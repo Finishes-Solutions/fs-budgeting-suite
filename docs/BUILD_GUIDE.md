@@ -1,6 +1,6 @@
 # Build & Deployment Guide — FS Budgeting Suite (Phase 1)
 
-Audience: Matthew (VP Technology). Assumes Owner/Contributor on an Azure subscription
+Prepared by Finishes Technology. Assumes Owner/Contributor on an Azure subscription
 and admin rights in the Finishes Solutions Entra tenant.
 
 This guide covers **Phase 1 (standalone hosted tool)**. Phases 2–4 (SharePoint export,
@@ -15,15 +15,15 @@ Monday.com sync, Lender Package service) are defined with exit criteria in `ROAD
 | Decision | Value | Why |
 |---|---|---|
 | Region | **Central US** | Matches your existing Azure footprint (App Services, SQL). Keep everything co-located. |
-| Resource group | **`rg-fs-budgeting-prod`** | One RG per workload per environment. Everything for this tool lives and dies together — delete the RG, delete the tool cleanly. |
+| Resource groups | **`rg-finishes-data-prod`** (SQL server + all work databases) and **`rg-fs-budgeting-prod`** (this workload's Static Web App) | The SQL server you create here is the **first production Finishes SQL server** — the BD governance database (Sept 1) and future work databases land on it too. Shared data platform gets its own RG; each workload's app resources get theirs. Azure requires databases to live in their server's RG, so this split must be made now, not retrofitted. |
 | SWA SKU | **Standard** (~$9/mo) | Free tier cannot use a custom Entra registration, which is what locks sign-in to the Finishes tenant. Non-negotiable for this design. |
 | SQL | **Serverless GP, Gen5, 0.5–1 vCore, auto-pause 60 min** | Right-sized for an internal tool; near-zero cost on idle weekends. |
-| SQL server | **Reuse your existing production SQL server** if the BD governance DB already has one in Central US; otherwise create `sql-finishes-cus-prod-<unique>` | One server, many databases is the normal pattern — a server is a free logical container. Fewer firewalls to manage. |
+| SQL server | **Create `sql-finishes-cus-prod-fs01`** in `rg-finishes-data-prod` — there is no existing work SQL server (the NFL analytics server is personal and stays out of work infrastructure) | One server, many databases: the server is a free logical container, so BD governance and future databases join it with zero extra server cost and one firewall to manage. |
 | Database name | **`fs-budgeting-suite`** | Matches repo/docs. |
 | Static Web App name | **`stapp-fs-budgeting-prod`** | CAF-style prefix; the default hostname is random anyway and you'll put a custom domain on it. |
 | Custom domain | **`budgets.finishessolutions.com`** | Set in §6. |
 | Auth to SQL (Phase 1) | SQL auth, dedicated least-privilege user | Pragmatic v1. Managed identity is hardening item #2 (§9). |
-| Tags on everything | `workload=fs-budgeting-suite` `env=prod` `owner=msinitiere` | Cost reporting and future cleanup. Add `costCenter` if you use one. |
+| Tags on everything | `workload=fs-budgeting-suite` `env=prod` `owner=fs-technology` | Cost reporting and future cleanup. Add `costCenter` if you use one. |
 
 Naming follows Microsoft's Cloud Adoption Framework abbreviations (`rg-`, `sql-`,
 `sqldb-`, `stapp-`). If Finishes already has a different convention in place, use
@@ -31,19 +31,27 @@ yours — consistency with your estate beats consistency with this document.
 
 ---
 
-## 1 · Resource group
+## 1 · Resource groups
 
-Portal: Resource groups → Create → name `rg-fs-budgeting-prod`, region Central US, add the three tags.
+Two groups: the shared data platform, and this workload.
 
 CLI (everything below assumes `az login` done and the right subscription selected —
 check with `az account show`):
 
 ```bash
 az group create \
+  --name rg-finishes-data-prod \
+  --location centralus \
+  --tags workload=finishes-data-platform env=prod owner=fs-technology
+
+az group create \
   --name rg-fs-budgeting-prod \
   --location centralus \
-  --tags workload=fs-budgeting-suite env=prod owner=msinitiere
+  --tags workload=fs-budgeting-suite env=prod owner=fs-technology
 ```
+
+When the BD governance database arrives, it goes onto this same server inside
+`rg-finishes-data-prod` — no new server, no new resource group.
 
 Recommendation: skip a separate dev environment for now. SWA gives you free
 **preview environments per pull request** automatically — that's your dev/staging.
@@ -77,47 +85,47 @@ az ad app credential reset --id <appId> --display-name swa-auth --years 0.5
 
 ## 3 · Azure SQL
 
-### 3a. Server (skip if reusing an existing Central US server)
+### 3a. Server (the first production Finishes SQL server — future work DBs join it)
 
 ```bash
 az sql server create \
   --name sql-finishes-cus-prod-fs01 \
-  --resource-group rg-fs-budgeting-prod \
+  --resource-group rg-finishes-data-prod \
   --location centralus \
   --admin-user fsadmin \
   --admin-password '<STRONG-ADMIN-PW>'   # store in your password manager / Key Vault, not in notes
 
 az sql server firewall-rule create \
-  --resource-group rg-fs-budgeting-prod --server sql-finishes-cus-prod-fs01 \
+  --resource-group rg-finishes-data-prod --server sql-finishes-cus-prod-fs01 \
   --name AllowAzureServices --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
 
 az sql server firewall-rule create \
-  --resource-group rg-fs-budgeting-prod --server sql-finishes-cus-prod-fs01 \
-  --name MattSetupIP --start-ip-address <your-ip> --end-ip-address <your-ip>
+  --resource-group rg-finishes-data-prod --server sql-finishes-cus-prod-fs01 \
+  --name AdminSetupIP --start-ip-address <your-ip> --end-ip-address <your-ip>
 ```
 
 (Server names are globally unique; the `-fs01` suffix is there to dodge collisions.
 `0.0.0.0` is Azure's magic "allow Azure services" rule, which is how the SWA-managed
-Functions reach the DB. Delete `MattSetupIP` when setup is done.)
+Functions reach the DB. Delete `AdminSetupIP` when setup is done.)
 
 ### 3b. Database
 
 ```bash
 az sql db create \
-  --resource-group rg-fs-budgeting-prod \
+  --resource-group rg-finishes-data-prod \
   --server sql-finishes-cus-prod-fs01 \
   --name fs-budgeting-suite \
   --edition GeneralPurpose --compute-model Serverless --family Gen5 \
   --capacity 1 --min-capacity 0.5 --auto-pause-delay 60 \
   --backup-storage-redundancy Local \
-  --tags workload=fs-budgeting-suite env=prod owner=msinitiere
+  --tags workload=fs-budgeting-suite env=prod owner=fs-technology
 ```
 
 Then raise point-in-time restore retention from the 7-day default:
 
 ```bash
 az sql db str-policy-set \
-  --resource-group rg-fs-budgeting-prod --server sql-finishes-cus-prod-fs01 \
+  --resource-group rg-finishes-data-prod --server sql-finishes-cus-prod-fs01 \
   --name fs-budgeting-suite --retention-days 35
 ```
 
@@ -235,11 +243,12 @@ person:
    `SELECT COUNT(*) FROM dbo.SovLines WHERE ProjectId='BD-0001';` → ~103 rows.
 4. Pricing library → shows unlocked for you → publish a version bump → confirm a new
    `PricingLibrary` row with `IsCurrent=1` and the old row flipped to 0.
-5. Second account (Luigi, or a test user) → pricing page shows locked with the
+5. A second, non-admin account → pricing page shows locked with the
    role message → their `PUT /api/pricing` returns 403.
 6. Export both Excel and PDF from BD-0001 → open both.
-7. `az group show -n rg-fs-budgeting-prod --query tags` → tags present (future-you
-   doing cost reports says thanks).
+7. Tags present on both groups (future-you doing cost reports says thanks):
+   `az group show -n rg-finishes-data-prod --query tags` and
+   `az group show -n rg-fs-budgeting-prod --query tags`.
 
 ## 9 · Hardening / next steps (ordered by value)
 

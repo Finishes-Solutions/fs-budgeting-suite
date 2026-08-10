@@ -1,0 +1,41 @@
+# FS Budgeting Suite — build guide variables
+# Copy to guide.vars, fill in, run: python3 render_guide.py
+#
+# ⚠ SECURITY: guide.vars and BUILD_GUIDE.filled.md are gitignored. Never commit
+#   them, screenshot them, or paste them into chat tools — they contain secrets.
+#   Leave any secret blank to keep a visible {{PLACEHOLDER}} in the output instead.
+
+# ---- Identity ----
+TENANT_ID=
+CLIENT_ID=
+CLIENT_SECRET=            # optional; leave blank to keep placeholder in the doc
+
+# ---- Resource names (defaults match the guide's recommendations) ----
+LOCATION=centralus
+RG_DATA=rg-finishes-data-prod
+RG_APP=rg-fs-budgeting-prod
+SQL_SERVER=sql-finishes-cus-prod-fs01
+SQL_DB=fs-budgeting-suite
+SWA_NAME=stapp-fs-budgeting-prod
+OWNER_TAG=fs-technology
+
+# ---- SQL credentials ----
+SQL_ADMIN_USER=fsadmin
+SQL_ADMIN_PASSWORD=       # optional; leave blank to keep placeholder
+APP_DB_USER=fs_budgeting_app
+APP_DB_PASSWORD=          # optional; leave blank to keep placeholder
+
+# ---- Networking / hosting ----
+SETUP_IP=                 # your public IP for the temporary firewall rule
+DEFAULT_HOSTNAME=         # xxxx.azurestaticapps.net — known after SWA creation; re-render then
+CUSTOM_DOMAIN=budgets.finishessolutions.com
+
+# ---- GitHub ----
+GITHUB_ORG=Finishes-Solutions
+GITHUB_REPO_NAME=fs-budgeting-suite
+# GITHUB_REPO is derived automatically as github.com/ORG/REPO_NAME unless set here:
+GITHUB_REPO=
+
+# SQL_CONN_STRING is derived automatically from SQL_SERVER/SQL_DB/APP_DB_USER/APP_DB_PASSWORD
+# unless you set it explicitly here:
+SQL_CONN_STRING=
