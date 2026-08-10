@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finishes Solutions — FS Budgeting Suite</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --green-900:#00351a;--green-800:#004d1e;--green-700:#006527;--green-600:#0a7a36;--green-500:#1f9249;
+  --green-200:#c2e3d0;--green-100:#e2f1e8;--green-50:#f1f8f4;
+  --ink-950:#0b0d0c;--ink-900:#16191a;--ink-800:#23282a;--ink-700:#353b3d;--ink-600:#4d5457;
+  --ink-500:#6b7174;--ink-400:#939a9d;--ink-300:#bcc2c4;--ink-200:#dde1e2;--ink-150:#e8ebeb;
+  --ink-100:#f1f3f3;--ink-50:#f8f9f9;--white:#fff;
+  --warn:#b7791f;--danger:#b42318;
+  --fb:'Montserrat',system-ui,sans-serif;--fm:'IBM Plex Mono',ui-monospace,monospace;
+  --r:4px;--rm:6px;
+  --sh:0 1px 2px rgba(11,13,12,.06),0 1px 3px rgba(11,13,12,.08);
+  --focus:0 0 0 3px rgba(10,122,54,.32);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);color:var(--ink-800);background:var(--ink-50);font-size:14px;line-height:1.5}
+.mono{font-family:var(--fm)}
+.eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
+
+header{background:var(--ink-900);color:var(--white)}
+.hd{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px;padding:0 32px}
+.wordmark{font-weight:800;letter-spacing:.06em;font-size:16px;text-transform:uppercase}
+.wordmark span{color:var(--green-500)}
+nav{display:flex;gap:4px}
+nav button{background:transparent;border:none;color:rgba(255,255,255,.6);font-family:var(--fm);font-size:11px;
+  letter-spacing:.12em;text-transform:uppercase;padding:8px 14px;cursor:pointer;border-radius:var(--r)}
+nav button:hover{color:#fff;background:rgba(255,255,255,.08)}
+nav button.on{color:#fff;background:var(--green-700)}
+nav button[disabled]{opacity:.35;cursor:not-allowed}
+
+main{max-width:1280px;margin:0 auto;padding:28px 32px 48px}
+.page{display:none}.page.on{display:block}
+.page-title{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title h1{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--ink-950)}
+.page-title .sub{font-size:13px;color:var(--ink-500);margin-top:2px}
+
+.card{background:var(--white);border:1px solid var(--ink-150);border-radius:var(--rm);box-shadow:var(--sh);margin-bottom:20px}
+.card-hd{padding:14px 22px;border-bottom:1px solid var(--ink-150);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.card-hd h2{font-size:15px;font-weight:700;color:var(--ink-950)}
+.card-bd{padding:22px}
+.grid{display:grid;gap:14px}.g5{grid-template-columns:repeat(5,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.g4,.g5{grid-template-columns:1fr 1fr}}
+
+label.fld{display:block}
+label.fld .lab{display:block;margin-bottom:6px;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
+input[type=text],input[type=number],input[type=password],select{
+  width:100%;padding:9px 12px;border:1px solid var(--ink-200);border-radius:var(--r);
+  font-family:var(--fb);font-size:14px;color:var(--ink-900);background:var(--white);outline:none;
+  transition:border-color .12s,box-shadow .12s}
+input:focus,select:focus{border-color:var(--green-600);box-shadow:var(--focus)}
+input.num{font-family:var(--fm);font-size:13px;text-align:right}
+.err{border-color:var(--danger)!important}
+.fld-err{font-size:11.5px;color:var(--danger);margin-top:4px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:var(--r);
+  font-family:var(--fb);font-weight:600;font-size:13px;padding:8px 16px;cursor:pointer;transition:all .12s}
+.btn-primary{background:var(--green-700);color:#fff}.btn-primary:hover{background:var(--green-800)}
+.btn-ghost{background:transparent;border-color:var(--ink-200);color:var(--ink-700)}
+.btn-ghost:hover{border-color:var(--ink-400);background:var(--ink-50)}
+.btn-dark{background:var(--ink-900);color:#fff}.btn-dark:hover{background:var(--ink-800)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-x{background:none;border:none;color:var(--ink-400);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:var(--r)}
+.btn-x:hover{color:var(--danger);background:var(--ink-100)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-500);
+  font-weight:500;text-align:left;padding:8px 10px;border-bottom:1px solid var(--ink-200);white-space:nowrap}
+.tbl th.r,.tbl td.r{text-align:right}
+.tbl td{padding:6px 10px;border-bottom:1px solid var(--ink-100);vertical-align:middle}
+.tbl td.calc{font-family:var(--fm);font-size:13px;color:var(--ink-700);white-space:nowrap}
+.tbl td.calc.strong{color:var(--ink-950);font-weight:600}
+.tbl tr.total td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;color:var(--ink-950);padding-top:10px}
+.tbl input,.tbl select{border:1px solid transparent;background:transparent;padding:6px 8px}
+.tbl input:hover,.tbl select:hover{border-color:var(--ink-200);background:#fff}
+.tbl input:focus,.tbl select:focus{border-color:var(--green-600);background:#fff}
+.tbl input[type=number]{font-family:var(--fm);font-size:13px;text-align:right}
+.scope-hd td{background:var(--ink-900);color:#fff;font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  font-weight:600;padding:9px 12px}
+.scope-hd .div-sum{float:right;color:var(--green-500)}
+.grp-hd td{background:var(--ink-50);font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-700);font-weight:600;padding:7px 10px;border-bottom:1px solid var(--ink-150)}
+.grp-hd .div-sum{float:right;color:var(--ink-950)}
+tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
+
+.stats{display:grid;grid-template-columns:repeat(5,1fr);background:var(--ink-900);border-radius:var(--rm);overflow:hidden;margin-bottom:20px}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{padding:18px 22px;border-left:3px solid var(--green-700)}
+.stat .k{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:6px}
+.stat .v{font-family:var(--fm);font-size:20px;font-weight:600;color:#fff}
+
+.sum-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--ink-100)}
+.sum-row .k{color:var(--ink-600)}.sum-row .v{font-family:var(--fm);font-weight:500;color:var(--ink-900)}
+.sum-row.sub .k{padding-left:16px;font-size:13px;color:var(--ink-500)}
+.sum-row.grand{border-bottom:none;border-top:2px solid var(--ink-900);margin-top:6px;padding-top:12px}
+.sum-row.grand .k{font-weight:700;color:var(--ink-950)}
+.sum-row.grand .v{font-weight:700;font-size:18px;color:var(--green-700)}
+.sum-row.mid{border-top:1px solid var(--ink-300);padding-top:10px}
+.sum-row.mid .k{font-weight:700;color:var(--ink-900)}.sum-row.mid .v{font-weight:600}
+
+.badge{display:inline-block;font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 8px;border-radius:var(--r);border:1px solid var(--ink-200);color:var(--ink-600)}
+.badge.warn{border-color:#e6d3ae;background:#fdf6e8;color:var(--warn)}
+.badge.ok{border-color:var(--green-200);background:var(--green-50);color:var(--green-700)}
+
+.banner{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 18px;border-radius:var(--rm);
+  border:1px solid #e6d3ae;background:#fdf6e8;color:#7a5514;font-size:13px;margin-bottom:20px}
+.banner.green{border-color:var(--green-200);background:var(--green-50);color:var(--green-800)}
+
+.seg{display:inline-flex;border:1px solid var(--ink-200);border-radius:var(--r);overflow:hidden}
+.seg button{border:none;background:#fff;padding:7px 12px;font-family:var(--fm);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-500);cursor:pointer}
+.seg button.on{background:var(--ink-900);color:#fff}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-700);cursor:pointer;user-select:none}
+.chk input{width:15px;height:15px;accent-color:var(--green-700)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink-900);color:#fff;padding:12px 20px;border-radius:var(--rm);
+  font-size:13px;box-shadow:0 8px 24px rgba(11,13,12,.25);opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:99}
+.toast.show{opacity:1;transform:none}
+.empty{padding:48px;text-align:center;color:var(--ink-400)}
+.empty .big{font-size:15px;font-weight:600;color:var(--ink-600);margin-bottom:6px}
+.note{font-size:12.5px;color:var(--ink-500);line-height:1.55}
+@media print{
+  header,.no-print,.banner{display:none!important}
+  body{background:#fff}main{padding:0;max-width:none}
+  .page{display:none!important}.page.print-target{display:block!important}
+  .card{box-shadow:none;break-inside:avoid}
+  section.print-hide,div.print-hide{display:none!important}
+  .stats{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd">
+    <div class="wordmark">Finishes <span>Solutions</span></div>
+    <nav class="no-print">
+      <button id="nav-home" class="on" onclick="go('home')">Budgets</button>
+      <button id="nav-input" onclick="go('input')" disabled>Inputs</button>
+      <button id="nav-budget" onclick="go('budget')" disabled>Budget</button>
+      <button id="nav-pricing" onclick="go('pricing')">Pricing library</button>
+    </nav>
+    <span class="mono" id="whoami" style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.06em"></span>
+  </div>
+</header>
+
+<main>
+
+<!-- ================= HOME ================= -->
+<div class="page on" id="page-home">
+  <div class="page-title">
+    <div><h1>Project budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
+    <button class="btn btn-primary" onclick="newBudget()">+ New budget</button>
+  </div>
+  <div class="card"><div class="card-bd" style="padding:0">
+    <table class="tbl">
+      <thead><tr><th style="padding-left:22px">Project ID</th><th>Name</th><th class="r">Contract sum</th><th class="r">Total project</th><th>Status</th><th class="r" style="padding-right:22px">Updated</th><th class="no-print"></th></tr></thead>
+      <tbody id="homeBody"></tbody>
+    </table>
+    <div class="empty" id="homeEmpty" style="display:none">
+      <div class="big">No budgets yet</div>
+      <div>Create one to get started. Budgets snapshot the pricing library at creation.</div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ================= INPUTS ================= -->
+<div class="page" id="page-input">
+  <div class="page-title">
+    <div><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
+    <div style="display:flex;gap:10px" class="no-print">
+      <button class="btn btn-ghost" onclick="saveBudget(true)">Save draft</button>
+      <button class="btn btn-primary" onclick="toBudget()">Continue to budget →</button>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="card-hd"><h2>Project</h2><span class="eyebrow">ID formats: OP-001 · BD-0001 · AS-0001</span></div>
+    <div class="card-bd">
+      <div class="grid g4">
+        <label class="fld"><span class="lab">Project ID</span>
+          <input type="text" id="pId" placeholder="BD-0001" oninput="validateId()" style="font-family:var(--fm);text-transform:uppercase">
+          <div class="fld-err" id="pIdErr" style="display:none">Must match OP-###, BD-#### or AS-####</div></label>
+        <label class="fld"><span class="lab">Project name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I"></label>
+        <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP"></label>
+        <label class="fld"><span class="lab">Property type</span>
+          <select id="pType"><option>Multifamily</option><option disabled>Commercial (coming)</option><option disabled>SFR (coming)</option></select></label>
+      </div>
+      <div class="grid g4" style="margin-top:14px">
+        <label class="fld"><span class="lab">Residential buildable SF</span><input type="number" class="num" id="pSF" value="51365" min="0" step="100" oninput="recalc()"></label>
+        <label class="fld"><span class="lab">Amenity / clubhouse SF</span><input type="number" class="num" id="pASF" value="1200" min="0" step="50" oninput="recalc()"></label>
+      </div>
+      <div class="note" style="margin-top:10px">Residential SF drives the per-SF construction and soft-cost lines. Amenity SF drives the clubhouse/leasing scope at its own (higher) rates — matching how the Finishes model prices the two buildings separately.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-hd"><h2>Unit mix &amp; rent revenue</h2>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span id="sfCheck" class="badge">—</span>
+        <button class="btn btn-ghost btn-sm no-print" onclick="addUnit()">+ Add unit type</button>
+      </div></div>
+    <div class="card-bd" style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr><th style="width:19%">Unit type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF / unit</th><th class="r"># Units</th>
+          <th class="r">Rent / mo</th><th class="r">$ / SF / mo</th><th class="r">Type SF</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
+        <tbody id="unitBody"></tbody>
+        <tfoot><tr class="total">
+          <td>Total / blended</td><td></td><td></td><td class="calc r" id="uAvgSF">—</td><td class="calc r strong" id="uCount">0</td>
+          <td class="calc r" id="uAvgRent">—</td><td class="calc r" id="uBlendPSF">—</td><td class="calc r strong" id="uTotSF">0</td>
+          <td class="calc r strong" id="uMoRev">$0</td><td class="calc r strong" id="uYrRev">$0</td><td class="no-print"></td>
+        </tr></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-hd"><h2>Other income</h2>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="eyebrow">Net $/mo per count — utilities, tech entity, parking, pet, admin…</span>
+        <button class="btn btn-ghost btn-sm no-print" onclick="addOther()">+ Add income line</button>
+      </div></div>
+    <div class="card-bd" style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr><th style="width:40%">Income line</th><th class="r">Net $ / mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
+        <tbody id="otherBody"></tbody>
+        <tfoot><tr class="total"><td>Total other income</td><td></td><td></td>
+          <td class="calc r strong" id="oMo">$0</td><td class="calc r strong" id="oYr">$0</td><td class="no-print"></td></tr></tfoot>
+      </table>
+      <div class="note" style="margin-top:10px">Enter <b>gross</b> charges here (what the resident is billed). Costs live in Expenses below — the tool nets them for you, matching the sheet's Gross → Cost → Net breakdown. Count defaults to total units (green dot); override for lines like parking spaces or premium units.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-hd"><h2>Operating expenses</h2>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="eyebrow">Per-unit or fixed monthly costs netted against income</span>
+        <button class="btn btn-ghost btn-sm no-print" onclick="addExpense()">+ Add expense</button>
+      </div></div>
+    <div class="card-bd" style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr><th style="width:40%">Expense line</th><th>Basis</th><th class="r">$ / mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
+        <tbody id="expBody"></tbody>
+        <tfoot>
+          <tr class="total"><td>Total operating expenses</td><td></td><td></td><td></td>
+            <td class="calc r strong" id="eMo">$0</td><td class="calc r strong" id="eYr">$0</td><td class="no-print"></td></tr>
+          <tr><td colspan="4" style="border:none;padding-top:8px;font-weight:600;color:var(--ink-950)">Net other income (gross − expenses)</td>
+            <td class="calc r strong" id="nMo" style="border:none;padding-top:8px;color:var(--green-700)">$0</td>
+            <td class="calc r strong" id="nYr" style="border:none;padding-top:8px;color:var(--green-700)">$0</td><td class="no-print" style="border:none"></td></tr>
+        </tfoot>
+      </table>
+      <div class="note" style="margin-top:10px">Per-unit lines auto-count to total units (green dot). Fixed lines (e.g., City of Waller dumpster at $383/mo) apply once regardless of unit count.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-hd"><h2>Profit &amp; contingency</h2>
+      <button class="btn btn-ghost btn-sm no-print" onclick="addCo()">+ Add company</button></div>
+    <div class="card-bd">
+      <div class="grid" style="grid-template-columns:1.4fr 1fr;gap:32px">
+        <div>
+          <div class="eyebrow" style="margin-bottom:8px">Profit by company (% of construction hard cost)</div>
+          <table class="tbl"><tbody id="coBody"></tbody></table>
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:8px">Construction contingency</div>
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+            <div class="seg">
+              <button id="cPct" onclick="setCMode('pct')">% hard</button>
+              <button id="cPsf" onclick="setCMode('psf')">$ / SF</button>
+              <button id="cAmt" onclick="setCMode('amt')">Fixed $</button>
+            </div>
+            <input type="number" class="num" id="cVal" value="2" min="0" step="0.25" style="width:120px" oninput="doc.contingency.val=+this.value;recalc()">
+          </div>
+          <div class="note">The Finishes model carries construction contingency at $2.00/SF. Soft-cost contingency lines live in the Soft Costs scope. Carried as explicit SOV line 99.03.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ================= BUDGET ================= -->
+<div class="page" id="page-budget">
+  <div class="page-title">
+    <div><h1 id="bTitle">Budget</h1><div class="sub" id="bSub"></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap" class="no-print">
+      <button class="btn btn-ghost" onclick="go('input')">← Inputs</button>
+      <button class="btn btn-ghost" onclick="saveBudget(true)">Save</button>
+      <button class="btn btn-dark" onclick="openExport()">Export…</button>
+    </div>
+  </div>
+
+  <div class="banner" id="staleBanner" style="display:none">
+    <span>This budget uses pricing library <b id="staleFrom"></b>; current is <b id="staleTo"></b>. Values are frozen until you update.</span>
+    <button class="btn btn-sm btn-dark no-print" onclick="repriceBudget()">Update to current pricing</button>
+  </div>
+
+  <div class="stats" id="sec-stats">
+    <div class="stat"><div class="k">Units</div><div class="v" id="sUnits">0</div></div>
+    <div class="stat"><div class="k">Net income / yr</div><div class="v" id="sRev">$0</div></div>
+    <div class="stat"><div class="k">Contract $/SF</div><div class="v" id="sCSF">—</div></div>
+    <div class="stat"><div class="k">Project $/SF</div><div class="v" id="sPSF">—</div></div>
+    <div class="stat"><div class="k">Cost / unit</div><div class="v" id="sCPU">—</div></div>
+  </div>
+
+  <section class="card" id="sec-budget">
+    <div class="card-hd"><h2>Budget detail</h2>
+      <span class="eyebrow">● = qty auto-synced (res SF / amenity SF / units) · edit to override</span></div>
+    <div class="card-bd" style="overflow-x:auto;padding-top:8px">
+      <table class="tbl">
+        <thead><tr><th style="width:36%">Line item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th>
+          <th class="r">Total</th><th class="r">% scope</th><th class="no-print"></th></tr></thead>
+        <tbody id="budBody"></tbody>
+      </table>
+      <div style="margin-top:12px" class="no-print"><button class="btn btn-ghost btn-sm" onclick="addLine()">+ Add line item</button></div>
+    </div>
+  </section>
+
+  <section class="card" id="sec-project">
+    <div class="card-hd"><h2>Land &amp; project costs</h2><span class="eyebrow">Outside the construction contract — rolls into total project cost</span></div>
+    <div class="card-bd">
+      <div class="grid g4">
+        <label class="fld"><span class="lab">Land cost</span><input type="number" class="num" id="pcLand" min="0" step="10000" oninput="doc.projectCosts.land=+this.value;recalc()"></label>
+        <label class="fld"><span class="lab">Developer fee</span><input type="number" class="num" id="pcDev" min="0" step="5000" oninput="doc.projectCosts.dev=+this.value;recalc()"></label>
+        <label class="fld"><span class="lab">Marketing / brokerage</span><input type="number" class="num" id="pcMkt" min="0" step="5000" oninput="doc.projectCosts.mkt=+this.value;recalc()"></label>
+        <label class="fld"><span class="lab">Closing costs</span><input type="number" class="num" id="pcCls" min="0" step="5000" oninput="doc.projectCosts.cls=+this.value;recalc()"></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="sec-summary">
+    <div class="card-hd"><h2>Contract &amp; project summary</h2></div>
+    <div class="card-bd">
+      <div class="grid" style="grid-template-columns:1fr 1.25fr;gap:40px">
+        <div>
+          <div class="sum-row sub"><span class="k">Residential construction</span><span class="v" id="rRes">$0</span></div>
+          <div class="sum-row sub"><span class="k">Amenity / clubhouse</span><span class="v" id="rAmen">$0</span></div>
+          <div class="sum-row mid"><span class="k">Construction hard cost</span><span class="v" id="rHard">$0</span></div>
+          <div class="sum-row"><span class="k">Profit — total</span><span class="v" id="rProfit">$0</span></div>
+          <div class="sum-row"><span class="k">Contingency (99.03)</span><span class="v" id="rCont">$0</span></div>
+          <div class="sum-row grand"><span class="k">Contract sum (construction)</span><span class="v" id="rContract">$0</span></div>
+          <div style="height:16px"></div>
+          <div class="sum-row sub"><span class="k">Soft costs</span><span class="v" id="rSoft">$0</span></div>
+          <div class="sum-row sub"><span class="k">Land</span><span class="v" id="rLand">$0</span></div>
+          <div class="sum-row sub"><span class="k">Developer fee · marketing · closing</span><span class="v" id="rFees">$0</span></div>
+          <div class="sum-row grand"><span class="k">Total project cost</span><span class="v" id="rProject">$0</span></div>
+          <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+            <span class="badge" id="mMargin">Margin —</span>
+            <span class="badge" id="mYield">Gross yield —</span>
+            <span class="badge" id="mPricing">Pricing —</span>
+          </div>
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:8px">SOV rollup — construction contract</div>
+          <table class="tbl"><tbody id="sovBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ================= PRICING ================= -->
+<div class="page" id="page-pricing">
+  <div class="page-title">
+    <div><h1>Pricing library</h1><div class="sub">Multifamily cost assumptions — seeded from the Finishes budget model export.</div></div>
+  </div>
+  <div class="banner" id="lockBanner">
+    <span id="lockMsg"><b>Locked.</b> Pricing is editable only by accounts holding the <b>pricing_admin</b> role (assigned in the Static Web App's role management).</span>
+    <span style="display:flex;gap:8px;align-items:center" class="no-print" id="lockCtl">
+      <input type="password" id="adminPass" placeholder="Admin passcode" style="width:180px">
+      <button class="btn btn-sm btn-dark" onclick="unlock()">Unlock</button>
+    </span>
+  </div>
+  <div class="banner green" id="unlockedBanner" style="display:none">
+    <span><b>Unlocked.</b> Changes affect <i>new</i> budgets only — drafts keep their snapshot until updated from the budget page.</span>
+    <button class="btn btn-sm btn-primary no-print" onclick="savePricing()">Publish new version</button>
+  </div>
+  <div class="card"><div class="card-hd">
+      <h2>Multifamily cost assumptions</h2>
+      <span class="eyebrow" id="pricingMeta">—</span></div>
+    <div class="card-bd" style="overflow-x:auto;padding-top:8px">
+      <table class="tbl">
+        <thead><tr><th style="width:44%">Line item</th><th>Basis</th><th class="r">Rate</th><th class="no-print"></th></tr></thead>
+        <tbody id="priceBody"></tbody>
+      </table>
+      <div style="margin-top:12px" class="no-print" id="priceAdd" hidden>
+        <button class="btn btn-ghost btn-sm" onclick="addPriceLine()">+ Add blank line</button>
+        <span class="note" style="margin-left:10px">Prefer adding from the CSI catalog below so every line carries a real code.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <h2>CSI MasterFormat code catalog</h2>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap" class="no-print">
+        <span class="eyebrow" id="catCount">—</span>
+        <select id="catScope" style="width:150px;font-size:12px;padding:6px 8px">
+          <option value="res">→ Residential</option>
+          <option value="amen">→ Amenity</option>
+          <option value="soft">→ Soft Costs</option>
+        </select>
+        <input type="text" id="catSearch" placeholder="Search code or title…" style="width:220px" oninput="renderCatalog()">
+      </div>
+    </div>
+    <div class="card-bd" style="padding-top:8px;max-height:520px;overflow:auto">
+      <table class="tbl">
+        <thead><tr><th style="width:130px">Code</th><th>Section</th><th class="r" style="width:120px">In template</th><th class="no-print" style="width:90px"></th></tr></thead>
+        <tbody id="catBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ================= EXPORT MODAL ================= -->
+<div id="exportModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
+  <div class="card" style="width:460px;max-width:92vw;margin:0">
+    <div class="card-hd"><h2>Export budget</h2><button class="btn-x" onclick="closeExport()">×</button></div>
+    <div class="card-bd">
+      <div class="eyebrow" style="margin-bottom:10px">Include sections</div>
+      <div style="display:grid;gap:10px;margin-bottom:20px">
+        <label class="chk"><input type="checkbox" id="ex-stats" checked> Project summary &amp; key metrics</label>
+        <label class="chk"><input type="checkbox" id="ex-units" checked> Unit mix &amp; rent revenue</label>
+        <label class="chk"><input type="checkbox" id="ex-other" checked> Other income &amp; operating expenses</label>
+        <label class="chk"><input type="checkbox" id="ex-budget" checked> Budget detail (all scopes)</label>
+        <label class="chk"><input type="checkbox" id="ex-summary" checked> Contract &amp; project summary / SOV</label>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="exportExcel()">Excel (.xlsx)</button>
+        <button class="btn btn-primary" onclick="exportPDF()">PDF (print)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CSI PICKER MODAL ================= -->
+<div id="pickModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
+  <div class="card" style="width:640px;max-width:94vw;margin:0">
+    <div class="card-hd"><h2>Add line from CSI catalog</h2>
+      <div style="display:flex;gap:10px;align-items:center">
+        <select id="pickScope" style="width:150px;font-size:12px;padding:6px 8px">
+          <option value="res">→ Residential</option>
+          <option value="amen">→ Amenity</option>
+          <option value="soft">→ Soft Costs</option>
+        </select>
+        <button class="btn-x" onclick="closePick()">×</button>
+      </div></div>
+    <div class="card-bd" style="padding-top:12px">
+      <input type="text" id="pickSearch" placeholder="Search code or title — e.g., 09 60, flooring, elevator…" oninput="renderPick()" style="margin-bottom:12px">
+      <div style="max-height:380px;overflow:auto;border:1px solid var(--ink-150);border-radius:var(--r)">
+        <table class="tbl"><tbody id="pickBody"></tbody></table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+        <span class="note">Line is added at qty auto / rate $0 — set the rate on the budget.</span>
+        <button class="btn btn-ghost btn-sm" onclick="addBlankLine()">Add blank line instead</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ HELPERS ============ */
+const usd=n=>'$'+Math.round(n).toLocaleString('en-US');
+const usd2=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=n=>Math.round(n).toLocaleString('en-US');
+const esc=s=>String(s??'').replace(/"/g,'&quot;');
+const ID_RX=/^(OP-\d{3}|BD-\d{4}|AS-\d{4})$/;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+
+/* ============ STORAGE — Azure Functions API ============ */
+async function api(path,opts={}){
+  const r=await fetch('/api/'+path,{headers:{'Content-Type':'application/json'},...opts});
+  if(r.status===403)throw new Error('Not authorized (pricing_admin role required)');
+  if(!r.ok)throw new Error('API '+r.status+': '+await r.text());
+  const ct=r.headers.get('content-type')||'';
+  return ct.includes('json')?await r.json():null;
+}
+async function sGet(k){try{
+  if(k==='budgets-index')return await api('budgets');
+  if(k.startsWith('budget-'))return await api('budget/'+encodeURIComponent(k.slice(7)));
+  if(k==='pricing-multifamily')return await api('pricing');
+  return null;}catch(e){console.warn('GET',k,e.message);return null;}}
+async function sSet(k,v){
+  if(k==='budgets-index')return; // server maintains the index
+  if(k.startsWith('budget-'))return api('budget/'+encodeURIComponent(k.slice(7)),{method:'PUT',body:JSON.stringify({doc:v})});
+  if(k==='pricing-multifamily')return api('pricing',{method:'PUT',body:JSON.stringify(v)});
+}
+async function sDel(k){if(k.startsWith('budget-'))await api('budget/'+encodeURIComponent(k.slice(7)),{method:'DELETE'});}
+let principal=null;
+async function initAuth(){
+  try{const r=await fetch('/.auth/me');const j=await r.json();principal=j.clientPrincipal||null;}catch(e){principal=null;}
+  if(principal){
+    adminUnlocked=(principal.userRoles||[]).includes('pricing_admin');
+    const el=document.getElementById('whoami');
+    if(el)el.textContent=principal.userDetails||'';
+  }
+}
+
+/* ============ CSI MASTERFORMAT CATALOG ============
+   All divisions (00–48; 15–20, 24, 29–30, 36–39, 47, 49 reserved) with Level-2
+   sections, plus Level-3 codes in active use in the Finishes budget model.  */
+const CSI=[
+['00','Procurement and Contracting Requirements',[['00 10 00','Solicitation'],['00 20 00','Instructions for Procurement'],['00 30 00','Available Information'],['00 40 00','Procurement Forms and Supplements'],['00 50 00','Contracting Forms and Supplements'],['00 60 00','Project Forms'],['00 70 00','Conditions of the Contract'],['00 80 00','Supplementary Conditions'],['00 90 00','Revisions, Clarifications, and Modifications']]],
+['01','General Requirements',[['01 01 00','Project Management'],['01 02 00','Insurance'],['01 04 00','Equipment & Supplies'],['01 05 00','Security'],['01 06 00','Testing & Surveying'],['01 07 00','Inspections'],['01 10 00','Summary'],['01 20 00','Price and Payment Procedures'],['01 30 00','Administrative Requirements'],['01 40 00','Quality Requirements'],['01 50 00','Temporary Facilities and Controls'],['01 60 00','Product Requirements'],['01 70 00','Execution and Closeout Requirements'],['01 74 00','Construction Waste Management and Disposal'],['01 80 00','Performance Requirements'],['01 90 00','Life Cycle Activities']]],
+['02','Existing Conditions',[['02 20 00','Assessment'],['02 30 00','Subsurface Investigation'],['02 40 00','Demolition and Structure Moving'],['02 50 00','Site Remediation'],['02 60 00','Contaminated Site Material Removal'],['02 70 00','Water Remediation'],['02 80 00','Facility Remediation']]],
+['03','Concrete',[['03 05 00','Common Work Results for Concrete'],['03 10 00','Concrete Forming and Accessories'],['03 20 00','Concrete Reinforcing'],['03 30 00','Cast-in-Place Concrete / Foundation / Slab'],['03 40 00','Precast Concrete'],['03 50 00','Cast Decks and Underlayment'],['03 60 00','Grouting'],['03 70 00','Mass Concrete'],['03 80 00','Concrete Cutting and Boring']]],
+['04','Masonry',[['04 03 00','Gypcrete Fill / Lightweight Concrete'],['04 05 00','Common Work Results for Masonry'],['04 20 00','Unit Masonry'],['04 30 00','Stone Masonry'],['04 40 00','Stone Assemblies'],['04 50 00','Refractory Masonry'],['04 60 00','Corrosion-Resistant Masonry'],['04 70 00','Manufactured Masonry']]],
+['05','Metals',[['05 05 00','Common Work Results for Metals'],['05 10 00','Structural Metal Framing / Stairs / Handrails'],['05 20 00','Metal Joists'],['05 30 00','Metal Decking'],['05 40 00','Cold-Formed Metal Framing'],['05 50 00','Metal Fabrications'],['05 70 00','Decorative Metal']]],
+['06','Wood, Plastics, and Composites',[['06 05 00','Common Work Results'],['06 10 00','Rough Carpentry / Framing / Sheathing'],['06 20 00','Finish Carpentry / Trim'],['06 40 00','Architectural Woodwork / Millwork'],['06 50 00','Structural Plastics'],['06 60 00','Plastic Fabrications'],['06 70 00','Structural Composites'],['06 80 00','Composite Fabrications']]],
+['07','Thermal and Moisture Protection',[['07 05 00','Common Work Results'],['07 10 00','Dampproofing and Waterproofing'],['07 20 00','Thermal Protection'],['07 21 00','Insulation'],['07 25 00','Weather Barriers'],['07 30 00','Steep Slope Roofing'],['07 40 00','Roofing and Siding Panels'],['07 50 00','Membrane Roofing'],['07 60 00','Flashing and Sheet Metal / Gutters / Downspouts'],['07 70 00','Roof and Wall Specialties and Accessories'],['07 80 00','Fire and Smoke Protection'],['07 90 00','Joint Protection / Sealants']]],
+['08','Openings',[['08 05 00','Common Work Results'],['08 10 00','Doors and Frames'],['08 11 00','Interior Doors and Frames'],['08 30 00','Specialty Doors and Frames'],['08 40 00','Entrances, Storefronts, and Curtain Walls'],['08 50 00','Windows'],['08 60 00','Roof Windows and Skylights'],['08 70 00','Hardware'],['08 71 00','Door Hardware'],['08 80 00','Glazing'],['08 83 00','Mirrors'],['08 90 00','Louvers and Vents']]],
+['09','Finishes',[['09 05 00','Common Work Results'],['09 20 00','Plaster and Gypsum Board'],['09 30 00','Tiling'],['09 40 00','Terrazzo'],['09 50 00','Ceilings'],['09 60 00','Flooring'],['09 70 00','Wall Finishes'],['09 80 00','Acoustic Treatment'],['09 90 00','Painting and Coating'],['09 91 00','Interior Painting and Coating']]],
+['10','Specialties',[['10 10 00','Information Specialties'],['10 14 00','Signage / Unit & Building Numbers'],['10 20 00','Interior Specialties'],['10 28 00','Toilet, Bath, and Laundry Accessories'],['10 30 00','Fireplaces and Stoves'],['10 40 00','Safety Specialties'],['10 44 00','Fire Protection Specialties / Extinguishers'],['10 50 00','Storage Specialties'],['10 55 00','Postal Specialties / Mailboxes / Package Lockers'],['10 70 00','Exterior Specialties'],['10 80 00','Other Specialties']]],
+['11','Equipment',[['11 10 00','Vehicle and Pedestrian Equipment'],['11 15 00','Security, Detention, and Banking Equipment'],['11 20 00','Commercial Equipment'],['11 30 00','Residential Equipment'],['11 31 00','Residential Appliances'],['11 40 00','Foodservice Equipment / Amenity Kitchen'],['11 50 00','Educational and Scientific Equipment'],['11 60 00','Entertainment Equipment / Game & Media Room'],['11 65 00','Athletic and Recreational / Fitness Equipment'],['11 70 00','Healthcare Equipment'],['11 80 00','Collection and Disposal Equipment'],['11 90 00','Other Equipment']]],
+['12','Furnishings',[['12 05 00','Common Work Results'],['12 10 00','Art'],['12 20 00','Window Treatments'],['12 21 00','Window Blinds'],['12 30 00','Casework / Stock Cabinets'],['12 36 00','Countertops'],['12 40 00','Furnishings and Accessories'],['12 50 00','Furniture'],['12 60 00','Multiple Seating'],['12 90 00','Other Furnishings']]],
+['13','Special Construction',[['13 10 00','Special Facility Components'],['13 11 00','Swimming Pools'],['13 20 00','Special Purpose Rooms'],['13 30 00','Special Structures'],['13 40 00','Integrated Construction'],['13 50 00','Special Instrumentation'],['13 70 00','Security Access and Surveillance'],['13 80 00','Building Automation and Control']]],
+['14','Conveying Equipment',[['14 10 00','Dumbwaiters'],['14 20 00','Elevators'],['14 30 00','Escalators and Moving Walks'],['14 40 00','Lifts'],['14 70 00','Turntables'],['14 80 00','Scaffolding'],['14 90 00','Other Conveying Equipment']]],
+['21','Fire Suppression',[['21 05 00','Common Work Results'],['21 10 00','Water-Based Fire-Suppression Systems'],['21 20 00','Fire-Extinguishing Systems'],['21 30 00','Fire Pumps'],['21 40 00','Fire-Suppression Water Storage']]],
+['22','Plumbing',[['22 05 00','Common Work Results for Plumbing'],['22 10 00','Plumbing Piping'],['22 30 00','Plumbing Equipment'],['22 40 00','Plumbing Fixtures'],['22 50 00','Pool and Fountain Plumbing Systems'],['22 60 00','Gas and Vacuum Systems']]],
+['23','Heating, Ventilating, and Air Conditioning (HVAC)',[['23 05 00','Common Work Results for HVAC'],['23 10 00','Facility Fuel Systems'],['23 20 00','HVAC Piping and Pumps'],['23 30 00','HVAC Air Distribution'],['23 40 00','HVAC Air Cleaning Devices'],['23 50 00','Central Heating Equipment'],['23 60 00','Central Cooling Equipment'],['23 70 00','Central HVAC Equipment'],['23 80 00','Decentralized HVAC Equipment']]],
+['25','Integrated Automation',[['25 05 00','Common Work Results'],['25 10 00','Integrated Automation Network Equipment'],['25 30 00','Instrumentation and Terminal Devices'],['25 50 00','Integrated Automation Facility Controls'],['25 90 00','Integrated Automation Control Sequences']]],
+['26','Electrical',[['26 05 00','Common Work Results for Electrical'],['26 10 00','Medium-Voltage Electrical Distribution'],['26 20 00','Low-Voltage Electrical Transmission'],['26 30 00','Facility Electrical Power Generating and Storing Equipment'],['26 40 00','Electrical and Cathodic Protection'],['26 50 00','Lighting'],['26 56 00','Exterior / Site Lighting']]],
+['27','Communications',[['27 05 00','Common Work Results'],['27 10 00','Structured Cabling'],['27 11 00','Communications Equipment Room Fittings'],['27 15 00','Communications Horizontal Cabling'],['27 20 00','Data Communications'],['27 30 00','Voice Communications'],['27 40 00','Audio-Video Communications'],['27 50 00','Distributed Communications and Monitoring Systems']]],
+['28','Electronic Safety and Security',[['28 05 00','Common Work Results'],['28 10 00','Access Control / Intrusion Detection'],['28 20 00','Video Surveillance / Cameras'],['28 30 00','Security Detection, Alarm, and Monitoring'],['28 46 00','Fire Detection and Alarm']]],
+['31','Earthwork',[['31 05 00','Common Work Results for Earthwork'],['31 10 00','Site Clearing'],['31 20 00','Earth Moving'],['31 23 00','Excavation and Fill'],['31 30 00','Earthwork Methods'],['31 32 00','Soil Stabilization'],['31 40 00','Shoring and Underpinning'],['31 50 00','Excavation Support and Protection'],['31 60 00','Special Foundations and Load-Bearing Elements'],['31 70 00','Tunneling and Mining']]],
+['32','Exterior Improvements',[['32 05 00','Common Work Results'],['32 10 00','Bases, Ballasts, and Paving'],['32 13 00','Rigid Paving / Concrete Paving'],['32 30 00','Site Improvements'],['32 31 00','Fences and Gates'],['32 33 00','Site Furnishings / Benches / Bike Racks'],['32 70 00','Wetlands'],['32 80 00','Irrigation'],['32 90 00','Planting / Landscaping']]],
+['33','Utilities',[['33 05 00','Common Work Results for Utilities'],['33 10 00','Water Utilities'],['33 30 00','Sanitary Sewerage Utilities'],['33 40 00','Storm Drainage Utilities'],['33 50 00','Fuel Distribution Utilities'],['33 70 00','Electrical Utilities'],['33 80 00','Communications Utilities'],['33 90 00','Miscellaneous Utilities']]],
+['34','Transportation',[['34 05 00','Common Work Results'],['34 10 00','Guideways / Railways'],['34 20 00','Traction Power'],['34 40 00','Transportation Signaling and Control Equipment'],['34 70 00','Transportation Construction and Equipment']]],
+['35','Waterway and Marine Construction',[['35 10 00','Waterway and Marine Signaling and Control'],['35 20 00','Waterway and Marine Construction and Equipment'],['35 30 00','Coastal Construction'],['35 40 00','Waterway Construction'],['35 50 00','Marine Construction']]],
+['40','Process Interconnections',[['40 05 00','Common Work Results for Process Interconnections'],['40 10 00','Gas and Vapor Process Piping'],['40 20 00','Liquids Process Piping'],['40 90 00','Instrumentation and Control for Process Systems']]],
+['41','Material Processing and Handling Equipment',[['41 10 00','Bulk Material Processing Equipment'],['41 20 00','Piece Material Handling Equipment'],['41 60 00','Mobile Plant Equipment']]],
+['42','Process Heating, Cooling, and Drying Equipment',[['42 10 00','Process Heating Equipment'],['42 20 00','Process Cooling Equipment'],['42 30 00','Process Drying Equipment']]],
+['43','Process Gas and Liquid Handling, Purification, and Storage Equipment',[['43 10 00','Gas Handling Equipment'],['43 20 00','Liquid Handling Equipment'],['43 40 00','Gas and Liquid Storage']]],
+['44','Pollution and Waste Control Equipment',[['44 10 00','Air Pollution Control'],['44 40 00','Water Treatment Equipment'],['44 60 00','Solid Waste Control']]],
+['45','Industry-Specific Manufacturing Equipment',[['45 10 00','Industry-Specific Manufacturing Equipment']]],
+['46','Water and Wastewater Equipment',[['46 10 00','Water and Wastewater Preliminary Treatment'],['46 30 00','Water and Wastewater Chemical Feed'],['46 50 00','Water and Wastewater Secondary Treatment']]],
+['48','Electrical Power Generation',[['48 10 00','Electrical Power Generation Equipment'],['48 70 00','Electrical Power Generation Testing']]],
+];
+const CSI_DIV=Object.fromEntries(CSI.map(([n,t])=>[n,'Division '+n+' — '+t]));
+function csiDivOf(code){const n=code.slice(0,2);return CSI_DIV[n]||'Custom';}
+
+/* ============ PRICING LIBRARY — from Finishes multifamily model export ============
+   Scopes: res = residential construction (basis sf = residential SF)
+           amen = amenity/clubhouse (basis asf = amenity SF)
+           soft = soft costs (basis sf)                                      */
+const L=(code,grp,scope,desc,basis,unit)=>({code,grp,scope,desc,basis,unit});
+const DEFAULT_PRICING={version:'2026.08-v2',effective:'2026-08-10',adminPass:'FS-ADMIN',
+lines:[
+ // ---- RESIDENTIAL: General Conditions
+ L('01 01 00','General Conditions','res','Project Management','sf',7.50),
+ L('01 02 00','General Conditions','res','Insurance','sf',1.52),
+ L('01 04 00','General Conditions','res','Equipment & Supplies','sf',0.70),
+ L('01 05 00','General Conditions','res','Security','sf',0.18),
+ L('01 50 00','General Conditions','res','Temporary Facilities (Toilets, Fencing, Power, Water)','sf',1.20),
+ L('01 70 00','General Conditions','res','Execution & Closeout','sf',0.55),
+ L('01 74 00','General Conditions','res','Construction Waste Management & Disposal','sf',2.18),
+ // ---- RESIDENTIAL: Infrastructure
+ L('01 06 00','Infrastructure','res','Testing & Surveying','sf',0.40),
+ L('01 07 00','Infrastructure','res','Inspections','sf',0.65),
+ L('31 10 00','Infrastructure','res','Site Clearing','sf',0.75),
+ L('31 20 00','Infrastructure','res','Earth Moving','sf',0.33),
+ L('31 23 00','Infrastructure','res','Excavation & Fill','sf',3.85),
+ L('32 10 00','Infrastructure','res','Bases, Ballasts & Paving','sf',7.00),
+ L('32 30 00','Infrastructure','res','Pavement Markings / Striping','sf',0.35),
+ L('33 10 00','Infrastructure','res','Water Utilities','sf',1.52),
+ L('33 30 00','Infrastructure','res','Sanitary Sewerage Utilities','sf',1.12),
+ L('33 40 00','Infrastructure','res','Storm Drainage Utilities','sf',3.56),
+ L('33 70 00','Infrastructure','res','Electrical Utilities','sf',3.05),
+ L('33 80 00','Infrastructure','res','Communications Utilities','sf',0.50),
+ L('33 90 00','Infrastructure','res','Misc Utilities','sf',0.10),
+ // ---- RESIDENTIAL: Shell
+ L('03 30 00','Shell of Building','res','Foundation / Slab w/ Termite Treatment','sf',5.25),
+ L('04 40 00','Shell of Building','res','Stone Assemblies','sf',0.83),
+ L('05 10 00','Shell of Building','res','Structural Metal / Stairs / Handrails / Dumpster Doors','sf',1.55),
+ L('06 10 00','Shell of Building','res','Rough Carpentry / Framing / Roof Framing / Sheathing / Siding','sf',20.55),
+ L('07 21 00','Shell of Building','res','Insulation','sf',1.39),
+ L('07 40 00','Shell of Building','res','Roofing','sf',1.28),
+ L('07 60 00','Shell of Building','res','Gutters / Downspouts','sf',0.33),
+ L('08 10 00','Shell of Building','res','Doors & Frames (Exterior)','sf',2.50),
+ L('08 50 00','Shell of Building','res','Windows','sf',1.21),
+ L('08 70 00','Shell of Building','res','Door Hardware (Exterior)','sf',0.10),
+ L('09 90 00','Shell of Building','res','Exterior Painting & Coating','sf',0.47),
+ // ---- RESIDENTIAL: MEPS
+ L('21 10 00','Services (MEPS)','res','Water-Based Fire Suppression','sf',1.40),
+ L('22 05 00','Services (MEPS)','res','Plumbing','sf',8.12),
+ L('23 05 00','Services (MEPS)','res','HVAC','sf',5.81),
+ L('26 05 00','Services (MEPS)','res','Electrical','sf',6.49),
+ L('27 10 00','Services (MEPS)','res','Structured Cabling (Ethernet & Cameras)','sf',0.81),
+ L('28 46 00','Services (MEPS)','res','Fire Detection & Alarm','sf',1.36),
+ // ---- RESIDENTIAL: Interiors
+ L('06 20 00','Interiors','res','Finish Carpentry / Baseboards / Casing / Trim','sf',2.13),
+ L('08 11 00','Interiors','res','Interior Doors & Frames','sf',1.31),
+ L('08 71 00','Interiors','res','Interior Door Hardware','sf',0.20),
+ L('08 83 00','Interiors','res','Mirrors','sf',0.29),
+ L('09 20 00','Interiors','res','Plaster & Gypsum Board','sf',4.72),
+ L('09 30 00','Interiors','res','Tiling / Bathroom & Backsplash','sf',0.96),
+ L('09 60 00','Interiors','res','Flooring','sf',1.79),
+ L('09 91 00','Interiors','res','Interior Painting & Coating','sf',2.18),
+ L('10 14 00','Interiors','res','Signage / Unit & Building Numbers','sf',0.10),
+ L('10 28 00','Interiors','res','Toilet, Bath & Laundry Accessories','sf',0.62),
+ L('11 31 00','Interiors','res','Residential Appliances','sf',3.48),
+ L('12 21 00','Interiors','res','Window Blinds','sf',0.33),
+ L('12 30 00','Interiors','res','Casework / Stock Cabinets','sf',2.01),
+ L('12 36 00','Interiors','res','Countertops','sf',1.13),
+ // ---- RESIDENTIAL: Site Finish
+ L('10 55 00','Site Finish','res','Mailboxes','sf',0.25),
+ L('13 11 00','Site Finish','res','Swimming Pool w/ Pool Deck','sf',3.22),
+ L('28 10 00','Site Finish','res','Electronic Access Control & Intrusion Detection','sf',1.14),
+ L('32 31 00','Site Finish','res','Fences & Gates / Motors','sf',1.30),
+ L('32 33 00','Site Finish','res','Site Furnishings / Benches / Bike Racks','sf',0.44),
+ L('32 80 00','Site Finish','res','Irrigation','sf',0.72),
+ L('32 90 00','Site Finish','res','Planting / Landscaping','sf',2.15),
+ // ---- AMENITY / CLUBHOUSE
+ L('08 10 00','Amenity Shell & Openings','amen','Doors & Frames','asf',2.50),
+ L('08 40 00','Amenity Shell & Openings','amen','Storefront / Glass Partitions','asf',21.16),
+ L('22 30 00','Amenity MEP & Low Voltage','amen','Plumbing Fixtures','asf',4.15),
+ L('26 50 00','Amenity MEP & Low Voltage','amen','Light Fixtures','asf',4.12),
+ L('27 10 00','Amenity MEP & Low Voltage','amen','Structured Cabling (Ethernet & Cameras)','asf',9.44),
+ L('27 11 00','Amenity MEP & Low Voltage','amen','Communications Equipment Room','asf',6.83),
+ L('28 10 00','Amenity MEP & Low Voltage','amen','Access Control / Intrusion Detection','asf',11.83),
+ L('28 20 00','Amenity MEP & Low Voltage','amen','Electronic Surveillance / Cameras','asf',4.00),
+ L('28 46 00','Amenity MEP & Low Voltage','amen','Fire Detection & Alarm','asf',5.00),
+ L('06 20 00','Amenity Interiors','amen','Finish Carpentry / Millwork / Trim','asf',7.97),
+ L('08 11 00','Amenity Interiors','amen','Interior Doors & Frames','asf',4.36),
+ L('08 71 00','Amenity Interiors','amen','Door Hardware','asf',2.99),
+ L('09 30 00','Amenity Interiors','amen','Tiling / Bathroom & Backsplash','asf',8.21),
+ L('09 60 00','Amenity Interiors','amen','Flooring','asf',4.77),
+ L('10 14 00','Amenity Interiors','amen','Signage','asf',0.16),
+ L('10 28 00','Amenity Interiors','amen','Toilet, Bath & Laundry Accessories','asf',7.94),
+ L('10 44 00','Amenity Interiors','amen','Fire Protection Specialties / Extinguishers','asf',0.13),
+ L('11 60 00','Amenity Interiors','amen','Entertainment Equipment / Game & Media Room','asf',3.00),
+ L('11 65 00','Amenity Interiors','amen','Athletic & Recreational / Fitness Equipment','asf',5.00),
+ L('12 30 00','Amenity Interiors','amen','Casework / Stock Cabinets','asf',5.33),
+ L('12 36 00','Amenity Interiors','amen','Countertops','asf',4.00),
+ L('12 50 00','Amenity Interiors','amen','Leasing Office / Clubhouse Furniture','asf',1.74),
+ L('12 60 00','Amenity Interiors','amen','Multiple / Amenity Seating','asf',0.94),
+ // ---- SOFT COSTS
+ L('SC-01','Soft Costs — Engineering & Design','soft','Architect','sf',2.65),
+ L('SC-02','Soft Costs — Engineering & Design','soft','Civil Engineer','sf',1.58),
+ L('SC-03','Soft Costs — Engineering & Design','soft','Structural Engineer','sf',1.17),
+ L('SC-04','Soft Costs — Engineering & Design','soft','MEP Engineer','sf',0.33),
+ L('SC-05','Soft Costs — Engineering & Design','soft','Landscape Architect','sf',0.15),
+ L('SC-06','Soft Costs — Engineering & Design','soft','Geotechnical Engineer','sf',0.18),
+ L('SC-07','Soft Costs — Engineering & Design','soft','Environmental Study','sf',0.04),
+ L('SC-08','Soft Costs — Engineering & Design','soft','TxDOT Driveway Permitting','sf',0.28),
+ L('SC-09','Soft Costs — Engineering & Design','soft','Traffic Impact Analysis','sf',0.36),
+ L('SC-10','Soft Costs — Engineering & Design','soft','Flood Plain Mitigation','sf',0.18),
+ L('SC-11','Soft Costs — Engineering & Design','soft','Pad Elevation Certificates','sf',0.22),
+ L('SC-12','Soft Costs — Engineering & Design','soft','A/E Construction Administration','sf',0.39),
+ L('SC-13','Soft Costs — Engineering & Design','soft','Surveyor','sf',0.13),
+ L('SC-14','Soft Costs — Engineering & Design','soft','Renderings','sf',0.10),
+ L('SC-15','Soft Costs — Engineering & Design','soft','Reimbursables','sf',0.18),
+ L('SC-16','Soft Costs — Engineering & Design','soft','Plan Printing','sf',0.06),
+ L('SC-17','Soft Costs — Engineering & Design','soft','Precon Services (6 mo)','sf',0.29),
+ L('SC-18','Soft Costs — Engineering & Design','soft','Design Contingency (≈10%)','sf',0.83),
+ L('SC-20','Soft Costs — Impact & Fees','soft','Water & Sewer Impact & Tap Fees','sf',7.50),
+ L('SC-21','Soft Costs — Impact & Fees','soft','Permitting & Inspection Fees','sf',0.45),
+ L('SC-22','Soft Costs — Impact & Fees','soft','Plan Review Fees','sf',0.15),
+ L('SC-23','Soft Costs — Impact & Fees','soft','Fees Contingency (≈10%)','sf',0.81),
+]};
+const DEFAULT_OTHER=[
+ {label:'Utilities billback',rate:77,count:0,auto:true},
+ {label:'Technology package (fiber + comms)',rate:75,count:0,auto:true},
+ {label:'Parking (reserved spaces)',rate:25,count:15,auto:false},
+ {label:'Pet rent (~30% of units)',rate:25,count:18,auto:false},
+ {label:'Admin fees',rate:20,count:0,auto:true},
+ {label:'Premium units',rate:25,count:23,auto:false},
+ {label:'Valet trash',rate:25,count:0,auto:true},
+ {label:'Misc',rate:15,count:0,auto:true},
+];
+const DEFAULT_EXPENSES=[
+ {label:'City of Waller water & sewer (≈$40–60/unit)',per:'unit',rate:60,count:0,auto:true},
+ {label:'Ezee Fiber',per:'unit',rate:40,count:0,auto:true},
+ {label:'Finishes Communications',per:'unit',rate:15,count:0,auto:true},
+ {label:'Ally Waste valet trash service',per:'unit',rate:15,count:0,auto:true},
+ {label:'City of Waller dumpster — 1 cu yd, 2×/wk pickup',per:'fixed',rate:383,count:1,auto:false},
+ {label:'Admin / processing costs',per:'unit',rate:10,count:0,auto:true},
+];
+
+/* ============ STATE ============ */
+let pricing=null,doc=null,index=[],adminUnlocked=false,currentPage='home';
+const SCOPES={res:'Residential Construction',amen:'Amenity / Clubhouse',soft:'Soft Costs'};
+
+function blankDoc(){
+  return {projectId:'',name:'',address:'',type:'Multifamily',resSF:51365,amenSF:1200,
+    units:[
+      {label:'Studio (630)',bd:0,bth:1,sf:630,count:16,rent:1203},
+      {label:'Studio (400)',bd:0,bth:1,sf:400,count:14,rent:1160},
+      {label:'Townhome (1,063)',bd:2,bth:2,sf:1063,count:14,rent:1520},
+      {label:'Townhome (1,200)',bd:2,bth:2.5,sf:1200,count:14,rent:1500}],
+    other:JSON.parse(JSON.stringify(DEFAULT_OTHER)),
+    expenses:JSON.parse(JSON.stringify(DEFAULT_EXPENSES)),
+    lines:pricing.lines.map(l=>({...l,qty:l.basis==='ls'?1:0,auto:l.basis!=='ls'})),
+    companies:[{name:'Finishes Solutions LLC',pct:12}],
+    contingency:{mode:'psf',val:2},
+    projectCosts:{land:1200000,dev:200000,mkt:75000,cls:0},
+    pricingVersion:pricing.version,status:'Draft',
+    created:new Date().toISOString(),updated:new Date().toISOString()};
+}
+function migrate(d){ // tolerate older saves
+  d.resSF=d.resSF??d.buildableSF??0; d.amenSF=d.amenSF??0;
+  d.other=d.other??JSON.parse(JSON.stringify(DEFAULT_OTHER));
+  d.expenses=d.expenses??JSON.parse(JSON.stringify(DEFAULT_EXPENSES));
+  d.projectCosts=d.projectCosts??{land:0,dev:0,mkt:0,cls:0};
+  d.units.forEach(u=>{u.bd=u.bd??0;u.bth=u.bth??1;});
+  d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';});
+  return d;
+}
+
+/* ============ NAV ============ */
+function go(p){
+  currentPage=p;
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  document.getElementById('page-'+p).classList.add('on');
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+  document.getElementById('nav-'+p).classList.add('on');
+  if(p==='home')renderHome();
+  if(p==='pricing'){renderPricing();renderCatalog();}
+  if(p==='budget'||p==='input')recalc();
+}
+
+/* ============ HOME ============ */
+async function renderHome(){
+  index=(await sGet('budgets-index'))||[];
+  const b=document.getElementById('homeBody');b.innerHTML='';
+  document.getElementById('homeEmpty').style.display=index.length?'none':'block';
+  index.sort((a,z)=>z.updated.localeCompare(a.updated)).forEach(x=>{
+    b.insertAdjacentHTML('beforeend',`<tr class="clickable" onclick="openBudget('${x.projectId}')">
+      <td class="mono" style="padding-left:22px;font-size:13px;color:var(--green-700);font-weight:600">${x.projectId}</td>
+      <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
+      <td class="calc r">${usd(x.contractSum||0)}</td>
+      <td class="calc r">${usd(x.projectCost||0)}</td>
+      <td><span class="badge ${x.status==='Finalized'?'ok':''}">${x.status}</span></td>
+      <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${x.updated.slice(0,10)}</td>
+      <td class="no-print"><button class="btn-x" onclick="event.stopPropagation();deleteBudget('${x.projectId}')">×</button></td></tr>`);
+  });
+}
+function newBudget(){
+  doc=blankDoc();
+  document.getElementById('nav-input').disabled=false;
+  document.getElementById('nav-budget').disabled=false;
+  fillForms();go('input');
+}
+async function openBudget(pid){
+  const d=await sGet('budget-'+pid);
+  if(!d){toast('Could not load '+pid);return;}
+  doc=migrate(d);
+  document.getElementById('nav-input').disabled=false;
+  document.getElementById('nav-budget').disabled=false;
+  fillForms();go('budget');
+}
+async function deleteBudget(pid){
+  if(!confirm('Delete '+pid+'? This cannot be undone.'))return;
+  await sDel('budget-'+pid);
+  renderHome();toast('Deleted '+pid);
+}
+
+/* ============ FORMS ============ */
+function fillForms(){
+  document.getElementById('pId').value=doc.projectId;
+  document.getElementById('pName').value=doc.name;
+  document.getElementById('pAddr').value=doc.address;
+  document.getElementById('pSF').value=doc.resSF;
+  document.getElementById('pASF').value=doc.amenSF;
+  document.getElementById('cVal').value=doc.contingency.val;
+  document.getElementById('pcLand').value=doc.projectCosts.land;
+  document.getElementById('pcDev').value=doc.projectCosts.dev;
+  document.getElementById('pcMkt').value=doc.projectCosts.mkt;
+  document.getElementById('pcCls').value=doc.projectCosts.cls;
+  setCMode(doc.contingency.mode,true);
+}
+function pullForms(){
+  doc.projectId=document.getElementById('pId').value.trim().toUpperCase();
+  doc.name=document.getElementById('pName').value.trim();
+  doc.address=document.getElementById('pAddr').value.trim();
+  doc.resSF=+document.getElementById('pSF').value||0;
+  doc.amenSF=+document.getElementById('pASF').value||0;
+}
+function validateId(){
+  const el=document.getElementById('pId');
+  el.value=el.value.toUpperCase();
+  const ok=ID_RX.test(el.value.trim());
+  el.classList.toggle('err',el.value.trim()!==''&&!ok);
+  document.getElementById('pIdErr').style.display=(el.value.trim()!==''&&!ok)?'block':'none';
+  return ok;
+}
+function toBudget(){
+  pullForms();
+  if(!validateId()){toast('Enter a valid project ID (OP-001 / BD-0001 / AS-0001)');document.getElementById('pId').focus();return;}
+  go('budget');
+}
+
+/* ============ CALC ============ */
+function totUnits(){return doc.units.reduce((s,u)=>s+u.count,0);}
+function lineQty(it){
+  if(!it.auto)return it.qty;
+  if(it.basis==='sf')return doc.resSF;
+  if(it.basis==='asf')return doc.amenSF;
+  if(it.basis==='unit')return totUnits();
+  return 1;
+}
+function scopeSum(sc){return doc.lines.filter(l=>l.scope===sc).reduce((s,it)=>s+lineQty(it)*it.unit,0);}
+function parts(){
+  const res=scopeSum('res'),amen=scopeSum('amen'),soft=scopeSum('soft');
+  const hard=res+amen;
+  const profit=doc.companies.reduce((s,c)=>s+hard*c.pct/100,0);
+  const c=doc.contingency;
+  const cont=c.mode==='pct'?hard*c.val/100:c.mode==='psf'?(doc.resSF+doc.amenSF)*c.val:c.val;
+  const contract=hard+profit+cont;
+  const pc=doc.projectCosts;
+  const fees=pc.dev+pc.mkt+pc.cls;
+  const project=contract+soft+pc.land+fees;
+  return {res,amen,soft,hard,profit,cont,contract,fees,project};
+}
+function grossIncome(){
+  const tu=totUnits();
+  const rent=doc.units.reduce((s,u)=>s+u.rent*u.count,0);
+  const other=doc.other.reduce((s,o)=>s+o.rate*(o.auto?tu:o.count),0);
+  const exp=doc.expenses.reduce((s,e)=>s+e.rate*(e.per==='fixed'?(e.count||1):(e.auto?tu:e.count)),0);
+  const netOther=other-exp;
+  return {rentMo:rent,otherMo:other,expMo:exp,netOtherMo:netOther,grossYr:12*(rent+other),netYr:12*(rent+netOther)};
+}
+
+/* ============ RENDER: EXPENSES ============ */
+function renderExpenses(){
+  const b=document.getElementById('expBody');b.innerHTML='';
+  const tu=totUnits(),g=null;
+  doc.expenses.forEach((e,i)=>{
+    const cnt=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
+    const mo=e.rate*cnt;
+    b.insertAdjacentHTML('beforeend',`<tr>
+      <td><input type="text" value="${esc(e.label)}" oninput="doc.expenses[${i}].label=this.value"></td>
+      <td><select onchange="doc.expenses[${i}].per=this.value;if(this.value==='fixed'){doc.expenses[${i}].auto=false;doc.expenses[${i}].count=doc.expenses[${i}].count||1}else{doc.expenses[${i}].auto=true}recalc()" style="width:96px;font-size:12px;padding:5px 8px">
+        <option value="unit" ${e.per==='unit'?'selected':''}>per unit</option>
+        <option value="fixed" ${e.per==='fixed'?'selected':''}>fixed / mo</option></select></td>
+      <td class="r"><input type="number" value="${e.rate}" min="0" step="1" style="width:80px" onchange="doc.expenses[${i}].rate=+this.value;recalc()"></td>
+      <td class="r"><input type="number" value="${cnt}" min="0" style="width:70px" onchange="doc.expenses[${i}].count=+this.value;doc.expenses[${i}].auto=false;recalc()">
+        ${e.auto&&e.per!=='fixed'?'<span style="color:var(--green-600);font-size:10px" title="= total units">●</span>':''}</td>
+      <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
+      <td class="no-print"><button class="btn-x" onclick="doc.expenses.splice(${i},1);recalc()">×</button></td></tr>`);
+  });
+  const gi=grossIncome();
+  document.getElementById('eMo').textContent=usd(gi.expMo);
+  document.getElementById('eYr').textContent=usd(gi.expMo*12);
+  document.getElementById('nMo').textContent=usd(gi.netOtherMo);
+  document.getElementById('nYr').textContent=usd(gi.netOtherMo*12);
+}
+function addExpense(){doc.expenses.push({label:'New expense',per:'unit',rate:0,count:0,auto:true});recalc();}
+
+/* ============ RENDER: UNITS ============ */
+function renderUnits(){
+  const b=document.getElementById('unitBody');b.innerHTML='';
+  doc.units.forEach((u,i)=>{
+    const psf=u.sf>0?u.rent/u.sf:0,tsf=u.sf*u.count,mo=u.rent*u.count;
+    b.insertAdjacentHTML('beforeend',`<tr>
+      <td><input type="text" value="${esc(u.label)}" oninput="doc.units[${i}].label=this.value"></td>
+      <td class="r"><input type="number" value="${u.bd}" min="0" style="width:56px" oninput="doc.units[${i}].bd=+this.value"></td>
+      <td class="r"><input type="number" value="${u.bth}" min="0" step="0.5" style="width:60px" oninput="doc.units[${i}].bth=+this.value"></td>
+      <td class="r"><input type="number" value="${u.sf}" min="0" style="width:78px" onchange="doc.units[${i}].sf=+this.value;recalc()"></td>
+      <td class="r"><input type="number" value="${u.count}" min="0" style="width:66px" onchange="doc.units[${i}].count=+this.value;recalc()"></td>
+      <td class="r"><input type="number" value="${u.rent}" min="0" step="1" style="width:86px" onchange="doc.units[${i}].rent=+this.value;recalc()"></td>
+      <td class="r"><input type="number" value="${psf?psf.toFixed(2):''}" min="0" step="0.01" style="width:72px" title="Edit to derive rent = SF × rate (sheet formula direction)" onchange="unitRate(${i},+this.value)"></td>
+      <td class="calc r">${num(tsf)}</td>
+      <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
+      <td class="no-print"><button class="btn-x" onclick="doc.units.splice(${i},1);recalc()">×</button></td></tr>`);
+  });
+  const tu=totUnits();
+  const rentSF=doc.units.reduce((s,u)=>s+u.sf*u.count,0);
+  const moRev=doc.units.reduce((s,u)=>s+u.rent*u.count,0);
+  document.getElementById('uCount').textContent=num(tu);
+  document.getElementById('uTotSF').textContent=num(rentSF);
+  document.getElementById('uMoRev').textContent=usd(moRev);
+  document.getElementById('uYrRev').textContent=usd(moRev*12);
+  document.getElementById('uAvgSF').textContent=tu?num(rentSF/tu):'—';
+  document.getElementById('uAvgRent').textContent=tu?usd(moRev/tu):'—';
+  document.getElementById('uBlendPSF').textContent=rentSF?usd2(moRev/rentSF):'—';
+  const chk=document.getElementById('sfCheck');
+  if(doc.resSF>0&&rentSF>0){
+    if(rentSF>doc.resSF){chk.className='badge warn';chk.textContent='Unit SF exceeds residential SF';}
+    else{chk.className='badge ok';chk.textContent='Efficiency '+(100*rentSF/doc.resSF).toFixed(0)+'%';}
+  }else{chk.className='badge';chk.textContent='—';}
+}
+function unitRate(i,v){const u=doc.units[i];u.rent=Math.round(u.sf*v*100)/100;recalc();}
+function addUnit(){doc.units.push({label:'New type',bd:1,bth:1,sf:0,count:0,rent:0});recalc();}
+
+/* ============ RENDER: OTHER INCOME ============ */
+function renderOther(){
+  const b=document.getElementById('otherBody');b.innerHTML='';
+  const tu=totUnits();
+  doc.other.forEach((o,i)=>{
+    const cnt=o.auto?tu:o.count, mo=o.rate*cnt;
+    b.insertAdjacentHTML('beforeend',`<tr>
+      <td><input type="text" value="${esc(o.label)}" oninput="doc.other[${i}].label=this.value"></td>
+      <td class="r"><input type="number" value="${o.rate}" min="0" step="1" style="width:80px" onchange="doc.other[${i}].rate=+this.value;recalc()"></td>
+      <td class="r"><input type="number" value="${cnt}" min="0" style="width:76px" onchange="doc.other[${i}].count=+this.value;doc.other[${i}].auto=false;recalc()">
+        ${o.auto?'<span style="color:var(--green-600);font-size:10px" title="= total units">●</span>':''}</td>
+      <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
+      <td class="no-print"><button class="btn-x" onclick="doc.other.splice(${i},1);recalc()">×</button></td></tr>`);
+  });
+  const mo=doc.other.reduce((s,o)=>s+o.rate*(o.auto?tu:o.count),0);
+  document.getElementById('oMo').textContent=usd(mo);
+  document.getElementById('oYr').textContent=usd(mo*12);
+}
+function addOther(){doc.other.push({label:'New income line',rate:0,count:0,auto:true});recalc();}
+
+/* ============ RENDER: BUDGET ============ */
+function renderBudget(){
+  const b=document.getElementById('budBody');b.innerHTML='';
+  ['res','amen','soft'].forEach(sc=>{
+    const scLines=doc.lines.map((l,gi)=>({l,gi})).filter(x=>x.l.scope===sc);
+    if(!scLines.length)return;
+    const scSum=scopeSum(sc);
+    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="7">${SCOPES[sc]}<span class="div-sum">${usd(scSum)}</span></td></tr>`);
+    let lastGrp=null;
+    scLines.forEach(({l:it,gi})=>{
+      if(it.grp!==lastGrp){lastGrp=it.grp;
+        const gSum=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((s,x)=>s+lineQty(x)*x.unit,0);
+        b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="7">${it.grp}<span class="div-sum mono">${usd(gSum)}</span></td></tr>`);}
+      const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0;
+      b.insertAdjacentHTML('beforeend',`<tr>
+        <td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${it.code}</span>
+          <input type="text" value="${esc(it.desc)}" style="width:70%" oninput="doc.lines[${gi}].desc=this.value"></td>
+        <td><select onchange="setBasis(${gi},this.value)" style="width:104px;font-size:12px;padding:5px 8px">
+          <option value="sf" ${it.basis==='sf'?'selected':''}>per res SF</option>
+          <option value="asf" ${it.basis==='asf'?'selected':''}>per amen SF</option>
+          <option value="unit" ${it.basis==='unit'?'selected':''}>per unit</option>
+          <option value="ls" ${it.basis==='ls'?'selected':''}>lump sum</option></select></td>
+        <td class="r"><input type="number" value="${q}" min="0" style="width:88px"
+          onchange="doc.lines[${gi}].qty=+this.value;doc.lines[${gi}].auto=false;recalc()">
+          ${it.auto&&it.basis!=='ls'?'<span style="color:var(--green-600);font-size:10px" title="auto">●</span>':''}</td>
+        <td class="r"><input type="number" value="${it.unit}" min="0" step="0.01" style="width:96px"
+          onchange="doc.lines[${gi}].unit=+this.value;recalc()"></td>
+        <td class="calc r strong">${usd(tot)}</td><td class="calc r">${pct.toFixed(1)}%</td>
+        <td class="no-print"><button class="btn-x" onclick="doc.lines.splice(${gi},1);recalc()">×</button></td></tr>`);
+    });
+  });
+}
+function setBasis(i,v){doc.lines[i].basis=v;doc.lines[i].auto=v!=='ls';if(v==='ls')doc.lines[i].qty=doc.lines[i].qty||1;recalc();}
+
+/* ---- add lines via CSI catalog ---- */
+function addLine(){document.getElementById('pickSearch').value='';document.getElementById('pickModal').style.display='flex';renderPick();document.getElementById('pickSearch').focus();}
+function closePick(){document.getElementById('pickModal').style.display='none';}
+function addBlankLine(){doc.lines.push({code:'—',grp:'Custom',scope:document.getElementById('pickScope').value,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1});closePick();recalc();toast('Blank line added');}
+function catalogFiltered(q){
+  q=(q||'').trim().toLowerCase();
+  const out=[];
+  CSI.forEach(([n,t,secs])=>{
+    const dm=('division '+n+' '+t).toLowerCase().includes(q);
+    const hits=q?secs.filter(([c,s])=>dm||c.toLowerCase().includes(q)||s.toLowerCase().includes(q)):secs;
+    if(hits.length)out.push([n,t,hits]);
+  });
+  return out;
+}
+function renderPick(){
+  const b=document.getElementById('pickBody');b.innerHTML='';
+  catalogFiltered(document.getElementById('pickSearch').value).forEach(([n,t,secs])=>{
+    b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="2">Division ${n} — ${t}</td></tr>`);
+    secs.forEach(([c,s])=>{
+      b.insertAdjacentHTML('beforeend',`<tr class="clickable" onclick="pickCsi('${c}','${esc(s).replace(/'/g,"\\'")}')">
+        <td class="mono" style="font-size:12px;color:var(--green-700);width:110px">${c}</td><td style="font-size:13px">${s}</td></tr>`);
+    });
+  });
+}
+function pickCsi(code,title){
+  const scope=document.getElementById('pickScope').value;
+  const basis=scope==='amen'?'asf':'sf';
+  doc.lines.push({code,grp:csiDivOf(code),scope,desc:title,basis,unit:0,auto:true,qty:0});
+  closePick();recalc();toast(code+' added — set the rate');
+}
+
+/* ============ RENDER: COMPANIES / SUMMARY ============ */
+function renderCos(){
+  const b=document.getElementById('coBody');b.innerHTML='';
+  const {hard}=parts();
+  doc.companies.forEach((c,i)=>{
+    b.insertAdjacentHTML('beforeend',`<tr>
+      <td><input type="text" value="${esc(c.name)}" oninput="doc.companies[${i}].name=this.value"></td>
+      <td class="r" style="width:110px"><input type="number" value="${c.pct}" min="0" step="0.5" style="width:80px"
+        onchange="doc.companies[${i}].pct=+this.value;recalc()"> <span class="mono" style="font-size:12px;color:var(--ink-400)">%</span></td>
+      <td class="calc r" style="width:130px">${usd(hard*c.pct/100)}</td>
+      <td class="no-print" style="width:36px"><button class="btn-x" onclick="doc.companies.splice(${i},1);recalc()">×</button></td></tr>`);
+  });
+}
+function addCo(){doc.companies.push({name:'Company',pct:0});recalc();}
+function setCMode(m,silent){
+  doc.contingency.mode=m;
+  ['cPct','cPsf','cAmt'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById(m==='pct'?'cPct':m==='psf'?'cPsf':'cAmt').classList.add('on');
+  if(!silent){doc.contingency.val=m==='pct'?2:m==='psf'?2:100000;document.getElementById('cVal').value=doc.contingency.val;recalc();}
+}
+
+function renderSummary(){
+  const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF;
+  document.getElementById('rRes').textContent=usd(p.res);
+  document.getElementById('rAmen').textContent=usd(p.amen);
+  document.getElementById('rHard').textContent=usd(p.hard);
+  document.getElementById('rProfit').textContent=usd(p.profit);
+  document.getElementById('rCont').textContent=usd(p.cont);
+  document.getElementById('rContract').textContent=usd(p.contract);
+  document.getElementById('rSoft').textContent=usd(p.soft);
+  document.getElementById('rLand').textContent=usd(doc.projectCosts.land);
+  document.getElementById('rFees').textContent=usd(p.fees);
+  document.getElementById('rProject').textContent=usd(p.project);
+  document.getElementById('mMargin').textContent='Margin '+(p.contract?(100*p.profit/p.contract).toFixed(1)+'%':'—');
+  document.getElementById('mYield').textContent='Yield (net inc) '+(p.project?(100*g.netYr/p.project).toFixed(1)+'%':'—');
+  document.getElementById('mPricing').textContent='Pricing '+doc.pricingVersion;
+  document.getElementById('sUnits').textContent=num(tu);
+  document.getElementById('sRev').textContent=usd(g.netYr);
+  document.getElementById('sCSF').textContent=tsf?usd2(p.contract/tsf):'—';
+  document.getElementById('sPSF').textContent=tsf?usd2(p.project/tsf):'—';
+  document.getElementById('sCPU').textContent=tu?usd(p.project/tu):'—';
+  document.getElementById('bTitle').textContent=doc.projectId?doc.projectId+' — '+(doc.name||'Untitled'):'Budget';
+  document.getElementById('bSub').textContent=[doc.address,doc.type,num(doc.resSF)+' SF res + '+num(doc.amenSF)+' SF amenity'].filter(Boolean).join(' · ');
+  const sb=document.getElementById('sovBody');sb.innerHTML='';
+  ['res','amen'].forEach(sc=>{
+    const grps=[...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))];
+    grps.forEach(gp=>{
+      const s=doc.lines.filter(l=>l.scope===sc&&l.grp===gp).reduce((x,l)=>x+lineQty(l)*l.unit,0);
+      if(s>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">${sc==='amen'?'Amenity — ':''}${gp}</td><td class="calc r">${usd(s)}</td><td class="calc r" style="color:var(--ink-400)">${(100*s/p.contract).toFixed(1)}%</td></tr>`);
+    });
+  });
+  doc.companies.forEach(c=>{if(c.pct>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">Profit — ${esc(c.name)}</td><td class="calc r">${usd(p.hard*c.pct/100)}</td><td class="calc r" style="color:var(--ink-400)">${(100*(p.hard*c.pct/100)/p.contract).toFixed(1)}%</td></tr>`);});
+  if(p.cont>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">99.03 Contingency</td><td class="calc r">${usd(p.cont)}</td><td class="calc r" style="color:var(--ink-400)">${(100*p.cont/p.contract).toFixed(1)}%</td></tr>`);
+  sb.insertAdjacentHTML('beforeend',`<tr class="total"><td>Contract sum</td><td class="calc r strong">${usd(p.contract)}</td><td class="calc r">100%</td></tr>`);
+  const stale=pricing&&doc.pricingVersion!==pricing.version;
+  document.getElementById('staleBanner').style.display=stale?'flex':'none';
+  if(stale){document.getElementById('staleFrom').textContent=doc.pricingVersion;document.getElementById('staleTo').textContent=pricing.version;}
+}
+
+function recalc(){
+  if(!doc)return;
+  pullForms();
+  renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();
+}
+
+/* ============ SAVE ============ */
+async function saveBudget(show){
+  if(!doc)return;
+  pullForms();
+  if(!validateId()){toast('Valid project ID required to save');go('input');document.getElementById('pId').focus();return;}
+  doc.updated=new Date().toISOString();
+  const p=parts();
+  index=(await sGet('budgets-index'))||[];
+  const meta={projectId:doc.projectId,name:doc.name,type:doc.type,status:doc.status,
+    contractSum:p.contract,projectCost:p.project,updated:doc.updated};
+  try{
+    await api('budget/'+encodeURIComponent(doc.projectId),{method:'PUT',body:JSON.stringify({meta,doc})});
+    if(show)toast('Saved '+doc.projectId);
+  }catch(e){toast('Save failed: '+e.message);}
+}
+function repriceBudget(){
+  const map={};pricing.lines.forEach(l=>{map[l.scope+'|'+l.code+'|'+l.desc]=l;});
+  doc.lines.forEach(it=>{const m=map[it.scope+'|'+it.code+'|'+it.desc];if(m)it.unit=m.unit;});
+  doc.pricingVersion=pricing.version;
+  recalc();toast('Repriced to library '+pricing.version);
+}
+
+/* ============ PRICING PAGE ============ */
+function renderPricing(){
+  document.getElementById('pricingMeta').textContent='Version '+pricing.version+' · effective '+pricing.effective;
+  const ctl=document.getElementById('lockCtl');
+  if(ctl&&principal){ctl.style.display='none';
+    if(!adminUnlocked)document.getElementById('lockMsg').innerHTML='<b>Locked.</b> Signed in as '+esc(principal.userDetails)+' — this account does not hold the <b>pricing_admin</b> role.';}
+  document.getElementById('lockBanner').style.display=adminUnlocked?'none':'flex';
+  document.getElementById('unlockedBanner').style.display=adminUnlocked?'flex':'none';
+  document.getElementById('priceAdd').hidden=!adminUnlocked;
+  const b=document.getElementById('priceBody');b.innerHTML='';
+  ['res','amen','soft'].forEach(sc=>{
+    const scLines=pricing.lines.map((l,i)=>({l,i})).filter(x=>x.l.scope===sc);
+    if(!scLines.length)return;
+    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="4">${SCOPES[sc]}</td></tr>`);
+    let lastGrp=null;
+    scLines.forEach(({l,i})=>{
+      if(l.grp!==lastGrp){lastGrp=l.grp;
+        b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4">${l.grp}</td></tr>`);}
+      b.insertAdjacentHTML('beforeend', adminUnlocked
+        ?`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${l.code}</span>
+            <input type="text" value="${esc(l.desc)}" style="width:72%" oninput="pricing.lines[${i}].desc=this.value"></td>
+          <td><select onchange="pricing.lines[${i}].basis=this.value" style="width:104px;font-size:12px;padding:5px 8px">
+            <option value="sf" ${l.basis==='sf'?'selected':''}>per res SF</option>
+            <option value="asf" ${l.basis==='asf'?'selected':''}>per amen SF</option>
+            <option value="unit" ${l.basis==='unit'?'selected':''}>per unit</option>
+            <option value="ls" ${l.basis==='ls'?'selected':''}>lump sum</option></select></td>
+          <td class="r"><input type="number" value="${l.unit}" min="0" step="0.01" style="width:110px" oninput="pricing.lines[${i}].unit=+this.value"></td>
+          <td class="no-print"><button class="btn-x" onclick="pricing.lines.splice(${i},1);renderPricing()">×</button></td></tr>`
+        :`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${l.code}</span>${esc(l.desc)}</td>
+          <td><span class="badge">${l.basis==='sf'?'per res SF':l.basis==='asf'?'per amen SF':l.basis==='unit'?'per unit':'lump sum'}</span></td>
+          <td class="calc r">${usd2(l.unit)}</td><td></td></tr>`);
+    });
+  });
+}
+function unlock(){
+  if(document.getElementById('adminPass').value===pricing.adminPass){adminUnlocked=true;renderPricing();renderCatalog();toast('Pricing library unlocked');}
+  else toast('Incorrect passcode');
+}
+function addPriceLine(){pricing.lines.push({code:'—',grp:'Custom',scope:'res',desc:'New template line',basis:'sf',unit:0});renderPricing();}
+function renderCatalog(){
+  const b=document.getElementById('catBody');if(!b)return;b.innerHTML='';
+  const inTpl={};pricing.lines.forEach(l=>{(inTpl[l.code]=inTpl[l.code]||[]).push(l.scope);});
+  let secCount=0;
+  catalogFiltered(document.getElementById('catSearch').value).forEach(([n,t,secs])=>{
+    b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4">Division ${n} — ${t}</td></tr>`);
+    secs.forEach(([c,s])=>{secCount++;
+      const scopes=inTpl[c];
+      b.insertAdjacentHTML('beforeend',`<tr>
+        <td class="mono" style="font-size:12px;color:var(--green-700)">${c}</td>
+        <td style="font-size:13px">${s}</td>
+        <td class="r">${scopes?'<span class="badge ok">'+[...new Set(scopes)].map(x=>x==='res'?'RES':x==='amen'?'AMEN':'SOFT').join(' · ')+'</span>':'<span class="badge">—</span>'}</td>
+        <td class="no-print r">${adminUnlocked?`<button class="btn btn-ghost btn-sm" onclick="catAdd('${c}','${esc(s).replace(/'/g,"\\'")}')">+ Add</button>`:''}</td></tr>`);
+    });
+  });
+  const tot=CSI.reduce((x,[,,s])=>x+s.length,0);
+  document.getElementById('catCount').textContent=CSI.length+' divisions · '+secCount+' of '+tot+' sections';
+}
+function catAdd(code,title){
+  const scope=document.getElementById('catScope').value;
+  pricing.lines.push({code,grp:csiDivOf(code),scope,desc:title,basis:scope==='amen'?'asf':'sf',unit:0});
+  renderPricing();toast(code+' added to template ('+scope+') — set the rate, then publish');
+}
+async function savePricing(){
+  const d=new Date(),stamp=d.toISOString().slice(0,10);
+  const n=(parseInt((pricing.version.split('-v')[1]||'1'))+1);
+  pricing.version=stamp.slice(0,7)+'-v'+n;pricing.effective=stamp;
+  try{
+    await sSet('pricing-multifamily',pricing);
+    renderPricing();if(doc)renderSummary();
+    toast('Published pricing '+pricing.version);
+  }catch(e){toast('Publish failed: '+e.message);}
+}
+
+/* ============ EXPORT ============ */
+function openExport(){document.getElementById('exportModal').style.display='flex';}
+function closeExport(){document.getElementById('exportModal').style.display='none';}
+function sel(){const c=id=>document.getElementById(id).checked;
+  return {stats:c('ex-stats'),units:c('ex-units'),other:c('ex-other'),budget:c('ex-budget'),summary:c('ex-summary')};}
+function exportPDF(){
+  const s=sel();
+  const map={stats:'sec-stats',budget:'sec-budget',summary:'sec-summary'};
+  Object.values(map).forEach(id=>document.getElementById(id).classList.remove('print-hide'));
+  document.getElementById('sec-project').classList.remove('print-hide');
+  if(!s.stats)document.getElementById('sec-stats').classList.add('print-hide');
+  if(!s.budget)document.getElementById('sec-budget').classList.add('print-hide');
+  if(!s.summary){document.getElementById('sec-summary').classList.add('print-hide');document.getElementById('sec-project').classList.add('print-hide');}
+  document.getElementById('page-budget').classList.add('print-target');
+  closeExport();window.print();
+  setTimeout(()=>{document.getElementById('page-budget').classList.remove('print-target');
+    ['sec-stats','sec-budget','sec-summary','sec-project'].forEach(id=>document.getElementById(id).classList.remove('print-hide'));},400);
+}
+function exportExcel(){
+  const s=sel(),p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF;
+  const wb=XLSX.utils.book_new();
+  if(s.stats){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['FINISHES SOLUTIONS — BD BUDGET'],[],
+    ['Project ID',doc.projectId],['Name',doc.name],['Address',doc.address],['Type',doc.type],
+    ['Residential SF',doc.resSF],['Amenity SF',doc.amenSF],['Total units',tu],
+    ['Pricing library',doc.pricingVersion],['Status',doc.status],[],
+    ['Residential construction',p.res],['Amenity / clubhouse',p.amen],['Construction hard cost',p.hard],
+    ['Profit',p.profit],['Contingency',p.cont],['CONTRACT SUM (CONSTRUCTION)',p.contract],[],
+    ['Soft costs',p.soft],['Land',doc.projectCosts.land],['Developer fee',doc.projectCosts.dev],
+    ['Marketing/brokerage',doc.projectCosts.mkt],['Closing costs',doc.projectCosts.cls],
+    ['TOTAL PROJECT COST',p.project],[],
+    ['Contract $/SF',tsf?p.contract/tsf:''],['Project $/SF',tsf?p.project/tsf:''],['Cost/unit',tu?p.project/tu:''],
+    ['Gross income (yr)',g.grossYr],['Operating expenses (yr)',12*g.expMo],['Net income (yr)',g.netYr],['Yield on net income',p.project?g.netYr/p.project:''],
+  ]),'Summary');}
+  if(s.units){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['Unit type','BD','BTH','SF/unit','# Units','Rent/mo','$/SF/mo','Type SF','Monthly','Yearly'],
+    ...doc.units.map(u=>[u.label,u.bd,u.bth,u.sf,u.count,u.rent,u.sf?u.rent/u.sf:0,u.sf*u.count,u.rent*u.count,12*u.rent*u.count]),
+    [],['TOTAL','','','',tu,'','',doc.units.reduce((x,u)=>x+u.sf*u.count,0),g.rentMo,12*g.rentMo]]),'Unit Mix');}
+  if(s.other){
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['GROSS OTHER INCOME'],['Income line','Gross $/mo','Count','Monthly','Yearly'],
+    ...doc.other.map(o=>{const c=o.auto?tu:o.count;return [o.label,o.rate,c,o.rate*c,12*o.rate*c];}),
+    ['Total gross other income','','',g.otherMo,12*g.otherMo],[],
+    ['OPERATING EXPENSES'],['Expense line','Basis','$/mo','Count','Monthly','Yearly'],
+    ...doc.expenses.map(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);return [e.label,e.per==='fixed'?'fixed':'per unit',e.rate,c,e.rate*c,12*e.rate*c];}),
+    ['Total expenses','','','',g.expMo,12*g.expMo],[],
+    ['NET BREAKDOWN'],['Net other income (gross − expenses)','','','',g.netOtherMo,12*g.netOtherMo],
+    ['Rent income','','','',g.rentMo,12*g.rentMo],
+    ['NET INCOME (rent + net other)','','','',g.rentMo+g.netOtherMo,g.netYr]]),'Income & Expenses');}
+  if(s.budget){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['Scope','Group','Code','Description','Basis','Qty','Rate','Total','Provenance'],
+    ...doc.lines.map(it=>[SCOPES[it.scope],it.grp,it.code,it.desc,it.basis,lineQty(it),it.unit,lineQty(it)*it.unit,'parametric-estimate']),
+    [],['','','','','','','CONSTRUCTION HARD COST',p.hard],['','','','','','','SOFT COSTS',p.soft]]),'Budget-SOV');}
+  if(s.summary){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['Component','Amount','% of project'],
+    ['Construction hard cost',p.hard,p.project?p.hard/p.project:0],
+    ['Profit',p.profit,p.project?p.profit/p.project:0],
+    ['Contingency',p.cont,p.project?p.cont/p.project:0],
+    ['Contract sum (construction)',p.contract,p.project?p.contract/p.project:0],
+    ['Soft costs',p.soft,p.project?p.soft/p.project:0],
+    ['Land',doc.projectCosts.land,p.project?doc.projectCosts.land/p.project:0],
+    ['Developer fee + marketing + closing',p.fees,p.project?p.fees/p.project:0],
+    ['TOTAL PROJECT COST',p.project,1]]),'Contract Summary');}
+  XLSX.writeFile(wb,(doc.projectId||'FS-Budget')+'_'+(doc.name||'budget').replace(/\s+/g,'_')+'.xlsx');
+  closeExport();toast('Excel exported');
+}
+
+/* ============ INIT ============ */
+(async function init(){
+  await initAuth();
+  pricing=(await sGet('pricing-multifamily'))||DEFAULT_PRICING; // API-first; local fallback when running without the API
+  renderHome();
+})();
+</script>
+</body>
+</html>
