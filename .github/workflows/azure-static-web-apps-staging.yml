@@ -21,12 +21,22 @@ on:
       - staging
   workflow_dispatch:
 
-# Auth note: this workflow authenticates with the deployment token only. It must NOT
-# pass github_id_token — the OIDC path identifies the Static Web App by the workflow's
+# Auth note: this workflow authenticates with a deployment token, and must NOT pass
+# github_id_token. The OIDC path identifies the Static Web App by the workflow's
 # *filename*, which has to match Azure's generated
 # 'azure-static-web-apps-<adjective>-<noun>-<hex>.yml' pattern. Only the production
 # workflow can own that name, so OIDC here fails with
 # "Could not determine the Static Web App from the GitHub OIDC workflow reference".
+#
+# SETUP REQUIRED — this workflow fails with "No matching Static Web App was found or
+# the api key was invalid" until the secret below exists:
+#   1. Azure Portal -> Static Web App -> Overview -> Manage deployment token -> Reset.
+#   2. Copy the new token.
+#   3. GitHub -> repo Settings -> Secrets and variables -> Actions -> New repository
+#      secret, named AZURE_SWA_DEPLOYMENT_TOKEN, pasting that value.
+#   4. Re-run this workflow (Actions -> this workflow -> Run workflow).
+# Production is unaffected: it deploys from the main-branch workflow over GitHub OIDC
+# and does not use this secret.
 
 jobs:
   build_and_deploy_staging:
@@ -43,7 +53,7 @@ jobs:
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WONDERFUL_ROCK_071C8E810 }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_SWA_DEPLOYMENT_TOKEN }}
           action: "upload"
           app_location: "./app"
           api_location: "api"
