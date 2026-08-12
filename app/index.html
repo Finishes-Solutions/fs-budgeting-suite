@@ -291,6 +291,32 @@ th.sortable.sorted{color:var(--ink-900)}
   .edited-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
     color:var(--edit);border:1px solid var(--edit);border-radius:2px;padding:0 3px;margin-left:4px}
 
+  /* ---- guide PDF ---- */
+  .rpt-guide .rpt-sec{break-inside:auto}
+  .rpt-guide h3{font-size:12pt;font-weight:800;color:var(--ink-950);margin:0 0 6px;
+    padding-bottom:4px;border-bottom:2px solid var(--green-700);break-after:avoid}
+  .rpt-guide h4{font-size:10pt;font-weight:700;color:var(--ink-800);margin:12px 0 4px;break-after:avoid}
+  .rpt-guide p{color:var(--ink-700);margin-bottom:7px;max-width:none}
+  .rpt-guide ul,.rpt-guide ol{margin:0 0 9px 18px;color:var(--ink-700)}
+  .rpt-guide li{margin-bottom:4px;max-width:none;break-inside:avoid}
+  .rpt-guide code,.rpt-guide .kbd{font-family:var(--fm);font-size:8.5pt;background:var(--ink-100);
+    border:1px solid var(--ink-200);border-radius:2px;padding:0 3px}
+  .rpt-guide .tbl{width:100%;border-collapse:collapse;margin-bottom:9px}
+  .rpt-guide .tbl td{font-size:8.5pt;color:var(--ink-700);padding:4px 6px;
+    border-bottom:1px solid var(--ink-100);vertical-align:top}
+  .rpt-guide .tbl td:first-child{white-space:nowrap;font-weight:700;color:var(--ink-900);
+    width:1%;padding-right:14px}
+  .rpt-guide .callout{border-left:3px solid var(--green-700);background:var(--green-50);
+    padding:8px 12px;margin-bottom:9px;font-size:8.5pt;color:var(--green-900);break-inside:avoid}
+  .rpt-guide .callout.warn{border-left-color:var(--warn);background:#fdf6e8;color:#7a5514}
+  .rpt-guide .step{display:flex;gap:10px;margin-bottom:8px;break-inside:avoid;max-width:none}
+  .rpt-guide .step .n{flex:0 0 18px;height:18px;border-radius:50%;background:var(--green-700);color:#fff;
+    font-family:var(--fm);font-size:8.5pt;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .rpt-guide .editdot{width:6px;height:6px;border-radius:50%;background:var(--edit);display:inline-block}
+  .guide-toc{margin:0;padding:0;list-style:none;columns:2;column-gap:26px}
+  .guide-toc li{font-size:9pt;color:var(--ink-700);margin-bottom:4px;break-inside:avoid}
+  .guide-toc .n{font-family:var(--fm);font-size:8pt;color:var(--green-700);margin-right:8px}
+
   .rpt-ft{display:flex;justify-content:space-between;border-top:1px solid var(--ink-300);
     margin-top:20px;padding-top:6px;font-size:7.5pt;color:var(--ink-500)}
 }
@@ -701,6 +727,7 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title">
     <div><h1>How to Use the FS Budgeting Suite</h1>
       <div class="sub">Build a multifamily project budget from the shared pricing library, then export it.</div></div>
+    <div class="no-print"><button class="btn btn-dark" onclick="downloadGuide()">Download Guide</button></div>
   </div>
 
   <div class="help-wrap">
@@ -735,8 +762,11 @@ th.sortable.sorted{color:var(--ink-900)}
 
       <section class="card"><div class="card-bd">
         <h3 id="help-quickstart">Quick Start</h3>
-        <div class="step"><div class="n">1</div><div class="t"><b>Budgets → + New budget.</b>
-          A fresh budget copies the current pricing library and the standard multifamily template.</div></div>
+        <div class="step"><div class="n">1</div><div class="t"><b>Budgets → pick a starting point.</b>
+          <b>+ New Multifamily Budget</b> copies the current pricing library and the standard template — unit mix,
+          income, expenses and every priced line. <b>+ Blank Budget</b> starts genuinely empty: no units, no income,
+          no scope, no square footage. Use blank when the project is not multifamily or looks nothing like the
+          template, and build the scope yourself from the CSI catalog.</div></div>
         <div class="step"><div class="n">2</div><div class="t"><b>Fill in the Inputs page.</b>
           Project ID and name first — the ID is required before anything can be saved. Then residential and
           amenity square footage, the unit mix, income and expenses, and the land and project costs that sit
@@ -908,9 +938,22 @@ th.sortable.sorted{color:var(--ink-900)}
           outside the number the bank sees.</p>
 
         <h4>Adding Scope</h4>
-        <p><span class="kbd">+ Add line item</span> opens the CSI MasterFormat catalog. Adding from the catalog
+        <p><span class="kbd">+ Add Line Item</span> opens the CSI MasterFormat catalog. Adding from the catalog
           means the line carries a real code into the SOV, which the lender package depends on. New lines arrive
           at rate $0 — set the rate before you trust the total.</p>
+        <p>Two dropdowns sit beside the search box. The first picks the <b>scope</b>; the second picks the
+          <b>group</b> the line joins:</p>
+        <table class="tbl"><tbody>
+          <tr><td>An existing group</td><td>The line is filed under that heading — pick <b>Site Finish</b> and it
+            lands with the other site finish lines instead of starting a section of its own. The list shows only
+            groups already in use for the chosen scope, so it follows the scope dropdown.</td></tr>
+          <tr><td>Auto</td><td>The default. The line is filed under its CSI division, creating a heading such as
+            "Division 14 — Conveying Equipment".</td></tr>
+          <tr><td>New group…</td><td>Prompts for a name and files the line under it, for scope that does not belong
+            anywhere existing.</td></tr>
+        </tbody></table>
+        <p>Lines are inserted next to the group they join rather than appended at the end, so a group never appears
+          twice in the budget or in the exports.</p>
 
         <h4>Reading the Summary</h4>
         <p>The left column walks hard cost up to contract sum, then adds the non-contract costs to reach total
@@ -964,6 +1007,8 @@ th.sortable.sorted{color:var(--ink-900)}
         </tbody></table>
         <div class="callout">Both exports read the same numbers the screen shows, so they cannot drift from the
           budget. The workbook also carries the <b>Manually edited</b> flag and each line's original library rate.</div>
+        <p><b>Download Guide</b>, at the top of this page, produces a formatted PDF of this guide. It is generated
+          from this page rather than a separate copy, so it cannot fall out of date with what you are reading.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -1035,11 +1080,12 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="card" style="width:640px;max-width:94vw;margin:0">
     <div class="card-hd"><h2>Add Line From CSI Catalog</h2>
       <div style="display:flex;gap:10px;align-items:center">
-        <select id="pickScope" style="width:150px;font-size:12px;padding:6px 8px">
+        <select id="pickScope" style="width:140px;font-size:12px;padding:6px 8px" onchange="fillPickGroups()">
           <option value="res">→ Residential</option>
           <option value="amen">→ Amenity</option>
           <option value="soft">→ Soft Costs</option>
         </select>
+        <select id="pickGroup" style="width:210px;font-size:12px;padding:6px 8px" title="Which group the line joins"></select>
         <button class="btn-x" onclick="closePick()">×</button>
       </div></div>
     <div class="card-bd" style="padding-top:12px">
@@ -1048,7 +1094,8 @@ th.sortable.sorted{color:var(--ink-900)}
         <table class="tbl"><tbody id="pickBody"></tbody></table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
-        <span class="note">Line is added at qty auto / rate $0 — set the rate on the budget.</span>
+        <span class="note">Added at qty auto / rate $0 — set the rate on the budget. Leave the group on
+          <b>Auto</b> to file the line under its CSI division.</span>
         <button class="btn btn-ghost btn-sm" onclick="addBlankLine()">Add Blank Line Instead</button>
       </div>
     </div>
@@ -1887,12 +1934,53 @@ function collapseAll(){
 function setBasis(i,v){doc.lines[i].basis=v;doc.lines[i].auto=v!=='ls';doc.lines[i].edited=true;if(v==='ls')doc.lines[i].qty=doc.lines[i].qty||1;touch();}
 
 /* ---- add lines via CSI catalog ---- */
-function addLine(){document.getElementById('pickSearch').value='';document.getElementById('pickModal').style.display='flex';renderPick();document.getElementById('pickSearch').focus();}
+function addLine(){
+  document.getElementById('pickSearch').value='';
+  fillPickGroups();
+  document.getElementById('pickModal').style.display='flex';
+  renderPick();
+  document.getElementById('pickSearch').focus();
+}
+/* Groups already in use for the chosen scope, in the order they appear, so a line can be
+   filed under an existing heading like "Site Finish" instead of starting a new one. */
+function groupsFor(scope){
+  const out=[];
+  doc.lines.forEach(l=>{if(l.scope===scope&&l.grp&&!out.includes(l.grp))out.push(l.grp);});
+  return out;
+}
+function fillPickGroups(){
+  const sel=document.getElementById('pickGroup');if(!sel)return;
+  const scope=document.getElementById('pickScope').value,prev=sel.value;
+  sel.innerHTML='<option value="">Auto — by CSI division</option>'
+    +groupsFor(scope).map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('')
+    +'<option value="__new">New group…</option>';
+  if([...sel.options].some(o=>o.value===prev))sel.value=prev;
+}
+/* Insert next to the group's existing lines rather than appending. renderBudget starts a
+   new heading whenever grp changes, so an appended line would render a second, duplicate
+   heading for a group that already exists further up. */
+function insertLine(line){
+  let at=-1;
+  doc.lines.forEach((l,i)=>{if(l.scope===line.scope&&l.grp===line.grp)at=i;});
+  if(at<0)doc.lines.push(line); else doc.lines.splice(at+1,0,line);
+  return at<0?doc.lines.length-1:at+1;
+}
+/* Resolve what the picker asked for into an actual group name. */
+function chosenGroup(fallback){
+  const sel=document.getElementById('pickGroup');
+  const v=sel?sel.value:'';
+  if(v==='__new'){
+    const name=(prompt('Name the new group','New group')||'').trim();
+    return name||fallback;
+  }
+  return v||fallback;
+}
 function closePick(){document.getElementById('pickModal').style.display='none';}
 function addBlankLine(){
   const scope=document.getElementById('pickScope').value;
-  doc.lines.push({code:'—',grp:'Custom',scope,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1,baseUnit:0,custom:true});
-  revealLine(scope,'Custom');
+  const grp=chosenGroup('Custom');
+  insertLine({code:'—',grp,scope,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1,baseUnit:0,custom:true});
+  revealLine(scope,grp);
   closePick();touch();toast('Blank line added');
 }
 /* A new line dropped into a collapsed scope or group is invisible, which reads as
@@ -1921,8 +2009,8 @@ function renderPick(){
 function pickCsi(code,title){
   const scope=document.getElementById('pickScope').value;
   const basis=scope==='amen'?'asf':'sf';
-  const grp=csiDivOf(code);
-  doc.lines.push({code,grp,scope,desc:title,basis,unit:0,auto:true,qty:0,baseUnit:0,custom:true});
+  const grp=chosenGroup(csiDivOf(code));
+  insertLine({code,grp,scope,desc:title,basis,unit:0,auto:true,qty:0,baseUnit:0,custom:true});
   revealLine(scope,grp);
   closePick();touch();
   toast(scopeActive(scope)?code+' added — set the rate'
@@ -2271,6 +2359,34 @@ function buildReport(s){
   h+='<footer class="rpt-ft"><span>Finishes Solutions — Building a Future Together</span>'
     +'<span class="mono">'+esc(doc.projectId||'')+' · '+esc(stamp)+'</span></footer>';
   return h;
+}
+
+/* ---------------- Guide PDF ----------------
+   Built from the live help markup rather than a second copy of the text, so the printed
+   guide cannot drift out of step with the page. Card chrome and the contents rail are
+   dropped; each card becomes a section. */
+function downloadGuide(){
+  const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const secs=[...document.querySelectorAll('#page-help .help > section .card-bd')]
+    .map(e=>'<section class="rpt-sec">'+e.innerHTML+'</section>').join('');
+  const toc=[...document.querySelectorAll('#helpToc a')]
+    .map((a,i)=>'<li><span class="n">'+String(i+1).padStart(2,'0')+'</span>'+esc(a.textContent.trim())+'</li>').join('');
+  document.getElementById('printDoc').innerHTML=
+     '<div class="rpt-guide">'
+    +'<header class="rpt-hd"><img src="assets/finishes-logo-black.png" alt="Finishes Solutions">'
+    +'<div class="rpt-hd-r"><div class="eyebrow">User guide</div><div class="mono stamp">'+esc(stamp)+'</div></div></header>'
+    +'<section class="rpt-title"><div class="eyebrow">FS Budgeting Suite</div>'
+    +'<h1>How to Use the FS Budgeting Suite</h1>'
+    +'<div class="rpt-meta">Business Development budgeting — building a multifamily project budget from the shared '
+    +'pricing library, and exporting it.</div></section>'
+    +'<section class="rpt-sec"><h2>Contents</h2><ol class="guide-toc">'+toc+'</ol></section>'
+    +secs
+    +'<footer class="rpt-ft"><span>Finishes Solutions — Building a Future Together</span>'
+    +'<span class="mono">User guide · '+esc(stamp)+'</span></footer></div>';
+  document.body.classList.add('printing');
+  window.print();
+  setTimeout(()=>{document.body.classList.remove('printing');
+    document.getElementById('printDoc').innerHTML='';},600);
 }
 
 /* ---------------- Excel: styled workbook via vendored ExcelJS ---------------- */
