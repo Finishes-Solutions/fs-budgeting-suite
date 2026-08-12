@@ -30,3 +30,6 @@ the full budget document (unit mix, income, expenses, markups) for narrative sec
    for internal underwriting and equity/sources-uses sections.
 4. **Pricing version travels with the doc** (`Budgets.PricingVersion`) so any package
    can state which rate library produced it.
+5. **`TST-####` is test data, not a project.** Preview environments share this database,
+   so throwaway budgets land in these same tables. Every read must filter
+   `WHERE ProjectId NOT LIKE 'TST-%'`. `sql/cleanup_test_budgets.sql` purges them.
