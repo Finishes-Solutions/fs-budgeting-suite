@@ -362,7 +362,7 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title">
     <div><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
     <div style="display:flex;gap:10px" class="no-print">
-      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)">Save draft</button>
+      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save draft</button>
       <button class="btn btn-primary" onclick="toBudget()">Continue to budget →</button>
     </div>
   </div>
@@ -503,7 +503,7 @@ th.sortable.sorted{color:var(--ink-900)}
         </select>
       </label>
       <button class="btn btn-ghost" onclick="go('input')">← Inputs</button>
-      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)">Save</button>
+      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
       <button class="btn btn-dark" onclick="openExport()">Export…</button>
     </div>
   </div>
@@ -733,7 +733,8 @@ th.sortable.sorted{color:var(--ink-900)}
         <div class="step"><div class="n">5</div><div class="t"><b>Save, then export.</b>
           <span class="kbd">Save</span> writes to the database; <span class="kbd">Export…</span> produces Excel or PDF.</div></div>
         <div class="callout">The header pill shows <b>Unsaved changes</b> until a save succeeds. Nothing is stored
-          automatically — if you close the tab with that pill showing, the browser will warn you.</div>
+          automatically — if you close the tab with that pill showing, the browser will warn you.
+          <b>Cmd+S</b> (or <b>Ctrl+S</b>) saves from anywhere in a budget.</div>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -764,10 +765,32 @@ th.sortable.sorted{color:var(--ink-900)}
         <ul>
           <li>Editing <b>$ / SF / mo</b> works backwards and sets rent to SF × your rate, matching the direction
             the source spreadsheet calculates.</li>
-          <li>The badge in the card header compares total unit SF against residential buildable SF and shows an
-            <b>efficiency percentage</b>. It turns amber if unit SF exceeds the building — usually a typo in a
-            unit count or a stale SF figure.</li>
+          <li>The badge in the card header shows an <b>efficiency percentage</b> — explained below.</li>
         </ul>
+
+        <h4>What efficiency means</h4>
+        <p>Efficiency is the share of the building you can actually rent:</p>
+        <p><code>efficiency = total unit SF ÷ residential buildable SF</code></p>
+        <p>Total unit SF is every unit type's SF multiplied by its count — the leasable area. Residential buildable
+          SF is the whole structure. The gap between them is everything you build but nobody rents: corridors,
+          stairwells, elevator shafts, lobbies, walls, mechanical and electrical rooms, trash rooms.</p>
+        <p>It matters because you pay to build the whole number and collect rent on only part of it. Two buildings
+          of identical size at different efficiencies produce different revenue from the same construction cost, so
+          it is one of the earliest signals of whether a layout works.</p>
+        <table class="tbl"><tbody>
+          <tr><td>Typical range</td><td>Garden-style walk-ups tend to run high, often 85% or better, because they
+            have little interior circulation. Mid-rise with double-loaded corridors and elevators usually sits lower.
+            What counts as good is specific to the building type — compare against your own past projects rather
+            than a rule of thumb.</td></tr>
+          <tr><td>Reading it low</td><td>Either the design carries a lot of unrentable area, or the unit mix is
+            incomplete — a missing unit type or a wrong count will understate leasable SF and make an ordinary
+            building look inefficient.</td></tr>
+          <tr><td>Amber warning</td><td>Unit SF exceeds residential buildable SF, which cannot be true. Almost always
+            a typo in a unit count or SF, or a residential SF figure that was never updated after the design
+            changed.</td></tr>
+        </tbody></table>
+        <p>Amenity SF is deliberately excluded from this calculation. The clubhouse is not rentable area, and it is
+          measured and priced separately.</p>
 
         <h4>Other income and Operating expenses</h4>
         <p>Enter <b>gross</b> charges under Other income — what the resident is billed. Put the cost of providing
@@ -2416,7 +2439,18 @@ function wireDelegates(){
   });
   document.getElementById('homeSearch').addEventListener('input',e=>{homeView.q=e.target.value;paintHome();});
   document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeExport();closePick();}});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){closeExport();closePick();return;}
+    // Cmd/Ctrl+S saves rather than letting the browser offer to save the page.
+    if((e.metaKey||e.ctrlKey)&&(e.key==='s'||e.key==='S')){
+      e.preventDefault();
+      if(!doc){toast('Open or create a budget first');return;}
+      if(saving)return;
+      // commit whatever field is focused before reading the form
+      if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+      saveBudget(true);
+    }
+  });
   document.querySelectorAll('#helpToc a').forEach(a=>a.addEventListener('click',e=>{
     e.preventDefault();                       // no hash change, so #/help survives a refresh
     const t=document.getElementById(a.getAttribute('href').slice(1));
