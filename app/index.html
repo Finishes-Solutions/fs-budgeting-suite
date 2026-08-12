@@ -531,6 +531,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
         <span class="eyebrow" style="color:var(--green-600)">● qty auto-synced · edit to override</span>
         <span class="eyebrow legend" id="editLegend" style="color:var(--edit)"><span class="editdot on"></span><span id="editCount">no manual edits</span></span>
+        <span class="eyebrow" id="amenHidden" style="display:none;color:var(--warn)">Amenity hidden — amenity SF is 0</span>
         <span class="no-print" style="display:flex;gap:8px">
           <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Collapse all</button>
           <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand all</button>
@@ -561,7 +562,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <div class="grid" style="grid-template-columns:1fr 1.25fr;gap:40px">
         <div>
           <div class="sum-row sub"><span class="k">Residential construction</span><span class="v" id="rRes">$0</span></div>
-          <div class="sum-row sub"><span class="k">Amenity / clubhouse</span><span class="v" id="rAmen">$0</span></div>
+          <div class="sum-row sub" id="rAmenRow"><span class="k">Amenity / clubhouse</span><span class="v" id="rAmen">$0</span></div>
           <div class="sum-row mid"><span class="k">Construction hard cost</span><span class="v" id="rHard">$0</span></div>
           <div class="sum-row"><span class="k">Profit — total</span><span class="v" id="rProfit">$0</span></div>
           <div class="sum-row"><span class="k">Contingency (99.03)</span><span class="v" id="rCont">$0</span></div>
@@ -809,6 +810,44 @@ th.sortable.sorted{color:var(--ink-900)}
           into the Excel export, which carries a <b>Manually edited</b> column alongside the original library rate —
           useful when someone asks which numbers came from the model and which came from judgment.</p>
 
+        <h4>Scopes, and how they relate to CSI codes</h4>
+        <p>Every line belongs to one of three <b>scopes</b>. The scope answers <i>where the money goes</i>; the CSI
+          code answers <i>what the work is</i>. They are independent, which is why the same code legitimately
+          appears more than once.</p>
+        <table class="tbl"><tbody>
+          <tr><td>Residential Construction</td><td>The apartment buildings themselves. Priced against residential
+            buildable SF. Inside the construction contract.</td></tr>
+          <tr><td>Amenity / Clubhouse</td><td>The clubhouse and leasing building. Priced against amenity SF at its
+            own, higher rates. Also inside the construction contract.</td></tr>
+          <tr><td>Soft Costs</td><td>Design, engineering, permits, impact fees, contingencies on those. Priced
+            against residential SF, but <b>outside the construction contract</b> — it is part of total project cost
+            only.</td></tr>
+        </tbody></table>
+        <p>So <b>Residential + Amenity = construction hard cost</b>, which becomes the contract sum once profit and
+          contingency are added. Soft costs never enter that number.</p>
+        <div class="callout"><b>No clubhouse? Set amenity SF to 0.</b> The amenity scope then disappears from the
+          budget, the CSI schedule and both exports, and stops contributing to the contract sum — including any
+          amenity line you had set to a lump sum or given a manual quantity, which would otherwise keep adding money
+          you could no longer see. Nothing is deleted: put a figure back in amenity SF and the whole scope returns
+          exactly as it was.</div>
+
+        <h4>Why the same CSI code appears twice</h4>
+        <p>Take <code>09 60 00 Flooring</code>. It exists in the residential scope at one rate and in the amenity
+          scope at a much higher one, because clubhouse flooring is a different specification from apartment
+          flooring. One CSI code, two scopes, two rates — that is correct, not a duplicate. On the CSI schedule
+          both lines sit under Division 09 with a <b>Residential</b> or <b>Amenity</b> tag telling you which
+          building each belongs to.</p>
+        <p>Soft costs use <code>SC-##</code> codes rather than CSI codes, because MasterFormat classifies
+          construction <i>work results</i> — it has no home for an architect's fee or a traffic impact study. That
+          is the second reason they are reported separately on the schedule.</p>
+
+        <h4>Scope and basis when adding a line</h4>
+        <p>The scope dropdown in the CSI picker sets the quantity basis for you: choosing Amenity gives the line
+          <b>per amen SF</b>, anything else gives <b>per res SF</b>. Change it afterwards with the Basis dropdown if
+          the line should count per unit or be a lump sum instead. Getting the scope right matters beyond
+          bookkeeping — it decides which square footage drives the quantity, and whether the money lands inside or
+          outside the number the bank sees.</p>
+
         <h4>Adding scope</h4>
         <p><span class="kbd">+ Add line item</span> opens the CSI MasterFormat catalog. Adding from the catalog
           means the line carries a real code into the SOV, which the lender package depends on. New lines arrive
@@ -834,6 +873,9 @@ th.sortable.sorted{color:var(--ink-900)}
           <li>Hand-added lines with no CSI code collect under <b>Uncoded / custom scope</b>, a prompt to give them a
             real code before the budget goes out.</li>
         </ul>
+        <p>The <b>Residential</b> and <b>Amenity</b> tags on each line say which building the work belongs to, so a
+          code that appears in both scopes stays readable. See <a href="#help-budget">The budget page</a> for what
+          the scopes mean and why a code can appear twice.</p>
         <p>The schedule is also its own Excel sheet and its own PDF section, both selectable at export.</p>
 
         <h3 id="help-pricing">Pricing library and versioning</h3>
@@ -1365,7 +1407,11 @@ function go(p){
 }
 
 async function routeFromHash(){
-  const seg=(location.hash||'').replace(/^#\/?/,'').split('/');
+  // Only '#/...' is a route. Plain fragment links like '#help-exports' belong to the page
+  // and must be left alone — parsing them found no slug and bounced you to Budgets.
+  const h=location.hash||'';
+  if(h&&h.slice(0,2)!=='#/')return;
+  const seg=h.replace(/^#\/?/,'').split('/');
   const p=SLUG_PAGE[seg[0]]||'home';
   const id=(seg[1]||'').toUpperCase();
   if(p===currentPage&&(!id||(doc&&doc.projectId===id)))return;   // already where the hash points
@@ -1495,7 +1541,16 @@ function lineQty(it){
   if(it.basis==='unit')return totUnits();
   return 1;
 }
-function scopeSum(sc){return doc.lines.filter(l=>l.scope===sc).reduce((s,it)=>s+lineQty(it)*it.unit,0);}
+/* If we are not building a clubhouse, the amenity scope is not part of this project.
+   scopeSum returns 0 for an inactive scope rather than merely hiding it — an amenity line
+   on a lump-sum basis, or with a manually overridden quantity, would otherwise keep
+   contributing money that no longer appears anywhere on screen. */
+function scopeActive(sc){return sc!=='amen'||(+doc.amenSF||0)>0;}
+function activeScopes(){return ['res','amen','soft'].filter(scopeActive);}
+function scopeSum(sc){
+  if(!scopeActive(sc))return 0;
+  return doc.lines.filter(l=>l.scope===sc).reduce((s,it)=>s+lineQty(it)*it.unit,0);
+}
 function parts(){
   const res=scopeSum('res'),amen=scopeSum('amen'),soft=scopeSum('soft');
   const hard=res+amen;
@@ -1602,8 +1657,11 @@ function addOther(){doc.other.push({label:'New income line',rate:0,count:0,auto:
    `collapsed` set so a recalc() triggered from anywhere does not spring them open. */
 function renderBudget(){
   const b=document.getElementById('budBody');b.innerHTML='';
-  document.getElementById('budEmpty').style.display=doc.lines.length?'none':'block';
-  ['res','amen','soft'].forEach(sc=>{
+  const shown=doc.lines.filter(l=>scopeActive(l.scope)).length;
+  document.getElementById('budEmpty').style.display=shown?'none':'block';
+  const hid=document.getElementById('amenHidden');
+  if(hid)hid.style.display=(!scopeActive('amen')&&doc.lines.some(l=>l.scope==='amen'))?'inline':'none';
+  activeScopes().forEach(sc=>{
     const scLines=doc.lines.map((l,gi)=>({l,gi})).filter(x=>x.l.scope===sc);
     if(!scLines.length)return;
     const scSum=scopeSum(sc),scShut=collapsed.has(sc);
@@ -1649,7 +1707,7 @@ function csiDivKey(code){
 }
 function csiSchedule(){
   const p=parts(),divs=new Map(),soft=[],orphans=[];
-  doc.lines.forEach(l=>{
+  doc.lines.filter(l=>scopeActive(l.scope)).forEach(l=>{
     const row={code:l.code,desc:l.desc,scope:l.scope,basis:l.basis,
                qty:lineQty(l),rate:l.unit,total:lineQty(l)*l.unit,edited:isEdited(l)};
     if(l.scope==='soft'){soft.push(row);return;}
@@ -1776,7 +1834,9 @@ function pickCsi(code,title){
   const grp=csiDivOf(code);
   doc.lines.push({code,grp,scope,desc:title,basis,unit:0,auto:true,qty:0,baseUnit:0,custom:true});
   revealLine(scope,grp);
-  closePick();touch();toast(code+' added — set the rate');
+  closePick();touch();
+  toast(scopeActive(scope)?code+' added — set the rate'
+        :code+' added to Amenity, which is hidden until amenity SF is set');
 }
 
 /* ============ RENDER: COMPANIES / SUMMARY ============ */
@@ -1804,6 +1864,7 @@ function renderSummary(){
   const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF;
   document.getElementById('rRes').textContent=usd(p.res);
   document.getElementById('rAmen').textContent=usd(p.amen);
+  document.getElementById('rAmenRow').style.display=scopeActive('amen')?'flex':'none';
   document.getElementById('rHard').textContent=usd(p.hard);
   document.getElementById('rProfit').textContent=usd(p.profit);
   document.getElementById('rCont').textContent=usd(p.cont);
@@ -1826,7 +1887,7 @@ function renderSummary(){
   document.getElementById('bTitle').textContent=doc.projectId?doc.projectId+' — '+(doc.name||'Untitled'):'Budget';
   document.getElementById('bSub').textContent=[doc.address,doc.type,num(doc.resSF)+' SF res + '+num(doc.amenSF)+' SF amenity'].filter(Boolean).join(' · ');
   const sb=document.getElementById('sovBody');sb.innerHTML='';
-  ['res','amen'].forEach(sc=>{
+  ['res','amen'].filter(scopeActive).forEach(sc=>{
     const grps=[...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))];
     grps.forEach(gp=>{
       const s=doc.lines.filter(l=>l.scope===sc&&l.grp===gp).reduce((x,l)=>x+lineQty(l)*l.unit,0);
@@ -2019,7 +2080,7 @@ function buildReport(s){
   if(s.summary){
     h+='<section class="rpt-sec"><h2>Contract &amp; project summary</h2><div class="rpt-2col"><div>'
       +rptRow('Residential construction',usd(p.res),'sub')
-      +rptRow('Amenity / clubhouse',usd(p.amen),'sub')
+      +(scopeActive('amen')?rptRow('Amenity / clubhouse',usd(p.amen),'sub'):'')
       +rptRow('Construction hard cost',usd(p.hard),'mid')
       +rptRow('Profit — total',usd(p.profit))
       +rptRow('Contingency (99.03)',usd(p.cont))
@@ -2030,7 +2091,7 @@ function buildReport(s){
       +rptRow('Developer fee · marketing · closing',usd(p.fees),'sub')
       +rptRow('Total project cost',usd(p.project),'grand')
       +'</div><div><div class="eyebrow" style="margin-bottom:6px">SOV rollup — construction contract</div><table class="rpt-tbl"><tbody>';
-    ['res','amen'].forEach(sc=>{
+    ['res','amen'].filter(scopeActive).forEach(sc=>{
       [...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))].forEach(gp=>{
         const v=doc.lines.filter(l=>l.scope===sc&&l.grp===gp).reduce((x,l)=>x+lineQty(l)*l.unit,0);
         if(v>0)h+='<tr><td>'+(sc==='amen'?'Amenity — ':'')+esc(gp)+'</td><td class="r mono">'+usd(v)+'</td>'
@@ -2073,7 +2134,7 @@ function buildReport(s){
   if(s.budget){
     h+='<section class="rpt-sec break"><h2>Budget detail</h2><table class="rpt-tbl full"><thead><tr>'
       +'<th>Line item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>';
-    ['res','amen','soft'].forEach(sc=>{
+    activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
       h+='<tr class="scope"><td colspan="4">'+esc(SCOPES[sc])+'</td><td class="r mono">'+usd(scopeSum(sc))+'</td></tr>';
       let last=null;
@@ -2198,7 +2259,8 @@ async function exportExcel(){
     kv('Residential SF',doc.resSF,QTY);kv('Amenity SF',doc.amenSF,QTY);kv('Total units',tu,QTY);
     ws.addRow([]);
     head('CONSTRUCTION CONTRACT');
-    kv('Residential construction',p.res,MONEY);kv('Amenity / clubhouse',p.amen,MONEY);
+    kv('Residential construction',p.res,MONEY);
+    if(scopeActive('amen'))kv('Amenity / clubhouse',p.amen,MONEY);
     kv('Construction hard cost',p.hard,MONEY);kv('Profit',p.profit,MONEY);kv('Contingency (99.03)',p.cont,MONEY);
     totalRow(ws,'CONTRACT SUM',p.contract,3);
     ws.addRow([]);
@@ -2253,7 +2315,7 @@ async function exportExcel(){
     titleBand(ws,'Budget detail — schedule of values',9);
     headerRow(ws,['Code','Description','Basis','Qty','Rate','Total','Edited','Library rate','Provenance']);
     const f=[null,null,null,QTY,MONEY2,MONEY,null,MONEY2,null];
-    ['res','amen','soft'].forEach(sc=>{
+    activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
       groupRow(ws,SCOPES[sc].toUpperCase(),scopeSum(sc),9,true);
       let last=null;
@@ -2355,7 +2417,10 @@ function wireDelegates(){
   document.getElementById('homeSearch').addEventListener('input',e=>{homeView.q=e.target.value;paintHome();});
   document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeExport();closePick();}});
-  document.querySelectorAll('#helpToc a').forEach(a=>a.addEventListener('click',()=>{
+  document.querySelectorAll('#helpToc a').forEach(a=>a.addEventListener('click',e=>{
+    e.preventDefault();                       // no hash change, so #/help survives a refresh
+    const t=document.getElementById(a.getAttribute('href').slice(1));
+    if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
     document.querySelectorAll('#helpToc a').forEach(x=>x.classList.remove('on'));a.classList.add('on');
   }));
 }

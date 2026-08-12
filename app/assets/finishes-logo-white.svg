@@ -5,7 +5,12 @@
       /* Reversed lockup — white on dark. Brand rule: never place the black or
          colour logo on ink or green surfaces. */
       .cls-1,.cls-2,.cls-3{fill:#fff}
-      .cls-2{font-family:Montserrat,system-ui,sans-serif;font-weight:600;letter-spacing:.08em}
+      .cls-2{font-family:Montserrat,system-ui,sans-serif;font-weight:600;
+             font-size:92px;letter-spacing:.06em}
+      /* The supplied SVG gives the tagline no font-size, so it fell back to 16 user
+         units inside a 1440x670 viewBox and rendered about a pixel tall. 92 units
+         reproduces the lockup proportions of the supplied PNG (tagline ~918 units
+         wide, sitting under the wordmark). */
     </style>
   </defs>
   <text class="cls-2" transform="translate(140.7182617188 537.5135498047)"><tspan x="0" y="0">SOLUTIONS LLC.</tspan></text>
