@@ -29,10 +29,17 @@ body{font-family:var(--fb);color:var(--ink-800);background:var(--ink-50);font-si
 .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
 
 body>header{background:var(--ink-900);color:var(--white)}   /* app chrome only — the printed report has its own <header> */
-.hd{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px;padding:0 32px}
-.wordmark{font-weight:800;letter-spacing:.06em;font-size:16px;text-transform:uppercase}
-.wordmark span{color:var(--green-500)}
-nav{display:flex;gap:4px}
+.hd{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+  height:60px;padding:0 32px;gap:20px;flex-wrap:nowrap;white-space:nowrap}
+.brand{flex:0 0 auto;display:flex;align-items:center;height:60px}
+.brand img{height:36px;width:auto;display:block}
+.hd>nav{flex:0 1 auto;min-width:0}
+.hd>.hd-r{flex:0 0 auto;display:flex;align-items:center;gap:14px;min-width:0}
+#whoami{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:230px}
+@media(max-width:1180px){#whoami{max-width:120px}}
+@media(max-width:1040px){#whoami{display:none}}
+nav{display:flex;gap:4px;flex-wrap:nowrap}
+nav button{white-space:nowrap}
 nav button{background:transparent;border:none;color:rgba(255,255,255,.6);font-family:var(--fm);font-size:11px;
   letter-spacing:.12em;text-transform:uppercase;padding:8px 14px;cursor:pointer;border-radius:var(--r)}
 nav button:hover{color:#fff;background:rgba(255,255,255,.08)}
@@ -147,6 +154,12 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
    fill appears when a line has been touched by hand. */
 .editdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:transparent;
   margin-right:8px;vertical-align:middle;flex:none}
+/* The auto-quantity marker used to sit AFTER the number and only when active, which
+   shifted every auto row's figure left of the manual ones. It is now a fixed slot that is
+   always present and merely uncoloured when the row is manual. */
+.autodot{display:inline-block;width:7px;height:7px;border-radius:50%;background:transparent;
+  margin-right:8px;vertical-align:middle;flex:none}
+.autodot.on{background:var(--green-600)}
 .editdot.on{background:var(--edit);box-shadow:0 0 0 3px var(--edit-100)}
 tr.edited td:first-child{box-shadow:inset 2px 0 0 var(--edit)}
 tr.edited:hover td{background:var(--edit-50)}
@@ -278,7 +291,9 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <header>
   <div class="hd">
-    <div class="wordmark">Finishes <span>Solutions</span></div>
+    <a class="brand" href="#/budgets" title="Finishes Solutions — FS Budgeting Suite">
+      <img src="assets/finishes-logo-white.svg" alt="Finishes Solutions">
+    </a>
     <nav class="no-print">
       <button id="nav-home" class="on" onclick="go('home')">Budgets</button>
       <button id="nav-input" onclick="go('input')" disabled>Inputs</button>
@@ -287,7 +302,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <button id="nav-pricing" onclick="go('pricing')">Pricing library</button>
       <button id="nav-help" onclick="go('help')">How to use</button>
     </nav>
-    <div style="display:flex;align-items:center;gap:14px">
+    <div class="hd-r">
       <span class="savepill" id="saveState" style="display:none"></span>
       <span class="mono" id="whoami" style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.06em"></span>
     </div>
@@ -353,12 +368,12 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
 
   <section class="card">
-    <div class="card-hd"><h2>Project</h2><span class="eyebrow">ID formats: OP-001 · BD-0001 · AS-0001 · TST-9999 (test)</span></div>
+    <div class="card-hd"><h2>Project</h2><span class="eyebrow">ID formats: OP-0001 · BD-0001 · AS-0001 · TST-9999 (test)</span></div>
     <div class="card-bd">
       <div class="grid g4">
         <label class="fld"><span class="lab">Project ID</span>
           <input type="text" id="pId" placeholder="BD-0001" oninput="validateId();markDirty()" style="font-family:var(--fm);text-transform:uppercase">
-          <div class="fld-err" id="pIdErr" style="display:none">Must match OP-###, BD-####, AS-#### or TST-#### (test)</div></label>
+          <div class="fld-err" id="pIdErr" style="display:none">Must match OP-####, BD-####, AS-#### or TST-#### (test)</div></label>
         <label class="fld"><span class="lab">Project name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Property type</span>
@@ -725,7 +740,7 @@ th.sortable.sorted{color:var(--ink-900)}
         <p>The ID is the primary key for the budget, in the database and in every downstream system. It cannot be
           changed by renaming later without creating a second record, so get it right at the start.</p>
         <table class="tbl"><tbody>
-          <tr><td>OP-###</td><td>Operations project — three digits, e.g. <code>OP-001</code>.</td></tr>
+          <tr><td>OP-####</td><td>Operations project — four digits, e.g. <code>OP-0001</code>.</td></tr>
           <tr><td>BD-####</td><td>Business Development pursuit — four digits, e.g. <code>BD-0001</code>.</td></tr>
           <tr><td>AS-####</td><td>Assessment — four digits, e.g. <code>AS-0001</code>.</td></tr>
           <tr><td>TST-####</td><td>Test budget. Use <code>TST-9999</code> when checking a preview build.</td></tr>
@@ -950,7 +965,7 @@ const usd2=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFract
 const num=n=>Math.round(n).toLocaleString('en-US');
 const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>ESC_MAP[c]);
-const ID_RX=/^(OP-\d{3}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
+const ID_RX=/^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
 const isTest=id=>/^TST-/.test(id||'');
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
 
@@ -1467,7 +1482,7 @@ function validateId(){
 }
 function toBudget(){
   pullForms();
-  if(!validateId()){toast('Enter a valid project ID (OP-001 / BD-0001 / AS-0001)');document.getElementById('pId').focus();return;}
+  if(!validateId()){toast('Enter a valid project ID (OP-0001 / BD-0001 / AS-0001)');document.getElementById('pId').focus();return;}
   go('budget');
 }
 
@@ -1515,8 +1530,7 @@ function renderExpenses(){
         <option value="unit" ${e.per==='unit'?'selected':''}>per unit</option>
         <option value="fixed" ${e.per==='fixed'?'selected':''}>fixed / mo</option></select></td>
       <td class="r"><input type="number" data-k="exp.${i}.rate" value="${e.rate}" min="0" step="1" style="width:80px" onchange="doc.expenses[${i}].rate=+this.value;touch()"></td>
-      <td class="r"><input type="number" data-k="exp.${i}.count" value="${cnt}" min="0" style="width:70px" onchange="doc.expenses[${i}].count=+this.value;doc.expenses[${i}].auto=false;touch()">
-        ${e.auto&&e.per!=='fixed'?'<span style="color:var(--green-600);font-size:10px" title="= total units">●</span>':''}</td>
+      <td class="r"><span class="autodot${e.auto&&e.per!=='fixed'?' on':''}" title="${e.auto&&e.per!=='fixed'?'Counts every unit automatically':'Manual count'}"></span><input type="number" data-k="exp.${i}.count" value="${cnt}" min="0" style="width:70px" onchange="doc.expenses[${i}].count=+this.value;doc.expenses[${i}].auto=false;touch()"></td>
       <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
       <td class="no-print"><button class="btn-x" title="Remove expense" onclick="doc.expenses.splice(${i},1);touch()">×</button></td></tr>`);
   });
@@ -1573,8 +1587,7 @@ function renderOther(){
     b.insertAdjacentHTML('beforeend',`<tr>
       <td><input type="text" data-k="other.${i}.label" value="${esc(o.label)}" oninput="doc.other[${i}].label=this.value;markDirty()"></td>
       <td class="r"><input type="number" data-k="other.${i}.rate" value="${o.rate}" min="0" step="1" style="width:80px" onchange="doc.other[${i}].rate=+this.value;touch()"></td>
-      <td class="r"><input type="number" data-k="other.${i}.count" value="${cnt}" min="0" style="width:76px" onchange="doc.other[${i}].count=+this.value;doc.other[${i}].auto=false;touch()">
-        ${o.auto?'<span style="color:var(--green-600);font-size:10px" title="= total units">●</span>':''}</td>
+      <td class="r"><span class="autodot${o.auto?' on':''}" title="${o.auto?'Counts every unit automatically':'Manual count'}"></span><input type="number" data-k="other.${i}.count" value="${cnt}" min="0" style="width:76px" onchange="doc.other[${i}].count=+this.value;doc.other[${i}].auto=false;touch()"></td>
       <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
       <td class="no-print"><button class="btn-x" title="Remove income line" onclick="doc.other.splice(${i},1);touch()">×</button></td></tr>`);
   });
@@ -1615,9 +1628,8 @@ function renderBudget(){
           <option value="asf" ${it.basis==='asf'?'selected':''}>per amen SF</option>
           <option value="unit" ${it.basis==='unit'?'selected':''}>per unit</option>
           <option value="ls" ${it.basis==='ls'?'selected':''}>lump sum</option></select></td>
-        <td class="r"><input type="number" data-k="line.${gi}.qty" value="${q}" min="0" style="width:88px"
-          onchange="doc.lines[${gi}].qty=+this.value;doc.lines[${gi}].auto=false;touch()">
-          ${it.auto&&it.basis!=='ls'?'<span style="color:var(--green-600);font-size:10px" title="auto">●</span>':''}</td>
+        <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span><input type="number" data-k="line.${gi}.qty" value="${q}" min="0" style="width:88px"
+          onchange="doc.lines[${gi}].qty=+this.value;doc.lines[${gi}].auto=false;touch()"></td>
         <td class="r"><input type="number" data-k="line.${gi}.unit" value="${it.unit}" min="0" step="0.01" style="width:96px"
           onchange="doc.lines[${gi}].unit=+this.value;touch()"></td>
         <td class="calc r strong">${usd(tot)}</td><td class="calc r">${pct.toFixed(1)}%</td>
@@ -1774,8 +1786,8 @@ function renderCos(){
   doc.companies.forEach((c,i)=>{
     b.insertAdjacentHTML('beforeend',`<tr>
       <td><input type="text" data-k="co.${i}.name" value="${esc(c.name)}" oninput="doc.companies[${i}].name=this.value;markDirty()"></td>
-      <td class="r" style="width:110px"><input type="number" data-k="co.${i}.pct" value="${c.pct}" min="0" step="0.5" style="width:80px"
-        onchange="doc.companies[${i}].pct=+this.value;touch()"> <span class="mono" style="font-size:12px;color:var(--ink-400)">%</span></td>
+      <td class="r" style="width:118px;white-space:nowrap"><input type="number" data-k="co.${i}.pct" value="${c.pct}" min="0" step="0.5" style="width:74px"
+        onchange="doc.companies[${i}].pct=+this.value;touch()"><span class="mono" style="font-size:12px;color:var(--ink-400);margin-left:5px">%</span></td>
       <td class="calc r" style="width:130px">${usd(hard*c.pct/100)}</td>
       <td class="no-print" style="width:36px"><button class="btn-x" title="Remove company" onclick="doc.companies.splice(${i},1);touch()">×</button></td></tr>`);
   });
