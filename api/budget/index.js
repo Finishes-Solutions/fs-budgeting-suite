@@ -1,10 +1,13 @@
 const { getPool, sql } = require('../shared/db');
 
-const ID_RX = /^(OP-\d{3}|BD-\d{4}|AS-\d{4})$/;
+// TST-#### are throwaway test budgets used to exercise preview environments against
+// this same database. They are real rows; sql/cleanup_test_budgets.sql purges them and
+// the lender package excludes them (see docs/DATA_CONTRACT.md).
+const ID_RX = /^(OP-\d{3}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
 
 module.exports = async function (context, req) {
   const id = (context.bindingData.id || '').toUpperCase();
-  if (!ID_RX.test(id)) { context.res = { status: 400, body: 'Invalid project ID (OP-### / BD-#### / AS-####)' }; return; }
+  if (!ID_RX.test(id)) { context.res = { status: 400, body: 'Invalid project ID (OP-### / BD-#### / AS-#### / TST-####)' }; return; }
   const pool = await getPool();
 
   if (req.method === 'GET') {

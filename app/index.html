@@ -125,6 +125,60 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .empty{padding:48px;text-align:center;color:var(--ink-400)}
 .empty .big{font-size:15px;font-weight:600;color:var(--ink-600);margin-bottom:6px}
 .note{font-size:12.5px;color:var(--ink-500);line-height:1.55}
+/* ---- save state pill ---- */
+.savepill{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;padding:4px 10px;border-radius:100px;white-space:nowrap}
+.savepill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.savepill.saved{background:rgba(31,146,73,.16);color:#7fd3a1}
+.savepill.dirty{background:rgba(214,158,46,.18);color:#f0c674}
+.savepill.saving{background:rgba(255,255,255,.12);color:rgba(255,255,255,.75)}
+
+/* ---- banners ---- */
+.banner.danger{border-color:#e8c4c0;background:#fdf2f1;color:#8c2a20}
+.banner.test{border-color:#cdd3e6;background:#f2f4fb;color:#3b4570}
+.badge.test{border-color:#cdd3e6;background:#f2f4fb;color:#3b4570;margin-left:6px}
+
+/* ---- collapsible budget grid ---- */
+.caret{display:inline-block;width:14px;font-size:10px;opacity:.75}
+.scope-hd,.grp-hd{cursor:pointer;user-select:none}
+.scope-hd:hover td{background:var(--ink-800)}
+.grp-hd:hover td{background:var(--ink-100)}
+.shut{font-weight:400;opacity:.6;letter-spacing:.06em;margin-left:8px;text-transform:none}
+.budget-scroll{max-height:72vh}
+.budget-scroll thead th{position:sticky;top:0;z-index:2;background:var(--white);box-shadow:inset 0 -1px 0 var(--ink-200)}
+
+/* ---- sortable table headers ---- */
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--ink-800)}
+th.sortable::after{content:attr(data-arrow);margin-left:5px;font-size:9px;color:var(--green-700)}
+th.sortable.sorted{color:var(--ink-900)}
+
+/* ---- how to use ---- */
+.help-wrap{display:grid;grid-template-columns:210px 1fr;gap:36px;align-items:start}
+@media(max-width:900px){.help-wrap{grid-template-columns:1fr}#helpToc{position:static!important}}
+#helpToc{position:sticky;top:20px;display:block}   /* override the header's nav{display:flex} */
+#helpToc a{display:block;padding:6px 10px;border-left:2px solid var(--ink-200);color:var(--ink-600);
+  text-decoration:none;font-size:12.5px}
+#helpToc a:hover{color:var(--green-700);border-left-color:var(--green-200);background:var(--green-50)}
+#helpToc a.on{color:var(--green-800);border-left-color:var(--green-700);font-weight:600}
+.help h3{font-size:15px;font-weight:700;color:var(--ink-950);margin-bottom:8px;scroll-margin-top:20px}
+.help h4{font-size:13px;font-weight:700;color:var(--ink-800);margin:16px 0 6px}
+.help p{color:var(--ink-700);margin-bottom:10px;max-width:70ch}
+.help ul,.help ol{margin:0 0 12px 20px;color:var(--ink-700)}
+.help li{margin-bottom:6px;max-width:68ch}
+.help section{margin-bottom:30px}
+.help code,.help .kbd{font-family:var(--fm);font-size:12.5px;background:var(--ink-100);
+  border:1px solid var(--ink-200);border-radius:var(--r);padding:1px 5px;color:var(--ink-900)}
+.help .tbl td{font-size:13px;color:var(--ink-700);vertical-align:top}
+.help .tbl td:first-child{white-space:nowrap;font-weight:600;color:var(--ink-900);width:1%;padding-right:20px}
+.help .callout{border-left:3px solid var(--green-700);background:var(--green-50);padding:12px 16px;
+  border-radius:0 var(--r) var(--r) 0;margin-bottom:12px;font-size:13px;color:var(--green-900);max-width:70ch}
+.help .callout.warn{border-left-color:var(--warn);background:#fdf6e8;color:#7a5514}
+.help .step{display:flex;gap:14px;margin-bottom:14px;max-width:70ch}
+.help .step .n{flex:0 0 24px;height:24px;border-radius:50%;background:var(--green-700);color:#fff;
+  font-family:var(--fm);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.help .step .t{padding-top:2px}
+
 @media print{
   header,.no-print,.banner{display:none!important}
   body{background:#fff}main{padding:0;max-width:none}
@@ -145,12 +199,21 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
       <button id="nav-input" onclick="go('input')" disabled>Inputs</button>
       <button id="nav-budget" onclick="go('budget')" disabled>Budget</button>
       <button id="nav-pricing" onclick="go('pricing')">Pricing library</button>
+      <button id="nav-help" onclick="go('help')">How to use</button>
     </nav>
-    <span class="mono" id="whoami" style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.06em"></span>
+    <div style="display:flex;align-items:center;gap:14px">
+      <span class="savepill" id="saveState" style="display:none"></span>
+      <span class="mono" id="whoami" style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.06em"></span>
+    </div>
   </div>
 </header>
 
 <main>
+
+<div class="banner danger no-print" id="apiBanner" style="display:none">
+  <span id="apiBannerMsg">Cannot reach the server.</span>
+  <button class="btn btn-sm btn-dark" onclick="location.reload()">Reload</button>
+</div>
 
 <!-- ================= HOME ================= -->
 <div class="page on" id="page-home">
@@ -158,14 +221,34 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
     <div><h1>Project budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
     <button class="btn btn-primary" onclick="newBudget()">+ New budget</button>
   </div>
-  <div class="card"><div class="card-bd" style="padding:0">
+  <div class="card">
+    <div class="card-hd no-print">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="homeSearch" placeholder="Search ID or name…" style="width:240px">
+        <select id="homeStatus" style="width:140px;font-size:12px;padding:6px 8px">
+          <option value="all">All statuses</option>
+          <option value="Draft">Draft</option>
+          <option value="In Review">In Review</option>
+          <option value="Finalized">Finalized</option>
+        </select>
+      </div>
+      <span class="eyebrow" id="homeCount">—</span>
+    </div>
+    <div class="card-bd" style="padding:0">
     <table class="tbl">
-      <thead><tr><th style="padding-left:22px">Project ID</th><th>Name</th><th class="r">Contract sum</th><th class="r">Total project</th><th>Status</th><th class="r" style="padding-right:22px">Updated</th><th class="no-print"></th></tr></thead>
+      <thead id="homeHead"><tr>
+        <th style="padding-left:22px" class="sortable" data-sort="projectId">Project ID</th>
+        <th class="sortable" data-sort="name">Name</th>
+        <th class="r sortable" data-sort="contractSum">Contract sum</th>
+        <th class="r sortable" data-sort="projectCost">Total project</th>
+        <th class="sortable" data-sort="status">Status</th>
+        <th class="r sortable" data-sort="updated" style="padding-right:22px">Updated</th>
+        <th class="no-print"></th></tr></thead>
       <tbody id="homeBody"></tbody>
     </table>
     <div class="empty" id="homeEmpty" style="display:none">
-      <div class="big">No budgets yet</div>
-      <div>Create one to get started. Budgets snapshot the pricing library at creation.</div>
+      <div class="big" id="homeEmptyBig">No budgets yet</div>
+      <div id="homeEmptyMsg">Create one to get started. Budgets snapshot the pricing library at creation.</div>
     </div>
   </div></div>
 </div>
@@ -175,26 +258,26 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
   <div class="page-title">
     <div><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
     <div style="display:flex;gap:10px" class="no-print">
-      <button class="btn btn-ghost" onclick="saveBudget(true)">Save draft</button>
+      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)">Save draft</button>
       <button class="btn btn-primary" onclick="toBudget()">Continue to budget →</button>
     </div>
   </div>
 
   <section class="card">
-    <div class="card-hd"><h2>Project</h2><span class="eyebrow">ID formats: OP-001 · BD-0001 · AS-0001</span></div>
+    <div class="card-hd"><h2>Project</h2><span class="eyebrow">ID formats: OP-001 · BD-0001 · AS-0001 · TST-9999 (test)</span></div>
     <div class="card-bd">
       <div class="grid g4">
         <label class="fld"><span class="lab">Project ID</span>
-          <input type="text" id="pId" placeholder="BD-0001" oninput="validateId()" style="font-family:var(--fm);text-transform:uppercase">
-          <div class="fld-err" id="pIdErr" style="display:none">Must match OP-###, BD-#### or AS-####</div></label>
-        <label class="fld"><span class="lab">Project name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I"></label>
-        <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP"></label>
+          <input type="text" id="pId" placeholder="BD-0001" oninput="validateId();markDirty()" style="font-family:var(--fm);text-transform:uppercase">
+          <div class="fld-err" id="pIdErr" style="display:none">Must match OP-###, BD-####, AS-#### or TST-#### (test)</div></label>
+        <label class="fld"><span class="lab">Project name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
+        <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Property type</span>
           <select id="pType"><option>Multifamily</option><option disabled>Commercial (coming)</option><option disabled>SFR (coming)</option></select></label>
       </div>
       <div class="grid g4" style="margin-top:14px">
-        <label class="fld"><span class="lab">Residential buildable SF</span><input type="number" class="num" id="pSF" value="51365" min="0" step="100" oninput="recalc()"></label>
-        <label class="fld"><span class="lab">Amenity / clubhouse SF</span><input type="number" class="num" id="pASF" value="1200" min="0" step="50" oninput="recalc()"></label>
+        <label class="fld"><span class="lab">Residential buildable SF</span><input type="number" class="num" id="pSF" value="51365" min="0" step="100" oninput="touch()"></label>
+        <label class="fld"><span class="lab">Amenity / clubhouse SF</span><input type="number" class="num" id="pASF" value="1200" min="0" step="50" oninput="touch()"></label>
       </div>
       <div class="note" style="margin-top:10px">Residential SF drives the per-SF construction and soft-cost lines. Amenity SF drives the clubhouse/leasing scope at its own (higher) rates — matching how the Finishes model prices the two buildings separately.</div>
     </div>
@@ -276,7 +359,7 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
               <button id="cPsf" onclick="setCMode('psf')">$ / SF</button>
               <button id="cAmt" onclick="setCMode('amt')">Fixed $</button>
             </div>
-            <input type="number" class="num" id="cVal" value="2" min="0" step="0.25" style="width:120px" oninput="doc.contingency.val=+this.value;recalc()">
+            <input type="number" class="num" id="cVal" value="2" min="0" step="0.25" style="width:120px" oninput="doc.contingency.val=+this.value;touch()">
           </div>
           <div class="note">The Finishes model carries construction contingency at $2.00/SF. Soft-cost contingency lines live in the Soft Costs scope. Carried as explicit SOV line 99.03.</div>
         </div>
@@ -289,11 +372,24 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 <div class="page" id="page-budget">
   <div class="page-title">
     <div><h1 id="bTitle">Budget</h1><div class="sub" id="bSub"></div></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap" class="no-print">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
+      <label class="fld" style="display:flex;align-items:center;gap:8px">
+        <span class="lab" style="margin:0">Status</span>
+        <select id="bStatus" style="width:130px;font-size:12px;padding:6px 8px" onchange="setStatus(this.value)">
+          <option value="Draft">Draft</option>
+          <option value="In Review">In Review</option>
+          <option value="Finalized">Finalized</option>
+        </select>
+      </label>
       <button class="btn btn-ghost" onclick="go('input')">← Inputs</button>
-      <button class="btn btn-ghost" onclick="saveBudget(true)">Save</button>
+      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)">Save</button>
       <button class="btn btn-dark" onclick="openExport()">Export…</button>
     </div>
+  </div>
+
+  <div class="banner test no-print" id="testBanner" style="display:none">
+    <span><b>Test budget.</b> TST-#### budgets are throwaway records for checking a preview build. They are written to the
+      same database as real projects — delete this when you are done (<span class="mono">sql/cleanup_test_budgets.sql</span>).</span>
   </div>
 
   <div class="banner" id="staleBanner" style="display:none">
@@ -311,8 +407,14 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 
   <section class="card" id="sec-budget">
     <div class="card-hd"><h2>Budget detail</h2>
-      <span class="eyebrow">● = qty auto-synced (res SF / amenity SF / units) · edit to override</span></div>
-    <div class="card-bd" style="overflow-x:auto;padding-top:8px">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <span class="eyebrow">● = qty auto-synced (res SF / amenity SF / units) · edit to override</span>
+        <span class="seg no-print">
+          <button onclick="collapseAll()">Collapse all</button>
+          <button onclick="expandAll()">Expand all</button>
+        </span>
+      </div></div>
+    <div class="card-bd budget-scroll" style="overflow:auto;padding-top:8px">
       <table class="tbl">
         <thead><tr><th style="width:36%">Line item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th>
           <th class="r">Total</th><th class="r">% scope</th><th class="no-print"></th></tr></thead>
@@ -326,10 +428,10 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
     <div class="card-hd"><h2>Land &amp; project costs</h2><span class="eyebrow">Outside the construction contract — rolls into total project cost</span></div>
     <div class="card-bd">
       <div class="grid g4">
-        <label class="fld"><span class="lab">Land cost</span><input type="number" class="num" id="pcLand" min="0" step="10000" oninput="doc.projectCosts.land=+this.value;recalc()"></label>
-        <label class="fld"><span class="lab">Developer fee</span><input type="number" class="num" id="pcDev" min="0" step="5000" oninput="doc.projectCosts.dev=+this.value;recalc()"></label>
-        <label class="fld"><span class="lab">Marketing / brokerage</span><input type="number" class="num" id="pcMkt" min="0" step="5000" oninput="doc.projectCosts.mkt=+this.value;recalc()"></label>
-        <label class="fld"><span class="lab">Closing costs</span><input type="number" class="num" id="pcCls" min="0" step="5000" oninput="doc.projectCosts.cls=+this.value;recalc()"></label>
+        <label class="fld"><span class="lab">Land cost</span><input type="number" class="num" id="pcLand" min="0" step="10000" oninput="doc.projectCosts.land=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Developer fee</span><input type="number" class="num" id="pcDev" min="0" step="5000" oninput="doc.projectCosts.dev=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Marketing / brokerage</span><input type="number" class="num" id="pcMkt" min="0" step="5000" oninput="doc.projectCosts.mkt=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Closing costs</span><input type="number" class="num" id="pcCls" min="0" step="5000" oninput="doc.projectCosts.cls=+this.value;touch()"></label>
       </div>
     </div>
   </section>
@@ -418,6 +520,202 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
   </div>
 </div>
 
+<!-- ================= HOW TO USE ================= -->
+<div class="page" id="page-help">
+  <div class="page-title">
+    <div><h1>How to use the FS Budgeting Suite</h1>
+      <div class="sub">Build a multifamily project budget from the shared pricing library, then export it.</div></div>
+  </div>
+
+  <div class="help-wrap">
+    <nav id="helpToc" class="no-print">
+      <a href="#help-overview" class="on">What this is</a>
+      <a href="#help-quickstart">Quick start</a>
+      <a href="#help-ids">Project IDs</a>
+      <a href="#help-inputs">Inputs reference</a>
+      <a href="#help-budget">The budget page</a>
+      <a href="#help-pricing">Pricing library</a>
+      <a href="#help-exports">Exports</a>
+      <a href="#help-access">Who can do what</a>
+      <a href="#help-faq">Troubleshooting</a>
+    </nav>
+
+    <div class="help">
+
+      <section class="card"><div class="card-bd">
+        <h3 id="help-overview">What this is</h3>
+        <p>A Business Development budgeting tool for multifamily projects. You enter the project's size, unit
+          mix and income assumptions; the tool prices the construction scope from a shared, versioned rate
+          library and rolls it up into two numbers that matter:</p>
+        <ul>
+          <li><b>Contract sum</b> — construction hard cost + profit + contingency. This is the number the bank sees.</li>
+          <li><b>Total project cost</b> — contract sum + soft costs + land + developer fee, marketing and closing.
+            Internal underwriting only.</li>
+        </ul>
+        <p>Every saved budget also writes a normalized schedule-of-values table that the Master Lender Package
+          pipeline reads later, so the line items you set here become the SOV rows in the lender package.</p>
+      </div></section>
+
+      <section class="card"><div class="card-bd">
+        <h3 id="help-quickstart">Quick start</h3>
+        <div class="step"><div class="n">1</div><div class="t"><b>Budgets → + New budget.</b>
+          A fresh budget copies the current pricing library and the standard multifamily template.</div></div>
+        <div class="step"><div class="n">2</div><div class="t"><b>Fill in the Inputs page.</b>
+          Project ID and name first — the ID is required before anything can be saved. Then residential and
+          amenity square footage, the unit mix, income and expenses.</div></div>
+        <div class="step"><div class="n">3</div><div class="t"><b>Continue to budget.</b>
+          Every line is already priced from the library. Adjust quantities or rates where you know better,
+          and add scope with <span class="kbd">+ Add line item</span>.</div></div>
+        <div class="step"><div class="n">4</div><div class="t"><b>Check the summary.</b>
+          Contract sum, total project cost, cost per unit and the SOV rollup are at the bottom of the page.</div></div>
+        <div class="step"><div class="n">5</div><div class="t"><b>Save, then export.</b>
+          <span class="kbd">Save</span> writes to the database; <span class="kbd">Export…</span> produces Excel or PDF.</div></div>
+        <div class="callout">The header pill shows <b>Unsaved changes</b> until a save succeeds. Nothing is stored
+          automatically — if you close the tab with that pill showing, the browser will warn you.</div>
+      </div></section>
+
+      <section class="card"><div class="card-bd">
+        <h3 id="help-ids">Project IDs</h3>
+        <p>The ID is the primary key for the budget, in the database and in every downstream system. It cannot be
+          changed by renaming later without creating a second record, so get it right at the start.</p>
+        <table class="tbl"><tbody>
+          <tr><td>OP-###</td><td>Operations project — three digits, e.g. <code>OP-001</code>.</td></tr>
+          <tr><td>BD-####</td><td>Business Development pursuit — four digits, e.g. <code>BD-0001</code>.</td></tr>
+          <tr><td>AS-####</td><td>Assessment — four digits, e.g. <code>AS-0001</code>.</td></tr>
+          <tr><td>TST-####</td><td>Test budget. Use <code>TST-9999</code> when checking a preview build.</td></tr>
+        </tbody></table>
+        <div class="callout warn"><b>Test budgets are real rows.</b> Preview builds share the production database,
+          so a <code>TST-</code> budget is written to the same tables as live projects. It is flagged with a Test
+          badge everywhere it appears — delete it when you are finished.</div>
+      </div></section>
+
+      <section class="card"><div class="card-bd">
+        <h3 id="help-inputs">Inputs reference</h3>
+
+        <h4>Project</h4>
+        <p><b>Residential buildable SF</b> drives every line priced per residential SF — the bulk of the budget
+          and most soft costs. <b>Amenity / clubhouse SF</b> drives the amenity scope at its own, higher rates,
+          because the model prices the two buildings separately.</p>
+
+        <h4>Unit mix &amp; rent revenue</h4>
+        <p>One row per unit type. Type SF, monthly and yearly revenue are calculated. Two behaviors worth knowing:</p>
+        <ul>
+          <li>Editing <b>$ / SF / mo</b> works backwards and sets rent to SF × your rate, matching the direction
+            the source spreadsheet calculates.</li>
+          <li>The badge in the card header compares total unit SF against residential buildable SF and shows an
+            <b>efficiency percentage</b>. It turns amber if unit SF exceeds the building — usually a typo in a
+            unit count or a stale SF figure.</li>
+        </ul>
+
+        <h4>Other income and Operating expenses</h4>
+        <p>Enter <b>gross</b> charges under Other income — what the resident is billed. Put the cost of providing
+          them under Operating expenses. The tool nets the two and reports net other income.</p>
+        <ul>
+          <li>A green <b>●</b> next to a count means it tracks total units automatically. Type over the count to
+            break the link — useful for parking spaces, pet rent or premium units that apply to only some units.</li>
+          <li>Expenses are <b>per unit</b> or <b>fixed / mo</b>. Fixed lines apply once no matter the unit count.</li>
+        </ul>
+
+        <h4>Profit &amp; contingency</h4>
+        <p>Profit is a percentage of construction hard cost, per company; add a row for each entity taking a fee.
+          Contingency carries three ways — percent of hard cost, dollars per SF (residential + amenity), or a
+          fixed amount. It is always reported as its own line, never blended into the trades.</p>
+      </div></section>
+
+      <section class="card"><div class="card-bd">
+        <h3 id="help-budget">The budget page</h3>
+        <p>Lines are grouped into three scopes — Residential Construction, Amenity / Clubhouse and Soft Costs —
+          and then into phase groups within each. Click any scope or group header to collapse it; subtotals stay
+          visible. <span class="kbd">Collapse all</span> is the fastest way to sanity-check the shape of a budget.</p>
+
+        <h4>Quantities</h4>
+        <p>A green <b>●</b> on a quantity means it is derived from the inputs, so it follows your SF and unit
+          counts automatically:</p>
+        <table class="tbl"><tbody>
+          <tr><td>per res SF</td><td>Quantity = residential buildable SF</td></tr>
+          <tr><td>per amen SF</td><td>Quantity = amenity SF</td></tr>
+          <tr><td>per unit</td><td>Quantity = total units from the unit mix</td></tr>
+          <tr><td>lump sum</td><td>Quantity is always 1; put the whole amount in the rate</td></tr>
+        </tbody></table>
+        <p>Typing over a quantity breaks the link for that line only, and it will no longer follow the inputs.</p>
+
+        <h4>Adding scope</h4>
+        <p><span class="kbd">+ Add line item</span> opens the CSI MasterFormat catalog. Adding from the catalog
+          means the line carries a real code into the SOV, which the lender package depends on. New lines arrive
+          at rate $0 — set the rate before you trust the total.</p>
+
+        <h4>Reading the summary</h4>
+        <p>The left column walks hard cost up to contract sum, then adds the non-contract costs to reach total
+          project cost. The right column is the SOV rollup: the same money grouped the way it will appear on the
+          schedule of values, with contingency shown explicitly as line 99.03 and profit broken out by company.</p>
+      </div></section>
+
+      <section class="card"><div class="card-bd">
+        <h3 id="help-pricing">Pricing library and versioning</h3>
+        <p>All rates come from one shared library so two people pricing the same building get the same answer.
+          The important rule:</p>
+        <div class="callout"><b>A budget snapshots the library the moment it is created.</b> Publishing new rates
+          never moves the numbers under an existing budget. Your saved work does not change behind your back.</div>
+        <p>When a budget is running on an older library, a banner appears on the budget page naming both versions.
+          <span class="kbd">Update to current pricing</span> pulls the new rates in — it matches on scope, code and
+          description, so standard template lines are repriced and any custom line you added keeps the rate you
+          gave it. Quantities and overrides are untouched.</p>
+        <p>Publishing is the other direction: an admin edits the library and publishes, which stamps a new version
+          number and effective date. Only budgets created after that point pick it up.</p>
+      </div></section>
+
+      <section class="card"><div class="card-bd">
+        <h3 id="help-exports">Exports</h3>
+        <p><span class="kbd">Export…</span> lets you pick which sections to include, then produces either format.</p>
+        <table class="tbl"><tbody>
+          <tr><td>Excel</td><td>A workbook with a sheet per section — Summary, Unit Mix, Income &amp; Expenses,
+            Budget-SOV and Contract Summary. Values are live numbers, not text, so they can be pivoted or
+            re-totalled. This is the one to send to anyone doing further analysis.</td></tr>
+          <tr><td>PDF</td><td>Opens the browser print dialog against the budget page. Choose "Save as PDF" as the
+            destination. Best for a quick read-only copy.</td></tr>
+        </tbody></table>
+      </div></section>
+
+      <section class="card"><div class="card-bd">
+        <h3 id="help-access">Who can do what</h3>
+        <table class="tbl"><tbody>
+          <tr><td>Everyone</td><td>Anyone who can sign in with a Finishes account can create, edit, save, delete
+            and export budgets, and can read the pricing library.</td></tr>
+          <tr><td>pricing_admin</td><td>Additionally can edit and publish the pricing library. This is deliberately
+            a very short list, because a rate change affects every budget created afterwards.</td></tr>
+        </tbody></table>
+        <p>The pricing page shows whether your account holds the role. If you need it, ask the tool owner for a
+          role invitation.</p>
+      </div></section>
+
+      <section class="card"><div class="card-bd">
+        <h3 id="help-faq">Troubleshooting</h3>
+        <table class="tbl"><tbody>
+          <tr><td>A red banner says the server cannot be reached</td>
+            <td>Saves will fail and rates shown may be the built-in fallback rather than the published library.
+              Reload. If it persists, the API or database is down — report it before doing more work, and copy
+              anything unsaved out first.</td></tr>
+          <tr><td>The first request of the day hangs</td>
+            <td>The database pauses when idle and takes a few seconds to wake. Retry once.</td></tr>
+          <tr><td>Publishing pricing returns "not authorized"</td>
+            <td>Your account does not hold <code>pricing_admin</code> in this browser profile. Check
+              <code>/.auth/me</code>; if the role is missing, the role invitation needs to be accepted in the
+              profile you are actually signed in with.</td></tr>
+          <tr><td>Sign-in loops back to the login page</td>
+            <td>Usually the address you are using is not registered as a redirect URI — common on a preview build.
+              Send the URL to whoever set up the environment.</td></tr>
+          <tr><td>A budget shows $0 totals</td>
+            <td>Almost always residential SF is 0, or every line was switched to lump sum with no rate set.</td></tr>
+          <tr><td>I lost my edits</td>
+            <td>Nothing autosaves. The header pill shows unsaved state and the browser warns before closing —
+              if that warning was dismissed, the work is gone.</td></tr>
+        </tbody></table>
+      </div></section>
+
+    </div>
+  </div>
+</div>
+
 </main>
 
 <!-- ================= EXPORT MODAL ================= -->
@@ -473,17 +771,45 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 const usd=n=>'$'+Math.round(n).toLocaleString('en-US');
 const usd2=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const num=n=>Math.round(n).toLocaleString('en-US');
-const esc=s=>String(s??'').replace(/"/g,'&quot;');
-const ID_RX=/^(OP-\d{3}|BD-\d{4}|AS-\d{4})$/;
+const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>ESC_MAP[c]);
+const ID_RX=/^(OP-\d{3}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
+const isTest=id=>/^TST-/.test(id||'');
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
 
 /* ============ STORAGE — Azure Functions API ============ */
+/* apiHealthy tracks whether the backend is reachable. A dead API used to fail silently:
+   sGet swallowed the error, init() fell back to the built-in pricing seed, and the
+   Budgets list simply looked empty — so you could price a whole project against stale
+   hardcoded rates and never know. Now it raises a banner. */
+let apiHealthy=true,apiDownMsg='',pricingFromApi=false;
 async function api(path,opts={}){
-  const r=await fetch('/api/'+path,{headers:{'Content-Type':'application/json'},...opts});
+  let r;
+  try{
+    r=await fetch('/api/'+path,{headers:{'Content-Type':'application/json'},...opts});
+  }catch(e){setApiHealth(false,'Cannot reach the server — check your connection, then reload.');throw new Error('Network error: '+e.message);}
+  if(r.status>=500){const t=await r.text();setApiHealth(false,'The server returned '+r.status+' on /api/'+path+'. Saves will fail until this clears.');throw new Error('API '+r.status+': '+t);}
+  setApiHealth(true);
   if(r.status===403)throw new Error('Not authorized (pricing_admin role required)');
   if(!r.ok)throw new Error('API '+r.status+': '+await r.text());
   const ct=r.headers.get('content-type')||'';
   return ct.includes('json')?await r.json():null;
+}
+function setApiHealth(ok,msg){
+  apiHealthy=ok;apiDownMsg=ok?'':(msg||'');
+  renderApiBanner();
+}
+/* Two independent problems share the banner: the transport being down, and the pricing
+   library having fallen back to the built-in seed. A later 404 from some other endpoint
+   must not clear the second one, so the message is composed from both flags. */
+function renderApiBanner(){
+  const el=document.getElementById('apiBanner');if(!el)return;
+  const msgs=[];
+  if(!apiHealthy)msgs.push(apiDownMsg||'Cannot reach the server.');
+  if(!pricingFromApi)msgs.push('Showing the built-in pricing library — the published rates could not be loaded, so they may be out of date and saving will fail.');
+  el.style.display=msgs.length?'flex':'none';
+  const m=document.getElementById('apiBannerMsg');
+  if(m)m.textContent=msgs.join(' ');
 }
 async function sGet(k){try{
   if(k==='budgets-index')return await api('budgets');
@@ -689,7 +1015,66 @@ const DEFAULT_EXPENSES=[
 
 /* ============ STATE ============ */
 let pricing=null,doc=null,index=[],adminUnlocked=false,currentPage='home';
+let dirty=false,saving=false,lastSaved=null;
+const collapsed=new Set();              // "scope|grp" keys collapsed on the budget grid
+const homeView={q:'',sort:'updated',dir:-1,status:'all'};
 const SCOPES={res:'Residential Construction',amen:'Amenity / Clubhouse',soft:'Soft Costs'};
+
+/* ---- unsaved-work tracking ----
+   touch() is recalc() plus "the user changed something". Mutation handlers call it;
+   navigation and initial paints call plain recalc(), so simply opening a budget or
+   switching tabs never marks it dirty. */
+function markDirty(){if(!dirty){dirty=true;renderSaveState();}}   // edits that need no recalc
+function touch(){dirty=true;renderSaveState();recalc();}
+function markSaved(){dirty=false;lastSaved=new Date();renderSaveState();}
+function renderSaveState(){
+  const el=document.getElementById('saveState');if(!el)return;
+  if(!doc){el.style.display='none';return;}
+  el.style.display='inline-flex';
+  el.className='savepill'+(saving?' saving':dirty?' dirty':' saved');
+  el.textContent=saving?'Saving…':dirty?'Unsaved changes'
+    :lastSaved?'Saved '+lastSaved.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})
+    :'No changes yet';
+  document.querySelectorAll('[data-save-btn]').forEach(b=>{b.disabled=saving;});
+}
+function confirmDiscard(){
+  if(!dirty)return true;
+  return confirm('This budget has unsaved changes that will be lost.\n\nLeave without saving?');
+}
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+
+/* ---- focus preservation across re-renders ----
+   Every table cell commits with onchange → recalc(), and recalc() rebuilds all five
+   tables with innerHTML. That destroyed the element that had just fired, so pressing
+   Tab dropped focus to the top of the document and you could not key across a row.
+   Each generated input carries a stable data-k; we restore focus and caret by that key. */
+/* Tab fires change → recalc while focus is still on the field being left, so the row is
+   rebuilt before the browser can hand focus to the next cell and the move is lost. We
+   record the Tab direction, then re-issue it against the rebuilt DOM. A plain edit with
+   no Tab (dir 0) just restores the same field and its caret. */
+let pendingFocusKey=null,tabDir=0;
+document.addEventListener('keydown',e=>{tabDir=e.key==='Tab'?(e.shiftKey?-1:1):0;},true);
+document.addEventListener('focusout',e=>{
+  const rt=e.relatedTarget;
+  pendingFocusKey=rt&&rt.dataset?(rt.dataset.k||null):null;
+});
+function withFocus(fn){
+  const a=document.activeElement;
+  const live=a&&a.dataset?a.dataset.k:null;
+  const k=live||pendingFocusKey,dir=tabDir;
+  let s=null,e=null;
+  if(live){try{s=a.selectionStart;e=a.selectionEnd;}catch(_){/* number inputs throw */}}
+  fn();
+  pendingFocusKey=null;tabDir=0;
+  if(!k)return;
+  const scope=document.querySelector('.page.on')||document;
+  const all=[...scope.querySelectorAll('[data-k]')];
+  const i=all.findIndex(x=>x.dataset.k===k);
+  if(i<0)return;
+  const el=(dir&&all[i+dir])?all[i+dir]:all[i];
+  el.focus();
+  if(el===all[i]&&s!=null){try{el.setSelectionRange(s,e);}catch(_){}}
+}
 
 function blankDoc(){
   return {projectId:'',name:'',address:'',type:'Multifamily',resSF:51365,amenSF:1200,
@@ -714,54 +1099,124 @@ function migrate(d){ // tolerate older saves
   d.projectCosts=d.projectCosts??{land:0,dev:0,mkt:0,cls:0};
   d.units.forEach(u=>{u.bd=u.bd??0;u.bth=u.bth??1;});
   d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';});
+  d.status=d.status||'Draft';
   return d;
 }
 
-/* ============ NAV ============ */
+/* ============ NAV + HASH ROUTING ============
+   The hash keeps your place across a refresh, makes browser Back work, and lets a
+   budget be linked directly — #/budget/BD-0001. */
+const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',pricing:'pricing',help:'help'};
+const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',pricing:'pricing',help:'help'};
+const DOC_PAGES=['input','budget'];
+
+function hashFor(p){
+  const s=PAGE_SLUG[p]||'budgets';
+  return DOC_PAGES.includes(p)&&doc&&doc.projectId?'#/'+s+'/'+doc.projectId:'#/'+s;
+}
+function syncHash(p){const h=hashFor(p);if(location.hash!==h)location.hash=h;}
+
 function go(p){
+  // Leaving a budget for a non-budget page abandons unsaved edits — ask first.
+  if(p!==currentPage&&DOC_PAGES.includes(currentPage)&&!DOC_PAGES.includes(p)&&!confirmDiscard()){
+    syncHash(currentPage);return;
+  }
   currentPage=p;
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   document.getElementById('page-'+p).classList.add('on');
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
   document.getElementById('nav-'+p).classList.add('on');
+  syncHash(p);
+  renderSaveState();
   if(p==='home')renderHome();
   if(p==='pricing'){renderPricing();renderCatalog();}
   if(p==='budget'||p==='input')recalc();
+  window.scrollTo(0,0);
 }
+
+async function routeFromHash(){
+  const seg=(location.hash||'').replace(/^#\/?/,'').split('/');
+  const p=SLUG_PAGE[seg[0]]||'home';
+  const id=(seg[1]||'').toUpperCase();
+  if(p===currentPage&&(!id||(doc&&doc.projectId===id)))return;   // already where the hash points
+  if(DOC_PAGES.includes(p)){
+    if(id&&ID_RX.test(id)&&(!doc||doc.projectId!==id)){await openBudget(id,p);return;}
+    if(!doc){go('home');return;}
+  }
+  go(p);
+}
+window.addEventListener('hashchange',routeFromHash);
 
 /* ============ HOME ============ */
 async function renderHome(){
   index=(await sGet('budgets-index'))||[];
-  const b=document.getElementById('homeBody');b.innerHTML='';
-  document.getElementById('homeEmpty').style.display=index.length?'none':'block';
-  index.sort((a,z)=>z.updated.localeCompare(a.updated)).forEach(x=>{
+  paintHome();
+}
+function homeRows(){
+  const q=homeView.q.trim().toLowerCase();
+  const rows=index.filter(x=>{
+    if(homeView.status!=='all'&&(x.status||'Draft')!==homeView.status)return false;
+    if(!q)return true;
+    return (x.projectId||'').toLowerCase().includes(q)||(x.name||'').toLowerCase().includes(q);
+  });
+  const k=homeView.sort,d=homeView.dir;
+  return rows.sort((a,z)=>{
+    if(k==='contractSum'||k==='projectCost')return ((+a[k]||0)-(+z[k]||0))*d;
+    return String(a[k]??'').localeCompare(String(z[k]??''))*d;
+  });
+}
+function paintHome(){
+  const rows=homeRows(),b=document.getElementById('homeBody');b.innerHTML='';
+  document.getElementById('homeEmpty').style.display=rows.length?'none':'block';
+  document.getElementById('homeEmptyBig').textContent=index.length?'Nothing matches':'No budgets yet';
+  document.getElementById('homeEmptyMsg').textContent=index.length
+    ?'No budgets match this search or filter.'
+    :'Create one to get started. Budgets snapshot the pricing library at creation.';
+  document.getElementById('homeCount').textContent=index.length
+    ?rows.length+' of '+index.length+(index.length===1?' budget':' budgets'):'—';
+  rows.forEach(x=>{
     b.insertAdjacentHTML('beforeend',`<tr class="clickable" onclick="openBudget('${x.projectId}')">
-      <td class="mono" style="padding-left:22px;font-size:13px;color:var(--green-700);font-weight:600">${x.projectId}</td>
+      <td class="mono" style="padding-left:22px;font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
       <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
       <td class="calc r">${usd(x.contractSum||0)}</td>
       <td class="calc r">${usd(x.projectCost||0)}</td>
-      <td><span class="badge ${x.status==='Finalized'?'ok':''}">${x.status}</span></td>
-      <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${x.updated.slice(0,10)}</td>
-      <td class="no-print"><button class="btn-x" onclick="event.stopPropagation();deleteBudget('${x.projectId}')">×</button></td></tr>`);
+      <td><span class="badge ${x.status==='Finalized'?'ok':''}">${esc(x.status)}</span></td>
+      <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${esc((x.updated||'').slice(0,10))}</td>
+      <td class="no-print"><button class="btn-x" title="Delete ${esc(x.projectId)}" onclick="event.stopPropagation();deleteBudget('${x.projectId}')">×</button></td></tr>`);
+  });
+  document.querySelectorAll('#homeHead th[data-sort]').forEach(th=>{
+    const on=th.dataset.sort===homeView.sort;
+    th.classList.toggle('sorted',on);
+    th.setAttribute('data-arrow',on?(homeView.dir<0?'▾':'▴'):'');
   });
 }
-function newBudget(){
-  doc=blankDoc();
+function homeSort(k){
+  if(homeView.sort===k)homeView.dir*=-1;
+  else{homeView.sort=k;homeView.dir=(k==='updated'||k==='contractSum'||k==='projectCost')?-1:1;}
+  paintHome();
+}
+function enableDocNav(){
   document.getElementById('nav-input').disabled=false;
   document.getElementById('nav-budget').disabled=false;
-  fillForms();go('input');
 }
-async function openBudget(pid){
+function newBudget(){
+  if(!confirmDiscard())return;
+  doc=blankDoc();dirty=false;lastSaved=null;
+  enableDocNav();fillForms();go('input');
+}
+async function openBudget(pid,page){
+  if(!confirmDiscard())return;
   const d=await sGet('budget-'+pid);
   if(!d){toast('Could not load '+pid);return;}
-  doc=migrate(d);
-  document.getElementById('nav-input').disabled=false;
-  document.getElementById('nav-budget').disabled=false;
-  fillForms();go('budget');
+  doc=migrate(d);dirty=false;lastSaved=null;
+  enableDocNav();fillForms();go(page||'budget');
 }
 async function deleteBudget(pid){
   if(!confirm('Delete '+pid+'? This cannot be undone.'))return;
-  await sDel('budget-'+pid);
+  try{await sDel('budget-'+pid);}catch(e){toast('Delete failed: '+e.message);return;}
+  if(doc&&doc.projectId===pid){doc=null;dirty=false;
+    document.getElementById('nav-input').disabled=true;
+    document.getElementById('nav-budget').disabled=true;}
   renderHome();toast('Deleted '+pid);
 }
 
@@ -839,15 +1294,15 @@ function renderExpenses(){
     const cnt=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
     const mo=e.rate*cnt;
     b.insertAdjacentHTML('beforeend',`<tr>
-      <td><input type="text" value="${esc(e.label)}" oninput="doc.expenses[${i}].label=this.value"></td>
-      <td><select onchange="doc.expenses[${i}].per=this.value;if(this.value==='fixed'){doc.expenses[${i}].auto=false;doc.expenses[${i}].count=doc.expenses[${i}].count||1}else{doc.expenses[${i}].auto=true}recalc()" style="width:96px;font-size:12px;padding:5px 8px">
+      <td><input type="text" data-k="exp.${i}.label" value="${esc(e.label)}" oninput="doc.expenses[${i}].label=this.value;markDirty()"></td>
+      <td><select data-k="exp.${i}.per" onchange="doc.expenses[${i}].per=this.value;if(this.value==='fixed'){doc.expenses[${i}].auto=false;doc.expenses[${i}].count=doc.expenses[${i}].count||1}else{doc.expenses[${i}].auto=true}touch()" style="width:96px;font-size:12px;padding:5px 8px">
         <option value="unit" ${e.per==='unit'?'selected':''}>per unit</option>
         <option value="fixed" ${e.per==='fixed'?'selected':''}>fixed / mo</option></select></td>
-      <td class="r"><input type="number" value="${e.rate}" min="0" step="1" style="width:80px" onchange="doc.expenses[${i}].rate=+this.value;recalc()"></td>
-      <td class="r"><input type="number" value="${cnt}" min="0" style="width:70px" onchange="doc.expenses[${i}].count=+this.value;doc.expenses[${i}].auto=false;recalc()">
+      <td class="r"><input type="number" data-k="exp.${i}.rate" value="${e.rate}" min="0" step="1" style="width:80px" onchange="doc.expenses[${i}].rate=+this.value;touch()"></td>
+      <td class="r"><input type="number" data-k="exp.${i}.count" value="${cnt}" min="0" style="width:70px" onchange="doc.expenses[${i}].count=+this.value;doc.expenses[${i}].auto=false;touch()">
         ${e.auto&&e.per!=='fixed'?'<span style="color:var(--green-600);font-size:10px" title="= total units">●</span>':''}</td>
       <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
-      <td class="no-print"><button class="btn-x" onclick="doc.expenses.splice(${i},1);recalc()">×</button></td></tr>`);
+      <td class="no-print"><button class="btn-x" title="Remove expense" onclick="doc.expenses.splice(${i},1);touch()">×</button></td></tr>`);
   });
   const gi=grossIncome();
   document.getElementById('eMo').textContent=usd(gi.expMo);
@@ -855,7 +1310,7 @@ function renderExpenses(){
   document.getElementById('nMo').textContent=usd(gi.netOtherMo);
   document.getElementById('nYr').textContent=usd(gi.netOtherMo*12);
 }
-function addExpense(){doc.expenses.push({label:'New expense',per:'unit',rate:0,count:0,auto:true});recalc();}
+function addExpense(){doc.expenses.push({label:'New expense',per:'unit',rate:0,count:0,auto:true});touch();}
 
 /* ============ RENDER: UNITS ============ */
 function renderUnits(){
@@ -863,16 +1318,16 @@ function renderUnits(){
   doc.units.forEach((u,i)=>{
     const psf=u.sf>0?u.rent/u.sf:0,tsf=u.sf*u.count,mo=u.rent*u.count;
     b.insertAdjacentHTML('beforeend',`<tr>
-      <td><input type="text" value="${esc(u.label)}" oninput="doc.units[${i}].label=this.value"></td>
-      <td class="r"><input type="number" value="${u.bd}" min="0" style="width:56px" oninput="doc.units[${i}].bd=+this.value"></td>
-      <td class="r"><input type="number" value="${u.bth}" min="0" step="0.5" style="width:60px" oninput="doc.units[${i}].bth=+this.value"></td>
-      <td class="r"><input type="number" value="${u.sf}" min="0" style="width:78px" onchange="doc.units[${i}].sf=+this.value;recalc()"></td>
-      <td class="r"><input type="number" value="${u.count}" min="0" style="width:66px" onchange="doc.units[${i}].count=+this.value;recalc()"></td>
-      <td class="r"><input type="number" value="${u.rent}" min="0" step="1" style="width:86px" onchange="doc.units[${i}].rent=+this.value;recalc()"></td>
-      <td class="r"><input type="number" value="${psf?psf.toFixed(2):''}" min="0" step="0.01" style="width:72px" title="Edit to derive rent = SF × rate (sheet formula direction)" onchange="unitRate(${i},+this.value)"></td>
+      <td><input type="text" data-k="units.${i}.label" value="${esc(u.label)}" oninput="doc.units[${i}].label=this.value;markDirty()"></td>
+      <td class="r"><input type="number" data-k="units.${i}.bd" value="${u.bd}" min="0" style="width:56px" oninput="doc.units[${i}].bd=+this.value;markDirty()"></td>
+      <td class="r"><input type="number" data-k="units.${i}.bth" value="${u.bth}" min="0" step="0.5" style="width:60px" oninput="doc.units[${i}].bth=+this.value;markDirty()"></td>
+      <td class="r"><input type="number" data-k="units.${i}.sf" value="${u.sf}" min="0" style="width:78px" onchange="doc.units[${i}].sf=+this.value;touch()"></td>
+      <td class="r"><input type="number" data-k="units.${i}.count" value="${u.count}" min="0" style="width:66px" onchange="doc.units[${i}].count=+this.value;touch()"></td>
+      <td class="r"><input type="number" data-k="units.${i}.rent" value="${u.rent}" min="0" step="1" style="width:86px" onchange="doc.units[${i}].rent=+this.value;touch()"></td>
+      <td class="r"><input type="number" data-k="units.${i}.psf" value="${psf?psf.toFixed(2):''}" min="0" step="0.01" style="width:72px" title="Edit to derive rent = SF × rate (sheet formula direction)" onchange="unitRate(${i},+this.value)"></td>
       <td class="calc r">${num(tsf)}</td>
       <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
-      <td class="no-print"><button class="btn-x" onclick="doc.units.splice(${i},1);recalc()">×</button></td></tr>`);
+      <td class="no-print"><button class="btn-x" title="Remove unit type" onclick="doc.units.splice(${i},1);touch()">×</button></td></tr>`);
   });
   const tu=totUnits();
   const rentSF=doc.units.reduce((s,u)=>s+u.sf*u.count,0);
@@ -890,8 +1345,8 @@ function renderUnits(){
     else{chk.className='badge ok';chk.textContent='Efficiency '+(100*rentSF/doc.resSF).toFixed(0)+'%';}
   }else{chk.className='badge';chk.textContent='—';}
 }
-function unitRate(i,v){const u=doc.units[i];u.rent=Math.round(u.sf*v*100)/100;recalc();}
-function addUnit(){doc.units.push({label:'New type',bd:1,bth:1,sf:0,count:0,rent:0});recalc();}
+function unitRate(i,v){const u=doc.units[i];u.rent=Math.round(u.sf*v*100)/100;touch();}
+function addUnit(){doc.units.push({label:'New type',bd:1,bth:1,sf:0,count:0,rent:0});touch();}
 
 /* ============ RENDER: OTHER INCOME ============ */
 function renderOther(){
@@ -900,57 +1355,72 @@ function renderOther(){
   doc.other.forEach((o,i)=>{
     const cnt=o.auto?tu:o.count, mo=o.rate*cnt;
     b.insertAdjacentHTML('beforeend',`<tr>
-      <td><input type="text" value="${esc(o.label)}" oninput="doc.other[${i}].label=this.value"></td>
-      <td class="r"><input type="number" value="${o.rate}" min="0" step="1" style="width:80px" onchange="doc.other[${i}].rate=+this.value;recalc()"></td>
-      <td class="r"><input type="number" value="${cnt}" min="0" style="width:76px" onchange="doc.other[${i}].count=+this.value;doc.other[${i}].auto=false;recalc()">
+      <td><input type="text" data-k="other.${i}.label" value="${esc(o.label)}" oninput="doc.other[${i}].label=this.value;markDirty()"></td>
+      <td class="r"><input type="number" data-k="other.${i}.rate" value="${o.rate}" min="0" step="1" style="width:80px" onchange="doc.other[${i}].rate=+this.value;touch()"></td>
+      <td class="r"><input type="number" data-k="other.${i}.count" value="${cnt}" min="0" style="width:76px" onchange="doc.other[${i}].count=+this.value;doc.other[${i}].auto=false;touch()">
         ${o.auto?'<span style="color:var(--green-600);font-size:10px" title="= total units">●</span>':''}</td>
       <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
-      <td class="no-print"><button class="btn-x" onclick="doc.other.splice(${i},1);recalc()">×</button></td></tr>`);
+      <td class="no-print"><button class="btn-x" title="Remove income line" onclick="doc.other.splice(${i},1);touch()">×</button></td></tr>`);
   });
   const mo=doc.other.reduce((s,o)=>s+o.rate*(o.auto?tu:o.count),0);
   document.getElementById('oMo').textContent=usd(mo);
   document.getElementById('oYr').textContent=usd(mo*12);
 }
-function addOther(){doc.other.push({label:'New income line',rate:0,count:0,auto:true});recalc();}
+function addOther(){doc.other.push({label:'New income line',rate:0,count:0,auto:true});touch();}
 
-/* ============ RENDER: BUDGET ============ */
+/* ============ RENDER: BUDGET ============
+   Scope and group header rows collapse. Collapsed keys live in the module-level
+   `collapsed` set so a recalc() triggered from anywhere does not spring them open. */
 function renderBudget(){
   const b=document.getElementById('budBody');b.innerHTML='';
   ['res','amen','soft'].forEach(sc=>{
     const scLines=doc.lines.map((l,gi)=>({l,gi})).filter(x=>x.l.scope===sc);
     if(!scLines.length)return;
-    const scSum=scopeSum(sc);
-    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="7">${SCOPES[sc]}<span class="div-sum">${usd(scSum)}</span></td></tr>`);
+    const scSum=scopeSum(sc),scShut=collapsed.has(sc);
+    const nGrp=new Set(scLines.map(x=>x.l.grp)).size;
+    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd" data-toggle="scope:${esc(sc)}" title="${scShut?'Expand':'Collapse'} ${esc(SCOPES[sc])}">
+      <td colspan="7"><span class="caret">${scShut?'▸':'▾'}</span>${esc(SCOPES[sc])}${scShut?' <span class="shut">'+scLines.length+' lines · '+nGrp+' groups hidden</span>':''}<span class="div-sum">${usd(scSum)}</span></td></tr>`);
+    if(scShut)return;
     let lastGrp=null;
     scLines.forEach(({l:it,gi})=>{
       if(it.grp!==lastGrp){lastGrp=it.grp;
         const gSum=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((s,x)=>s+lineQty(x)*x.unit,0);
-        b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="7">${it.grp}<span class="div-sum mono">${usd(gSum)}</span></td></tr>`);}
+        const n=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).length,gShut=collapsed.has(sc+'|'+it.grp);
+        b.insertAdjacentHTML('beforeend',`<tr class="grp-hd" data-toggle="grp:${esc(sc)}|${esc(it.grp)}" title="${gShut?'Expand':'Collapse'} ${esc(it.grp)}">
+          <td colspan="7"><span class="caret">${gShut?'▸':'▾'}</span>${esc(it.grp)}${gShut?' <span class="shut">'+n+' lines hidden</span>':''}<span class="div-sum mono">${usd(gSum)}</span></td></tr>`);}
+      if(collapsed.has(sc+'|'+it.grp))return;
       const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0;
       b.insertAdjacentHTML('beforeend',`<tr>
-        <td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${it.code}</span>
-          <input type="text" value="${esc(it.desc)}" style="width:70%" oninput="doc.lines[${gi}].desc=this.value"></td>
-        <td><select onchange="setBasis(${gi},this.value)" style="width:104px;font-size:12px;padding:5px 8px">
+        <td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${esc(it.code)}</span>
+          <input type="text" data-k="line.${gi}.desc" value="${esc(it.desc)}" style="width:70%" oninput="doc.lines[${gi}].desc=this.value;markDirty()"></td>
+        <td><select data-k="line.${gi}.basis" onchange="setBasis(${gi},this.value)" style="width:104px;font-size:12px;padding:5px 8px">
           <option value="sf" ${it.basis==='sf'?'selected':''}>per res SF</option>
           <option value="asf" ${it.basis==='asf'?'selected':''}>per amen SF</option>
           <option value="unit" ${it.basis==='unit'?'selected':''}>per unit</option>
           <option value="ls" ${it.basis==='ls'?'selected':''}>lump sum</option></select></td>
-        <td class="r"><input type="number" value="${q}" min="0" style="width:88px"
-          onchange="doc.lines[${gi}].qty=+this.value;doc.lines[${gi}].auto=false;recalc()">
+        <td class="r"><input type="number" data-k="line.${gi}.qty" value="${q}" min="0" style="width:88px"
+          onchange="doc.lines[${gi}].qty=+this.value;doc.lines[${gi}].auto=false;touch()">
           ${it.auto&&it.basis!=='ls'?'<span style="color:var(--green-600);font-size:10px" title="auto">●</span>':''}</td>
-        <td class="r"><input type="number" value="${it.unit}" min="0" step="0.01" style="width:96px"
-          onchange="doc.lines[${gi}].unit=+this.value;recalc()"></td>
+        <td class="r"><input type="number" data-k="line.${gi}.unit" value="${it.unit}" min="0" step="0.01" style="width:96px"
+          onchange="doc.lines[${gi}].unit=+this.value;touch()"></td>
         <td class="calc r strong">${usd(tot)}</td><td class="calc r">${pct.toFixed(1)}%</td>
-        <td class="no-print"><button class="btn-x" onclick="doc.lines.splice(${gi},1);recalc()">×</button></td></tr>`);
+        <td class="no-print"><button class="btn-x" title="Remove line item" onclick="doc.lines.splice(${gi},1);touch()">×</button></td></tr>`);
     });
   });
 }
-function setBasis(i,v){doc.lines[i].basis=v;doc.lines[i].auto=v!=='ls';if(v==='ls')doc.lines[i].qty=doc.lines[i].qty||1;recalc();}
+function toggleCollapse(key){collapsed.has(key)?collapsed.delete(key):collapsed.add(key);renderBudget();}
+function expandAll(){collapsed.clear();renderBudget();}
+function collapseAll(){
+  collapsed.clear();
+  ['res','amen','soft'].forEach(sc=>{if(doc.lines.some(l=>l.scope===sc))collapsed.add(sc);});
+  renderBudget();
+}
+function setBasis(i,v){doc.lines[i].basis=v;doc.lines[i].auto=v!=='ls';if(v==='ls')doc.lines[i].qty=doc.lines[i].qty||1;touch();}
 
 /* ---- add lines via CSI catalog ---- */
 function addLine(){document.getElementById('pickSearch').value='';document.getElementById('pickModal').style.display='flex';renderPick();document.getElementById('pickSearch').focus();}
 function closePick(){document.getElementById('pickModal').style.display='none';}
-function addBlankLine(){doc.lines.push({code:'—',grp:'Custom',scope:document.getElementById('pickScope').value,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1});closePick();recalc();toast('Blank line added');}
+function addBlankLine(){doc.lines.push({code:'—',grp:'Custom',scope:document.getElementById('pickScope').value,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1});closePick();touch();toast('Blank line added');}
 function catalogFiltered(q){
   q=(q||'').trim().toLowerCase();
   const out=[];
@@ -964,10 +1434,10 @@ function catalogFiltered(q){
 function renderPick(){
   const b=document.getElementById('pickBody');b.innerHTML='';
   catalogFiltered(document.getElementById('pickSearch').value).forEach(([n,t,secs])=>{
-    b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="2">Division ${n} — ${t}</td></tr>`);
+    b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="2">Division ${esc(n)} — ${esc(t)}</td></tr>`);
     secs.forEach(([c,s])=>{
-      b.insertAdjacentHTML('beforeend',`<tr class="clickable" onclick="pickCsi('${c}','${esc(s).replace(/'/g,"\\'")}')">
-        <td class="mono" style="font-size:12px;color:var(--green-700);width:110px">${c}</td><td style="font-size:13px">${s}</td></tr>`);
+      b.insertAdjacentHTML('beforeend',`<tr class="clickable" data-code="${esc(c)}" data-title="${esc(s)}">
+        <td class="mono" style="font-size:12px;color:var(--green-700);width:110px">${esc(c)}</td><td style="font-size:13px">${esc(s)}</td></tr>`);
     });
   });
 }
@@ -975,7 +1445,7 @@ function pickCsi(code,title){
   const scope=document.getElementById('pickScope').value;
   const basis=scope==='amen'?'asf':'sf';
   doc.lines.push({code,grp:csiDivOf(code),scope,desc:title,basis,unit:0,auto:true,qty:0});
-  closePick();recalc();toast(code+' added — set the rate');
+  closePick();touch();toast(code+' added — set the rate');
 }
 
 /* ============ RENDER: COMPANIES / SUMMARY ============ */
@@ -984,19 +1454,19 @@ function renderCos(){
   const {hard}=parts();
   doc.companies.forEach((c,i)=>{
     b.insertAdjacentHTML('beforeend',`<tr>
-      <td><input type="text" value="${esc(c.name)}" oninput="doc.companies[${i}].name=this.value"></td>
-      <td class="r" style="width:110px"><input type="number" value="${c.pct}" min="0" step="0.5" style="width:80px"
-        onchange="doc.companies[${i}].pct=+this.value;recalc()"> <span class="mono" style="font-size:12px;color:var(--ink-400)">%</span></td>
+      <td><input type="text" data-k="co.${i}.name" value="${esc(c.name)}" oninput="doc.companies[${i}].name=this.value;markDirty()"></td>
+      <td class="r" style="width:110px"><input type="number" data-k="co.${i}.pct" value="${c.pct}" min="0" step="0.5" style="width:80px"
+        onchange="doc.companies[${i}].pct=+this.value;touch()"> <span class="mono" style="font-size:12px;color:var(--ink-400)">%</span></td>
       <td class="calc r" style="width:130px">${usd(hard*c.pct/100)}</td>
-      <td class="no-print" style="width:36px"><button class="btn-x" onclick="doc.companies.splice(${i},1);recalc()">×</button></td></tr>`);
+      <td class="no-print" style="width:36px"><button class="btn-x" title="Remove company" onclick="doc.companies.splice(${i},1);touch()">×</button></td></tr>`);
   });
 }
-function addCo(){doc.companies.push({name:'Company',pct:0});recalc();}
+function addCo(){doc.companies.push({name:'Company',pct:0});touch();}
 function setCMode(m,silent){
   doc.contingency.mode=m;
   ['cPct','cPsf','cAmt'].forEach(id=>document.getElementById(id).classList.remove('on'));
   document.getElementById(m==='pct'?'cPct':m==='psf'?'cPsf':'cAmt').classList.add('on');
-  if(!silent){doc.contingency.val=m==='pct'?2:m==='psf'?2:100000;document.getElementById('cVal').value=doc.contingency.val;recalc();}
+  if(!silent){doc.contingency.val=m==='pct'?2:m==='psf'?2:100000;document.getElementById('cVal').value=doc.contingency.val;touch();}
 }
 
 function renderSummary(){
@@ -1013,7 +1483,10 @@ function renderSummary(){
   document.getElementById('rProject').textContent=usd(p.project);
   document.getElementById('mMargin').textContent='Margin '+(p.contract?(100*p.profit/p.contract).toFixed(1)+'%':'—');
   document.getElementById('mYield').textContent='Yield (net inc) '+(p.project?(100*g.netYr/p.project).toFixed(1)+'%':'—');
-  document.getElementById('mPricing').textContent='Pricing '+doc.pricingVersion;
+  document.getElementById('mPricing').textContent='Pricing '+doc.pricingVersion+(pricingFromApi?'':' · built-in fallback');
+  document.getElementById('mPricing').className='badge'+(pricingFromApi?'':' warn');
+  const st=document.getElementById('bStatus');if(st&&st.value!==doc.status)st.value=doc.status;
+  document.getElementById('testBanner').style.display=isTest(doc.projectId)?'flex':'none';
   document.getElementById('sUnits').textContent=num(tu);
   document.getElementById('sRev').textContent=usd(g.netYr);
   document.getElementById('sCSF').textContent=tsf?usd2(p.contract/tsf):'—';
@@ -1040,29 +1513,31 @@ function renderSummary(){
 function recalc(){
   if(!doc)return;
   pullForms();
-  renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();
+  withFocus(()=>{renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();});
 }
 
 /* ============ SAVE ============ */
 async function saveBudget(show){
-  if(!doc)return;
+  if(!doc||saving)return;
   pullForms();
   if(!validateId()){toast('Valid project ID required to save');go('input');document.getElementById('pId').focus();return;}
+  saving=true;renderSaveState();
   doc.updated=new Date().toISOString();
   const p=parts();
-  index=(await sGet('budgets-index'))||[];
   const meta={projectId:doc.projectId,name:doc.name,type:doc.type,status:doc.status,
     contractSum:p.contract,projectCost:p.project,updated:doc.updated};
   try{
     await api('budget/'+encodeURIComponent(doc.projectId),{method:'PUT',body:JSON.stringify({meta,doc})});
+    saving=false;markSaved();
     if(show)toast('Saved '+doc.projectId);
-  }catch(e){toast('Save failed: '+e.message);}
+  }catch(e){saving=false;renderSaveState();toast('Save failed: '+e.message);}
 }
+function setStatus(v){doc.status=v;markDirty();}
 function repriceBudget(){
   const map={};pricing.lines.forEach(l=>{map[l.scope+'|'+l.code+'|'+l.desc]=l;});
   doc.lines.forEach(it=>{const m=map[it.scope+'|'+it.code+'|'+it.desc];if(m)it.unit=m.unit;});
   doc.pricingVersion=pricing.version;
-  recalc();toast('Repriced to library '+pricing.version);
+  touch();toast('Repriced to library '+pricing.version);
 }
 
 /* ============ PRICING PAGE ============ */
@@ -1109,14 +1584,14 @@ function renderCatalog(){
   const inTpl={};pricing.lines.forEach(l=>{(inTpl[l.code]=inTpl[l.code]||[]).push(l.scope);});
   let secCount=0;
   catalogFiltered(document.getElementById('catSearch').value).forEach(([n,t,secs])=>{
-    b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4">Division ${n} — ${t}</td></tr>`);
+    b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4">Division ${esc(n)} — ${esc(t)}</td></tr>`);
     secs.forEach(([c,s])=>{secCount++;
       const scopes=inTpl[c];
       b.insertAdjacentHTML('beforeend',`<tr>
-        <td class="mono" style="font-size:12px;color:var(--green-700)">${c}</td>
-        <td style="font-size:13px">${s}</td>
+        <td class="mono" style="font-size:12px;color:var(--green-700)">${esc(c)}</td>
+        <td style="font-size:13px">${esc(s)}</td>
         <td class="r">${scopes?'<span class="badge ok">'+[...new Set(scopes)].map(x=>x==='res'?'RES':x==='amen'?'AMEN':'SOFT').join(' · ')+'</span>':'<span class="badge">—</span>'}</td>
-        <td class="no-print r">${adminUnlocked?`<button class="btn btn-ghost btn-sm" onclick="catAdd('${c}','${esc(s).replace(/'/g,"\\'")}')">+ Add</button>`:''}</td></tr>`);
+        <td class="no-print r">${adminUnlocked?`<button class="btn btn-ghost btn-sm" data-cat-add data-code="${esc(c)}" data-title="${esc(s)}">+ Add</button>`:''}</td></tr>`);
     });
   });
   const tot=CSI.reduce((x,[,,s])=>x+s.length,0);
@@ -1205,11 +1680,47 @@ function exportExcel(){
   closeExport();toast('Excel exported');
 }
 
+/* ============ DELEGATED EVENTS ============
+   Collapse toggles, CSI picks and catalog adds carry their payload in data-attributes
+   rather than being interpolated into onclick strings, so a group or section title
+   containing a quote or ampersand can never break the handler. */
+function wireDelegates(){
+  document.getElementById('budBody').addEventListener('click',e=>{
+    const row=e.target.closest('[data-toggle]');if(!row)return;
+    const v=row.dataset.toggle;
+    toggleCollapse(v.startsWith('scope:')?v.slice(6):v.slice(4));
+  });
+  document.getElementById('pickBody').addEventListener('click',e=>{
+    const row=e.target.closest('tr[data-code]');if(!row)return;
+    pickCsi(row.dataset.code,row.dataset.title);
+  });
+  document.getElementById('catBody').addEventListener('click',e=>{
+    const btn=e.target.closest('[data-cat-add]');if(!btn)return;
+    catAdd(btn.dataset.code,btn.dataset.title);
+  });
+  document.getElementById('homeHead').addEventListener('click',e=>{
+    const th=e.target.closest('th[data-sort]');if(!th)return;homeSort(th.dataset.sort);
+  });
+  document.getElementById('homeSearch').addEventListener('input',e=>{homeView.q=e.target.value;paintHome();});
+  document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeExport();closePick();}});
+  document.querySelectorAll('#helpToc a').forEach(a=>a.addEventListener('click',()=>{
+    document.querySelectorAll('#helpToc a').forEach(x=>x.classList.remove('on'));a.classList.add('on');
+  }));
+}
+
 /* ============ INIT ============ */
 (async function init(){
   await initAuth();
-  pricing=(await sGet('pricing-multifamily'))||DEFAULT_PRICING; // API-first; local fallback when running without the API
-  renderHome();
+  const published=await sGet('pricing-multifamily');   // API-first; built-in seed as fallback
+  pricingFromApi=!!published;
+  pricing=published||DEFAULT_PRICING;
+  renderApiBanner();
+  wireDelegates();
+  await renderHome();
+  await routeFromHash();
+  if(!location.hash)syncHash(currentPage);
+  renderSaveState();
 })();
 </script>
 </body>
