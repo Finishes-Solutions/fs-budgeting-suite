@@ -14,6 +14,7 @@
   --ink-500:#6b7174;--ink-400:#939a9d;--ink-300:#bcc2c4;--ink-200:#dde1e2;--ink-150:#e8ebeb;
   --ink-100:#f1f3f3;--ink-50:#f8f9f9;--white:#fff;
   --warn:#b7791f;--danger:#b42318;
+  --edit:#2563c9;--edit-100:#d9e6fa;--edit-50:#f0f5fd;
   --fb:'Montserrat',system-ui,sans-serif;--fm:'IBM Plex Mono',ui-monospace,monospace;
   --r:4px;--rm:6px;
   --sh:0 1px 2px rgba(11,13,12,.06),0 1px 3px rgba(11,13,12,.08);
@@ -137,6 +138,17 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .banner.danger{border-color:#e8c4c0;background:#fdf2f1;color:#8c2a20}
 .banner.test{border-color:#cdd3e6;background:#f2f4fb;color:#3b4570}
 .badge.test{border-color:#cdd3e6;background:#f2f4fb;color:#3b4570;margin-left:6px}
+
+/* ---- manually edited line marker ----
+   The dot is always in the DOM so every row's code column stays aligned; only the
+   fill appears when a line has been touched by hand. */
+.editdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:transparent;
+  margin-right:8px;vertical-align:middle;flex:none}
+.editdot.on{background:var(--edit);box-shadow:0 0 0 3px var(--edit-100)}
+tr.edited td:first-child{box-shadow:inset 2px 0 0 var(--edit)}
+tr.edited:hover td{background:var(--edit-50)}
+.legend{display:inline-flex;align-items:center;gap:0}
+.legend .editdot{margin-right:6px}
 
 /* ---- collapsible budget grid ---- */
 .caret{display:inline-block;width:14px;font-size:10px;opacity:.75}
@@ -411,8 +423,9 @@ th.sortable.sorted{color:var(--ink-900)}
 
   <section class="card" id="sec-budget">
     <div class="card-hd"><h2>Budget detail</h2>
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <span class="eyebrow">● = qty auto-synced (res SF / amenity SF / units) · edit to override</span>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+        <span class="eyebrow" style="color:var(--green-600)">● qty auto-synced · edit to override</span>
+        <span class="eyebrow legend" id="editLegend" style="color:var(--edit)"><span class="editdot on"></span><span id="editCount">no manual edits</span></span>
         <span class="seg no-print">
           <button onclick="collapseAll()">Collapse all</button>
           <button onclick="expandAll()">Expand all</button>
@@ -642,6 +655,15 @@ th.sortable.sorted{color:var(--ink-900)}
           <tr><td>lump sum</td><td>Quantity is always 1; put the whole amount in the rate</td></tr>
         </tbody></table>
         <p>Typing over a quantity breaks the link for that line only, and it will no longer follow the inputs.</p>
+
+        <h4>Manually edited lines</h4>
+        <p>A <span class="editdot on" style="margin:0 2px"></span> blue dot to the left of a line means you changed it
+          rather than taking the library's number. A line is marked when you override its quantity, set a rate that
+          differs from the pricing library, change its description or basis, or add it by hand. Hover the dot to see
+          which of those applied. The count of edited lines sits in the card header.</p>
+        <p>Put a rate back to the library figure and the dot clears itself, so the marks stay honest. They also travel
+          into the Excel export, which carries a <b>Manually edited</b> column alongside the original library rate —
+          useful when someone asks which numbers came from the model and which came from judgment.</p>
 
         <h4>Adding scope</h4>
         <p><span class="kbd">+ Add line item</span> opens the CSI MasterFormat catalog. Adding from the catalog
@@ -884,7 +906,15 @@ function csiDivOf(code){const n=code.slice(0,2);return CSI_DIV[n]||'Custom';}
            amen = amenity/clubhouse (basis asf = amenity SF)
            soft = soft costs (basis sf)                                      */
 const L=(code,grp,scope,desc,basis,unit)=>({code,grp,scope,desc,basis,unit});
-const DEFAULT_PRICING={version:'2026.08-v2',effective:'2026-08-10',adminPass:'FS-ADMIN',
+/* The pricing editor's local unlock. Only reachable when there is no signed-in
+   principal (i.e. `swa start` local dev) — in the deployed app the control is hidden and
+   the pricing_admin role decides. Storing the SHA-256 digest rather than the passphrase
+   keeps the secret out of the page source; publishing is still gated server-side by
+   PUT /api/pricing, which re-checks the role, so this is a convenience lock only.
+   To change it: sha256 the new passphrase and replace the digest. */
+const ADMIN_PASS_SHA256='52e20e96fd28257e018abac67cd8e1f4863b1cac1fdfb6cb0a96c963b9437548';
+
+const DEFAULT_PRICING={version:'2026.08-v2',effective:'2026-08-10',
 lines:[
  // ---- RESIDENTIAL: General Conditions
  L('01 01 00','General Conditions','res','Project Management','sf',7.50),
@@ -1089,7 +1119,10 @@ function blankDoc(){
       {label:'Townhome (1,200)',bd:2,bth:2.5,sf:1200,count:14,rent:1500}],
     other:JSON.parse(JSON.stringify(DEFAULT_OTHER)),
     expenses:JSON.parse(JSON.stringify(DEFAULT_EXPENSES)),
-    lines:pricing.lines.map(l=>({...l,qty:l.basis==='ls'?1:0,auto:l.basis!=='ls'})),
+    // baseUnit is the library rate this line was born with. Comparing against it is what
+    // lets the budget flag a manually re-priced line — and un-flag it if you put the
+    // original rate back.
+    lines:pricing.lines.map(l=>({...l,qty:l.basis==='ls'?1:0,auto:l.basis!=='ls',baseUnit:l.unit})),
     companies:[{name:'Finishes Solutions LLC',pct:12}],
     contingency:{mode:'psf',val:2},
     projectCosts:{land:1200000,dev:200000,mkt:75000,cls:0},
@@ -1102,9 +1135,30 @@ function migrate(d){ // tolerate older saves
   d.expenses=d.expenses??JSON.parse(JSON.stringify(DEFAULT_EXPENSES));
   d.projectCosts=d.projectCosts??{land:0,dev:0,mkt:0,cls:0};
   d.units.forEach(u=>{u.bd=u.bd??0;u.bth=u.bth??1;});
-  d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';});
+  // Budgets saved before edit-tracking existed have no baseline, so seed it from the
+  // current rate: nothing is retroactively claimed to be a manual edit.
+  d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';l.baseUnit=l.baseUnit??l.unit;});
   d.status=d.status||'Draft';
   return d;
+}
+
+/* A line counts as manually touched when it was added by hand, its quantity was
+   overridden off auto, its rate differs from the library baseline, or its description
+   or basis was changed. */
+function isEdited(it){
+  return it.custom===true
+      || (it.auto===false&&it.basis!=='ls')
+      || (+it.unit)!==(+it.baseUnit)
+      || it.edited===true;
+}
+function editedCount(){return doc?doc.lines.filter(isEdited).length:0;}
+function editReason(it){
+  const r=[];
+  if(it.custom)r.push('added by hand');
+  if(it.auto===false&&it.basis!=='ls')r.push('quantity overridden');
+  if((+it.unit)!==(+it.baseUnit))r.push('rate changed from '+usd2(+it.baseUnit||0));
+  if(it.edited===true)r.push('description or basis changed');
+  return r.length?'Manually edited — '+r.join(', '):'';
 }
 
 /* ============ NAV + HASH ROUTING ============
@@ -1393,10 +1447,10 @@ function renderBudget(){
         b.insertAdjacentHTML('beforeend',`<tr class="grp-hd" data-toggle="grp:${esc(sc)}|${esc(it.grp)}" title="${gShut?'Expand':'Collapse'} ${esc(it.grp)}">
           <td colspan="7"><span class="caret">${gShut?'▸':'▾'}</span>${esc(it.grp)}${gShut?' <span class="shut">'+n+' lines hidden</span>':''}<span class="div-sum mono">${usd(gSum)}</span></td></tr>`);}
       if(collapsed.has(sc+'|'+it.grp))return;
-      const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0;
-      b.insertAdjacentHTML('beforeend',`<tr>
-        <td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${esc(it.code)}</span>
-          <input type="text" data-k="line.${gi}.desc" value="${esc(it.desc)}" style="width:70%" oninput="doc.lines[${gi}].desc=this.value;markDirty()"></td>
+      const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0,ed=isEdited(it);
+      b.insertAdjacentHTML('beforeend',`<tr${ed?' class="edited"':''}>
+        <td><span class="editdot${ed?' on':''}"${ed?' title="'+esc(editReason(it))+'"':''}></span><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${esc(it.code)}</span>
+          <input type="text" data-k="line.${gi}.desc" value="${esc(it.desc)}" style="width:calc(100% - 108px)" oninput="doc.lines[${gi}].desc=this.value;doc.lines[${gi}].edited=true;markDirty()"></td>
         <td><select data-k="line.${gi}.basis" onchange="setBasis(${gi},this.value)" style="width:104px;font-size:12px;padding:5px 8px">
           <option value="sf" ${it.basis==='sf'?'selected':''}>per res SF</option>
           <option value="asf" ${it.basis==='asf'?'selected':''}>per amen SF</option>
@@ -1411,6 +1465,13 @@ function renderBudget(){
         <td class="no-print"><button class="btn-x" title="Remove line item" onclick="doc.lines.splice(${gi},1);touch()">×</button></td></tr>`);
     });
   });
+  renderEditLegend();
+}
+function renderEditLegend(){
+  const n=editedCount(),el=document.getElementById('editCount'),lg=document.getElementById('editLegend');
+  if(!el||!lg)return;
+  el.textContent=n?n+(n===1?' line manually edited':' lines manually edited'):'no manual edits';
+  lg.style.opacity=n?'1':'.45';
 }
 function toggleCollapse(key){collapsed.has(key)?collapsed.delete(key):collapsed.add(key);renderBudget();}
 function expandAll(){collapsed.clear();renderBudget();}
@@ -1419,12 +1480,12 @@ function collapseAll(){
   ['res','amen','soft'].forEach(sc=>{if(doc.lines.some(l=>l.scope===sc))collapsed.add(sc);});
   renderBudget();
 }
-function setBasis(i,v){doc.lines[i].basis=v;doc.lines[i].auto=v!=='ls';if(v==='ls')doc.lines[i].qty=doc.lines[i].qty||1;touch();}
+function setBasis(i,v){doc.lines[i].basis=v;doc.lines[i].auto=v!=='ls';doc.lines[i].edited=true;if(v==='ls')doc.lines[i].qty=doc.lines[i].qty||1;touch();}
 
 /* ---- add lines via CSI catalog ---- */
 function addLine(){document.getElementById('pickSearch').value='';document.getElementById('pickModal').style.display='flex';renderPick();document.getElementById('pickSearch').focus();}
 function closePick(){document.getElementById('pickModal').style.display='none';}
-function addBlankLine(){doc.lines.push({code:'—',grp:'Custom',scope:document.getElementById('pickScope').value,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1});closePick();touch();toast('Blank line added');}
+function addBlankLine(){doc.lines.push({code:'—',grp:'Custom',scope:document.getElementById('pickScope').value,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1,baseUnit:0,custom:true});closePick();touch();toast('Blank line added');}
 function catalogFiltered(q){
   q=(q||'').trim().toLowerCase();
   const out=[];
@@ -1448,7 +1509,7 @@ function renderPick(){
 function pickCsi(code,title){
   const scope=document.getElementById('pickScope').value;
   const basis=scope==='amen'?'asf':'sf';
-  doc.lines.push({code,grp:csiDivOf(code),scope,desc:title,basis,unit:0,auto:true,qty:0});
+  doc.lines.push({code,grp:csiDivOf(code),scope,desc:title,basis,unit:0,auto:true,qty:0,baseUnit:0,custom:true});
   closePick();touch();toast(code+' added — set the rate');
 }
 
@@ -1539,9 +1600,16 @@ async function saveBudget(show){
 function setStatus(v){doc.status=v;markDirty();}
 function repriceBudget(){
   const map={};pricing.lines.forEach(l=>{map[l.scope+'|'+l.code+'|'+l.desc]=l;});
-  doc.lines.forEach(it=>{const m=map[it.scope+'|'+it.code+'|'+it.desc];if(m)it.unit=m.unit;});
+  let clobbered=0;
+  doc.lines.forEach(it=>{
+    const m=map[it.scope+'|'+it.code+'|'+it.desc];
+    if(!m)return;                                    // hand-added lines keep their rate
+    if((+it.unit)!==(+it.baseUnit)&&(+it.unit)!==(+m.unit))clobbered++;   // replacing a manual rate
+    it.unit=m.unit;it.baseUnit=m.unit;               // the new library rate is the new baseline
+  });
   doc.pricingVersion=pricing.version;
-  touch();toast('Repriced to library '+pricing.version);
+  touch();
+  toast('Repriced to library '+pricing.version+(clobbered?' — replaced '+clobbered+' manually set '+(clobbered===1?'rate':'rates'):''));
 }
 
 /* ============ PRICING PAGE ============ */
@@ -1578,9 +1646,18 @@ function renderPricing(){
     });
   });
 }
-function unlock(){
-  if(document.getElementById('adminPass').value===pricing.adminPass){adminUnlocked=true;renderPricing();renderCatalog();toast('Pricing library unlocked');}
-  else toast('Incorrect passcode');
+async function sha256Hex(s){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function unlock(){
+  const el=document.getElementById('adminPass');
+  if(!window.crypto||!crypto.subtle){toast('Unlock needs a secure context (https or localhost)');return;}
+  let hex;
+  try{hex=await sha256Hex(el.value);}catch(e){toast('Could not verify passcode');return;}
+  if(hex===ADMIN_PASS_SHA256){
+    adminUnlocked=true;el.value='';renderPricing();renderCatalog();toast('Pricing library unlocked');
+  }else toast('Incorrect passcode');
 }
 function addPriceLine(){pricing.lines.push({code:'—',grp:'Custom',scope:'res',desc:'New template line',basis:'sf',unit:0});renderPricing();}
 function renderCatalog(){
@@ -1672,8 +1749,9 @@ function exportExcel(){
     ['Rent income','','','',g.rentMo,12*g.rentMo],
     ['NET INCOME (rent + net other)','','','',g.rentMo+g.netOtherMo,g.netYr]]),'Income & Expenses');}
   if(s.budget){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
-    ['Scope','Group','Code','Description','Basis','Qty','Rate','Total','Provenance'],
-    ...doc.lines.map(it=>[SCOPES[it.scope],it.grp,it.code,it.desc,it.basis,lineQty(it),it.unit,lineQty(it)*it.unit,'parametric-estimate']),
+    ['Scope','Group','Code','Description','Basis','Qty','Rate','Total','Provenance','Manually edited','Library rate'],
+    ...doc.lines.map(it=>[SCOPES[it.scope],it.grp,it.code,it.desc,it.basis,lineQty(it),it.unit,lineQty(it)*it.unit,'parametric-estimate',
+      isEdited(it)?'YES':'',isEdited(it)?(+it.baseUnit||0):'']),
     [],['','','','','','','CONSTRUCTION HARD COST',p.hard],['','','','','','','SOFT COSTS',p.soft]]),'Budget-SOV');}
   if(s.summary){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
     ['Component','Amount','% of project'],
