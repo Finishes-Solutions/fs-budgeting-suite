@@ -21,28 +21,24 @@ on:
       - staging
   workflow_dispatch:
 
+# Auth note: this workflow authenticates with the deployment token only. It must NOT
+# pass github_id_token — the OIDC path identifies the Static Web App by the workflow's
+# *filename*, which has to match Azure's generated
+# 'azure-static-web-apps-<adjective>-<noun>-<hex>.yml' pattern. Only the production
+# workflow can own that name, so OIDC here fails with
+# "Could not determine the Static Web App from the GitHub OIDC workflow reference".
+
 jobs:
   build_and_deploy_staging:
     runs-on: ubuntu-latest
     name: Build and Deploy to staging environment
     permissions:
-      id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
-      - name: Install OIDC Client from Core Package
-        run: npm install @actions/core@1.6.0 @actions/http-client
-      - name: Get Id Token
-        uses: actions/github-script@v6
-        id: idtoken
-        with:
-          script: |
-            const coredemo = require('@actions/core')
-            return await coredemo.getIDToken()
-          result-encoding: string
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -53,4 +49,3 @@ jobs:
           api_location: "api"
           output_location: "."
           deployment_environment: staging
-          github_id_token: ${{ steps.idtoken.outputs.result }}

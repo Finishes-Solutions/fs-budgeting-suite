@@ -185,6 +185,10 @@ th.sortable.sorted{color:var(--ink-900)}
   .page{display:none!important}.page.print-target{display:block!important}
   .card{box-shadow:none;break-inside:avoid}
   section.print-hide,div.print-hide{display:none!important}
+  /* the budget grid scrolls on screen — it must not clip to one page in print */
+  .budget-scroll{max-height:none!important;overflow:visible!important}
+  .budget-scroll thead th{position:static!important;box-shadow:none!important}
+  .caret,.seg{display:none!important}
   .stats{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 </style>
@@ -1620,6 +1624,10 @@ function sel(){const c=id=>document.getElementById(id).checked;
   return {stats:c('ex-stats'),units:c('ex-units'),other:c('ex-other'),budget:c('ex-budget'),summary:c('ex-summary')};}
 function exportPDF(){
   const s=sel();
+  // Collapsed groups are a screen convenience. Printing them away would silently ship an
+  // incomplete budget, so expand everything for the print and restore the view after.
+  const wasCollapsed=[...collapsed];
+  if(wasCollapsed.length){collapsed.clear();renderBudget();}
   const map={stats:'sec-stats',budget:'sec-budget',summary:'sec-summary'};
   Object.values(map).forEach(id=>document.getElementById(id).classList.remove('print-hide'));
   document.getElementById('sec-project').classList.remove('print-hide');
@@ -1629,7 +1637,8 @@ function exportPDF(){
   document.getElementById('page-budget').classList.add('print-target');
   closeExport();window.print();
   setTimeout(()=>{document.getElementById('page-budget').classList.remove('print-target');
-    ['sec-stats','sec-budget','sec-summary','sec-project'].forEach(id=>document.getElementById(id).classList.remove('print-hide'));},400);
+    ['sec-stats','sec-budget','sec-summary','sec-project'].forEach(id=>document.getElementById(id).classList.remove('print-hide'));
+    if(wasCollapsed.length){wasCollapsed.forEach(k=>collapsed.add(k));renderBudget();}},400);
 }
 function exportExcel(){
   const s=sel(),p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF;
