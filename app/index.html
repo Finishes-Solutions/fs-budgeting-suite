@@ -95,7 +95,7 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .tbl input[type=number]{font-family:var(--fm);font-size:13px;text-align:right}
 .scope-hd td{background:var(--ink-900);color:#fff;font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
   font-weight:600;padding:9px 12px}
-.scope-hd .div-sum{float:right;color:var(--green-500)}
+.scope-hd .div-sum{float:right;color:#fff}   /* white, not green — this sits on ink-900 */
 .grp-hd td{background:var(--ink-50);font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-700);font-weight:600;padding:7px 10px;border-bottom:1px solid var(--ink-150)}
 .grp-hd .div-sum{float:right;color:var(--ink-950)}
@@ -148,6 +148,15 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .banner.danger{border-color:#e8c4c0;background:#fdf2f1;color:#8c2a20}
 .banner.test{border-color:#cdd3e6;background:#f2f4fb;color:#3b4570}
 .badge.test{border-color:#cdd3e6;background:#f2f4fb;color:#3b4570;margin-left:6px}
+
+/* ---- small read-only metric tiles (site efficiency etc.) ---- */
+.metric{border:1px solid var(--ink-150);border-left:3px solid var(--green-700);border-radius:var(--r);
+  padding:10px 12px;background:var(--ink-50)}
+.metric .k{display:block;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-500);margin-bottom:4px}
+.metric .v{font-family:var(--fm);font-size:16px;font-weight:600;color:var(--ink-950)}
+.metric.warn{border-left-color:var(--warn)}
+.metric.warn .v{color:var(--warn)}
 
 /* ---- manually edited line marker ----
    The dot is always in the DOM so every row's code column stays aligned; only the
@@ -298,9 +307,9 @@ th.sortable.sorted{color:var(--ink-900)}
       <button id="nav-home" class="on" onclick="go('home')">Budgets</button>
       <button id="nav-input" onclick="go('input')" disabled>Inputs</button>
       <button id="nav-budget" onclick="go('budget')" disabled>Budget</button>
-      <button id="nav-csi" onclick="go('csi')" disabled>CSI schedule</button>
-      <button id="nav-pricing" onclick="go('pricing')">Pricing library</button>
-      <button id="nav-help" onclick="go('help')">How to use</button>
+      <button id="nav-csi" onclick="go('csi')" disabled>CSI Schedule</button>
+      <button id="nav-pricing" onclick="go('pricing')">Pricing Library</button>
+      <button id="nav-help" onclick="go('help')">How to Use</button>
     </nav>
     <div class="hd-r">
       <span class="savepill" id="saveState" style="display:none"></span>
@@ -319,10 +328,10 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= HOME ================= -->
 <div class="page on" id="page-home">
   <div class="page-title">
-    <div><h1>Project budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
+    <div><h1>Project Budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
     <div style="display:flex;gap:10px">
-      <button class="btn btn-ghost" onclick="newBudget('blank')">+ Blank budget</button>
-      <button class="btn btn-primary" onclick="newBudget()">+ New multifamily budget</button>
+      <button class="btn btn-ghost" onclick="newBudget('blank')">+ Blank Budget</button>
+      <button class="btn btn-primary" onclick="newBudget()">+ New Multifamily Budget</button>
     </div>
   </div>
   <div class="card">
@@ -330,7 +339,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <input type="text" id="homeSearch" placeholder="Search ID or name…" style="width:240px">
         <select id="homeStatus" style="width:140px;font-size:12px;padding:6px 8px">
-          <option value="all">All statuses</option>
+          <option value="all">All Statuses</option>
           <option value="Draft">Draft</option>
           <option value="In Review">In Review</option>
           <option value="Finalized">Finalized</option>
@@ -343,8 +352,8 @@ th.sortable.sorted{color:var(--ink-900)}
       <thead id="homeHead"><tr>
         <th style="padding-left:22px" class="sortable" data-sort="projectId">Project ID</th>
         <th class="sortable" data-sort="name">Name</th>
-        <th class="r sortable" data-sort="contractSum">Contract sum</th>
-        <th class="r sortable" data-sort="projectCost">Total project</th>
+        <th class="r sortable" data-sort="contractSum">Contract Sum</th>
+        <th class="r sortable" data-sort="projectCost">Total Project</th>
         <th class="sortable" data-sort="status">Status</th>
         <th class="r sortable" data-sort="updated" style="padding-right:22px">Updated</th>
         <th class="no-print"></th></tr></thead>
@@ -362,8 +371,8 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title">
     <div><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
     <div style="display:flex;gap:10px" class="no-print">
-      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save draft</button>
-      <button class="btn btn-primary" onclick="toBudget()">Continue to budget →</button>
+      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save Draft</button>
+      <button class="btn btn-primary" onclick="toBudget()">Continue to Budget →</button>
     </div>
   </div>
 
@@ -374,36 +383,43 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="fld"><span class="lab">Project ID</span>
           <input type="text" id="pId" placeholder="BD-0001" oninput="validateId();markDirty()" style="font-family:var(--fm);text-transform:uppercase">
           <div class="fld-err" id="pIdErr" style="display:none">Must match OP-####, BD-####, AS-#### or TST-#### (test)</div></label>
-        <label class="fld"><span class="lab">Project name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
+        <label class="fld"><span class="lab">Project Name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
-        <label class="fld"><span class="lab">Property type</span>
+        <label class="fld"><span class="lab">Property Type</span>
           <select id="pType" onchange="doc.type=this.value;markDirty()">
             <option value="Multifamily">Multifamily</option>
-            <option value="Blank">Blank / custom</option>
+            <option value="Blank">Blank / Custom</option>
             <option disabled>Commercial (coming)</option>
             <option disabled>SFR (coming)</option></select></label>
       </div>
       <div class="grid g4" style="margin-top:14px">
-        <label class="fld"><span class="lab">Residential buildable SF</span><input type="number" class="num" id="pSF" value="51365" min="0" step="100" oninput="touch()"></label>
-        <label class="fld"><span class="lab">Amenity / clubhouse SF</span><input type="number" class="num" id="pASF" value="1200" min="0" step="50" oninput="touch()"></label>
+        <label class="fld"><span class="lab">Residential Buildable SF</span><input type="number" class="num" id="pSF" value="51365" min="0" step="100" oninput="touch()"></label>
+        <label class="fld"><span class="lab">Amenity / Clubhouse SF</span><input type="number" class="num" id="pASF" value="1200" min="0" step="50" oninput="touch()"></label>
+        <label class="fld"><span class="lab">Total Site SF</span><input type="number" class="num" id="pSiteSF" value="0" min="0" step="1000" oninput="touch()"></label>
       </div>
-      <div class="note" style="margin-top:10px">Residential SF drives the per-SF construction and soft-cost lines. Amenity SF drives the clubhouse/leasing scope at its own (higher) rates — matching how the Finishes model prices the two buildings separately.</div>
+      <div class="grid g4" style="margin-top:14px" id="siteMetrics">
+        <div class="metric"><span class="k">Site Area</span><span class="v" id="mSiteAcres">—</span></div>
+        <div class="metric" id="mSiteEffTile"><span class="k">Site Efficiency</span><span class="v" id="mSiteEff">—</span></div>
+        <div class="metric"><span class="k">Density</span><span class="v" id="mDensity">—</span></div>
+        <div class="metric" id="mBldgEffTile"><span class="k">Building Efficiency</span><span class="v" id="mBldgEff">—</span></div>
+      </div>
+      <div class="note" style="margin-top:10px">Residential SF drives the per-SF construction and soft-cost lines. Amenity SF drives the clubhouse/leasing scope at its own (higher) rates — matching how the Finishes model prices the two buildings separately. Total site SF is the land itself; it prices nothing, it measures how hard the site is working. Leave it at 0 if you do not know it yet.</div>
     </div>
   </section>
 
   <section class="card">
-    <div class="card-hd"><h2>Unit mix &amp; rent revenue</h2>
+    <div class="card-hd"><h2>Unit Mix &amp; Rent Revenue</h2>
       <div style="display:flex;gap:10px;align-items:center">
         <span id="sfCheck" class="badge">—</span>
-        <button class="btn btn-ghost btn-sm no-print" onclick="addUnit()">+ Add unit type</button>
+        <button class="btn btn-ghost btn-sm no-print" onclick="addUnit()">+ Add Unit Type</button>
       </div></div>
     <div class="card-bd" style="overflow-x:auto">
       <table class="tbl">
-        <thead><tr><th style="width:19%">Unit type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF / unit</th><th class="r"># Units</th>
-          <th class="r">Rent / mo</th><th class="r">$ / SF / mo</th><th class="r">Type SF</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th style="width:19%">Unit Type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF / Unit</th><th class="r"># Units</th>
+          <th class="r">Rent / Mo</th><th class="r">$ / SF / Mo</th><th class="r">Type SF</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
         <tbody id="unitBody"></tbody>
         <tfoot><tr class="total">
-          <td>Total / blended</td><td></td><td></td><td class="calc r" id="uAvgSF">—</td><td class="calc r strong" id="uCount">0</td>
+          <td>Total / Blended</td><td></td><td></td><td class="calc r" id="uAvgSF">—</td><td class="calc r strong" id="uCount">0</td>
           <td class="calc r" id="uAvgRent">—</td><td class="calc r" id="uBlendPSF">—</td><td class="calc r strong" id="uTotSF">0</td>
           <td class="calc r strong" id="uMoRev">$0</td><td class="calc r strong" id="uYrRev">$0</td><td class="no-print"></td>
         </tr></tfoot>
@@ -412,16 +428,16 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card">
-    <div class="card-hd"><h2>Other income</h2>
+    <div class="card-hd"><h2>Other Income</h2>
       <div style="display:flex;gap:10px;align-items:center">
         <span class="eyebrow">Net $/mo per count — utilities, tech entity, parking, pet, admin…</span>
-        <button class="btn btn-ghost btn-sm no-print" onclick="addOther()">+ Add income line</button>
+        <button class="btn btn-ghost btn-sm no-print" onclick="addOther()">+ Add Income Line</button>
       </div></div>
     <div class="card-bd" style="overflow-x:auto">
       <table class="tbl">
-        <thead><tr><th style="width:40%">Income line</th><th class="r">Net $ / mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th style="width:40%">Income Line</th><th class="r">Net $ / Mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
         <tbody id="otherBody"></tbody>
-        <tfoot><tr class="total"><td>Total other income</td><td></td><td></td>
+        <tfoot><tr class="total"><td>Total Other Income</td><td></td><td></td>
           <td class="calc r strong" id="oMo">$0</td><td class="calc r strong" id="oYr">$0</td><td class="no-print"></td></tr></tfoot>
       </table>
       <div class="note" style="margin-top:10px">Enter <b>gross</b> charges here (what the resident is billed). Costs live in Expenses below — the tool nets them for you, matching the sheet's Gross → Cost → Net breakdown. Count defaults to total units (green dot); override for lines like parking spaces or premium units.</div>
@@ -429,19 +445,19 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card">
-    <div class="card-hd"><h2>Operating expenses</h2>
+    <div class="card-hd"><h2>Operating Expenses</h2>
       <div style="display:flex;gap:10px;align-items:center">
         <span class="eyebrow">Per-unit or fixed monthly costs netted against income</span>
-        <button class="btn btn-ghost btn-sm no-print" onclick="addExpense()">+ Add expense</button>
+        <button class="btn btn-ghost btn-sm no-print" onclick="addExpense()">+ Add Expense</button>
       </div></div>
     <div class="card-bd" style="overflow-x:auto">
       <table class="tbl">
-        <thead><tr><th style="width:40%">Expense line</th><th>Basis</th><th class="r">$ / mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th style="width:40%">Expense Line</th><th>Basis</th><th class="r">$ / Mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
         <tbody id="expBody"></tbody>
         <tfoot>
-          <tr class="total"><td>Total operating expenses</td><td></td><td></td><td></td>
+          <tr class="total"><td>Total Operating Expenses</td><td></td><td></td><td></td>
             <td class="calc r strong" id="eMo">$0</td><td class="calc r strong" id="eYr">$0</td><td class="no-print"></td></tr>
-          <tr><td colspan="4" style="border:none;padding-top:8px;font-weight:600;color:var(--ink-950)">Net other income (gross − expenses)</td>
+          <tr><td colspan="4" style="border:none;padding-top:8px;font-weight:600;color:var(--ink-950)">Net Other Income (Gross − Expenses)</td>
             <td class="calc r strong" id="nMo" style="border:none;padding-top:8px;color:var(--green-700)">$0</td>
             <td class="calc r strong" id="nYr" style="border:none;padding-top:8px;color:var(--green-700)">$0</td><td class="no-print" style="border:none"></td></tr>
         </tfoot>
@@ -451,8 +467,8 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card">
-    <div class="card-hd"><h2>Profit &amp; contingency</h2>
-      <button class="btn btn-ghost btn-sm no-print" onclick="addCo()">+ Add company</button></div>
+    <div class="card-hd"><h2>Profit &amp; Contingency</h2>
+      <button class="btn btn-ghost btn-sm no-print" onclick="addCo()">+ Add Company</button></div>
     <div class="card-bd">
       <div class="grid" style="grid-template-columns:1.4fr 1fr;gap:32px">
         <div>
@@ -463,7 +479,7 @@ th.sortable.sorted{color:var(--ink-900)}
           <div class="eyebrow" style="margin-bottom:8px">Construction contingency</div>
           <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
             <div class="seg">
-              <button id="cPct" onclick="setCMode('pct')">% hard</button>
+              <button id="cPct" onclick="setCMode('pct')">% Hard</button>
               <button id="cPsf" onclick="setCMode('psf')">$ / SF</button>
               <button id="cAmt" onclick="setCMode('amt')">Fixed $</button>
             </div>
@@ -476,13 +492,13 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card" id="sec-project">
-    <div class="card-hd"><h2>Land &amp; project costs</h2><span class="eyebrow">Outside the construction contract — rolls into total project cost</span></div>
+    <div class="card-hd"><h2>Land &amp; Project Costs</h2><span class="eyebrow">Outside the construction contract — rolls into total project cost</span></div>
     <div class="card-bd">
       <div class="grid g4">
-        <label class="fld"><span class="lab">Land cost</span><input type="number" class="num" id="pcLand" min="0" step="10000" oninput="doc.projectCosts.land=+this.value;touch()"></label>
-        <label class="fld"><span class="lab">Developer fee</span><input type="number" class="num" id="pcDev" min="0" step="5000" oninput="doc.projectCosts.dev=+this.value;touch()"></label>
-        <label class="fld"><span class="lab">Marketing / brokerage</span><input type="number" class="num" id="pcMkt" min="0" step="5000" oninput="doc.projectCosts.mkt=+this.value;touch()"></label>
-        <label class="fld"><span class="lab">Closing costs</span><input type="number" class="num" id="pcCls" min="0" step="5000" oninput="doc.projectCosts.cls=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Land Cost</span><input type="number" class="num" id="pcLand" min="0" step="10000" oninput="doc.projectCosts.land=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Developer Fee</span><input type="number" class="num" id="pcDev" min="0" step="5000" oninput="doc.projectCosts.dev=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Marketing / Brokerage</span><input type="number" class="num" id="pcMkt" min="0" step="5000" oninput="doc.projectCosts.mkt=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Closing Costs</span><input type="number" class="num" id="pcCls" min="0" step="5000" oninput="doc.projectCosts.cls=+this.value;touch()"></label>
       </div>
     </div>
   </section>
@@ -515,32 +531,32 @@ th.sortable.sorted{color:var(--ink-900)}
 
   <div class="banner" id="staleBanner" style="display:none">
     <span>This budget uses pricing library <b id="staleFrom"></b>; current is <b id="staleTo"></b>. Values are frozen until you update.</span>
-    <button class="btn btn-sm btn-dark no-print" onclick="repriceBudget()">Update to current pricing</button>
+    <button class="btn btn-sm btn-dark no-print" onclick="repriceBudget()">Update to Current Pricing</button>
   </div>
 
   <div class="stats" id="sec-stats">
     <div class="stat"><div class="k">Units</div><div class="v" id="sUnits">0</div></div>
-    <div class="stat"><div class="k">Net income / yr</div><div class="v" id="sRev">$0</div></div>
+    <div class="stat"><div class="k">Net Income / Yr</div><div class="v" id="sRev">$0</div></div>
     <div class="stat"><div class="k">Contract $/SF</div><div class="v" id="sCSF">—</div></div>
     <div class="stat"><div class="k">Project $/SF</div><div class="v" id="sPSF">—</div></div>
-    <div class="stat"><div class="k">Cost / unit</div><div class="v" id="sCPU">—</div></div>
+    <div class="stat"><div class="k">Cost / Unit</div><div class="v" id="sCPU">—</div></div>
   </div>
 
   <section class="card" id="sec-budget">
-    <div class="card-hd"><h2>Budget detail</h2>
+    <div class="card-hd"><h2>Budget Detail</h2>
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
         <span class="eyebrow" style="color:var(--green-600)">● qty auto-synced · edit to override</span>
         <span class="eyebrow legend" id="editLegend" style="color:var(--edit)"><span class="editdot on"></span><span id="editCount">no manual edits</span></span>
         <span class="eyebrow" id="amenHidden" style="display:none;color:var(--warn)">Amenity hidden — amenity SF is 0</span>
         <span class="no-print" style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Collapse all</button>
-          <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand all</button>
+          <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Collapse All</button>
+          <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand All</button>
         </span>
       </div></div>
     <div class="card-bd budget-scroll" style="overflow:auto;padding-top:8px">
       <table class="tbl">
-        <thead><tr><th style="width:36%">Line item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th>
-          <th class="r">Total</th><th class="r">% scope</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th style="width:36%">Line Item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th>
+          <th class="r">Total</th><th class="r">% Scope</th><th class="no-print"></th></tr></thead>
         <tbody id="budBody"></tbody>
       </table>
       <div class="empty" id="budEmpty" style="display:none">
@@ -551,27 +567,27 @@ th.sortable.sorted{color:var(--ink-900)}
     <!-- Deliberately OUTSIDE the scroll pane. Sitting below a 100-row table inside a
          72vh scroller made this button unreachable without scrolling the inner pane. -->
     <div class="no-print" style="border-top:1px solid var(--ink-150);padding:14px 22px;display:flex;align-items:center;gap:12px">
-      <button class="btn btn-ghost btn-sm" onclick="addLine()">+ Add line item</button>
+      <button class="btn btn-ghost btn-sm" onclick="addLine()">+ Add Line Item</button>
       <span class="note">Opens the CSI MasterFormat catalog.</span>
     </div>
   </section>
 
   <section class="card" id="sec-summary">
-    <div class="card-hd"><h2>Contract &amp; project summary</h2></div>
+    <div class="card-hd"><h2>Contract &amp; Project Summary</h2></div>
     <div class="card-bd">
       <div class="grid" style="grid-template-columns:1fr 1.25fr;gap:40px">
         <div>
-          <div class="sum-row sub"><span class="k">Residential construction</span><span class="v" id="rRes">$0</span></div>
-          <div class="sum-row sub" id="rAmenRow"><span class="k">Amenity / clubhouse</span><span class="v" id="rAmen">$0</span></div>
-          <div class="sum-row mid"><span class="k">Construction hard cost</span><span class="v" id="rHard">$0</span></div>
-          <div class="sum-row"><span class="k">Profit — total</span><span class="v" id="rProfit">$0</span></div>
+          <div class="sum-row sub"><span class="k">Residential Construction</span><span class="v" id="rRes">$0</span></div>
+          <div class="sum-row sub" id="rAmenRow"><span class="k">Amenity / Clubhouse</span><span class="v" id="rAmen">$0</span></div>
+          <div class="sum-row mid"><span class="k">Construction Hard Cost</span><span class="v" id="rHard">$0</span></div>
+          <div class="sum-row"><span class="k">Profit — Total</span><span class="v" id="rProfit">$0</span></div>
           <div class="sum-row"><span class="k">Contingency (99.03)</span><span class="v" id="rCont">$0</span></div>
-          <div class="sum-row grand"><span class="k">Contract sum (construction)</span><span class="v" id="rContract">$0</span></div>
+          <div class="sum-row grand"><span class="k">Contract Sum (Construction)</span><span class="v" id="rContract">$0</span></div>
           <div style="height:16px"></div>
-          <div class="sum-row sub"><span class="k">Soft costs</span><span class="v" id="rSoft">$0</span></div>
+          <div class="sum-row sub"><span class="k">Soft Costs</span><span class="v" id="rSoft">$0</span></div>
           <div class="sum-row sub"><span class="k">Land</span><span class="v" id="rLand">$0</span></div>
-          <div class="sum-row sub"><span class="k">Developer fee · marketing · closing</span><span class="v" id="rFees">$0</span></div>
-          <div class="sum-row grand"><span class="k">Total project cost</span><span class="v" id="rProject">$0</span></div>
+          <div class="sum-row sub"><span class="k">Developer Fee · Marketing · Closing</span><span class="v" id="rFees">$0</span></div>
+          <div class="sum-row grand"><span class="k">Total Project Cost</span><span class="v" id="rProject">$0</span></div>
           <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
             <span class="badge" id="mMargin">Margin —</span>
             <span class="badge" id="mYield">Gross yield —</span>
@@ -590,7 +606,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= CSI SCHEDULE ================= -->
 <div class="page" id="page-csi">
   <div class="page-title">
-    <div><h1>CSI schedule of values</h1>
+    <div><h1>CSI Schedule of Values</h1>
       <div class="sub" id="csiSub">The same budget, ordered as MasterFormat divisions — the form a lender, architect or GC expects.</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap" class="no-print">
       <button class="btn btn-ghost" onclick="go('budget')">← Budget</button>
@@ -599,12 +615,12 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
 
   <section class="card" id="sec-csi">
-    <div class="card-hd"><h2>Construction contract</h2>
+    <div class="card-hd"><h2>Construction Contract</h2>
       <span class="eyebrow" id="csiMeta">—</span></div>
     <div class="card-bd" style="overflow:auto;padding-top:8px;max-height:72vh">
       <table class="tbl">
         <thead><tr><th style="width:112px">Code</th><th style="width:34%">Section</th><th>Scope</th><th>Basis</th>
-          <th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th><th class="r">% contract</th></tr></thead>
+          <th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th><th class="r">% Contract</th></tr></thead>
         <tbody id="csiBody"></tbody>
       </table>
       <div class="empty" id="csiEmpty" style="display:none">
@@ -615,7 +631,7 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card" id="sec-csi-soft">
-    <div class="card-hd"><h2>Soft costs</h2>
+    <div class="card-hd"><h2>Soft Costs</h2>
       <span class="eyebrow">Reported separately — outside the construction contract</span></div>
     <div class="card-bd" style="overflow:auto;padding-top:8px">
       <table class="tbl">
@@ -630,7 +646,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= PRICING ================= -->
 <div class="page" id="page-pricing">
   <div class="page-title">
-    <div><h1>Pricing library</h1><div class="sub">Multifamily cost assumptions — seeded from the Finishes budget model export.</div></div>
+    <div><h1>Pricing Library</h1><div class="sub">Multifamily cost assumptions — seeded from the Finishes budget model export.</div></div>
   </div>
   <div class="banner" id="lockBanner">
     <span id="lockMsg"><b>Locked.</b> Pricing is editable only by accounts holding the <b>pricing_admin</b> role (assigned in the Static Web App's role management).</span>
@@ -641,18 +657,18 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
   <div class="banner green" id="unlockedBanner" style="display:none">
     <span><b>Unlocked.</b> Changes affect <i>new</i> budgets only — drafts keep their snapshot until updated from the budget page.</span>
-    <button class="btn btn-sm btn-primary no-print" onclick="savePricing()">Publish new version</button>
+    <button class="btn btn-sm btn-primary no-print" onclick="savePricing()">Publish New Version</button>
   </div>
   <div class="card"><div class="card-hd">
-      <h2>Multifamily cost assumptions</h2>
+      <h2>Multifamily Cost Assumptions</h2>
       <span class="eyebrow" id="pricingMeta">—</span></div>
     <div class="card-bd" style="overflow-x:auto;padding-top:8px">
       <table class="tbl">
-        <thead><tr><th style="width:44%">Line item</th><th>Basis</th><th class="r">Rate</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th style="width:44%">Line Item</th><th>Basis</th><th class="r">Rate</th><th class="no-print"></th></tr></thead>
         <tbody id="priceBody"></tbody>
       </table>
       <div style="margin-top:12px" class="no-print" id="priceAdd" hidden>
-        <button class="btn btn-ghost btn-sm" onclick="addPriceLine()">+ Add blank line</button>
+        <button class="btn btn-ghost btn-sm" onclick="addPriceLine()">+ Add Blank Line</button>
         <span class="note" style="margin-left:10px">Prefer adding from the CSI catalog below so every line carries a real code.</span>
       </div>
     </div>
@@ -660,7 +676,7 @@ th.sortable.sorted{color:var(--ink-900)}
 
   <div class="card">
     <div class="card-hd">
-      <h2>CSI MasterFormat code catalog</h2>
+      <h2>CSI MasterFormat Code Catalog</h2>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap" class="no-print">
         <span class="eyebrow" id="catCount">—</span>
         <select id="catScope" style="width:150px;font-size:12px;padding:6px 8px">
@@ -673,7 +689,7 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
     <div class="card-bd" style="padding-top:8px;max-height:520px;overflow:auto">
       <table class="tbl">
-        <thead><tr><th style="width:130px">Code</th><th>Section</th><th class="r" style="width:120px">In template</th><th class="no-print" style="width:90px"></th></tr></thead>
+        <thead><tr><th style="width:130px">Code</th><th>Section</th><th class="r" style="width:120px">In Template</th><th class="no-print" style="width:90px"></th></tr></thead>
         <tbody id="catBody"></tbody>
       </table>
     </div>
@@ -683,28 +699,28 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= HOW TO USE ================= -->
 <div class="page" id="page-help">
   <div class="page-title">
-    <div><h1>How to use the FS Budgeting Suite</h1>
+    <div><h1>How to Use the FS Budgeting Suite</h1>
       <div class="sub">Build a multifamily project budget from the shared pricing library, then export it.</div></div>
   </div>
 
   <div class="help-wrap">
     <nav id="helpToc" class="no-print">
-      <a href="#help-overview" class="on">What this is</a>
-      <a href="#help-quickstart">Quick start</a>
+      <a href="#help-overview" class="on">What This Is</a>
+      <a href="#help-quickstart">Quick Start</a>
       <a href="#help-ids">Project IDs</a>
-      <a href="#help-inputs">Inputs reference</a>
-      <a href="#help-budget">The budget page</a>
-      <a href="#help-csi">CSI schedule</a>
-      <a href="#help-pricing">Pricing library</a>
+      <a href="#help-inputs">Inputs Reference</a>
+      <a href="#help-budget">The Budget Page</a>
+      <a href="#help-csi">CSI Schedule</a>
+      <a href="#help-pricing">Pricing Library</a>
       <a href="#help-exports">Exports</a>
-      <a href="#help-access">Who can do what</a>
+      <a href="#help-access">Who Can Do What</a>
       <a href="#help-faq">Troubleshooting</a>
     </nav>
 
     <div class="help">
 
       <section class="card"><div class="card-bd">
-        <h3 id="help-overview">What this is</h3>
+        <h3 id="help-overview">What This Is</h3>
         <p>A Business Development budgeting tool for multifamily projects. You enter the project's size, unit
           mix and income assumptions; the tool prices the construction scope from a shared, versioned rate
           library and rolls it up into two numbers that matter:</p>
@@ -718,7 +734,7 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></section>
 
       <section class="card"><div class="card-bd">
-        <h3 id="help-quickstart">Quick start</h3>
+        <h3 id="help-quickstart">Quick Start</h3>
         <div class="step"><div class="n">1</div><div class="t"><b>Budgets → + New budget.</b>
           A fresh budget copies the current pricing library and the standard multifamily template.</div></div>
         <div class="step"><div class="n">2</div><div class="t"><b>Fill in the Inputs page.</b>
@@ -753,14 +769,14 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></section>
 
       <section class="card"><div class="card-bd">
-        <h3 id="help-inputs">Inputs reference</h3>
+        <h3 id="help-inputs">Inputs Reference</h3>
 
         <h4>Project</h4>
         <p><b>Residential buildable SF</b> drives every line priced per residential SF — the bulk of the budget
           and most soft costs. <b>Amenity / clubhouse SF</b> drives the amenity scope at its own, higher rates,
           because the model prices the two buildings separately.</p>
 
-        <h4>Unit mix &amp; rent revenue</h4>
+        <h4>Unit Mix &amp; Rent Revenue</h4>
         <p>One row per unit type. Type SF, monthly and yearly revenue are calculated. Two behaviors worth knowing:</p>
         <ul>
           <li>Editing <b>$ / SF / mo</b> works backwards and sets rent to SF × your rate, matching the direction
@@ -768,7 +784,7 @@ th.sortable.sorted{color:var(--ink-900)}
           <li>The badge in the card header shows an <b>efficiency percentage</b> — explained below.</li>
         </ul>
 
-        <h4>What efficiency means</h4>
+        <h4>What Efficiency Means</h4>
         <p>Efficiency is the share of the building you can actually rent:</p>
         <p><code>efficiency = total unit SF ÷ residential buildable SF</code></p>
         <p>Total unit SF is every unit type's SF multiplied by its count — the leasable area. Residential buildable
@@ -792,7 +808,27 @@ th.sortable.sorted{color:var(--ink-900)}
         <p>Amenity SF is deliberately excluded from this calculation. The clubhouse is not rentable area, and it is
           measured and priced separately.</p>
 
-        <h4>Other income and Operating expenses</h4>
+        <h4>Site Efficiency, and How It Differs</h4>
+        <p>Building efficiency asks how much of the <i>structure</i> you can rent. Site efficiency asks how hard the
+          <i>land</i> is working:</p>
+        <p><code>site efficiency = (residential SF + amenity SF) ÷ total site SF</code></p>
+        <p>That is the floor area ratio, expressed as a percentage. Enter the land area in <b>Total Site SF</b> and
+          the Project card reports site area in acres, site efficiency, density in units per acre, and building
+          efficiency side by side.</p>
+        <table class="tbl"><tbody>
+          <tr><td>What it tells you</td><td>Whether the scheme is using the parcel you are paying for. A low figure
+            on expensive land is the earliest sign that the deal needs more density, or that the land is priced
+            wrong for what will fit on it.</td></tr>
+          <tr><td>Density</td><td>Units per acre, the number entitlement and zoning conversations are usually
+            conducted in. It comes from the same site figure, so it appears as soon as you enter one.</td></tr>
+          <tr><td>Over 100%</td><td>The tile turns amber. Building SF exceeding site SF is normal for anything
+            multi-storey — a two-storey building covering half the site is already 100%. Read it as a ratio, not a
+            ceiling; it is only a warning when you expected a single-storey scheme.</td></tr>
+        </tbody></table>
+        <p>Total site SF prices nothing. It never touches a rate, a quantity or the contract sum — it exists purely
+          to produce these measures, so leaving it at 0 costs you nothing but the metrics.</p>
+
+        <h4>Other Income and Operating Expenses</h4>
         <p>Enter <b>gross</b> charges under Other income — what the resident is billed. Put the cost of providing
           them under Operating expenses. The tool nets the two and reports net other income.</p>
         <ul>
@@ -801,14 +837,14 @@ th.sortable.sorted{color:var(--ink-900)}
           <li>Expenses are <b>per unit</b> or <b>fixed / mo</b>. Fixed lines apply once no matter the unit count.</li>
         </ul>
 
-        <h4>Profit &amp; contingency</h4>
+        <h4>Profit &amp; Contingency</h4>
         <p>Profit is a percentage of construction hard cost, per company; add a row for each entity taking a fee.
           Contingency carries three ways — percent of hard cost, dollars per SF (residential + amenity), or a
           fixed amount. It is always reported as its own line, never blended into the trades.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
-        <h3 id="help-budget">The budget page</h3>
+        <h3 id="help-budget">The Budget Page</h3>
         <p>Lines are grouped into three scopes — Residential Construction, Amenity / Clubhouse and Soft Costs —
           and then into phase groups within each. Click any scope or group header to collapse it; subtotals stay
           visible. <span class="kbd">Collapse all</span> is the fastest way to sanity-check the shape of a budget.</p>
@@ -824,7 +860,7 @@ th.sortable.sorted{color:var(--ink-900)}
         </tbody></table>
         <p>Typing over a quantity breaks the link for that line only, and it will no longer follow the inputs.</p>
 
-        <h4>Manually edited lines</h4>
+        <h4>Manually Edited Lines</h4>
         <p>A <span class="editdot on" style="margin:0 2px"></span> blue dot to the left of a line means you changed it
           rather than taking the library's number. A line is marked when you override its quantity, set a rate that
           differs from the pricing library, change its description or basis, or add it by hand. Hover the dot to see
@@ -833,7 +869,7 @@ th.sortable.sorted{color:var(--ink-900)}
           into the Excel export, which carries a <b>Manually edited</b> column alongside the original library rate —
           useful when someone asks which numbers came from the model and which came from judgment.</p>
 
-        <h4>Scopes, and how they relate to CSI codes</h4>
+        <h4>Scopes, and How They Relate to CSI Codes</h4>
         <p>Every line belongs to one of three <b>scopes</b>. The scope answers <i>where the money goes</i>; the CSI
           code answers <i>what the work is</i>. They are independent, which is why the same code legitimately
           appears more than once.</p>
@@ -854,7 +890,7 @@ th.sortable.sorted{color:var(--ink-900)}
           you could no longer see. Nothing is deleted: put a figure back in amenity SF and the whole scope returns
           exactly as it was.</div>
 
-        <h4>Why the same CSI code appears twice</h4>
+        <h4>Why the Same CSI Code Appears Twice</h4>
         <p>Take <code>09 60 00 Flooring</code>. It exists in the residential scope at one rate and in the amenity
           scope at a much higher one, because clubhouse flooring is a different specification from apartment
           flooring. One CSI code, two scopes, two rates — that is correct, not a duplicate. On the CSI schedule
@@ -864,26 +900,26 @@ th.sortable.sorted{color:var(--ink-900)}
           construction <i>work results</i> — it has no home for an architect's fee or a traffic impact study. That
           is the second reason they are reported separately on the schedule.</p>
 
-        <h4>Scope and basis when adding a line</h4>
+        <h4>Scope and Basis When Adding a Line</h4>
         <p>The scope dropdown in the CSI picker sets the quantity basis for you: choosing Amenity gives the line
           <b>per amen SF</b>, anything else gives <b>per res SF</b>. Change it afterwards with the Basis dropdown if
           the line should count per unit or be a lump sum instead. Getting the scope right matters beyond
           bookkeeping — it decides which square footage drives the quantity, and whether the money lands inside or
           outside the number the bank sees.</p>
 
-        <h4>Adding scope</h4>
+        <h4>Adding Scope</h4>
         <p><span class="kbd">+ Add line item</span> opens the CSI MasterFormat catalog. Adding from the catalog
           means the line carries a real code into the SOV, which the lender package depends on. New lines arrive
           at rate $0 — set the rate before you trust the total.</p>
 
-        <h4>Reading the summary</h4>
+        <h4>Reading the Summary</h4>
         <p>The left column walks hard cost up to contract sum, then adds the non-contract costs to reach total
           project cost. The right column is the SOV rollup: the same money grouped the way it will appear on the
           schedule of values, with contingency shown explicitly as line 99.03 and profit broken out by company.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
-        <h3 id="help-csi">CSI schedule</h3>
+        <h3 id="help-csi">CSI Schedule</h3>
         <p>The <b>CSI schedule</b> tab re-presents the same budget as a MasterFormat schedule of values: sorted by
           division number, grouped under Division 00–48 headings with a subtotal per division, showing the full
           code on every line. Same money as the Budget page, organised the way an architect, lender or general
@@ -897,11 +933,11 @@ th.sortable.sorted{color:var(--ink-900)}
             real code before the budget goes out.</li>
         </ul>
         <p>The <b>Residential</b> and <b>Amenity</b> tags on each line say which building the work belongs to, so a
-          code that appears in both scopes stays readable. See <a href="#help-budget">The budget page</a> for what
+          code that appears in both scopes stays readable. See <a href="#help-budget">The Budget Page</a> for what
           the scopes mean and why a code can appear twice.</p>
         <p>The schedule is also its own Excel sheet and its own PDF section, both selectable at export.</p>
 
-        <h3 id="help-pricing">Pricing library and versioning</h3>
+        <h3 id="help-pricing">Pricing Library and Versioning</h3>
         <p>All rates come from one shared library so two people pricing the same building get the same answer.
           The important rule:</p>
         <div class="callout"><b>A budget snapshots the library the moment it is created.</b> Publishing new rates
@@ -931,7 +967,7 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></section>
 
       <section class="card"><div class="card-bd">
-        <h3 id="help-access">Who can do what</h3>
+        <h3 id="help-access">Who Can Do What</h3>
         <table class="tbl"><tbody>
           <tr><td>Everyone</td><td>Anyone who can sign in with a Finishes account can create, edit, save, delete
             and export budgets, and can read the pricing library.</td></tr>
@@ -975,20 +1011,20 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= EXPORT MODAL ================= -->
 <div id="exportModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
   <div class="card" style="width:460px;max-width:92vw;margin:0">
-    <div class="card-hd"><h2>Export budget</h2><button class="btn-x" onclick="closeExport()">×</button></div>
+    <div class="card-hd"><h2>Export Budget</h2><button class="btn-x" onclick="closeExport()">×</button></div>
     <div class="card-bd">
       <div class="eyebrow" style="margin-bottom:10px">Include sections</div>
       <div style="display:grid;gap:10px;margin-bottom:20px">
-        <label class="chk"><input type="checkbox" id="ex-stats" checked> Project summary &amp; key metrics</label>
-        <label class="chk"><input type="checkbox" id="ex-units" checked> Unit mix &amp; rent revenue</label>
-        <label class="chk"><input type="checkbox" id="ex-other" checked> Other income &amp; operating expenses</label>
-        <label class="chk"><input type="checkbox" id="ex-budget" checked> Budget detail (all scopes)</label>
-        <label class="chk"><input type="checkbox" id="ex-csi" checked> CSI MasterFormat schedule of values</label>
-        <label class="chk"><input type="checkbox" id="ex-summary" checked> Contract &amp; project summary / SOV</label>
+        <label class="chk"><input type="checkbox" id="ex-stats" checked> Project Summary &amp; Key Metrics</label>
+        <label class="chk"><input type="checkbox" id="ex-units" checked> Unit Mix &amp; Rent Revenue</label>
+        <label class="chk"><input type="checkbox" id="ex-other" checked> Other Income &amp; Operating Expenses</label>
+        <label class="chk"><input type="checkbox" id="ex-budget" checked> Budget Detail (All Scopes)</label>
+        <label class="chk"><input type="checkbox" id="ex-csi" checked> CSI MasterFormat Schedule of Values</label>
+        <label class="chk"><input type="checkbox" id="ex-summary" checked> Contract &amp; Project Summary / SOV</label>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button class="btn btn-ghost" onclick="exportExcel()">Excel (.xlsx)</button>
-        <button class="btn btn-primary" onclick="exportPDF()">PDF (print)</button>
+        <button class="btn btn-primary" onclick="exportPDF()">PDF (Print)</button>
       </div>
     </div>
   </div>
@@ -997,7 +1033,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= CSI PICKER MODAL ================= -->
 <div id="pickModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
   <div class="card" style="width:640px;max-width:94vw;margin:0">
-    <div class="card-hd"><h2>Add line from CSI catalog</h2>
+    <div class="card-hd"><h2>Add Line From CSI Catalog</h2>
       <div style="display:flex;gap:10px;align-items:center">
         <select id="pickScope" style="width:150px;font-size:12px;padding:6px 8px">
           <option value="res">→ Residential</option>
@@ -1013,7 +1049,7 @@ th.sortable.sorted{color:var(--ink-900)}
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
         <span class="note">Line is added at qty auto / rate $0 — set the rate on the budget.</span>
-        <button class="btn btn-ghost btn-sm" onclick="addBlankLine()">Add blank line instead</button>
+        <button class="btn btn-ghost btn-sm" onclick="addBlankLine()">Add Blank Line Instead</button>
       </div>
     </div>
   </div>
@@ -1284,7 +1320,7 @@ let dirty=false,saving=false,lastSaved=null;
 const collapsed=new Set();              // "scope|grp" keys collapsed on the budget grid
 const homeView={q:'',sort:'updated',dir:-1,status:'all'};
 const SCOPES={res:'Residential Construction',amen:'Amenity / Clubhouse',soft:'Soft Costs'};
-const BASIS_LABEL={sf:'per res SF',asf:'per amen SF',unit:'per unit',ls:'lump sum'};
+const BASIS_LABEL={sf:'Per Res SF',asf:'Per Amen SF',unit:'Per Unit',ls:'Lump Sum'};
 
 /* ---- unsaved-work tracking ----
    touch() is recalc() plus "the user changed something". Mutation handlers call it;
@@ -1348,7 +1384,7 @@ function withFocus(fn){
 function blankDoc(kind){
   const bare=kind==='blank';
   return {projectId:'',name:'',address:'',type:bare?'Blank':'Multifamily',
-    resSF:bare?0:51365,amenSF:bare?0:1200,
+    resSF:bare?0:51365,amenSF:bare?0:1200,siteSF:0,
     units:bare?[]:[
       {label:'Studio (630)',bd:0,bth:1,sf:630,count:16,rent:1203},
       {label:'Studio (400)',bd:0,bth:1,sf:400,count:14,rent:1160},
@@ -1367,7 +1403,7 @@ function blankDoc(kind){
     created:new Date().toISOString(),updated:new Date().toISOString()};
 }
 function migrate(d){ // tolerate older saves
-  d.resSF=d.resSF??d.buildableSF??0; d.amenSF=d.amenSF??0;
+  d.resSF=d.resSF??d.buildableSF??0; d.amenSF=d.amenSF??0; d.siteSF=d.siteSF??0;
   d.other=d.other??JSON.parse(JSON.stringify(DEFAULT_OTHER));
   d.expenses=d.expenses??JSON.parse(JSON.stringify(DEFAULT_EXPENSES));
   d.projectCosts=d.projectCosts??{land:0,dev:0,mkt:0,cls:0};
@@ -1525,6 +1561,7 @@ function fillForms(){
   document.getElementById('pAddr').value=doc.address;
   document.getElementById('pSF').value=doc.resSF;
   document.getElementById('pASF').value=doc.amenSF;
+  document.getElementById('pSiteSF').value=doc.siteSF||0;
   document.getElementById('pType').value=doc.type||'Multifamily';
   document.getElementById('cVal').value=doc.contingency.val;
   document.getElementById('pcLand').value=doc.projectCosts.land;
@@ -1539,6 +1576,7 @@ function pullForms(){
   doc.address=document.getElementById('pAddr').value.trim();
   doc.resSF=+document.getElementById('pSF').value||0;
   doc.amenSF=+document.getElementById('pASF').value||0;
+  doc.siteSF=+document.getElementById('pSiteSF').value||0;
   doc.type=document.getElementById('pType').value||doc.type||'Multifamily';
 }
 function validateId(){
@@ -1586,6 +1624,35 @@ function parts(){
   const project=contract+soft+pc.land+fees;
   return {res,amen,soft,hard,profit,cont,contract,fees,project};
 }
+/* Two different efficiencies, easy to confuse:
+     building efficiency = leasable unit SF ÷ residential buildable SF  (how much of the
+                           structure you can rent)
+     site efficiency     = total building SF ÷ total site SF            (how hard the land
+                           is working — the floor area ratio, as a percentage)
+   Site SF is land, so it prices nothing; it only feeds these measures. */
+const SQFT_PER_ACRE=43560;
+function siteMetrics(){
+  const bldg=(+doc.resSF||0)+(+doc.amenSF||0);
+  const site=+doc.siteSF||0;
+  const unitSF=doc.units.reduce((s,u)=>s+u.sf*u.count,0);
+  const acres=site?site/SQFT_PER_ACRE:0;
+  return {bldg,site,unitSF,acres,
+    siteEff:site?bldg/site:null,
+    bldgEff:doc.resSF>0?unitSF/doc.resSF:null,
+    density:acres?totUnits()/acres:null};
+}
+function renderSiteMetrics(){
+  const m=siteMetrics();
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('mSiteAcres',m.site?m.acres.toFixed(2)+' ac':'—');
+  set('mSiteEff',m.siteEff!==null?(100*m.siteEff).toFixed(1)+'%':'—');
+  set('mDensity',m.density!==null?m.density.toFixed(1)+' u/ac':'—');
+  set('mBldgEff',m.bldgEff!==null?(100*m.bldgEff).toFixed(1)+'%':'—');
+  const et=document.getElementById('mBldgEffTile');
+  if(et)et.classList.toggle('warn',m.bldgEff!==null&&m.bldgEff>1);
+  const st=document.getElementById('mSiteEffTile');
+  if(st)st.classList.toggle('warn',m.siteEff!==null&&m.siteEff>1);
+}
 function grossIncome(){
   const tu=totUnits();
   const rent=doc.units.reduce((s,u)=>s+u.rent*u.count,0);
@@ -1605,8 +1672,8 @@ function renderExpenses(){
     b.insertAdjacentHTML('beforeend',`<tr>
       <td><input type="text" data-k="exp.${i}.label" value="${esc(e.label)}" oninput="doc.expenses[${i}].label=this.value;markDirty()"></td>
       <td><select data-k="exp.${i}.per" onchange="doc.expenses[${i}].per=this.value;if(this.value==='fixed'){doc.expenses[${i}].auto=false;doc.expenses[${i}].count=doc.expenses[${i}].count||1}else{doc.expenses[${i}].auto=true}touch()" style="width:96px;font-size:12px;padding:5px 8px">
-        <option value="unit" ${e.per==='unit'?'selected':''}>per unit</option>
-        <option value="fixed" ${e.per==='fixed'?'selected':''}>fixed / mo</option></select></td>
+        <option value="unit" ${e.per==='unit'?'selected':''}>Per Unit</option>
+        <option value="fixed" ${e.per==='fixed'?'selected':''}>Fixed / Mo</option></select></td>
       <td class="r"><input type="number" data-k="exp.${i}.rate" value="${e.rate}" min="0" step="1" style="width:80px" onchange="doc.expenses[${i}].rate=+this.value;touch()"></td>
       <td class="r"><span class="autodot${e.auto&&e.per!=='fixed'?' on':''}" title="${e.auto&&e.per!=='fixed'?'Counts every unit automatically':'Manual count'}"></span><input type="number" data-k="exp.${i}.count" value="${cnt}" min="0" style="width:70px" onchange="doc.expenses[${i}].count=+this.value;doc.expenses[${i}].auto=false;touch()"></td>
       <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
@@ -1705,10 +1772,10 @@ function renderBudget(){
         <td><span class="editdot${ed?' on':''}"${ed?' title="'+esc(editReason(it))+'"':''}></span><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${esc(it.code)}</span>
           <input type="text" data-k="line.${gi}.desc" value="${esc(it.desc)}" style="width:calc(100% - 108px)" oninput="doc.lines[${gi}].desc=this.value;doc.lines[${gi}].edited=true;markDirty()"></td>
         <td><select data-k="line.${gi}.basis" onchange="setBasis(${gi},this.value)" style="width:104px;font-size:12px;padding:5px 8px">
-          <option value="sf" ${it.basis==='sf'?'selected':''}>per res SF</option>
-          <option value="asf" ${it.basis==='asf'?'selected':''}>per amen SF</option>
-          <option value="unit" ${it.basis==='unit'?'selected':''}>per unit</option>
-          <option value="ls" ${it.basis==='ls'?'selected':''}>lump sum</option></select></td>
+          <option value="sf" ${it.basis==='sf'?'selected':''}>Per Res SF</option>
+          <option value="asf" ${it.basis==='asf'?'selected':''}>Per Amen SF</option>
+          <option value="unit" ${it.basis==='unit'?'selected':''}>Per Unit</option>
+          <option value="ls" ${it.basis==='ls'?'selected':''}>Lump Sum</option></select></td>
         <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span><input type="number" data-k="line.${gi}.qty" value="${q}" min="0" style="width:88px"
           onchange="doc.lines[${gi}].qty=+this.value;doc.lines[${gi}].auto=false;touch()"></td>
         <td class="r"><input type="number" data-k="line.${gi}.unit" value="${it.unit}" min="0" step="0.01" style="width:96px"
@@ -1782,7 +1849,7 @@ function renderCsi(){
         <td class="calc r strong">${usd(m.total)}</td><td class="calc r" style="color:var(--ink-400)">${pct(m.total)}</td></tr>`);
     });
   }
-  b.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="6">Contract sum</td>
+  b.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="6">Contract Sum</td>
     <td class="calc r strong">${usd(sch.contract)}</td><td class="calc r">100%</td></tr>`);
 
   const sb=document.getElementById('csiSoftBody');sb.innerHTML='';
@@ -1794,7 +1861,7 @@ function renderCsi(){
       <td class="calc r">${num(r.qty)}</td><td class="calc r">${usd2(r.rate)}</td>
       <td class="calc r strong">${usd(r.total)}</td></tr>`);
   });
-  sb.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="5">Total soft costs</td>
+  sb.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="5">Total Soft Costs</td>
     <td class="calc r strong">${usd(sch.softTotal)}</td></tr>`);
 
   document.getElementById('csiMeta').textContent=
@@ -1919,7 +1986,7 @@ function renderSummary(){
   });
   doc.companies.forEach(c=>{if(c.pct>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">Profit — ${esc(c.name)}</td><td class="calc r">${usd(p.hard*c.pct/100)}</td><td class="calc r" style="color:var(--ink-400)">${(100*(p.hard*c.pct/100)/p.contract).toFixed(1)}%</td></tr>`);});
   if(p.cont>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">99.03 Contingency</td><td class="calc r">${usd(p.cont)}</td><td class="calc r" style="color:var(--ink-400)">${(100*p.cont/p.contract).toFixed(1)}%</td></tr>`);
-  sb.insertAdjacentHTML('beforeend',`<tr class="total"><td>Contract sum</td><td class="calc r strong">${usd(p.contract)}</td><td class="calc r">100%</td></tr>`);
+  sb.insertAdjacentHTML('beforeend',`<tr class="total"><td>Contract Sum</td><td class="calc r strong">${usd(p.contract)}</td><td class="calc r">100%</td></tr>`);
   const stale=pricing&&doc.pricingVersion!==pricing.version;
   document.getElementById('staleBanner').style.display=stale?'flex':'none';
   if(stale){document.getElementById('staleFrom').textContent=doc.pricingVersion;document.getElementById('staleTo').textContent=pricing.version;}
@@ -1928,7 +1995,7 @@ function renderSummary(){
 function recalc(){
   if(!doc)return;
   pullForms();
-  withFocus(()=>{renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();
+  withFocus(()=>{renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();renderSiteMetrics();
     if(currentPage==='csi')renderCsi();});
 }
 
@@ -1985,10 +2052,10 @@ function renderPricing(){
         ?`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${l.code}</span>
             <input type="text" value="${esc(l.desc)}" style="width:72%" oninput="pricing.lines[${i}].desc=this.value"></td>
           <td><select onchange="pricing.lines[${i}].basis=this.value" style="width:104px;font-size:12px;padding:5px 8px">
-            <option value="sf" ${l.basis==='sf'?'selected':''}>per res SF</option>
-            <option value="asf" ${l.basis==='asf'?'selected':''}>per amen SF</option>
-            <option value="unit" ${l.basis==='unit'?'selected':''}>per unit</option>
-            <option value="ls" ${l.basis==='ls'?'selected':''}>lump sum</option></select></td>
+            <option value="sf" ${l.basis==='sf'?'selected':''}>Per Res SF</option>
+            <option value="asf" ${l.basis==='asf'?'selected':''}>Per Amen SF</option>
+            <option value="unit" ${l.basis==='unit'?'selected':''}>Per Unit</option>
+            <option value="ls" ${l.basis==='ls'?'selected':''}>Lump Sum</option></select></td>
           <td class="r"><input type="number" value="${l.unit}" min="0" step="0.01" style="width:110px" oninput="pricing.lines[${i}].unit=+this.value"></td>
           <td class="no-print"><button class="btn-x" onclick="pricing.lines.splice(${i},1);renderPricing()">×</button></td></tr>`
         :`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${l.code}</span>${esc(l.desc)}</td>
@@ -2075,7 +2142,7 @@ function exportPDF(){
 }
 function rptRow(k,v,cls){return '<div class="rr '+(cls||'')+'"><span>'+k+'</span><span class="v">'+v+'</span></div>';}
 function buildReport(s){
-  const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF;
+  const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF,sm=siteMetrics();
   const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
   let h='';
 
@@ -2087,32 +2154,35 @@ function buildReport(s){
   h+='<section class="rpt-title"><div class="eyebrow">'+esc(doc.projectId||'—')+' · '+esc(doc.type||'')+'</div>'
     +'<h1>'+esc(doc.name||'Untitled project')+'</h1>'
     +'<div class="rpt-meta">'+[esc(doc.address),num(doc.resSF)+' SF residential',
-       num(doc.amenSF)+' SF amenity',tu+' units','Pricing '+esc(doc.pricingVersion||'—'),
+       doc.amenSF?num(doc.amenSF)+' SF amenity':'',
+       sm.site?sm.acres.toFixed(2)+' ac site':'',
+       sm.siteEff!==null?'site efficiency '+(100*sm.siteEff).toFixed(1)+'%':'',
+       tu+' units','Pricing '+esc(doc.pricingVersion||'—'),
        'Status: '+esc(doc.status||'Draft')].filter(Boolean).join(' &nbsp;·&nbsp; ')+'</div></section>';
 
   if(s.stats){
     h+='<section class="rpt-stats">'
-      +[['Units',num(tu)],['Net income / yr',usd(g.netYr)],
+      +[['Units',num(tu)],['Net Income / Yr',usd(g.netYr)],
         ['Contract $/SF',tsf?usd2(p.contract/tsf):'—'],
         ['Project $/SF',tsf?usd2(p.project/tsf):'—'],
-        ['Cost / unit',tu?usd(p.project/tu):'—']]
+        ['Cost / Unit',tu?usd(p.project/tu):'—']]
         .map(([k,v])=>'<div><div class="k">'+k+'</div><div class="v">'+v+'</div></div>').join('')
       +'</section>';
   }
 
   if(s.summary){
-    h+='<section class="rpt-sec"><h2>Contract &amp; project summary</h2><div class="rpt-2col"><div>'
-      +rptRow('Residential construction',usd(p.res),'sub')
-      +(scopeActive('amen')?rptRow('Amenity / clubhouse',usd(p.amen),'sub'):'')
-      +rptRow('Construction hard cost',usd(p.hard),'mid')
-      +rptRow('Profit — total',usd(p.profit))
+    h+='<section class="rpt-sec"><h2>Contract &amp; Project Summary</h2><div class="rpt-2col"><div>'
+      +rptRow('Residential Construction',usd(p.res),'sub')
+      +(scopeActive('amen')?rptRow('Amenity / Clubhouse',usd(p.amen),'sub'):'')
+      +rptRow('Construction Hard Cost',usd(p.hard),'mid')
+      +rptRow('Profit — Total',usd(p.profit))
       +rptRow('Contingency (99.03)',usd(p.cont))
-      +rptRow('Contract sum (construction)',usd(p.contract),'grand')
+      +rptRow('Contract Sum (Construction)',usd(p.contract),'grand')
       +'<div style="height:10px"></div>'
-      +rptRow('Soft costs',usd(p.soft),'sub')
+      +rptRow('Soft Costs',usd(p.soft),'sub')
       +rptRow('Land',usd(doc.projectCosts.land),'sub')
-      +rptRow('Developer fee · marketing · closing',usd(p.fees),'sub')
-      +rptRow('Total project cost',usd(p.project),'grand')
+      +rptRow('Developer Fee · Marketing · Closing',usd(p.fees),'sub')
+      +rptRow('Total Project Cost',usd(p.project),'grand')
       +'</div><div><div class="eyebrow" style="margin-bottom:6px">SOV rollup — construction contract</div><table class="rpt-tbl"><tbody>';
     ['res','amen'].filter(scopeActive).forEach(sc=>{
       [...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))].forEach(gp=>{
@@ -2123,14 +2193,14 @@ function buildReport(s){
     });
     doc.companies.forEach(c=>{if(c.pct>0)h+='<tr><td>Profit — '+esc(c.name)+'</td><td class="r mono">'+usd(p.hard*c.pct/100)+'</td><td class="r mono muted">'+(p.contract?(100*(p.hard*c.pct/100)/p.contract).toFixed(1):'0.0')+'%</td></tr>';});
     if(p.cont>0)h+='<tr><td>99.03 Contingency</td><td class="r mono">'+usd(p.cont)+'</td><td class="r mono muted">'+(p.contract?(100*p.cont/p.contract).toFixed(1):'0.0')+'%</td></tr>';
-    h+='<tr class="tot"><td>Contract sum</td><td class="r mono">'+usd(p.contract)+'</td><td class="r mono">100%</td></tr>';
+    h+='<tr class="tot"><td>Contract Sum</td><td class="r mono">'+usd(p.contract)+'</td><td class="r mono">100%</td></tr>';
     h+='</tbody></table></div></div></section>';
   }
 
   if(s.units&&doc.units.length){
-    h+='<section class="rpt-sec"><h2>Unit mix &amp; rent revenue</h2><table class="rpt-tbl full"><thead><tr>'
-      +'<th>Unit type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF</th><th class="r">Units</th>'
-      +'<th class="r">Rent / mo</th><th class="r">$/SF</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead><tbody>';
+    h+='<section class="rpt-sec"><h2>Unit Mix &amp; Rent Revenue</h2><table class="rpt-tbl full"><thead><tr>'
+      +'<th>Unit Type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF</th><th class="r">Units</th>'
+      +'<th class="r">Rent / Mo</th><th class="r">$/SF</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead><tbody>';
     doc.units.forEach(u=>{h+='<tr><td>'+esc(u.label)+'</td><td class="r mono">'+u.bd+'</td><td class="r mono">'+u.bth+'</td>'
       +'<td class="r mono">'+num(u.sf)+'</td><td class="r mono">'+num(u.count)+'</td><td class="r mono">'+usd(u.rent)+'</td>'
       +'<td class="r mono">'+(u.sf?usd2(u.rent/u.sf):'—')+'</td><td class="r mono">'+usd(u.rent*u.count)+'</td>'
@@ -2141,22 +2211,22 @@ function buildReport(s){
   }
 
   if(s.other&&(doc.other.length||doc.expenses.length)){
-    h+='<section class="rpt-sec"><h2>Other income &amp; operating expenses</h2><table class="rpt-tbl full"><thead><tr>'
-      +'<th>Line</th><th>Basis</th><th class="r">$ / mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead><tbody>';
+    h+='<section class="rpt-sec"><h2>Other Income &amp; Operating Expenses</h2><table class="rpt-tbl full"><thead><tr>'
+      +'<th>Line</th><th>Basis</th><th class="r">$ / Mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead><tbody>';
     doc.other.forEach(o=>{const c=o.auto?tu:o.count;h+='<tr><td>'+esc(o.label)+'</td><td class="muted">gross income</td>'
       +'<td class="r mono">'+usd(o.rate)+'</td><td class="r mono">'+num(c)+'</td><td class="r mono">'+usd(o.rate*c)+'</td><td class="r mono">'+usd(12*o.rate*c)+'</td></tr>';});
     h+='<tr class="sub-tot"><td>Total gross other income</td><td></td><td></td><td></td><td class="r mono">'+usd(g.otherMo)+'</td><td class="r mono">'+usd(12*g.otherMo)+'</td></tr>';
     doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
       h+='<tr><td>'+esc(e.label)+'</td><td class="muted">'+(e.per==='fixed'?'fixed / mo':'per unit')+'</td>'
       +'<td class="r mono">'+usd(e.rate)+'</td><td class="r mono">'+num(c)+'</td><td class="r mono">('+usd(e.rate*c)+')</td><td class="r mono">('+usd(12*e.rate*c)+')</td></tr>';});
-    h+='<tr class="sub-tot"><td>Total operating expenses</td><td></td><td></td><td></td><td class="r mono">('+usd(g.expMo)+')</td><td class="r mono">('+usd(12*g.expMo)+')</td></tr>';
+    h+='<tr class="sub-tot"><td>Total Operating Expenses</td><td></td><td></td><td></td><td class="r mono">('+usd(g.expMo)+')</td><td class="r mono">('+usd(12*g.expMo)+')</td></tr>';
     h+='<tr class="tot"><td>Net income (rent + net other)</td><td></td><td></td><td></td><td class="r mono">'+usd(g.rentMo+g.netOtherMo)+'</td><td class="r mono">'+usd(g.netYr)+'</td></tr>';
     h+='</tbody></table></section>';
   }
 
   if(s.budget){
-    h+='<section class="rpt-sec break"><h2>Budget detail</h2><table class="rpt-tbl full"><thead><tr>'
-      +'<th>Line item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>';
+    h+='<section class="rpt-sec break"><h2>Budget Detail</h2><table class="rpt-tbl full"><thead><tr>'
+      +'<th>Line Item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>';
     activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
       h+='<tr class="scope"><td colspan="4">'+esc(SCOPES[sc])+'</td><td class="r mono">'+usd(scopeSum(sc))+'</td></tr>';
@@ -2176,9 +2246,9 @@ function buildReport(s){
 
   if(s.csi){
     const sch=csiSchedule();
-    h+='<section class="rpt-sec break"><h2>CSI schedule of values</h2>'
+    h+='<section class="rpt-sec break"><h2>CSI Schedule of Values</h2>'
       +'<p class="rpt-note">MasterFormat divisions. Contingency is carried explicitly as 99.03 and is never blended into a trade line. Soft costs are reported separately and are not part of the contract sum.</p>'
-      +'<table class="rpt-tbl full"><thead><tr><th>Code</th><th>Section</th><th>Scope</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Scheduled value</th></tr></thead><tbody>';
+      +'<table class="rpt-tbl full"><thead><tr><th>Code</th><th>Section</th><th>Scope</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Scheduled Value</th></tr></thead><tbody>';
     sch.divisions.forEach(d=>{
       h+='<tr class="scope"><td colspan="5">'+esc(d.title)+'</td><td class="r mono">'+usd(d.total)+'</td></tr>';
       d.rows.forEach(r=>{h+='<tr><td class="mono code">'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td>'
@@ -2189,11 +2259,11 @@ function buildReport(s){
       h+='<tr class="scope"><td colspan="5">Division 99 — Markups</td><td class="r mono">'+usd(sch.markups.reduce((a,m)=>a+m.total,0))+'</td></tr>';
       sch.markups.forEach(m=>{h+='<tr><td class="mono code">'+esc(m.code)+'</td><td>'+esc(m.desc)+'</td><td></td><td></td><td></td><td class="r mono">'+usd(m.total)+'</td></tr>';});
     }
-    h+='<tr class="tot"><td colspan="5">Contract sum</td><td class="r mono">'+usd(sch.contract)+'</td></tr></tbody></table>';
+    h+='<tr class="tot"><td colspan="5">Contract Sum</td><td class="r mono">'+usd(sch.contract)+'</td></tr></tbody></table>';
     if(sch.soft.length){
-      h+='<h2 style="margin-top:18px">Soft costs</h2><table class="rpt-tbl full"><thead><tr><th>Code</th><th>Item</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>';
+      h+='<h2 style="margin-top:18px">Soft Costs</h2><table class="rpt-tbl full"><thead><tr><th>Code</th><th>Item</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>';
       sch.soft.forEach(r=>{h+='<tr><td class="mono code">'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td><td class="r mono">'+num(r.qty)+'</td><td class="r mono">'+usd2(r.rate)+'</td><td class="r mono">'+usd(r.total)+'</td></tr>';});
-      h+='<tr class="tot"><td colspan="4">Total soft costs</td><td class="r mono">'+usd(sch.softTotal)+'</td></tr></tbody></table>';
+      h+='<tr class="tot"><td colspan="4">Total Soft Costs</td><td class="r mono">'+usd(sch.softTotal)+'</td></tr></tbody></table>';
     }
     h+='</section>';
   }
@@ -2270,7 +2340,7 @@ async function exportExcel(){
 
   if(s.stats){
     const ws=sheet('Summary',[{width:38},{width:20},{width:16}]);
-    titleBand(ws,'Project budget summary',3);
+    titleBand(ws,'Project Budget Summary',3);
     const kv=(k,v,fmt)=>{const r=ws.addRow([k,v]);
       r.getCell(1).font=F(10,{color:{argb:'FF'+BRAND.ink700}});
       r.getCell(2).font=F(10,{bold:true});if(fmt)r.getCell(2).numFmt=fmt;return r;};
@@ -2278,33 +2348,37 @@ async function exportExcel(){
       r.getCell(1).border={bottom:thin};ws.mergeCells(r.number,1,r.number,3);return r;};
     head('PROJECT');
     kv('Project ID',doc.projectId);kv('Name',doc.name);kv('Address',doc.address);kv('Type',doc.type);
-    kv('Status',doc.status);kv('Pricing library',doc.pricingVersion);
-    kv('Residential SF',doc.resSF,QTY);kv('Amenity SF',doc.amenSF,QTY);kv('Total units',tu,QTY);
+    kv('Status',doc.status);kv('Pricing Library',doc.pricingVersion);
+    kv('Residential SF',doc.resSF,QTY);kv('Amenity SF',doc.amenSF,QTY);kv('Total Units',tu,QTY);
+    const sm=siteMetrics();
+    if(sm.site){kv('Total Site SF',sm.site,QTY);kv('Site Area (Acres)',sm.acres,'#,##0.00');
+      kv('Site Efficiency',sm.siteEff,PCT);kv('Density (Units / Acre)',sm.density,'#,##0.0');}
+    if(sm.bldgEff!==null)kv('Building Efficiency',sm.bldgEff,PCT);
     ws.addRow([]);
     head('CONSTRUCTION CONTRACT');
-    kv('Residential construction',p.res,MONEY);
-    if(scopeActive('amen'))kv('Amenity / clubhouse',p.amen,MONEY);
-    kv('Construction hard cost',p.hard,MONEY);kv('Profit',p.profit,MONEY);kv('Contingency (99.03)',p.cont,MONEY);
+    kv('Residential Construction',p.res,MONEY);
+    if(scopeActive('amen'))kv('Amenity / Clubhouse',p.amen,MONEY);
+    kv('Construction Hard Cost',p.hard,MONEY);kv('Profit',p.profit,MONEY);kv('Contingency (99.03)',p.cont,MONEY);
     totalRow(ws,'CONTRACT SUM',p.contract,3);
     ws.addRow([]);
     head('TOTAL PROJECT COST');
-    kv('Soft costs',p.soft,MONEY);kv('Land',doc.projectCosts.land,MONEY);
-    kv('Developer fee',doc.projectCosts.dev,MONEY);kv('Marketing / brokerage',doc.projectCosts.mkt,MONEY);
-    kv('Closing costs',doc.projectCosts.cls,MONEY);
+    kv('Soft Costs',p.soft,MONEY);kv('Land',doc.projectCosts.land,MONEY);
+    kv('Developer Fee',doc.projectCosts.dev,MONEY);kv('Marketing / Brokerage',doc.projectCosts.mkt,MONEY);
+    kv('Closing Costs',doc.projectCosts.cls,MONEY);
     totalRow(ws,'TOTAL PROJECT COST',p.project,3);
     ws.addRow([]);
     head('METRICS');
     kv('Contract $/SF',tsf?p.contract/tsf:0,MONEY2);kv('Project $/SF',tsf?p.project/tsf:0,MONEY2);
-    kv('Cost per unit',tu?p.project/tu:0,MONEY);
-    kv('Gross income (yr)',g.grossYr,MONEY);kv('Operating expenses (yr)',12*g.expMo,MONEY);
-    kv('Net income (yr)',g.netYr,MONEY);
-    kv('Yield on net income',p.project?g.netYr/p.project:0,PCT);
+    kv('Cost per Unit',tu?p.project/tu:0,MONEY);
+    kv('Gross Income (Yr)',g.grossYr,MONEY);kv('Operating Expenses (Yr)',12*g.expMo,MONEY);
+    kv('Net Income (Yr)',g.netYr,MONEY);
+    kv('Yield on Net Income',p.project?g.netYr/p.project:0,PCT);
   }
 
   if(s.units){
     const ws=sheet('Unit Mix',[{width:30},{width:7},{width:7},{width:11},{width:9},{width:13},{width:11},{width:13},{width:15},{width:15}]);
-    titleBand(ws,'Unit mix & rent revenue',10);
-    headerRow(ws,['Unit type','BD','BTH','SF / unit','Units','Rent / mo','$ / SF / mo','Type SF','Monthly','Yearly']);
+    titleBand(ws,'Unit Mix & Rent Revenue',10);
+    headerRow(ws,['Unit Type','BD','BTH','SF / Unit','Units','Rent / Mo','$ / SF / Mo','Type SF','Monthly','Yearly']);
     const f=[null,QTY,'0.0',QTY,QTY,MONEY,MONEY2,QTY,MONEY,MONEY];
     doc.units.forEach(u=>styleBody(ws.addRow([u.label,u.bd,u.bth,u.sf,u.count,u.rent,
       u.sf?u.rent/u.sf:0,u.sf*u.count,u.rent*u.count,12*u.rent*u.count]),f));
@@ -2315,28 +2389,28 @@ async function exportExcel(){
 
   if(s.other){
     const ws=sheet('Income & Expenses',[{width:44},{width:14},{width:12},{width:10},{width:14},{width:16}]);
-    titleBand(ws,'Other income & operating expenses',6);
-    headerRow(ws,['Line','Basis','$ / mo','Count','Monthly','Yearly']);
+    titleBand(ws,'Other Income & Operating Expenses',6);
+    headerRow(ws,['Line','Basis','$ / Mo','Count','Monthly','Yearly']);
     const f=[null,null,MONEY,QTY,MONEY,MONEY];
     groupRow(ws,'GROSS OTHER INCOME',null,6,true);
     doc.other.forEach(o=>{const c=o.auto?tu:o.count;
       styleBody(ws.addRow([o.label,'gross income',o.rate,c,o.rate*c,12*o.rate*c]),f);});
-    groupRow(ws,'Total gross other income',g.otherMo,6);
+    groupRow(ws,'Total Gross Other Income',g.otherMo,6);
     groupRow(ws,'OPERATING EXPENSES',null,6,true);
     doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
       styleBody(ws.addRow([e.label,e.per==='fixed'?'fixed / mo':'per unit',e.rate,c,e.rate*c,12*e.rate*c]),f);});
-    groupRow(ws,'Total operating expenses',g.expMo,6);
+    groupRow(ws,'Total Operating Expenses',g.expMo,6);
     ws.addRow([]);
-    groupRow(ws,'Net other income (gross − expenses)',g.netOtherMo,6);
-    groupRow(ws,'Rent income',g.rentMo,6);
+    groupRow(ws,'Net Other Income (Gross − Expenses)',g.netOtherMo,6);
+    groupRow(ws,'Rent Income',g.rentMo,6);
     totalRow(ws,'NET INCOME (monthly)',g.rentMo+g.netOtherMo,6);
     totalRow(ws,'NET INCOME (yearly)',g.netYr,6);
   }
 
   if(s.budget){
     const ws=sheet('Budget-SOV',[{width:13},{width:46},{width:14},{width:12},{width:12},{width:14},{width:12},{width:14},{width:18}],true);
-    titleBand(ws,'Budget detail — schedule of values',9);
-    headerRow(ws,['Code','Description','Basis','Qty','Rate','Total','Edited','Library rate','Provenance']);
+    titleBand(ws,'Budget Detail — Schedule of Values',9);
+    headerRow(ws,['Code','Description','Basis','Qty','Rate','Total','Edited','Library Rate','Provenance']);
     const f=[null,null,null,QTY,MONEY2,MONEY,null,MONEY2,null];
     activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
@@ -2359,8 +2433,8 @@ async function exportExcel(){
   if(s.csi){
     const sch=csiSchedule();
     const ws=sheet('CSI Schedule',[{width:14},{width:52},{width:14},{width:14},{width:12},{width:14},{width:16},{width:12}],true);
-    titleBand(ws,'CSI MasterFormat schedule of values',8);
-    headerRow(ws,['Code','Section','Scope','Basis','Qty','Rate','Scheduled value','% contract']);
+    titleBand(ws,'CSI MasterFormat Schedule of Values',8);
+    headerRow(ws,['Code','Section','Scope','Basis','Qty','Rate','Scheduled Value','% Contract']);
     const f=[null,null,null,null,QTY,MONEY2,MONEY,PCT];
     sch.divisions.forEach(d=>{
       groupRow(ws,d.title,d.total,8,true);
@@ -2393,14 +2467,14 @@ async function exportExcel(){
 
   if(s.summary){
     const ws=sheet('Contract Summary',[{width:44},{width:18},{width:14}]);
-    titleBand(ws,'Contract & project composition',3);
-    headerRow(ws,['Component','Amount','% of project']);
+    titleBand(ws,'Contract & Project Composition',3);
+    headerRow(ws,['Component','Amount','% of Project']);
     const f=[null,MONEY,PCT];
     const pc=v=>p.project?v/p.project:0;
-    [['Construction hard cost',p.hard],['Profit',p.profit],['Contingency (99.03)',p.cont]]
+    [['Construction Hard Cost',p.hard],['Profit',p.profit],['Contingency (99.03)',p.cont]]
       .forEach(([k,v])=>styleBody(ws.addRow([k,v,pc(v)]),f));
     totalRow(ws,'CONTRACT SUM (CONSTRUCTION)',p.contract,3);
-    [['Soft costs',p.soft],['Land',doc.projectCosts.land],['Developer fee + marketing + closing',p.fees]]
+    [['Soft Costs',p.soft],['Land',doc.projectCosts.land],['Developer Fee + Marketing + Closing',p.fees]]
       .forEach(([k,v])=>styleBody(ws.addRow([k,v,pc(v)]),f));
     totalRow(ws,'TOTAL PROJECT COST',p.project,3);
   }
