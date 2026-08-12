@@ -13,8 +13,10 @@ Functions (Node 18) · Azure SQL Database.
 | `app/` | Frontend (single-file, Finishes Solutions design system) |
 | `api/` | Azure Functions API — pricing, budgets, budget/{id} |
 | `sql/` | Schema + initial pricing library seed |
+| `test/` | Browser test suites + a mock of the SWA API (`./test/run-all.sh`) |
 | `docs/ROADMAP.md` | Phased plan: standalone → SharePoint → Monday → lender package |
 | `docs/BUILD_GUIDE.md` | **Start here** — full provisioning & deployment guide |
+| `docs/HANDOFF.md` | Picking the project up: branch/deploy model, invariants, open items |
 | `docs/DATA_CONTRACT.md` | SOV data contract → lender package integration |
 | `staticwebapp.config.json` | Routes, Entra ID provider, role enforcement |
 

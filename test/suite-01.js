@@ -1,0 +1,135 @@
+const { chromium } = require('playwright');
+const OUT = process.env.OUT_DIR || require('os').tmpdir();
+const R = [];
+const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' — ' + extra : ''}`);
+
+(async () => {
+ try {
+  const b = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+  const p = await b.newPage({ viewport: { width: 1400, height: 1000 } });
+  const errs = [];
+  let dialogs = 0;
+  p.on('dialog', async d => { dialogs++; await d.accept(); });
+  p.on('pageerror', e => errs.push('pageerror: ' + e.message));
+  p.on('console', m => { if (m.type() === 'error' && !/favicon|Failed to load resource/.test(m.text())) errs.push('console: ' + m.text()); });
+
+  await p.goto('http://127.0.0.1:8099/index.html', { waitUntil: 'networkidle' });
+  await p.waitForTimeout(600);
+
+  // D3 — API is absent here, so the offline banner must be visible
+  ok('D3 offline banner shows when API is unreachable', await p.locator('#apiBanner').isVisible());
+  ok('D3 banner text is specific', /pricing library/i.test(await p.locator('#apiBannerMsg').textContent()));
+
+  // Nav + routing
+  ok('Help tab exists and is enabled', await p.locator('#nav-help').isEnabled());
+  await p.click('#nav-help');
+  ok('U4 hash set for help', p.url().endsWith('#/help'), p.url());
+  ok('Help page visible', await p.locator('#page-help').isVisible());
+  ok('Help TOC has 10 entries', (await p.locator('#helpToc a').count()) === 10);
+  await p.screenshot({ path: OUT + '/help.png', fullPage: false });
+
+  // New budget
+  await p.click('#nav-home');
+  await p.click('button:has-text("+ New Multifamily Budget")');
+  ok('Inputs page after new budget', await p.locator('#page-input').isVisible());
+  ok('U4 hash for inputs', p.url().endsWith('#/inputs'), p.url());
+
+  // TST id validation
+  await p.fill('#pId', 'TST-9999');
+  await p.locator('#pName').click();
+  ok('TST-9999 accepted by validator', !(await p.locator('#pId').evaluate(e => e.classList.contains('err'))));
+  await p.fill('#pId', 'ZZ-1');
+  await p.locator('#pName').click();
+  ok('Bad ID still rejected', await p.locator('#pId').evaluate(e => e.classList.contains('err')));
+  await p.fill('#pId', 'TST-9999');
+  await p.fill('#pName', 'Preview <Test> & Co');   // D4 escaping
+  await p.locator('#pSF').click();
+
+  // D2 — dirty pill
+  ok('D2 save pill shows unsaved changes', /unsaved/i.test(await p.locator('#saveState').textContent()));
+
+  // D1 — tab-through focus retention (the core bug)
+  const cnt = p.locator('[data-k="units.0.count"]');
+  await cnt.click();
+  await cnt.fill('20');
+  await p.keyboard.press('Tab');
+  await p.waitForTimeout(250);
+  const focusKey = await p.evaluate(() => document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.k : null);
+  ok('D1 Tab moves to next field instead of losing focus', focusKey === 'units.0.rent', 'focus=' + focusKey);
+  const recalced = await p.locator('#uCount').textContent();
+  ok('D1 totals still recalculated on commit', recalced.trim() === '62', 'units=' + recalced);
+
+  // Caret restoration inside a text field
+  const lbl = p.locator('[data-k="units.0.label"]');
+  await lbl.click();
+  await lbl.press('End');
+  await lbl.type('X');
+  await p.waitForTimeout(150);
+  ok('D1 text edits keep focus', await lbl.evaluate(e => e === document.activeElement));
+
+  // Budget page
+  await p.click('button:has-text("Continue to Budget")');
+  ok('Budget page visible', await p.locator('#page-budget').isVisible());
+  ok('U4 hash carries project id', p.url().endsWith('#/budget/TST-9999'), p.url());
+  ok('TST banner visible', await p.locator('#testBanner').isVisible());
+  ok('D3 pricing badge flags fallback', /built-in fallback/.test(await p.locator('#mPricing').textContent()));
+
+  // D4 — name with < > & renders literally, no broken markup
+  const sub = await p.locator('#bTitle').textContent();
+  ok('D4 unsafe name renders literally', sub.includes('Preview <Test> & Co'), sub);
+
+  // D5 — status
+  await p.selectOption('#bStatus', 'Finalized');
+  ok('D5 status settable', await p.locator('#bStatus').inputValue() === 'Finalized');
+
+  // U1 — collapse
+  const before = await p.locator('#budBody tr').count();
+  await p.click('button:has-text("Collapse All")');
+  const after = await p.locator('#budBody tr').count();
+  ok('U1 collapse all hides lines', after < before, `${before} → ${after} rows`);
+  ok('U1 scope subtotal still shown', (await p.locator('#budBody .scope-hd .div-sum').first().textContent()).startsWith('$'));
+  // collapse state survives a recalc
+  await p.evaluate(()=>touch());        // force a recalc without needing a visible field
+  await p.waitForTimeout(250);
+  ok('U1 collapse survives recalc', (await p.locator('#budBody tr').count()) === after);
+  await p.click('button:has-text("Expand All")');
+  ok('U1 expand all restores', (await p.locator('#budBody tr').count()) === before);
+  await p.screenshot({ path: OUT + '/budget.png', fullPage: false });
+
+  // U1 sticky header
+  await p.locator('.budget-scroll').evaluate(e => e.scrollTop = 400);
+  await p.waitForTimeout(200);
+  const stickyOk = await p.locator('.budget-scroll thead th').first().evaluate(e => getComputedStyle(e).position === 'sticky');
+  ok('U1 header is sticky', stickyOk);
+
+  // D2 — the unsaved guard must fire when leaving a dirty budget
+  const before2 = dialogs;
+  await p.click('#nav-home');
+  ok('D2 leaving a dirty budget prompts', dialogs === before2 + 1, `dialogs=${dialogs}`);
+
+  // U2 — home search / sort (no data, but controls must wire without error)
+  await p.fill('#homeSearch', 'BD');
+  await p.selectOption('#homeStatus', 'Draft');
+  await p.click('#homeHead th[data-sort="name"]');
+  ok('U2 home controls operate without error', true);
+  ok('U2 empty state message switches', /No budgets yet/.test(await p.locator('#homeEmptyBig').textContent()));
+
+  // U4 — deep link on cold load
+  await p.goto('http://127.0.0.1:8099/index.html#/pricing', { waitUntil: 'networkidle' });
+  await p.waitForTimeout(500);
+  ok('U4 deep link to pricing on cold load', await p.locator('#page-pricing').isVisible());
+  ok('Pricing renders from fallback seed', (await p.locator('#priceBody tr').count()) > 100,
+     (await p.locator('#priceBody tr').count()) + ' rows');
+  await p.screenshot({ path: OUT + '/pricing.png' });
+
+  ok('No uncaught JS errors', errs.length === 0, errs.join(' | '));
+
+  console.log(R.join('\n'));
+  console.log('\n' + R.filter(r => r.startsWith('FAIL')).length + ' failures of ' + R.length);
+  await b.close();
+ } catch (e) {
+  console.log(R.join('\n'));
+  console.log('\nABORTED: ' + e.message.split('\n')[0]);
+  process.exit(1);
+ }
+})();
