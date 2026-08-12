@@ -28,15 +28,15 @@ on:
 # workflow can own that name, so OIDC here fails with
 # "Could not determine the Static Web App from the GitHub OIDC workflow reference".
 #
-# SETUP REQUIRED — this workflow fails with "No matching Static Web App was found or
-# the api key was invalid" until the secret below exists:
-#   1. Azure Portal -> Static Web App -> Overview -> Manage deployment token -> Reset.
-#   2. Copy the new token.
-#   3. GitHub -> repo Settings -> Secrets and variables -> Actions -> New repository
-#      secret, named AZURE_SWA_DEPLOYMENT_TOKEN, pasting that value.
-#   4. Re-run this workflow (Actions -> this workflow -> Run workflow).
+# SETUP — needs a deployment token in a repository secret, under EITHER name:
+#     AZURE_SWA_DEPLOYMENT_TOKEN                            (preferred)
+#     AZURE_STATIC_WEB_APPS_API_TOKEN_WONDERFUL_ROCK_071C8E810   (also accepted)
+# Get it from Azure Portal -> Static Web App -> Overview -> Manage deployment token.
+# The preflight step below reports which secret it found and how long the value is, so
+# a missing, misnamed or truncated token is obvious in the log instead of surfacing as
+# "No matching Static Web App was found or the api key was invalid".
 # Production is unaffected: it deploys from the main-branch workflow over GitHub OIDC
-# and does not use this secret.
+# and does not use either secret.
 
 jobs:
   build_and_deploy_staging:
@@ -49,11 +49,26 @@ jobs:
         with:
           submodules: true
           lfs: false
+
+      # Prints only the name and character count — never the value, which GitHub masks
+      # anyway. A healthy SWA deployment token is ~119 characters.
+      - name: Preflight — deployment token
+        env:
+          TOKEN_NEW: ${{ secrets.AZURE_SWA_DEPLOYMENT_TOKEN }}
+          TOKEN_OLD: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WONDERFUL_ROCK_071C8E810 }}
+        run: |
+          if   [ -n "$TOKEN_NEW" ]; then echo "Found AZURE_SWA_DEPLOYMENT_TOKEN (${#TOKEN_NEW} chars)"
+          elif [ -n "$TOKEN_OLD" ]; then echo "Found AZURE_STATIC_WEB_APPS_API_TOKEN_WONDERFUL_ROCK_071C8E810 (${#TOKEN_OLD} chars)"
+          else
+            echo "::error::No deployment token found. Add a repository secret named AZURE_SWA_DEPLOYMENT_TOKEN (Settings -> Secrets and variables -> Actions) with the value from Azure Portal -> Static Web App -> Overview -> Manage deployment token."
+            exit 1
+          fi
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_SWA_DEPLOYMENT_TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_SWA_DEPLOYMENT_TOKEN || secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WONDERFUL_ROCK_071C8E810 }}
           action: "upload"
           app_location: "./app"
           api_location: "api"
