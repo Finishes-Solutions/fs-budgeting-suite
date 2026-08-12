@@ -1,9 +1,22 @@
 name: Azure Static Web Apps CI/CD
 
+# Two deploy targets, deliberately in ONE file. Azure identifies the Static Web App from
+# this workflow's filename when authenticating over OIDC, so a separate staging workflow
+# cannot authenticate without a deployment token. Keeping both jobs here means staging
+# uses the same proven, token-free auth as production.
+#
+#   push to main     -> production
+#   push to staging  -> the "staging" named environment, at a stable URL
+#   pull request     -> a per-PR preview environment (unchanged)
+#
+# The two deploy jobs are mutually exclusive on github.ref_name, so a push to staging can
+# never publish to the live site.
+
 on:
   push:
     branches:
       - main
+      - staging
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
@@ -11,7 +24,7 @@ on:
 
 jobs:
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: (github.event_name == 'push' && github.ref_name == 'main') || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     permissions:
@@ -45,6 +58,43 @@ jobs:
           output_location: "." # Built app content directory - optional
           github_id_token: ${{ steps.idtoken.outputs.result }}
           ###### End of Repository/Build Configurations ######
+
+  # Same steps as above, but published to the "staging" named environment instead of
+  # production. Its hostname is stable, so its Entra redirect URI is registered once:
+  #   https://<default-hostname>-staging.<region>.azurestaticapps.net/.auth/login/aad/callback
+  build_and_deploy_staging_job:
+    if: github.event_name == 'push' && github.ref_name == 'staging'
+    runs-on: ubuntu-latest
+    name: Build and Deploy Staging
+    permissions:
+       id-token: write
+       contents: read
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          lfs: false
+      - name: Install OIDC Client from Core Package
+        run: npm install @actions/core@1.6.0 @actions/http-client
+      - name: Get Id Token
+        uses: actions/github-script@v6
+        id: idtoken
+        with:
+           script: |
+               const coredemo = require('@actions/core')
+               return await coredemo.getIDToken()
+           result-encoding: string
+      - name: Build And Deploy
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WONDERFUL_ROCK_071C8E810 }}
+          action: "upload"
+          app_location: "./app"
+          api_location: "api"
+          output_location: "."
+          deployment_environment: staging
+          github_id_token: ${{ steps.idtoken.outputs.result }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
