@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Finishes Solutions — FS Budgeting Suite</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- ExcelJS is vendored, not loaded from a CDN: the export used to fail silently on any
+     network that blocked cdnjs, and the community build of the old library could not style
+     cells at all. MIT licence in vendor/exceljs-LICENSE.txt. -->
+<script src="vendor/exceljs.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 :root{
@@ -25,7 +28,7 @@ body{font-family:var(--fb);color:var(--ink-800);background:var(--ink-50);font-si
 .mono{font-family:var(--fm)}
 .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
 
-header{background:var(--ink-900);color:var(--white)}
+body>header{background:var(--ink-900);color:var(--white)}   /* app chrome only — the printed report has its own <header> */
 .hd{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px;padding:0 32px}
 .wordmark{font-weight:800;letter-spacing:.06em;font-size:16px;text-transform:uppercase}
 .wordmark span{color:var(--green-500)}
@@ -191,17 +194,83 @@ th.sortable.sorted{color:var(--ink-900)}
   font-family:var(--fm);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
 .help .step .t{padding-top:2px}
 
+/* ---- printed report ----
+   Export builds a purpose-made document into #printDoc rather than printing the app UI,
+   so the PDF is a branded report instead of a screenshot of a web page. */
+#printDoc{display:none}
 @media print{
-  header,.no-print,.banner{display:none!important}
-  body{background:#fff}main{padding:0;max-width:none}
-  .page{display:none!important}.page.print-target{display:block!important}
-  .card{box-shadow:none;break-inside:avoid}
-  section.print-hide,div.print-hide{display:none!important}
-  /* the budget grid scrolls on screen — it must not clip to one page in print */
-  .budget-scroll{max-height:none!important;overflow:visible!important}
-  .budget-scroll thead th{position:static!important;box-shadow:none!important}
-  .caret,.seg{display:none!important}
-  .stats{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:letter portrait;margin:13mm 12mm 14mm}
+  body{background:#fff}
+  .no-print,.banner,.toast,#exportModal,#pickModal{display:none!important}
+  /* direct children only — the report has its own <header> and must not be hidden */
+  body.printing > header,body.printing > main{display:none!important}
+  body.printing #printDoc{display:block}
+  /* fall back to printing the app itself if someone hits Ctrl+P directly */
+  body:not(.printing) .budget-scroll{max-height:none!important;overflow:visible!important}
+  body:not(.printing) .budget-scroll thead th{position:static!important;box-shadow:none!important}
+  body:not(.printing) .card{box-shadow:none;break-inside:avoid}
+  body:not(.printing) .caret{display:none!important}
+
+  #printDoc{font-family:var(--fb);color:var(--ink-900);font-size:9.5pt;line-height:1.45;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printDoc .mono{font-family:var(--fm)}
+  #printDoc .r{text-align:right}
+  #printDoc .muted{color:var(--ink-500)}
+  #printDoc .eyebrow{font-family:var(--fm);font-size:7.5pt;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--ink-500);font-weight:500}
+
+  .rpt-hd{background:none;color:var(--ink-900);display:flex;align-items:flex-end;justify-content:space-between;
+    border-bottom:2px solid var(--ink-900);padding-bottom:8px;margin-bottom:16px}
+  .rpt-hd img{height:34px;width:auto}
+  .rpt-hd-r{text-align:right}
+  .rpt-hd .stamp{font-size:8.5pt;color:var(--ink-600);margin-top:2px}
+
+  .rpt-title{margin-bottom:14px}
+  .rpt-title h1{font-size:21pt;font-weight:800;letter-spacing:-.02em;color:var(--ink-950);margin:2px 0 4px}
+  .rpt-meta{font-size:8.5pt;color:var(--ink-600)}
+
+  .rpt-stats{display:grid;grid-template-columns:repeat(5,1fr);background:var(--ink-900);
+    border-radius:4px;overflow:hidden;margin-bottom:18px;break-inside:avoid}
+  .rpt-stats>div{padding:10px 12px;border-left:3px solid var(--green-700)}
+  .rpt-stats .k{font-family:var(--fm);font-size:7pt;letter-spacing:.14em;text-transform:uppercase;
+    color:rgba(255,255,255,.6);margin-bottom:3px}
+  .rpt-stats .v{font-family:var(--fm);font-size:12.5pt;font-weight:600;color:#fff}
+
+  .rpt-sec{margin-bottom:18px;break-inside:auto}
+  .rpt-sec.break{break-before:page}
+  .rpt-sec h2{font-size:11pt;font-weight:700;color:var(--ink-950);margin-bottom:8px;
+    padding-bottom:4px;border-bottom:1px solid var(--ink-300)}
+  .rpt-note{font-size:8.5pt;color:var(--ink-600);margin-bottom:8px;max-width:62em}
+  .rpt-2col{display:grid;grid-template-columns:1fr 1.15fr;gap:26px;break-inside:avoid}
+
+  .rr{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--ink-100)}
+  .rr .v{font-family:var(--fm);font-weight:500}
+  .rr.sub{padding-left:12px;color:var(--ink-600);font-size:9pt}
+  .rr.mid{border-top:1px solid var(--ink-300);font-weight:700}
+  .rr.grand{border-bottom:none;border-top:2px solid var(--ink-900);margin-top:3px;padding-top:6px;font-weight:700}
+  .rr.grand .v{color:var(--green-700);font-size:11pt}
+
+  .rpt-tbl{width:100%;border-collapse:collapse}
+  .rpt-tbl.full{margin-top:2px}
+  .rpt-tbl thead{display:table-header-group}
+  .rpt-tbl th{font-family:var(--fm);font-size:7pt;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-600);font-weight:500;text-align:left;padding:5px 6px;
+    border-bottom:1px solid var(--ink-400);white-space:nowrap}
+  .rpt-tbl th.r{text-align:right}
+  .rpt-tbl td{padding:3.5px 6px;border-bottom:1px solid var(--ink-100);vertical-align:top}
+  .rpt-tbl tr{break-inside:avoid}
+  .rpt-tbl .code{font-size:8pt;color:var(--green-700);margin-right:4px}
+  .rpt-tbl tr.scope td{background:var(--ink-900);color:#fff;font-family:var(--fm);font-size:7.5pt;
+    letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:5px 6px}
+  .rpt-tbl tr.grp td{background:var(--ink-100);font-family:var(--fm);font-size:7.5pt;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--ink-700);font-weight:600;padding:4px 6px}
+  .rpt-tbl tr.sub-tot td{border-top:1px solid var(--ink-300);font-weight:600}
+  .rpt-tbl tr.tot td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;padding-top:6px}
+  .edited-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--edit);border:1px solid var(--edit);border-radius:2px;padding:0 3px;margin-left:4px}
+
+  .rpt-ft{display:flex;justify-content:space-between;border-top:1px solid var(--ink-300);
+    margin-top:20px;padding-top:6px;font-size:7.5pt;color:var(--ink-500)}
 }
 </style>
 </head>
@@ -214,6 +283,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <button id="nav-home" class="on" onclick="go('home')">Budgets</button>
       <button id="nav-input" onclick="go('input')" disabled>Inputs</button>
       <button id="nav-budget" onclick="go('budget')" disabled>Budget</button>
+      <button id="nav-csi" onclick="go('csi')" disabled>CSI schedule</button>
       <button id="nav-pricing" onclick="go('pricing')">Pricing library</button>
       <button id="nav-help" onclick="go('help')">How to use</button>
     </nav>
@@ -235,7 +305,10 @@ th.sortable.sorted{color:var(--ink-900)}
 <div class="page on" id="page-home">
   <div class="page-title">
     <div><h1>Project budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
-    <button class="btn btn-primary" onclick="newBudget()">+ New budget</button>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="newBudget('blank')">+ Blank budget</button>
+      <button class="btn btn-primary" onclick="newBudget()">+ New multifamily budget</button>
+    </div>
   </div>
   <div class="card">
     <div class="card-hd no-print">
@@ -289,7 +362,11 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="fld"><span class="lab">Project name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Property type</span>
-          <select id="pType"><option>Multifamily</option><option disabled>Commercial (coming)</option><option disabled>SFR (coming)</option></select></label>
+          <select id="pType" onchange="doc.type=this.value;markDirty()">
+            <option value="Multifamily">Multifamily</option>
+            <option value="Blank">Blank / custom</option>
+            <option disabled>Commercial (coming)</option>
+            <option disabled>SFR (coming)</option></select></label>
       </div>
       <div class="grid g4" style="margin-top:14px">
         <label class="fld"><span class="lab">Residential buildable SF</span><input type="number" class="num" id="pSF" value="51365" min="0" step="100" oninput="touch()"></label>
@@ -382,6 +459,19 @@ th.sortable.sorted{color:var(--ink-900)}
       </div>
     </div>
   </section>
+
+  <section class="card" id="sec-project">
+    <div class="card-hd"><h2>Land &amp; project costs</h2><span class="eyebrow">Outside the construction contract — rolls into total project cost</span></div>
+    <div class="card-bd">
+      <div class="grid g4">
+        <label class="fld"><span class="lab">Land cost</span><input type="number" class="num" id="pcLand" min="0" step="10000" oninput="doc.projectCosts.land=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Developer fee</span><input type="number" class="num" id="pcDev" min="0" step="5000" oninput="doc.projectCosts.dev=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Marketing / brokerage</span><input type="number" class="num" id="pcMkt" min="0" step="5000" oninput="doc.projectCosts.mkt=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Closing costs</span><input type="number" class="num" id="pcCls" min="0" step="5000" oninput="doc.projectCosts.cls=+this.value;touch()"></label>
+      </div>
+    </div>
+  </section>
+
 </div>
 
 <!-- ================= BUDGET ================= -->
@@ -426,9 +516,9 @@ th.sortable.sorted{color:var(--ink-900)}
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
         <span class="eyebrow" style="color:var(--green-600)">● qty auto-synced · edit to override</span>
         <span class="eyebrow legend" id="editLegend" style="color:var(--edit)"><span class="editdot on"></span><span id="editCount">no manual edits</span></span>
-        <span class="seg no-print">
-          <button onclick="collapseAll()">Collapse all</button>
-          <button onclick="expandAll()">Expand all</button>
+        <span class="no-print" style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Collapse all</button>
+          <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand all</button>
         </span>
       </div></div>
     <div class="card-bd budget-scroll" style="overflow:auto;padding-top:8px">
@@ -437,19 +527,16 @@ th.sortable.sorted{color:var(--ink-900)}
           <th class="r">Total</th><th class="r">% scope</th><th class="no-print"></th></tr></thead>
         <tbody id="budBody"></tbody>
       </table>
-      <div style="margin-top:12px" class="no-print"><button class="btn btn-ghost btn-sm" onclick="addLine()">+ Add line item</button></div>
-    </div>
-  </section>
-
-  <section class="card" id="sec-project">
-    <div class="card-hd"><h2>Land &amp; project costs</h2><span class="eyebrow">Outside the construction contract — rolls into total project cost</span></div>
-    <div class="card-bd">
-      <div class="grid g4">
-        <label class="fld"><span class="lab">Land cost</span><input type="number" class="num" id="pcLand" min="0" step="10000" oninput="doc.projectCosts.land=+this.value;touch()"></label>
-        <label class="fld"><span class="lab">Developer fee</span><input type="number" class="num" id="pcDev" min="0" step="5000" oninput="doc.projectCosts.dev=+this.value;touch()"></label>
-        <label class="fld"><span class="lab">Marketing / brokerage</span><input type="number" class="num" id="pcMkt" min="0" step="5000" oninput="doc.projectCosts.mkt=+this.value;touch()"></label>
-        <label class="fld"><span class="lab">Closing costs</span><input type="number" class="num" id="pcCls" min="0" step="5000" oninput="doc.projectCosts.cls=+this.value;touch()"></label>
+      <div class="empty" id="budEmpty" style="display:none">
+        <div class="big">No line items yet</div>
+        <div>Add scope below — lines picked from the catalog carry a real CSI code into the schedule of values.</div>
       </div>
+    </div>
+    <!-- Deliberately OUTSIDE the scroll pane. Sitting below a 100-row table inside a
+         72vh scroller made this button unreachable without scrolling the inner pane. -->
+    <div class="no-print" style="border-top:1px solid var(--ink-150);padding:14px 22px;display:flex;align-items:center;gap:12px">
+      <button class="btn btn-ghost btn-sm" onclick="addLine()">+ Add line item</button>
+      <span class="note">Opens the CSI MasterFormat catalog.</span>
     </div>
   </section>
 
@@ -480,6 +567,46 @@ th.sortable.sorted{color:var(--ink-900)}
           <table class="tbl"><tbody id="sovBody"></tbody></table>
         </div>
       </div>
+    </div>
+  </section>
+</div>
+
+<!-- ================= CSI SCHEDULE ================= -->
+<div class="page" id="page-csi">
+  <div class="page-title">
+    <div><h1>CSI schedule of values</h1>
+      <div class="sub" id="csiSub">The same budget, ordered as MasterFormat divisions — the form a lender, architect or GC expects.</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap" class="no-print">
+      <button class="btn btn-ghost" onclick="go('budget')">← Budget</button>
+      <button class="btn btn-dark" onclick="openExport()">Export…</button>
+    </div>
+  </div>
+
+  <section class="card" id="sec-csi">
+    <div class="card-hd"><h2>Construction contract</h2>
+      <span class="eyebrow" id="csiMeta">—</span></div>
+    <div class="card-bd" style="overflow:auto;padding-top:8px;max-height:72vh">
+      <table class="tbl">
+        <thead><tr><th style="width:112px">Code</th><th style="width:34%">Section</th><th>Scope</th><th>Basis</th>
+          <th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th><th class="r">% contract</th></tr></thead>
+        <tbody id="csiBody"></tbody>
+      </table>
+      <div class="empty" id="csiEmpty" style="display:none">
+        <div class="big">Nothing to schedule yet</div>
+        <div>Add construction scope on the Budget page and it will appear here by division.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="sec-csi-soft">
+    <div class="card-hd"><h2>Soft costs</h2>
+      <span class="eyebrow">Reported separately — outside the construction contract</span></div>
+    <div class="card-bd" style="overflow:auto;padding-top:8px">
+      <table class="tbl">
+        <thead><tr><th style="width:112px">Code</th><th style="width:34%">Item</th><th>Basis</th>
+          <th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead>
+        <tbody id="csiSoftBody"></tbody>
+      </table>
     </div>
   </section>
 </div>
@@ -551,6 +678,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <a href="#help-ids">Project IDs</a>
       <a href="#help-inputs">Inputs reference</a>
       <a href="#help-budget">The budget page</a>
+      <a href="#help-csi">CSI schedule</a>
       <a href="#help-pricing">Pricing library</a>
       <a href="#help-exports">Exports</a>
       <a href="#help-access">Who can do what</a>
@@ -579,7 +707,8 @@ th.sortable.sorted{color:var(--ink-900)}
           A fresh budget copies the current pricing library and the standard multifamily template.</div></div>
         <div class="step"><div class="n">2</div><div class="t"><b>Fill in the Inputs page.</b>
           Project ID and name first — the ID is required before anything can be saved. Then residential and
-          amenity square footage, the unit mix, income and expenses.</div></div>
+          amenity square footage, the unit mix, income and expenses, and the land and project costs that sit
+          outside the construction contract.</div></div>
         <div class="step"><div class="n">3</div><div class="t"><b>Continue to budget.</b>
           Every line is already priced from the library. Adjust quantities or rates where you know better,
           and add scope with <span class="kbd">+ Add line item</span>.</div></div>
@@ -677,6 +806,21 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></section>
 
       <section class="card"><div class="card-bd">
+        <h3 id="help-csi">CSI schedule</h3>
+        <p>The <b>CSI schedule</b> tab re-presents the same budget as a MasterFormat schedule of values: sorted by
+          division number, grouped under Division 00–48 headings with a subtotal per division, showing the full
+          code on every line. Same money as the Budget page, organised the way an architect, lender or general
+          contractor expects to receive it.</p>
+        <ul>
+          <li>Profit and contingency appear as <b>Division 99 — Markups</b>, with contingency carried explicitly as
+            <code>99 03 00</code> and never blended into a trade line.</li>
+          <li><b>Soft costs are listed separately</b> and are not part of the contract sum — the bank sees the
+            construction contract, not the total project cost.</li>
+          <li>Hand-added lines with no CSI code collect under <b>Uncoded / custom scope</b>, a prompt to give them a
+            real code before the budget goes out.</li>
+        </ul>
+        <p>The schedule is also its own Excel sheet and its own PDF section, both selectable at export.</p>
+
         <h3 id="help-pricing">Pricing library and versioning</h3>
         <p>All rates come from one shared library so two people pricing the same building get the same answer.
           The important rule:</p>
@@ -694,12 +838,16 @@ th.sortable.sorted{color:var(--ink-900)}
         <h3 id="help-exports">Exports</h3>
         <p><span class="kbd">Export…</span> lets you pick which sections to include, then produces either format.</p>
         <table class="tbl"><tbody>
-          <tr><td>Excel</td><td>A workbook with a sheet per section — Summary, Unit Mix, Income &amp; Expenses,
-            Budget-SOV and Contract Summary. Values are live numbers, not text, so they can be pivoted or
-            re-totalled. This is the one to send to anyone doing further analysis.</td></tr>
-          <tr><td>PDF</td><td>Opens the browser print dialog against the budget page. Choose "Save as PDF" as the
-            destination. Best for a quick read-only copy.</td></tr>
+          <tr><td>Excel</td><td>A branded workbook, one sheet per section — Summary, Unit Mix, Income &amp; Expenses,
+            Budget-SOV, CSI Schedule and Contract Summary. Headers freeze, columns are sized, currency and
+            percentages carry real number formats, and every sheet prints landscape and fits to width. Values are
+            live numbers, not text, so they can be pivoted or re-totalled.</td></tr>
+          <tr><td>PDF</td><td>A composed report rather than a picture of the screen: logo lockup, project header,
+            key metrics band, then whichever sections you ticked. Collapsed groups never affect it — the report is
+            always complete. Opens the browser print dialog; choose "Save as PDF".</td></tr>
         </tbody></table>
+        <div class="callout">Both exports read the same numbers the screen shows, so they cannot drift from the
+          budget. The workbook also carries the <b>Manually edited</b> flag and each line's original library rate.</div>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -755,6 +903,7 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="chk"><input type="checkbox" id="ex-units" checked> Unit mix &amp; rent revenue</label>
         <label class="chk"><input type="checkbox" id="ex-other" checked> Other income &amp; operating expenses</label>
         <label class="chk"><input type="checkbox" id="ex-budget" checked> Budget detail (all scopes)</label>
+        <label class="chk"><input type="checkbox" id="ex-csi" checked> CSI MasterFormat schedule of values</label>
         <label class="chk"><input type="checkbox" id="ex-summary" checked> Contract &amp; project summary / SOV</label>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
@@ -789,6 +938,8 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
   </div>
 </div>
+
+<div id="printDoc" aria-hidden="true"></div>
 
 <div class="toast" id="toast"></div>
 
@@ -1053,6 +1204,7 @@ let dirty=false,saving=false,lastSaved=null;
 const collapsed=new Set();              // "scope|grp" keys collapsed on the budget grid
 const homeView={q:'',sort:'updated',dir:-1,status:'all'};
 const SCOPES={res:'Residential Construction',amen:'Amenity / Clubhouse',soft:'Soft Costs'};
+const BASIS_LABEL={sf:'per res SF',asf:'per amen SF',unit:'per unit',ls:'lump sum'};
 
 /* ---- unsaved-work tracking ----
    touch() is recalc() plus "the user changed something". Mutation handlers call it;
@@ -1110,22 +1262,27 @@ function withFocus(fn){
   if(el===all[i]&&s!=null){try{el.setSelectionRange(s,e);}catch(_){}}
 }
 
-function blankDoc(){
-  return {projectId:'',name:'',address:'',type:'Multifamily',resSF:51365,amenSF:1200,
-    units:[
+/* kind 'blank' starts genuinely from scratch — no unit types, no income or expense lines,
+   no scope, no square footage, no markups. Everything is added by hand, which is what you
+   want for a project the multifamily template does not describe. */
+function blankDoc(kind){
+  const bare=kind==='blank';
+  return {projectId:'',name:'',address:'',type:bare?'Blank':'Multifamily',
+    resSF:bare?0:51365,amenSF:bare?0:1200,
+    units:bare?[]:[
       {label:'Studio (630)',bd:0,bth:1,sf:630,count:16,rent:1203},
       {label:'Studio (400)',bd:0,bth:1,sf:400,count:14,rent:1160},
       {label:'Townhome (1,063)',bd:2,bth:2,sf:1063,count:14,rent:1520},
       {label:'Townhome (1,200)',bd:2,bth:2.5,sf:1200,count:14,rent:1500}],
-    other:JSON.parse(JSON.stringify(DEFAULT_OTHER)),
-    expenses:JSON.parse(JSON.stringify(DEFAULT_EXPENSES)),
+    other:bare?[]:JSON.parse(JSON.stringify(DEFAULT_OTHER)),
+    expenses:bare?[]:JSON.parse(JSON.stringify(DEFAULT_EXPENSES)),
     // baseUnit is the library rate this line was born with. Comparing against it is what
     // lets the budget flag a manually re-priced line — and un-flag it if you put the
     // original rate back.
-    lines:pricing.lines.map(l=>({...l,qty:l.basis==='ls'?1:0,auto:l.basis!=='ls',baseUnit:l.unit})),
-    companies:[{name:'Finishes Solutions LLC',pct:12}],
-    contingency:{mode:'psf',val:2},
-    projectCosts:{land:1200000,dev:200000,mkt:75000,cls:0},
+    lines:bare?[]:pricing.lines.map(l=>({...l,qty:l.basis==='ls'?1:0,auto:l.basis!=='ls',baseUnit:l.unit})),
+    companies:bare?[]:[{name:'Finishes Solutions LLC',pct:12}],
+    contingency:bare?{mode:'pct',val:0}:{mode:'psf',val:2},
+    projectCosts:bare?{land:0,dev:0,mkt:0,cls:0}:{land:1200000,dev:200000,mkt:75000,cls:0},
     pricingVersion:pricing.version,status:'Draft',
     created:new Date().toISOString(),updated:new Date().toISOString()};
 }
@@ -1164,9 +1321,9 @@ function editReason(it){
 /* ============ NAV + HASH ROUTING ============
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
-const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',pricing:'pricing',help:'help'};
-const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',pricing:'pricing',help:'help'};
-const DOC_PAGES=['input','budget'];
+const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',csi:'csi',pricing:'pricing',help:'help'};
+const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',pricing:'pricing',help:'help'};
+const DOC_PAGES=['input','budget','csi'];
 
 function hashFor(p){
   const s=PAGE_SLUG[p]||'budgets';
@@ -1188,7 +1345,7 @@ function go(p){
   renderSaveState();
   if(p==='home')renderHome();
   if(p==='pricing'){renderPricing();renderCatalog();}
-  if(p==='budget'||p==='input')recalc();
+  if(p==='budget'||p==='input'||p==='csi')recalc();
   window.scrollTo(0,0);
 }
 
@@ -1254,13 +1411,13 @@ function homeSort(k){
   paintHome();
 }
 function enableDocNav(){
-  document.getElementById('nav-input').disabled=false;
-  document.getElementById('nav-budget').disabled=false;
+  ['nav-input','nav-budget','nav-csi'].forEach(id=>{document.getElementById(id).disabled=false;});
 }
-function newBudget(){
+function newBudget(kind){
   if(!confirmDiscard())return;
-  doc=blankDoc();dirty=false;lastSaved=null;
+  doc=blankDoc(kind);dirty=false;lastSaved=null;
   enableDocNav();fillForms();go('input');
+  if(kind==='blank')toast('Blank budget — build the scope from the CSI catalog on the Budget page');
 }
 async function openBudget(pid,page){
   if(!confirmDiscard())return;
@@ -1273,8 +1430,7 @@ async function deleteBudget(pid){
   if(!confirm('Delete '+pid+'? This cannot be undone.'))return;
   try{await sDel('budget-'+pid);}catch(e){toast('Delete failed: '+e.message);return;}
   if(doc&&doc.projectId===pid){doc=null;dirty=false;
-    document.getElementById('nav-input').disabled=true;
-    document.getElementById('nav-budget').disabled=true;}
+    ['nav-input','nav-budget','nav-csi'].forEach(id=>{document.getElementById(id).disabled=true;});}
   renderHome();toast('Deleted '+pid);
 }
 
@@ -1285,6 +1441,7 @@ function fillForms(){
   document.getElementById('pAddr').value=doc.address;
   document.getElementById('pSF').value=doc.resSF;
   document.getElementById('pASF').value=doc.amenSF;
+  document.getElementById('pType').value=doc.type||'Multifamily';
   document.getElementById('cVal').value=doc.contingency.val;
   document.getElementById('pcLand').value=doc.projectCosts.land;
   document.getElementById('pcDev').value=doc.projectCosts.dev;
@@ -1298,6 +1455,7 @@ function pullForms(){
   doc.address=document.getElementById('pAddr').value.trim();
   doc.resSF=+document.getElementById('pSF').value||0;
   doc.amenSF=+document.getElementById('pASF').value||0;
+  doc.type=document.getElementById('pType').value||doc.type||'Multifamily';
 }
 function validateId(){
   const el=document.getElementById('pId');
@@ -1431,6 +1589,7 @@ function addOther(){doc.other.push({label:'New income line',rate:0,count:0,auto:
    `collapsed` set so a recalc() triggered from anywhere does not spring them open. */
 function renderBudget(){
   const b=document.getElementById('budBody');b.innerHTML='';
+  document.getElementById('budEmpty').style.display=doc.lines.length?'none':'block';
   ['res','amen','soft'].forEach(sc=>{
     const scLines=doc.lines.map((l,gi)=>({l,gi})).filter(x=>x.l.scope===sc);
     if(!scLines.length)return;
@@ -1467,6 +1626,91 @@ function renderBudget(){
   });
   renderEditLegend();
 }
+/* ============ CSI SCHEDULE OF VALUES ============
+   One model, three consumers: the CSI tab, the Excel sheet and the PDF section. The
+   construction contract is grouped by MasterFormat division, then profit by company and
+   contingency as line 99.03 (DATA_CONTRACT rule 2). Soft costs are reported separately
+   because they are not part of the contract sum (rule 3). */
+function csiDivKey(code){
+  const n=String(code||'').slice(0,2);
+  return /^\d{2}$/.test(n)&&CSI_DIV[n]?n:null;
+}
+function csiSchedule(){
+  const p=parts(),divs=new Map(),soft=[],orphans=[];
+  doc.lines.forEach(l=>{
+    const row={code:l.code,desc:l.desc,scope:l.scope,basis:l.basis,
+               qty:lineQty(l),rate:l.unit,total:lineQty(l)*l.unit,edited:isEdited(l)};
+    if(l.scope==='soft'){soft.push(row);return;}
+    const k=csiDivKey(l.code);
+    if(!k){orphans.push(row);return;}
+    if(!divs.has(k))divs.set(k,[]);
+    divs.get(k).push(row);
+  });
+  const divisions=[...divs.keys()].sort().map(k=>{
+    const rows=divs.get(k).sort((a,z)=>String(a.code).localeCompare(String(z.code)));
+    return {key:k,title:CSI_DIV[k],rows,total:rows.reduce((s,r)=>s+r.total,0)};
+  });
+  if(orphans.length)divisions.push({key:'--',title:'Uncoded / custom scope',
+    rows:orphans.sort((a,z)=>String(a.code).localeCompare(String(z.code))),
+    total:orphans.reduce((s,r)=>s+r.total,0)});
+  const markups=[];
+  doc.companies.forEach(c=>{if(c.pct>0)markups.push({code:'99 01 00',desc:'Profit — '+c.name,total:p.hard*c.pct/100});});
+  if(p.cont>0)markups.push({code:'99 03 00',desc:'Construction contingency',total:p.cont});
+  soft.sort((a,z)=>String(a.code).localeCompare(String(z.code)));
+  return {divisions,markups,soft,
+          softTotal:soft.reduce((s,r)=>s+r.total,0),
+          hard:p.hard,contract:p.contract,project:p.project};
+}
+function renderCsi(){
+  if(!doc)return;
+  const sch=csiSchedule(),b=document.getElementById('csiBody');if(!b)return;
+  b.innerHTML='';
+  const any=sch.divisions.length||sch.markups.length;
+  document.getElementById('csiEmpty').style.display=any?'none':'block';
+  const pct=v=>sch.contract?(100*v/sch.contract).toFixed(1)+'%':'—';
+  sch.divisions.forEach(d=>{
+    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="8">${esc(d.title)}<span class="div-sum">${usd(d.total)}</span></td></tr>`);
+    d.rows.forEach(r=>{
+      b.insertAdjacentHTML('beforeend',`<tr${r.edited?' class="edited"':''}>
+        <td class="mono" style="font-size:12px;color:var(--green-700)"><span class="editdot${r.edited?' on':''}"></span>${esc(r.code)}</td>
+        <td>${esc(r.desc)}</td>
+        <td><span class="badge">${r.scope==='amen'?'Amenity':'Residential'}</span></td>
+        <td class="mono" style="font-size:12px;color:var(--ink-500)">${esc(BASIS_LABEL[r.basis]||r.basis)}</td>
+        <td class="calc r">${num(r.qty)}</td><td class="calc r">${usd2(r.rate)}</td>
+        <td class="calc r strong">${usd(r.total)}</td><td class="calc r" style="color:var(--ink-400)">${pct(r.total)}</td></tr>`);
+    });
+  });
+  if(sch.markups.length){
+    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="8">Division 99 — Markups<span class="div-sum">${usd(sch.markups.reduce((s,m)=>s+m.total,0))}</span></td></tr>`);
+    sch.markups.forEach(m=>{
+      b.insertAdjacentHTML('beforeend',`<tr>
+        <td class="mono" style="font-size:12px;color:var(--green-700)"><span class="editdot"></span>${esc(m.code)}</td>
+        <td>${esc(m.desc)}</td><td></td><td></td><td></td><td></td>
+        <td class="calc r strong">${usd(m.total)}</td><td class="calc r" style="color:var(--ink-400)">${pct(m.total)}</td></tr>`);
+    });
+  }
+  b.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="6">Contract sum</td>
+    <td class="calc r strong">${usd(sch.contract)}</td><td class="calc r">100%</td></tr>`);
+
+  const sb=document.getElementById('csiSoftBody');sb.innerHTML='';
+  sch.soft.forEach(r=>{
+    sb.insertAdjacentHTML('beforeend',`<tr${r.edited?' class="edited"':''}>
+      <td class="mono" style="font-size:12px;color:var(--green-700)"><span class="editdot${r.edited?' on':''}"></span>${esc(r.code)}</td>
+      <td>${esc(r.desc)}</td>
+      <td class="mono" style="font-size:12px;color:var(--ink-500)">${esc(BASIS_LABEL[r.basis]||r.basis)}</td>
+      <td class="calc r">${num(r.qty)}</td><td class="calc r">${usd2(r.rate)}</td>
+      <td class="calc r strong">${usd(r.total)}</td></tr>`);
+  });
+  sb.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="5">Total soft costs</td>
+    <td class="calc r strong">${usd(sch.softTotal)}</td></tr>`);
+
+  document.getElementById('csiMeta').textContent=
+    (doc.projectId||'—')+' · '+sch.divisions.length+' divisions · contract '+usd(sch.contract);
+  document.getElementById('csiSub').textContent=
+    [doc.projectId&&doc.projectId+' — '+(doc.name||'Untitled'),doc.address,
+     'Contingency carried explicitly as 99.03'].filter(Boolean).join(' · ');
+}
+
 function renderEditLegend(){
   const n=editedCount(),el=document.getElementById('editCount'),lg=document.getElementById('editLegend');
   if(!el||!lg)return;
@@ -1485,7 +1729,15 @@ function setBasis(i,v){doc.lines[i].basis=v;doc.lines[i].auto=v!=='ls';doc.lines
 /* ---- add lines via CSI catalog ---- */
 function addLine(){document.getElementById('pickSearch').value='';document.getElementById('pickModal').style.display='flex';renderPick();document.getElementById('pickSearch').focus();}
 function closePick(){document.getElementById('pickModal').style.display='none';}
-function addBlankLine(){doc.lines.push({code:'—',grp:'Custom',scope:document.getElementById('pickScope').value,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1,baseUnit:0,custom:true});closePick();touch();toast('Blank line added');}
+function addBlankLine(){
+  const scope=document.getElementById('pickScope').value;
+  doc.lines.push({code:'—',grp:'Custom',scope,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1,baseUnit:0,custom:true});
+  revealLine(scope,'Custom');
+  closePick();touch();toast('Blank line added');
+}
+/* A new line dropped into a collapsed scope or group is invisible, which reads as
+   "the button did nothing". Always open the section it landed in. */
+function revealLine(scope,grp){collapsed.delete(scope);collapsed.delete(scope+'|'+grp);}
 function catalogFiltered(q){
   q=(q||'').trim().toLowerCase();
   const out=[];
@@ -1509,7 +1761,9 @@ function renderPick(){
 function pickCsi(code,title){
   const scope=document.getElementById('pickScope').value;
   const basis=scope==='amen'?'asf':'sf';
-  doc.lines.push({code,grp:csiDivOf(code),scope,desc:title,basis,unit:0,auto:true,qty:0,baseUnit:0,custom:true});
+  const grp=csiDivOf(code);
+  doc.lines.push({code,grp,scope,desc:title,basis,unit:0,auto:true,qty:0,baseUnit:0,custom:true});
+  revealLine(scope,grp);
   closePick();touch();toast(code+' added — set the rate');
 }
 
@@ -1578,7 +1832,8 @@ function renderSummary(){
 function recalc(){
   if(!doc)return;
   pullForms();
-  withFocus(()=>{renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();});
+  withFocus(()=>{renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();
+    if(currentPage==='csi')renderCsi();});
 }
 
 /* ============ SAVE ============ */
@@ -1694,77 +1949,374 @@ async function savePricing(){
   }catch(e){toast('Publish failed: '+e.message);}
 }
 
-/* ============ EXPORT ============ */
+/* ============ EXPORT ============
+   Both exports are built from the same numbers the screen shows, and both are branded to
+   the Finishes design system: Montserrat display, IBM Plex Mono for data, ink-900 bands,
+   #006527 green accents, hairline rules. The PDF is a purpose-built report rather than a
+   screenshot of the UI. */
+const BRAND={ink900:'16191A',ink700:'353B3D',ink500:'6B7174',ink200:'DDE1E2',ink100:'F1F3F3',
+             ink50:'F8F9F9',green:'006527',green50:'F1F8F4',white:'FFFFFF',edit:'2563C9'};
+const MONEY='"$"#,##0';const MONEY2='"$"#,##0.00';const QTY='#,##0';const PCT='0.0%';
+
 function openExport(){document.getElementById('exportModal').style.display='flex';}
 function closeExport(){document.getElementById('exportModal').style.display='none';}
-function sel(){const c=id=>document.getElementById(id).checked;
-  return {stats:c('ex-stats'),units:c('ex-units'),other:c('ex-other'),budget:c('ex-budget'),summary:c('ex-summary')};}
+function sel(){const c=id=>{const e=document.getElementById(id);return e?e.checked:false;};
+  return {stats:c('ex-stats'),units:c('ex-units'),other:c('ex-other'),
+          budget:c('ex-budget'),csi:c('ex-csi'),summary:c('ex-summary')};}
+function exportBaseName(){
+  return (doc.projectId||'FS-Budget')+'_'+String(doc.name||'budget').replace(/[^\w]+/g,'_').replace(/^_|_$/g,'');
+}
+
+/* ---------------- PDF: a composed report, printed ---------------- */
 function exportPDF(){
   const s=sel();
-  // Collapsed groups are a screen convenience. Printing them away would silently ship an
-  // incomplete budget, so expand everything for the print and restore the view after.
-  const wasCollapsed=[...collapsed];
-  if(wasCollapsed.length){collapsed.clear();renderBudget();}
-  const map={stats:'sec-stats',budget:'sec-budget',summary:'sec-summary'};
-  Object.values(map).forEach(id=>document.getElementById(id).classList.remove('print-hide'));
-  document.getElementById('sec-project').classList.remove('print-hide');
-  if(!s.stats)document.getElementById('sec-stats').classList.add('print-hide');
-  if(!s.budget)document.getElementById('sec-budget').classList.add('print-hide');
-  if(!s.summary){document.getElementById('sec-summary').classList.add('print-hide');document.getElementById('sec-project').classList.add('print-hide');}
-  document.getElementById('page-budget').classList.add('print-target');
-  closeExport();window.print();
-  setTimeout(()=>{document.getElementById('page-budget').classList.remove('print-target');
-    ['sec-stats','sec-budget','sec-summary','sec-project'].forEach(id=>document.getElementById(id).classList.remove('print-hide'));
-    if(wasCollapsed.length){wasCollapsed.forEach(k=>collapsed.add(k));renderBudget();}},400);
+  document.getElementById('printDoc').innerHTML=buildReport(s);
+  document.body.classList.add('printing');
+  closeExport();
+  window.print();
+  setTimeout(()=>{document.body.classList.remove('printing');
+    document.getElementById('printDoc').innerHTML='';},600);
 }
-function exportExcel(){
+function rptRow(k,v,cls){return '<div class="rr '+(cls||'')+'"><span>'+k+'</span><span class="v">'+v+'</span></div>';}
+function buildReport(s){
+  const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF;
+  const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  let h='';
+
+  h+='<header class="rpt-hd">'
+    +'<img src="assets/finishes-logo-black.png" alt="Finishes Solutions">'
+    +'<div class="rpt-hd-r"><div class="eyebrow">Project budget</div>'
+    +'<div class="mono stamp">'+esc(stamp)+'</div></div></header>';
+
+  h+='<section class="rpt-title"><div class="eyebrow">'+esc(doc.projectId||'—')+' · '+esc(doc.type||'')+'</div>'
+    +'<h1>'+esc(doc.name||'Untitled project')+'</h1>'
+    +'<div class="rpt-meta">'+[esc(doc.address),num(doc.resSF)+' SF residential',
+       num(doc.amenSF)+' SF amenity',tu+' units','Pricing '+esc(doc.pricingVersion||'—'),
+       'Status: '+esc(doc.status||'Draft')].filter(Boolean).join(' &nbsp;·&nbsp; ')+'</div></section>';
+
+  if(s.stats){
+    h+='<section class="rpt-stats">'
+      +[['Units',num(tu)],['Net income / yr',usd(g.netYr)],
+        ['Contract $/SF',tsf?usd2(p.contract/tsf):'—'],
+        ['Project $/SF',tsf?usd2(p.project/tsf):'—'],
+        ['Cost / unit',tu?usd(p.project/tu):'—']]
+        .map(([k,v])=>'<div><div class="k">'+k+'</div><div class="v">'+v+'</div></div>').join('')
+      +'</section>';
+  }
+
+  if(s.summary){
+    h+='<section class="rpt-sec"><h2>Contract &amp; project summary</h2><div class="rpt-2col"><div>'
+      +rptRow('Residential construction',usd(p.res),'sub')
+      +rptRow('Amenity / clubhouse',usd(p.amen),'sub')
+      +rptRow('Construction hard cost',usd(p.hard),'mid')
+      +rptRow('Profit — total',usd(p.profit))
+      +rptRow('Contingency (99.03)',usd(p.cont))
+      +rptRow('Contract sum (construction)',usd(p.contract),'grand')
+      +'<div style="height:10px"></div>'
+      +rptRow('Soft costs',usd(p.soft),'sub')
+      +rptRow('Land',usd(doc.projectCosts.land),'sub')
+      +rptRow('Developer fee · marketing · closing',usd(p.fees),'sub')
+      +rptRow('Total project cost',usd(p.project),'grand')
+      +'</div><div><div class="eyebrow" style="margin-bottom:6px">SOV rollup — construction contract</div><table class="rpt-tbl"><tbody>';
+    ['res','amen'].forEach(sc=>{
+      [...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))].forEach(gp=>{
+        const v=doc.lines.filter(l=>l.scope===sc&&l.grp===gp).reduce((x,l)=>x+lineQty(l)*l.unit,0);
+        if(v>0)h+='<tr><td>'+(sc==='amen'?'Amenity — ':'')+esc(gp)+'</td><td class="r mono">'+usd(v)+'</td>'
+          +'<td class="r mono muted">'+(p.contract?(100*v/p.contract).toFixed(1):'0.0')+'%</td></tr>';
+      });
+    });
+    doc.companies.forEach(c=>{if(c.pct>0)h+='<tr><td>Profit — '+esc(c.name)+'</td><td class="r mono">'+usd(p.hard*c.pct/100)+'</td><td class="r mono muted">'+(p.contract?(100*(p.hard*c.pct/100)/p.contract).toFixed(1):'0.0')+'%</td></tr>';});
+    if(p.cont>0)h+='<tr><td>99.03 Contingency</td><td class="r mono">'+usd(p.cont)+'</td><td class="r mono muted">'+(p.contract?(100*p.cont/p.contract).toFixed(1):'0.0')+'%</td></tr>';
+    h+='<tr class="tot"><td>Contract sum</td><td class="r mono">'+usd(p.contract)+'</td><td class="r mono">100%</td></tr>';
+    h+='</tbody></table></div></div></section>';
+  }
+
+  if(s.units&&doc.units.length){
+    h+='<section class="rpt-sec"><h2>Unit mix &amp; rent revenue</h2><table class="rpt-tbl full"><thead><tr>'
+      +'<th>Unit type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF</th><th class="r">Units</th>'
+      +'<th class="r">Rent / mo</th><th class="r">$/SF</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead><tbody>';
+    doc.units.forEach(u=>{h+='<tr><td>'+esc(u.label)+'</td><td class="r mono">'+u.bd+'</td><td class="r mono">'+u.bth+'</td>'
+      +'<td class="r mono">'+num(u.sf)+'</td><td class="r mono">'+num(u.count)+'</td><td class="r mono">'+usd(u.rent)+'</td>'
+      +'<td class="r mono">'+(u.sf?usd2(u.rent/u.sf):'—')+'</td><td class="r mono">'+usd(u.rent*u.count)+'</td>'
+      +'<td class="r mono">'+usd(12*u.rent*u.count)+'</td></tr>';});
+    h+='<tr class="tot"><td>Total</td><td></td><td></td><td class="r mono">'+num(doc.units.reduce((x,u)=>x+u.sf*u.count,0))
+      +'</td><td class="r mono">'+num(tu)+'</td><td></td><td></td><td class="r mono">'+usd(g.rentMo)+'</td>'
+      +'<td class="r mono">'+usd(12*g.rentMo)+'</td></tr></tbody></table></section>';
+  }
+
+  if(s.other&&(doc.other.length||doc.expenses.length)){
+    h+='<section class="rpt-sec"><h2>Other income &amp; operating expenses</h2><table class="rpt-tbl full"><thead><tr>'
+      +'<th>Line</th><th>Basis</th><th class="r">$ / mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead><tbody>';
+    doc.other.forEach(o=>{const c=o.auto?tu:o.count;h+='<tr><td>'+esc(o.label)+'</td><td class="muted">gross income</td>'
+      +'<td class="r mono">'+usd(o.rate)+'</td><td class="r mono">'+num(c)+'</td><td class="r mono">'+usd(o.rate*c)+'</td><td class="r mono">'+usd(12*o.rate*c)+'</td></tr>';});
+    h+='<tr class="sub-tot"><td>Total gross other income</td><td></td><td></td><td></td><td class="r mono">'+usd(g.otherMo)+'</td><td class="r mono">'+usd(12*g.otherMo)+'</td></tr>';
+    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
+      h+='<tr><td>'+esc(e.label)+'</td><td class="muted">'+(e.per==='fixed'?'fixed / mo':'per unit')+'</td>'
+      +'<td class="r mono">'+usd(e.rate)+'</td><td class="r mono">'+num(c)+'</td><td class="r mono">('+usd(e.rate*c)+')</td><td class="r mono">('+usd(12*e.rate*c)+')</td></tr>';});
+    h+='<tr class="sub-tot"><td>Total operating expenses</td><td></td><td></td><td></td><td class="r mono">('+usd(g.expMo)+')</td><td class="r mono">('+usd(12*g.expMo)+')</td></tr>';
+    h+='<tr class="tot"><td>Net income (rent + net other)</td><td></td><td></td><td></td><td class="r mono">'+usd(g.rentMo+g.netOtherMo)+'</td><td class="r mono">'+usd(g.netYr)+'</td></tr>';
+    h+='</tbody></table></section>';
+  }
+
+  if(s.budget){
+    h+='<section class="rpt-sec break"><h2>Budget detail</h2><table class="rpt-tbl full"><thead><tr>'
+      +'<th>Line item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>';
+    ['res','amen','soft'].forEach(sc=>{
+      const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
+      h+='<tr class="scope"><td colspan="4">'+esc(SCOPES[sc])+'</td><td class="r mono">'+usd(scopeSum(sc))+'</td></tr>';
+      let last=null;
+      ls.forEach(it=>{
+        if(it.grp!==last){last=it.grp;
+          const gs=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
+          h+='<tr class="grp"><td colspan="4">'+esc(it.grp)+'</td><td class="r mono">'+usd(gs)+'</td></tr>';}
+        const q=lineQty(it);
+        h+='<tr><td><span class="mono code">'+esc(it.code)+'</span> '+esc(it.desc)+(isEdited(it)?' <span class="edited-mark">edited</span>':'')+'</td>'
+          +'<td class="muted">'+esc(BASIS_LABEL[it.basis]||it.basis)+'</td><td class="r mono">'+num(q)+'</td>'
+          +'<td class="r mono">'+usd2(it.unit)+'</td><td class="r mono">'+usd(q*it.unit)+'</td></tr>';
+      });
+    });
+    h+='</tbody></table></section>';
+  }
+
+  if(s.csi){
+    const sch=csiSchedule();
+    h+='<section class="rpt-sec break"><h2>CSI schedule of values</h2>'
+      +'<p class="rpt-note">MasterFormat divisions. Contingency is carried explicitly as 99.03 and is never blended into a trade line. Soft costs are reported separately and are not part of the contract sum.</p>'
+      +'<table class="rpt-tbl full"><thead><tr><th>Code</th><th>Section</th><th>Scope</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Scheduled value</th></tr></thead><tbody>';
+    sch.divisions.forEach(d=>{
+      h+='<tr class="scope"><td colspan="5">'+esc(d.title)+'</td><td class="r mono">'+usd(d.total)+'</td></tr>';
+      d.rows.forEach(r=>{h+='<tr><td class="mono code">'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td>'
+        +'<td class="muted">'+(r.scope==='amen'?'Amenity':'Residential')+'</td><td class="r mono">'+num(r.qty)+'</td>'
+        +'<td class="r mono">'+usd2(r.rate)+'</td><td class="r mono">'+usd(r.total)+'</td></tr>';});
+    });
+    if(sch.markups.length){
+      h+='<tr class="scope"><td colspan="5">Division 99 — Markups</td><td class="r mono">'+usd(sch.markups.reduce((a,m)=>a+m.total,0))+'</td></tr>';
+      sch.markups.forEach(m=>{h+='<tr><td class="mono code">'+esc(m.code)+'</td><td>'+esc(m.desc)+'</td><td></td><td></td><td></td><td class="r mono">'+usd(m.total)+'</td></tr>';});
+    }
+    h+='<tr class="tot"><td colspan="5">Contract sum</td><td class="r mono">'+usd(sch.contract)+'</td></tr></tbody></table>';
+    if(sch.soft.length){
+      h+='<h2 style="margin-top:18px">Soft costs</h2><table class="rpt-tbl full"><thead><tr><th>Code</th><th>Item</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>';
+      sch.soft.forEach(r=>{h+='<tr><td class="mono code">'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td><td class="r mono">'+num(r.qty)+'</td><td class="r mono">'+usd2(r.rate)+'</td><td class="r mono">'+usd(r.total)+'</td></tr>';});
+      h+='<tr class="tot"><td colspan="4">Total soft costs</td><td class="r mono">'+usd(sch.softTotal)+'</td></tr></tbody></table>';
+    }
+    h+='</section>';
+  }
+
+  h+='<footer class="rpt-ft"><span>Finishes Solutions — Building a Future Together</span>'
+    +'<span class="mono">'+esc(doc.projectId||'')+' · '+esc(stamp)+'</span></footer>';
+  return h;
+}
+
+/* ---------------- Excel: styled workbook via vendored ExcelJS ---------------- */
+async function exportExcel(){
+  if(typeof ExcelJS==='undefined'){toast('Excel library failed to load — reload the page');return;}
   const s=sel(),p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF;
-  const wb=XLSX.utils.book_new();
-  if(s.stats){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
-    ['FINISHES SOLUTIONS — BD BUDGET'],[],
-    ['Project ID',doc.projectId],['Name',doc.name],['Address',doc.address],['Type',doc.type],
-    ['Residential SF',doc.resSF],['Amenity SF',doc.amenSF],['Total units',tu],
-    ['Pricing library',doc.pricingVersion],['Status',doc.status],[],
-    ['Residential construction',p.res],['Amenity / clubhouse',p.amen],['Construction hard cost',p.hard],
-    ['Profit',p.profit],['Contingency',p.cont],['CONTRACT SUM (CONSTRUCTION)',p.contract],[],
-    ['Soft costs',p.soft],['Land',doc.projectCosts.land],['Developer fee',doc.projectCosts.dev],
-    ['Marketing/brokerage',doc.projectCosts.mkt],['Closing costs',doc.projectCosts.cls],
-    ['TOTAL PROJECT COST',p.project],[],
-    ['Contract $/SF',tsf?p.contract/tsf:''],['Project $/SF',tsf?p.project/tsf:''],['Cost/unit',tu?p.project/tu:''],
-    ['Gross income (yr)',g.grossYr],['Operating expenses (yr)',12*g.expMo],['Net income (yr)',g.netYr],['Yield on net income',p.project?g.netYr/p.project:''],
-  ]),'Summary');}
-  if(s.units){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
-    ['Unit type','BD','BTH','SF/unit','# Units','Rent/mo','$/SF/mo','Type SF','Monthly','Yearly'],
-    ...doc.units.map(u=>[u.label,u.bd,u.bth,u.sf,u.count,u.rent,u.sf?u.rent/u.sf:0,u.sf*u.count,u.rent*u.count,12*u.rent*u.count]),
-    [],['TOTAL','','','',tu,'','',doc.units.reduce((x,u)=>x+u.sf*u.count,0),g.rentMo,12*g.rentMo]]),'Unit Mix');}
+  const wb=new ExcelJS.Workbook();
+  wb.creator='Finishes Solutions — FS Budgeting Suite';
+  wb.created=new Date();
+
+  const F=(n,o={})=>Object.assign({name:'Montserrat',size:10,color:{argb:'FF'+BRAND.ink900}},{size:n},o);
+  const fill=hex=>({type:'pattern',pattern:'solid',fgColor:{argb:'FF'+hex}});
+  const thin={style:'thin',color:{argb:'FF'+BRAND.ink200}};
+  const box={top:thin,left:thin,bottom:thin,right:thin};
+
+  function sheet(name,cols,landscape){
+    const ws=wb.addWorksheet(name,{pageSetup:{orientation:landscape?'landscape':'portrait',
+      fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2}},
+      headerFooter:{oddFooter:'&L&"Montserrat"Finishes Solutions&C&P of &N&R'+(doc.projectId||'')}});
+    ws.columns=cols;
+    return ws;
+  }
+  // Branded two-row title band at the top of every sheet.
+  function titleBand(ws,title,span){
+    ws.mergeCells(1,1,1,span);
+    const t=ws.getCell(1,1);
+    t.value='FINISHES SOLUTIONS';
+    t.font=F(12,{bold:true,color:{argb:'FF'+BRAND.white}});
+    t.fill=fill(BRAND.ink900); t.alignment={vertical:'middle',indent:1};
+    ws.getRow(1).height=26;
+    ws.mergeCells(2,1,2,span);
+    const u=ws.getCell(2,1);
+    u.value=title+'   ·   '+(doc.projectId||'—')+'   ·   '+(doc.name||'Untitled');
+    u.font=F(9,{bold:true,color:{argb:'FF'+BRAND.white}});
+    u.fill=fill(BRAND.green); u.alignment={vertical:'middle',indent:1};
+    ws.getRow(2).height=18;
+    ws.addRow([]);
+  }
+  function headerRow(ws,labels){
+    const r=ws.addRow(labels);
+    r.eachCell(c=>{c.font=F(9,{bold:true,color:{argb:'FF'+BRAND.white}});
+      c.fill=fill(BRAND.ink700);c.border=box;c.alignment={vertical:'middle',wrapText:true};});
+    r.height=20;
+    ws.views=[{state:'frozen',ySplit:r.number}];
+    return r;
+  }
+  function styleBody(row,fmts){
+    row.eachCell((c,i)=>{c.border=box;c.font=c.font&&c.font.bold?c.font:F(10);
+      if(fmts&&fmts[i-1])c.numFmt=fmts[i-1];});
+    return row;
+  }
+  function groupRow(ws,label,value,span,dark){
+    const r=ws.addRow([label,...Array(span-2).fill(null),value]);
+    ws.mergeCells(r.number,1,r.number,span-1);
+    r.eachCell(c=>{c.font=F(10,{bold:true,color:{argb:'FF'+(dark?BRAND.white:BRAND.ink900)}});
+      c.fill=fill(dark?BRAND.ink900:BRAND.ink100);c.border=box;});
+    r.getCell(span).numFmt=MONEY;
+    return r;
+  }
+  function totalRow(ws,label,value,span,fmt){
+    const r=ws.addRow([label,...Array(span-2).fill(null),value]);
+    ws.mergeCells(r.number,1,r.number,span-1);
+    r.eachCell(c=>{c.font=F(11,{bold:true});c.border={...box,top:{style:'medium',color:{argb:'FF'+BRAND.ink900}}};});
+    r.getCell(span).numFmt=fmt||MONEY;
+    return r;
+  }
+
+  if(s.stats){
+    const ws=sheet('Summary',[{width:38},{width:20},{width:16}]);
+    titleBand(ws,'Project budget summary',3);
+    const kv=(k,v,fmt)=>{const r=ws.addRow([k,v]);
+      r.getCell(1).font=F(10,{color:{argb:'FF'+BRAND.ink700}});
+      r.getCell(2).font=F(10,{bold:true});if(fmt)r.getCell(2).numFmt=fmt;return r;};
+    const head=t=>{const r=ws.addRow([t]);r.getCell(1).font=F(9,{bold:true,color:{argb:'FF'+BRAND.green}});
+      r.getCell(1).border={bottom:thin};ws.mergeCells(r.number,1,r.number,3);return r;};
+    head('PROJECT');
+    kv('Project ID',doc.projectId);kv('Name',doc.name);kv('Address',doc.address);kv('Type',doc.type);
+    kv('Status',doc.status);kv('Pricing library',doc.pricingVersion);
+    kv('Residential SF',doc.resSF,QTY);kv('Amenity SF',doc.amenSF,QTY);kv('Total units',tu,QTY);
+    ws.addRow([]);
+    head('CONSTRUCTION CONTRACT');
+    kv('Residential construction',p.res,MONEY);kv('Amenity / clubhouse',p.amen,MONEY);
+    kv('Construction hard cost',p.hard,MONEY);kv('Profit',p.profit,MONEY);kv('Contingency (99.03)',p.cont,MONEY);
+    totalRow(ws,'CONTRACT SUM',p.contract,3);
+    ws.addRow([]);
+    head('TOTAL PROJECT COST');
+    kv('Soft costs',p.soft,MONEY);kv('Land',doc.projectCosts.land,MONEY);
+    kv('Developer fee',doc.projectCosts.dev,MONEY);kv('Marketing / brokerage',doc.projectCosts.mkt,MONEY);
+    kv('Closing costs',doc.projectCosts.cls,MONEY);
+    totalRow(ws,'TOTAL PROJECT COST',p.project,3);
+    ws.addRow([]);
+    head('METRICS');
+    kv('Contract $/SF',tsf?p.contract/tsf:0,MONEY2);kv('Project $/SF',tsf?p.project/tsf:0,MONEY2);
+    kv('Cost per unit',tu?p.project/tu:0,MONEY);
+    kv('Gross income (yr)',g.grossYr,MONEY);kv('Operating expenses (yr)',12*g.expMo,MONEY);
+    kv('Net income (yr)',g.netYr,MONEY);
+    kv('Yield on net income',p.project?g.netYr/p.project:0,PCT);
+  }
+
+  if(s.units){
+    const ws=sheet('Unit Mix',[{width:30},{width:7},{width:7},{width:11},{width:9},{width:13},{width:11},{width:13},{width:15},{width:15}]);
+    titleBand(ws,'Unit mix & rent revenue',10);
+    headerRow(ws,['Unit type','BD','BTH','SF / unit','Units','Rent / mo','$ / SF / mo','Type SF','Monthly','Yearly']);
+    const f=[null,QTY,'0.0',QTY,QTY,MONEY,MONEY2,QTY,MONEY,MONEY];
+    doc.units.forEach(u=>styleBody(ws.addRow([u.label,u.bd,u.bth,u.sf,u.count,u.rent,
+      u.sf?u.rent/u.sf:0,u.sf*u.count,u.rent*u.count,12*u.rent*u.count]),f));
+    const r=ws.addRow(['TOTAL','','','',tu,'','',doc.units.reduce((x,u)=>x+u.sf*u.count,0),g.rentMo,12*g.rentMo]);
+    r.eachCell(c=>{c.font=F(10,{bold:true});c.border={...box,top:{style:'medium',color:{argb:'FF'+BRAND.ink900}}};});
+    [5,8].forEach(i=>r.getCell(i).numFmt=QTY);[9,10].forEach(i=>r.getCell(i).numFmt=MONEY);
+  }
+
   if(s.other){
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
-    ['GROSS OTHER INCOME'],['Income line','Gross $/mo','Count','Monthly','Yearly'],
-    ...doc.other.map(o=>{const c=o.auto?tu:o.count;return [o.label,o.rate,c,o.rate*c,12*o.rate*c];}),
-    ['Total gross other income','','',g.otherMo,12*g.otherMo],[],
-    ['OPERATING EXPENSES'],['Expense line','Basis','$/mo','Count','Monthly','Yearly'],
-    ...doc.expenses.map(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);return [e.label,e.per==='fixed'?'fixed':'per unit',e.rate,c,e.rate*c,12*e.rate*c];}),
-    ['Total expenses','','','',g.expMo,12*g.expMo],[],
-    ['NET BREAKDOWN'],['Net other income (gross − expenses)','','','',g.netOtherMo,12*g.netOtherMo],
-    ['Rent income','','','',g.rentMo,12*g.rentMo],
-    ['NET INCOME (rent + net other)','','','',g.rentMo+g.netOtherMo,g.netYr]]),'Income & Expenses');}
-  if(s.budget){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
-    ['Scope','Group','Code','Description','Basis','Qty','Rate','Total','Provenance','Manually edited','Library rate'],
-    ...doc.lines.map(it=>[SCOPES[it.scope],it.grp,it.code,it.desc,it.basis,lineQty(it),it.unit,lineQty(it)*it.unit,'parametric-estimate',
-      isEdited(it)?'YES':'',isEdited(it)?(+it.baseUnit||0):'']),
-    [],['','','','','','','CONSTRUCTION HARD COST',p.hard],['','','','','','','SOFT COSTS',p.soft]]),'Budget-SOV');}
-  if(s.summary){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
-    ['Component','Amount','% of project'],
-    ['Construction hard cost',p.hard,p.project?p.hard/p.project:0],
-    ['Profit',p.profit,p.project?p.profit/p.project:0],
-    ['Contingency',p.cont,p.project?p.cont/p.project:0],
-    ['Contract sum (construction)',p.contract,p.project?p.contract/p.project:0],
-    ['Soft costs',p.soft,p.project?p.soft/p.project:0],
-    ['Land',doc.projectCosts.land,p.project?doc.projectCosts.land/p.project:0],
-    ['Developer fee + marketing + closing',p.fees,p.project?p.fees/p.project:0],
-    ['TOTAL PROJECT COST',p.project,1]]),'Contract Summary');}
-  XLSX.writeFile(wb,(doc.projectId||'FS-Budget')+'_'+(doc.name||'budget').replace(/\s+/g,'_')+'.xlsx');
-  closeExport();toast('Excel exported');
+    const ws=sheet('Income & Expenses',[{width:44},{width:14},{width:12},{width:10},{width:14},{width:16}]);
+    titleBand(ws,'Other income & operating expenses',6);
+    headerRow(ws,['Line','Basis','$ / mo','Count','Monthly','Yearly']);
+    const f=[null,null,MONEY,QTY,MONEY,MONEY];
+    groupRow(ws,'GROSS OTHER INCOME',null,6,true);
+    doc.other.forEach(o=>{const c=o.auto?tu:o.count;
+      styleBody(ws.addRow([o.label,'gross income',o.rate,c,o.rate*c,12*o.rate*c]),f);});
+    groupRow(ws,'Total gross other income',g.otherMo,6);
+    groupRow(ws,'OPERATING EXPENSES',null,6,true);
+    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
+      styleBody(ws.addRow([e.label,e.per==='fixed'?'fixed / mo':'per unit',e.rate,c,e.rate*c,12*e.rate*c]),f);});
+    groupRow(ws,'Total operating expenses',g.expMo,6);
+    ws.addRow([]);
+    groupRow(ws,'Net other income (gross − expenses)',g.netOtherMo,6);
+    groupRow(ws,'Rent income',g.rentMo,6);
+    totalRow(ws,'NET INCOME (monthly)',g.rentMo+g.netOtherMo,6);
+    totalRow(ws,'NET INCOME (yearly)',g.netYr,6);
+  }
+
+  if(s.budget){
+    const ws=sheet('Budget-SOV',[{width:13},{width:46},{width:14},{width:12},{width:12},{width:14},{width:12},{width:14},{width:18}],true);
+    titleBand(ws,'Budget detail — schedule of values',9);
+    headerRow(ws,['Code','Description','Basis','Qty','Rate','Total','Edited','Library rate','Provenance']);
+    const f=[null,null,null,QTY,MONEY2,MONEY,null,MONEY2,null];
+    ['res','amen','soft'].forEach(sc=>{
+      const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
+      groupRow(ws,SCOPES[sc].toUpperCase(),scopeSum(sc),9,true);
+      let last=null;
+      ls.forEach(it=>{
+        if(it.grp!==last){last=it.grp;
+          groupRow(ws,it.grp,doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0),9);}
+        const q=lineQty(it),ed=isEdited(it);
+        const r=styleBody(ws.addRow([it.code,it.desc,BASIS_LABEL[it.basis]||it.basis,q,it.unit,q*it.unit,
+          ed?'YES':'',ed?(+it.baseUnit||0):null,'parametric-estimate']),f);
+        r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
+        if(ed)r.getCell(7).font=F(9,{bold:true,color:{argb:'FF'+BRAND.edit}});
+      });
+    });
+    totalRow(ws,'CONSTRUCTION HARD COST',p.hard,9);
+    totalRow(ws,'SOFT COSTS',p.soft,9);
+  }
+
+  if(s.csi){
+    const sch=csiSchedule();
+    const ws=sheet('CSI Schedule',[{width:14},{width:52},{width:14},{width:14},{width:12},{width:14},{width:16},{width:12}],true);
+    titleBand(ws,'CSI MasterFormat schedule of values',8);
+    headerRow(ws,['Code','Section','Scope','Basis','Qty','Rate','Scheduled value','% contract']);
+    const f=[null,null,null,null,QTY,MONEY2,MONEY,PCT];
+    sch.divisions.forEach(d=>{
+      groupRow(ws,d.title,d.total,8,true);
+      d.rows.forEach(r0=>{
+        const r=styleBody(ws.addRow([r0.code,r0.desc,r0.scope==='amen'?'Amenity':'Residential',
+          BASIS_LABEL[r0.basis]||r0.basis,r0.qty,r0.rate,r0.total,
+          sch.contract?r0.total/sch.contract:0]),f);
+        r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
+      });
+    });
+    if(sch.markups.length){
+      groupRow(ws,'DIVISION 99 — MARKUPS',sch.markups.reduce((a,m)=>a+m.total,0),8,true);
+      sch.markups.forEach(m=>{
+        const r=styleBody(ws.addRow([m.code,m.desc,'','','','',m.total,sch.contract?m.total/sch.contract:0]),f);
+        r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
+      });
+    }
+    totalRow(ws,'CONTRACT SUM',sch.contract,8);
+    if(sch.soft.length){
+      ws.addRow([]);
+      groupRow(ws,'SOFT COSTS — reported separately, outside the contract sum',sch.softTotal,8,true);
+      sch.soft.forEach(r0=>{
+        const r=styleBody(ws.addRow([r0.code,r0.desc,'Soft',BASIS_LABEL[r0.basis]||r0.basis,
+          r0.qty,r0.rate,r0.total,null]),f);
+        r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
+      });
+      totalRow(ws,'TOTAL SOFT COSTS',sch.softTotal,8);
+    }
+  }
+
+  if(s.summary){
+    const ws=sheet('Contract Summary',[{width:44},{width:18},{width:14}]);
+    titleBand(ws,'Contract & project composition',3);
+    headerRow(ws,['Component','Amount','% of project']);
+    const f=[null,MONEY,PCT];
+    const pc=v=>p.project?v/p.project:0;
+    [['Construction hard cost',p.hard],['Profit',p.profit],['Contingency (99.03)',p.cont]]
+      .forEach(([k,v])=>styleBody(ws.addRow([k,v,pc(v)]),f));
+    totalRow(ws,'CONTRACT SUM (CONSTRUCTION)',p.contract,3);
+    [['Soft costs',p.soft],['Land',doc.projectCosts.land],['Developer fee + marketing + closing',p.fees]]
+      .forEach(([k,v])=>styleBody(ws.addRow([k,v,pc(v)]),f));
+    totalRow(ws,'TOTAL PROJECT COST',p.project,3);
+  }
+
+  try{
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download=exportBaseName()+'.xlsx';
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+    closeExport();toast('Excel exported');
+  }catch(e){toast('Excel export failed: '+e.message);}
 }
 
 /* ============ DELEGATED EVENTS ============
