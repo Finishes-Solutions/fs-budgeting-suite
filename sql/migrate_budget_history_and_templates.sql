@@ -419,6 +419,7 @@ ELSE
 -- history must survive deletion. Timestamps reuse the budget's own UpdatedAt —
 -- no fabricated history. Provenance stays NULL (see header note 3).
 DECLARE @baselines TABLE (Id BIGINT NOT NULL, ProjectId VARCHAR(16) NOT NULL);
+DECLARE @baselineCount INT;
 
 INSERT INTO dbo.BudgetVersions
   (ProjectId, VersionNumber, Name, Type, Status, ContractSum, ProjectCost,
@@ -433,7 +434,9 @@ SELECT
 FROM dbo.Budgets AS b
 WHERE NOT EXISTS (SELECT 1 FROM dbo.BudgetVersions AS v WHERE v.ProjectId = b.ProjectId);
 
-PRINT CONCAT('Baseline versions created: ', (SELECT COUNT(*) FROM @baselines));
+-- PRINT cannot take a subquery (Msg 1046), so count into a variable first
+SET @baselineCount = @@ROWCOUNT;
+PRINT CONCAT('Baseline versions created: ', @baselineCount);
 
 -- Copy each baselined budget's current SOV rows into the version, numbering
 -- them by today's row order (same determinism as the LineOrder backfill).
