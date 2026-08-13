@@ -1,8 +1,0 @@
-# Secrets / rendered guides — never commit
-docs/guide.vars
-docs/BUILD_GUIDE.filled.md
-
-# Local dev
-api/local.settings.json
-node_modules/
-.DS_Store
