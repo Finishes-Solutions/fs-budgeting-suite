@@ -26,6 +26,16 @@ if [ $# -gt 0 ]; then SUITES=(); for n in "$@"; do SUITES+=("test/suite-$n.js");
 else SUITES=(test/suite-*.js); fi
 
 fails=0
+
+# Pure-logic tests (canonical JSON, content hashing, SOV projection) need no
+# browser, so they run under node:test. Skipped when specific suites are named,
+# which keeps `run-all.sh 03 08` meaning exactly those suites.
+if [ $# -eq 0 ]; then
+  echo "=== test/*.test.js (node:test)"
+  node --test test/*.test.js >/tmp/fs-node-test.log 2>&1 \
+    && grep -E '^# (tests|pass|fail)' /tmp/fs-node-test.log \
+    || { fails=$((fails+1)); cat /tmp/fs-node-test.log; }
+fi
 for s in "${SUITES[@]}"; do
   echo "=== $s"
   node "$s" || fails=$((fails+1))

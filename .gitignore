@@ -1,0 +1,8 @@
+# The frontend has no build step and nothing here is bundled — these are only
+# ever developer-local: Playwright for test/run-all.sh, mssql for the Functions.
+node_modules/
+api/node_modules/
+
+# Test harness output (screenshots land in OUT_DIR, default the system temp dir)
+test/out/
+*.log

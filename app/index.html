@@ -1594,7 +1594,9 @@ async function openBudget(pid,page){
   enableDocNav();fillForms();go(page||'budget');
 }
 async function deleteBudget(pid){
-  if(!confirm('Delete '+pid+'? This cannot be undone.'))return;
+  // Deletion is recoverable now: the API flags the budget, keeps its saved
+  // version history, and restores it if the same project ID is saved again.
+  if(!confirm('Delete '+pid+'?\n\nIt will be removed from your budgets list. Its saved version history is kept, and an administrator can restore it.'))return;
   try{await sDel('budget-'+pid);}catch(e){toast('Delete failed: '+e.message);return;}
   if(doc&&doc.projectId===pid){doc=null;dirty=false;
     ['nav-input','nav-budget','nav-csi'].forEach(id=>{document.getElementById(id).disabled=true;});}
