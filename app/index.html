@@ -38,6 +38,11 @@ body>header{background:var(--ink-900);color:var(--white)}   /* app chrome only �
 #whoami{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:230px}
 @media(max-width:1180px){#whoami{max-width:120px}}
 @media(max-width:1040px){#whoami{display:none}}
+#signOut{background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.75);
+  font-family:var(--fm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 10px;border-radius:var(--r);cursor:pointer;white-space:nowrap}
+#signOut:hover{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.45)}
+#signOut:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(255,255,255,.35)}
 nav{display:flex;gap:4px;flex-wrap:nowrap}
 nav button{white-space:nowrap}
 nav button{background:transparent;border:none;color:rgba(255,255,255,.6);font-family:var(--fm);font-size:11px;
@@ -401,6 +406,8 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="hd-r">
       <span class="savepill" id="saveState" style="display:none"></span>
       <span class="mono" id="whoami" style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.06em"></span>
+      <button id="signOut" class="no-print" style="display:none" onclick="logout()"
+        title="Sign out and choose a different account">Sign Out</button>
     </div>
   </div>
 </header>
@@ -1291,6 +1298,30 @@ async function initAuth(){
     const el=document.getElementById('whoami');
     if(el)el.textContent=principal.userDetails||'';
   }
+  // Only offer Sign Out where there is a session to end. Local `swa start` runs
+  // without a principal, and /.auth/logout would be a dead link there.
+  const so=document.getElementById('signOut');
+  if(so)so.style.display=principal?'':'none';
+}
+
+/* Ending the session is a full navigation to the SWA logout route, which clears
+   the auth cookie and returns to the app — the app then redirects to sign-in,
+   where the account picker appears (prompt=select_account in
+   staticwebapp.config.json) so a different account can be chosen. */
+function logoutUrl(){
+  return '/.auth/logout?post_logout_redirect_uri='+encodeURIComponent('/');
+}
+async function logout(){
+  if(!confirmDiscard())return;
+  dirty=false;                       // already asked — do not let beforeunload ask again
+  // Every bit of app state lives in memory or behind the API, so the navigation
+  // below disposes of it. These clears are defensive: nothing writes here today,
+  // but a stale entry from a later change must not survive an account switch.
+  try{localStorage.clear();sessionStorage.clear();}catch(_){}
+  try{
+    if(window.caches&&caches.keys)await Promise.all((await caches.keys()).map(k=>caches.delete(k)));
+  }catch(_){}
+  location.replace(logoutUrl());
 }
 
 /* ============ CSI MASTERFORMAT CATALOG ============

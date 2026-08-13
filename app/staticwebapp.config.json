@@ -16,6 +16,9 @@
           "openIdIssuer": "https://login.microsoftonline.com/bfbd2cad-3f2f-42b5-a374-5867d67dde93/v2.0",
           "clientIdSettingName": "AAD_CLIENT_ID",
           "clientSecretSettingName": "AAD_CLIENT_SECRET"
+        },
+        "login": {
+          "loginParameters": ["prompt=select_account"]
         }
       }
     }

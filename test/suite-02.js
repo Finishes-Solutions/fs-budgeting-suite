@@ -188,7 +188,24 @@ const BASE = 'http://127.0.0.1:8100';
   await p.waitForTimeout(500);
   ok('Delete removes the row', (await p.locator('#homeBody tr').count()) === 3);
 
-  ok('No uncaught JS errors', errs.length === 0, errs.join(' | '));
+   // --- sign out
+  ok('Sign Out is offered to a signed-in user', await p.locator('#signOut').isVisible());
+  ok('Sign Out targets the SWA logout route',
+     /^\/\.auth\/logout\?post_logout_redirect_uri=/.test(await p.evaluate(() => logoutUrl())),
+     await p.evaluate(() => logoutUrl()));
+  // A dirty budget must not be discarded silently by signing out.
+  const stayed = await p.evaluate(async () => {
+    const c = window.confirm; window.confirm = () => false;
+    dirty = true;
+    await logout();                      // declines the discard prompt, so must not navigate
+    const here = location.pathname + location.hash;
+    window.confirm = c; dirty = false;
+    return here;
+  });
+  ok('Sign Out is blocked by unsaved changes', stayed.includes('index.html') || stayed.startsWith('/'),
+     stayed);
+
+ ok('No uncaught JS errors', errs.length === 0, errs.join(' | '));
   console.log(R.join('\n'));
   console.log('\n' + R.filter(r => r.startsWith('FAIL')).length + ' failures of ' + R.length);
   await b.close();
