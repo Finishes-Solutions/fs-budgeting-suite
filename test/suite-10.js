@@ -175,6 +175,25 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     await p.evaluate(() => dirty === true));
  await p.evaluate(() => { window.confirm = window.__confirm; });
 
+ // ---- deleting a single line asks first
+ await p.evaluate(() => { clearSelection(); expandAll(); });
+ await p.waitForTimeout(250);
+ const single = await p.evaluate(async () => {
+   const before = doc.lines.length;
+   const id = doc.lines[0].lineId;
+   const c = window.confirm;
+   window.confirm = () => false;
+   removeLine(id);                       // declined
+   const afterCancel = doc.lines.length;
+   window.confirm = () => true;
+   removeLine(id);                       // confirmed
+   const afterOk = doc.lines.length;
+   window.confirm = c;
+   return {before, afterCancel, afterOk, gone: !doc.lines.some(l => l.lineId === id)};
+ });
+ ok('Cancelling a single line delete keeps the line', single.afterCancel === single.before);
+ ok('Confirming a single line delete removes it', single.afterOk === single.before - 1 && single.gone);
+
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();

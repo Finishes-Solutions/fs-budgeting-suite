@@ -1,4 +1,4 @@
-# FS Budgeting Suite — Phased Roadmap
+# Finishes Solutions Budgeting Suite — Phased Roadmap
 
 Principle: one new integration risk per phase. Ship, verify, then extend.
 (Working name: fs-budgeting-suite. Rename is a find/replace + SWA/repo rename — cheap

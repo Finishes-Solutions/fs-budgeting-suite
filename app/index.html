@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Finishes Solutions — FS Budgeting Suite</title>
+<title>Finishes Solutions Budgeting Suite</title>
 <!-- ExcelJS is vendored, not loaded from a CDN: the export used to fail silently on any
      network that blocked cdnjs, and the community build of the old library could not style
      cells at all. MIT licence in vendor/exceljs-LICENSE.txt. -->
@@ -38,11 +38,21 @@ body>header{background:var(--ink-900);color:var(--white)}   /* app chrome only �
 #whoami{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:230px}
 @media(max-width:1180px){#whoami{max-width:120px}}
 @media(max-width:1040px){#whoami{display:none}}
-#signOut{background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.75);
-  font-family:var(--fm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
-  padding:5px 10px;border-radius:var(--r);cursor:pointer;white-space:nowrap}
-#signOut:hover{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.45)}
-#signOut:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(255,255,255,.35)}
+/* The header carried the full email plus a Sign Out button, which crowded the bar
+   at narrow widths. Identity now lives behind a round avatar; the name, email and
+   Sign Out are in its menu. */
+#profileBtn{width:32px;height:32px;flex:none;border-radius:50%;cursor:pointer;
+  background:var(--green-600);border:1px solid rgba(255,255,255,.35);color:#fff;
+  font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.04em;
+  display:flex;align-items:center;justify-content:center;padding:0}
+#profileBtn:hover{background:var(--green-500);border-color:rgba(255,255,255,.6)}
+#profileBtn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(255,255,255,.35)}
+#profileMenu{position:fixed;z-index:60;min-width:236px;max-width:300px;background:var(--white);
+  border:1px solid var(--ink-200);border-radius:var(--rm);box-shadow:0 8px 24px rgba(11,13,12,.18);padding:4px}
+.pm-id{padding:10px 12px 12px}
+.pm-name{font-size:13px;font-weight:600;color:var(--ink-900);overflow:hidden;text-overflow:ellipsis}
+.pm-email{font-family:var(--fm);font-size:11px;color:var(--ink-500);margin-top:3px;
+  overflow:hidden;text-overflow:ellipsis}
 nav{display:flex;gap:4px;flex-wrap:nowrap}
 nav button{white-space:nowrap}
 nav button{background:transparent;border:none;color:rgba(255,255,255,.6);font-family:var(--fm);font-size:11px;
@@ -318,7 +328,8 @@ th.sortable.sorted{color:var(--ink-900)}
 @media print{
   @page{size:letter portrait;margin:13mm 12mm 14mm}
   body{background:#fff}
-  .no-print,.banner,.toast,#exportModal,#pickModal,#versionsModal,#rowMenu,#bootScreen{display:none!important}
+  .no-print,.banner,.toast,#exportModal,#pickModal,#versionsModal,#rowMenu,#bootScreen,
+  #profileMenu{display:none!important}
   /* direct children only — the report has its own <header> and must not be hidden */
   body.printing > header,body.printing > main{display:none!important}
   body.printing #printDoc{display:block}
@@ -421,7 +432,7 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <header>
   <div class="hd">
-    <a class="brand" href="#/budgets" title="Finishes Solutions — FS Budgeting Suite">
+    <a class="brand" href="#/budgets" title="Finishes Solutions Budgeting Suite">
       <img src="assets/finishes-logo-white.svg" alt="Finishes Solutions">
     </a>
     <nav class="no-print">
@@ -434,9 +445,8 @@ th.sortable.sorted{color:var(--ink-900)}
     </nav>
     <div class="hd-r">
       <span class="savepill" id="saveState" style="display:none"></span>
-      <span class="mono" id="whoami" style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.06em"></span>
-      <button id="signOut" class="no-print" style="display:none" onclick="logout()"
-        title="Sign out and choose a different account">Sign Out</button>
+      <button id="profileBtn" class="no-print" style="display:none" aria-haspopup="menu" aria-expanded="false"
+        aria-label="Account menu" title="Account" onclick="toggleProfile()"><span id="profileInitials">?</span></button>
     </div>
   </div>
 </header>
@@ -852,7 +862,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= HOW TO USE ================= -->
 <div class="page" id="page-help">
   <div class="page-title">
-    <div><h1>How to Use the FS Budgeting Suite</h1>
+    <div><h1>How to Use the Budgeting Suite</h1>
       <div class="sub">Build a multifamily project budget from the shared pricing library, then export it.</div></div>
     <div class="no-print"><button class="btn btn-dark" onclick="downloadGuide()">Download Guide</button></div>
   </div>
@@ -1238,6 +1248,16 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
 </div>
 
+<!-- ================= ACCOUNT MENU ================= -->
+<div id="profileMenu" role="menu" aria-hidden="true" style="display:none">
+  <div class="pm-id">
+    <div class="pm-name" id="pmName"></div>
+    <div class="pm-email" id="pmEmail"></div>
+  </div>
+  <div class="rowmenu-sep"></div>
+  <button class="rowmenu-item" role="menuitem" onclick="logout()">Sign Out</button>
+</div>
+
 <!-- ================= BUDGET ROW ACTIONS MENU ================= -->
 <div id="rowMenu" role="menu" aria-hidden="true" style="display:none"></div>
 
@@ -1322,15 +1342,62 @@ async function sDel(k){if(k.startsWith('budget-'))await api('budget/'+encodeURIC
 let principal=null;
 async function initAuth(){
   try{const r=await fetch('/.auth/me');const j=await r.json();principal=j.clientPrincipal||null;}catch(e){principal=null;}
-  if(principal){
-    adminUnlocked=(principal.userRoles||[]).includes('pricing_admin');
-    const el=document.getElementById('whoami');
-    if(el)el.textContent=principal.userDetails||'';
-  }
-  // Only offer Sign Out where there is a session to end. Local `swa start` runs
-  // without a principal, and /.auth/logout would be a dead link there.
-  const so=document.getElementById('signOut');
-  if(so)so.style.display=principal?'':'none';
+  if(principal)adminUnlocked=(principal.userRoles||[]).includes('pricing_admin');
+  renderProfile();
+}
+
+/* SWA gives us userDetails (the UPN, normally the email). A display name is only
+   present when the provider returns a name claim, so fall back to humanising the
+   address rather than showing a blank line. */
+function principalName(p){
+  const claims=(p&&p.claims)||[];
+  const c=claims.find(x=>x&&(x.typ==='name'||/\/name$/.test(x.typ||'')));
+  if(c&&c.val)return c.val;
+  const local=String((p&&p.userDetails)||'').split('@')[0];
+  if(!local)return 'Signed In';
+  return local.split(/[._-]+/).filter(Boolean)
+    .map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ')||local;
+}
+function initialsOf(name){
+  const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
+  if(!parts.length)return '?';
+  return (parts[0][0]+(parts.length>1?parts[parts.length-1][0]:'')).toUpperCase();
+}
+/* Only show the avatar where there is a session. Local `swa start` runs without a
+   principal, and /.auth/logout would be a dead link there. */
+function renderProfile(){
+  const btn=document.getElementById('profileBtn');
+  if(btn)btn.style.display=principal?'flex':'none';
+  if(!principal)return;
+  const name=principalName(principal),email=principal.userDetails||'';
+  const ini=document.getElementById('profileInitials');
+  if(ini)ini.textContent=initialsOf(name);
+  if(btn)btn.title=name+(email?' · '+email:'');
+  const n=document.getElementById('pmName'),e=document.getElementById('pmEmail');
+  if(n)n.textContent=name;                 // textContent, so a name is never markup
+  if(e)e.textContent=email;
+}
+let profileOpen=false;
+function toggleProfile(){profileOpen?closeProfile(true):openProfile();}
+function openProfile(){
+  closeRowMenu();                          // only one popover at a time
+  const m=document.getElementById('profileMenu'),btn=document.getElementById('profileBtn');
+  if(!m||!btn)return;
+  m.style.display='block';m.setAttribute('aria-hidden','false');
+  btn.setAttribute('aria-expanded','true');
+  const r=btn.getBoundingClientRect();
+  m.style.top=(r.bottom+8)+'px';
+  m.style.left=Math.max(8,Math.min(r.right-m.offsetWidth,window.innerWidth-m.offsetWidth-8))+'px';
+  profileOpen=true;
+  const first=m.querySelector('.rowmenu-item');
+  if(first)first.focus();
+}
+function closeProfile(refocus){
+  const m=document.getElementById('profileMenu'),btn=document.getElementById('profileBtn');
+  if(!m)return;
+  m.style.display='none';m.setAttribute('aria-hidden','true');
+  profileOpen=false;
+  if(btn){btn.setAttribute('aria-expanded','false');if(refocus)btn.focus();}
 }
 
 /* Ending the session is a full navigation to the SWA logout route, which clears
@@ -1341,6 +1408,7 @@ function logoutUrl(){
   return '/.auth/logout?post_logout_redirect_uri='+encodeURIComponent('/');
 }
 async function logout(){
+  closeProfile(false);
   if(!confirmDiscard())return;
   dirty=false;                       // already asked — do not let beforeunload ask again
   // Every bit of app state lives in memory or behind the API, so the navigation
@@ -2032,8 +2100,10 @@ function rowMenuAction(act){
 }
 document.addEventListener('click',e=>{     // outside click closes; the trigger stops propagation
   if(rowMenuTrigger&&!e.target.closest('#rowMenu'))closeRowMenu(false);
+  if(profileOpen&&!e.target.closest('#profileMenu')&&!e.target.closest('#profileBtn'))closeProfile(false);
 });
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&profileOpen){e.preventDefault();closeProfile(true);return;}
   if(e.key==='Escape'&&document.getElementById('versionsModal').style.display==='flex'&&!rowMenuTrigger){
     e.preventDefault();closeVersions();return;}
   if(!rowMenuTrigger)return;
@@ -2383,7 +2453,17 @@ function lineIndexById(id){return doc?doc.lines.findIndex(l=>l.lineId===id):-1;}
 function setLineDesc(id,v){const l=lineById(id);if(!l)return;l.desc=v;l.edited=true;markDirty();}
 function setLineQty(id,v){const l=lineById(id);if(!l)return;l.qty=+v;l.auto=false;touch();}
 function setLineRate(id,v){const l=lineById(id);if(!l)return;l.unit=+v;touch();}
-function removeLine(id){const i=lineIndexById(id);if(i<0)return;selected.delete(id);doc.lines.splice(i,1);touch();}
+/* Deleting one line asks first. There is no undo, so the wording says so rather
+   than implying the change is recoverable; it lands in the database on the next
+   save, like every other edit. */
+function removeLine(id){
+  const i=lineIndexById(id);if(i<0)return;
+  const l=doc.lines[i],what=(l.desc||l.code||'this line item').trim();
+  if(!confirm('Delete "'+what+'"?\n\nThis cannot be undone. The line is removed from the open budget and the change is written to the database the next time you save.'))return;
+  selected.delete(id);
+  doc.lines.splice(i,1);
+  touch();
+}
 
 /* ---- editable CSI codes ----
    Normalize the shapes people actually type — 033000 and 03-30-00 — into the
@@ -3046,8 +3126,8 @@ function downloadGuide(){
      '<div class="rpt-guide">'
     +'<header class="rpt-hd"><img src="assets/finishes-logo-black.png" alt="Finishes Solutions">'
     +'<div class="rpt-hd-r"><div class="eyebrow">User guide</div><div class="mono stamp">'+esc(stamp)+'</div></div></header>'
-    +'<section class="rpt-title"><div class="eyebrow">FS Budgeting Suite</div>'
-    +'<h1>How to Use the FS Budgeting Suite</h1>'
+    +'<section class="rpt-title"><div class="eyebrow">Budgeting Suite</div>'
+    +'<h1>How to Use the Budgeting Suite</h1>'
     +'<div class="rpt-meta">Business Development budgeting — building a multifamily project budget from the shared '
     +'pricing library, and exporting it.</div></section>'
     +'<section class="rpt-sec"><h2>Contents</h2><ol class="guide-toc">'+toc+'</ol></section>'
@@ -3065,7 +3145,7 @@ async function exportExcel(){
   if(typeof ExcelJS==='undefined'){toast('Excel library failed to load — reload the page');return;}
   const s=sel(),p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF;
   const wb=new ExcelJS.Workbook();
-  wb.creator='Finishes Solutions — FS Budgeting Suite';
+  wb.creator='Finishes Solutions Budgeting Suite';
   wb.created=new Date();
 
   const F=(n,o={})=>Object.assign({name:'Montserrat',size:10,color:{argb:'FF'+BRAND.ink900}},{size:n},o);

@@ -1,23 +1,164 @@
-# Finishes Solutions — FS Budgeting Suite
+# Finishes Solutions Budgeting Suite
 
-Internal Business Development budgeting application: multifamily project budgets built
-from a versioned, admin-controlled pricing library, with unit-mix revenue, other income
-and operating expenses, construction contract + total project cost rollups, and a
-normalized SOV table that feeds the Master Lender Package pipeline.
+Internal Business Development tool for building multifamily project budgets. A budget is
+priced from a versioned, admin-controlled pricing library, adds unit-mix revenue, other
+income and operating expenses, and rolls up to a construction contract sum and a total
+project cost. It emits a normalized SOV (schedule of values) that the Master Lender
+Package pipeline consumes — that downstream contract is why the data model matters more
+than the UI does.
 
-**Stack:** Azure Static Web Apps (Standard) · Entra ID auth · SWA-managed Azure
-Functions (Node 18) · Azure SQL Database.
+Referred to as the **Budgeting Suite**, or the **Finishes Solutions Budgeting Suite** in
+full. (Some Azure objects, notably the Entra app registration, still carry older literal
+names — see `docs/NAMING.md`.)
+
+**Live:** <https://budgets.finishessolutions.ai>
+**Staging:** <https://wonderful-rock-071c8e810-staging.centralus.7.azurestaticapps.net>
+
+**Stack:** Azure Static Web Apps (Standard) · Entra ID auth via a *custom* provider ·
+SWA-managed Azure Functions (Node 18) · Azure SQL Database (serverless).
+
+Everyone in the tenant can build budgets. Publishing pricing and managing budget
+templates requires the `pricing_admin` custom role.
+
+---
+
+## What it does
+
+| Area | Behaviour |
+|---|---|
+| **Budgets** | Priced line items across three scopes — residential, amenity, soft costs — grouped by phase and by CSI MasterFormat division |
+| **Inputs** | Unit mix and rents, other income, operating expenses, square footages, company profit split, contingency, land and project costs |
+| **Version history** | Every meaningful save records an immutable snapshot. A save that changed nothing creates no version |
+| **Templates** | Admin-managed, versioned defaults that new budgets are created from. Publishing affects only future budgets |
+| **Deletion** | Recoverable. Deleting a budget flags it; its history survives and re-saving the same project ID restores it |
+| **Exports** | Excel workbook (vendored ExcelJS) and a print/PDF report, both built from the data model |
+| **CSI schedule** | Division totals and percentages that reconcile to the contract sum, feeding the lender package |
+
+---
+
+## Repository layout
 
 | Path | What it is |
 |---|---|
-| `app/` | Frontend (single-file, Finishes Solutions design system) |
-| `api/` | Azure Functions API — pricing, budgets, budget/{id} |
-| `sql/` | Schema + initial pricing library seed |
-| `test/` | Browser test suites + a mock of the SWA API (`./test/run-all.sh`) |
-| `docs/ROADMAP.md` | Phased plan: standalone → SharePoint → Monday → lender package |
-| `docs/BUILD_GUIDE.md` | **Start here** — full provisioning & deployment guide |
-| `docs/HANDOFF.md` | Picking the project up: branch/deploy model, invariants, open items |
-| `docs/DATA_CONTRACT.md` | SOV data contract → lender package integration |
-| `staticwebapp.config.json` | Routes, Entra ID provider, role enforcement |
+| `app/index.html` | **The entire frontend** — HTML + inline CSS + inline JS, no build step |
+| `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement |
+| `app/vendor/exceljs.min.js` | ExcelJS 4.4.0, MIT, vendored |
+| `api/budget/` | GET / PUT / DELETE one budget. PUT writes the version snapshot |
+| `api/budgets/` | Budget list (excludes soft-deleted) |
+| `api/budget-versions/` | Read-only version history |
+| `api/pricing/` | Pricing library read + publish |
+| `api/templates/` | Budget templates: list, read, versions, create, publish, activate |
+| `api/shared/` | `auth.js` (principal + roles), `db.js` (pool + cold-start retry), `canonical.js`, `sov.js`, `versioning.js` |
+| `sql/` | Schema, migration, views, seeds, admin scripts — see below |
+| `test/` | Ten Playwright suites, `node:test` logic tests, and a mock of the SWA API |
+| `docs/` | Build guide, data contract, handoff, roadmap, naming |
 
-Quick path: follow `docs/BUILD_GUIDE.md` top to bottom. First deploy is ~45 minutes.
+There is **one HTML file**. Every UI change happens in `app/index.html`. It is served
+verbatim — nothing compiles, bundles or minifies it, so a syntax error ships.
+
+---
+
+## Database
+
+Run against Azure SQL in this order.
+
+**Existing database**
+
+1. `sql/migrate_budget_history_and_templates.sql` — idempotent and transactional. Adds
+   version history, templates, soft-delete columns and stable line keys, seeds the
+   `multifamily` template, and backfills Version 1 for every existing budget. Has
+   preflight and verification sections with expected results.
+2. `sql/views.sql` — reporting views (reads the soft-delete columns, so it must run second).
+3. `sql/verify_migration.sql` — read-only; returns one row per check with PASS / FAIL / INFO.
+
+**Fresh install**
+
+`sql/schema.sql` → `sql/seed_pricing.sql` → the migration → `sql/views.sql`.
+
+**Admin-run, never part of a deployment**
+
+- `sql/purge_deleted_budgets.sql` — hard-deletes soft-deleted budgets and their history,
+  child-first in one transaction. The application itself has no hard delete.
+- `sql/cleanup_test_budgets.sql` — purges `TST-####` rows.
+- `sql/migrate_op_ids.sql` — one-time `OP-###` → `OP-####` rename.
+
+Tables: `Budgets`, `SovLines`, `BudgetVersions`, `BudgetVersionSovLines`,
+`BudgetTemplates`, `BudgetTemplateVersions`, `PricingLibrary`.
+
+---
+
+## Branches and deployment
+
+```
+push to staging  →  the "staging" named environment (stable URL, test here)
+PR to main       →  a throwaway per-PR preview environment
+push to main     →  production (budgets.finishessolutions.ai)
+```
+
+**Azure resolves which Static Web App a workflow may deploy to from the workflow file's
+filename.** Under OIDC there is no token to identify the app, so the filename *is* the
+identity. It must stay named:
+
+```
+.github/workflows/azure-static-web-apps-wonderful-rock-071c8e810.yml
+```
+
+Do not rename it, and do not add a second workflow that calls
+`Azure/static-web-apps-deploy`. All three jobs live in that one file, guarded by `if:`
+on `github.ref_name`. Authentication is **OIDC**, not deployment tokens.
+
+Per-PR preview environments put the PR number in the hostname, so they cannot complete
+sign-in — that is expected. Test on staging.
+
+**One database serves every environment**, production included. A schema migration is
+live everywhere the moment it runs, so an API change that depends on it must be released
+promptly. `TST-####` budgets are throwaway test records in those same tables.
+
+---
+
+## Running the tests
+
+```bash
+./test/run-all.sh          # node:test logic suites, then all ten browser suites
+./test/run-all.sh 03 08    # only suites 03 and 08
+```
+
+Needs Playwright with a Chromium build (`npm i -D playwright`); set `CHROMIUM_PATH` if
+Playwright's own copy is not present. Other optional overrides: `APP_DIR`, `OUT_DIR`,
+and `NO_API=1` to kill every API route (how the offline path is exercised).
+
+The runner starts two mocks — port **8099** with `NO_API=1` and port **8100** live — and
+restarts the live one between suites, because several suites seed budgets and assert
+exact row counts.
+
+| Suite | Covers |
+|---|---|
+| 01 | Offline banner, cold-start screen, routing, focus retention, collapse, ID validation |
+| 02 | Save/load round-trip, home list, actions menu, version history, export wiring |
+| 03 | PDF report composed from the data model |
+| 04 | Passcode is hashed — no plaintext in the served source |
+| 05 | Blank budget type, template administration and publication |
+| 06 | Header, layout and line-item alignment at several widths |
+| 07 | Help TOC scrolls within the guide |
+| 08 | Amenity suppression arithmetic, division totals and percentages |
+| 09 | Cmd/Ctrl+S |
+| 10 | Group selector, editable CSI codes, batch selection and deletion |
+
+`test/*.test.js` covers what needs no browser: canonical JSON and content hashing, the
+SOV projection, and the calculation audit against the reference workbook.
+
+The browser suites assert against **visible button text**, so a copy change breaks
+selectors. That is intentional — it catches drift — but expect to update selectors
+alongside label changes.
+
+---
+
+## Where to read next
+
+| Document | For |
+|---|---|
+| `docs/BUILD_GUIDE.md` | **Provisioning from scratch** — first deploy is ~45 minutes |
+| `docs/HANDOFF.md` | Picking the project up: invariants that will bite, open items |
+| `docs/DATA_CONTRACT.md` | The SOV contract, versioning model, template and version APIs |
+| `docs/ROADMAP.md` | Phased plan: standalone → SharePoint → Monday → lender package |
+| `docs/NAMING.md` | Azure resource naming, including names that predate the current product name |

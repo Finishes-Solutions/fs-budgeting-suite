@@ -1,4 +1,4 @@
-# FS Budgeting Suite — Handoff
+# Finishes Solutions Budgeting Suite — Handoff
 
 Written for whoever (or whatever) picks this repository up next. It records the things
 that are not obvious from reading the code: why the deployment is shaped the way it is,
@@ -60,6 +60,10 @@ push to staging  →  the "staging" named environment (stable URL, test here)
 PR to main       →  a throwaway per-PR preview environment
 push to main     →  production
 ```
+
+Production is served from the custom domain **`https://budgets.finishessolutions.ai`**
+(the SWA default hostname still resolves; the custom domain is the one people use, and
+it has its own `/.auth/login/aad/callback` redirect URI registered in Entra).
 
 Staging URL:
 `https://wonderful-rock-071c8e810-staging.centralus.7.azurestaticapps.net`

@@ -19,7 +19,10 @@ const BASE = 'http://127.0.0.1:8100';
   await p.waitForTimeout(400);
 
   ok('No offline banner when API is healthy', !(await p.locator('#apiBanner').isVisible()));
-  ok('Signed-in identity in header', (await p.locator('#whoami').textContent()).includes('svc_automation'));
+  // Identity moved from a bare email in the bar into the account menu behind the avatar.
+  ok('Account avatar is shown when signed in', await p.locator('#profileBtn').isVisible());
+  ok('Avatar shows initials', /^[A-Z?]{1,2}$/.test((await p.locator('#profileInitials').textContent()).trim()),
+     await p.locator('#profileInitials').textContent());
 
   // --- create + save a real budget
   await p.click('button:has-text("+ New Multifamily Budget")');
@@ -189,7 +192,18 @@ const BASE = 'http://127.0.0.1:8100';
   ok('Delete removes the row', (await p.locator('#homeBody tr').count()) === 3);
 
    // --- sign out
-  ok('Sign Out is offered to a signed-in user', await p.locator('#signOut').isVisible());
+  await p.click('#profileBtn'); await p.waitForTimeout(200);
+  ok('The account menu opens from the avatar', await p.locator('#profileMenu').isVisible());
+  ok('The account menu shows the signed-in email',
+     (await p.locator('#pmEmail').textContent()).includes('svc_automation@finishessolutions.com'),
+     await p.locator('#pmEmail').textContent());
+  ok('The account menu shows a display name',
+     (await p.locator('#pmName').textContent()).trim().length > 0,
+     await p.locator('#pmName').textContent());
+  ok('Sign Out lives in the account menu',
+     await p.locator('#profileMenu .rowmenu-item:has-text("Sign Out")').isVisible());
+  await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+  ok('Escape closes the account menu', !(await p.locator('#profileMenu').isVisible()));
   ok('Sign Out targets the SWA logout route',
      /^\/\.auth\/logout\?post_logout_redirect_uri=/.test(await p.evaluate(() => logoutUrl())),
      await p.evaluate(() => logoutUrl()));

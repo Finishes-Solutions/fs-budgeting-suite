@@ -1,4 +1,4 @@
-# Build & Deployment Guide — FS Budgeting Suite (Phase 1)
+# Build & Deployment Guide — Finishes Solutions Budgeting Suite (Phase 1)
 
 Prepared by Finishes Technology. Assumes Owner/Contributor on an Azure subscription
 and admin rights in the Finishes Solutions Entra tenant.
@@ -21,7 +21,7 @@ Monday.com sync, Lender Package service) are defined with exit criteria in `ROAD
 | SQL server | **Create `sql-finishes-cus-prod-fs01`** in `rg-finishes-data-prod` — there is no existing work SQL server (the NFL analytics server is personal and stays out of work infrastructure) | One server, many databases: the server is a free logical container, so BD governance and future databases join it with zero extra server cost and one firewall to manage. |
 | Database name | **`fs-budgeting-suite`** | Matches repo/docs. |
 | Static Web App name | **`stapp-fs-budgeting-prod`** | CAF-style prefix; the default hostname is random anyway and you'll put a custom domain on it. |
-| Custom domain | **`budgets.finishessolutions.com`** | Set in §6. |
+| Custom domain | **`budgets.finishessolutions.ai`** | Set in §6. |
 | Auth to SQL (Phase 1) | SQL auth, dedicated least-privilege user | Pragmatic v1. Managed identity is hardening item #2 (§9). |
 | Tags on everything | `workload=fs-budgeting-suite` `env=prod` `owner=fs-technology` | Cost reporting and future cleanup. Add `costCenter` if you use one. |
 
@@ -62,7 +62,10 @@ second SQL bill yet.
 
 Portal → Microsoft Entra ID → App registrations → **New registration**:
 
-- Name: `FS Budgeting Suite`
+- Name: `FS Budgeting Suite` — this is the **existing Entra app registration's display
+  name in Azure**, not the product name. The product is the Finishes Solutions Budgeting
+  Suite; the registration keeps its original string so this guide matches what is actually
+  in the tenant. Renaming it in Azure means updating it here too.
 - Supported account types: **Accounts in this organizational directory only (Finishes Solutions only — Single tenant)** ← this is the line that keeps the rest of the world out.
 - Redirect URI: leave blank for now (you don't have the hostname yet; §5 step 4 comes back here).
 
@@ -215,12 +218,12 @@ az staticwebapp appsettings set \
 
 ## 6 · Custom domain (recommended, do it now — renaming later is when links break)
 
-1. SWA → Custom domains → Add → `budgets.finishessolutions.com`.
+1. SWA → Custom domains → Add → `budgets.finishessolutions.ai`.
 2. At your DNS host, add the CNAME it shows you:
    `budgets  CNAME  <default-hostname>.azurestaticapps.net`
 3. Validation + free managed TLS cert takes minutes to an hour.
 4. Add the second redirect URI to the app registration:
-   `https://budgets.finishessolutions.com/.auth/login/aad/callback`
+   `https://budgets.finishessolutions.ai/.auth/login/aad/callback`
 
 ## 7 · Roles
 
@@ -232,7 +235,7 @@ person:
   Role: `pricing_admin` → Generate → open the invite link **in the browser/profile
   you'll actually use** and accept. The role is bound to that consent; if pricing
   publish ever 403s you, re-accept the invite and confirm the role appears at
-  `https://budgets.finishessolutions.com/.auth/me`.
+  `https://budgets.finishessolutions.ai/.auth/me`.
 
 ## 8 · Verification checklist (run every item before calling it deployed)
 

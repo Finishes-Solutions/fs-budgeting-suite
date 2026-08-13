@@ -22,8 +22,8 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
      (await p.locator('#bootScreen').count()) === 0);
   ok('The app is usable behind it', await p.locator('#page-home').isVisible());
 
-  ok('Sign Out is hidden with no signed-in principal',
-     await p.locator('#signOut').isHidden());
+  ok('The account avatar is hidden with no signed-in principal',
+     await p.locator('#profileBtn').isHidden());
 
   // D3 â€” API is absent here, so the offline banner must be visible
   ok('D3 offline banner shows when API is unreachable', await p.locator('#apiBanner').isVisible());
