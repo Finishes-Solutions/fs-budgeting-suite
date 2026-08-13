@@ -29,7 +29,7 @@ body{font-family:var(--fb);color:var(--ink-800);background:var(--ink-50);font-si
 .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
 
 body>header{background:var(--ink-900);color:var(--white)}   /* app chrome only — the printed report has its own <header> */
-.hd{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+.hd{max-width:1440px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
   height:60px;padding:0 32px;gap:20px;flex-wrap:nowrap;white-space:nowrap}
 .brand{flex:0 0 auto;display:flex;align-items:center;height:60px}
 .brand img{height:36px;width:auto;display:block}
@@ -51,7 +51,7 @@ nav button:hover{color:#fff;background:rgba(255,255,255,.08)}
 nav button.on{color:#fff;background:var(--green-700)}
 nav button[disabled]{opacity:.35;cursor:not-allowed}
 
-main{max-width:1280px;margin:0 auto;padding:28px 32px 48px}
+main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 .page{display:none}.page.on{display:block}
 .page-title{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px}
 .page-title h1{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--ink-950)}
@@ -115,11 +115,11 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .tbl th{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-500);
   font-weight:500;text-align:left;padding:8px 10px;border-bottom:1px solid var(--ink-200);white-space:nowrap}
 .tbl th.r,.tbl td.r{text-align:right}
-.tbl td{padding:6px 10px;border-bottom:1px solid var(--ink-100);vertical-align:middle}
+.tbl td{padding:3px 10px;border-bottom:1px solid var(--ink-100);vertical-align:middle}
 .tbl td.calc{font-family:var(--fm);font-size:13px;color:var(--ink-700);white-space:nowrap}
 .tbl td.calc.strong{color:var(--ink-950);font-weight:600}
 .tbl tr.total td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;color:var(--ink-950);padding-top:10px}
-.tbl input,.tbl select{border:1px solid transparent;background:transparent;padding:6px 8px}
+.tbl input,.tbl select{border:1px solid transparent;background:transparent;padding:4px 8px}
 .tbl input:hover,.tbl select:hover{border-color:var(--ink-200);background:#fff}
 .tbl input:focus,.tbl select:focus{border-color:var(--green-600);background:#fff}
 .tbl input[type=number]{font-family:var(--fm);font-size:13px;text-align:right}
@@ -162,8 +162,37 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .selbar-danger:hover{background:#8f1c12;border-color:#8f1c12}
 .tbl tr.sel td{background:var(--green-50)}
 .tbl td.selcell{text-align:center;padding-left:10px}
-.codein{font-family:var(--fm);font-size:11px;width:74px;color:var(--ink-600);padding:4px 6px}
-.codein:hover,.codein:focus{color:var(--ink-950)}
+/* One flex row per line item, so the edit dot, the CSI code and the description
+   sit on a single baseline instead of the dot wrapping onto a line of its own
+   above the code. min-width:0 lets the description shrink rather than push the
+   row wider. */
+.lineitem{display:flex;align-items:center;gap:8px;min-width:0}
+.lineitem .editdot{margin-right:0}
+/* `.tbl input` and `input[type=text]` both outrank a bare class on padding, which
+   left too little content width and clipped the last digit of a code. Qualify the
+   selector so the width and padding here actually win. */
+.tbl input.codein{font-family:var(--fm);font-size:11px;flex:0 0 94px;width:94px;
+  color:var(--ink-600);padding:4px 7px}
+.tbl input.codein:hover,.tbl input.codein:focus{color:var(--ink-950)}
+.tbl input.descin{flex:1 1 auto;min-width:0;width:auto}
+/* Selects need room for the native arrow, or the last letters of a long option
+   ("Per Amen SF") are clipped once it is the selected value. */
+.tbl select{padding-right:24px}
+.basisin{width:132px;font-size:12px}
+
+/* Checkboxes are drawn rather than native so they can be rounded and pick up the
+   brand green. Native padding from `.tbl input` is reset explicitly. */
+.tbl input[type=checkbox]{appearance:none;-webkit-appearance:none;width:15px;height:15px;padding:0;margin:0;
+  border:1.5px solid var(--ink-300);border-radius:5px;background:#fff;cursor:pointer;flex:none;
+  position:relative;vertical-align:middle;transition:background .12s,border-color .12s}
+.tbl input[type=checkbox]:hover{border-color:var(--ink-500);background:#fff}
+.tbl input[type=checkbox]:checked,.tbl input[type=checkbox]:indeterminate{
+  background:var(--green-600);border-color:var(--green-600)}
+.tbl input[type=checkbox]:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.tbl input[type=checkbox]:indeterminate::after{content:'';position:absolute;left:2.5px;top:5.5px;
+  width:7px;border-top:2px solid #fff}
+.tbl input[type=checkbox]:focus-visible{outline:none;box-shadow:var(--focus)}
 .grp-hd td.calc,.grp-hd td.calc.strong{color:var(--ink-950)}
 tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 
@@ -1204,7 +1233,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <div id="bootScreen" role="status" aria-live="polite">
   <div class="boot-card">
     <div class="boot-spin" aria-hidden="true"></div>
-    <div class="boot-title">Loading FS Budgeting Suite</div>
+    <div class="boot-title">Loading Budgeting Suite</div>
     <div class="boot-msg" id="bootMsg">Connecting to the server…</div>
   </div>
 </div>
@@ -2324,11 +2353,14 @@ function renderBudget(){
       b.insertAdjacentHTML('beforeend',`<tr class="${ed?'edited ':''}${sel?'sel':''}">
         <td class="no-print selcell"><input type="checkbox" data-k="line.${id}.sel" ${sel?'checked':''}
           aria-label="Select ${esc(it.desc)}" onchange="toggleSelect('${id}',this.checked,this)"></td>
-        <td><span class="editdot${ed?' on':''}"${ed?' title="'+esc(editReason(it))+'"':''}></span><input type="text" class="codein" data-k="line.${id}.code"
+        <td><div class="lineitem">
+          <span class="editdot${ed?' on':''}"${ed?' title="'+esc(editReason(it))+'"':''}></span>
+          <input type="text" class="codein" data-k="line.${id}.code"
             value="${esc(it.code)}" title="CSI code — changing it files the line under the matching division"
             aria-label="CSI code for ${esc(it.desc)}" onchange="setLineCode('${id}',this.value)">
-          <input type="text" data-k="line.${id}.desc" value="${esc(it.desc)}" style="width:calc(100% - 116px)" oninput="setLineDesc('${id}',this.value)"></td>
-        <td><select data-k="line.${id}.basis" onchange="setBasis('${id}',this.value)" style="width:104px;font-size:12px;padding:5px 8px">
+          <input type="text" class="descin" data-k="line.${id}.desc" value="${esc(it.desc)}" oninput="setLineDesc('${id}',this.value)">
+        </div></td>
+        <td><select class="basisin" data-k="line.${id}.basis" onchange="setBasis('${id}',this.value)">
           <option value="sf" ${it.basis==='sf'?'selected':''}>Per Res SF</option>
           <option value="asf" ${it.basis==='asf'?'selected':''}>Per Amen SF</option>
           <option value="unit" ${it.basis==='unit'?'selected':''}>Per Unit</option>

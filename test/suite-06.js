@@ -64,6 +64,36 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
    els=>els.slice(0,25).map(e=>Math.round(e.getBoundingClientRect().right)));
  ok('budget quantities share one right edge', new Set(xq).size===1, 'edges: '+[...new Set(xq)].join(','));
 
+ // --- line-item row layout (compactness, inline edit dot, no clipped text)
+ await p.evaluate(() => { const l = doc.lines[2]; l.unit = l.unit + 1; touch(); });
+ await p.waitForTimeout(300);
+ const layout = await p.evaluate(() => {
+   const mid = el => { const r = el.getBoundingClientRect(); return r.top + r.height / 2; };
+   const row = [...document.querySelectorAll('#budBody tr')].find(t => t.className.includes('edited'));
+   const li = row.querySelector('.lineitem');
+   const dot = li.querySelector('.editdot'), code = li.querySelector('.codein'), desc = li.querySelector('.descin');
+   const sels = [...document.querySelectorAll('#budBody select.basisin')];
+   sels.forEach(x => { x.value = 'asf'; });          // the longest option
+   const codes = [...document.querySelectorAll('#budBody input.codein')];
+   const leaf = [...document.querySelectorAll('#budBody tr')].filter(t => !t.className.includes('-hd'));
+   return {
+     dotInline: Math.abs(mid(dot) - mid(code)) < 2 && Math.abs(mid(code) - mid(desc)) < 2,
+     rowH: Math.round(leaf[0].getBoundingClientRect().height),
+     clippedCodes: codes.filter(i => i.scrollWidth > i.clientWidth + 1).length,
+     clippedSelects: sels.filter(x => x.scrollWidth > x.clientWidth + 1).length,
+     codeLefts: new Set(codes.slice(0, 8).map(i => Math.round(i.getBoundingClientRect().left))).size
+   };
+ });
+ ok('The edit dot sits inline with the code and description', layout.dotInline);
+ ok('Line rows stay compact', layout.rowH <= 40, layout.rowH + 'px');
+ ok('CSI codes are never clipped', layout.clippedCodes === 0, layout.clippedCodes + ' clipped');
+ ok('The basis dropdown fits its longest option', layout.clippedSelects === 0,
+    layout.clippedSelects + ' clipped');
+ ok('Codes stay left-aligned whether or not a line is edited', layout.codeLefts === 1,
+    layout.codeLefts + ' distinct left edges');
+ ok('Selection checkboxes are rounded', await p.evaluate(() =>
+    parseFloat(getComputedStyle(document.querySelector('#budBody input[type=checkbox]')).borderRadius) >= 4));
+
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();
