@@ -81,6 +81,31 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .btn-x:hover{color:var(--danger);background:var(--ink-100)}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 
+/* Row actions menu on the Budgets list. Positioned fixed from the trigger's
+   bounding rect rather than nested in the row, so a scrolling table can never
+   clip it. Only one is ever open. */
+.rowmenu-btn{background:none;border:none;color:var(--ink-500);cursor:pointer;font-size:17px;line-height:1;
+  padding:3px 8px;border-radius:var(--r)}
+.rowmenu-btn:hover{color:var(--ink-900);background:var(--ink-100)}
+.rowmenu-btn:focus-visible{outline:none;box-shadow:var(--focus)}
+#rowMenu{position:fixed;z-index:60;min-width:176px;background:var(--white);border:1px solid var(--ink-200);
+  border-radius:var(--rm);box-shadow:0 8px 24px rgba(11,13,12,.18);padding:4px}
+.rowmenu-item{display:block;width:100%;text-align:left;background:none;border:0;border-radius:var(--r);
+  padding:8px 12px;font-family:inherit;font-size:13px;color:var(--ink-900);cursor:pointer}
+.rowmenu-item:hover,.rowmenu-item:focus-visible{background:var(--ink-100);outline:none}
+.rowmenu-item.danger{color:var(--danger)}
+.rowmenu-item.danger:hover,.rowmenu-item.danger:focus-visible{background:#fdf0ee}
+.rowmenu-sep{height:1px;background:var(--ink-150);margin:4px 0}
+
+/* Version history list */
+.ver-row{display:grid;grid-template-columns:130px 1fr auto;gap:14px;align-items:center;
+  padding:12px 14px;border:1px solid var(--ink-150);border-radius:var(--r);margin-bottom:8px}
+.ver-row.current{border-color:var(--green-200);background:var(--green-50)}
+.ver-num{font-family:var(--fm);font-size:12px;color:var(--green-700);font-weight:600;margin-bottom:4px}
+.ver-sub{font-size:12px;color:var(--ink-500);margin-top:3px}
+.ver-hist{background:var(--edit-50);border:1px solid var(--edit-100);color:var(--edit);
+  padding:9px 12px;border-radius:var(--r);font-size:12px;margin-bottom:14px}
+
 .tbl{width:100%;border-collapse:collapse}
 .tbl th{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-500);
   font-weight:500;text-align:left;padding:8px 10px;border-bottom:1px solid var(--ink-200);white-space:nowrap}
@@ -223,7 +248,7 @@ th.sortable.sorted{color:var(--ink-900)}
 @media print{
   @page{size:letter portrait;margin:13mm 12mm 14mm}
   body{background:#fff}
-  .no-print,.banner,.toast,#exportModal,#pickModal{display:none!important}
+  .no-print,.banner,.toast,#exportModal,#pickModal,#versionsModal,#rowMenu{display:none!important}
   /* direct children only — the report has its own <header> and must not be hidden */
   body.printing > header,body.printing > main{display:none!important}
   body.printing #printDoc{display:block}
@@ -1102,6 +1127,18 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
 </div>
 
+<!-- ================= BUDGET ROW ACTIONS MENU ================= -->
+<div id="rowMenu" role="menu" aria-hidden="true" style="display:none"></div>
+
+<!-- ================= BUDGET VERSIONS MODAL ================= -->
+<div id="versionsModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
+  <div class="card" style="width:820px;max-width:94vw;margin:0" role="dialog" aria-modal="true" aria-labelledby="versionsTitle">
+    <div class="card-hd"><h2 id="versionsTitle">Budget Versions</h2>
+      <button class="btn-x" onclick="closeVersions()" aria-label="Close version history">×</button></div>
+    <div class="card-bd" style="max-height:70vh;overflow:auto"><div id="versionsBody"></div></div>
+  </div>
+</div>
+
 <div id="printDoc" aria-hidden="true"></div>
 
 <div class="toast" id="toast"></div>
@@ -1115,6 +1152,15 @@ const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>ESC_MAP[c]);
 const ID_RX=/^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
 const isTest=id=>/^TST-/.test(id||'');
+/* Stable per-line identity. Array positions shift whenever a line is inserted,
+   moved between groups or batch-deleted, so anything that has to outlive a
+   render — focus keys, selection, the SOV LineKey column, version snapshots —
+   keys off lineId instead of the index. randomUUID needs a secure context, so
+   there is a fallback for plain-http local dev. */
+function newLineId(){
+  try{ if(window.crypto&&crypto.randomUUID)return crypto.randomUUID(); }catch(_){}
+  return 'l-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
+}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
 
 /* ============ STORAGE — Azure Functions API ============ */
@@ -1442,7 +1488,7 @@ function blankDoc(kind){
     // baseUnit is the library rate this line was born with. Comparing against it is what
     // lets the budget flag a manually re-priced line — and un-flag it if you put the
     // original rate back.
-    lines:bare?[]:pricing.lines.map(l=>({...l,qty:l.basis==='ls'?1:0,auto:l.basis!=='ls',baseUnit:l.unit})),
+    lines:bare?[]:pricing.lines.map(l=>({...l,lineId:newLineId(),qty:l.basis==='ls'?1:0,auto:l.basis!=='ls',baseUnit:l.unit})),
     companies:bare?[]:[{name:'Finishes Solutions LLC',pct:12}],
     contingency:bare?{mode:'pct',val:0}:{mode:'psf',val:2},
     projectCosts:bare?{land:0,dev:0,mkt:0,cls:0}:{land:1200000,dev:200000,mkt:75000,cls:0},
@@ -1457,7 +1503,10 @@ function migrate(d){ // tolerate older saves
   d.units.forEach(u=>{u.bd=u.bd??0;u.bth=u.bth??1;});
   // Budgets saved before edit-tracking existed have no baseline, so seed it from the
   // current rate: nothing is retroactively claimed to be a manual edit.
-  d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';l.baseUnit=l.baseUnit??l.unit;});
+  // Older saves predate stable line IDs; mint one per line so selection, code
+  // editing and SOV LineKey have something durable to hold on to.
+  d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';l.baseUnit=l.baseUnit??l.unit;
+    if(!l.lineId)l.lineId=newLineId();});
   d.status=d.status||'Draft';
   return d;
 }
@@ -1564,7 +1613,9 @@ function paintHome(){
       <td class="calc r">${usd(x.projectCost||0)}</td>
       <td><span class="badge ${x.status==='Finalized'?'ok':''}">${esc(x.status)}</span></td>
       <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${esc((x.updated||'').slice(0,10))}</td>
-      <td class="no-print"><button class="btn-x" title="Delete ${esc(x.projectId)}" onclick="event.stopPropagation();deleteBudget('${x.projectId}')">×</button></td></tr>`);
+      <td class="no-print" style="text-align:right"><button class="rowmenu-btn" data-pid="${esc(x.projectId)}"
+        aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(x.projectId)}"
+        onclick="event.stopPropagation();openRowMenu(this)">⋮</button></td></tr>`);
   });
   document.querySelectorAll('#homeHead th[data-sort]').forEach(th=>{
     const on=th.dataset.sort===homeView.sort;
@@ -1593,6 +1644,131 @@ async function openBudget(pid,page){
   doc=migrate(d);dirty=false;lastSaved=null;
   enableDocNav();fillForms();go(page||'budget');
 }
+/* ---- Budgets list row actions ----
+   Whole-budget actions live behind one menu so Delete is deliberate and clearly
+   separated from batch line-item deletion inside a budget. The menu is a single
+   shared element positioned from the trigger, which keeps "only one open" true
+   by construction and survives paintHome() rebuilding every row. */
+let rowMenuTrigger=null,versionsReturn=null,versionsPid=null;
+const ROW_ACTIONS=[{act:'edit',label:'Edit'},{act:'versions',label:'Versions'},
+                   {act:'sep'},{act:'delete',label:'Delete',danger:true}];
+function rowMenuItems(){return [...document.querySelectorAll('#rowMenu .rowmenu-item')];}
+function openRowMenu(btn){
+  const wasOpen=rowMenuTrigger===btn;
+  closeRowMenu();
+  if(wasOpen)return;                       // the trigger toggles its own menu
+  const m=document.getElementById('rowMenu');
+  m.dataset.pid=btn.dataset.pid;           // never interpolated into markup
+  m.innerHTML=ROW_ACTIONS.map(a=>a.act==='sep'?'<div class="rowmenu-sep"></div>'
+    :`<button class="rowmenu-item${a.danger?' danger':''}" role="menuitem" tabindex="-1" data-act="${a.act}">${a.label}</button>`).join('');
+  rowMenuItems().forEach(el=>{el.onclick=()=>rowMenuAction(el.dataset.act);});
+  m.style.display='block';
+  const r=btn.getBoundingClientRect();
+  m.style.top=(r.bottom+4)+'px';
+  m.style.left=Math.max(8,Math.min(r.right-m.offsetWidth,window.innerWidth-m.offsetWidth-8))+'px';
+  m.setAttribute('aria-hidden','false');
+  btn.setAttribute('aria-expanded','true');
+  rowMenuTrigger=btn;
+  rowMenuItems()[0].focus();
+}
+function closeRowMenu(refocus){
+  const m=document.getElementById('rowMenu'),t=rowMenuTrigger;
+  rowMenuTrigger=null;
+  m.style.display='none';m.setAttribute('aria-hidden','true');m.innerHTML='';
+  if(t){t.setAttribute('aria-expanded','false');if(refocus&&document.body.contains(t))t.focus();}
+}
+function rowMenuAction(act){
+  const pid=document.getElementById('rowMenu').dataset.pid,t=rowMenuTrigger;
+  versionsReturn=t;
+  closeRowMenu(act==='delete');            // the other two navigate away from the row
+  if(act==='edit')openBudget(pid);
+  else if(act==='versions')openVersions(pid);
+  else if(act==='delete')deleteBudget(pid);
+}
+document.addEventListener('click',e=>{     // outside click closes; the trigger stops propagation
+  if(rowMenuTrigger&&!e.target.closest('#rowMenu'))closeRowMenu(false);
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&document.getElementById('versionsModal').style.display==='flex'&&!rowMenuTrigger){
+    e.preventDefault();closeVersions();return;}
+  if(!rowMenuTrigger)return;
+  const items=rowMenuItems(),i=items.indexOf(document.activeElement);
+  const step=d=>items[i<0?(d>0?0:items.length-1):(i+d+items.length)%items.length].focus();
+  if(e.key==='Escape'){e.preventDefault();closeRowMenu(true);}
+  else if(e.key==='ArrowDown'){e.preventDefault();step(1);}
+  else if(e.key==='ArrowUp'){e.preventDefault();step(-1);}
+  else if(e.key==='Tab'){closeRowMenu(false);}
+});
+
+/* ---- Version history (read-only) ----
+   Historical documents are rendered straight from the API response and are
+   never assigned to the global `doc`, so opening history cannot disturb
+   unsaved work in the budget you have open. */
+const vBody=()=>document.getElementById('versionsBody');
+function fmtWhen(iso){
+  if(!iso)return 'Unknown date';
+  const d=new Date(iso);
+  return isNaN(d.getTime())?'Unknown date'
+    :d.toLocaleString('en-US',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+async function openVersions(pid){
+  versionsPid=pid;
+  document.getElementById('versionsTitle').textContent='Budget Versions — '+pid;
+  document.getElementById('versionsModal').style.display='flex';
+  vBody().innerHTML='<div class="note">Loading version history…</div>';
+  try{
+    renderVersionList(await api('budget/'+encodeURIComponent(pid)+'/versions'));
+  }catch(e){
+    vBody().innerHTML='<div class="note" style="color:var(--danger)">Could not load version history: '+esc(e.message)+'</div>';
+  }
+}
+function renderVersionList(data){
+  const vs=data.versions||[];
+  if(!vs.length){
+    vBody().innerHTML='<div class="note">No saved versions yet. Saving this budget records its first version.</div>';return;}
+  vBody().innerHTML=vs.map(v=>`<div class="ver-row${v.isCurrent?' current':''}">
+      <div><div class="ver-num">Version ${v.versionNumber}</div>${v.isCurrent?'<span class="badge ok">Current</span>':''}</div>
+      <div><div>${esc(v.changeSummary||'No change summary')}</div>
+        <div class="ver-sub">${esc(fmtWhen(v.createdAt))} · ${esc(v.createdByName||'Unknown')} · ${esc(v.status||'—')} · Pricing ${esc(v.pricingVersion||'—')}${v.templateVersion?' · Template v'+esc(v.templateVersion):''}</div></div>
+      <div style="text-align:right">
+        <div class="calc">${usd(v.contractSum||0)}</div>
+        <div class="ver-sub">${usd(v.projectCost||0)} total project</div>
+        <button class="btn btn-ghost btn-sm" data-vn="${v.versionNumber}" style="margin-top:8px">Open</button>
+      </div></div>`).join('');
+  vBody().querySelectorAll('button[data-vn]').forEach(b=>{b.onclick=()=>openVersionDetail(+b.dataset.vn);});
+}
+async function openVersionDetail(vn){
+  vBody().innerHTML='<div class="note">Loading version '+vn+'…</div>';
+  let d;
+  try{ d=await api('budget/'+encodeURIComponent(versionsPid)+'/versions/'+vn); }
+  catch(e){ vBody().innerHTML='<div class="note" style="color:var(--danger)">Could not load version '+vn+': '+esc(e.message)+'</div>';return; }
+  const v=d.version,rows=d.sovLines||[];
+  vBody().innerHTML=
+    '<div class="ver-hist">Historical version — read only. Nothing here is editable, and your open budget is untouched.</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">'
+    +'<button class="btn btn-ghost btn-sm" id="verBack">Back to Versions</button>'
+    +'<span class="note">Version '+v.versionNumber+' · '+esc(fmtWhen(v.createdAt))+' · '+esc(v.createdByName||'Unknown')+'</span></div>'
+    +'<div style="display:flex;gap:24px;margin-bottom:14px;font-size:13px">'
+    +'<div><div class="eyebrow">Contract Sum</div><div class="calc">'+usd(v.contractSum||0)+'</div></div>'
+    +'<div><div class="eyebrow">Total Project</div><div class="calc">'+usd(v.projectCost||0)+'</div></div>'
+    +'<div><div class="eyebrow">Status</div><div>'+esc(v.status||'—')+'</div></div>'
+    +'<div><div class="eyebrow">Pricing Version</div><div>'+esc(v.pricingVersion||'—')+'</div></div></div>'
+    +'<div style="max-height:340px;overflow:auto;border:1px solid var(--ink-150);border-radius:var(--r)">'
+    +'<table class="tbl"><thead><tr><th>Code</th><th>Description</th><th>Group</th>'
+    +'<th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>'
+    +rows.map(r=>'<tr><td class="mono">'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td><td>'+esc(r.grp)+'</td>'
+      +'<td class="r">'+num(r.qty)+'</td><td class="r">'+usd2(r.rate)+'</td><td class="r">'+usd(r.total)+'</td></tr>').join('')
+    +'</tbody></table></div>'
+    +'<div class="note" style="margin-top:10px">'+rows.length+' schedule of values lines recorded in this version.</div>';
+  document.getElementById('verBack').onclick=()=>openVersions(versionsPid);
+}
+function closeVersions(){
+  document.getElementById('versionsModal').style.display='none';
+  vBody().innerHTML='';
+  if(versionsReturn&&document.body.contains(versionsReturn))versionsReturn.focus();
+  versionsReturn=null;
+}
+
 async function deleteBudget(pid){
   // Deletion is recoverable now: the API flags the budget, keeps its saved
   // version history, and restores it if the same project ID is saved again.
@@ -1981,7 +2157,7 @@ function closePick(){document.getElementById('pickModal').style.display='none';}
 function addBlankLine(){
   const scope=document.getElementById('pickScope').value;
   const grp=chosenGroup('Custom');
-  insertLine({code:'—',grp,scope,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1,baseUnit:0,custom:true});
+  insertLine({lineId:newLineId(),code:'—',grp,scope,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1,baseUnit:0,custom:true});
   revealLine(scope,grp);
   closePick();touch();toast('Blank line added');
 }
@@ -2012,7 +2188,7 @@ function pickCsi(code,title){
   const scope=document.getElementById('pickScope').value;
   const basis=scope==='amen'?'asf':'sf';
   const grp=chosenGroup(csiDivOf(code));
-  insertLine({code,grp,scope,desc:title,basis,unit:0,auto:true,qty:0,baseUnit:0,custom:true});
+  insertLine({lineId:newLineId(),code,grp,scope,desc:title,basis,unit:0,auto:true,qty:0,baseUnit:0,custom:true});
   revealLine(scope,grp);
   closePick();touch();
   toast(scopeActive(scope)?code+' added — set the rate'

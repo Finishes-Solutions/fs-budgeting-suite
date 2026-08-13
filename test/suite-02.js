@@ -140,9 +140,51 @@ const BASE = 'http://127.0.0.1:8100';
   ok('Print classes are cleaned up afterwards',
      !(await p.locator('#page-budget').evaluate(e => e.classList.contains('print-target'))));
 
-  // --- delete
+  // --- stable line identity (survives the save/load round trip above)
+  // `doc` is a top-level `let`, so it is a lexical global, not a window property.
+  const lineIds = await p.evaluate(() => (doc && doc.lines ? doc.lines : []).map(l => l.lineId));
+  ok('Every budget line carries a stable ID', lineIds.length > 0 && lineIds.every(Boolean), lineIds.length + ' lines');
+  ok('Line IDs are unique', new Set(lineIds).size === lineIds.length);
+
+  // --- three-dot row actions menu (replaced the bare × delete button)
   await p.click('#nav-home'); await p.waitForTimeout(400);
-  await p.click('#homeBody tr:has-text("TST-9999") .btn-x');
+  await p.click('#homeBody tr:has-text("TST-9999") .rowmenu-btn');
+  await p.waitForTimeout(200);
+  ok('Row menu opens', await p.locator('#rowMenu').isVisible());
+  ok('Row menu offers Edit, Versions and Delete',
+     (await p.locator('#rowMenu .rowmenu-item').allTextContents()).join('|') === 'Edit|Versions|Delete');
+  ok('Trigger reports expanded state',
+     await p.locator('#homeBody tr:has-text("TST-9999") .rowmenu-btn').getAttribute('aria-expanded') === 'true');
+  ok('Trigger carries an accessible label',
+     (await p.locator('#homeBody tr:has-text("TST-9999") .rowmenu-btn').getAttribute('aria-label')) === 'Actions for TST-9999');
+  await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+  ok('Escape closes the row menu', !(await p.locator('#rowMenu').isVisible()));
+
+  // --- version history, read-only
+  const openBefore = await p.evaluate(() => doc ? JSON.stringify(doc) : null);
+  await p.click('#homeBody tr:has-text("TST-9999") .rowmenu-btn'); await p.waitForTimeout(150);
+  await p.click('#rowMenu .rowmenu-item:has-text("Versions")');
+  await p.waitForTimeout(500);
+  ok('Versions modal opens', await p.locator('#versionsModal').isVisible());
+  const vRows = await p.locator('#versionsBody .ver-row').count();
+  ok('Version history lists saved versions', vRows >= 1, vRows + ' version(s)');
+  ok('Newest version is marked Current',
+     await p.locator('#versionsBody .ver-row').first().locator('.badge').textContent() === 'Current');
+  await p.click('#versionsBody button[data-vn]'); await p.waitForTimeout(400);
+  ok('A historical version opens read-only',
+     (await p.locator('#versionsBody .ver-hist').textContent()).includes('read only'));
+  ok('Historical detail has no editable inputs',
+     (await p.locator('#versionsBody input, #versionsBody select').count()) === 0);
+  ok('Opening history leaves the working document byte-for-byte unchanged',
+     (await p.evaluate(() => doc ? JSON.stringify(doc) : null)) === openBefore);
+  await p.click('#verBack'); await p.waitForTimeout(400);
+  ok('Back returns to the version list', (await p.locator('#versionsBody .ver-row').count()) >= 1);
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  ok('Escape closes the versions modal', !(await p.locator('#versionsModal').isVisible()));
+
+  // --- delete, now behind the menu and recoverable
+  await p.click('#homeBody tr:has-text("TST-9999") .rowmenu-btn'); await p.waitForTimeout(150);
+  await p.click('#rowMenu .rowmenu-item:has-text("Delete")');
   await p.waitForTimeout(500);
   ok('Delete removes the row', (await p.locator('#homeBody tr').count()) === 3);
 
