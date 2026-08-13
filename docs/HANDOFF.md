@@ -307,8 +307,10 @@ update selectors alongside label changes.
 
 **Correctness**
 
-- Blank numeric inputs render `$NaN`. Still open — no touched code path made it a
-  one-liner.
+- ~~Blank numeric inputs render `$NaN`.~~ Fixed. The diagnosis in this list was wrong:
+  clearing a numeric field yields `0`, not `NaN`. The real trigger is an *absent*
+  property, which is what an older saved document looks like. `nz()` coerces at the
+  formatters and at every arithmetic source, and `migrate()` repairs numerics on load.
 - **Production runs the pre-versioning API against the migrated database.** Its
   delete button fails until `staging` is released, because the old hard delete is
   blocked by the new `BudgetVersions` foreign key. Nothing is lost; it fails cleanly.
