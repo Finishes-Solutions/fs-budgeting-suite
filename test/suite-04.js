@@ -24,7 +24,8 @@ const PASS='Basalt-Meridian-8538-27D5B4';
  ok('legend reads no manual edits', /no manual edits/.test(await p.locator('#editCount').textContent()));
 
  // change a rate -> dot appears
- const rate=p.locator('[data-k="line.0.unit"]');
+ // data-k keys are line.<lineId>.unit now — array indexes are no longer row identity
+ const rate=p.locator('#budBody input[data-k$=".unit"]').first();
  const orig=await rate.inputValue();
  await rate.fill('9.99'); await rate.blur(); await p.waitForTimeout(300);
  ok('changing a rate flags the line', (await p.locator('#budBody tr.edited .editdot.on').count())===1);
@@ -38,7 +39,7 @@ const PASS='Basalt-Meridian-8538-27D5B4';
  ok('restoring the library rate clears the flag', (await p.locator('#budBody .editdot.on').count())===0);
 
  // qty override flags
- const qty=p.locator('[data-k="line.0.qty"]');
+ const qty=p.locator('#budBody input[data-k$=".qty"]').first();
  await qty.fill('123'); await qty.blur(); await p.waitForTimeout(300);
  ok('overriding a quantity flags the line', (await p.locator('#budBody .editdot.on').count())===1);
  const tip2=await p.locator('#budBody tr.edited .editdot.on').first().getAttribute('title');

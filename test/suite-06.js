@@ -59,7 +59,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // --- budget qty column alignment
  await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
- const xq=await p.locator('#budBody tr td:nth-child(3) input').evaluateAll(
+ // Qty moved from column 3 to column 4 when the selection checkbox column landed
+ const xq=await p.locator('#budBody tr td:nth-child(4) input').evaluateAll(
    els=>els.slice(0,25).map(e=>Math.round(e.getBoundingClientRect().right)));
  ok('budget quantities share one right edge', new Set(xq).size===1, 'edges: '+[...new Set(xq)].join(','));
 

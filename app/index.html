@@ -128,6 +128,17 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
    Total and % columns instead of floating in a full-width header. They must not
    inherit the light body-cell colour, least of all on the dark scope header. */
 .scope-hd td.calc,.scope-hd td.calc.strong{color:#fff}
+/* Batch selection toolbar. Appears only while something is selected, so the
+   budget grid is unchanged for the ordinary single-line workflow. */
+.selbar{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--green-50);
+  border-top:1px solid var(--green-200);border-bottom:1px solid var(--green-200);
+  font-size:13px;font-weight:600;color:var(--green-800)}
+.selbar-danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.selbar-danger:hover{background:#8f1c12;border-color:#8f1c12}
+.tbl tr.sel td{background:var(--green-50)}
+.tbl td.selcell{text-align:center;padding-left:10px}
+.codein{font-family:var(--fm);font-size:11px;width:74px;color:var(--ink-600);padding:4px 6px}
+.codein:hover,.codein:focus{color:var(--ink-950)}
 .grp-hd td.calc,.grp-hd td.calc.strong{color:var(--ink-950)}
 tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 
@@ -609,9 +620,17 @@ th.sortable.sorted{color:var(--ink-900)}
           <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand All</button>
         </span>
       </div></div>
+    <div class="selbar no-print" id="selBar" style="display:none">
+      <span id="selCount">0 Items Selected</span>
+      <span style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" onclick="clearSelection()">Clear Selection</button>
+      <button class="btn btn-sm selbar-danger" onclick="deleteSelected()">Delete Items</button>
+    </div>
     <div class="card-bd budget-scroll" style="overflow:auto;padding-top:8px">
       <table class="tbl">
-        <thead><tr><th style="width:36%">Line Item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th>
+        <thead><tr><th class="no-print" style="width:34px"><input type="checkbox" id="selAll"
+            title="Select All Visible" aria-label="Select All Visible" onchange="selectAllVisible(this.checked)"></th>
+          <th style="width:34%">Line Item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th>
           <th class="r">Total</th><th class="r">% Scope</th><th class="no-print"></th></tr></thead>
         <tbody id="budBody"></tbody>
       </table>
@@ -1639,7 +1658,7 @@ function enableDocNav(){
 }
 function newBudget(kind){
   if(!confirmDiscard())return;
-  doc=blankDoc(kind);dirty=false;lastSaved=null;
+  doc=blankDoc(kind);dirty=false;lastSaved=null;selected.clear();
   enableDocNav();fillForms();go('input');
   if(kind==='blank')toast('Blank budget — build the scope from the CSI catalog on the Budget page');
 }
@@ -1647,7 +1666,7 @@ async function openBudget(pid,page){
   if(!confirmDiscard())return;
   const d=await sGet('budget-'+pid);
   if(!d){toast('Could not load '+pid);return;}
-  doc=migrate(d);dirty=false;lastSaved=null;
+  doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
   enableDocNav();fillForms();go(page||'budget');
 }
 /* ---- Budgets list row actions ----
@@ -2006,23 +2025,133 @@ function renderBudget(){
           <td class="no-print"></td></tr>`);}
       if(collapsed.has(sc+'|'+it.grp))return;
       const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0,ed=isEdited(it);
-      b.insertAdjacentHTML('beforeend',`<tr${ed?' class="edited"':''}>
-        <td><span class="editdot${ed?' on':''}"${ed?' title="'+esc(editReason(it))+'"':''}></span><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${esc(it.code)}</span>
-          <input type="text" data-k="line.${gi}.desc" value="${esc(it.desc)}" style="width:calc(100% - 108px)" oninput="doc.lines[${gi}].desc=this.value;doc.lines[${gi}].edited=true;markDirty()"></td>
-        <td><select data-k="line.${gi}.basis" onchange="setBasis(${gi},this.value)" style="width:104px;font-size:12px;padding:5px 8px">
+      // Every interactive control keys off lineId, not the array index: a code edit
+      // can move this line to another group and a batch delete can shift every
+      // index below it, but the key stays valid across both.
+      const id=it.lineId;
+      const sel=selected.has(id);
+      b.insertAdjacentHTML('beforeend',`<tr class="${ed?'edited ':''}${sel?'sel':''}">
+        <td class="no-print selcell"><input type="checkbox" data-k="line.${id}.sel" ${sel?'checked':''}
+          aria-label="Select ${esc(it.desc)}" onchange="toggleSelect('${id}',this.checked,this)"></td>
+        <td><span class="editdot${ed?' on':''}"${ed?' title="'+esc(editReason(it))+'"':''}></span><input type="text" class="codein" data-k="line.${id}.code"
+            value="${esc(it.code)}" title="CSI code — changing it files the line under the matching division"
+            aria-label="CSI code for ${esc(it.desc)}" onchange="setLineCode('${id}',this.value)">
+          <input type="text" data-k="line.${id}.desc" value="${esc(it.desc)}" style="width:calc(100% - 116px)" oninput="setLineDesc('${id}',this.value)"></td>
+        <td><select data-k="line.${id}.basis" onchange="setBasis('${id}',this.value)" style="width:104px;font-size:12px;padding:5px 8px">
           <option value="sf" ${it.basis==='sf'?'selected':''}>Per Res SF</option>
           <option value="asf" ${it.basis==='asf'?'selected':''}>Per Amen SF</option>
           <option value="unit" ${it.basis==='unit'?'selected':''}>Per Unit</option>
           <option value="ls" ${it.basis==='ls'?'selected':''}>Lump Sum</option></select></td>
-        <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span><input type="number" data-k="line.${gi}.qty" value="${q}" min="0" style="width:88px"
-          onchange="doc.lines[${gi}].qty=+this.value;doc.lines[${gi}].auto=false;touch()"></td>
-        <td class="r"><input type="number" data-k="line.${gi}.unit" value="${it.unit}" min="0" step="0.01" style="width:96px"
-          onchange="doc.lines[${gi}].unit=+this.value;touch()"></td>
+        <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span><input type="number" data-k="line.${id}.qty" value="${q}" min="0" style="width:88px"
+          onchange="setLineQty('${id}',this.value)"></td>
+        <td class="r"><input type="number" data-k="line.${id}.unit" value="${it.unit}" min="0" step="0.01" style="width:96px"
+          onchange="setLineRate('${id}',this.value)"></td>
         <td class="calc r strong">${usd(tot)}</td><td class="calc r">${pct.toFixed(1)}%</td>
-        <td class="no-print"><button class="btn-x" title="Remove line item" onclick="doc.lines.splice(${gi},1);touch()">×</button></td></tr>`);
+        <td class="no-print"><button class="btn-x" title="Remove line item" aria-label="Remove ${esc(it.desc)}" onclick="removeLine('${id}')">×</button></td></tr>`);
     });
   });
   renderEditLegend();
+  renderSelectionBar();
+}
+
+/* ---- line lookup and mutation, all by stable lineId ---- */
+function lineById(id){return doc?doc.lines.find(l=>l.lineId===id)||null:null;}
+function lineIndexById(id){return doc?doc.lines.findIndex(l=>l.lineId===id):-1;}
+function setLineDesc(id,v){const l=lineById(id);if(!l)return;l.desc=v;l.edited=true;markDirty();}
+function setLineQty(id,v){const l=lineById(id);if(!l)return;l.qty=+v;l.auto=false;touch();}
+function setLineRate(id,v){const l=lineById(id);if(!l)return;l.unit=+v;touch();}
+function removeLine(id){const i=lineIndexById(id);if(i<0)return;selected.delete(id);doc.lines.splice(i,1);touch();}
+
+/* ---- editable CSI codes ----
+   Normalize the shapes people actually type — 033000 and 03-30-00 — into the
+   spaced MasterFormat form. Anything unrecognized (SC-01, a dash, free text) is
+   preserved exactly as typed: custom codes are intentional. */
+function normalizeCsi(raw){
+  const s=String(raw||'').trim();
+  const digits=s.replace(/[\s.\-]/g,'');
+  return /^\d{6}$/.test(digits)?digits.slice(0,2)+' '+digits.slice(2,4)+' '+digits.slice(4,6):s;
+}
+/* Soft-cost codes carry their own grouping. Filing SC-* by its first two
+   characters would send every soft cost to Custom, so they map by number:
+   SC-01..19 are engineering and design, SC-20+ are impact and fees. An existing
+   soft-cost heading is respected — the user may have filed it deliberately. */
+function grpForCode(code,line){
+  const c=String(code||'').trim().toUpperCase();
+  const sc=c.match(/^SC-(\d+)/);
+  if(sc){
+    if(line&&/^Soft Costs/i.test(line.grp||''))return line.grp;
+    return +sc[1]>=20?'Soft Costs — Impact & Fees':'Soft Costs — Engineering & Design';
+  }
+  return csiDivOf(c);
+}
+/* A code change moves the line to the matching group and nothing else: scope,
+   description, basis, quantity, auto/manual state, rate, baseUnit, total and
+   lineId are all left alone. Removing and reinserting keeps same-group lines
+   contiguous, which is what stops renderBudget emitting a duplicate heading. */
+function setLineCode(id,raw){
+  const l=lineById(id);if(!l)return;
+  const code=normalizeCsi(raw),grp=grpForCode(code,l);
+  if(code===l.code&&grp===l.grp){touch();return;}
+  l.code=code;l.edited=true;
+  if(grp!==l.grp){
+    doc.lines.splice(lineIndexById(id),1);
+    l.grp=grp;
+    insertLine(l);
+    revealLine(l.scope,grp);
+  }
+  touch();
+}
+
+/* ---- batch selection ----
+   Selection lives in a Set of lineIds and is re-applied by renderBudget, so it
+   survives every recalc and DOM rebuild. Headers are never selectable. */
+const selected=new Set();
+let batchBusy=false;
+function visibleLineIds(){
+  const out=[];
+  if(!doc)return out;
+  activeScopes().forEach(sc=>{
+    if(collapsed.has(sc))return;
+    doc.lines.forEach(l=>{if(l.scope===sc&&!collapsed.has(sc+'|'+l.grp))out.push(l.lineId);});
+  });
+  return out;
+}
+function toggleSelect(id,on,el){
+  on?selected.add(id):selected.delete(id);
+  const tr=el&&el.closest('tr');
+  if(tr)tr.classList.toggle('sel',on);      // no re-render, so the checkbox keeps focus
+  renderSelectionBar();
+}
+function selectAllVisible(on){
+  visibleLineIds().forEach(id=>{on?selected.add(id):selected.delete(id);});
+  renderBudget();
+}
+function clearSelection(){selected.clear();renderBudget();}
+function renderSelectionBar(){
+  const bar=document.getElementById('selBar');if(!bar)return;
+  const n=selected.size;
+  bar.style.display=n?'flex':'none';
+  const c=document.getElementById('selCount');
+  if(c)c.textContent=n+(n===1?' Item Selected':' Items Selected');
+  const all=document.getElementById('selAll');
+  if(all){
+    const vis=visibleLineIds();
+    all.checked=vis.length>0&&vis.every(id=>selected.has(id));
+    all.indeterminate=!all.checked&&vis.some(id=>selected.has(id));
+  }
+}
+function deleteSelected(){
+  if(batchBusy)return;                       // one action at a time
+  const n=selected.size;
+  if(!n)return;
+  if(!confirm('Delete '+n+' Budget Line Item'+(n===1?'':'s')+'?\n\nThis changes only the open budget. Nothing is saved until you save it.'))return;
+  batchBusy=true;
+  try{
+    doc.lines=doc.lines.filter(l=>!selected.has(l.lineId));
+    selected.clear();                        // deleted IDs cannot linger in the Set
+    touch();                                 // one recalc for the whole batch
+    toast(n+(n===1?' line item deleted':' line items deleted')+' — save to keep the change');
+  }finally{batchBusy=false;}
 }
 /* ============ CSI SCHEDULE OF VALUES ============
    One model, three consumers: the CSI tab, the Excel sheet and the PDF section. The
@@ -2138,7 +2267,7 @@ function collapseAll(){
   ['res','amen','soft'].forEach(sc=>{if(doc.lines.some(l=>l.scope===sc))collapsed.add(sc);});
   renderBudget();
 }
-function setBasis(i,v){doc.lines[i].basis=v;doc.lines[i].auto=v!=='ls';doc.lines[i].edited=true;if(v==='ls')doc.lines[i].qty=doc.lines[i].qty||1;touch();}
+function setBasis(id,v){const l=lineById(id);if(!l)return;l.basis=v;l.auto=v!=='ls';l.edited=true;if(v==='ls')l.qty=l.qty||1;touch();}
 
 /* ---- add lines via CSI catalog ---- */
 function addLine(){
