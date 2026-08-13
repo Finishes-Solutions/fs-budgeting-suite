@@ -117,6 +117,86 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  });
  ok('The favicon actually serves', favOk === 'ok', favOk);
 
+ // ================= MOBILE READ-ONLY RESTRICTIONS =================
+ // Driven by viewport width, not user agent, so a narrow window is the same case.
+ ok('No mobile bar on a desktop viewport', !(await p.locator('#mobileBar').isVisible()));
+ ok('Editing tabs are present on a desktop viewport',
+    (await p.locator('#nav-input').isVisible()) && (await p.locator('#nav-pricing').isVisible()));
+
+ const m = await b.newPage({viewport:{width:390,height:844}});
+ const merrs = []; m.on('pageerror', e => merrs.push(e.message));
+ m.on('dialog', d => d.accept());
+ await m.goto('http://127.0.0.1:8100/index.html',{waitUntil:'networkidle'});
+ await m.waitForTimeout(900);
+
+ ok('The read-only bar is shown on a small screen', await m.locator('#mobileBar').isVisible());
+ ok('The bar says the screen is read-only and where to edit',
+    /read-only/i.test(await m.locator('#mobileBar').textContent())
+    && /desktop/i.test(await m.locator('#mobileBar').textContent()));
+ ok('Editing tabs are omitted, not merely disabled', await m.evaluate(() =>
+    ['nav-input','nav-budget','nav-csi','nav-pricing']
+      .every(id => document.getElementById(id).offsetParent === null)));
+ ok('Home and How to Use remain', await m.evaluate(() =>
+    document.getElementById('nav-home').offsetParent !== null
+    && document.getElementById('nav-help').offsetParent !== null));
+ ok('New-budget actions are hidden', await m.evaluate(() =>
+    document.querySelector('[data-edit-only] button').offsetParent === null));
+
+ // A deep link into an editing page must land somewhere usable, not a dead page.
+ await m.goto('http://127.0.0.1:8100/index.html#/inputs/BD-4821',{waitUntil:'networkidle'});
+ await m.waitForTimeout(900);
+ ok('A deep link to an editing page is redirected home',
+    (await m.evaluate(() => currentPage)) === 'home', await m.evaluate(() => currentPage));
+ ok('Editing pages cannot be reached programmatically either', await m.evaluate(() => {
+    go('budget'); go('pricing'); return currentPage === 'home';
+ }));
+
+ // Seed a budget so the row menu has something to act on.
+ await m.evaluate(async () => {
+   const meta = {projectId:'BD-4821', name:'Mobile Row', type:'Multifamily', status:'Draft',
+                 contractSum:100, projectCost:130, updated:new Date().toISOString()};
+   const doc = {projectId:'BD-4821', name:'Mobile Row', resSF:1, amenSF:0,
+                units:[], other:[], expenses:[], lines:[], companies:[],
+                contingency:{mode:'psf', val:0},
+                projectCosts:{land:0, dev:0, mkt:0, cls:0}, pricingVersion:'x'};
+   await fetch('/api/budget/BD-4821', {
+     method:'PUT',
+     headers:{'Content-Type':'application/json'},
+     body: JSON.stringify({meta, doc})
+   });
+   await renderHome();
+ });
+ await m.waitForTimeout(400);
+ await m.click('#homeBody tr .rowmenu-btn'); await m.waitForTimeout(300);
+ ok('The row menu offers only the read-only action',
+    (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|') === 'Versions',
+    (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|'));
+ await m.keyboard.press('Escape'); await m.waitForTimeout(150);
+
+ // The escape hatch is deliberate and session-scoped.
+ await m.click('#mobileBar button:has-text("Use Full Version")'); await m.waitForTimeout(400);
+ ok('Use Full Version lifts the restriction', !(await m.locator('#mobileBar').isVisible()));
+ ok('Editing tabs return after opting in', await m.evaluate(() =>
+    document.getElementById('nav-pricing').offsetParent !== null));
+ ok('No JS errors on mobile', merrs.length === 0, merrs.join(' | '));
+ await m.close();
+
+ // Printing switches the browser to print media. A bare width query flips to true
+ // there and used to bounce a desktop user off the page mid-export — caught by
+ // suite-05's Excel step failing. The query is scoped to `screen` for this reason.
+ await p.click('#nav-csi').catch(() => {});
+ await p.waitForTimeout(300);
+ const pageBefore = await p.evaluate(() => currentPage);
+ await p.emulateMedia({media:'print'});
+ await p.waitForTimeout(300);
+ ok('Print media does not trigger the mobile restriction', await p.evaluate(() =>
+    !document.body.classList.contains('mobile-ro')));
+ ok('Printing does not navigate away from the page being exported',
+    (await p.evaluate(() => currentPage)) === pageBefore,
+    pageBefore + ' → ' + (await p.evaluate(() => currentPage)));
+ await p.emulateMedia({media:'screen'});
+ await p.waitForTimeout(200);
+
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();
