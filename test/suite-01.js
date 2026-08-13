@@ -87,7 +87,16 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' �
   await p.click('button:has-text("Collapse All")');
   const after = await p.locator('#budBody tr').count();
   ok('U1 collapse all hides lines', after < before, `${before} → ${after} rows`);
-  ok('U1 scope subtotal still shown', (await p.locator('#budBody .scope-hd .div-sum').first().textContent()).startsWith('$'));
+  // Header totals moved from a floating .div-sum into real Total / % cells so they
+  // align with the columns beneath; they must survive collapsing.
+  const scopeHd = p.locator('#budBody .scope-hd').first();
+  ok('U1 scope subtotal still shown when collapsed',
+     (await scopeHd.locator('td.calc.strong').textContent()).startsWith('$'));
+  ok('U1 scope percentage still shown when collapsed',
+     /^(100\.0%|—)$/.test((await scopeHd.locator('td.calc').nth(1).textContent()).trim()));
+  ok('U1 scope header cells align with the Total and % columns',
+     (await scopeHd.locator('td').count()) === 4
+     && (await scopeHd.locator('td').first().getAttribute('colspan')) === '5');
   // collapse state survives a recalc
   await p.evaluate(()=>touch());        // force a recalc without needing a visible field
   await p.waitForTimeout(250);

@@ -124,6 +124,11 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .grp-hd td{background:var(--ink-50);font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-700);font-weight:600;padding:7px 10px;border-bottom:1px solid var(--ink-150)}
 .grp-hd .div-sum{float:right;color:var(--ink-950)}
+/* Division and group totals live in real table cells so they line up under the
+   Total and % columns instead of floating in a full-width header. They must not
+   inherit the light body-cell colour, least of all on the dark scope header. */
+.scope-hd td.calc,.scope-hd td.calc.strong{color:#fff}
+.grp-hd td.calc,.grp-hd td.calc.strong{color:var(--ink-950)}
 tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 
 .stats{display:grid;grid-template-columns:repeat(5,1fr);background:var(--ink-900);border-radius:var(--rm);overflow:hidden;margin-bottom:20px}
@@ -687,7 +692,8 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="card-bd" style="overflow:auto;padding-top:8px">
       <table class="tbl">
         <thead><tr><th style="width:112px">Code</th><th style="width:34%">Item</th><th>Basis</th>
-          <th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead>
+          <th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th>
+          <th class="r" title="Share of total soft costs — soft costs sit outside the contract sum">% Soft</th></tr></thead>
         <tbody id="csiSoftBody"></tbody>
       </table>
     </div>
@@ -1981,8 +1987,13 @@ function renderBudget(){
     if(!scLines.length)return;
     const scSum=scopeSum(sc),scShut=collapsed.has(sc);
     const nGrp=new Set(scLines.map(x=>x.l.grp)).size;
+    // Totals and percentages stay on the header when collapsed — that is the whole
+    // point of a collapsed section. The denominator is the scope sum, matching the
+    // "% Scope" column on the leaf rows beneath.
     b.insertAdjacentHTML('beforeend',`<tr class="scope-hd" data-toggle="scope:${esc(sc)}" title="${scShut?'Expand':'Collapse'} ${esc(SCOPES[sc])}">
-      <td colspan="7"><span class="caret">${scShut?'▸':'▾'}</span>${esc(SCOPES[sc])}${scShut?' <span class="shut">'+scLines.length+' lines · '+nGrp+' groups hidden</span>':''}<span class="div-sum">${usd(scSum)}</span></td></tr>`);
+      <td colspan="5"><span class="caret">${scShut?'▸':'▾'}</span>${esc(SCOPES[sc])}${scShut?' <span class="shut">'+scLines.length+' lines · '+nGrp+' groups hidden</span>':''}</td>
+      <td class="calc r strong">${usd(scSum)}</td><td class="calc r">${scSum?'100.0%':'—'}</td>
+      <td class="no-print"></td></tr>`);
     if(scShut)return;
     let lastGrp=null;
     scLines.forEach(({l:it,gi})=>{
@@ -1990,7 +2001,9 @@ function renderBudget(){
         const gSum=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((s,x)=>s+lineQty(x)*x.unit,0);
         const n=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).length,gShut=collapsed.has(sc+'|'+it.grp);
         b.insertAdjacentHTML('beforeend',`<tr class="grp-hd" data-toggle="grp:${esc(sc)}|${esc(it.grp)}" title="${gShut?'Expand':'Collapse'} ${esc(it.grp)}">
-          <td colspan="7"><span class="caret">${gShut?'▸':'▾'}</span>${esc(it.grp)}${gShut?' <span class="shut">'+n+' lines hidden</span>':''}<span class="div-sum mono">${usd(gSum)}</span></td></tr>`);}
+          <td colspan="5"><span class="caret">${gShut?'▸':'▾'}</span>${esc(it.grp)}${gShut?' <span class="shut">'+n+' lines hidden</span>':''}</td>
+          <td class="calc r strong">${usd(gSum)}</td><td class="calc r">${scSum?(100*gSum/scSum).toFixed(1)+'%':'—'}</td>
+          <td class="no-print"></td></tr>`);}
       if(collapsed.has(sc+'|'+it.grp))return;
       const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0,ed=isEdited(it);
       b.insertAdjacentHTML('beforeend',`<tr${ed?' class="edited"':''}>
@@ -2023,7 +2036,7 @@ function csiDivKey(code){
 function csiSchedule(){
   const p=parts(),divs=new Map(),soft=[],orphans=[];
   doc.lines.filter(l=>scopeActive(l.scope)).forEach(l=>{
-    const row={code:l.code,desc:l.desc,scope:l.scope,basis:l.basis,
+    const row={code:l.code,desc:l.desc,scope:l.scope,grp:l.grp,basis:l.basis,
                qty:lineQty(l),rate:l.unit,total:lineQty(l)*l.unit,edited:isEdited(l)};
     if(l.scope==='soft'){soft.push(row);return;}
     const k=csiDivKey(l.code);
@@ -2042,8 +2055,16 @@ function csiSchedule(){
   doc.companies.forEach(c=>{if(c.pct>0)markups.push({code:'99 01 00',desc:'Profit — '+c.name,total:p.hard*c.pct/100});});
   if(p.cont>0)markups.push({code:'99 03 00',desc:'Construction contingency',total:p.cont});
   soft.sort((a,z)=>String(a.code).localeCompare(String(z.code)));
-  return {divisions,markups,soft,
-          softTotal:soft.reduce((s,r)=>s+r.total,0),
+  // Soft costs are grouped by their own heading, and their percentages use total
+  // soft costs as the denominator — NOT the contract sum, which excludes them
+  // (DATA_CONTRACT rule 3). The column is labelled "% Soft" to say so.
+  const softTotal=soft.reduce((s,r)=>s+r.total,0);
+  const sg=new Map();
+  soft.forEach(r=>{const k=r.grp||'Soft Costs';if(!sg.has(k))sg.set(k,[]);sg.get(k).push(r);});
+  const softGroups=[...sg.keys()].map(k=>({grp:k,rows:sg.get(k),
+    total:sg.get(k).reduce((s,r)=>s+r.total,0)}));
+  return {divisions,markups,soft,softGroups,softTotal,
+          markupsTotal:markups.reduce((s,m)=>s+m.total,0),
           hard:p.hard,contract:p.contract,project:p.project};
 }
 function renderCsi(){
@@ -2054,7 +2075,8 @@ function renderCsi(){
   document.getElementById('csiEmpty').style.display=any?'none':'block';
   const pct=v=>sch.contract?(100*v/sch.contract).toFixed(1)+'%':'—';
   sch.divisions.forEach(d=>{
-    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="8">${esc(d.title)}<span class="div-sum">${usd(d.total)}</span></td></tr>`);
+    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="6">${esc(d.title)}</td>
+      <td class="calc r strong">${usd(d.total)}</td><td class="calc r">${pct(d.total)}</td></tr>`);
     d.rows.forEach(r=>{
       b.insertAdjacentHTML('beforeend',`<tr${r.edited?' class="edited"':''}>
         <td class="mono" style="font-size:12px;color:var(--green-700)"><span class="editdot${r.edited?' on':''}"></span>${esc(r.code)}</td>
@@ -2066,7 +2088,8 @@ function renderCsi(){
     });
   });
   if(sch.markups.length){
-    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="8">Division 99 — Markups<span class="div-sum">${usd(sch.markups.reduce((s,m)=>s+m.total,0))}</span></td></tr>`);
+    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="6">Division 99 — Markups</td>
+      <td class="calc r strong">${usd(sch.markupsTotal)}</td><td class="calc r">${pct(sch.markupsTotal)}</td></tr>`);
     sch.markups.forEach(m=>{
       b.insertAdjacentHTML('beforeend',`<tr>
         <td class="mono" style="font-size:12px;color:var(--green-700)"><span class="editdot"></span>${esc(m.code)}</td>
@@ -2078,16 +2101,22 @@ function renderCsi(){
     <td class="calc r strong">${usd(sch.contract)}</td><td class="calc r">100%</td></tr>`);
 
   const sb=document.getElementById('csiSoftBody');sb.innerHTML='';
-  sch.soft.forEach(r=>{
-    sb.insertAdjacentHTML('beforeend',`<tr${r.edited?' class="edited"':''}>
-      <td class="mono" style="font-size:12px;color:var(--green-700)"><span class="editdot${r.edited?' on':''}"></span>${esc(r.code)}</td>
-      <td>${esc(r.desc)}</td>
-      <td class="mono" style="font-size:12px;color:var(--ink-500)">${esc(BASIS_LABEL[r.basis]||r.basis)}</td>
-      <td class="calc r">${num(r.qty)}</td><td class="calc r">${usd2(r.rate)}</td>
-      <td class="calc r strong">${usd(r.total)}</td></tr>`);
+  const spct=v=>sch.softTotal?(100*v/sch.softTotal).toFixed(1)+'%':'—';
+  sch.softGroups.forEach(g=>{
+    sb.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="5">${esc(g.grp)}</td>
+      <td class="calc r strong">${usd(g.total)}</td><td class="calc r">${spct(g.total)}</td></tr>`);
+    g.rows.forEach(r=>{
+      sb.insertAdjacentHTML('beforeend',`<tr${r.edited?' class="edited"':''}>
+        <td class="mono" style="font-size:12px;color:var(--green-700)"><span class="editdot${r.edited?' on':''}"></span>${esc(r.code)}</td>
+        <td>${esc(r.desc)}</td>
+        <td class="mono" style="font-size:12px;color:var(--ink-500)">${esc(BASIS_LABEL[r.basis]||r.basis)}</td>
+        <td class="calc r">${num(r.qty)}</td><td class="calc r">${usd2(r.rate)}</td>
+        <td class="calc r strong">${usd(r.total)}</td>
+        <td class="calc r" style="color:var(--ink-400)">${spct(r.total)}</td></tr>`);
+    });
   });
   sb.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="5">Total Soft Costs</td>
-    <td class="calc r strong">${usd(sch.softTotal)}</td></tr>`);
+    <td class="calc r strong">${usd(sch.softTotal)}</td><td class="calc r">${sch.softTotal?'100.0%':'—'}</td></tr>`);
 
   document.getElementById('csiMeta').textContent=
     (doc.projectId||'—')+' · '+sch.divisions.length+' divisions · contract '+usd(sch.contract);
@@ -2514,22 +2543,31 @@ function buildReport(s){
     const sch=csiSchedule();
     h+='<section class="rpt-sec break"><h2>CSI Schedule of Values</h2>'
       +'<p class="rpt-note">MasterFormat divisions. Contingency is carried explicitly as 99.03 and is never blended into a trade line. Soft costs are reported separately and are not part of the contract sum.</p>'
-      +'<table class="rpt-tbl full"><thead><tr><th>Code</th><th>Section</th><th>Scope</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Scheduled Value</th></tr></thead><tbody>';
+      +'<table class="rpt-tbl full"><thead><tr><th>Code</th><th>Section</th><th>Scope</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Scheduled Value</th><th class="r">% Contract</th></tr></thead><tbody>';
+    // Division totals and percentages are computed from the data model, exactly as
+    // the CSI tab computes them — never scraped from the rendered page.
+    const cpct=v=>sch.contract?(100*v/sch.contract).toFixed(1)+'%':'—';
     sch.divisions.forEach(d=>{
-      h+='<tr class="scope"><td colspan="5">'+esc(d.title)+'</td><td class="r mono">'+usd(d.total)+'</td></tr>';
+      h+='<tr class="scope"><td colspan="5">'+esc(d.title)+'</td><td class="r mono">'+usd(d.total)+'</td><td class="r mono">'+cpct(d.total)+'</td></tr>';
       d.rows.forEach(r=>{h+='<tr><td class="mono code">'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td>'
         +'<td class="muted">'+(r.scope==='amen'?'Amenity':'Residential')+'</td><td class="r mono">'+num(r.qty)+'</td>'
-        +'<td class="r mono">'+usd2(r.rate)+'</td><td class="r mono">'+usd(r.total)+'</td></tr>';});
+        +'<td class="r mono">'+usd2(r.rate)+'</td><td class="r mono">'+usd(r.total)+'</td><td class="r mono">'+cpct(r.total)+'</td></tr>';});
     });
     if(sch.markups.length){
-      h+='<tr class="scope"><td colspan="5">Division 99 — Markups</td><td class="r mono">'+usd(sch.markups.reduce((a,m)=>a+m.total,0))+'</td></tr>';
-      sch.markups.forEach(m=>{h+='<tr><td class="mono code">'+esc(m.code)+'</td><td>'+esc(m.desc)+'</td><td></td><td></td><td></td><td class="r mono">'+usd(m.total)+'</td></tr>';});
+      h+='<tr class="scope"><td colspan="5">Division 99 — Markups</td><td class="r mono">'+usd(sch.markupsTotal)+'</td><td class="r mono">'+cpct(sch.markupsTotal)+'</td></tr>';
+      sch.markups.forEach(m=>{h+='<tr><td class="mono code">'+esc(m.code)+'</td><td>'+esc(m.desc)+'</td><td></td><td></td><td></td><td class="r mono">'+usd(m.total)+'</td><td class="r mono">'+cpct(m.total)+'</td></tr>';});
     }
-    h+='<tr class="tot"><td colspan="5">Contract Sum</td><td class="r mono">'+usd(sch.contract)+'</td></tr></tbody></table>';
+    h+='<tr class="tot"><td colspan="5">Contract Sum</td><td class="r mono">'+usd(sch.contract)+'</td><td class="r mono">'+(sch.contract?'100.0%':'—')+'</td></tr></tbody></table>';
     if(sch.soft.length){
-      h+='<h2 style="margin-top:18px">Soft Costs</h2><table class="rpt-tbl full"><thead><tr><th>Code</th><th>Item</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>';
-      sch.soft.forEach(r=>{h+='<tr><td class="mono code">'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td><td class="r mono">'+num(r.qty)+'</td><td class="r mono">'+usd2(r.rate)+'</td><td class="r mono">'+usd(r.total)+'</td></tr>';});
-      h+='<tr class="tot"><td colspan="4">Total Soft Costs</td><td class="r mono">'+usd(sch.softTotal)+'</td></tr></tbody></table>';
+      const spct=v=>sch.softTotal?(100*v/sch.softTotal).toFixed(1)+'%':'—';
+      h+='<h2 style="margin-top:18px">Soft Costs</h2>'
+        +'<p class="rpt-note">Percentages here are a share of total soft costs, which sit outside the contract sum.</p>'
+        +'<table class="rpt-tbl full"><thead><tr><th>Code</th><th>Item</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th><th class="r">% Soft</th></tr></thead><tbody>';
+      sch.softGroups.forEach(g=>{
+        h+='<tr class="scope"><td colspan="4">'+esc(g.grp)+'</td><td class="r mono">'+usd(g.total)+'</td><td class="r mono">'+spct(g.total)+'</td></tr>';
+        g.rows.forEach(r=>{h+='<tr><td class="mono code">'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td><td class="r mono">'+num(r.qty)+'</td><td class="r mono">'+usd2(r.rate)+'</td><td class="r mono">'+usd(r.total)+'</td><td class="r mono">'+spct(r.total)+'</td></tr>';});
+      });
+      h+='<tr class="tot"><td colspan="4">Total Soft Costs</td><td class="r mono">'+usd(sch.softTotal)+'</td><td class="r mono">'+(sch.softTotal?'100.0%':'—')+'</td></tr></tbody></table>';
     }
     h+='</section>';
   }
@@ -2624,11 +2662,33 @@ async function exportExcel(){
     r.getCell(span).numFmt=MONEY;
     return r;
   }
+  /* A division header on a sheet whose last column is a percentage needs the money
+     in the second-to-last cell and the share in the last one; groupRow's single
+     trailing value would otherwise land the dollar total under the % heading. */
+  function divisionRow(ws,label,value,pct,span,dark){
+    const r=ws.addRow([label,...Array(span-2).fill(null),value,pct]);
+    ws.mergeCells(r.number,1,r.number,span-2);
+    r.eachCell(c=>{c.font=F(10,{bold:true,color:{argb:'FF'+(dark?BRAND.white:BRAND.ink900)}});
+      c.fill=fill(dark?BRAND.ink900:BRAND.ink100);c.border=box;});
+    r.getCell(span-1).numFmt=MONEY;
+    r.getCell(span).numFmt=PCT;
+    return r;
+  }
   function totalRow(ws,label,value,span,fmt){
     const r=ws.addRow([label,...Array(span-2).fill(null),value]);
     ws.mergeCells(r.number,1,r.number,span-1);
     r.eachCell(c=>{c.font=F(11,{bold:true});c.border={...box,top:{style:'medium',color:{argb:'FF'+BRAND.ink900}}};});
     r.getCell(span).numFmt=fmt||MONEY;
+    return r;
+  }
+  /* Same column problem as divisionRow: on a sheet ending in a percentage column,
+     the grand total belongs under Scheduled Value, not under % Contract. */
+  function totalRowPct(ws,label,value,pct,span){
+    const r=ws.addRow([label,...Array(span-2).fill(null),value,pct]);
+    ws.mergeCells(r.number,1,r.number,span-2);
+    r.eachCell(c=>{c.font=F(11,{bold:true});c.border={...box,top:{style:'medium',color:{argb:'FF'+BRAND.ink900}}};});
+    r.getCell(span-1).numFmt=MONEY;
+    r.getCell(span).numFmt=PCT;
     return r;
   }
 
@@ -2731,7 +2791,7 @@ async function exportExcel(){
     headerRow(ws,['Code','Section','Scope','Basis','Qty','Rate','Scheduled Value','% Contract']);
     const f=[null,null,null,null,QTY,MONEY2,MONEY,PCT];
     sch.divisions.forEach(d=>{
-      groupRow(ws,d.title,d.total,8,true);
+      divisionRow(ws,d.title,d.total,sch.contract?d.total/sch.contract:0,8,true);
       d.rows.forEach(r0=>{
         const r=styleBody(ws.addRow([r0.code,r0.desc,r0.scope==='amen'?'Amenity':'Residential',
           BASIS_LABEL[r0.basis]||r0.basis,r0.qty,r0.rate,r0.total,
@@ -2740,22 +2800,28 @@ async function exportExcel(){
       });
     });
     if(sch.markups.length){
-      groupRow(ws,'DIVISION 99 — MARKUPS',sch.markups.reduce((a,m)=>a+m.total,0),8,true);
+      divisionRow(ws,'DIVISION 99 — MARKUPS',sch.markupsTotal,sch.contract?sch.markupsTotal/sch.contract:0,8,true);
       sch.markups.forEach(m=>{
         const r=styleBody(ws.addRow([m.code,m.desc,'','','','',m.total,sch.contract?m.total/sch.contract:0]),f);
         r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
       });
     }
-    totalRow(ws,'CONTRACT SUM',sch.contract,8);
+    totalRowPct(ws,'CONTRACT SUM',sch.contract,sch.contract?1:0,8);
     if(sch.soft.length){
       ws.addRow([]);
-      groupRow(ws,'SOFT COSTS — reported separately, outside the contract sum',sch.softTotal,8,true);
-      sch.soft.forEach(r0=>{
-        const r=styleBody(ws.addRow([r0.code,r0.desc,'Soft',BASIS_LABEL[r0.basis]||r0.basis,
-          r0.qty,r0.rate,r0.total,null]),f);
-        r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
+      // Soft-cost percentages are a share of soft costs, not of the contract sum,
+      // so the band says so rather than silently reusing the column heading.
+      divisionRow(ws,'SOFT COSTS — outside the contract sum; % is share of soft costs',
+        sch.softTotal,sch.softTotal?1:0,8,true);
+      sch.softGroups.forEach(g=>{
+        divisionRow(ws,g.grp,g.total,sch.softTotal?g.total/sch.softTotal:0,8,false);
+        g.rows.forEach(r0=>{
+          const r=styleBody(ws.addRow([r0.code,r0.desc,'Soft',BASIS_LABEL[r0.basis]||r0.basis,
+            r0.qty,r0.rate,r0.total,sch.softTotal?r0.total/sch.softTotal:0]),f);
+          r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
+        });
       });
-      totalRow(ws,'TOTAL SOFT COSTS',sch.softTotal,8);
+      totalRowPct(ws,'TOTAL SOFT COSTS',sch.softTotal,sch.softTotal?1:0,8);
     }
   }
 

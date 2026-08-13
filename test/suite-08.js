@@ -75,6 +75,53 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     (await p.locator('#rContract').textContent())===withLump,
     (await p.locator('#rContract').textContent())+' vs '+withLump);
 
+ // --- division header totals and percentages (CSI schedule)
+ await p.click('#nav-csi'); await p.waitForTimeout(400);
+ const div = await p.evaluate(() => {
+   const sch = csiSchedule();
+   const d = sch.divisions[0];
+   return { title: d.title, total: d.total,
+            leafSum: d.rows.reduce((s, r) => s + r.total, 0),
+            contract: sch.contract,
+            markupsTotal: sch.markupsTotal,
+            softTotal: sch.softTotal,
+            softGroupSum: sch.softGroups.reduce((s, g) => s + g.total, 0) };
+ });
+ ok('Division total equals the sum of its leaf lines',
+    Math.abs(div.total - div.leafSum) < 0.005, div.total + ' vs ' + div.leafSum);
+ ok('Soft group totals reconcile to total soft costs',
+    Math.abs(div.softGroupSum - div.softTotal) < 0.005);
+ const hd = p.locator('#csiBody .scope-hd').first();
+ ok('Division header has separate Total and % cells', (await hd.locator('td').count()) === 3
+    && (await hd.locator('td').first().getAttribute('colspan')) === '6');
+ const hdPct = parseFloat((await hd.locator('td.calc').nth(1).textContent()).replace('%',''));
+ ok('Division percentage uses Contract Sum as the denominator',
+    Math.abs(hdPct - (100*div.total/div.contract)) < 0.06,
+    hdPct + '% vs ' + (100*div.total/div.contract).toFixed(1) + '%');
+ // The line-item % column must share that denominator, or the two cannot reconcile.
+ const firstRowPct = parseFloat((await p.locator('#csiBody tr:not(.scope-hd):not(.total)').first()
+   .locator('td.calc').last().textContent()).replace('%',''));
+ const firstRowTotal = await p.evaluate(() => csiSchedule().divisions[0].rows[0].total);
+ ok('Line-item percentage uses the same denominator as the division header',
+    Math.abs(firstRowPct - (100*firstRowTotal/div.contract)) < 0.06);
+ ok('Soft costs are labelled with their own denominator',
+    (await p.locator('#page-csi').textContent()).includes('% Soft'));
+
+ // A zero contract sum must show an em dash rather than NaN% or Infinity.
+ const dash = await p.evaluate(() => {
+   const keep = doc.lines.map(l => l.unit);
+   doc.lines.forEach(l => l.unit = 0);
+   const co = doc.companies.map(c => c.pct), cv = doc.contingency.val;
+   doc.companies.forEach(c => c.pct = 0); doc.contingency.val = 0;
+   recalc();
+   const t = document.getElementById('csiBody').textContent;
+   doc.lines.forEach((l, i) => l.unit = keep[i]);
+   doc.companies.forEach((c, i) => c.pct = co[i]); doc.contingency.val = cv;
+   recalc();
+   return t;
+ });
+ ok('A zero contract sum shows an em dash, not NaN', !/NaN|Infinity/.test(dash) && dash.includes('—'));
+
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();
