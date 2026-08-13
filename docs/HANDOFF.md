@@ -100,8 +100,9 @@ Consequences, all learned the hard way:
 ### Working rhythm
 
 Push work to `staging`, click through it on the staging URL, then open a PR
-`staging → main` and merge to release. `main` is currently **14 commits behind
-`staging`**; that release PR has not been opened yet.
+`staging → main` and merge to release. That release ran on 2026-08-13 (PR #1),
+so `main` and `staging` are level; `main` was then merged back into `staging`,
+which is why the history has merge commits on both sides.
 
 ---
 
@@ -320,9 +321,26 @@ update selectors alongside label changes.
 
 **Housekeeping**
 
-- `main` is 14 commits behind `staging`; the release PR is unopened.
-- Orphaned per-PR preview environments need deleting in Azure Portal → SWA →
-  Environments. (New ones now clean themselves up — the PR-close job was fixed.)
+- **The `Close Pull Request Job` fails on every PR close, and per-PR preview
+  environments are therefore NOT torn down.** They accumulate and need deleting by
+  hand in Azure Portal → SWA → Environments. The earlier note here said the job was
+  fixed; it was not, and the real cause is now known. From the failing run's log:
+
+  ```
+  Unexpected input(s) 'github_id_token', valid inputs are [... 'azure_static_web_apps_api_token' ...]
+  deployment_token was not provided.
+  ```
+
+  `Azure/static-web-apps-deploy@v1` does not accept `github_id_token` on the
+  **close** action, so it falls back to wanting a deployment token — which this
+  repository deliberately does not have (auth is OIDC; the old token was rotated out
+  and must not come back). The deploy jobs are unaffected and succeed under OIDC.
+
+  There is no clean fix without reintroducing a deployment token. Adding
+  `skip_deploy_on_missing_secrets: true`, which the action's own error suggests,
+  only turns the run green — the preview is still not deleted, so it trades a
+  visible problem for a silent one. Left failing on purpose. Do not "fix" it by
+  adding a token.
 
 **Deferred UI work**
 
