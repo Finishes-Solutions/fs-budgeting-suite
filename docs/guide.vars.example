@@ -1,4 +1,4 @@
-# FS Budgeting Suite — build guide variables
+# Finishes Solutions Budgeting Suite — build guide variables
 # Copy to guide.vars, fill in, run: python3 render_guide.py
 #
 # ⚠ SECURITY: guide.vars and BUILD_GUIDE.filled.md are gitignored. Never commit

@@ -30,14 +30,14 @@ Exceptions forced by Azure: storage accounts & container registries = no hyphens
 | Name | What | When |
 |---|---|---|
 | stapp-fs-budgeting-prod | Static Web App | Phase 1 |
-| budgets.finishessolutions.com | Custom domain | Phase 1 |
+| budgets.finishessolutions.ai | Custom domain | Phase 1 |
 | app-fs-lender-cus-prod on asp-finishes-cus-prod-01 | Lender package App Service; plan named generically for sharing | Phase 4 |
 | reports.finishessolutions.com | Lender package domain (suggestion) | Phase 4 |
 
 ## Identity, monitoring, platform (as needed)
 | Name | What |
 |---|---|
-| App registrations: "FS Budgeting Suite", "FS Lender Package" | Human-readable display names |
+| App registrations: "FS Budgeting Suite", "FS Lender Package" | Human-readable display names. These are the literal Azure object names and predate the product being called the Finishes Solutions Budgeting Suite — do not "correct" them in docs without renaming them in Azure |
 | pricing_admin | SWA custom role (in code — do not rename) |
 | kv-finishes-prod-01 | Key Vault |
 | log-finishes-cus-prod / appi-fs-budgeting-prod | Log Analytics / per-workload App Insights |

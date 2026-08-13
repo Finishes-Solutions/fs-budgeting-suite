@@ -1,7 +1,7 @@
 {
   "name": "fs-budgeting-suite-api",
   "version": "1.0.0",
-  "description": "Finishes Solutions FS Budgeting Suite API (Azure Functions, SWA-managed)",
+  "description": "Finishes Solutions Budgeting Suite API (Azure Functions, SWA-managed)",
   "engines": { "node": ">=18" },
   "dependencies": { "mssql": "^10.0.2" }
 }

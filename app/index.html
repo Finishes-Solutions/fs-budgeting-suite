@@ -3,7 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Finishes Solutions — FS Budgeting Suite</title>
+<title>Finishes Solutions Budgeting Suite</title>
+<!-- The FS monogram is black ink on transparency and would vanish against a dark tab
+     strip, so the icon is the mark in white on the app's own ink-900 tile. Contrast is
+     then glyph-against-tile, which is fixed, rather than glyph-against-browser-chrome,
+     which is not — it reads in light and dark themes with no media query and no
+     per-browser behaviour to depend on. Regenerate with tools/make-favicons.py. -->
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png">
 <!-- ExcelJS is vendored, not loaded from a CDN: the export used to fail silently on any
      network that blocked cdnjs, and the community build of the old library could not style
      cells at all. MIT licence in vendor/exceljs-LICENSE.txt. -->
@@ -29,7 +38,7 @@ body{font-family:var(--fb);color:var(--ink-800);background:var(--ink-50);font-si
 .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
 
 body>header{background:var(--ink-900);color:var(--white)}   /* app chrome only — the printed report has its own <header> */
-.hd{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+.hd{max-width:1440px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
   height:60px;padding:0 32px;gap:20px;flex-wrap:nowrap;white-space:nowrap}
 .brand{flex:0 0 auto;display:flex;align-items:center;height:60px}
 .brand img{height:36px;width:auto;display:block}
@@ -38,6 +47,21 @@ body>header{background:var(--ink-900);color:var(--white)}   /* app chrome only �
 #whoami{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:230px}
 @media(max-width:1180px){#whoami{max-width:120px}}
 @media(max-width:1040px){#whoami{display:none}}
+/* The header carried the full email plus a Sign Out button, which crowded the bar
+   at narrow widths. Identity now lives behind a round avatar; the name, email and
+   Sign Out are in its menu. */
+#profileBtn{width:32px;height:32px;flex:none;border-radius:50%;cursor:pointer;
+  background:var(--green-600);border:1px solid rgba(255,255,255,.35);color:#fff;
+  font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.04em;
+  display:flex;align-items:center;justify-content:center;padding:0}
+#profileBtn:hover{background:var(--green-500);border-color:rgba(255,255,255,.6)}
+#profileBtn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(255,255,255,.35)}
+#profileMenu{position:fixed;z-index:60;min-width:236px;max-width:300px;background:var(--white);
+  border:1px solid var(--ink-200);border-radius:var(--rm);box-shadow:0 8px 24px rgba(11,13,12,.18);padding:4px}
+.pm-id{padding:10px 12px 12px}
+.pm-name{font-size:13px;font-weight:600;color:var(--ink-900);overflow:hidden;text-overflow:ellipsis}
+.pm-email{font-family:var(--fm);font-size:11px;color:var(--ink-500);margin-top:3px;
+  overflow:hidden;text-overflow:ellipsis}
 nav{display:flex;gap:4px;flex-wrap:nowrap}
 nav button{white-space:nowrap}
 nav button{background:transparent;border:none;color:rgba(255,255,255,.6);font-family:var(--fm);font-size:11px;
@@ -46,7 +70,7 @@ nav button:hover{color:#fff;background:rgba(255,255,255,.08)}
 nav button.on{color:#fff;background:var(--green-700)}
 nav button[disabled]{opacity:.35;cursor:not-allowed}
 
-main{max-width:1280px;margin:0 auto;padding:28px 32px 48px}
+main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 .page{display:none}.page.on{display:block}
 .page-title{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px}
 .page-title h1{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--ink-950)}
@@ -80,25 +104,122 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .btn-x{background:none;border:none;color:var(--ink-400);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:var(--r)}
 .btn-x:hover{color:var(--danger);background:var(--ink-100)}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
+/* Announced as unavailable but still focusable, so the reason is discoverable by
+   keyboard and not only on mouse hover. */
+.btn-soon{opacity:.55;cursor:not-allowed}
+.btn-soon:hover{background:transparent;border-color:var(--ink-200);color:var(--ink-600)}
+.soon-pill{display:inline-block;margin-left:7px;padding:1px 6px;border-radius:999px;
+  background:var(--ink-150);color:var(--ink-600);font-family:var(--fm);font-size:9px;
+  letter-spacing:.08em;text-transform:uppercase;vertical-align:1px}
+
+/* Row actions menu on the Budgets list. Positioned fixed from the trigger's
+   bounding rect rather than nested in the row, so a scrolling table can never
+   clip it. Only one is ever open. */
+.rowmenu-btn{background:none;border:none;color:var(--ink-500);cursor:pointer;font-size:17px;line-height:1;
+  padding:3px 8px;border-radius:var(--r)}
+.rowmenu-btn:hover{color:var(--ink-900);background:var(--ink-100)}
+.rowmenu-btn:focus-visible{outline:none;box-shadow:var(--focus)}
+#rowMenu{position:fixed;z-index:60;min-width:176px;background:var(--white);border:1px solid var(--ink-200);
+  border-radius:var(--rm);box-shadow:0 8px 24px rgba(11,13,12,.18);padding:4px}
+.rowmenu-item{display:block;width:100%;text-align:left;background:none;border:0;border-radius:var(--r);
+  padding:8px 12px;font-family:inherit;font-size:13px;color:var(--ink-900);cursor:pointer}
+.rowmenu-item:hover,.rowmenu-item:focus-visible{background:var(--ink-100);outline:none}
+.rowmenu-item.danger{color:var(--danger)}
+.rowmenu-item.danger:hover,.rowmenu-item.danger:focus-visible{background:#fdf0ee}
+.rowmenu-sep{height:1px;background:var(--ink-150);margin:4px 0}
+
+/* Version history list */
+.ver-row{display:grid;grid-template-columns:130px 1fr auto;gap:14px;align-items:center;
+  padding:12px 14px;border:1px solid var(--ink-150);border-radius:var(--r);margin-bottom:8px}
+.ver-row.current{border-color:var(--green-200);background:var(--green-50)}
+.ver-num{font-family:var(--fm);font-size:12px;color:var(--green-700);font-weight:600;margin-bottom:4px}
+.ver-sub{font-size:12px;color:var(--ink-500);margin-top:3px}
+.ver-hist{background:var(--edit-50);border:1px solid var(--edit-100);color:var(--edit);
+  padding:9px 12px;border-radius:var(--r);font-size:12px;margin-bottom:14px}
 
 .tbl{width:100%;border-collapse:collapse}
 .tbl th{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-500);
   font-weight:500;text-align:left;padding:8px 10px;border-bottom:1px solid var(--ink-200);white-space:nowrap}
 .tbl th.r,.tbl td.r{text-align:right}
-.tbl td{padding:6px 10px;border-bottom:1px solid var(--ink-100);vertical-align:middle}
+.tbl td{padding:3px 10px;border-bottom:1px solid var(--ink-100);vertical-align:middle}
 .tbl td.calc{font-family:var(--fm);font-size:13px;color:var(--ink-700);white-space:nowrap}
 .tbl td.calc.strong{color:var(--ink-950);font-weight:600}
 .tbl tr.total td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;color:var(--ink-950);padding-top:10px}
-.tbl input,.tbl select{border:1px solid transparent;background:transparent;padding:6px 8px}
+.tbl input,.tbl select{border:1px solid transparent;background:transparent;padding:4px 8px}
 .tbl input:hover,.tbl select:hover{border-color:var(--ink-200);background:#fff}
 .tbl input:focus,.tbl select:focus{border-color:var(--green-600);background:#fff}
 .tbl input[type=number]{font-family:var(--fm);font-size:13px;text-align:right}
 .scope-hd td{background:var(--ink-900);color:#fff;font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
   font-weight:600;padding:9px 12px}
-.scope-hd .div-sum{float:right;color:var(--green-500)}
+.scope-hd .div-sum{float:right;color:#fff}   /* white, not green — this sits on ink-900 */
 .grp-hd td{background:var(--ink-50);font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-700);font-weight:600;padding:7px 10px;border-bottom:1px solid var(--ink-150)}
 .grp-hd .div-sum{float:right;color:var(--ink-950)}
+/* Division and group totals live in real table cells so they line up under the
+   Total and % columns instead of floating in a full-width header. They must not
+   inherit the light body-cell colour, least of all on the dark scope header. */
+.scope-hd td.calc,.scope-hd td.calc.strong{color:#fff}
+/* Batch selection toolbar. Appears only while something is selected, so the
+   budget grid is unchanged for the ordinary single-line workflow. */
+/* Cold-start screen. Azure SQL serverless auto-pauses, so the first request after
+   a quiet spell waits on the database resuming. Without this the app renders an
+   empty budgets list and reads as broken. */
+#bootScreen{position:fixed;inset:0;z-index:200;background:var(--white);display:flex;
+  align-items:center;justify-content:center;transition:opacity .25s}
+.boot-card{text-align:center;max-width:380px;padding:24px}
+.boot-spin{width:34px;height:34px;margin:0 auto 18px;border:3px solid var(--ink-150);
+  border-top-color:var(--green-600);border-radius:50%;animation:bootspin .9s linear infinite}
+@keyframes bootspin{to{transform:rotate(360deg)}}
+.boot-title{font-size:15px;font-weight:600;color:var(--ink-900);margin-bottom:6px}
+.boot-msg{font-size:13px;color:var(--ink-500);line-height:1.5}
+@media (prefers-reduced-motion:reduce){.boot-spin{animation-duration:2.4s}}
+
+/* Template administration */
+.tpl-row{display:grid;grid-template-columns:120px 1fr auto;gap:12px;align-items:center;
+  padding:10px 12px;border:1px solid var(--ink-150);border-radius:var(--r);margin-bottom:6px}
+.tpl-row.current{border-color:var(--green-200);background:var(--green-50)}
+.tpl-banner{background:var(--edit-50);border:1px solid var(--edit-100);color:var(--edit);
+  padding:10px 14px;border-radius:var(--r);font-size:13px;display:flex;gap:12px;
+  align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.selbar{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--green-50);
+  border-top:1px solid var(--green-200);border-bottom:1px solid var(--green-200);
+  font-size:13px;font-weight:600;color:var(--green-800)}
+.selbar-danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.selbar-danger:hover{background:#8f1c12;border-color:#8f1c12}
+.tbl tr.sel td{background:var(--green-50)}
+.tbl td.selcell{text-align:center;padding-left:10px}
+/* One flex row per line item, so the edit dot, the CSI code and the description
+   sit on a single baseline instead of the dot wrapping onto a line of its own
+   above the code. min-width:0 lets the description shrink rather than push the
+   row wider. */
+.lineitem{display:flex;align-items:center;gap:8px;min-width:0}
+.lineitem .editdot{margin-right:0}
+/* `.tbl input` and `input[type=text]` both outrank a bare class on padding, which
+   left too little content width and clipped the last digit of a code. Qualify the
+   selector so the width and padding here actually win. */
+.tbl input.codein{font-family:var(--fm);font-size:11px;flex:0 0 94px;width:94px;
+  color:var(--ink-600);padding:4px 7px}
+.tbl input.codein:hover,.tbl input.codein:focus{color:var(--ink-950)}
+.tbl input.descin{flex:1 1 auto;min-width:0;width:auto}
+/* Selects need room for the native arrow, or the last letters of a long option
+   ("Per Amen SF") are clipped once it is the selected value. */
+.tbl select{padding-right:24px}
+.basisin{width:132px;font-size:12px}
+
+/* Checkboxes are drawn rather than native so they can be rounded and pick up the
+   brand green. Native padding from `.tbl input` is reset explicitly. */
+.tbl input[type=checkbox]{appearance:none;-webkit-appearance:none;width:15px;height:15px;padding:0;margin:0;
+  border:1.5px solid var(--ink-300);border-radius:5px;background:#fff;cursor:pointer;flex:none;
+  position:relative;vertical-align:middle;transition:background .12s,border-color .12s}
+.tbl input[type=checkbox]:hover{border-color:var(--ink-500);background:#fff}
+.tbl input[type=checkbox]:checked,.tbl input[type=checkbox]:indeterminate{
+  background:var(--green-600);border-color:var(--green-600)}
+.tbl input[type=checkbox]:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.tbl input[type=checkbox]:indeterminate::after{content:'';position:absolute;left:2.5px;top:5.5px;
+  width:7px;border-top:2px solid #fff}
+.tbl input[type=checkbox]:focus-visible{outline:none;box-shadow:var(--focus)}
+.grp-hd td.calc,.grp-hd td.calc.strong{color:var(--ink-950)}
 tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 
 .stats{display:grid;grid-template-columns:repeat(5,1fr);background:var(--ink-900);border-radius:var(--rm);overflow:hidden;margin-bottom:20px}
@@ -148,6 +269,15 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .banner.danger{border-color:#e8c4c0;background:#fdf2f1;color:#8c2a20}
 .banner.test{border-color:#cdd3e6;background:#f2f4fb;color:#3b4570}
 .badge.test{border-color:#cdd3e6;background:#f2f4fb;color:#3b4570;margin-left:6px}
+
+/* ---- small read-only metric tiles (site efficiency etc.) ---- */
+.metric{border:1px solid var(--ink-150);border-left:3px solid var(--green-700);border-radius:var(--r);
+  padding:10px 12px;background:var(--ink-50)}
+.metric .k{display:block;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-500);margin-bottom:4px}
+.metric .v{font-family:var(--fm);font-size:16px;font-weight:600;color:var(--ink-950)}
+.metric.warn{border-left-color:var(--warn)}
+.metric.warn .v{color:var(--warn)}
 
 /* ---- manually edited line marker ----
    The dot is always in the DOM so every row's code column stays aligned; only the
@@ -214,7 +344,8 @@ th.sortable.sorted{color:var(--ink-900)}
 @media print{
   @page{size:letter portrait;margin:13mm 12mm 14mm}
   body{background:#fff}
-  .no-print,.banner,.toast,#exportModal,#pickModal{display:none!important}
+  .no-print,.banner,.toast,#exportModal,#pickModal,#versionsModal,#rowMenu,#bootScreen,
+  #profileMenu{display:none!important}
   /* direct children only — the report has its own <header> and must not be hidden */
   body.printing > header,body.printing > main{display:none!important}
   body.printing #printDoc{display:block}
@@ -282,6 +413,32 @@ th.sortable.sorted{color:var(--ink-900)}
   .edited-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
     color:var(--edit);border:1px solid var(--edit);border-radius:2px;padding:0 3px;margin-left:4px}
 
+  /* ---- guide PDF ---- */
+  .rpt-guide .rpt-sec{break-inside:auto}
+  .rpt-guide h3{font-size:12pt;font-weight:800;color:var(--ink-950);margin:0 0 6px;
+    padding-bottom:4px;border-bottom:2px solid var(--green-700);break-after:avoid}
+  .rpt-guide h4{font-size:10pt;font-weight:700;color:var(--ink-800);margin:12px 0 4px;break-after:avoid}
+  .rpt-guide p{color:var(--ink-700);margin-bottom:7px;max-width:none}
+  .rpt-guide ul,.rpt-guide ol{margin:0 0 9px 18px;color:var(--ink-700)}
+  .rpt-guide li{margin-bottom:4px;max-width:none;break-inside:avoid}
+  .rpt-guide code,.rpt-guide .kbd{font-family:var(--fm);font-size:8.5pt;background:var(--ink-100);
+    border:1px solid var(--ink-200);border-radius:2px;padding:0 3px}
+  .rpt-guide .tbl{width:100%;border-collapse:collapse;margin-bottom:9px}
+  .rpt-guide .tbl td{font-size:8.5pt;color:var(--ink-700);padding:4px 6px;
+    border-bottom:1px solid var(--ink-100);vertical-align:top}
+  .rpt-guide .tbl td:first-child{white-space:nowrap;font-weight:700;color:var(--ink-900);
+    width:1%;padding-right:14px}
+  .rpt-guide .callout{border-left:3px solid var(--green-700);background:var(--green-50);
+    padding:8px 12px;margin-bottom:9px;font-size:8.5pt;color:var(--green-900);break-inside:avoid}
+  .rpt-guide .callout.warn{border-left-color:var(--warn);background:#fdf6e8;color:#7a5514}
+  .rpt-guide .step{display:flex;gap:10px;margin-bottom:8px;break-inside:avoid;max-width:none}
+  .rpt-guide .step .n{flex:0 0 18px;height:18px;border-radius:50%;background:var(--green-700);color:#fff;
+    font-family:var(--fm);font-size:8.5pt;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .rpt-guide .editdot{width:6px;height:6px;border-radius:50%;background:var(--edit);display:inline-block}
+  .guide-toc{margin:0;padding:0;list-style:none;columns:2;column-gap:26px}
+  .guide-toc li{font-size:9pt;color:var(--ink-700);margin-bottom:4px;break-inside:avoid}
+  .guide-toc .n{font-family:var(--fm);font-size:8pt;color:var(--green-700);margin-right:8px}
+
   .rpt-ft{display:flex;justify-content:space-between;border-top:1px solid var(--ink-300);
     margin-top:20px;padding-top:6px;font-size:7.5pt;color:var(--ink-500)}
 }
@@ -291,20 +448,21 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <header>
   <div class="hd">
-    <a class="brand" href="#/budgets" title="Finishes Solutions — FS Budgeting Suite">
+    <a class="brand" href="#/budgets" title="Finishes Solutions Budgeting Suite">
       <img src="assets/finishes-logo-white.svg" alt="Finishes Solutions">
     </a>
     <nav class="no-print">
-      <button id="nav-home" class="on" onclick="go('home')">Budgets</button>
+      <button id="nav-home" class="on" onclick="go('home')">Home</button>
       <button id="nav-input" onclick="go('input')" disabled>Inputs</button>
       <button id="nav-budget" onclick="go('budget')" disabled>Budget</button>
-      <button id="nav-csi" onclick="go('csi')" disabled>CSI schedule</button>
-      <button id="nav-pricing" onclick="go('pricing')">Pricing library</button>
-      <button id="nav-help" onclick="go('help')">How to use</button>
+      <button id="nav-csi" onclick="go('csi')" disabled>CSI Schedule</button>
+      <button id="nav-pricing" onclick="go('pricing')">Pricing Library</button>
+      <button id="nav-help" onclick="go('help')">How to Use</button>
     </nav>
     <div class="hd-r">
       <span class="savepill" id="saveState" style="display:none"></span>
-      <span class="mono" id="whoami" style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.06em"></span>
+      <button id="profileBtn" class="no-print" style="display:none" aria-haspopup="menu" aria-expanded="false"
+        aria-label="Account menu" title="Account" onclick="toggleProfile()"><span id="profileInitials">?</span></button>
     </div>
   </div>
 </header>
@@ -319,10 +477,12 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= HOME ================= -->
 <div class="page on" id="page-home">
   <div class="page-title">
-    <div><h1>Project budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
+    <div><h1>Project Budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
     <div style="display:flex;gap:10px">
-      <button class="btn btn-ghost" onclick="newBudget('blank')">+ Blank budget</button>
-      <button class="btn btn-primary" onclick="newBudget()">+ New multifamily budget</button>
+      <select id="newFromTpl" style="width:210px;display:none" onchange="newBudgetFromTemplate(this.value);this.selectedIndex=0"
+        aria-label="New Budget From Template"></select>
+      <button class="btn btn-ghost" onclick="newBudget('blank')">+ Blank Budget</button>
+      <button class="btn btn-primary" id="newMfBtn" onclick="newBudgetFromTemplate('multifamily')">+ New Multifamily Budget</button>
     </div>
   </div>
   <div class="card">
@@ -330,7 +490,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <input type="text" id="homeSearch" placeholder="Search ID or name…" style="width:240px">
         <select id="homeStatus" style="width:140px;font-size:12px;padding:6px 8px">
-          <option value="all">All statuses</option>
+          <option value="all">All Statuses</option>
           <option value="Draft">Draft</option>
           <option value="In Review">In Review</option>
           <option value="Finalized">Finalized</option>
@@ -343,8 +503,8 @@ th.sortable.sorted{color:var(--ink-900)}
       <thead id="homeHead"><tr>
         <th style="padding-left:22px" class="sortable" data-sort="projectId">Project ID</th>
         <th class="sortable" data-sort="name">Name</th>
-        <th class="r sortable" data-sort="contractSum">Contract sum</th>
-        <th class="r sortable" data-sort="projectCost">Total project</th>
+        <th class="r sortable" data-sort="contractSum">Contract Sum</th>
+        <th class="r sortable" data-sort="projectCost">Total Project</th>
         <th class="sortable" data-sort="status">Status</th>
         <th class="r sortable" data-sort="updated" style="padding-right:22px">Updated</th>
         <th class="no-print"></th></tr></thead>
@@ -362,8 +522,8 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title">
     <div><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
     <div style="display:flex;gap:10px" class="no-print">
-      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)">Save draft</button>
-      <button class="btn btn-primary" onclick="toBudget()">Continue to budget →</button>
+      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save Draft</button>
+      <button class="btn btn-primary" onclick="toBudget()">Continue to Budget →</button>
     </div>
   </div>
 
@@ -374,36 +534,43 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="fld"><span class="lab">Project ID</span>
           <input type="text" id="pId" placeholder="BD-0001" oninput="validateId();markDirty()" style="font-family:var(--fm);text-transform:uppercase">
           <div class="fld-err" id="pIdErr" style="display:none">Must match OP-####, BD-####, AS-#### or TST-#### (test)</div></label>
-        <label class="fld"><span class="lab">Project name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
+        <label class="fld"><span class="lab">Project Name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
-        <label class="fld"><span class="lab">Property type</span>
+        <label class="fld"><span class="lab">Property Type</span>
           <select id="pType" onchange="doc.type=this.value;markDirty()">
             <option value="Multifamily">Multifamily</option>
-            <option value="Blank">Blank / custom</option>
+            <option value="Blank">Blank / Custom</option>
             <option disabled>Commercial (coming)</option>
             <option disabled>SFR (coming)</option></select></label>
       </div>
       <div class="grid g4" style="margin-top:14px">
-        <label class="fld"><span class="lab">Residential buildable SF</span><input type="number" class="num" id="pSF" value="51365" min="0" step="100" oninput="touch()"></label>
-        <label class="fld"><span class="lab">Amenity / clubhouse SF</span><input type="number" class="num" id="pASF" value="1200" min="0" step="50" oninput="touch()"></label>
+        <label class="fld"><span class="lab">Residential Buildable SF</span><input type="number" class="num" id="pSF" value="51365" min="0" step="100" oninput="touch()"></label>
+        <label class="fld"><span class="lab">Amenity / Clubhouse SF</span><input type="number" class="num" id="pASF" value="1200" min="0" step="50" oninput="touch()"></label>
+        <label class="fld"><span class="lab">Total Site SF</span><input type="number" class="num" id="pSiteSF" value="0" min="0" step="1000" oninput="touch()"></label>
       </div>
-      <div class="note" style="margin-top:10px">Residential SF drives the per-SF construction and soft-cost lines. Amenity SF drives the clubhouse/leasing scope at its own (higher) rates — matching how the Finishes model prices the two buildings separately.</div>
+      <div class="grid g4" style="margin-top:14px" id="siteMetrics">
+        <div class="metric"><span class="k">Site Area</span><span class="v" id="mSiteAcres">—</span></div>
+        <div class="metric" id="mSiteEffTile"><span class="k">Site Efficiency</span><span class="v" id="mSiteEff">—</span></div>
+        <div class="metric"><span class="k">Density</span><span class="v" id="mDensity">—</span></div>
+        <div class="metric" id="mBldgEffTile"><span class="k">Building Efficiency</span><span class="v" id="mBldgEff">—</span></div>
+      </div>
+      <div class="note" style="margin-top:10px">Residential SF drives the per-SF construction and soft-cost lines. Amenity SF drives the clubhouse/leasing scope at its own (higher) rates — matching how the Finishes model prices the two buildings separately. Total site SF is the land itself; it prices nothing, it measures how hard the site is working. Leave it at 0 if you do not know it yet.</div>
     </div>
   </section>
 
   <section class="card">
-    <div class="card-hd"><h2>Unit mix &amp; rent revenue</h2>
+    <div class="card-hd"><h2>Unit Mix &amp; Rent Revenue</h2>
       <div style="display:flex;gap:10px;align-items:center">
         <span id="sfCheck" class="badge">—</span>
-        <button class="btn btn-ghost btn-sm no-print" onclick="addUnit()">+ Add unit type</button>
+        <button class="btn btn-ghost btn-sm no-print" onclick="addUnit()">+ Add Unit Type</button>
       </div></div>
     <div class="card-bd" style="overflow-x:auto">
       <table class="tbl">
-        <thead><tr><th style="width:19%">Unit type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF / unit</th><th class="r"># Units</th>
-          <th class="r">Rent / mo</th><th class="r">$ / SF / mo</th><th class="r">Type SF</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th style="width:19%">Unit Type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF / Unit</th><th class="r"># Units</th>
+          <th class="r">Rent / Mo</th><th class="r">$ / SF / Mo</th><th class="r">Type SF</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
         <tbody id="unitBody"></tbody>
         <tfoot><tr class="total">
-          <td>Total / blended</td><td></td><td></td><td class="calc r" id="uAvgSF">—</td><td class="calc r strong" id="uCount">0</td>
+          <td>Total / Blended</td><td></td><td></td><td class="calc r" id="uAvgSF">—</td><td class="calc r strong" id="uCount">0</td>
           <td class="calc r" id="uAvgRent">—</td><td class="calc r" id="uBlendPSF">—</td><td class="calc r strong" id="uTotSF">0</td>
           <td class="calc r strong" id="uMoRev">$0</td><td class="calc r strong" id="uYrRev">$0</td><td class="no-print"></td>
         </tr></tfoot>
@@ -412,16 +579,16 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card">
-    <div class="card-hd"><h2>Other income</h2>
+    <div class="card-hd"><h2>Other Income</h2>
       <div style="display:flex;gap:10px;align-items:center">
         <span class="eyebrow">Net $/mo per count — utilities, tech entity, parking, pet, admin…</span>
-        <button class="btn btn-ghost btn-sm no-print" onclick="addOther()">+ Add income line</button>
+        <button class="btn btn-ghost btn-sm no-print" onclick="addOther()">+ Add Income Line</button>
       </div></div>
     <div class="card-bd" style="overflow-x:auto">
       <table class="tbl">
-        <thead><tr><th style="width:40%">Income line</th><th class="r">Net $ / mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th style="width:40%">Income Line</th><th class="r">Net $ / Mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
         <tbody id="otherBody"></tbody>
-        <tfoot><tr class="total"><td>Total other income</td><td></td><td></td>
+        <tfoot><tr class="total"><td>Total Other Income</td><td></td><td></td>
           <td class="calc r strong" id="oMo">$0</td><td class="calc r strong" id="oYr">$0</td><td class="no-print"></td></tr></tfoot>
       </table>
       <div class="note" style="margin-top:10px">Enter <b>gross</b> charges here (what the resident is billed). Costs live in Expenses below — the tool nets them for you, matching the sheet's Gross → Cost → Net breakdown. Count defaults to total units (green dot); override for lines like parking spaces or premium units.</div>
@@ -429,19 +596,19 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card">
-    <div class="card-hd"><h2>Operating expenses</h2>
+    <div class="card-hd"><h2>Operating Expenses</h2>
       <div style="display:flex;gap:10px;align-items:center">
         <span class="eyebrow">Per-unit or fixed monthly costs netted against income</span>
-        <button class="btn btn-ghost btn-sm no-print" onclick="addExpense()">+ Add expense</button>
+        <button class="btn btn-ghost btn-sm no-print" onclick="addExpense()">+ Add Expense</button>
       </div></div>
     <div class="card-bd" style="overflow-x:auto">
       <table class="tbl">
-        <thead><tr><th style="width:40%">Expense line</th><th>Basis</th><th class="r">$ / mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th style="width:40%">Expense Line</th><th>Basis</th><th class="r">$ / Mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
         <tbody id="expBody"></tbody>
         <tfoot>
-          <tr class="total"><td>Total operating expenses</td><td></td><td></td><td></td>
+          <tr class="total"><td>Total Operating Expenses</td><td></td><td></td><td></td>
             <td class="calc r strong" id="eMo">$0</td><td class="calc r strong" id="eYr">$0</td><td class="no-print"></td></tr>
-          <tr><td colspan="4" style="border:none;padding-top:8px;font-weight:600;color:var(--ink-950)">Net other income (gross − expenses)</td>
+          <tr><td colspan="4" style="border:none;padding-top:8px;font-weight:600;color:var(--ink-950)">Net Other Income (Gross − Expenses)</td>
             <td class="calc r strong" id="nMo" style="border:none;padding-top:8px;color:var(--green-700)">$0</td>
             <td class="calc r strong" id="nYr" style="border:none;padding-top:8px;color:var(--green-700)">$0</td><td class="no-print" style="border:none"></td></tr>
         </tfoot>
@@ -451,8 +618,8 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card">
-    <div class="card-hd"><h2>Profit &amp; contingency</h2>
-      <button class="btn btn-ghost btn-sm no-print" onclick="addCo()">+ Add company</button></div>
+    <div class="card-hd"><h2>Profit &amp; Contingency</h2>
+      <button class="btn btn-ghost btn-sm no-print" onclick="addCo()">+ Add Company</button></div>
     <div class="card-bd">
       <div class="grid" style="grid-template-columns:1.4fr 1fr;gap:32px">
         <div>
@@ -460,10 +627,10 @@ th.sortable.sorted{color:var(--ink-900)}
           <table class="tbl"><tbody id="coBody"></tbody></table>
         </div>
         <div>
-          <div class="eyebrow" style="margin-bottom:8px">Construction contingency</div>
+          <div class="eyebrow" style="margin-bottom:8px">Construction Contingency</div>
           <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
             <div class="seg">
-              <button id="cPct" onclick="setCMode('pct')">% hard</button>
+              <button id="cPct" onclick="setCMode('pct')">% Hard</button>
               <button id="cPsf" onclick="setCMode('psf')">$ / SF</button>
               <button id="cAmt" onclick="setCMode('amt')">Fixed $</button>
             </div>
@@ -476,13 +643,13 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card" id="sec-project">
-    <div class="card-hd"><h2>Land &amp; project costs</h2><span class="eyebrow">Outside the construction contract — rolls into total project cost</span></div>
+    <div class="card-hd"><h2>Land &amp; Project Costs</h2><span class="eyebrow">Outside the construction contract — rolls into total project cost</span></div>
     <div class="card-bd">
       <div class="grid g4">
-        <label class="fld"><span class="lab">Land cost</span><input type="number" class="num" id="pcLand" min="0" step="10000" oninput="doc.projectCosts.land=+this.value;touch()"></label>
-        <label class="fld"><span class="lab">Developer fee</span><input type="number" class="num" id="pcDev" min="0" step="5000" oninput="doc.projectCosts.dev=+this.value;touch()"></label>
-        <label class="fld"><span class="lab">Marketing / brokerage</span><input type="number" class="num" id="pcMkt" min="0" step="5000" oninput="doc.projectCosts.mkt=+this.value;touch()"></label>
-        <label class="fld"><span class="lab">Closing costs</span><input type="number" class="num" id="pcCls" min="0" step="5000" oninput="doc.projectCosts.cls=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Land Cost</span><input type="number" class="num" id="pcLand" min="0" step="10000" oninput="doc.projectCosts.land=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Developer Fee</span><input type="number" class="num" id="pcDev" min="0" step="5000" oninput="doc.projectCosts.dev=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Marketing / Brokerage</span><input type="number" class="num" id="pcMkt" min="0" step="5000" oninput="doc.projectCosts.mkt=+this.value;touch()"></label>
+        <label class="fld"><span class="lab">Closing Costs</span><input type="number" class="num" id="pcCls" min="0" step="5000" oninput="doc.projectCosts.cls=+this.value;touch()"></label>
       </div>
     </div>
   </section>
@@ -503,7 +670,7 @@ th.sortable.sorted{color:var(--ink-900)}
         </select>
       </label>
       <button class="btn btn-ghost" onclick="go('input')">← Inputs</button>
-      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)">Save</button>
+      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
       <button class="btn btn-dark" onclick="openExport()">Export…</button>
     </div>
   </div>
@@ -515,31 +682,40 @@ th.sortable.sorted{color:var(--ink-900)}
 
   <div class="banner" id="staleBanner" style="display:none">
     <span>This budget uses pricing library <b id="staleFrom"></b>; current is <b id="staleTo"></b>. Values are frozen until you update.</span>
-    <button class="btn btn-sm btn-dark no-print" onclick="repriceBudget()">Update to current pricing</button>
+    <button class="btn btn-sm btn-dark no-print" onclick="repriceBudget()">Update to Current Pricing</button>
   </div>
 
   <div class="stats" id="sec-stats">
     <div class="stat"><div class="k">Units</div><div class="v" id="sUnits">0</div></div>
-    <div class="stat"><div class="k">Net income / yr</div><div class="v" id="sRev">$0</div></div>
+    <div class="stat"><div class="k">Net Income / Yr</div><div class="v" id="sRev">$0</div></div>
     <div class="stat"><div class="k">Contract $/SF</div><div class="v" id="sCSF">—</div></div>
     <div class="stat"><div class="k">Project $/SF</div><div class="v" id="sPSF">—</div></div>
-    <div class="stat"><div class="k">Cost / unit</div><div class="v" id="sCPU">—</div></div>
+    <div class="stat"><div class="k">Cost / Unit</div><div class="v" id="sCPU">—</div></div>
   </div>
 
   <section class="card" id="sec-budget">
-    <div class="card-hd"><h2>Budget detail</h2>
+    <div class="card-hd"><h2>Budget Detail</h2>
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
         <span class="eyebrow" style="color:var(--green-600)">● qty auto-synced · edit to override</span>
         <span class="eyebrow legend" id="editLegend" style="color:var(--edit)"><span class="editdot on"></span><span id="editCount">no manual edits</span></span>
+        <span class="eyebrow" id="amenHidden" style="display:none;color:var(--warn)">Amenity hidden — amenity SF is 0</span>
         <span class="no-print" style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Collapse all</button>
-          <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand all</button>
+          <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Collapse All</button>
+          <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand All</button>
         </span>
       </div></div>
+    <div class="selbar no-print" id="selBar" style="display:none">
+      <span id="selCount">0 Items Selected</span>
+      <span style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" onclick="clearSelection()">Clear Selection</button>
+      <button class="btn btn-sm selbar-danger" onclick="deleteSelected()">Delete Items</button>
+    </div>
     <div class="card-bd budget-scroll" style="overflow:auto;padding-top:8px">
       <table class="tbl">
-        <thead><tr><th style="width:36%">Line item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th>
-          <th class="r">Total</th><th class="r">% scope</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th class="no-print" style="width:34px"><input type="checkbox" id="selAll"
+            title="Select All Visible" aria-label="Select All Visible" onchange="selectAllVisible(this.checked)"></th>
+          <th style="width:34%">Line Item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th>
+          <th class="r">Total</th><th class="r">% Scope</th><th class="no-print"></th></tr></thead>
         <tbody id="budBody"></tbody>
       </table>
       <div class="empty" id="budEmpty" style="display:none">
@@ -550,27 +726,27 @@ th.sortable.sorted{color:var(--ink-900)}
     <!-- Deliberately OUTSIDE the scroll pane. Sitting below a 100-row table inside a
          72vh scroller made this button unreachable without scrolling the inner pane. -->
     <div class="no-print" style="border-top:1px solid var(--ink-150);padding:14px 22px;display:flex;align-items:center;gap:12px">
-      <button class="btn btn-ghost btn-sm" onclick="addLine()">+ Add line item</button>
+      <button class="btn btn-ghost btn-sm" onclick="addLine()">+ Add Line Item</button>
       <span class="note">Opens the CSI MasterFormat catalog.</span>
     </div>
   </section>
 
   <section class="card" id="sec-summary">
-    <div class="card-hd"><h2>Contract &amp; project summary</h2></div>
+    <div class="card-hd"><h2>Contract &amp; Project Summary</h2></div>
     <div class="card-bd">
       <div class="grid" style="grid-template-columns:1fr 1.25fr;gap:40px">
         <div>
-          <div class="sum-row sub"><span class="k">Residential construction</span><span class="v" id="rRes">$0</span></div>
-          <div class="sum-row sub"><span class="k">Amenity / clubhouse</span><span class="v" id="rAmen">$0</span></div>
-          <div class="sum-row mid"><span class="k">Construction hard cost</span><span class="v" id="rHard">$0</span></div>
-          <div class="sum-row"><span class="k">Profit — total</span><span class="v" id="rProfit">$0</span></div>
+          <div class="sum-row sub"><span class="k">Residential Construction</span><span class="v" id="rRes">$0</span></div>
+          <div class="sum-row sub" id="rAmenRow"><span class="k">Amenity / Clubhouse</span><span class="v" id="rAmen">$0</span></div>
+          <div class="sum-row mid"><span class="k">Construction Hard Cost</span><span class="v" id="rHard">$0</span></div>
+          <div class="sum-row"><span class="k">Profit — Total</span><span class="v" id="rProfit">$0</span></div>
           <div class="sum-row"><span class="k">Contingency (99.03)</span><span class="v" id="rCont">$0</span></div>
-          <div class="sum-row grand"><span class="k">Contract sum (construction)</span><span class="v" id="rContract">$0</span></div>
+          <div class="sum-row grand"><span class="k">Contract Sum (Construction)</span><span class="v" id="rContract">$0</span></div>
           <div style="height:16px"></div>
-          <div class="sum-row sub"><span class="k">Soft costs</span><span class="v" id="rSoft">$0</span></div>
+          <div class="sum-row sub"><span class="k">Soft Costs</span><span class="v" id="rSoft">$0</span></div>
           <div class="sum-row sub"><span class="k">Land</span><span class="v" id="rLand">$0</span></div>
-          <div class="sum-row sub"><span class="k">Developer fee · marketing · closing</span><span class="v" id="rFees">$0</span></div>
-          <div class="sum-row grand"><span class="k">Total project cost</span><span class="v" id="rProject">$0</span></div>
+          <div class="sum-row sub"><span class="k">Developer Fee · Marketing · Closing</span><span class="v" id="rFees">$0</span></div>
+          <div class="sum-row grand"><span class="k">Total Project Cost</span><span class="v" id="rProject">$0</span></div>
           <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
             <span class="badge" id="mMargin">Margin —</span>
             <span class="badge" id="mYield">Gross yield —</span>
@@ -578,7 +754,7 @@ th.sortable.sorted{color:var(--ink-900)}
           </div>
         </div>
         <div>
-          <div class="eyebrow" style="margin-bottom:8px">SOV rollup — construction contract</div>
+          <div class="eyebrow" style="margin-bottom:8px">SOV Rollup — Construction Contract</div>
           <table class="tbl"><tbody id="sovBody"></tbody></table>
         </div>
       </div>
@@ -589,7 +765,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= CSI SCHEDULE ================= -->
 <div class="page" id="page-csi">
   <div class="page-title">
-    <div><h1>CSI schedule of values</h1>
+    <div><h1>CSI Schedule of Values</h1>
       <div class="sub" id="csiSub">The same budget, ordered as MasterFormat divisions — the form a lender, architect or GC expects.</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap" class="no-print">
       <button class="btn btn-ghost" onclick="go('budget')">← Budget</button>
@@ -598,12 +774,12 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
 
   <section class="card" id="sec-csi">
-    <div class="card-hd"><h2>Construction contract</h2>
+    <div class="card-hd"><h2>Construction Contract</h2>
       <span class="eyebrow" id="csiMeta">—</span></div>
     <div class="card-bd" style="overflow:auto;padding-top:8px;max-height:72vh">
       <table class="tbl">
         <thead><tr><th style="width:112px">Code</th><th style="width:34%">Section</th><th>Scope</th><th>Basis</th>
-          <th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th><th class="r">% contract</th></tr></thead>
+          <th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th><th class="r">% Contract</th></tr></thead>
         <tbody id="csiBody"></tbody>
       </table>
       <div class="empty" id="csiEmpty" style="display:none">
@@ -614,12 +790,13 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card" id="sec-csi-soft">
-    <div class="card-hd"><h2>Soft costs</h2>
+    <div class="card-hd"><h2>Soft Costs</h2>
       <span class="eyebrow">Reported separately — outside the construction contract</span></div>
     <div class="card-bd" style="overflow:auto;padding-top:8px">
       <table class="tbl">
         <thead><tr><th style="width:112px">Code</th><th style="width:34%">Item</th><th>Basis</th>
-          <th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead>
+          <th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th>
+          <th class="r" title="Share of total soft costs — soft costs sit outside the contract sum">% Soft</th></tr></thead>
         <tbody id="csiSoftBody"></tbody>
       </table>
     </div>
@@ -629,7 +806,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= PRICING ================= -->
 <div class="page" id="page-pricing">
   <div class="page-title">
-    <div><h1>Pricing library</h1><div class="sub">Multifamily cost assumptions — seeded from the Finishes budget model export.</div></div>
+    <div><h1>Pricing Library</h1><div class="sub">Multifamily cost assumptions — seeded from the Finishes budget model export.</div></div>
   </div>
   <div class="banner" id="lockBanner">
     <span id="lockMsg"><b>Locked.</b> Pricing is editable only by accounts holding the <b>pricing_admin</b> role (assigned in the Static Web App's role management).</span>
@@ -640,18 +817,37 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
   <div class="banner green" id="unlockedBanner" style="display:none">
     <span><b>Unlocked.</b> Changes affect <i>new</i> budgets only — drafts keep their snapshot until updated from the budget page.</span>
-    <button class="btn btn-sm btn-primary no-print" onclick="savePricing()">Publish new version</button>
+    <button class="btn btn-sm btn-primary no-print" onclick="savePricing()">Publish New Version</button>
   </div>
+  <div class="card" id="tplCard">
+    <div class="card-hd"><h2>Budget Templates</h2><span class="eyebrow" id="tplMeta">—</span></div>
+    <div class="card-bd">
+      <p class="note" style="margin-top:0">A template holds the complete defaults a new budget starts from. Publishing
+        creates a new immutable version and affects <b>only budgets created afterwards</b> — no existing budget is
+        recalculated or repriced.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0">
+        <select id="tplSelect" style="width:280px" onchange="selectTemplate(this.value)" aria-label="Template"></select>
+        <span id="tplAdminCtl" class="no-print" style="display:none;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="editTemplate()">Edit Template</button>
+          <button class="btn btn-ghost btn-sm" onclick="duplicateTemplate()">Duplicate Template</button>
+          <button class="btn btn-ghost btn-sm" onclick="createTemplate()">Create Template</button>
+          <button class="btn btn-ghost btn-sm" id="tplActiveBtn" onclick="toggleTemplateActive()">Deactivate Template</button>
+        </span>
+      </div>
+      <div id="tplDetail"></div>
+    </div>
+  </div>
+
   <div class="card"><div class="card-hd">
-      <h2>Multifamily cost assumptions</h2>
+      <h2>Multifamily Cost Assumptions</h2>
       <span class="eyebrow" id="pricingMeta">—</span></div>
     <div class="card-bd" style="overflow-x:auto;padding-top:8px">
       <table class="tbl">
-        <thead><tr><th style="width:44%">Line item</th><th>Basis</th><th class="r">Rate</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th style="width:44%">Line Item</th><th>Basis</th><th class="r">Rate</th><th class="no-print"></th></tr></thead>
         <tbody id="priceBody"></tbody>
       </table>
       <div style="margin-top:12px" class="no-print" id="priceAdd" hidden>
-        <button class="btn btn-ghost btn-sm" onclick="addPriceLine()">+ Add blank line</button>
+        <button class="btn btn-ghost btn-sm" onclick="addPriceLine()">+ Add Blank Line</button>
         <span class="note" style="margin-left:10px">Prefer adding from the CSI catalog below so every line carries a real code.</span>
       </div>
     </div>
@@ -659,7 +855,7 @@ th.sortable.sorted{color:var(--ink-900)}
 
   <div class="card">
     <div class="card-hd">
-      <h2>CSI MasterFormat code catalog</h2>
+      <h2>CSI MasterFormat Code Catalog</h2>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap" class="no-print">
         <span class="eyebrow" id="catCount">—</span>
         <select id="catScope" style="width:150px;font-size:12px;padding:6px 8px">
@@ -672,7 +868,7 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
     <div class="card-bd" style="padding-top:8px;max-height:520px;overflow:auto">
       <table class="tbl">
-        <thead><tr><th style="width:130px">Code</th><th>Section</th><th class="r" style="width:120px">In template</th><th class="no-print" style="width:90px"></th></tr></thead>
+        <thead><tr><th style="width:130px">Code</th><th>Section</th><th class="r" style="width:120px">In Template</th><th class="no-print" style="width:90px"></th></tr></thead>
         <tbody id="catBody"></tbody>
       </table>
     </div>
@@ -682,28 +878,29 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= HOW TO USE ================= -->
 <div class="page" id="page-help">
   <div class="page-title">
-    <div><h1>How to use the FS Budgeting Suite</h1>
+    <div><h1>How to Use the Budgeting Suite</h1>
       <div class="sub">Build a multifamily project budget from the shared pricing library, then export it.</div></div>
+    <div class="no-print"><button class="btn btn-dark" onclick="downloadGuide()">Download Guide</button></div>
   </div>
 
   <div class="help-wrap">
     <nav id="helpToc" class="no-print">
-      <a href="#help-overview" class="on">What this is</a>
-      <a href="#help-quickstart">Quick start</a>
+      <a href="#help-overview" class="on">What This Is</a>
+      <a href="#help-quickstart">Quick Start</a>
       <a href="#help-ids">Project IDs</a>
-      <a href="#help-inputs">Inputs reference</a>
-      <a href="#help-budget">The budget page</a>
-      <a href="#help-csi">CSI schedule</a>
-      <a href="#help-pricing">Pricing library</a>
+      <a href="#help-inputs">Inputs Reference</a>
+      <a href="#help-budget">The Budget Page</a>
+      <a href="#help-csi">CSI Schedule</a>
+      <a href="#help-pricing">Pricing Library</a>
       <a href="#help-exports">Exports</a>
-      <a href="#help-access">Who can do what</a>
+      <a href="#help-access">Who Can Do What</a>
       <a href="#help-faq">Troubleshooting</a>
     </nav>
 
     <div class="help">
 
       <section class="card"><div class="card-bd">
-        <h3 id="help-overview">What this is</h3>
+        <h3 id="help-overview">What This Is</h3>
         <p>A Business Development budgeting tool for multifamily projects. You enter the project's size, unit
           mix and income assumptions; the tool prices the construction scope from a shared, versioned rate
           library and rolls it up into two numbers that matter:</p>
@@ -717,9 +914,12 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></section>
 
       <section class="card"><div class="card-bd">
-        <h3 id="help-quickstart">Quick start</h3>
-        <div class="step"><div class="n">1</div><div class="t"><b>Budgets → + New budget.</b>
-          A fresh budget copies the current pricing library and the standard multifamily template.</div></div>
+        <h3 id="help-quickstart">Quick Start</h3>
+        <div class="step"><div class="n">1</div><div class="t"><b>Home → pick a starting point.</b>
+          <b>+ New Multifamily Budget</b> copies the current pricing library and the standard template — unit mix,
+          income, expenses and every priced line. <b>+ Blank Budget</b> starts genuinely empty: no units, no income,
+          no scope, no square footage. Use blank when the project is not multifamily or looks nothing like the
+          template, and build the scope yourself from the CSI catalog.</div></div>
         <div class="step"><div class="n">2</div><div class="t"><b>Fill in the Inputs page.</b>
           Project ID and name first — the ID is required before anything can be saved. Then residential and
           amenity square footage, the unit mix, income and expenses, and the land and project costs that sit
@@ -732,7 +932,8 @@ th.sortable.sorted{color:var(--ink-900)}
         <div class="step"><div class="n">5</div><div class="t"><b>Save, then export.</b>
           <span class="kbd">Save</span> writes to the database; <span class="kbd">Export…</span> produces Excel or PDF.</div></div>
         <div class="callout">The header pill shows <b>Unsaved changes</b> until a save succeeds. Nothing is stored
-          automatically — if you close the tab with that pill showing, the browser will warn you.</div>
+          automatically — if you close the tab with that pill showing, the browser will warn you.
+          <b>Cmd+S</b> (or <b>Ctrl+S</b>) saves from anywhere in a budget.</div>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -751,24 +952,66 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></section>
 
       <section class="card"><div class="card-bd">
-        <h3 id="help-inputs">Inputs reference</h3>
+        <h3 id="help-inputs">Inputs Reference</h3>
 
         <h4>Project</h4>
         <p><b>Residential buildable SF</b> drives every line priced per residential SF — the bulk of the budget
           and most soft costs. <b>Amenity / clubhouse SF</b> drives the amenity scope at its own, higher rates,
           because the model prices the two buildings separately.</p>
 
-        <h4>Unit mix &amp; rent revenue</h4>
+        <h4>Unit Mix &amp; Rent Revenue</h4>
         <p>One row per unit type. Type SF, monthly and yearly revenue are calculated. Two behaviors worth knowing:</p>
         <ul>
           <li>Editing <b>$ / SF / mo</b> works backwards and sets rent to SF × your rate, matching the direction
             the source spreadsheet calculates.</li>
-          <li>The badge in the card header compares total unit SF against residential buildable SF and shows an
-            <b>efficiency percentage</b>. It turns amber if unit SF exceeds the building — usually a typo in a
-            unit count or a stale SF figure.</li>
+          <li>The badge in the card header shows an <b>efficiency percentage</b> — explained below.</li>
         </ul>
 
-        <h4>Other income and Operating expenses</h4>
+        <h4>What Efficiency Means</h4>
+        <p>Efficiency is the share of the building you can actually rent:</p>
+        <p><code>efficiency = total unit SF ÷ residential buildable SF</code></p>
+        <p>Total unit SF is every unit type's SF multiplied by its count — the leasable area. Residential buildable
+          SF is the whole structure. The gap between them is everything you build but nobody rents: corridors,
+          stairwells, elevator shafts, lobbies, walls, mechanical and electrical rooms, trash rooms.</p>
+        <p>It matters because you pay to build the whole number and collect rent on only part of it. Two buildings
+          of identical size at different efficiencies produce different revenue from the same construction cost, so
+          it is one of the earliest signals of whether a layout works.</p>
+        <table class="tbl"><tbody>
+          <tr><td>Typical range</td><td>Garden-style walk-ups tend to run high, often 85% or better, because they
+            have little interior circulation. Mid-rise with double-loaded corridors and elevators usually sits lower.
+            What counts as good is specific to the building type — compare against your own past projects rather
+            than a rule of thumb.</td></tr>
+          <tr><td>Reading it low</td><td>Either the design carries a lot of unrentable area, or the unit mix is
+            incomplete — a missing unit type or a wrong count will understate leasable SF and make an ordinary
+            building look inefficient.</td></tr>
+          <tr><td>Amber warning</td><td>Unit SF exceeds residential buildable SF, which cannot be true. Almost always
+            a typo in a unit count or SF, or a residential SF figure that was never updated after the design
+            changed.</td></tr>
+        </tbody></table>
+        <p>Amenity SF is deliberately excluded from this calculation. The clubhouse is not rentable area, and it is
+          measured and priced separately.</p>
+
+        <h4>Site Efficiency, and How It Differs</h4>
+        <p>Building efficiency asks how much of the <i>structure</i> you can rent. Site efficiency asks how hard the
+          <i>land</i> is working:</p>
+        <p><code>site efficiency = (residential SF + amenity SF) ÷ total site SF</code></p>
+        <p>That is the floor area ratio, expressed as a percentage. Enter the land area in <b>Total Site SF</b> and
+          the Project card reports site area in acres, site efficiency, density in units per acre, and building
+          efficiency side by side.</p>
+        <table class="tbl"><tbody>
+          <tr><td>What it tells you</td><td>Whether the scheme is using the parcel you are paying for. A low figure
+            on expensive land is the earliest sign that the deal needs more density, or that the land is priced
+            wrong for what will fit on it.</td></tr>
+          <tr><td>Density</td><td>Units per acre, the number entitlement and zoning conversations are usually
+            conducted in. It comes from the same site figure, so it appears as soon as you enter one.</td></tr>
+          <tr><td>Over 100%</td><td>The tile turns amber. Building SF exceeding site SF is normal for anything
+            multi-storey — a two-storey building covering half the site is already 100%. Read it as a ratio, not a
+            ceiling; it is only a warning when you expected a single-storey scheme.</td></tr>
+        </tbody></table>
+        <p>Total site SF prices nothing. It never touches a rate, a quantity or the contract sum — it exists purely
+          to produce these measures, so leaving it at 0 costs you nothing but the metrics.</p>
+
+        <h4>Other Income and Operating Expenses</h4>
         <p>Enter <b>gross</b> charges under Other income — what the resident is billed. Put the cost of providing
           them under Operating expenses. The tool nets the two and reports net other income.</p>
         <ul>
@@ -777,14 +1020,14 @@ th.sortable.sorted{color:var(--ink-900)}
           <li>Expenses are <b>per unit</b> or <b>fixed / mo</b>. Fixed lines apply once no matter the unit count.</li>
         </ul>
 
-        <h4>Profit &amp; contingency</h4>
+        <h4>Profit &amp; Contingency</h4>
         <p>Profit is a percentage of construction hard cost, per company; add a row for each entity taking a fee.
           Contingency carries three ways — percent of hard cost, dollars per SF (residential + amenity), or a
           fixed amount. It is always reported as its own line, never blended into the trades.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
-        <h3 id="help-budget">The budget page</h3>
+        <h3 id="help-budget">The Budget Page</h3>
         <p>Lines are grouped into three scopes — Residential Construction, Amenity / Clubhouse and Soft Costs —
           and then into phase groups within each. Click any scope or group header to collapse it; subtotals stay
           visible. <span class="kbd">Collapse all</span> is the fastest way to sanity-check the shape of a budget.</p>
@@ -800,7 +1043,7 @@ th.sortable.sorted{color:var(--ink-900)}
         </tbody></table>
         <p>Typing over a quantity breaks the link for that line only, and it will no longer follow the inputs.</p>
 
-        <h4>Manually edited lines</h4>
+        <h4>Manually Edited Lines</h4>
         <p>A <span class="editdot on" style="margin:0 2px"></span> blue dot to the left of a line means you changed it
           rather than taking the library's number. A line is marked when you override its quantity, set a rate that
           differs from the pricing library, change its description or basis, or add it by hand. Hover the dot to see
@@ -809,19 +1052,70 @@ th.sortable.sorted{color:var(--ink-900)}
           into the Excel export, which carries a <b>Manually edited</b> column alongside the original library rate —
           useful when someone asks which numbers came from the model and which came from judgment.</p>
 
-        <h4>Adding scope</h4>
-        <p><span class="kbd">+ Add line item</span> opens the CSI MasterFormat catalog. Adding from the catalog
+        <h4>Scopes, and How They Relate to CSI Codes</h4>
+        <p>Every line belongs to one of three <b>scopes</b>. The scope answers <i>where the money goes</i>; the CSI
+          code answers <i>what the work is</i>. They are independent, which is why the same code legitimately
+          appears more than once.</p>
+        <table class="tbl"><tbody>
+          <tr><td>Residential Construction</td><td>The apartment buildings themselves. Priced against residential
+            buildable SF. Inside the construction contract.</td></tr>
+          <tr><td>Amenity / Clubhouse</td><td>The clubhouse and leasing building. Priced against amenity SF at its
+            own, higher rates. Also inside the construction contract.</td></tr>
+          <tr><td>Soft Costs</td><td>Design, engineering, permits, impact fees, contingencies on those. Priced
+            against residential SF, but <b>outside the construction contract</b> — it is part of total project cost
+            only.</td></tr>
+        </tbody></table>
+        <p>So <b>Residential + Amenity = construction hard cost</b>, which becomes the contract sum once profit and
+          contingency are added. Soft costs never enter that number.</p>
+        <div class="callout"><b>No clubhouse? Set amenity SF to 0.</b> The amenity scope then disappears from the
+          budget, the CSI schedule and both exports, and stops contributing to the contract sum — including any
+          amenity line you had set to a lump sum or given a manual quantity, which would otherwise keep adding money
+          you could no longer see. Nothing is deleted: put a figure back in amenity SF and the whole scope returns
+          exactly as it was.</div>
+
+        <h4>Why the Same CSI Code Appears Twice</h4>
+        <p>Take <code>09 60 00 Flooring</code>. It exists in the residential scope at one rate and in the amenity
+          scope at a much higher one, because clubhouse flooring is a different specification from apartment
+          flooring. One CSI code, two scopes, two rates — that is correct, not a duplicate. On the CSI schedule
+          both lines sit under Division 09 with a <b>Residential</b> or <b>Amenity</b> tag telling you which
+          building each belongs to.</p>
+        <p>Soft costs use <code>SC-##</code> codes rather than CSI codes, because MasterFormat classifies
+          construction <i>work results</i> — it has no home for an architect's fee or a traffic impact study. That
+          is the second reason they are reported separately on the schedule.</p>
+
+        <h4>Scope and Basis When Adding a Line</h4>
+        <p>The scope dropdown in the CSI picker sets the quantity basis for you: choosing Amenity gives the line
+          <b>per amen SF</b>, anything else gives <b>per res SF</b>. Change it afterwards with the Basis dropdown if
+          the line should count per unit or be a lump sum instead. Getting the scope right matters beyond
+          bookkeeping — it decides which square footage drives the quantity, and whether the money lands inside or
+          outside the number the bank sees.</p>
+
+        <h4>Adding Scope</h4>
+        <p><span class="kbd">+ Add Line Item</span> opens the CSI MasterFormat catalog. Adding from the catalog
           means the line carries a real code into the SOV, which the lender package depends on. New lines arrive
           at rate $0 — set the rate before you trust the total.</p>
+        <p>Two dropdowns sit beside the search box. The first picks the <b>scope</b>; the second picks the
+          <b>group</b> the line joins:</p>
+        <table class="tbl"><tbody>
+          <tr><td>An existing group</td><td>The line is filed under that heading — pick <b>Site Finish</b> and it
+            lands with the other site finish lines instead of starting a section of its own. The list shows only
+            groups already in use for the chosen scope, so it follows the scope dropdown.</td></tr>
+          <tr><td>Auto</td><td>The default. The line is filed under its CSI division, creating a heading such as
+            "Division 14 — Conveying Equipment".</td></tr>
+          <tr><td>New group…</td><td>Prompts for a name and files the line under it, for scope that does not belong
+            anywhere existing.</td></tr>
+        </tbody></table>
+        <p>Lines are inserted next to the group they join rather than appended at the end, so a group never appears
+          twice in the budget or in the exports.</p>
 
-        <h4>Reading the summary</h4>
+        <h4>Reading the Summary</h4>
         <p>The left column walks hard cost up to contract sum, then adds the non-contract costs to reach total
           project cost. The right column is the SOV rollup: the same money grouped the way it will appear on the
           schedule of values, with contingency shown explicitly as line 99.03 and profit broken out by company.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
-        <h3 id="help-csi">CSI schedule</h3>
+        <h3 id="help-csi">CSI Schedule</h3>
         <p>The <b>CSI schedule</b> tab re-presents the same budget as a MasterFormat schedule of values: sorted by
           division number, grouped under Division 00–48 headings with a subtotal per division, showing the full
           code on every line. Same money as the Budget page, organised the way an architect, lender or general
@@ -831,12 +1125,15 @@ th.sortable.sorted{color:var(--ink-900)}
             <code>99 03 00</code> and never blended into a trade line.</li>
           <li><b>Soft costs are listed separately</b> and are not part of the contract sum — the bank sees the
             construction contract, not the total project cost.</li>
-          <li>Hand-added lines with no CSI code collect under <b>Uncoded / custom scope</b>, a prompt to give them a
+          <li>Hand-added lines with no CSI code collect under <b>Uncoded / Custom Scope</b>, a prompt to give them a
             real code before the budget goes out.</li>
         </ul>
+        <p>The <b>Residential</b> and <b>Amenity</b> tags on each line say which building the work belongs to, so a
+          code that appears in both scopes stays readable. See <a href="#help-budget">The Budget Page</a> for what
+          the scopes mean and why a code can appear twice.</p>
         <p>The schedule is also its own Excel sheet and its own PDF section, both selectable at export.</p>
 
-        <h3 id="help-pricing">Pricing library and versioning</h3>
+        <h3 id="help-pricing">Pricing Library and Versioning</h3>
         <p>All rates come from one shared library so two people pricing the same building get the same answer.
           The important rule:</p>
         <div class="callout"><b>A budget snapshots the library the moment it is created.</b> Publishing new rates
@@ -863,10 +1160,12 @@ th.sortable.sorted{color:var(--ink-900)}
         </tbody></table>
         <div class="callout">Both exports read the same numbers the screen shows, so they cannot drift from the
           budget. The workbook also carries the <b>Manually edited</b> flag and each line's original library rate.</div>
+        <p><b>Download Guide</b>, at the top of this page, produces a formatted PDF of this guide. It is generated
+          from this page rather than a separate copy, so it cannot fall out of date with what you are reading.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
-        <h3 id="help-access">Who can do what</h3>
+        <h3 id="help-access">Who Can Do What</h3>
         <table class="tbl"><tbody>
           <tr><td>Everyone</td><td>Anyone who can sign in with a Finishes account can create, edit, save, delete
             and export budgets, and can read the pricing library.</td></tr>
@@ -910,20 +1209,26 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= EXPORT MODAL ================= -->
 <div id="exportModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
   <div class="card" style="width:460px;max-width:92vw;margin:0">
-    <div class="card-hd"><h2>Export budget</h2><button class="btn-x" onclick="closeExport()">×</button></div>
+    <div class="card-hd"><h2>Export Budget</h2><button class="btn-x" onclick="closeExport()">×</button></div>
     <div class="card-bd">
-      <div class="eyebrow" style="margin-bottom:10px">Include sections</div>
+      <div class="eyebrow" style="margin-bottom:10px">Include Sections</div>
       <div style="display:grid;gap:10px;margin-bottom:20px">
-        <label class="chk"><input type="checkbox" id="ex-stats" checked> Project summary &amp; key metrics</label>
-        <label class="chk"><input type="checkbox" id="ex-units" checked> Unit mix &amp; rent revenue</label>
-        <label class="chk"><input type="checkbox" id="ex-other" checked> Other income &amp; operating expenses</label>
-        <label class="chk"><input type="checkbox" id="ex-budget" checked> Budget detail (all scopes)</label>
-        <label class="chk"><input type="checkbox" id="ex-csi" checked> CSI MasterFormat schedule of values</label>
-        <label class="chk"><input type="checkbox" id="ex-summary" checked> Contract &amp; project summary / SOV</label>
+        <label class="chk"><input type="checkbox" id="ex-stats" checked> Project Summary &amp; Key Metrics</label>
+        <label class="chk"><input type="checkbox" id="ex-units" checked> Unit Mix &amp; Rent Revenue</label>
+        <label class="chk"><input type="checkbox" id="ex-other" checked> Other Income &amp; Operating Expenses</label>
+        <label class="chk"><input type="checkbox" id="ex-budget" checked> Budget Detail (All Scopes)</label>
+        <label class="chk"><input type="checkbox" id="ex-csi" checked> CSI MasterFormat Schedule of Values</label>
+        <label class="chk"><input type="checkbox" id="ex-summary" checked> Contract &amp; Project Summary / SOV</label>
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end">
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
+        <!-- Not `disabled`: a disabled button is skipped by keyboard navigation and shows
+             no tooltip, so the "coming soon" affordance would be invisible to anyone not
+             using a mouse. aria-disabled announces the state while keeping it reachable. -->
+        <button class="btn btn-ghost btn-soon" id="ex-email" aria-disabled="true"
+          title="Coming soon — emailing the workbook and report is not built yet"
+          onclick="comingSoon('Emailing exports')">Email <span class="soon-pill">Soon</span></button>
         <button class="btn btn-ghost" onclick="exportExcel()">Excel (.xlsx)</button>
-        <button class="btn btn-primary" onclick="exportPDF()">PDF (print)</button>
+        <button class="btn btn-primary" onclick="exportPDF()">PDF (Print)</button>
       </div>
     </div>
   </div>
@@ -932,13 +1237,14 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= CSI PICKER MODAL ================= -->
 <div id="pickModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
   <div class="card" style="width:640px;max-width:94vw;margin:0">
-    <div class="card-hd"><h2>Add line from CSI catalog</h2>
+    <div class="card-hd"><h2>Add Line From CSI Catalog</h2>
       <div style="display:flex;gap:10px;align-items:center">
-        <select id="pickScope" style="width:150px;font-size:12px;padding:6px 8px">
+        <select id="pickScope" style="width:140px;font-size:12px;padding:6px 8px" onchange="fillPickGroups()">
           <option value="res">→ Residential</option>
           <option value="amen">→ Amenity</option>
           <option value="soft">→ Soft Costs</option>
         </select>
+        <select id="pickGroup" style="width:210px;font-size:12px;padding:6px 8px" title="Which group the line joins"></select>
         <button class="btn-x" onclick="closePick()">×</button>
       </div></div>
     <div class="card-bd" style="padding-top:12px">
@@ -947,10 +1253,42 @@ th.sortable.sorted{color:var(--ink-900)}
         <table class="tbl"><tbody id="pickBody"></tbody></table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
-        <span class="note">Line is added at qty auto / rate $0 — set the rate on the budget.</span>
-        <button class="btn btn-ghost btn-sm" onclick="addBlankLine()">Add blank line instead</button>
+        <span class="note">Added at qty auto / rate $0 — set the rate on the budget. Leave the group on
+          <b>Auto</b> to file the line under its CSI division.</span>
+        <button class="btn btn-ghost btn-sm" onclick="addBlankLine()">Add Blank Line Instead</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ================= COLD-START SCREEN ================= -->
+<div id="bootScreen" role="status" aria-live="polite">
+  <div class="boot-card">
+    <div class="boot-spin" aria-hidden="true"></div>
+    <div class="boot-title">Loading Budgeting Suite</div>
+    <div class="boot-msg" id="bootMsg">Connecting to the server…</div>
+  </div>
+</div>
+
+<!-- ================= ACCOUNT MENU ================= -->
+<div id="profileMenu" role="menu" aria-hidden="true" style="display:none">
+  <div class="pm-id">
+    <div class="pm-name" id="pmName"></div>
+    <div class="pm-email" id="pmEmail"></div>
+  </div>
+  <div class="rowmenu-sep"></div>
+  <button class="rowmenu-item" role="menuitem" onclick="logout()">Sign Out</button>
+</div>
+
+<!-- ================= BUDGET ROW ACTIONS MENU ================= -->
+<div id="rowMenu" role="menu" aria-hidden="true" style="display:none"></div>
+
+<!-- ================= BUDGET VERSIONS MODAL ================= -->
+<div id="versionsModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
+  <div class="card" style="width:820px;max-width:94vw;margin:0" role="dialog" aria-modal="true" aria-labelledby="versionsTitle">
+    <div class="card-hd"><h2 id="versionsTitle">Budget Versions</h2>
+      <button class="btn-x" onclick="closeVersions()" aria-label="Close version history">×</button></div>
+    <div class="card-bd" style="max-height:70vh;overflow:auto"><div id="versionsBody"></div></div>
   </div>
 </div>
 
@@ -960,13 +1298,28 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <script>
 /* ============ HELPERS ============ */
-const usd=n=>'$'+Math.round(n).toLocaleString('en-US');
-const usd2=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-const num=n=>Math.round(n).toLocaleString('en-US');
+/* A missing property arithmetics to NaN, and older saved documents genuinely lack
+   fields that exist today — a budget saved before `siteSF`, an imported doc, a
+   template line with no rate. Treat a non-finite value as zero at both ends: here
+   so nothing can ever render "$NaN", and at the arithmetic sources below so the
+   sums are right rather than merely printable. */
+const nz=v=>Number.isFinite(+v)?+v:0;
+const usd=n=>'$'+Math.round(nz(n)).toLocaleString('en-US');
+const usd2=n=>'$'+nz(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=n=>Math.round(nz(n)).toLocaleString('en-US');
 const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>ESC_MAP[c]);
 const ID_RX=/^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
 const isTest=id=>/^TST-/.test(id||'');
+/* Stable per-line identity. Array positions shift whenever a line is inserted,
+   moved between groups or batch-deleted, so anything that has to outlive a
+   render — focus keys, selection, the SOV LineKey column, version snapshots —
+   keys off lineId instead of the index. randomUUID needs a secure context, so
+   there is a fallback for plain-http local dev. */
+function newLineId(){
+  try{ if(window.crypto&&crypto.randomUUID)return crypto.randomUUID(); }catch(_){}
+  return 'l-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
+}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
 
 /* ============ STORAGE — Azure Functions API ============ */
@@ -1017,11 +1370,83 @@ async function sDel(k){if(k.startsWith('budget-'))await api('budget/'+encodeURIC
 let principal=null;
 async function initAuth(){
   try{const r=await fetch('/.auth/me');const j=await r.json();principal=j.clientPrincipal||null;}catch(e){principal=null;}
-  if(principal){
-    adminUnlocked=(principal.userRoles||[]).includes('pricing_admin');
-    const el=document.getElementById('whoami');
-    if(el)el.textContent=principal.userDetails||'';
-  }
+  if(principal)adminUnlocked=(principal.userRoles||[]).includes('pricing_admin');
+  renderProfile();
+}
+
+/* SWA gives us userDetails (the UPN, normally the email). A display name is only
+   present when the provider returns a name claim, so fall back to humanising the
+   address rather than showing a blank line. */
+function principalName(p){
+  const claims=(p&&p.claims)||[];
+  const c=claims.find(x=>x&&(x.typ==='name'||/\/name$/.test(x.typ||'')));
+  if(c&&c.val)return c.val;
+  const local=String((p&&p.userDetails)||'').split('@')[0];
+  if(!local)return 'Signed In';
+  return local.split(/[._-]+/).filter(Boolean)
+    .map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ')||local;
+}
+function initialsOf(name){
+  const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
+  if(!parts.length)return '?';
+  return (parts[0][0]+(parts.length>1?parts[parts.length-1][0]:'')).toUpperCase();
+}
+/* Only show the avatar where there is a session. Local `swa start` runs without a
+   principal, and /.auth/logout would be a dead link there. */
+function renderProfile(){
+  const btn=document.getElementById('profileBtn');
+  if(btn)btn.style.display=principal?'flex':'none';
+  if(!principal)return;
+  const name=principalName(principal),email=principal.userDetails||'';
+  const ini=document.getElementById('profileInitials');
+  if(ini)ini.textContent=initialsOf(name);
+  if(btn)btn.title=name+(email?' · '+email:'');
+  const n=document.getElementById('pmName'),e=document.getElementById('pmEmail');
+  if(n)n.textContent=name;                 // textContent, so a name is never markup
+  if(e)e.textContent=email;
+}
+let profileOpen=false;
+function toggleProfile(){profileOpen?closeProfile(true):openProfile();}
+function openProfile(){
+  closeRowMenu();                          // only one popover at a time
+  const m=document.getElementById('profileMenu'),btn=document.getElementById('profileBtn');
+  if(!m||!btn)return;
+  m.style.display='block';m.setAttribute('aria-hidden','false');
+  btn.setAttribute('aria-expanded','true');
+  const r=btn.getBoundingClientRect();
+  m.style.top=(r.bottom+8)+'px';
+  m.style.left=Math.max(8,Math.min(r.right-m.offsetWidth,window.innerWidth-m.offsetWidth-8))+'px';
+  profileOpen=true;
+  const first=m.querySelector('.rowmenu-item');
+  if(first)first.focus();
+}
+function closeProfile(refocus){
+  const m=document.getElementById('profileMenu'),btn=document.getElementById('profileBtn');
+  if(!m)return;
+  m.style.display='none';m.setAttribute('aria-hidden','true');
+  profileOpen=false;
+  if(btn){btn.setAttribute('aria-expanded','false');if(refocus)btn.focus();}
+}
+
+/* Ending the session is a full navigation to the SWA logout route, which clears
+   the auth cookie and returns to the app — the app then redirects to sign-in,
+   where the account picker appears (prompt=select_account in
+   staticwebapp.config.json) so a different account can be chosen. */
+function logoutUrl(){
+  return '/.auth/logout?post_logout_redirect_uri='+encodeURIComponent('/');
+}
+async function logout(){
+  closeProfile(false);
+  if(!confirmDiscard())return;
+  dirty=false;                       // already asked — do not let beforeunload ask again
+  // Every bit of app state lives in memory or behind the API, so the navigation
+  // below disposes of it. These clears are defensive: nothing writes here today,
+  // but a stale entry from a later change must not survive an account switch.
+  try{localStorage.clear();sessionStorage.clear();}catch(_){}
+  try{
+    if(window.caches&&caches.keys)await Promise.all((await caches.keys()).map(k=>caches.delete(k)));
+  }catch(_){}
+  location.replace(logoutUrl());
 }
 
 /* ============ CSI MASTERFORMAT CATALOG ============
@@ -1080,6 +1505,13 @@ const L=(code,grp,scope,desc,basis,unit)=>({code,grp,scope,desc,basis,unit});
    To change it: sha256 the new passphrase and replace the digest. */
 const ADMIN_PASS_SHA256='52e20e96fd28257e018abac67cd8e1f4863b1cac1fdfb6cb0a96c963b9437548';
 
+/* OFFLINE FALLBACK ONLY. The authoritative source of new-budget defaults is the
+   budget template system (dbo.BudgetTemplateVersions), whose rates come from the
+   published pricing library (dbo.PricingLibrary). This constant exists so the app
+   still renders when /api/pricing cannot be reached — the offline banner says as
+   much — and it must never be treated as the source of a saved budget's rates
+   while the API is up. To change rates, publish the pricing library; do not
+   hand-edit this. See docs/DATA_CONTRACT.md, "Single source of truth". */
 const DEFAULT_PRICING={version:'2026.08-v2',effective:'2026-08-10',
 lines:[
  // ---- RESIDENTIAL: General Conditions
@@ -1219,7 +1651,7 @@ let dirty=false,saving=false,lastSaved=null;
 const collapsed=new Set();              // "scope|grp" keys collapsed on the budget grid
 const homeView={q:'',sort:'updated',dir:-1,status:'all'};
 const SCOPES={res:'Residential Construction',amen:'Amenity / Clubhouse',soft:'Soft Costs'};
-const BASIS_LABEL={sf:'per res SF',asf:'per amen SF',unit:'per unit',ls:'lump sum'};
+const BASIS_LABEL={sf:'Per Res SF',asf:'Per Amen SF',unit:'Per Unit',ls:'Lump Sum'};
 
 /* ---- unsaved-work tracking ----
    touch() is recalc() plus "the user changed something". Mutation handlers call it;
@@ -1283,7 +1715,7 @@ function withFocus(fn){
 function blankDoc(kind){
   const bare=kind==='blank';
   return {projectId:'',name:'',address:'',type:bare?'Blank':'Multifamily',
-    resSF:bare?0:51365,amenSF:bare?0:1200,
+    resSF:bare?0:51365,amenSF:bare?0:1200,siteSF:0,
     units:bare?[]:[
       {label:'Studio (630)',bd:0,bth:1,sf:630,count:16,rent:1203},
       {label:'Studio (400)',bd:0,bth:1,sf:400,count:14,rent:1160},
@@ -1294,7 +1726,7 @@ function blankDoc(kind){
     // baseUnit is the library rate this line was born with. Comparing against it is what
     // lets the budget flag a manually re-priced line — and un-flag it if you put the
     // original rate back.
-    lines:bare?[]:pricing.lines.map(l=>({...l,qty:l.basis==='ls'?1:0,auto:l.basis!=='ls',baseUnit:l.unit})),
+    lines:bare?[]:pricing.lines.map(l=>({...l,lineId:newLineId(),qty:l.basis==='ls'?1:0,auto:l.basis!=='ls',baseUnit:l.unit})),
     companies:bare?[]:[{name:'Finishes Solutions LLC',pct:12}],
     contingency:bare?{mode:'pct',val:0}:{mode:'psf',val:2},
     projectCosts:bare?{land:0,dev:0,mkt:0,cls:0}:{land:1200000,dev:200000,mkt:75000,cls:0},
@@ -1302,14 +1734,26 @@ function blankDoc(kind){
     created:new Date().toISOString(),updated:new Date().toISOString()};
 }
 function migrate(d){ // tolerate older saves
-  d.resSF=d.resSF??d.buildableSF??0; d.amenSF=d.amenSF??0;
+  d.resSF=d.resSF??d.buildableSF??0; d.amenSF=d.amenSF??0; d.siteSF=d.siteSF??0;
   d.other=d.other??JSON.parse(JSON.stringify(DEFAULT_OTHER));
   d.expenses=d.expenses??JSON.parse(JSON.stringify(DEFAULT_EXPENSES));
   d.projectCosts=d.projectCosts??{land:0,dev:0,mkt:0,cls:0};
-  d.units.forEach(u=>{u.bd=u.bd??0;u.bth=u.bth??1;});
+  // Repair numerics on load rather than only defending at the point of use, so an
+  // older document is fixed once instead of every render.
+  d.units.forEach(u=>{u.bd=nz(u.bd);u.bth=u.bth??1;u.sf=nz(u.sf);u.count=nz(u.count);u.rent=nz(u.rent);});
+  d.other.forEach(o=>{o.rate=nz(o.rate);o.count=nz(o.count);});
+  d.expenses.forEach(x=>{x.rate=nz(x.rate);x.count=nz(x.count);});
+  (d.companies||[]).forEach(c=>{c.pct=nz(c.pct);});
+  d.resSF=nz(d.resSF);d.amenSF=nz(d.amenSF);d.siteSF=nz(d.siteSF);
+  if(d.contingency)d.contingency.val=nz(d.contingency.val);
+  ['land','dev','mkt','cls'].forEach(k=>{d.projectCosts[k]=nz(d.projectCosts[k]);});
   // Budgets saved before edit-tracking existed have no baseline, so seed it from the
   // current rate: nothing is retroactively claimed to be a manual edit.
-  d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';l.baseUnit=l.baseUnit??l.unit;});
+  // Older saves predate stable line IDs; mint one per line so selection, code
+  // editing and SOV LineKey have something durable to hold on to.
+  d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';
+    l.unit=nz(l.unit);l.qty=nz(l.qty);l.baseUnit=nz(l.baseUnit??l.unit);
+    if(!l.lineId)l.lineId=newLineId();});
   d.status=d.status||'Draft';
   return d;
 }
@@ -1365,7 +1809,11 @@ function go(p){
 }
 
 async function routeFromHash(){
-  const seg=(location.hash||'').replace(/^#\/?/,'').split('/');
+  // Only '#/...' is a route. Plain fragment links like '#help-exports' belong to the page
+  // and must be left alone — parsing them found no slug and bounced you to Budgets.
+  const h=location.hash||'';
+  if(h&&h.slice(0,2)!=='#/')return;
+  const seg=h.replace(/^#\/?/,'').split('/');
   const p=SLUG_PAGE[seg[0]]||'home';
   const id=(seg[1]||'').toUpperCase();
   if(p===currentPage&&(!id||(doc&&doc.projectId===id)))return;   // already where the hash points
@@ -1412,7 +1860,9 @@ function paintHome(){
       <td class="calc r">${usd(x.projectCost||0)}</td>
       <td><span class="badge ${x.status==='Finalized'?'ok':''}">${esc(x.status)}</span></td>
       <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${esc((x.updated||'').slice(0,10))}</td>
-      <td class="no-print"><button class="btn-x" title="Delete ${esc(x.projectId)}" onclick="event.stopPropagation();deleteBudget('${x.projectId}')">×</button></td></tr>`);
+      <td class="no-print" style="text-align:right"><button class="rowmenu-btn" data-pid="${esc(x.projectId)}"
+        aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(x.projectId)}"
+        onclick="event.stopPropagation();openRowMenu(this)">⋮</button></td></tr>`);
   });
   document.querySelectorAll('#homeHead th[data-sort]').forEach(th=>{
     const on=th.dataset.sort===homeView.sort;
@@ -1428,9 +1878,211 @@ function homeSort(k){
 function enableDocNav(){
   ['nav-input','nav-budget','nav-csi'].forEach(id=>{document.getElementById(id).disabled=false;});
 }
+/* ============ BUDGET TEMPLATES ============
+   The template system is the authoritative source of new-budget defaults
+   (docs/DATA_CONTRACT.md). A template is edited by loading its document into the
+   ordinary budget editor — that editor already edits every field a template
+   carries, so there is no parallel half-built form to drift out of step — and
+   publishing writes it back as a new immutable version. */
+let templates=[],tplKey=null,templateEdit=null,templatesLoaded=false,templatesAdmin=false;
+
+async function loadTemplates(){
+  try{
+    const r=await api('templates');
+    templates=r.templates||[];
+    templatesAdmin=!!r.isAdmin;      // separate from the pricing passcode unlock
+    templatesLoaded=true;
+  }catch(e){templates=[];templatesLoaded=false;}
+  paintTemplatePickers();
+}
+const canAdminTemplates=()=>templatesAdmin||adminUnlocked;
+function activeTemplates(){return templates.filter(t=>t.isActive&&t.currentVersion);}
+/* A deactivated template disappears from new-budget choices but keeps working for
+   the budgets that already reference it. */
+function paintTemplatePickers(){
+  const act=activeTemplates();
+  const sel=document.getElementById('newFromTpl');
+  if(sel){
+    const others=act.filter(t=>t.templateKey!=='multifamily');
+    sel.innerHTML='<option value="">+ New Budget…</option>'
+      +others.map(t=>`<option value="${esc(t.templateKey)}">${esc(t.name)}</option>`).join('');
+    sel.style.display=others.length?'':'none';
+  }
+  const mf=act.find(t=>t.templateKey==='multifamily');
+  const mfBtn=document.getElementById('newMfBtn');
+  // If templates could not be loaded — API down, cold start not finished — keep the
+  // primary action available. It falls back to the built-in defaults, which is
+  // exactly what DEFAULT_PRICING exists for. Hiding it would strand the user.
+  if(mfBtn)mfBtn.style.display=(!templatesLoaded||mf)?'':'none';
+  const ts=document.getElementById('tplSelect');
+  if(ts){
+    ts.innerHTML=templates.map(t=>`<option value="${esc(t.templateKey)}">${esc(t.name)}${t.isActive?'':' (Inactive)'}</option>`).join('')
+      ||'<option value="">No templates</option>';
+    if(tplKey)ts.value=tplKey; else tplKey=ts.value||null;
+  }
+  const ctl=document.getElementById('tplAdminCtl');
+  if(ctl)ctl.style.display=canAdminTemplates()?'flex':'none';
+  renderTemplateDetail();
+}
+function selectTemplate(k){tplKey=k;renderTemplateDetail();}
+async function renderTemplateDetail(){
+  const box=document.getElementById('tplDetail');if(!box)return;
+  const t=templates.find(x=>x.templateKey===tplKey);
+  const meta=document.getElementById('tplMeta');
+  if(!t){box.innerHTML='<div class="note">No template selected.</div>';if(meta)meta.textContent='—';return;}
+  if(meta)meta.textContent=t.name+' · version '+(t.currentVersion||'—')+(t.isActive?'':' · inactive');
+  const btn=document.getElementById('tplActiveBtn');
+  if(btn)btn.textContent=t.isActive?'Deactivate Template':'Activate Template';
+  box.innerHTML='<div class="note">Loading template versions…</div>';
+  let vs=[];
+  try{vs=(await api('templates/'+encodeURIComponent(t.templateKey)+'/versions')).versions||[];}
+  catch(e){box.innerHTML='<div class="note" style="color:var(--danger)">Could not load versions: '+esc(e.message)+'</div>';return;}
+  box.innerHTML=
+    (canAdminTemplates()?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:14px">
+      <label class="fld"><span class="lab">Template Name</span><input type="text" id="tplName" value="${esc(t.name)}"></label>
+      <label class="fld"><span class="lab">Budget Type</span><input type="text" id="tplType" value="${esc(t.budgetType||'')}"></label>
+      <label class="fld"><span class="lab">Description</span><input type="text" id="tplDesc" value="${esc(t.description||'')}"></label>
+      </div><div style="margin-bottom:16px"><button class="btn btn-ghost btn-sm" onclick="saveTemplateDetails()">Save Details</button>
+      <span class="note" style="margin-left:10px">Renaming never changes what a budget is created from — only publishing does.</span></div>`:'')
+    +'<div class="eyebrow" style="margin-bottom:8px">Template Versions</div>'
+    +(vs.length?vs.map(v=>`<div class="tpl-row${v.isCurrent?' current':''}">
+        <div><div class="ver-num">Version ${v.versionNumber}</div>${v.isCurrent?'<span class="badge ok">Current</span>':''}</div>
+        <div><div>${esc(v.versionLabel||'')}</div>
+          <div class="ver-sub">${esc(v.changeSummary||'No change summary')}</div>
+          <div class="ver-sub">${esc(fmtWhen(v.publishedAt||v.createdAt))} · ${esc(v.createdByName||'Unknown')} · Pricing ${esc(v.pricingVersion||'—')}</div></div>
+        <div style="text-align:right"><span class="note">Schema v${v.templateSchemaVersion||1}</span></div>
+      </div>`).join('')
+      :'<div class="note">No published versions yet.</div>');
+}
+async function saveTemplateDetails(){
+  const t=templates.find(x=>x.templateKey===tplKey);if(!t)return;
+  const body={name:document.getElementById('tplName').value.trim(),
+              budgetType:document.getElementById('tplType').value.trim(),
+              description:document.getElementById('tplDesc').value};
+  if(!body.name){toast('Template name is required');return;}
+  try{
+    await api('templates/'+encodeURIComponent(t.templateKey),{method:'PATCH',body:JSON.stringify(body)});
+    await loadTemplates();toast('Template details saved');
+  }catch(e){toast('Could not save details: '+e.message);}
+}
+async function toggleTemplateActive(){
+  const t=templates.find(x=>x.templateKey===tplKey);if(!t)return;
+  const on=!t.isActive;
+  if(!on&&!confirm('Deactivate '+t.name+'?\n\nIt disappears from new-budget choices. Existing budgets that used it keep working and still open normally.'))return;
+  try{
+    await api('templates/'+encodeURIComponent(t.templateKey),{method:'PATCH',body:JSON.stringify({isActive:on})});
+    await loadTemplates();toast(t.name+(on?' activated':' deactivated'));
+  }catch(e){toast('Could not change that: '+e.message);}
+}
+/* Editing loads the template's document into the normal editor. The budget you
+   had open is discarded only after the usual unsaved-changes warning. */
+async function editTemplate(key){
+  const k=key||tplKey;if(!k)return;
+  if(!confirmDiscard())return;
+  let t;
+  try{t=await api('templates/'+encodeURIComponent(k));}
+  catch(e){toast('Could not load that template: '+e.message);return;}
+  if(!t.doc){toast('That template has no published version to edit');return;}
+  templateEdit={key:t.templateKey,name:t.name,version:t.currentVersion};
+  doc=migrate(JSON.parse(JSON.stringify(t.doc)));
+  doc.projectId='';                       // a template is not a project
+  dirty=false;lastSaved=null;selected.clear();
+  enableDocNav();fillForms();renderTemplateBanner();go('input');
+  toast('Editing template '+t.name+' — version '+(t.currentVersion||1));
+}
+function renderTemplateBanner(){
+  let el=document.getElementById('tplEditBanner');
+  if(!templateEdit){if(el)el.remove();return;}
+  if(!el){
+    el=document.createElement('div');el.id='tplEditBanner';el.className='tpl-banner no-print';
+    const main=document.querySelector('main');
+    if(main)main.insertBefore(el,main.firstChild);
+  }
+  el.innerHTML='<b>Editing Template: '+esc(templateEdit.name)+'</b>'
+    +'<span>Version '+esc(String(templateEdit.version||1))+'. Publishing creates a new version and affects only budgets created afterwards.</span>'
+    +'<span style="flex:1"></span>'
+    +'<button class="btn btn-sm btn-primary" onclick="publishTemplate()">Publish Template</button>'
+    +'<button class="btn btn-sm btn-ghost" onclick="exitTemplateEdit()">Cancel</button>';
+}
+function exitTemplateEdit(){
+  if(!confirmDiscard())return;
+  templateEdit=null;doc=null;dirty=false;selected.clear();
+  renderTemplateBanner();
+  ['nav-input','nav-budget','nav-csi'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
+  go('pricing');
+}
+async function publishTemplate(){
+  if(!templateEdit||!doc)return;
+  pullForms();
+  const summary=(prompt('Describe this template change (shown in the version history):','')||'').trim();
+  if(!confirm('Publish a new version of '+templateEdit.name+'?\n\nThis creates an immutable version. Existing budgets are not changed, recalculated or repriced.'))return;
+  const body={doc:JSON.parse(JSON.stringify(doc)),changeSummary:summary||null};
+  delete body.doc.projectId;delete body.doc.templateKey;delete body.doc.templateVersionId;
+  try{
+    const r=await api('templates/'+encodeURIComponent(templateEdit.key),{method:'PUT',body:JSON.stringify(body)});
+    dirty=false;renderSaveState();
+    templateEdit.version=r.versionNumber;renderTemplateBanner();
+    await loadTemplates();
+    toast('Published '+templateEdit.name+' version '+r.versionNumber);
+  }catch(e){toast('Publish failed: '+e.message);}
+}
+async function createTemplate(){
+  if(!doc&&!templates.length){toast('Open or duplicate a template first');return;}
+  const name=(prompt('Name the new budget type (for example, Commercial):','')||'').trim();
+  if(!name)return;
+  const key=(prompt('URL-safe key — lowercase letters, digits and hyphens:',
+    name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''))||'').trim();
+  if(!key)return;
+  const base=templates.find(x=>x.templateKey===tplKey);
+  let src=null;
+  try{src=base?await api('templates/'+encodeURIComponent(base.templateKey)):null;}catch(e){}
+  const d=src&&src.doc?JSON.parse(JSON.stringify(src.doc)):(doc?JSON.parse(JSON.stringify(doc)):null);
+  if(!d){toast('No template document to start from');return;}
+  d.name=name;d.type=name;
+  try{
+    await api('templates',{method:'POST',body:JSON.stringify({templateKey:key,name,budgetType:name,
+      description:'Created from '+(base?base.name:'the open budget'),doc:d,changeSummary:'Initial version'})});
+    tplKey=key;await loadTemplates();toast('Created template '+name);
+  }catch(e){toast('Could not create that template: '+e.message);}
+}
+function duplicateTemplate(){createTemplate();}
+
+/* New budgets clone the template's current published version. Opening an existing
+   budget never does this — a saved budget owns its own document. */
+async function newBudgetFromTemplate(key){
+  if(!key)return;
+  if(!confirmDiscard())return;
+  let t=null;
+  try{t=await api('templates/'+encodeURIComponent(key));}catch(e){}
+  if(!t||!t.doc){
+    // Offline or not yet published: fall back to the built-in defaults rather than
+    // leaving the user with a button that does nothing.
+    applyNewBudget();
+    toast('Started from the built-in defaults — the published template could not be loaded');
+    return;
+  }
+  const d=JSON.parse(JSON.stringify(t.doc));        // deep clone — never share the template object
+  d.projectId='';d.name='';d.address='';d.status='Draft';
+  d.type=t.budgetType||t.name||d.type;
+  d.templateKey=t.templateKey;
+  d.templateVersionId=t.currentVersionId||null;
+  d.pricingVersion=d.pricingVersion||(pricing&&pricing.version)||'';
+  (d.lines||[]).forEach(l=>{l.lineId=newLineId();});   // fresh identity per budget
+  d.created=new Date().toISOString();d.updated=d.created;
+  templateEdit=null;renderTemplateBanner();
+  doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
+  enableDocNav();fillForms();go('input');
+  toast('New '+(t.name||'budget')+' from template version '+(t.currentVersion||1));
+}
+
 function newBudget(kind){
   if(!confirmDiscard())return;
-  doc=blankDoc(kind);dirty=false;lastSaved=null;
+  applyNewBudget(kind);
+}
+/* The discard prompt has already been answered by the caller. */
+function applyNewBudget(kind){
+  doc=blankDoc(kind);dirty=false;lastSaved=null;selected.clear();
+  templateEdit=null;renderTemplateBanner();
   enableDocNav();fillForms();go('input');
   if(kind==='blank')toast('Blank budget — build the scope from the CSI catalog on the Budget page');
 }
@@ -1438,11 +2090,141 @@ async function openBudget(pid,page){
   if(!confirmDiscard())return;
   const d=await sGet('budget-'+pid);
   if(!d){toast('Could not load '+pid);return;}
-  doc=migrate(d);dirty=false;lastSaved=null;
+  doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
+  templateEdit=null;renderTemplateBanner();      // opening a budget leaves template mode
   enableDocNav();fillForms();go(page||'budget');
 }
+/* ---- Budgets list row actions ----
+   Whole-budget actions live behind one menu so Delete is deliberate and clearly
+   separated from batch line-item deletion inside a budget. The menu is a single
+   shared element positioned from the trigger, which keeps "only one open" true
+   by construction and survives paintHome() rebuilding every row. */
+let rowMenuTrigger=null,versionsReturn=null,versionsPid=null;
+const ROW_ACTIONS=[{act:'edit',label:'Edit'},{act:'versions',label:'Versions'},
+                   {act:'sep'},{act:'delete',label:'Delete',danger:true}];
+function rowMenuItems(){return [...document.querySelectorAll('#rowMenu .rowmenu-item')];}
+function openRowMenu(btn){
+  const wasOpen=rowMenuTrigger===btn;
+  closeRowMenu();
+  if(wasOpen)return;                       // the trigger toggles its own menu
+  const m=document.getElementById('rowMenu');
+  m.dataset.pid=btn.dataset.pid;           // never interpolated into markup
+  m.innerHTML=ROW_ACTIONS.map(a=>a.act==='sep'?'<div class="rowmenu-sep"></div>'
+    :`<button class="rowmenu-item${a.danger?' danger':''}" role="menuitem" tabindex="-1" data-act="${a.act}">${a.label}</button>`).join('');
+  rowMenuItems().forEach(el=>{el.onclick=()=>rowMenuAction(el.dataset.act);});
+  m.style.display='block';
+  const r=btn.getBoundingClientRect();
+  m.style.top=(r.bottom+4)+'px';
+  m.style.left=Math.max(8,Math.min(r.right-m.offsetWidth,window.innerWidth-m.offsetWidth-8))+'px';
+  m.setAttribute('aria-hidden','false');
+  btn.setAttribute('aria-expanded','true');
+  rowMenuTrigger=btn;
+  rowMenuItems()[0].focus();
+}
+function closeRowMenu(refocus){
+  const m=document.getElementById('rowMenu'),t=rowMenuTrigger;
+  rowMenuTrigger=null;
+  m.style.display='none';m.setAttribute('aria-hidden','true');m.innerHTML='';
+  if(t){t.setAttribute('aria-expanded','false');if(refocus&&document.body.contains(t))t.focus();}
+}
+function rowMenuAction(act){
+  const pid=document.getElementById('rowMenu').dataset.pid,t=rowMenuTrigger;
+  versionsReturn=t;
+  closeRowMenu(act==='delete');            // the other two navigate away from the row
+  if(act==='edit')openBudget(pid);
+  else if(act==='versions')openVersions(pid);
+  else if(act==='delete')deleteBudget(pid);
+}
+document.addEventListener('click',e=>{     // outside click closes; the trigger stops propagation
+  if(rowMenuTrigger&&!e.target.closest('#rowMenu'))closeRowMenu(false);
+  if(profileOpen&&!e.target.closest('#profileMenu')&&!e.target.closest('#profileBtn'))closeProfile(false);
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&profileOpen){e.preventDefault();closeProfile(true);return;}
+  if(e.key==='Escape'&&document.getElementById('versionsModal').style.display==='flex'&&!rowMenuTrigger){
+    e.preventDefault();closeVersions();return;}
+  if(!rowMenuTrigger)return;
+  const items=rowMenuItems(),i=items.indexOf(document.activeElement);
+  const step=d=>items[i<0?(d>0?0:items.length-1):(i+d+items.length)%items.length].focus();
+  if(e.key==='Escape'){e.preventDefault();closeRowMenu(true);}
+  else if(e.key==='ArrowDown'){e.preventDefault();step(1);}
+  else if(e.key==='ArrowUp'){e.preventDefault();step(-1);}
+  else if(e.key==='Tab'){closeRowMenu(false);}
+});
+
+/* ---- Version history (read-only) ----
+   Historical documents are rendered straight from the API response and are
+   never assigned to the global `doc`, so opening history cannot disturb
+   unsaved work in the budget you have open. */
+const vBody=()=>document.getElementById('versionsBody');
+function fmtWhen(iso){
+  if(!iso)return 'Unknown date';
+  const d=new Date(iso);
+  return isNaN(d.getTime())?'Unknown date'
+    :d.toLocaleString('en-US',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+async function openVersions(pid){
+  versionsPid=pid;
+  document.getElementById('versionsTitle').textContent='Budget Versions — '+pid;
+  document.getElementById('versionsModal').style.display='flex';
+  vBody().innerHTML='<div class="note">Loading version history…</div>';
+  try{
+    renderVersionList(await api('budget/'+encodeURIComponent(pid)+'/versions'));
+  }catch(e){
+    vBody().innerHTML='<div class="note" style="color:var(--danger)">Could not load version history: '+esc(e.message)+'</div>';
+  }
+}
+function renderVersionList(data){
+  const vs=data.versions||[];
+  if(!vs.length){
+    vBody().innerHTML='<div class="note">No saved versions yet. Saving this budget records its first version.</div>';return;}
+  vBody().innerHTML=vs.map(v=>`<div class="ver-row${v.isCurrent?' current':''}">
+      <div><div class="ver-num">Version ${v.versionNumber}</div>${v.isCurrent?'<span class="badge ok">Current</span>':''}</div>
+      <div><div>${esc(v.changeSummary||'No change summary')}</div>
+        <div class="ver-sub">${esc(fmtWhen(v.createdAt))} · ${esc(v.createdByName||'Unknown')} · ${esc(v.status||'—')} · Pricing ${esc(v.pricingVersion||'—')}${v.templateVersion?' · Template v'+esc(v.templateVersion):''}</div></div>
+      <div style="text-align:right">
+        <div class="calc">${usd(v.contractSum||0)}</div>
+        <div class="ver-sub">${usd(v.projectCost||0)} total project</div>
+        <button class="btn btn-ghost btn-sm" data-vn="${v.versionNumber}" style="margin-top:8px">Open</button>
+      </div></div>`).join('');
+  vBody().querySelectorAll('button[data-vn]').forEach(b=>{b.onclick=()=>openVersionDetail(+b.dataset.vn);});
+}
+async function openVersionDetail(vn){
+  vBody().innerHTML='<div class="note">Loading version '+vn+'…</div>';
+  let d;
+  try{ d=await api('budget/'+encodeURIComponent(versionsPid)+'/versions/'+vn); }
+  catch(e){ vBody().innerHTML='<div class="note" style="color:var(--danger)">Could not load version '+vn+': '+esc(e.message)+'</div>';return; }
+  const v=d.version,rows=d.sovLines||[];
+  vBody().innerHTML=
+    '<div class="ver-hist">Historical version — read only. Nothing here is editable, and your open budget is untouched.</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">'
+    +'<button class="btn btn-ghost btn-sm" id="verBack">Back to Versions</button>'
+    +'<span class="note">Version '+v.versionNumber+' · '+esc(fmtWhen(v.createdAt))+' · '+esc(v.createdByName||'Unknown')+'</span></div>'
+    +'<div style="display:flex;gap:24px;margin-bottom:14px;font-size:13px">'
+    +'<div><div class="eyebrow">Contract Sum</div><div class="calc">'+usd(v.contractSum||0)+'</div></div>'
+    +'<div><div class="eyebrow">Total Project</div><div class="calc">'+usd(v.projectCost||0)+'</div></div>'
+    +'<div><div class="eyebrow">Status</div><div>'+esc(v.status||'—')+'</div></div>'
+    +'<div><div class="eyebrow">Pricing Version</div><div>'+esc(v.pricingVersion||'—')+'</div></div></div>'
+    +'<div style="max-height:340px;overflow:auto;border:1px solid var(--ink-150);border-radius:var(--r)">'
+    +'<table class="tbl"><thead><tr><th>Code</th><th>Description</th><th>Group</th>'
+    +'<th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>'
+    +rows.map(r=>'<tr><td class="mono">'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td><td>'+esc(r.grp)+'</td>'
+      +'<td class="r">'+num(r.qty)+'</td><td class="r">'+usd2(r.rate)+'</td><td class="r">'+usd(r.total)+'</td></tr>').join('')
+    +'</tbody></table></div>'
+    +'<div class="note" style="margin-top:10px">'+rows.length+' schedule of values lines recorded in this version.</div>';
+  document.getElementById('verBack').onclick=()=>openVersions(versionsPid);
+}
+function closeVersions(){
+  document.getElementById('versionsModal').style.display='none';
+  vBody().innerHTML='';
+  if(versionsReturn&&document.body.contains(versionsReturn))versionsReturn.focus();
+  versionsReturn=null;
+}
+
 async function deleteBudget(pid){
-  if(!confirm('Delete '+pid+'? This cannot be undone.'))return;
+  // Deletion is recoverable now: the API flags the budget, keeps its saved
+  // version history, and restores it if the same project ID is saved again.
+  if(!confirm('Delete '+pid+'?\n\nIt will be removed from your budgets list. Its saved version history is kept, and an administrator can restore it.'))return;
   try{await sDel('budget-'+pid);}catch(e){toast('Delete failed: '+e.message);return;}
   if(doc&&doc.projectId===pid){doc=null;dirty=false;
     ['nav-input','nav-budget','nav-csi'].forEach(id=>{document.getElementById(id).disabled=true;});}
@@ -1456,6 +2238,7 @@ function fillForms(){
   document.getElementById('pAddr').value=doc.address;
   document.getElementById('pSF').value=doc.resSF;
   document.getElementById('pASF').value=doc.amenSF;
+  document.getElementById('pSiteSF').value=doc.siteSF||0;
   document.getElementById('pType').value=doc.type||'Multifamily';
   document.getElementById('cVal').value=doc.contingency.val;
   document.getElementById('pcLand').value=doc.projectCosts.land;
@@ -1470,6 +2253,7 @@ function pullForms(){
   doc.address=document.getElementById('pAddr').value.trim();
   doc.resSF=+document.getElementById('pSF').value||0;
   doc.amenSF=+document.getElementById('pASF').value||0;
+  doc.siteSF=+document.getElementById('pSiteSF').value||0;
   doc.type=document.getElementById('pType').value||doc.type||'Multifamily';
 }
 function validateId(){
@@ -1487,26 +2271,65 @@ function toBudget(){
 }
 
 /* ============ CALC ============ */
-function totUnits(){return doc.units.reduce((s,u)=>s+u.count,0);}
+function totUnits(){return doc.units.reduce((s,u)=>s+nz(u.count),0);}
 function lineQty(it){
-  if(!it.auto)return it.qty;
-  if(it.basis==='sf')return doc.resSF;
-  if(it.basis==='asf')return doc.amenSF;
+  if(!it.auto)return nz(it.qty);
+  if(it.basis==='sf')return nz(doc.resSF);
+  if(it.basis==='asf')return nz(doc.amenSF);
   if(it.basis==='unit')return totUnits();
   return 1;
 }
-function scopeSum(sc){return doc.lines.filter(l=>l.scope===sc).reduce((s,it)=>s+lineQty(it)*it.unit,0);}
+/* If we are not building a clubhouse, the amenity scope is not part of this project.
+   scopeSum returns 0 for an inactive scope rather than merely hiding it — an amenity line
+   on a lump-sum basis, or with a manually overridden quantity, would otherwise keep
+   contributing money that no longer appears anywhere on screen. */
+function scopeActive(sc){return sc!=='amen'||(+doc.amenSF||0)>0;}
+function activeScopes(){return ['res','amen','soft'].filter(scopeActive);}
+function scopeSum(sc){
+  if(!scopeActive(sc))return 0;
+  return doc.lines.filter(l=>l.scope===sc).reduce((s,it)=>s+lineQty(it)*nz(it.unit),0);
+}
 function parts(){
   const res=scopeSum('res'),amen=scopeSum('amen'),soft=scopeSum('soft');
   const hard=res+amen;
-  const profit=doc.companies.reduce((s,c)=>s+hard*c.pct/100,0);
+  const profit=doc.companies.reduce((s,c)=>s+hard*nz(c.pct)/100,0);
   const c=doc.contingency;
-  const cont=c.mode==='pct'?hard*c.val/100:c.mode==='psf'?(doc.resSF+doc.amenSF)*c.val:c.val;
+  const cont=c.mode==='pct'?hard*nz(c.val)/100
+    :c.mode==='psf'?(nz(doc.resSF)+nz(doc.amenSF))*nz(c.val):nz(c.val);
   const contract=hard+profit+cont;
   const pc=doc.projectCosts;
-  const fees=pc.dev+pc.mkt+pc.cls;
-  const project=contract+soft+pc.land+fees;
+  const fees=nz(pc.dev)+nz(pc.mkt)+nz(pc.cls);
+  const project=contract+soft+nz(pc.land)+fees;
   return {res,amen,soft,hard,profit,cont,contract,fees,project};
+}
+/* Two different efficiencies, easy to confuse:
+     building efficiency = leasable unit SF ÷ residential buildable SF  (how much of the
+                           structure you can rent)
+     site efficiency     = total building SF ÷ total site SF            (how hard the land
+                           is working — the floor area ratio, as a percentage)
+   Site SF is land, so it prices nothing; it only feeds these measures. */
+const SQFT_PER_ACRE=43560;
+function siteMetrics(){
+  const bldg=nz(doc.resSF)+nz(doc.amenSF);
+  const site=+doc.siteSF||0;
+  const unitSF=doc.units.reduce((s,u)=>s+nz(u.sf)*nz(u.count),0);
+  const acres=site?site/SQFT_PER_ACRE:0;
+  return {bldg,site,unitSF,acres,
+    siteEff:site?bldg/site:null,
+    bldgEff:doc.resSF>0?unitSF/doc.resSF:null,
+    density:acres?totUnits()/acres:null};
+}
+function renderSiteMetrics(){
+  const m=siteMetrics();
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('mSiteAcres',m.site?m.acres.toFixed(2)+' ac':'—');
+  set('mSiteEff',m.siteEff!==null?(100*m.siteEff).toFixed(1)+'%':'—');
+  set('mDensity',m.density!==null?m.density.toFixed(1)+' u/ac':'—');
+  set('mBldgEff',m.bldgEff!==null?(100*m.bldgEff).toFixed(1)+'%':'—');
+  const et=document.getElementById('mBldgEffTile');
+  if(et)et.classList.toggle('warn',m.bldgEff!==null&&m.bldgEff>1);
+  const st=document.getElementById('mSiteEffTile');
+  if(st)st.classList.toggle('warn',m.siteEff!==null&&m.siteEff>1);
 }
 function grossIncome(){
   const tu=totUnits();
@@ -1527,8 +2350,8 @@ function renderExpenses(){
     b.insertAdjacentHTML('beforeend',`<tr>
       <td><input type="text" data-k="exp.${i}.label" value="${esc(e.label)}" oninput="doc.expenses[${i}].label=this.value;markDirty()"></td>
       <td><select data-k="exp.${i}.per" onchange="doc.expenses[${i}].per=this.value;if(this.value==='fixed'){doc.expenses[${i}].auto=false;doc.expenses[${i}].count=doc.expenses[${i}].count||1}else{doc.expenses[${i}].auto=true}touch()" style="width:96px;font-size:12px;padding:5px 8px">
-        <option value="unit" ${e.per==='unit'?'selected':''}>per unit</option>
-        <option value="fixed" ${e.per==='fixed'?'selected':''}>fixed / mo</option></select></td>
+        <option value="unit" ${e.per==='unit'?'selected':''}>Per Unit</option>
+        <option value="fixed" ${e.per==='fixed'?'selected':''}>Fixed / Mo</option></select></td>
       <td class="r"><input type="number" data-k="exp.${i}.rate" value="${e.rate}" min="0" step="1" style="width:80px" onchange="doc.expenses[${i}].rate=+this.value;touch()"></td>
       <td class="r"><span class="autodot${e.auto&&e.per!=='fixed'?' on':''}" title="${e.auto&&e.per!=='fixed'?'Counts every unit automatically':'Manual count'}"></span><input type="number" data-k="exp.${i}.count" value="${cnt}" min="0" style="width:70px" onchange="doc.expenses[${i}].count=+this.value;doc.expenses[${i}].auto=false;touch()"></td>
       <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
@@ -1602,14 +2425,22 @@ function addOther(){doc.other.push({label:'New income line',rate:0,count:0,auto:
    `collapsed` set so a recalc() triggered from anywhere does not spring them open. */
 function renderBudget(){
   const b=document.getElementById('budBody');b.innerHTML='';
-  document.getElementById('budEmpty').style.display=doc.lines.length?'none':'block';
-  ['res','amen','soft'].forEach(sc=>{
+  const shown=doc.lines.filter(l=>scopeActive(l.scope)).length;
+  document.getElementById('budEmpty').style.display=shown?'none':'block';
+  const hid=document.getElementById('amenHidden');
+  if(hid)hid.style.display=(!scopeActive('amen')&&doc.lines.some(l=>l.scope==='amen'))?'inline':'none';
+  activeScopes().forEach(sc=>{
     const scLines=doc.lines.map((l,gi)=>({l,gi})).filter(x=>x.l.scope===sc);
     if(!scLines.length)return;
     const scSum=scopeSum(sc),scShut=collapsed.has(sc);
     const nGrp=new Set(scLines.map(x=>x.l.grp)).size;
+    // Totals and percentages stay on the header when collapsed — that is the whole
+    // point of a collapsed section. The denominator is the scope sum, matching the
+    // "% Scope" column on the leaf rows beneath.
     b.insertAdjacentHTML('beforeend',`<tr class="scope-hd" data-toggle="scope:${esc(sc)}" title="${scShut?'Expand':'Collapse'} ${esc(SCOPES[sc])}">
-      <td colspan="7"><span class="caret">${scShut?'▸':'▾'}</span>${esc(SCOPES[sc])}${scShut?' <span class="shut">'+scLines.length+' lines · '+nGrp+' groups hidden</span>':''}<span class="div-sum">${usd(scSum)}</span></td></tr>`);
+      <td colspan="5"><span class="caret">${scShut?'▸':'▾'}</span>${esc(SCOPES[sc])}${scShut?' <span class="shut">'+scLines.length+' lines · '+nGrp+' groups hidden</span>':''}</td>
+      <td class="calc r strong">${usd(scSum)}</td><td class="calc r">${scSum?'100.0%':'—'}</td>
+      <td class="no-print"></td></tr>`);
     if(scShut)return;
     let lastGrp=null;
     scLines.forEach(({l:it,gi})=>{
@@ -1617,26 +2448,151 @@ function renderBudget(){
         const gSum=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((s,x)=>s+lineQty(x)*x.unit,0);
         const n=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).length,gShut=collapsed.has(sc+'|'+it.grp);
         b.insertAdjacentHTML('beforeend',`<tr class="grp-hd" data-toggle="grp:${esc(sc)}|${esc(it.grp)}" title="${gShut?'Expand':'Collapse'} ${esc(it.grp)}">
-          <td colspan="7"><span class="caret">${gShut?'▸':'▾'}</span>${esc(it.grp)}${gShut?' <span class="shut">'+n+' lines hidden</span>':''}<span class="div-sum mono">${usd(gSum)}</span></td></tr>`);}
+          <td colspan="5"><span class="caret">${gShut?'▸':'▾'}</span>${esc(it.grp)}${gShut?' <span class="shut">'+n+' lines hidden</span>':''}</td>
+          <td class="calc r strong">${usd(gSum)}</td><td class="calc r">${scSum?(100*gSum/scSum).toFixed(1)+'%':'—'}</td>
+          <td class="no-print"></td></tr>`);}
       if(collapsed.has(sc+'|'+it.grp))return;
       const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0,ed=isEdited(it);
-      b.insertAdjacentHTML('beforeend',`<tr${ed?' class="edited"':''}>
-        <td><span class="editdot${ed?' on':''}"${ed?' title="'+esc(editReason(it))+'"':''}></span><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${esc(it.code)}</span>
-          <input type="text" data-k="line.${gi}.desc" value="${esc(it.desc)}" style="width:calc(100% - 108px)" oninput="doc.lines[${gi}].desc=this.value;doc.lines[${gi}].edited=true;markDirty()"></td>
-        <td><select data-k="line.${gi}.basis" onchange="setBasis(${gi},this.value)" style="width:104px;font-size:12px;padding:5px 8px">
-          <option value="sf" ${it.basis==='sf'?'selected':''}>per res SF</option>
-          <option value="asf" ${it.basis==='asf'?'selected':''}>per amen SF</option>
-          <option value="unit" ${it.basis==='unit'?'selected':''}>per unit</option>
-          <option value="ls" ${it.basis==='ls'?'selected':''}>lump sum</option></select></td>
-        <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span><input type="number" data-k="line.${gi}.qty" value="${q}" min="0" style="width:88px"
-          onchange="doc.lines[${gi}].qty=+this.value;doc.lines[${gi}].auto=false;touch()"></td>
-        <td class="r"><input type="number" data-k="line.${gi}.unit" value="${it.unit}" min="0" step="0.01" style="width:96px"
-          onchange="doc.lines[${gi}].unit=+this.value;touch()"></td>
+      // Every interactive control keys off lineId, not the array index: a code edit
+      // can move this line to another group and a batch delete can shift every
+      // index below it, but the key stays valid across both.
+      const id=it.lineId;
+      const sel=selected.has(id);
+      b.insertAdjacentHTML('beforeend',`<tr class="${ed?'edited ':''}${sel?'sel':''}">
+        <td class="no-print selcell"><input type="checkbox" data-k="line.${id}.sel" ${sel?'checked':''}
+          aria-label="Select ${esc(it.desc)}" onchange="toggleSelect('${id}',this.checked,this)"></td>
+        <td><div class="lineitem">
+          <span class="editdot${ed?' on':''}"${ed?' title="'+esc(editReason(it))+'"':''}></span>
+          <input type="text" class="codein" data-k="line.${id}.code"
+            value="${esc(it.code)}" title="CSI code — changing it files the line under the matching division"
+            aria-label="CSI code for ${esc(it.desc)}" onchange="setLineCode('${id}',this.value)">
+          <input type="text" class="descin" data-k="line.${id}.desc" value="${esc(it.desc)}" oninput="setLineDesc('${id}',this.value)">
+        </div></td>
+        <td><select class="basisin" data-k="line.${id}.basis" onchange="setBasis('${id}',this.value)">
+          <option value="sf" ${it.basis==='sf'?'selected':''}>Per Res SF</option>
+          <option value="asf" ${it.basis==='asf'?'selected':''}>Per Amen SF</option>
+          <option value="unit" ${it.basis==='unit'?'selected':''}>Per Unit</option>
+          <option value="ls" ${it.basis==='ls'?'selected':''}>Lump Sum</option></select></td>
+        <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span><input type="number" data-k="line.${id}.qty" value="${q}" min="0" style="width:88px"
+          onchange="setLineQty('${id}',this.value)"></td>
+        <td class="r"><input type="number" data-k="line.${id}.unit" value="${it.unit}" min="0" step="0.01" style="width:96px"
+          onchange="setLineRate('${id}',this.value)"></td>
         <td class="calc r strong">${usd(tot)}</td><td class="calc r">${pct.toFixed(1)}%</td>
-        <td class="no-print"><button class="btn-x" title="Remove line item" onclick="doc.lines.splice(${gi},1);touch()">×</button></td></tr>`);
+        <td class="no-print"><button class="btn-x" title="Remove line item" aria-label="Remove ${esc(it.desc)}" onclick="removeLine('${id}')">×</button></td></tr>`);
     });
   });
   renderEditLegend();
+  renderSelectionBar();
+}
+
+/* ---- line lookup and mutation, all by stable lineId ---- */
+function lineById(id){return doc?doc.lines.find(l=>l.lineId===id)||null:null;}
+function lineIndexById(id){return doc?doc.lines.findIndex(l=>l.lineId===id):-1;}
+function setLineDesc(id,v){const l=lineById(id);if(!l)return;l.desc=v;l.edited=true;markDirty();}
+function setLineQty(id,v){const l=lineById(id);if(!l)return;l.qty=+v;l.auto=false;touch();}
+function setLineRate(id,v){const l=lineById(id);if(!l)return;l.unit=+v;touch();}
+/* Deleting one line asks first. There is no undo, so the wording says so rather
+   than implying the change is recoverable; it lands in the database on the next
+   save, like every other edit. */
+function removeLine(id){
+  const i=lineIndexById(id);if(i<0)return;
+  const l=doc.lines[i],what=(l.desc||l.code||'this line item').trim();
+  if(!confirm('Delete "'+what+'"?\n\nThis cannot be undone. The line is removed from the open budget and the change is written to the database the next time you save.'))return;
+  selected.delete(id);
+  doc.lines.splice(i,1);
+  touch();
+}
+
+/* ---- editable CSI codes ----
+   Normalize the shapes people actually type — 033000 and 03-30-00 — into the
+   spaced MasterFormat form. Anything unrecognized (SC-01, a dash, free text) is
+   preserved exactly as typed: custom codes are intentional. */
+function normalizeCsi(raw){
+  const s=String(raw||'').trim();
+  const digits=s.replace(/[\s.\-]/g,'');
+  return /^\d{6}$/.test(digits)?digits.slice(0,2)+' '+digits.slice(2,4)+' '+digits.slice(4,6):s;
+}
+/* Soft-cost codes carry their own grouping. Filing SC-* by its first two
+   characters would send every soft cost to Custom, so they map by number:
+   SC-01..19 are engineering and design, SC-20+ are impact and fees. An existing
+   soft-cost heading is respected — the user may have filed it deliberately. */
+function grpForCode(code,line){
+  const c=String(code||'').trim().toUpperCase();
+  const sc=c.match(/^SC-(\d+)/);
+  if(sc){
+    if(line&&/^Soft Costs/i.test(line.grp||''))return line.grp;
+    return +sc[1]>=20?'Soft Costs — Impact & Fees':'Soft Costs — Engineering & Design';
+  }
+  return csiDivOf(c);
+}
+/* A code change moves the line to the matching group and nothing else: scope,
+   description, basis, quantity, auto/manual state, rate, baseUnit, total and
+   lineId are all left alone. Removing and reinserting keeps same-group lines
+   contiguous, which is what stops renderBudget emitting a duplicate heading. */
+function setLineCode(id,raw){
+  const l=lineById(id);if(!l)return;
+  const code=normalizeCsi(raw),grp=grpForCode(code,l);
+  if(code===l.code&&grp===l.grp){touch();return;}
+  l.code=code;l.edited=true;
+  if(grp!==l.grp){
+    doc.lines.splice(lineIndexById(id),1);
+    l.grp=grp;
+    insertLine(l);
+    revealLine(l.scope,grp);
+  }
+  touch();
+}
+
+/* ---- batch selection ----
+   Selection lives in a Set of lineIds and is re-applied by renderBudget, so it
+   survives every recalc and DOM rebuild. Headers are never selectable. */
+const selected=new Set();
+let batchBusy=false;
+function visibleLineIds(){
+  const out=[];
+  if(!doc)return out;
+  activeScopes().forEach(sc=>{
+    if(collapsed.has(sc))return;
+    doc.lines.forEach(l=>{if(l.scope===sc&&!collapsed.has(sc+'|'+l.grp))out.push(l.lineId);});
+  });
+  return out;
+}
+function toggleSelect(id,on,el){
+  on?selected.add(id):selected.delete(id);
+  const tr=el&&el.closest('tr');
+  if(tr)tr.classList.toggle('sel',on);      // no re-render, so the checkbox keeps focus
+  renderSelectionBar();
+}
+function selectAllVisible(on){
+  visibleLineIds().forEach(id=>{on?selected.add(id):selected.delete(id);});
+  renderBudget();
+}
+function clearSelection(){selected.clear();renderBudget();}
+function renderSelectionBar(){
+  const bar=document.getElementById('selBar');if(!bar)return;
+  const n=selected.size;
+  bar.style.display=n?'flex':'none';
+  const c=document.getElementById('selCount');
+  if(c)c.textContent=n+(n===1?' Item Selected':' Items Selected');
+  const all=document.getElementById('selAll');
+  if(all){
+    const vis=visibleLineIds();
+    all.checked=vis.length>0&&vis.every(id=>selected.has(id));
+    all.indeterminate=!all.checked&&vis.some(id=>selected.has(id));
+  }
+}
+function deleteSelected(){
+  if(batchBusy)return;                       // one action at a time
+  const n=selected.size;
+  if(!n)return;
+  if(!confirm('Delete '+n+' Budget Line Item'+(n===1?'':'s')+'?\n\nThis changes only the open budget. Nothing is saved until you save it.'))return;
+  batchBusy=true;
+  try{
+    doc.lines=doc.lines.filter(l=>!selected.has(l.lineId));
+    selected.clear();                        // deleted IDs cannot linger in the Set
+    touch();                                 // one recalc for the whole batch
+    toast(n+(n===1?' line item deleted':' line items deleted')+' — save to keep the change');
+  }finally{batchBusy=false;}
 }
 /* ============ CSI SCHEDULE OF VALUES ============
    One model, three consumers: the CSI tab, the Excel sheet and the PDF section. The
@@ -1649,8 +2605,8 @@ function csiDivKey(code){
 }
 function csiSchedule(){
   const p=parts(),divs=new Map(),soft=[],orphans=[];
-  doc.lines.forEach(l=>{
-    const row={code:l.code,desc:l.desc,scope:l.scope,basis:l.basis,
+  doc.lines.filter(l=>scopeActive(l.scope)).forEach(l=>{
+    const row={code:l.code,desc:l.desc,scope:l.scope,grp:l.grp,basis:l.basis,
                qty:lineQty(l),rate:l.unit,total:lineQty(l)*l.unit,edited:isEdited(l)};
     if(l.scope==='soft'){soft.push(row);return;}
     const k=csiDivKey(l.code);
@@ -1662,15 +2618,23 @@ function csiSchedule(){
     const rows=divs.get(k).sort((a,z)=>String(a.code).localeCompare(String(z.code)));
     return {key:k,title:CSI_DIV[k],rows,total:rows.reduce((s,r)=>s+r.total,0)};
   });
-  if(orphans.length)divisions.push({key:'--',title:'Uncoded / custom scope',
+  if(orphans.length)divisions.push({key:'--',title:'Uncoded / Custom Scope',
     rows:orphans.sort((a,z)=>String(a.code).localeCompare(String(z.code))),
     total:orphans.reduce((s,r)=>s+r.total,0)});
   const markups=[];
   doc.companies.forEach(c=>{if(c.pct>0)markups.push({code:'99 01 00',desc:'Profit — '+c.name,total:p.hard*c.pct/100});});
   if(p.cont>0)markups.push({code:'99 03 00',desc:'Construction contingency',total:p.cont});
   soft.sort((a,z)=>String(a.code).localeCompare(String(z.code)));
-  return {divisions,markups,soft,
-          softTotal:soft.reduce((s,r)=>s+r.total,0),
+  // Soft costs are grouped by their own heading, and their percentages use total
+  // soft costs as the denominator — NOT the contract sum, which excludes them
+  // (DATA_CONTRACT rule 3). The column is labelled "% Soft" to say so.
+  const softTotal=soft.reduce((s,r)=>s+r.total,0);
+  const sg=new Map();
+  soft.forEach(r=>{const k=r.grp||'Soft Costs';if(!sg.has(k))sg.set(k,[]);sg.get(k).push(r);});
+  const softGroups=[...sg.keys()].map(k=>({grp:k,rows:sg.get(k),
+    total:sg.get(k).reduce((s,r)=>s+r.total,0)}));
+  return {divisions,markups,soft,softGroups,softTotal,
+          markupsTotal:markups.reduce((s,m)=>s+m.total,0),
           hard:p.hard,contract:p.contract,project:p.project};
 }
 function renderCsi(){
@@ -1681,7 +2645,8 @@ function renderCsi(){
   document.getElementById('csiEmpty').style.display=any?'none':'block';
   const pct=v=>sch.contract?(100*v/sch.contract).toFixed(1)+'%':'—';
   sch.divisions.forEach(d=>{
-    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="8">${esc(d.title)}<span class="div-sum">${usd(d.total)}</span></td></tr>`);
+    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="6">${esc(d.title)}</td>
+      <td class="calc r strong">${usd(d.total)}</td><td class="calc r">${pct(d.total)}</td></tr>`);
     d.rows.forEach(r=>{
       b.insertAdjacentHTML('beforeend',`<tr${r.edited?' class="edited"':''}>
         <td class="mono" style="font-size:12px;color:var(--green-700)"><span class="editdot${r.edited?' on':''}"></span>${esc(r.code)}</td>
@@ -1693,7 +2658,8 @@ function renderCsi(){
     });
   });
   if(sch.markups.length){
-    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="8">Division 99 — Markups<span class="div-sum">${usd(sch.markups.reduce((s,m)=>s+m.total,0))}</span></td></tr>`);
+    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="6">Division 99 — Markups</td>
+      <td class="calc r strong">${usd(sch.markupsTotal)}</td><td class="calc r">${pct(sch.markupsTotal)}</td></tr>`);
     sch.markups.forEach(m=>{
       b.insertAdjacentHTML('beforeend',`<tr>
         <td class="mono" style="font-size:12px;color:var(--green-700)"><span class="editdot"></span>${esc(m.code)}</td>
@@ -1701,20 +2667,26 @@ function renderCsi(){
         <td class="calc r strong">${usd(m.total)}</td><td class="calc r" style="color:var(--ink-400)">${pct(m.total)}</td></tr>`);
     });
   }
-  b.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="6">Contract sum</td>
+  b.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="6">Contract Sum</td>
     <td class="calc r strong">${usd(sch.contract)}</td><td class="calc r">100%</td></tr>`);
 
   const sb=document.getElementById('csiSoftBody');sb.innerHTML='';
-  sch.soft.forEach(r=>{
-    sb.insertAdjacentHTML('beforeend',`<tr${r.edited?' class="edited"':''}>
-      <td class="mono" style="font-size:12px;color:var(--green-700)"><span class="editdot${r.edited?' on':''}"></span>${esc(r.code)}</td>
-      <td>${esc(r.desc)}</td>
-      <td class="mono" style="font-size:12px;color:var(--ink-500)">${esc(BASIS_LABEL[r.basis]||r.basis)}</td>
-      <td class="calc r">${num(r.qty)}</td><td class="calc r">${usd2(r.rate)}</td>
-      <td class="calc r strong">${usd(r.total)}</td></tr>`);
+  const spct=v=>sch.softTotal?(100*v/sch.softTotal).toFixed(1)+'%':'—';
+  sch.softGroups.forEach(g=>{
+    sb.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="5">${esc(g.grp)}</td>
+      <td class="calc r strong">${usd(g.total)}</td><td class="calc r">${spct(g.total)}</td></tr>`);
+    g.rows.forEach(r=>{
+      sb.insertAdjacentHTML('beforeend',`<tr${r.edited?' class="edited"':''}>
+        <td class="mono" style="font-size:12px;color:var(--green-700)"><span class="editdot${r.edited?' on':''}"></span>${esc(r.code)}</td>
+        <td>${esc(r.desc)}</td>
+        <td class="mono" style="font-size:12px;color:var(--ink-500)">${esc(BASIS_LABEL[r.basis]||r.basis)}</td>
+        <td class="calc r">${num(r.qty)}</td><td class="calc r">${usd2(r.rate)}</td>
+        <td class="calc r strong">${usd(r.total)}</td>
+        <td class="calc r" style="color:var(--ink-400)">${spct(r.total)}</td></tr>`);
+    });
   });
-  sb.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="5">Total soft costs</td>
-    <td class="calc r strong">${usd(sch.softTotal)}</td></tr>`);
+  sb.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="5">Total Soft Costs</td>
+    <td class="calc r strong">${usd(sch.softTotal)}</td><td class="calc r">${sch.softTotal?'100.0%':'—'}</td></tr>`);
 
   document.getElementById('csiMeta').textContent=
     (doc.projectId||'—')+' · '+sch.divisions.length+' divisions · contract '+usd(sch.contract);
@@ -1736,15 +2708,56 @@ function collapseAll(){
   ['res','amen','soft'].forEach(sc=>{if(doc.lines.some(l=>l.scope===sc))collapsed.add(sc);});
   renderBudget();
 }
-function setBasis(i,v){doc.lines[i].basis=v;doc.lines[i].auto=v!=='ls';doc.lines[i].edited=true;if(v==='ls')doc.lines[i].qty=doc.lines[i].qty||1;touch();}
+function setBasis(id,v){const l=lineById(id);if(!l)return;l.basis=v;l.auto=v!=='ls';l.edited=true;if(v==='ls')l.qty=l.qty||1;touch();}
 
 /* ---- add lines via CSI catalog ---- */
-function addLine(){document.getElementById('pickSearch').value='';document.getElementById('pickModal').style.display='flex';renderPick();document.getElementById('pickSearch').focus();}
+function addLine(){
+  document.getElementById('pickSearch').value='';
+  fillPickGroups();
+  document.getElementById('pickModal').style.display='flex';
+  renderPick();
+  document.getElementById('pickSearch').focus();
+}
+/* Groups already in use for the chosen scope, in the order they appear, so a line can be
+   filed under an existing heading like "Site Finish" instead of starting a new one. */
+function groupsFor(scope){
+  const out=[];
+  doc.lines.forEach(l=>{if(l.scope===scope&&l.grp&&!out.includes(l.grp))out.push(l.grp);});
+  return out;
+}
+function fillPickGroups(){
+  const sel=document.getElementById('pickGroup');if(!sel)return;
+  const scope=document.getElementById('pickScope').value,prev=sel.value;
+  sel.innerHTML='<option value="">Auto — by CSI division</option>'
+    +groupsFor(scope).map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('')
+    +'<option value="__new">New group…</option>';
+  if([...sel.options].some(o=>o.value===prev))sel.value=prev;
+}
+/* Insert next to the group's existing lines rather than appending. renderBudget starts a
+   new heading whenever grp changes, so an appended line would render a second, duplicate
+   heading for a group that already exists further up. */
+function insertLine(line){
+  let at=-1;
+  doc.lines.forEach((l,i)=>{if(l.scope===line.scope&&l.grp===line.grp)at=i;});
+  if(at<0)doc.lines.push(line); else doc.lines.splice(at+1,0,line);
+  return at<0?doc.lines.length-1:at+1;
+}
+/* Resolve what the picker asked for into an actual group name. */
+function chosenGroup(fallback){
+  const sel=document.getElementById('pickGroup');
+  const v=sel?sel.value:'';
+  if(v==='__new'){
+    const name=(prompt('Name the new group','New group')||'').trim();
+    return name||fallback;
+  }
+  return v||fallback;
+}
 function closePick(){document.getElementById('pickModal').style.display='none';}
 function addBlankLine(){
   const scope=document.getElementById('pickScope').value;
-  doc.lines.push({code:'—',grp:'Custom',scope,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1,baseUnit:0,custom:true});
-  revealLine(scope,'Custom');
+  const grp=chosenGroup('Custom');
+  insertLine({lineId:newLineId(),code:'—',grp,scope,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1,baseUnit:0,custom:true});
+  revealLine(scope,grp);
   closePick();touch();toast('Blank line added');
 }
 /* A new line dropped into a collapsed scope or group is invisible, which reads as
@@ -1773,10 +2786,12 @@ function renderPick(){
 function pickCsi(code,title){
   const scope=document.getElementById('pickScope').value;
   const basis=scope==='amen'?'asf':'sf';
-  const grp=csiDivOf(code);
-  doc.lines.push({code,grp,scope,desc:title,basis,unit:0,auto:true,qty:0,baseUnit:0,custom:true});
+  const grp=chosenGroup(csiDivOf(code));
+  insertLine({lineId:newLineId(),code,grp,scope,desc:title,basis,unit:0,auto:true,qty:0,baseUnit:0,custom:true});
   revealLine(scope,grp);
-  closePick();touch();toast(code+' added — set the rate');
+  closePick();touch();
+  toast(scopeActive(scope)?code+' added — set the rate'
+        :code+' added to Amenity, which is hidden until amenity SF is set');
 }
 
 /* ============ RENDER: COMPANIES / SUMMARY ============ */
@@ -1804,6 +2819,7 @@ function renderSummary(){
   const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF;
   document.getElementById('rRes').textContent=usd(p.res);
   document.getElementById('rAmen').textContent=usd(p.amen);
+  document.getElementById('rAmenRow').style.display=scopeActive('amen')?'flex':'none';
   document.getElementById('rHard').textContent=usd(p.hard);
   document.getElementById('rProfit').textContent=usd(p.profit);
   document.getElementById('rCont').textContent=usd(p.cont);
@@ -1826,7 +2842,7 @@ function renderSummary(){
   document.getElementById('bTitle').textContent=doc.projectId?doc.projectId+' — '+(doc.name||'Untitled'):'Budget';
   document.getElementById('bSub').textContent=[doc.address,doc.type,num(doc.resSF)+' SF res + '+num(doc.amenSF)+' SF amenity'].filter(Boolean).join(' · ');
   const sb=document.getElementById('sovBody');sb.innerHTML='';
-  ['res','amen'].forEach(sc=>{
+  ['res','amen'].filter(scopeActive).forEach(sc=>{
     const grps=[...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))];
     grps.forEach(gp=>{
       const s=doc.lines.filter(l=>l.scope===sc&&l.grp===gp).reduce((x,l)=>x+lineQty(l)*l.unit,0);
@@ -1835,7 +2851,7 @@ function renderSummary(){
   });
   doc.companies.forEach(c=>{if(c.pct>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">Profit — ${esc(c.name)}</td><td class="calc r">${usd(p.hard*c.pct/100)}</td><td class="calc r" style="color:var(--ink-400)">${(100*(p.hard*c.pct/100)/p.contract).toFixed(1)}%</td></tr>`);});
   if(p.cont>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">99.03 Contingency</td><td class="calc r">${usd(p.cont)}</td><td class="calc r" style="color:var(--ink-400)">${(100*p.cont/p.contract).toFixed(1)}%</td></tr>`);
-  sb.insertAdjacentHTML('beforeend',`<tr class="total"><td>Contract sum</td><td class="calc r strong">${usd(p.contract)}</td><td class="calc r">100%</td></tr>`);
+  sb.insertAdjacentHTML('beforeend',`<tr class="total"><td>Contract Sum</td><td class="calc r strong">${usd(p.contract)}</td><td class="calc r">100%</td></tr>`);
   const stale=pricing&&doc.pricingVersion!==pricing.version;
   document.getElementById('staleBanner').style.display=stale?'flex':'none';
   if(stale){document.getElementById('staleFrom').textContent=doc.pricingVersion;document.getElementById('staleTo').textContent=pricing.version;}
@@ -1844,13 +2860,16 @@ function renderSummary(){
 function recalc(){
   if(!doc)return;
   pullForms();
-  withFocus(()=>{renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();
+  withFocus(()=>{renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();renderSiteMetrics();
     if(currentPage==='csi')renderCsi();});
 }
 
 /* ============ SAVE ============ */
 async function saveBudget(show){
   if(!doc||saving)return;
+  // In template mode the same Save affordance publishes a template version instead
+  // of writing a budget — a template has no project ID and is not a project.
+  if(templateEdit)return publishTemplate();
   pullForms();
   if(!validateId()){toast('Valid project ID required to save');go('input');document.getElementById('pId').focus();return;}
   saving=true;renderSaveState();
@@ -1901,10 +2920,10 @@ function renderPricing(){
         ?`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${l.code}</span>
             <input type="text" value="${esc(l.desc)}" style="width:72%" oninput="pricing.lines[${i}].desc=this.value"></td>
           <td><select onchange="pricing.lines[${i}].basis=this.value" style="width:104px;font-size:12px;padding:5px 8px">
-            <option value="sf" ${l.basis==='sf'?'selected':''}>per res SF</option>
-            <option value="asf" ${l.basis==='asf'?'selected':''}>per amen SF</option>
-            <option value="unit" ${l.basis==='unit'?'selected':''}>per unit</option>
-            <option value="ls" ${l.basis==='ls'?'selected':''}>lump sum</option></select></td>
+            <option value="sf" ${l.basis==='sf'?'selected':''}>Per Res SF</option>
+            <option value="asf" ${l.basis==='asf'?'selected':''}>Per Amen SF</option>
+            <option value="unit" ${l.basis==='unit'?'selected':''}>Per Unit</option>
+            <option value="ls" ${l.basis==='ls'?'selected':''}>Lump Sum</option></select></td>
           <td class="r"><input type="number" value="${l.unit}" min="0" step="0.01" style="width:110px" oninput="pricing.lines[${i}].unit=+this.value"></td>
           <td class="no-print"><button class="btn-x" onclick="pricing.lines.splice(${i},1);renderPricing()">×</button></td></tr>`
         :`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${l.code}</span>${esc(l.desc)}</td>
@@ -1970,6 +2989,9 @@ const BRAND={ink900:'16191A',ink700:'353B3D',ink500:'6B7174',ink200:'DDE1E2',ink
              ink50:'F8F9F9',green:'006527',green50:'F1F8F4',white:'FFFFFF',edit:'2563C9'};
 const MONEY='"$"#,##0';const MONEY2='"$"#,##0.00';const QTY='#,##0';const PCT='0.0%';
 
+/* Placeholder for controls that are visible but not built yet, so a click says why
+   instead of appearing broken. */
+function comingSoon(what){toast((what||'That')+' is coming soon.');}
 function openExport(){document.getElementById('exportModal').style.display='flex';}
 function closeExport(){document.getElementById('exportModal').style.display='none';}
 function sel(){const c=id=>{const e=document.getElementById(id);return e?e.checked:false;};
@@ -1991,7 +3013,7 @@ function exportPDF(){
 }
 function rptRow(k,v,cls){return '<div class="rr '+(cls||'')+'"><span>'+k+'</span><span class="v">'+v+'</span></div>';}
 function buildReport(s){
-  const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF;
+  const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF,sm=siteMetrics();
   const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
   let h='';
 
@@ -2003,34 +3025,37 @@ function buildReport(s){
   h+='<section class="rpt-title"><div class="eyebrow">'+esc(doc.projectId||'—')+' · '+esc(doc.type||'')+'</div>'
     +'<h1>'+esc(doc.name||'Untitled project')+'</h1>'
     +'<div class="rpt-meta">'+[esc(doc.address),num(doc.resSF)+' SF residential',
-       num(doc.amenSF)+' SF amenity',tu+' units','Pricing '+esc(doc.pricingVersion||'—'),
+       doc.amenSF?num(doc.amenSF)+' SF amenity':'',
+       sm.site?sm.acres.toFixed(2)+' ac site':'',
+       sm.siteEff!==null?'site efficiency '+(100*sm.siteEff).toFixed(1)+'%':'',
+       tu+' units','Pricing '+esc(doc.pricingVersion||'—'),
        'Status: '+esc(doc.status||'Draft')].filter(Boolean).join(' &nbsp;·&nbsp; ')+'</div></section>';
 
   if(s.stats){
     h+='<section class="rpt-stats">'
-      +[['Units',num(tu)],['Net income / yr',usd(g.netYr)],
+      +[['Units',num(tu)],['Net Income / Yr',usd(g.netYr)],
         ['Contract $/SF',tsf?usd2(p.contract/tsf):'—'],
         ['Project $/SF',tsf?usd2(p.project/tsf):'—'],
-        ['Cost / unit',tu?usd(p.project/tu):'—']]
+        ['Cost / Unit',tu?usd(p.project/tu):'—']]
         .map(([k,v])=>'<div><div class="k">'+k+'</div><div class="v">'+v+'</div></div>').join('')
       +'</section>';
   }
 
   if(s.summary){
-    h+='<section class="rpt-sec"><h2>Contract &amp; project summary</h2><div class="rpt-2col"><div>'
-      +rptRow('Residential construction',usd(p.res),'sub')
-      +rptRow('Amenity / clubhouse',usd(p.amen),'sub')
-      +rptRow('Construction hard cost',usd(p.hard),'mid')
-      +rptRow('Profit — total',usd(p.profit))
+    h+='<section class="rpt-sec"><h2>Contract &amp; Project Summary</h2><div class="rpt-2col"><div>'
+      +rptRow('Residential Construction',usd(p.res),'sub')
+      +(scopeActive('amen')?rptRow('Amenity / Clubhouse',usd(p.amen),'sub'):'')
+      +rptRow('Construction Hard Cost',usd(p.hard),'mid')
+      +rptRow('Profit — Total',usd(p.profit))
       +rptRow('Contingency (99.03)',usd(p.cont))
-      +rptRow('Contract sum (construction)',usd(p.contract),'grand')
+      +rptRow('Contract Sum (Construction)',usd(p.contract),'grand')
       +'<div style="height:10px"></div>'
-      +rptRow('Soft costs',usd(p.soft),'sub')
+      +rptRow('Soft Costs',usd(p.soft),'sub')
       +rptRow('Land',usd(doc.projectCosts.land),'sub')
-      +rptRow('Developer fee · marketing · closing',usd(p.fees),'sub')
-      +rptRow('Total project cost',usd(p.project),'grand')
+      +rptRow('Developer Fee · Marketing · Closing',usd(p.fees),'sub')
+      +rptRow('Total Project Cost',usd(p.project),'grand')
       +'</div><div><div class="eyebrow" style="margin-bottom:6px">SOV rollup — construction contract</div><table class="rpt-tbl"><tbody>';
-    ['res','amen'].forEach(sc=>{
+    ['res','amen'].filter(scopeActive).forEach(sc=>{
       [...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))].forEach(gp=>{
         const v=doc.lines.filter(l=>l.scope===sc&&l.grp===gp).reduce((x,l)=>x+lineQty(l)*l.unit,0);
         if(v>0)h+='<tr><td>'+(sc==='amen'?'Amenity — ':'')+esc(gp)+'</td><td class="r mono">'+usd(v)+'</td>'
@@ -2039,14 +3064,14 @@ function buildReport(s){
     });
     doc.companies.forEach(c=>{if(c.pct>0)h+='<tr><td>Profit — '+esc(c.name)+'</td><td class="r mono">'+usd(p.hard*c.pct/100)+'</td><td class="r mono muted">'+(p.contract?(100*(p.hard*c.pct/100)/p.contract).toFixed(1):'0.0')+'%</td></tr>';});
     if(p.cont>0)h+='<tr><td>99.03 Contingency</td><td class="r mono">'+usd(p.cont)+'</td><td class="r mono muted">'+(p.contract?(100*p.cont/p.contract).toFixed(1):'0.0')+'%</td></tr>';
-    h+='<tr class="tot"><td>Contract sum</td><td class="r mono">'+usd(p.contract)+'</td><td class="r mono">100%</td></tr>';
+    h+='<tr class="tot"><td>Contract Sum</td><td class="r mono">'+usd(p.contract)+'</td><td class="r mono">100%</td></tr>';
     h+='</tbody></table></div></div></section>';
   }
 
   if(s.units&&doc.units.length){
-    h+='<section class="rpt-sec"><h2>Unit mix &amp; rent revenue</h2><table class="rpt-tbl full"><thead><tr>'
-      +'<th>Unit type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF</th><th class="r">Units</th>'
-      +'<th class="r">Rent / mo</th><th class="r">$/SF</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead><tbody>';
+    h+='<section class="rpt-sec"><h2>Unit Mix &amp; Rent Revenue</h2><table class="rpt-tbl full"><thead><tr>'
+      +'<th>Unit Type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF</th><th class="r">Units</th>'
+      +'<th class="r">Rent / Mo</th><th class="r">$/SF</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead><tbody>';
     doc.units.forEach(u=>{h+='<tr><td>'+esc(u.label)+'</td><td class="r mono">'+u.bd+'</td><td class="r mono">'+u.bth+'</td>'
       +'<td class="r mono">'+num(u.sf)+'</td><td class="r mono">'+num(u.count)+'</td><td class="r mono">'+usd(u.rent)+'</td>'
       +'<td class="r mono">'+(u.sf?usd2(u.rent/u.sf):'—')+'</td><td class="r mono">'+usd(u.rent*u.count)+'</td>'
@@ -2057,23 +3082,23 @@ function buildReport(s){
   }
 
   if(s.other&&(doc.other.length||doc.expenses.length)){
-    h+='<section class="rpt-sec"><h2>Other income &amp; operating expenses</h2><table class="rpt-tbl full"><thead><tr>'
-      +'<th>Line</th><th>Basis</th><th class="r">$ / mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead><tbody>';
+    h+='<section class="rpt-sec"><h2>Other Income &amp; Operating Expenses</h2><table class="rpt-tbl full"><thead><tr>'
+      +'<th>Line</th><th>Basis</th><th class="r">$ / Mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead><tbody>';
     doc.other.forEach(o=>{const c=o.auto?tu:o.count;h+='<tr><td>'+esc(o.label)+'</td><td class="muted">gross income</td>'
       +'<td class="r mono">'+usd(o.rate)+'</td><td class="r mono">'+num(c)+'</td><td class="r mono">'+usd(o.rate*c)+'</td><td class="r mono">'+usd(12*o.rate*c)+'</td></tr>';});
     h+='<tr class="sub-tot"><td>Total gross other income</td><td></td><td></td><td></td><td class="r mono">'+usd(g.otherMo)+'</td><td class="r mono">'+usd(12*g.otherMo)+'</td></tr>';
     doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
       h+='<tr><td>'+esc(e.label)+'</td><td class="muted">'+(e.per==='fixed'?'fixed / mo':'per unit')+'</td>'
       +'<td class="r mono">'+usd(e.rate)+'</td><td class="r mono">'+num(c)+'</td><td class="r mono">('+usd(e.rate*c)+')</td><td class="r mono">('+usd(12*e.rate*c)+')</td></tr>';});
-    h+='<tr class="sub-tot"><td>Total operating expenses</td><td></td><td></td><td></td><td class="r mono">('+usd(g.expMo)+')</td><td class="r mono">('+usd(12*g.expMo)+')</td></tr>';
+    h+='<tr class="sub-tot"><td>Total Operating Expenses</td><td></td><td></td><td></td><td class="r mono">('+usd(g.expMo)+')</td><td class="r mono">('+usd(12*g.expMo)+')</td></tr>';
     h+='<tr class="tot"><td>Net income (rent + net other)</td><td></td><td></td><td></td><td class="r mono">'+usd(g.rentMo+g.netOtherMo)+'</td><td class="r mono">'+usd(g.netYr)+'</td></tr>';
     h+='</tbody></table></section>';
   }
 
   if(s.budget){
-    h+='<section class="rpt-sec break"><h2>Budget detail</h2><table class="rpt-tbl full"><thead><tr>'
-      +'<th>Line item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>';
-    ['res','amen','soft'].forEach(sc=>{
+    h+='<section class="rpt-sec break"><h2>Budget Detail</h2><table class="rpt-tbl full"><thead><tr>'
+      +'<th>Line Item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>';
+    activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
       h+='<tr class="scope"><td colspan="4">'+esc(SCOPES[sc])+'</td><td class="r mono">'+usd(scopeSum(sc))+'</td></tr>';
       let last=null;
@@ -2092,24 +3117,33 @@ function buildReport(s){
 
   if(s.csi){
     const sch=csiSchedule();
-    h+='<section class="rpt-sec break"><h2>CSI schedule of values</h2>'
+    h+='<section class="rpt-sec break"><h2>CSI Schedule of Values</h2>'
       +'<p class="rpt-note">MasterFormat divisions. Contingency is carried explicitly as 99.03 and is never blended into a trade line. Soft costs are reported separately and are not part of the contract sum.</p>'
-      +'<table class="rpt-tbl full"><thead><tr><th>Code</th><th>Section</th><th>Scope</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Scheduled value</th></tr></thead><tbody>';
+      +'<table class="rpt-tbl full"><thead><tr><th>Code</th><th>Section</th><th>Scope</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Scheduled Value</th><th class="r">% Contract</th></tr></thead><tbody>';
+    // Division totals and percentages are computed from the data model, exactly as
+    // the CSI tab computes them — never scraped from the rendered page.
+    const cpct=v=>sch.contract?(100*v/sch.contract).toFixed(1)+'%':'—';
     sch.divisions.forEach(d=>{
-      h+='<tr class="scope"><td colspan="5">'+esc(d.title)+'</td><td class="r mono">'+usd(d.total)+'</td></tr>';
+      h+='<tr class="scope"><td colspan="5">'+esc(d.title)+'</td><td class="r mono">'+usd(d.total)+'</td><td class="r mono">'+cpct(d.total)+'</td></tr>';
       d.rows.forEach(r=>{h+='<tr><td class="mono code">'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td>'
         +'<td class="muted">'+(r.scope==='amen'?'Amenity':'Residential')+'</td><td class="r mono">'+num(r.qty)+'</td>'
-        +'<td class="r mono">'+usd2(r.rate)+'</td><td class="r mono">'+usd(r.total)+'</td></tr>';});
+        +'<td class="r mono">'+usd2(r.rate)+'</td><td class="r mono">'+usd(r.total)+'</td><td class="r mono">'+cpct(r.total)+'</td></tr>';});
     });
     if(sch.markups.length){
-      h+='<tr class="scope"><td colspan="5">Division 99 — Markups</td><td class="r mono">'+usd(sch.markups.reduce((a,m)=>a+m.total,0))+'</td></tr>';
-      sch.markups.forEach(m=>{h+='<tr><td class="mono code">'+esc(m.code)+'</td><td>'+esc(m.desc)+'</td><td></td><td></td><td></td><td class="r mono">'+usd(m.total)+'</td></tr>';});
+      h+='<tr class="scope"><td colspan="5">Division 99 — Markups</td><td class="r mono">'+usd(sch.markupsTotal)+'</td><td class="r mono">'+cpct(sch.markupsTotal)+'</td></tr>';
+      sch.markups.forEach(m=>{h+='<tr><td class="mono code">'+esc(m.code)+'</td><td>'+esc(m.desc)+'</td><td></td><td></td><td></td><td class="r mono">'+usd(m.total)+'</td><td class="r mono">'+cpct(m.total)+'</td></tr>';});
     }
-    h+='<tr class="tot"><td colspan="5">Contract sum</td><td class="r mono">'+usd(sch.contract)+'</td></tr></tbody></table>';
+    h+='<tr class="tot"><td colspan="5">Contract Sum</td><td class="r mono">'+usd(sch.contract)+'</td><td class="r mono">'+(sch.contract?'100.0%':'—')+'</td></tr></tbody></table>';
     if(sch.soft.length){
-      h+='<h2 style="margin-top:18px">Soft costs</h2><table class="rpt-tbl full"><thead><tr><th>Code</th><th>Item</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th></tr></thead><tbody>';
-      sch.soft.forEach(r=>{h+='<tr><td class="mono code">'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td><td class="r mono">'+num(r.qty)+'</td><td class="r mono">'+usd2(r.rate)+'</td><td class="r mono">'+usd(r.total)+'</td></tr>';});
-      h+='<tr class="tot"><td colspan="4">Total soft costs</td><td class="r mono">'+usd(sch.softTotal)+'</td></tr></tbody></table>';
+      const spct=v=>sch.softTotal?(100*v/sch.softTotal).toFixed(1)+'%':'—';
+      h+='<h2 style="margin-top:18px">Soft Costs</h2>'
+        +'<p class="rpt-note">Percentages here are a share of total soft costs, which sit outside the contract sum.</p>'
+        +'<table class="rpt-tbl full"><thead><tr><th>Code</th><th>Item</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th><th class="r">% Soft</th></tr></thead><tbody>';
+      sch.softGroups.forEach(g=>{
+        h+='<tr class="scope"><td colspan="4">'+esc(g.grp)+'</td><td class="r mono">'+usd(g.total)+'</td><td class="r mono">'+spct(g.total)+'</td></tr>';
+        g.rows.forEach(r=>{h+='<tr><td class="mono code">'+esc(r.code)+'</td><td>'+esc(r.desc)+'</td><td class="r mono">'+num(r.qty)+'</td><td class="r mono">'+usd2(r.rate)+'</td><td class="r mono">'+usd(r.total)+'</td><td class="r mono">'+spct(r.total)+'</td></tr>';});
+      });
+      h+='<tr class="tot"><td colspan="4">Total Soft Costs</td><td class="r mono">'+usd(sch.softTotal)+'</td><td class="r mono">'+(sch.softTotal?'100.0%':'—')+'</td></tr></tbody></table>';
     }
     h+='</section>';
   }
@@ -2119,12 +3153,40 @@ function buildReport(s){
   return h;
 }
 
+/* ---------------- Guide PDF ----------------
+   Built from the live help markup rather than a second copy of the text, so the printed
+   guide cannot drift out of step with the page. Card chrome and the contents rail are
+   dropped; each card becomes a section. */
+function downloadGuide(){
+  const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const secs=[...document.querySelectorAll('#page-help .help > section .card-bd')]
+    .map(e=>'<section class="rpt-sec">'+e.innerHTML+'</section>').join('');
+  const toc=[...document.querySelectorAll('#helpToc a')]
+    .map((a,i)=>'<li><span class="n">'+String(i+1).padStart(2,'0')+'</span>'+esc(a.textContent.trim())+'</li>').join('');
+  document.getElementById('printDoc').innerHTML=
+     '<div class="rpt-guide">'
+    +'<header class="rpt-hd"><img src="assets/finishes-logo-black.png" alt="Finishes Solutions">'
+    +'<div class="rpt-hd-r"><div class="eyebrow">User guide</div><div class="mono stamp">'+esc(stamp)+'</div></div></header>'
+    +'<section class="rpt-title"><div class="eyebrow">Budgeting Suite</div>'
+    +'<h1>How to Use the Budgeting Suite</h1>'
+    +'<div class="rpt-meta">Business Development budgeting — building a multifamily project budget from the shared '
+    +'pricing library, and exporting it.</div></section>'
+    +'<section class="rpt-sec"><h2>Contents</h2><ol class="guide-toc">'+toc+'</ol></section>'
+    +secs
+    +'<footer class="rpt-ft"><span>Finishes Solutions — Building a Future Together</span>'
+    +'<span class="mono">User guide · '+esc(stamp)+'</span></footer></div>';
+  document.body.classList.add('printing');
+  window.print();
+  setTimeout(()=>{document.body.classList.remove('printing');
+    document.getElementById('printDoc').innerHTML='';},600);
+}
+
 /* ---------------- Excel: styled workbook via vendored ExcelJS ---------------- */
 async function exportExcel(){
   if(typeof ExcelJS==='undefined'){toast('Excel library failed to load — reload the page');return;}
   const s=sel(),p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF;
   const wb=new ExcelJS.Workbook();
-  wb.creator='Finishes Solutions — FS Budgeting Suite';
+  wb.creator='Finishes Solutions Budgeting Suite';
   wb.created=new Date();
 
   const F=(n,o={})=>Object.assign({name:'Montserrat',size:10,color:{argb:'FF'+BRAND.ink900}},{size:n},o);
@@ -2176,6 +3238,18 @@ async function exportExcel(){
     r.getCell(span).numFmt=MONEY;
     return r;
   }
+  /* A division header on a sheet whose last column is a percentage needs the money
+     in the second-to-last cell and the share in the last one; groupRow's single
+     trailing value would otherwise land the dollar total under the % heading. */
+  function divisionRow(ws,label,value,pct,span,dark){
+    const r=ws.addRow([label,...Array(span-2).fill(null),value,pct]);
+    ws.mergeCells(r.number,1,r.number,span-2);
+    r.eachCell(c=>{c.font=F(10,{bold:true,color:{argb:'FF'+(dark?BRAND.white:BRAND.ink900)}});
+      c.fill=fill(dark?BRAND.ink900:BRAND.ink100);c.border=box;});
+    r.getCell(span-1).numFmt=MONEY;
+    r.getCell(span).numFmt=PCT;
+    return r;
+  }
   function totalRow(ws,label,value,span,fmt){
     const r=ws.addRow([label,...Array(span-2).fill(null),value]);
     ws.mergeCells(r.number,1,r.number,span-1);
@@ -2183,10 +3257,20 @@ async function exportExcel(){
     r.getCell(span).numFmt=fmt||MONEY;
     return r;
   }
+  /* Same column problem as divisionRow: on a sheet ending in a percentage column,
+     the grand total belongs under Scheduled Value, not under % Contract. */
+  function totalRowPct(ws,label,value,pct,span){
+    const r=ws.addRow([label,...Array(span-2).fill(null),value,pct]);
+    ws.mergeCells(r.number,1,r.number,span-2);
+    r.eachCell(c=>{c.font=F(11,{bold:true});c.border={...box,top:{style:'medium',color:{argb:'FF'+BRAND.ink900}}};});
+    r.getCell(span-1).numFmt=MONEY;
+    r.getCell(span).numFmt=PCT;
+    return r;
+  }
 
   if(s.stats){
     const ws=sheet('Summary',[{width:38},{width:20},{width:16}]);
-    titleBand(ws,'Project budget summary',3);
+    titleBand(ws,'Project Budget Summary',3);
     const kv=(k,v,fmt)=>{const r=ws.addRow([k,v]);
       r.getCell(1).font=F(10,{color:{argb:'FF'+BRAND.ink700}});
       r.getCell(2).font=F(10,{bold:true});if(fmt)r.getCell(2).numFmt=fmt;return r;};
@@ -2194,32 +3278,37 @@ async function exportExcel(){
       r.getCell(1).border={bottom:thin};ws.mergeCells(r.number,1,r.number,3);return r;};
     head('PROJECT');
     kv('Project ID',doc.projectId);kv('Name',doc.name);kv('Address',doc.address);kv('Type',doc.type);
-    kv('Status',doc.status);kv('Pricing library',doc.pricingVersion);
-    kv('Residential SF',doc.resSF,QTY);kv('Amenity SF',doc.amenSF,QTY);kv('Total units',tu,QTY);
+    kv('Status',doc.status);kv('Pricing Library',doc.pricingVersion);
+    kv('Residential SF',doc.resSF,QTY);kv('Amenity SF',doc.amenSF,QTY);kv('Total Units',tu,QTY);
+    const sm=siteMetrics();
+    if(sm.site){kv('Total Site SF',sm.site,QTY);kv('Site Area (Acres)',sm.acres,'#,##0.00');
+      kv('Site Efficiency',sm.siteEff,PCT);kv('Density (Units / Acre)',sm.density,'#,##0.0');}
+    if(sm.bldgEff!==null)kv('Building Efficiency',sm.bldgEff,PCT);
     ws.addRow([]);
     head('CONSTRUCTION CONTRACT');
-    kv('Residential construction',p.res,MONEY);kv('Amenity / clubhouse',p.amen,MONEY);
-    kv('Construction hard cost',p.hard,MONEY);kv('Profit',p.profit,MONEY);kv('Contingency (99.03)',p.cont,MONEY);
+    kv('Residential Construction',p.res,MONEY);
+    if(scopeActive('amen'))kv('Amenity / Clubhouse',p.amen,MONEY);
+    kv('Construction Hard Cost',p.hard,MONEY);kv('Profit',p.profit,MONEY);kv('Contingency (99.03)',p.cont,MONEY);
     totalRow(ws,'CONTRACT SUM',p.contract,3);
     ws.addRow([]);
     head('TOTAL PROJECT COST');
-    kv('Soft costs',p.soft,MONEY);kv('Land',doc.projectCosts.land,MONEY);
-    kv('Developer fee',doc.projectCosts.dev,MONEY);kv('Marketing / brokerage',doc.projectCosts.mkt,MONEY);
-    kv('Closing costs',doc.projectCosts.cls,MONEY);
+    kv('Soft Costs',p.soft,MONEY);kv('Land',doc.projectCosts.land,MONEY);
+    kv('Developer Fee',doc.projectCosts.dev,MONEY);kv('Marketing / Brokerage',doc.projectCosts.mkt,MONEY);
+    kv('Closing Costs',doc.projectCosts.cls,MONEY);
     totalRow(ws,'TOTAL PROJECT COST',p.project,3);
     ws.addRow([]);
     head('METRICS');
     kv('Contract $/SF',tsf?p.contract/tsf:0,MONEY2);kv('Project $/SF',tsf?p.project/tsf:0,MONEY2);
-    kv('Cost per unit',tu?p.project/tu:0,MONEY);
-    kv('Gross income (yr)',g.grossYr,MONEY);kv('Operating expenses (yr)',12*g.expMo,MONEY);
-    kv('Net income (yr)',g.netYr,MONEY);
-    kv('Yield on net income',p.project?g.netYr/p.project:0,PCT);
+    kv('Cost per Unit',tu?p.project/tu:0,MONEY);
+    kv('Gross Income (Yr)',g.grossYr,MONEY);kv('Operating Expenses (Yr)',12*g.expMo,MONEY);
+    kv('Net Income (Yr)',g.netYr,MONEY);
+    kv('Yield on Net Income',p.project?g.netYr/p.project:0,PCT);
   }
 
   if(s.units){
     const ws=sheet('Unit Mix',[{width:30},{width:7},{width:7},{width:11},{width:9},{width:13},{width:11},{width:13},{width:15},{width:15}]);
-    titleBand(ws,'Unit mix & rent revenue',10);
-    headerRow(ws,['Unit type','BD','BTH','SF / unit','Units','Rent / mo','$ / SF / mo','Type SF','Monthly','Yearly']);
+    titleBand(ws,'Unit Mix & Rent Revenue',10);
+    headerRow(ws,['Unit Type','BD','BTH','SF / Unit','Units','Rent / Mo','$ / SF / Mo','Type SF','Monthly','Yearly']);
     const f=[null,QTY,'0.0',QTY,QTY,MONEY,MONEY2,QTY,MONEY,MONEY];
     doc.units.forEach(u=>styleBody(ws.addRow([u.label,u.bd,u.bth,u.sf,u.count,u.rent,
       u.sf?u.rent/u.sf:0,u.sf*u.count,u.rent*u.count,12*u.rent*u.count]),f));
@@ -2230,30 +3319,30 @@ async function exportExcel(){
 
   if(s.other){
     const ws=sheet('Income & Expenses',[{width:44},{width:14},{width:12},{width:10},{width:14},{width:16}]);
-    titleBand(ws,'Other income & operating expenses',6);
-    headerRow(ws,['Line','Basis','$ / mo','Count','Monthly','Yearly']);
+    titleBand(ws,'Other Income & Operating Expenses',6);
+    headerRow(ws,['Line','Basis','$ / Mo','Count','Monthly','Yearly']);
     const f=[null,null,MONEY,QTY,MONEY,MONEY];
     groupRow(ws,'GROSS OTHER INCOME',null,6,true);
     doc.other.forEach(o=>{const c=o.auto?tu:o.count;
       styleBody(ws.addRow([o.label,'gross income',o.rate,c,o.rate*c,12*o.rate*c]),f);});
-    groupRow(ws,'Total gross other income',g.otherMo,6);
+    groupRow(ws,'Total Gross Other Income',g.otherMo,6);
     groupRow(ws,'OPERATING EXPENSES',null,6,true);
     doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
       styleBody(ws.addRow([e.label,e.per==='fixed'?'fixed / mo':'per unit',e.rate,c,e.rate*c,12*e.rate*c]),f);});
-    groupRow(ws,'Total operating expenses',g.expMo,6);
+    groupRow(ws,'Total Operating Expenses',g.expMo,6);
     ws.addRow([]);
-    groupRow(ws,'Net other income (gross − expenses)',g.netOtherMo,6);
-    groupRow(ws,'Rent income',g.rentMo,6);
+    groupRow(ws,'Net Other Income (Gross − Expenses)',g.netOtherMo,6);
+    groupRow(ws,'Rent Income',g.rentMo,6);
     totalRow(ws,'NET INCOME (monthly)',g.rentMo+g.netOtherMo,6);
     totalRow(ws,'NET INCOME (yearly)',g.netYr,6);
   }
 
   if(s.budget){
     const ws=sheet('Budget-SOV',[{width:13},{width:46},{width:14},{width:12},{width:12},{width:14},{width:12},{width:14},{width:18}],true);
-    titleBand(ws,'Budget detail — schedule of values',9);
-    headerRow(ws,['Code','Description','Basis','Qty','Rate','Total','Edited','Library rate','Provenance']);
+    titleBand(ws,'Budget Detail — Schedule of Values',9);
+    headerRow(ws,['Code','Description','Basis','Qty','Rate','Total','Edited','Library Rate','Provenance']);
     const f=[null,null,null,QTY,MONEY2,MONEY,null,MONEY2,null];
-    ['res','amen','soft'].forEach(sc=>{
+    activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
       groupRow(ws,SCOPES[sc].toUpperCase(),scopeSum(sc),9,true);
       let last=null;
@@ -2274,11 +3363,11 @@ async function exportExcel(){
   if(s.csi){
     const sch=csiSchedule();
     const ws=sheet('CSI Schedule',[{width:14},{width:52},{width:14},{width:14},{width:12},{width:14},{width:16},{width:12}],true);
-    titleBand(ws,'CSI MasterFormat schedule of values',8);
-    headerRow(ws,['Code','Section','Scope','Basis','Qty','Rate','Scheduled value','% contract']);
+    titleBand(ws,'CSI MasterFormat Schedule of Values',8);
+    headerRow(ws,['Code','Section','Scope','Basis','Qty','Rate','Scheduled Value','% Contract']);
     const f=[null,null,null,null,QTY,MONEY2,MONEY,PCT];
     sch.divisions.forEach(d=>{
-      groupRow(ws,d.title,d.total,8,true);
+      divisionRow(ws,d.title,d.total,sch.contract?d.total/sch.contract:0,8,true);
       d.rows.forEach(r0=>{
         const r=styleBody(ws.addRow([r0.code,r0.desc,r0.scope==='amen'?'Amenity':'Residential',
           BASIS_LABEL[r0.basis]||r0.basis,r0.qty,r0.rate,r0.total,
@@ -2287,35 +3376,41 @@ async function exportExcel(){
       });
     });
     if(sch.markups.length){
-      groupRow(ws,'DIVISION 99 — MARKUPS',sch.markups.reduce((a,m)=>a+m.total,0),8,true);
+      divisionRow(ws,'DIVISION 99 — MARKUPS',sch.markupsTotal,sch.contract?sch.markupsTotal/sch.contract:0,8,true);
       sch.markups.forEach(m=>{
         const r=styleBody(ws.addRow([m.code,m.desc,'','','','',m.total,sch.contract?m.total/sch.contract:0]),f);
         r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
       });
     }
-    totalRow(ws,'CONTRACT SUM',sch.contract,8);
+    totalRowPct(ws,'CONTRACT SUM',sch.contract,sch.contract?1:0,8);
     if(sch.soft.length){
       ws.addRow([]);
-      groupRow(ws,'SOFT COSTS — reported separately, outside the contract sum',sch.softTotal,8,true);
-      sch.soft.forEach(r0=>{
-        const r=styleBody(ws.addRow([r0.code,r0.desc,'Soft',BASIS_LABEL[r0.basis]||r0.basis,
-          r0.qty,r0.rate,r0.total,null]),f);
-        r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
+      // Soft-cost percentages are a share of soft costs, not of the contract sum,
+      // so the band says so rather than silently reusing the column heading.
+      divisionRow(ws,'SOFT COSTS — outside the contract sum; % is share of soft costs',
+        sch.softTotal,sch.softTotal?1:0,8,true);
+      sch.softGroups.forEach(g=>{
+        divisionRow(ws,g.grp,g.total,sch.softTotal?g.total/sch.softTotal:0,8,false);
+        g.rows.forEach(r0=>{
+          const r=styleBody(ws.addRow([r0.code,r0.desc,'Soft',BASIS_LABEL[r0.basis]||r0.basis,
+            r0.qty,r0.rate,r0.total,sch.softTotal?r0.total/sch.softTotal:0]),f);
+          r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
+        });
       });
-      totalRow(ws,'TOTAL SOFT COSTS',sch.softTotal,8);
+      totalRowPct(ws,'TOTAL SOFT COSTS',sch.softTotal,sch.softTotal?1:0,8);
     }
   }
 
   if(s.summary){
     const ws=sheet('Contract Summary',[{width:44},{width:18},{width:14}]);
-    titleBand(ws,'Contract & project composition',3);
-    headerRow(ws,['Component','Amount','% of project']);
+    titleBand(ws,'Contract & Project Composition',3);
+    headerRow(ws,['Component','Amount','% of Project']);
     const f=[null,MONEY,PCT];
     const pc=v=>p.project?v/p.project:0;
-    [['Construction hard cost',p.hard],['Profit',p.profit],['Contingency (99.03)',p.cont]]
+    [['Construction Hard Cost',p.hard],['Profit',p.profit],['Contingency (99.03)',p.cont]]
       .forEach(([k,v])=>styleBody(ws.addRow([k,v,pc(v)]),f));
     totalRow(ws,'CONTRACT SUM (CONSTRUCTION)',p.contract,3);
-    [['Soft costs',p.soft],['Land',doc.projectCosts.land],['Developer fee + marketing + closing',p.fees]]
+    [['Soft Costs',p.soft],['Land',doc.projectCosts.land],['Developer Fee + Marketing + Closing',p.fees]]
       .forEach(([k,v])=>styleBody(ws.addRow([k,v,pc(v)]),f));
     totalRow(ws,'TOTAL PROJECT COST',p.project,3);
   }
@@ -2354,24 +3449,69 @@ function wireDelegates(){
   });
   document.getElementById('homeSearch').addEventListener('input',e=>{homeView.q=e.target.value;paintHome();});
   document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeExport();closePick();}});
-  document.querySelectorAll('#helpToc a').forEach(a=>a.addEventListener('click',()=>{
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){closeExport();closePick();return;}
+    // Cmd/Ctrl+S saves rather than letting the browser offer to save the page.
+    if((e.metaKey||e.ctrlKey)&&(e.key==='s'||e.key==='S')){
+      e.preventDefault();
+      if(!doc){toast('Open or create a budget first');return;}
+      if(saving)return;
+      // commit whatever field is focused before reading the form
+      if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+      saveBudget(true);
+    }
+  });
+  document.querySelectorAll('#helpToc a').forEach(a=>a.addEventListener('click',e=>{
+    e.preventDefault();                       // no hash change, so #/help survives a refresh
+    const t=document.getElementById(a.getAttribute('href').slice(1));
+    if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
     document.querySelectorAll('#helpToc a').forEach(x=>x.classList.remove('on'));a.classList.add('on');
   }));
 }
 
 /* ============ INIT ============ */
+/* ---- cold-start screen ----
+   A paused serverless database takes tens of seconds to resume, and the API layer
+   retries transient faults for about a minute (api/shared/db.js). The messages
+   escalate so a long wait reads as "still working", not as a hung page. */
+const BOOT_STAGES=[
+  [2500,'Waking the database — it pauses when idle and can take up to a minute to resume.'],
+  [15000,'Still waking the database. This is normal after a quiet spell.'],
+  [45000,'Taking longer than usual. Hang on — the app will load whatever it can.']
+];
+let bootTimers=[];
+function startBoot(){
+  bootTimers=BOOT_STAGES.map(([ms,msg])=>setTimeout(()=>{
+    const el=document.getElementById('bootMsg');if(el)el.textContent=msg;
+  },ms));
+}
+function endBoot(){
+  bootTimers.forEach(clearTimeout);bootTimers=[];
+  const el=document.getElementById('bootScreen');
+  if(!el)return;
+  el.style.opacity='0';
+  setTimeout(()=>{if(el.parentNode)el.remove();},260);
+}
 (async function init(){
-  await initAuth();
-  const published=await sGet('pricing-multifamily');   // API-first; built-in seed as fallback
-  pricingFromApi=!!published;
-  pricing=published||DEFAULT_PRICING;
-  renderApiBanner();
-  wireDelegates();
-  await renderHome();
-  await routeFromHash();
-  if(!location.hash)syncHash(currentPage);
-  renderSaveState();
+  startBoot();
+  try{
+    await initAuth();
+    const published=await sGet('pricing-multifamily');   // API-first; built-in seed as fallback
+    pricingFromApi=!!published;
+    pricing=published||DEFAULT_PRICING;
+    renderApiBanner();
+    wireDelegates();
+    await loadTemplates();
+    await renderHome();
+    await routeFromHash();
+    if(!location.hash)syncHash(currentPage);
+    renderSaveState();
+  }finally{
+    // Whatever happened — including the API being down — the app must become
+    // usable rather than sitting behind the overlay forever. The offline banner
+    // is what reports a failure from here on.
+    endBoot();
+  }
 })();
 </script>
 </body>

@@ -1,4 +1,4 @@
-# Build & Deployment Guide — FS Budgeting Suite (Phase 1)
+# Build & Deployment Guide — Finishes Solutions Budgeting Suite (Phase 1)
 
 Prepared by Finishes Technology. Assumes Owner/Contributor on an Azure subscription
 and admin rights in the Finishes Solutions Entra tenant.
@@ -67,7 +67,10 @@ second SQL bill yet.
 
 Portal → Microsoft Entra ID → App registrations → **New registration**:
 
-- Name: `FS Budgeting Suite`
+- Name: `FS Budgeting Suite` — this is the **existing Entra app registration's display
+  name in Azure**, not the product name. The product is the Finishes Solutions Budgeting
+  Suite; the registration keeps its original string so this guide matches what is actually
+  in the tenant. Renaming it in Azure means updating it here too.
 - Supported account types: **Accounts in this organizational directory only (Finishes Solutions only — Single tenant)** ← this is the line that keeps the rest of the world out.
 - Redirect URI: leave blank for now (you don't have the hostname yet; §5 step 4 comes back here).
 
