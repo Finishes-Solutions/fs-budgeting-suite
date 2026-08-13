@@ -34,7 +34,7 @@ Everyone in the tenant can build budgets. Publishing pricing requires the
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement |
 | `app/assets/` | Logos. `finishes-logo-white.svg` is the header lockup |
 | `app/vendor/exceljs.min.js` | ExcelJS 4.4.0, MIT, vendored (licence file alongside) |
-| `api/budget/`, `api/budgets/`, `api/pricing/`, `api/budget-versions/` | The four Functions |
+| `api/budget/`, `api/budgets/`, `api/pricing/`, `api/budget-versions/`, `api/templates/` | The five Functions |
 | `api/shared/canonical.js`, `api/shared/sov.js`, `api/shared/versioning.js` | Save-versioning primitives; `sov.js` is dependency-free so it tests without `mssql` |
 | `api/shared/auth.js`, `api/shared/db.js` | Principal parsing and the `mssql` pool |
 | `sql/schema.sql`, `sql/seed_pricing.sql`, `sql/views.sql` | Database |
@@ -242,7 +242,7 @@ Each budget line has `code` (CSI), `grp`, `scope` (`res` | `amen` | `soft`), `de
 
 ## 7 · Running the tests
 
-Ten Playwright suites, 261 assertions, plus 29 `node:test` assertions for the pure
+Ten Playwright suites, 280 assertions, plus 29 `node:test` assertions for the pure
 logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus
@@ -308,8 +308,9 @@ update selectors alongside label changes.
 - **Production runs the pre-versioning API against the migrated database.** Its
   delete button fails until `staging` is released, because the old hard delete is
   blocked by the new `BudgetVersions` foreign key. Nothing is lost; it fails cleanly.
-- Admin budget-template management (APIs and UI) is specified but not yet built. The
-  schema, the seeded `multifamily` template and its provenance columns are in place.
+- Publishing a template is the only way to change new-budget defaults. Do not hand-edit
+  `DEFAULT_PRICING` in `app/index.html` and expect it to matter — it is the offline
+  fallback only (docs/DATA_CONTRACT.md, "Single source of truth").
 
 **Housekeeping**
 

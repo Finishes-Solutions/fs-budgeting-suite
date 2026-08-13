@@ -121,6 +121,38 @@ Soft costs sit outside the contract sum (rule 3), so reusing Contract Sum there 
 produce percentages that cannot sum to 100. Only leaf lines are summed — no subtotal is
 ever counted into another subtotal. A zero denominator displays an em dash.
 
+## Template API
+
+- `GET /api/templates` → `{isAdmin, templates[]}`. Non-admins see active templates
+  only; admins also see deactivated ones so they can be revived.
+- `GET /api/templates/{key}` → metadata plus `doc` (the current published version's
+  document) and `currentVersionId`. Resolves for deactivated templates too, so budgets
+  referencing one keep opening.
+- `GET /api/templates/{key}/versions` and `/versions/{n}` → history and one immutable
+  version.
+- `POST /api/templates` → create a template and its version 1. **admin**
+- `PUT /api/templates/{key}` → publish a new immutable version. **admin**
+- `PATCH /api/templates/{key}` → name, budget type, description, `isActive`. **admin**
+
+Mutations are gated twice: a route rule in `staticwebapp.config.json` and
+`hasRole(req,'pricing_admin')` inside the Function. Publishing allocates the next
+version number under `UPDLOCK`/`HOLDLOCK`, demotes the previous current version and
+inserts the new one in one transaction; the filtered unique index on `(TemplateKey)
+WHERE IsCurrent = 1` is the database-level backstop. There is no DELETE — a template is
+deactivated, never removed, so a budget's provenance never dangles.
+
+A template is edited by loading its document into the ordinary budget editor and
+published back as a new version. Renaming or deactivating a template never changes what
+any budget was created from.
+
+## Cold starts
+
+Azure SQL serverless auto-pauses. `api/shared/db.js` retries transient faults (40613
+and related) with backoff for roughly a minute and shares a single connect attempt
+across concurrent callers, so a resuming database is not stampeded. The frontend shows
+a loading screen with escalating messages and always clears it, so a genuine outage
+surfaces the offline banner instead of trapping the user behind an overlay.
+
 ## Migration execution order
 
 Live database: `sql/migrate_budget_history_and_templates.sql`, then `sql/views.sql`.
