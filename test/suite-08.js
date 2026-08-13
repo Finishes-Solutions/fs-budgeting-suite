@@ -122,6 +122,38 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  });
  ok('A zero contract sum shows an em dash, not NaN', !/NaN|Infinity/.test(dash) && dash.includes('—'));
 
+ // --- missing numerics must never render as $NaN (HANDOFF §8)
+ // The trigger is an ABSENT property, which is what an older saved document or an
+ // imported one looks like — not a field the user typed into and cleared, which
+ // already coerces to 0.
+ await p.click('#nav-budget'); await p.waitForTimeout(400);
+ const nanScan = async () => p.evaluate(() =>
+   /NaN|Infinity/.test(document.body.innerText));
+ await p.evaluate(() => { doc.lines.forEach(l => { delete l.unit; delete l.qty; }); touch(); });
+ await p.waitForTimeout(300);
+ ok('Lines with no rate do not render NaN', !(await nanScan()));
+ await p.evaluate(() => {
+   doc.units.forEach(u => { delete u.count; delete u.sf; delete u.rent; });
+   delete doc.resSF; delete doc.amenSF; delete doc.contingency.val;
+   doc.companies.forEach(c => delete c.pct);
+   ['land','dev','mkt','cls'].forEach(k => delete doc.projectCosts[k]);
+   touch();
+ });
+ await p.waitForTimeout(300);
+ ok('A document stripped of every numeric does not render NaN', !(await nanScan()));
+ await p.click('#nav-csi'); await p.waitForTimeout(400);
+ ok('The CSI schedule survives it too', !(await nanScan()));
+ await p.click('#nav-input'); await p.waitForTimeout(400);
+ ok('The inputs page survives it too', !(await nanScan()));
+ const repaired = await p.evaluate(() => {
+   const d = migrate({units:[{label:'x'}], other:[], expenses:[], lines:[{code:'01 01 00'}],
+                      projectCosts:{}, companies:[{name:'c'}], contingency:{mode:'psf'}});
+   return [d.lines[0].unit, d.lines[0].qty, d.units[0].count, d.resSF,
+           d.companies[0].pct, d.contingency.val, d.projectCosts.land];
+ });
+ ok('migrate() repairs a legacy document rather than only masking it',
+    repaired.every(v => v === 0), JSON.stringify(repaired));
+
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();

@@ -443,7 +443,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <img src="assets/finishes-logo-white.svg" alt="Finishes Solutions">
     </a>
     <nav class="no-print">
-      <button id="nav-home" class="on" onclick="go('home')">Budgets</button>
+      <button id="nav-home" class="on" onclick="go('home')">Home</button>
       <button id="nav-input" onclick="go('input')" disabled>Inputs</button>
       <button id="nav-budget" onclick="go('budget')" disabled>Budget</button>
       <button id="nav-csi" onclick="go('csi')" disabled>CSI Schedule</button>
@@ -906,7 +906,7 @@ th.sortable.sorted{color:var(--ink-900)}
 
       <section class="card"><div class="card-bd">
         <h3 id="help-quickstart">Quick Start</h3>
-        <div class="step"><div class="n">1</div><div class="t"><b>Budgets → pick a starting point.</b>
+        <div class="step"><div class="n">1</div><div class="t"><b>Home → pick a starting point.</b>
           <b>+ New Multifamily Budget</b> copies the current pricing library and the standard template — unit mix,
           income, expenses and every priced line. <b>+ Blank Budget</b> starts genuinely empty: no units, no income,
           no scope, no square footage. Use blank when the project is not multifamily or looks nothing like the
@@ -1289,9 +1289,15 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <script>
 /* ============ HELPERS ============ */
-const usd=n=>'$'+Math.round(n).toLocaleString('en-US');
-const usd2=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-const num=n=>Math.round(n).toLocaleString('en-US');
+/* A missing property arithmetics to NaN, and older saved documents genuinely lack
+   fields that exist today — a budget saved before `siteSF`, an imported doc, a
+   template line with no rate. Treat a non-finite value as zero at both ends: here
+   so nothing can ever render "$NaN", and at the arithmetic sources below so the
+   sums are right rather than merely printable. */
+const nz=v=>Number.isFinite(+v)?+v:0;
+const usd=n=>'$'+Math.round(nz(n)).toLocaleString('en-US');
+const usd2=n=>'$'+nz(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=n=>Math.round(nz(n)).toLocaleString('en-US');
 const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>ESC_MAP[c]);
 const ID_RX=/^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
@@ -1723,12 +1729,21 @@ function migrate(d){ // tolerate older saves
   d.other=d.other??JSON.parse(JSON.stringify(DEFAULT_OTHER));
   d.expenses=d.expenses??JSON.parse(JSON.stringify(DEFAULT_EXPENSES));
   d.projectCosts=d.projectCosts??{land:0,dev:0,mkt:0,cls:0};
-  d.units.forEach(u=>{u.bd=u.bd??0;u.bth=u.bth??1;});
+  // Repair numerics on load rather than only defending at the point of use, so an
+  // older document is fixed once instead of every render.
+  d.units.forEach(u=>{u.bd=nz(u.bd);u.bth=u.bth??1;u.sf=nz(u.sf);u.count=nz(u.count);u.rent=nz(u.rent);});
+  d.other.forEach(o=>{o.rate=nz(o.rate);o.count=nz(o.count);});
+  d.expenses.forEach(x=>{x.rate=nz(x.rate);x.count=nz(x.count);});
+  (d.companies||[]).forEach(c=>{c.pct=nz(c.pct);});
+  d.resSF=nz(d.resSF);d.amenSF=nz(d.amenSF);d.siteSF=nz(d.siteSF);
+  if(d.contingency)d.contingency.val=nz(d.contingency.val);
+  ['land','dev','mkt','cls'].forEach(k=>{d.projectCosts[k]=nz(d.projectCosts[k]);});
   // Budgets saved before edit-tracking existed have no baseline, so seed it from the
   // current rate: nothing is retroactively claimed to be a manual edit.
   // Older saves predate stable line IDs; mint one per line so selection, code
   // editing and SOV LineKey have something durable to hold on to.
-  d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';l.baseUnit=l.baseUnit??l.unit;
+  d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';
+    l.unit=nz(l.unit);l.qty=nz(l.qty);l.baseUnit=nz(l.baseUnit??l.unit);
     if(!l.lineId)l.lineId=newLineId();});
   d.status=d.status||'Draft';
   return d;
@@ -2247,11 +2262,11 @@ function toBudget(){
 }
 
 /* ============ CALC ============ */
-function totUnits(){return doc.units.reduce((s,u)=>s+u.count,0);}
+function totUnits(){return doc.units.reduce((s,u)=>s+nz(u.count),0);}
 function lineQty(it){
-  if(!it.auto)return it.qty;
-  if(it.basis==='sf')return doc.resSF;
-  if(it.basis==='asf')return doc.amenSF;
+  if(!it.auto)return nz(it.qty);
+  if(it.basis==='sf')return nz(doc.resSF);
+  if(it.basis==='asf')return nz(doc.amenSF);
   if(it.basis==='unit')return totUnits();
   return 1;
 }
@@ -2263,18 +2278,19 @@ function scopeActive(sc){return sc!=='amen'||(+doc.amenSF||0)>0;}
 function activeScopes(){return ['res','amen','soft'].filter(scopeActive);}
 function scopeSum(sc){
   if(!scopeActive(sc))return 0;
-  return doc.lines.filter(l=>l.scope===sc).reduce((s,it)=>s+lineQty(it)*it.unit,0);
+  return doc.lines.filter(l=>l.scope===sc).reduce((s,it)=>s+lineQty(it)*nz(it.unit),0);
 }
 function parts(){
   const res=scopeSum('res'),amen=scopeSum('amen'),soft=scopeSum('soft');
   const hard=res+amen;
-  const profit=doc.companies.reduce((s,c)=>s+hard*c.pct/100,0);
+  const profit=doc.companies.reduce((s,c)=>s+hard*nz(c.pct)/100,0);
   const c=doc.contingency;
-  const cont=c.mode==='pct'?hard*c.val/100:c.mode==='psf'?(doc.resSF+doc.amenSF)*c.val:c.val;
+  const cont=c.mode==='pct'?hard*nz(c.val)/100
+    :c.mode==='psf'?(nz(doc.resSF)+nz(doc.amenSF))*nz(c.val):nz(c.val);
   const contract=hard+profit+cont;
   const pc=doc.projectCosts;
-  const fees=pc.dev+pc.mkt+pc.cls;
-  const project=contract+soft+pc.land+fees;
+  const fees=nz(pc.dev)+nz(pc.mkt)+nz(pc.cls);
+  const project=contract+soft+nz(pc.land)+fees;
   return {res,amen,soft,hard,profit,cont,contract,fees,project};
 }
 /* Two different efficiencies, easy to confuse:
@@ -2285,9 +2301,9 @@ function parts(){
    Site SF is land, so it prices nothing; it only feeds these measures. */
 const SQFT_PER_ACRE=43560;
 function siteMetrics(){
-  const bldg=(+doc.resSF||0)+(+doc.amenSF||0);
+  const bldg=nz(doc.resSF)+nz(doc.amenSF);
   const site=+doc.siteSF||0;
-  const unitSF=doc.units.reduce((s,u)=>s+u.sf*u.count,0);
+  const unitSF=doc.units.reduce((s,u)=>s+nz(u.sf)*nz(u.count),0);
   const acres=site?site/SQFT_PER_ACRE:0;
   return {bldg,site,unitSF,acres,
     siteEff:site?bldg/site:null,
