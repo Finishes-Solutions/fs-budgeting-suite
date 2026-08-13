@@ -27,6 +27,7 @@ templates requires the `pricing_admin` custom role.
 | Area | Behaviour |
 |---|---|
 | **Budgets** | Priced line items across three scopes — residential, amenity, soft costs — grouped by phase and by CSI MasterFormat division |
+| **Home list** | Search, status filter, sortable columns, and Group By address, project ID prefix, type or status with per-group totals |
 | **Inputs** | Unit mix and rents, other income, operating expenses, square footages, company profit split, contingency, land and project costs |
 | **Version history** | Every meaningful save records an immutable snapshot. A save that changed nothing creates no version |
 | **Templates** | Admin-managed, versioned defaults that new budgets are created from. Publishing affects only future budgets |

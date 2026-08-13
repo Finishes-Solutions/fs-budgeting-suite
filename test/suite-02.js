@@ -95,6 +95,61 @@ const BASE = 'http://127.0.0.1:8100';
   await p.fill('#homeSearch', 'nomatch');
   ok('U2 no-match empty state', /Nothing matches/.test(await p.locator('#homeEmptyBig').textContent()));
   await p.fill('#homeSearch', '');
+
+  // --- Group By
+  ok('Group By offers no-grouping, address, ID, type and status',
+     (await p.locator('#homeGroup option').allTextContents()).join('|')
+       === 'No Grouping|Group by Address|Group by Project ID|Group by Type|Group by Status');
+  ok('The list is ungrouped by default',
+     (await p.locator('#homeBody tr.grp-hd').count()) === 0);
+
+  const grouped = async (key) => {
+    await p.selectOption('#homeGroup', key); await p.waitForTimeout(250);
+    return p.evaluate(() => ({
+      groups: [...document.querySelectorAll('#homeBody tr.grp-hd')].length,
+      rows: [...document.querySelectorAll('#homeBody tr:not(.grp-hd)')].length,
+      first: (document.querySelector('#homeBody tr.grp-hd') || {}).textContent || '',
+      last: [...document.querySelectorAll('#homeBody tr.grp-hd')].pop().textContent || '',
+      // colspan means element count != column count; measure the real span, and
+      // check the money lands under Contract Sum and Total Project.
+      headerSpan: [...document.querySelector('#homeBody tr.grp-hd').children]
+        .reduce((n, c) => n + (+c.getAttribute('colspan') || 1), 0),
+      moneyCols: (() => {
+        let col = 0, cols = [];
+        for (const c of document.querySelector('#homeBody tr.grp-hd').children) {
+          if (/^\$/.test(c.textContent.trim())) cols.push(col);
+          col += (+c.getAttribute('colspan') || 1);
+        }
+        return cols;
+      })(),
+      allGroups: [...document.querySelectorAll('#homeBody tr.grp-hd')].map(t => t.textContent)
+    }));
+  };
+  const byStatus = await grouped('status');
+  ok('Grouping by status splits the list', byStatus.groups >= 2, byStatus.groups + ' groups');
+  ok('Grouping shows every budget exactly once', byStatus.rows === 4, byStatus.rows + ' rows');
+  ok('Group headers span the full table', byStatus.headerSpan === 7, 'span ' + byStatus.headerSpan);
+  ok('Group totals sit under Contract Sum and Total Project',
+     JSON.stringify(byStatus.moneyCols) === '[2,3]', JSON.stringify(byStatus.moneyCols));
+  const byType = await grouped('type');
+  ok('Grouping by type works', byType.groups >= 1 && byType.rows === 4);
+  const byId = await grouped('id');
+  // Fewer groups than rows is the proof it grouped by prefix — grouping on the whole
+  // (unique) ID would give one group per budget. Groups sort alphabetically, so AS
+  // legitimately comes before BD.
+  ok('Grouping by project ID groups by prefix, not by unique ID',
+     byId.groups < byId.rows && byId.allGroups.some(g => /BD/.test(g)),
+     byId.groups + ' groups for ' + byId.rows + ' budgets');
+  const byAddr = await grouped('address');
+  ok('Grouping by address works', byAddr.rows === 4);
+  ok('Budgets with no address are grouped last', /No Address/.test(byAddr.last), byAddr.last.trim());
+  ok('Group totals reconcile to the ungrouped total', await p.evaluate(() => {
+    const g = groupedRows(homeRows());
+    const all = homeRows().reduce((s, x) => s + (+x.contractSum || 0), 0);
+    return Math.abs(g.reduce((s, x) => s + x.contract, 0) - all) < 0.01;
+  }));
+  await p.selectOption('#homeGroup', ''); await p.waitForTimeout(200);
+  ok('Grouping can be turned off again', (await p.locator('#homeBody tr.grp-hd').count()) === 0);
   await p.screenshot({ path: OUT + '/home.png' });
 
   // --- reopen a saved budget round-trips

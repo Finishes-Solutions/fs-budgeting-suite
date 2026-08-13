@@ -495,6 +495,14 @@ th.sortable.sorted{color:var(--ink-900)}
           <option value="In Review">In Review</option>
           <option value="Finalized">Finalized</option>
         </select>
+        <select id="homeGroup" style="width:168px;font-size:12px;padding:6px 8px"
+          title="Group the list" aria-label="Group By">
+          <option value="">No Grouping</option>
+          <option value="address">Group by Address</option>
+          <option value="id">Group by Project ID</option>
+          <option value="type">Group by Type</option>
+          <option value="status">Group by Status</option>
+        </select>
       </div>
       <span class="eyebrow" id="homeCount">—</span>
     </div>
@@ -1649,7 +1657,7 @@ const DEFAULT_EXPENSES=[
 let pricing=null,doc=null,index=[],adminUnlocked=false,currentPage='home';
 let dirty=false,saving=false,lastSaved=null;
 const collapsed=new Set();              // "scope|grp" keys collapsed on the budget grid
-const homeView={q:'',sort:'updated',dir:-1,status:'all'};
+const homeView={q:'',sort:'updated',dir:-1,status:'all',group:''};
 const SCOPES={res:'Residential Construction',amen:'Amenity / Clubhouse',soft:'Soft Costs'};
 const BASIS_LABEL={sf:'Per Res SF',asf:'Per Amen SF',unit:'Per Unit',ls:'Lump Sum'};
 
@@ -1843,6 +1851,36 @@ function homeRows(){
     return String(a[k]??'').localeCompare(String(z[k]??''))*d;
   });
 }
+/* Grouping keys. Project ID groups by its prefix — every ID is unique, so grouping
+   on the whole value would make one group per budget. The prefix is the part that
+   actually classifies a record (BD / OP / AS / TST). */
+const HOME_GROUPS={
+  address:{label:'Address', of:x=>(x.address||'').trim()||'No Address'},
+  id:     {label:'Project ID', of:x=>{
+            const m=/^([A-Z]+)-/.exec(String(x.projectId||'').toUpperCase());
+            return m?({BD:'BD — Business Development',OP:'OP — Operations',
+                       AS:'AS — Assessment',TST:'TST — Test'}[m[1]]||m[1]):'Other';}},
+  type:   {label:'Type', of:x=>(x.type||'').trim()||'No Type'},
+  status: {label:'Status', of:x=>(x.status||'').trim()||'Draft'}
+};
+// "No Address" / "No Type" are placeholders for missing data, not real groups, so
+// they are pinned last rather than landing wherever the alphabet puts them.
+const HOME_GROUP_LAST=/^(No |Other$)/;
+/* Rows keep the user's chosen sort inside each group; only the grouping key decides
+   the outer order, so sorting and grouping compose instead of fighting. */
+function groupedRows(rows){
+  const g=HOME_GROUPS[homeView.group];
+  if(!g)return null;
+  const map=new Map();
+  rows.forEach(x=>{const k=g.of(x);if(!map.has(k))map.set(k,[]);map.get(k).push(x);});
+  return [...map.keys()].sort((a,z)=>{
+      const pa=HOME_GROUP_LAST.test(a),pz=HOME_GROUP_LAST.test(z);
+      return pa!==pz?(pa?1:-1):a.localeCompare(z,undefined,{numeric:true});
+    })
+    .map(k=>({key:k,rows:map.get(k),
+              contract:map.get(k).reduce((s,x)=>s+(+x.contractSum||0),0),
+              project:map.get(k).reduce((s,x)=>s+(+x.projectCost||0),0)}));
+}
 function paintHome(){
   const rows=homeRows(),b=document.getElementById('homeBody');b.innerHTML='';
   document.getElementById('homeEmpty').style.display=rows.length?'none':'block';
@@ -1852,8 +1890,23 @@ function paintHome(){
     :'Create one to get started. Budgets snapshot the pricing library at creation.';
   document.getElementById('homeCount').textContent=index.length
     ?rows.length+' of '+index.length+(index.length===1?' budget':' budgets'):'—';
-  rows.forEach(x=>{
-    b.insertAdjacentHTML('beforeend',`<tr class="clickable" onclick="openBudget('${x.projectId}')">
+  const groups=groupedRows(rows);
+  if(groups){
+    groups.forEach(gr=>{
+      // Totals sit in the Contract Sum and Total Project columns, matching the
+      // division headers on the budget grid.
+      b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="2" style="padding-left:22px">${esc(gr.key)}
+        <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'}</span></td>
+        <td class="calc r strong">${usd(gr.contract)}</td><td class="calc r strong">${usd(gr.project)}</td>
+        <td></td><td></td><td class="no-print"></td></tr>`);
+      gr.rows.forEach(homeRow);
+    });
+  } else rows.forEach(homeRow);
+  paintHomeSortArrows();
+}
+function homeRow(x){
+  document.getElementById('homeBody').insertAdjacentHTML('beforeend',
+    `<tr class="clickable" onclick="openBudget('${x.projectId}')">
       <td class="mono" style="padding-left:22px;font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
       <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
       <td class="calc r">${usd(x.contractSum||0)}</td>
@@ -1863,7 +1916,8 @@ function paintHome(){
       <td class="no-print" style="text-align:right"><button class="rowmenu-btn" data-pid="${esc(x.projectId)}"
         aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(x.projectId)}"
         onclick="event.stopPropagation();openRowMenu(this)">⋮</button></td></tr>`);
-  });
+}
+function paintHomeSortArrows(){
   document.querySelectorAll('#homeHead th[data-sort]').forEach(th=>{
     const on=th.dataset.sort===homeView.sort;
     th.classList.toggle('sorted',on);
@@ -3449,6 +3503,7 @@ function wireDelegates(){
   });
   document.getElementById('homeSearch').addEventListener('input',e=>{homeView.q=e.target.value;paintHome();});
   document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
+  document.getElementById('homeGroup').addEventListener('change',e=>{homeView.group=e.target.value;paintHome();});
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'){closeExport();closePick();return;}
     // Cmd/Ctrl+S saves rather than letting the browser offer to save the page.
