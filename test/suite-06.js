@@ -94,6 +94,29 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('Selection checkboxes are rounded', await p.evaluate(() =>
     parseFloat(getComputedStyle(document.querySelector('#budBody input[type=checkbox]')).borderRadius) >= 4));
 
+ // --- favicon: one self-contained icon, legible on light and dark tab strips
+ const fav = await p.evaluate(() => {
+   const links = [...document.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]')];
+   return links.map(l => ({rel: l.getAttribute('rel'), href: l.getAttribute('href'),
+                           sizes: l.getAttribute('sizes')}));
+ });
+ ok('A favicon is declared', fav.length >= 3, fav.length + ' icon links');
+ ok('It ships 16 and 32 px PNGs',
+    fav.some(f => /favicon-16\.png$/.test(f.href)) && fav.some(f => /favicon-32\.png$/.test(f.href)));
+ ok('It ships an apple-touch-icon', fav.some(f => f.rel === 'apple-touch-icon'));
+ // No media-scoped variants: a browser that ignores `media` would pick one at random,
+ // and half the time that is the invisible one. The tile is legible either way.
+ ok('The icon does not depend on prefers-color-scheme',
+    await p.evaluate(() => ![...document.querySelectorAll('link[rel~="icon"]')]
+      .some(l => (l.getAttribute('media') || '').includes('prefers-color-scheme'))));
+ const favOk = await p.evaluate(async () => {
+   const r = await fetch('assets/favicon-32.png');
+   if (!r.ok) return 'status ' + r.status;
+   const b = await r.blob();
+   return b.size > 200 && b.type.includes('png') ? 'ok' : 'bad blob ' + b.size + ' ' + b.type;
+ });
+ ok('The favicon actually serves', favOk === 'ok', favOk);
+
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();

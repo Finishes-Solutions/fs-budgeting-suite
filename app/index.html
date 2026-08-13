@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Finishes Solutions Budgeting Suite</title>
+<!-- The FS monogram is black ink on transparency and would vanish against a dark tab
+     strip, so the icon is the mark in white on the app's own ink-900 tile. Contrast is
+     then glyph-against-tile, which is fixed, rather than glyph-against-browser-chrome,
+     which is not — it reads in light and dark themes with no media query and no
+     per-browser behaviour to depend on. Regenerate with tools/make-favicons.py. -->
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png">
 <!-- ExcelJS is vendored, not loaded from a CDN: the export used to fail silently on any
      network that blocked cdnjs, and the community build of the old library could not style
      cells at all. MIT licence in vendor/exceljs-LICENSE.txt. -->
