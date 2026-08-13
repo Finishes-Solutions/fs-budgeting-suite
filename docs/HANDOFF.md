@@ -34,9 +34,13 @@ Everyone in the tenant can build budgets. Publishing pricing requires the
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement |
 | `app/assets/` | Logos. `finishes-logo-white.svg` is the header lockup |
 | `app/vendor/exceljs.min.js` | ExcelJS 4.4.0, MIT, vendored (licence file alongside) |
-| `api/budget/`, `api/budgets/`, `api/pricing/` | The three Functions |
+| `api/budget/`, `api/budgets/`, `api/pricing/`, `api/budget-versions/` | The four Functions |
+| `api/shared/canonical.js`, `api/shared/sov.js`, `api/shared/versioning.js` | Save-versioning primitives; `sov.js` is dependency-free so it tests without `mssql` |
 | `api/shared/auth.js`, `api/shared/db.js` | Principal parsing and the `mssql` pool |
 | `sql/schema.sql`, `sql/seed_pricing.sql`, `sql/views.sql` | Database |
+| `sql/migrate_budget_history_and_templates.sql` | Version history, templates, soft delete — run once, then `views.sql` |
+| `sql/verify_migration.sql` | Read-only post-migration check, one row per assertion |
+| `sql/purge_deleted_budgets.sql` | Admin-run hard purge of soft-deleted budgets. Never deployed |
 | `sql/cleanup_test_budgets.sql` | Purge `TST-%` rows (SovLines first — FK) |
 | `sql/migrate_op_ids.sql` | One-time `OP-###` → `OP-####` rename |
 | `test/` | Browser test harness (see §7) |
@@ -219,20 +223,34 @@ Each budget line has `code` (CSI), `grp`, `scope` (`res` | `amen` | `soft`), `de
    `99 03 00` in the markups division (rule 2).
 
 7. **Project IDs are `OP-####` / `BD-####` / `AS-####` / `TST-####`,** validated in
-   *three* places that must change together: `app/index.html` (`ID_RX`),
-   `api/budget/index.js` (`ID_RX`), and `test/mock-api.js`.
+   *four* places that must change together: `app/index.html` (`ID_RX`),
+   `api/budget/index.js`, `api/budget-versions/index.js`, and `test/mock-api.js`.
 
 8. **`TST-` budgets share the production database.** They render an amber TEST badge
-   and banner. `sql/views.sql` does **not** yet filter them out (see §8).
+   and banner. `sql/views.sql` now excludes them from the reporting views.
+
+9. **Array positions are not row identity.** Every budget line carries a stable
+   `lineId`, persisted as `SovLines.LineKey`. Selection, `data-k` focus keys, code
+   editing and batch deletion all key off it — a code edit moves a line between
+   groups and a batch delete shifts every index below it.
+
+10. **Deletion is a soft flag.** `DELETE` sets `IsDeleted`; history survives and a
+    `PUT` on the same project ID restores. The app has no hard delete —
+    `sql/purge_deleted_budgets.sql` is the admin recycle-bin empty.
 
 ---
 
 ## 7 · Running the tests
 
-Ten Playwright suites, 214 assertions (all passing as of this commit), driving the real
-frontend against a mock of the
-SWA API (`test/mock-api.js` — serves the static app, `/.auth/me`, and the three API
-routes from an in-memory store plus `test/pricing.json`).
+Ten Playwright suites, 261 assertions, plus 29 `node:test` assertions for the pure
+logic that needs no browser — all passing as of this commit. The browser suites drive
+the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
+app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus
+`test/pricing.json`, and mirrors soft-delete and no-op-save semantics).
+
+`node --test test/*.test.js` covers canonical JSON and content hashing, the SOV
+projection, and the calculation audit against the MF workbook. `run-all.sh` runs it
+first when invoked with no arguments.
 
 ```bash
 ./test/run-all.sh          # everything
@@ -264,7 +282,10 @@ counts — state carried between suites produces false failures.
 | 07 | Help TOC scrolls within the guide, never navigates away |
 | 08 | Amenity suppression arithmetic |
 | 09 | Cmd/Ctrl+S, including with no budget open |
-| 10 | Group selector when adding a line |
+| 10 | Group selector, editable CSI codes and group movement, batch selection and deletion |
+
+Suite 02 also covers the three-dot actions menu and read-only version history; suite 08
+covers division header totals, percentage denominators and the zero-contract em dash.
 
 The suites assert against **visible button text**, so a Title Case pass or a moved
 field breaks selectors. That is intentional — it catches copy drift — but expect to
@@ -282,13 +303,13 @@ update selectors alongside label changes.
 
 **Correctness**
 
-- `sql/views.sql` §2 references `migration_soft_delete.sql`, which does not exist in
-  this repository.
-- `sql/views.sql` does not exclude `ProjectId LIKE 'TST-%'`, so test budgets appear in
-  reporting. The DATA_CONTRACT note says downstream must filter; the views should too.
-- `DEFAULT_PRICING` is duplicated between `app/index.html` and `sql/seed_pricing.sql`
-  and will drift.
-- Blank numeric inputs render `$NaN`.
+- Blank numeric inputs render `$NaN`. Still open — no touched code path made it a
+  one-liner.
+- **Production runs the pre-versioning API against the migrated database.** Its
+  delete button fails until `staging` is released, because the old hard delete is
+  blocked by the new `BudgetVersions` foreign key. Nothing is lost; it fails cleanly.
+- Admin budget-template management (APIs and UI) is specified but not yet built. The
+  schema, the seeded `multifamily` template and its provenance columns are in place.
 
 **Housekeeping**
 
@@ -298,7 +319,8 @@ update selectors alongside label changes.
 
 **Deferred UI work**
 
-- No `aria-label` on the `×` icon buttons; no focus-visible styling.
+- Icon buttons other than the Budgets-list actions menu still lack `aria-label`; the
+  three-dot menu and the budget line remove buttons now have them.
 - Tablet and mobile: header nav and the wide tables only overflow-scroll.
 - The Excel workbook specifies **Montserrat**. Machines without it substitute silently.
   Switching to a guaranteed font is a one-line change in `BRAND` if that becomes a
