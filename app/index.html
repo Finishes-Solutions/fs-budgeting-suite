@@ -130,6 +130,26 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .scope-hd td.calc,.scope-hd td.calc.strong{color:#fff}
 /* Batch selection toolbar. Appears only while something is selected, so the
    budget grid is unchanged for the ordinary single-line workflow. */
+/* Cold-start screen. Azure SQL serverless auto-pauses, so the first request after
+   a quiet spell waits on the database resuming. Without this the app renders an
+   empty budgets list and reads as broken. */
+#bootScreen{position:fixed;inset:0;z-index:200;background:var(--white);display:flex;
+  align-items:center;justify-content:center;transition:opacity .25s}
+.boot-card{text-align:center;max-width:380px;padding:24px}
+.boot-spin{width:34px;height:34px;margin:0 auto 18px;border:3px solid var(--ink-150);
+  border-top-color:var(--green-600);border-radius:50%;animation:bootspin .9s linear infinite}
+@keyframes bootspin{to{transform:rotate(360deg)}}
+.boot-title{font-size:15px;font-weight:600;color:var(--ink-900);margin-bottom:6px}
+.boot-msg{font-size:13px;color:var(--ink-500);line-height:1.5}
+@media (prefers-reduced-motion:reduce){.boot-spin{animation-duration:2.4s}}
+
+/* Template administration */
+.tpl-row{display:grid;grid-template-columns:120px 1fr auto;gap:12px;align-items:center;
+  padding:10px 12px;border:1px solid var(--ink-150);border-radius:var(--r);margin-bottom:6px}
+.tpl-row.current{border-color:var(--green-200);background:var(--green-50)}
+.tpl-banner{background:var(--edit-50);border:1px solid var(--edit-100);color:var(--edit);
+  padding:10px 14px;border-radius:var(--r);font-size:13px;display:flex;gap:12px;
+  align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .selbar{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--green-50);
   border-top:1px solid var(--green-200);border-bottom:1px solid var(--green-200);
   font-size:13px;font-weight:600;color:var(--green-800)}
@@ -264,7 +284,7 @@ th.sortable.sorted{color:var(--ink-900)}
 @media print{
   @page{size:letter portrait;margin:13mm 12mm 14mm}
   body{background:#fff}
-  .no-print,.banner,.toast,#exportModal,#pickModal,#versionsModal,#rowMenu{display:none!important}
+  .no-print,.banner,.toast,#exportModal,#pickModal,#versionsModal,#rowMenu,#bootScreen{display:none!important}
   /* direct children only — the report has its own <header> and must not be hidden */
   body.printing > header,body.printing > main{display:none!important}
   body.printing #printDoc{display:block}
@@ -397,8 +417,10 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title">
     <div><h1>Project Budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
     <div style="display:flex;gap:10px">
+      <select id="newFromTpl" style="width:210px;display:none" onchange="newBudgetFromTemplate(this.value);this.selectedIndex=0"
+        aria-label="New Budget From Template"></select>
       <button class="btn btn-ghost" onclick="newBudget('blank')">+ Blank Budget</button>
-      <button class="btn btn-primary" onclick="newBudget()">+ New Multifamily Budget</button>
+      <button class="btn btn-primary" id="newMfBtn" onclick="newBudgetFromTemplate('multifamily')">+ New Multifamily Budget</button>
     </div>
   </div>
   <div class="card">
@@ -735,6 +757,25 @@ th.sortable.sorted{color:var(--ink-900)}
     <span><b>Unlocked.</b> Changes affect <i>new</i> budgets only — drafts keep their snapshot until updated from the budget page.</span>
     <button class="btn btn-sm btn-primary no-print" onclick="savePricing()">Publish New Version</button>
   </div>
+  <div class="card" id="tplCard">
+    <div class="card-hd"><h2>Budget Templates</h2><span class="eyebrow" id="tplMeta">—</span></div>
+    <div class="card-bd">
+      <p class="note" style="margin-top:0">A template holds the complete defaults a new budget starts from. Publishing
+        creates a new immutable version and affects <b>only budgets created afterwards</b> — no existing budget is
+        recalculated or repriced.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0">
+        <select id="tplSelect" style="width:280px" onchange="selectTemplate(this.value)" aria-label="Template"></select>
+        <span id="tplAdminCtl" class="no-print" style="display:none;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="editTemplate()">Edit Template</button>
+          <button class="btn btn-ghost btn-sm" onclick="duplicateTemplate()">Duplicate Template</button>
+          <button class="btn btn-ghost btn-sm" onclick="createTemplate()">Create Template</button>
+          <button class="btn btn-ghost btn-sm" id="tplActiveBtn" onclick="toggleTemplateActive()">Deactivate Template</button>
+        </span>
+      </div>
+      <div id="tplDetail"></div>
+    </div>
+  </div>
+
   <div class="card"><div class="card-hd">
       <h2>Multifamily Cost Assumptions</h2>
       <span class="eyebrow" id="pricingMeta">—</span></div>
@@ -1149,6 +1190,15 @@ th.sortable.sorted{color:var(--ink-900)}
         <button class="btn btn-ghost btn-sm" onclick="addBlankLine()">Add Blank Line Instead</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ================= COLD-START SCREEN ================= -->
+<div id="bootScreen" role="status" aria-live="polite">
+  <div class="boot-card">
+    <div class="boot-spin" aria-hidden="true"></div>
+    <div class="boot-title">Loading FS Budgeting Suite</div>
+    <div class="boot-msg" id="bootMsg">Connecting to the server…</div>
   </div>
 </div>
 
@@ -1663,9 +1713,211 @@ function homeSort(k){
 function enableDocNav(){
   ['nav-input','nav-budget','nav-csi'].forEach(id=>{document.getElementById(id).disabled=false;});
 }
+/* ============ BUDGET TEMPLATES ============
+   The template system is the authoritative source of new-budget defaults
+   (docs/DATA_CONTRACT.md). A template is edited by loading its document into the
+   ordinary budget editor — that editor already edits every field a template
+   carries, so there is no parallel half-built form to drift out of step — and
+   publishing writes it back as a new immutable version. */
+let templates=[],tplKey=null,templateEdit=null,templatesLoaded=false,templatesAdmin=false;
+
+async function loadTemplates(){
+  try{
+    const r=await api('templates');
+    templates=r.templates||[];
+    templatesAdmin=!!r.isAdmin;      // separate from the pricing passcode unlock
+    templatesLoaded=true;
+  }catch(e){templates=[];templatesLoaded=false;}
+  paintTemplatePickers();
+}
+const canAdminTemplates=()=>templatesAdmin||adminUnlocked;
+function activeTemplates(){return templates.filter(t=>t.isActive&&t.currentVersion);}
+/* A deactivated template disappears from new-budget choices but keeps working for
+   the budgets that already reference it. */
+function paintTemplatePickers(){
+  const act=activeTemplates();
+  const sel=document.getElementById('newFromTpl');
+  if(sel){
+    const others=act.filter(t=>t.templateKey!=='multifamily');
+    sel.innerHTML='<option value="">+ New Budget…</option>'
+      +others.map(t=>`<option value="${esc(t.templateKey)}">${esc(t.name)}</option>`).join('');
+    sel.style.display=others.length?'':'none';
+  }
+  const mf=act.find(t=>t.templateKey==='multifamily');
+  const mfBtn=document.getElementById('newMfBtn');
+  // If templates could not be loaded — API down, cold start not finished — keep the
+  // primary action available. It falls back to the built-in defaults, which is
+  // exactly what DEFAULT_PRICING exists for. Hiding it would strand the user.
+  if(mfBtn)mfBtn.style.display=(!templatesLoaded||mf)?'':'none';
+  const ts=document.getElementById('tplSelect');
+  if(ts){
+    ts.innerHTML=templates.map(t=>`<option value="${esc(t.templateKey)}">${esc(t.name)}${t.isActive?'':' (Inactive)'}</option>`).join('')
+      ||'<option value="">No templates</option>';
+    if(tplKey)ts.value=tplKey; else tplKey=ts.value||null;
+  }
+  const ctl=document.getElementById('tplAdminCtl');
+  if(ctl)ctl.style.display=canAdminTemplates()?'flex':'none';
+  renderTemplateDetail();
+}
+function selectTemplate(k){tplKey=k;renderTemplateDetail();}
+async function renderTemplateDetail(){
+  const box=document.getElementById('tplDetail');if(!box)return;
+  const t=templates.find(x=>x.templateKey===tplKey);
+  const meta=document.getElementById('tplMeta');
+  if(!t){box.innerHTML='<div class="note">No template selected.</div>';if(meta)meta.textContent='—';return;}
+  if(meta)meta.textContent=t.name+' · version '+(t.currentVersion||'—')+(t.isActive?'':' · inactive');
+  const btn=document.getElementById('tplActiveBtn');
+  if(btn)btn.textContent=t.isActive?'Deactivate Template':'Activate Template';
+  box.innerHTML='<div class="note">Loading template versions…</div>';
+  let vs=[];
+  try{vs=(await api('templates/'+encodeURIComponent(t.templateKey)+'/versions')).versions||[];}
+  catch(e){box.innerHTML='<div class="note" style="color:var(--danger)">Could not load versions: '+esc(e.message)+'</div>';return;}
+  box.innerHTML=
+    (canAdminTemplates()?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:14px">
+      <label class="fld"><span class="lab">Template Name</span><input type="text" id="tplName" value="${esc(t.name)}"></label>
+      <label class="fld"><span class="lab">Budget Type</span><input type="text" id="tplType" value="${esc(t.budgetType||'')}"></label>
+      <label class="fld"><span class="lab">Description</span><input type="text" id="tplDesc" value="${esc(t.description||'')}"></label>
+      </div><div style="margin-bottom:16px"><button class="btn btn-ghost btn-sm" onclick="saveTemplateDetails()">Save Details</button>
+      <span class="note" style="margin-left:10px">Renaming never changes what a budget is created from — only publishing does.</span></div>`:'')
+    +'<div class="eyebrow" style="margin-bottom:8px">Template Versions</div>'
+    +(vs.length?vs.map(v=>`<div class="tpl-row${v.isCurrent?' current':''}">
+        <div><div class="ver-num">Version ${v.versionNumber}</div>${v.isCurrent?'<span class="badge ok">Current</span>':''}</div>
+        <div><div>${esc(v.versionLabel||'')}</div>
+          <div class="ver-sub">${esc(v.changeSummary||'No change summary')}</div>
+          <div class="ver-sub">${esc(fmtWhen(v.publishedAt||v.createdAt))} · ${esc(v.createdByName||'Unknown')} · Pricing ${esc(v.pricingVersion||'—')}</div></div>
+        <div style="text-align:right"><span class="note">Schema v${v.templateSchemaVersion||1}</span></div>
+      </div>`).join('')
+      :'<div class="note">No published versions yet.</div>');
+}
+async function saveTemplateDetails(){
+  const t=templates.find(x=>x.templateKey===tplKey);if(!t)return;
+  const body={name:document.getElementById('tplName').value.trim(),
+              budgetType:document.getElementById('tplType').value.trim(),
+              description:document.getElementById('tplDesc').value};
+  if(!body.name){toast('Template name is required');return;}
+  try{
+    await api('templates/'+encodeURIComponent(t.templateKey),{method:'PATCH',body:JSON.stringify(body)});
+    await loadTemplates();toast('Template details saved');
+  }catch(e){toast('Could not save details: '+e.message);}
+}
+async function toggleTemplateActive(){
+  const t=templates.find(x=>x.templateKey===tplKey);if(!t)return;
+  const on=!t.isActive;
+  if(!on&&!confirm('Deactivate '+t.name+'?\n\nIt disappears from new-budget choices. Existing budgets that used it keep working and still open normally.'))return;
+  try{
+    await api('templates/'+encodeURIComponent(t.templateKey),{method:'PATCH',body:JSON.stringify({isActive:on})});
+    await loadTemplates();toast(t.name+(on?' activated':' deactivated'));
+  }catch(e){toast('Could not change that: '+e.message);}
+}
+/* Editing loads the template's document into the normal editor. The budget you
+   had open is discarded only after the usual unsaved-changes warning. */
+async function editTemplate(key){
+  const k=key||tplKey;if(!k)return;
+  if(!confirmDiscard())return;
+  let t;
+  try{t=await api('templates/'+encodeURIComponent(k));}
+  catch(e){toast('Could not load that template: '+e.message);return;}
+  if(!t.doc){toast('That template has no published version to edit');return;}
+  templateEdit={key:t.templateKey,name:t.name,version:t.currentVersion};
+  doc=migrate(JSON.parse(JSON.stringify(t.doc)));
+  doc.projectId='';                       // a template is not a project
+  dirty=false;lastSaved=null;selected.clear();
+  enableDocNav();fillForms();renderTemplateBanner();go('input');
+  toast('Editing template '+t.name+' — version '+(t.currentVersion||1));
+}
+function renderTemplateBanner(){
+  let el=document.getElementById('tplEditBanner');
+  if(!templateEdit){if(el)el.remove();return;}
+  if(!el){
+    el=document.createElement('div');el.id='tplEditBanner';el.className='tpl-banner no-print';
+    const main=document.querySelector('main');
+    if(main)main.insertBefore(el,main.firstChild);
+  }
+  el.innerHTML='<b>Editing Template: '+esc(templateEdit.name)+'</b>'
+    +'<span>Version '+esc(String(templateEdit.version||1))+'. Publishing creates a new version and affects only budgets created afterwards.</span>'
+    +'<span style="flex:1"></span>'
+    +'<button class="btn btn-sm btn-primary" onclick="publishTemplate()">Publish Template</button>'
+    +'<button class="btn btn-sm btn-ghost" onclick="exitTemplateEdit()">Cancel</button>';
+}
+function exitTemplateEdit(){
+  if(!confirmDiscard())return;
+  templateEdit=null;doc=null;dirty=false;selected.clear();
+  renderTemplateBanner();
+  ['nav-input','nav-budget','nav-csi'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
+  go('pricing');
+}
+async function publishTemplate(){
+  if(!templateEdit||!doc)return;
+  pullForms();
+  const summary=(prompt('Describe this template change (shown in the version history):','')||'').trim();
+  if(!confirm('Publish a new version of '+templateEdit.name+'?\n\nThis creates an immutable version. Existing budgets are not changed, recalculated or repriced.'))return;
+  const body={doc:JSON.parse(JSON.stringify(doc)),changeSummary:summary||null};
+  delete body.doc.projectId;delete body.doc.templateKey;delete body.doc.templateVersionId;
+  try{
+    const r=await api('templates/'+encodeURIComponent(templateEdit.key),{method:'PUT',body:JSON.stringify(body)});
+    dirty=false;renderSaveState();
+    templateEdit.version=r.versionNumber;renderTemplateBanner();
+    await loadTemplates();
+    toast('Published '+templateEdit.name+' version '+r.versionNumber);
+  }catch(e){toast('Publish failed: '+e.message);}
+}
+async function createTemplate(){
+  if(!doc&&!templates.length){toast('Open or duplicate a template first');return;}
+  const name=(prompt('Name the new budget type (for example, Commercial):','')||'').trim();
+  if(!name)return;
+  const key=(prompt('URL-safe key — lowercase letters, digits and hyphens:',
+    name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''))||'').trim();
+  if(!key)return;
+  const base=templates.find(x=>x.templateKey===tplKey);
+  let src=null;
+  try{src=base?await api('templates/'+encodeURIComponent(base.templateKey)):null;}catch(e){}
+  const d=src&&src.doc?JSON.parse(JSON.stringify(src.doc)):(doc?JSON.parse(JSON.stringify(doc)):null);
+  if(!d){toast('No template document to start from');return;}
+  d.name=name;d.type=name;
+  try{
+    await api('templates',{method:'POST',body:JSON.stringify({templateKey:key,name,budgetType:name,
+      description:'Created from '+(base?base.name:'the open budget'),doc:d,changeSummary:'Initial version'})});
+    tplKey=key;await loadTemplates();toast('Created template '+name);
+  }catch(e){toast('Could not create that template: '+e.message);}
+}
+function duplicateTemplate(){createTemplate();}
+
+/* New budgets clone the template's current published version. Opening an existing
+   budget never does this — a saved budget owns its own document. */
+async function newBudgetFromTemplate(key){
+  if(!key)return;
+  if(!confirmDiscard())return;
+  let t=null;
+  try{t=await api('templates/'+encodeURIComponent(key));}catch(e){}
+  if(!t||!t.doc){
+    // Offline or not yet published: fall back to the built-in defaults rather than
+    // leaving the user with a button that does nothing.
+    applyNewBudget();
+    toast('Started from the built-in defaults — the published template could not be loaded');
+    return;
+  }
+  const d=JSON.parse(JSON.stringify(t.doc));        // deep clone — never share the template object
+  d.projectId='';d.name='';d.address='';d.status='Draft';
+  d.type=t.budgetType||t.name||d.type;
+  d.templateKey=t.templateKey;
+  d.templateVersionId=t.currentVersionId||null;
+  d.pricingVersion=d.pricingVersion||(pricing&&pricing.version)||'';
+  (d.lines||[]).forEach(l=>{l.lineId=newLineId();});   // fresh identity per budget
+  d.created=new Date().toISOString();d.updated=d.created;
+  templateEdit=null;renderTemplateBanner();
+  doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
+  enableDocNav();fillForms();go('input');
+  toast('New '+(t.name||'budget')+' from template version '+(t.currentVersion||1));
+}
+
 function newBudget(kind){
   if(!confirmDiscard())return;
+  applyNewBudget(kind);
+}
+/* The discard prompt has already been answered by the caller. */
+function applyNewBudget(kind){
   doc=blankDoc(kind);dirty=false;lastSaved=null;selected.clear();
+  templateEdit=null;renderTemplateBanner();
   enableDocNav();fillForms();go('input');
   if(kind==='blank')toast('Blank budget — build the scope from the CSI catalog on the Budget page');
 }
@@ -1674,6 +1926,7 @@ async function openBudget(pid,page){
   const d=await sGet('budget-'+pid);
   if(!d){toast('Could not load '+pid);return;}
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
+  templateEdit=null;renderTemplateBanner();      // opening a budget leaves template mode
   enableDocNav();fillForms();go(page||'budget');
 }
 /* ---- Budgets list row actions ----
@@ -2433,6 +2686,9 @@ function recalc(){
 /* ============ SAVE ============ */
 async function saveBudget(show){
   if(!doc||saving)return;
+  // In template mode the same Save affordance publishes a template version instead
+  // of writing a budget — a template has no project ID and is not a project.
+  if(templateEdit)return publishTemplate();
   pullForms();
   if(!validateId()){toast('Valid project ID required to save');go('input');document.getElementById('pId').focus();return;}
   saving=true;renderSaveState();
@@ -3030,17 +3286,48 @@ function wireDelegates(){
 }
 
 /* ============ INIT ============ */
+/* ---- cold-start screen ----
+   A paused serverless database takes tens of seconds to resume, and the API layer
+   retries transient faults for about a minute (api/shared/db.js). The messages
+   escalate so a long wait reads as "still working", not as a hung page. */
+const BOOT_STAGES=[
+  [2500,'Waking the database — it pauses when idle and can take up to a minute to resume.'],
+  [15000,'Still waking the database. This is normal after a quiet spell.'],
+  [45000,'Taking longer than usual. Hang on — the app will load whatever it can.']
+];
+let bootTimers=[];
+function startBoot(){
+  bootTimers=BOOT_STAGES.map(([ms,msg])=>setTimeout(()=>{
+    const el=document.getElementById('bootMsg');if(el)el.textContent=msg;
+  },ms));
+}
+function endBoot(){
+  bootTimers.forEach(clearTimeout);bootTimers=[];
+  const el=document.getElementById('bootScreen');
+  if(!el)return;
+  el.style.opacity='0';
+  setTimeout(()=>{if(el.parentNode)el.remove();},260);
+}
 (async function init(){
-  await initAuth();
-  const published=await sGet('pricing-multifamily');   // API-first; built-in seed as fallback
-  pricingFromApi=!!published;
-  pricing=published||DEFAULT_PRICING;
-  renderApiBanner();
-  wireDelegates();
-  await renderHome();
-  await routeFromHash();
-  if(!location.hash)syncHash(currentPage);
-  renderSaveState();
+  startBoot();
+  try{
+    await initAuth();
+    const published=await sGet('pricing-multifamily');   // API-first; built-in seed as fallback
+    pricingFromApi=!!published;
+    pricing=published||DEFAULT_PRICING;
+    renderApiBanner();
+    wireDelegates();
+    await loadTemplates();
+    await renderHome();
+    await routeFromHash();
+    if(!location.hash)syncHash(currentPage);
+    renderSaveState();
+  }finally{
+    // Whatever happened — including the API being down — the app must become
+    // usable rather than sitting behind the overlay forever. The offline banner
+    // is what reports a failure from here on.
+    endBoot();
+  }
 })();
 </script>
 </body>

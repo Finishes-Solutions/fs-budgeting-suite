@@ -53,6 +53,34 @@ function sovRows(doc) {
   });
 }
 
+// Templates, seeded with `multifamily` from test/pricing.json plus the same
+// defaults blankDoc() carries — the migration seeds the real one the same way.
+const templates = new Map();
+function pushVersion(key, body, defaultLabel) {
+  const t = templates.get(key);
+  const n = t.versions.length + 1;
+  t.versions.push({versionNumber:n, versionLabel: body.versionLabel || defaultLabel || ('Version ' + n),
+    changeSummary: body.changeSummary || null, pricingVersion: body.doc.pricingVersion || null,
+    createdByName: principal.clientPrincipal.userDetails, templateSchemaVersion: 1,
+    createdAt: new Date().toISOString(), publishedAt: new Date().toISOString(),
+    doc: JSON.parse(JSON.stringify(body.doc))});
+  return n;
+}
+const tmeta = (t) => ({templateKey:t.templateKey, name:t.name, budgetType:t.budgetType,
+  description:t.description, isActive:t.isActive,
+  currentVersion: t.versions.length || null,
+  pricingVersion: t.versions.length ? t.versions[t.versions.length-1].pricingVersion : null,
+  publishedAt: t.versions.length ? t.versions[t.versions.length-1].publishedAt : null,
+  updatedAt: new Date().toISOString()});
+const tvmeta = (v) => ({versionNumber:v.versionNumber, versionLabel:v.versionLabel,
+  isCurrent: v.versionNumber === templatesCurrent(v), pricingVersion:v.pricingVersion,
+  changeSummary:v.changeSummary, createdByName:v.createdByName,
+  templateSchemaVersion:v.templateSchemaVersion, createdAt:v.createdAt, publishedAt:v.publishedAt});
+function templatesCurrent(v){
+  for (const t of templates.values()) if (t.versions.includes(v)) return t.versions.length;
+  return v.versionNumber;
+}
+
 const vmeta = (v, maxV) => ({
   versionNumber: v.versionNumber, isCurrent: v.versionNumber === maxV,
   createdAt: v.createdAt, createdByName: v.createdByName, changeSummary: v.changeSummary,
@@ -60,6 +88,27 @@ const vmeta = (v, maxV) => ({
   pricingVersion: v.doc.pricingVersion, templateKey: v.doc.templateKey || null,
   templateName: null, templateVersion: null
 });
+
+templates.set('multifamily', {templateKey:'multifamily', name:'Multifamily', budgetType:'Multifamily',
+  description:'Default multifamily budget template.', isActive:true, versions:[]});
+pushVersion('multifamily', {doc:{
+  templateSchemaVersion:1, name:'Multifamily', type:'Multifamily',
+  resSF:51365, amenSF:1200, siteSF:0,
+  units:[{label:'Studio (630)',bd:0,bth:1,sf:630,count:16,rent:1203},
+         {label:'Studio (400)',bd:0,bth:1,sf:400,count:14,rent:1160},
+         {label:'Townhome (1,063)',bd:2,bth:2,sf:1063,count:14,rent:1520},
+         {label:'Townhome (1,200)',bd:2,bth:2.5,sf:1200,count:14,rent:1500}],
+  other:[{label:'Utilities billback',rate:77,count:0,auto:true},
+         {label:'Parking (reserved spaces)',rate:25,count:15,auto:false}],
+  expenses:[{label:'Water & sewer',per:'unit',rate:60,count:0,auto:true},
+            {label:'Valet trash',per:'unit',rate:15,count:0,auto:true}],
+  lines: pricing.lines.map(l => ({...l, lineId:'tpl-'+Math.random().toString(36).slice(2,10),
+    qty: l.basis==='ls'?1:0, auto: l.basis!=='ls', baseUnit:l.unit})),
+  companies:[{name:'Finishes Solutions LLC',pct:12}],
+  contingency:{mode:'psf',val:2},
+  projectCosts:{land:1200000,dev:200000,mkt:75000,cls:0},
+  status:'Draft', pricingVersion: pricing.version
+}, changeSummary:'Seeded from the pricing library.'}, 'Initial Version');
 
 const json = (res, code, body) => {
   res.writeHead(code, { 'Content-Type': 'application/json' });
@@ -78,6 +127,62 @@ http.createServer((req, res) => {
     if (req.method === 'GET') return json(res, 200, pricing);
     let b = ''; req.on('data', c => b += c);
     return req.on('end', () => { pricing = JSON.parse(b); json(res, 200, { ok: true, version: pricing.version }); });
+  }
+
+  // ---- budget templates ----
+  if (p === '/api/templates' || p.startsWith('/api/templates/')) {
+    const seg = p === '/api/templates' ? [] : decodeURIComponent(p.slice('/api/templates/'.length)).split('/');
+    const key = seg[0] || '';
+    // x-mock-noadmin drops the role for one request, so the 403 path is exercised
+    // the same way hasRole(req,'pricing_admin') gates it in api/templates/index.js.
+    const admin = !req.headers['x-mock-noadmin']
+      && principal.clientPrincipal.userRoles.includes('pricing_admin');
+    const t = templates.get(key);
+
+    if (req.method === 'GET') {
+      if (!key) {
+        return json(res, 200, { isAdmin: admin, templates: [...templates.values()]
+          .filter(x => admin || x.isActive).map(tmeta) });
+      }
+      if (!t) { res.writeHead(404); return res.end('Template not found'); }
+      if (seg[1] === 'versions' && seg[2] === undefined) {
+        return json(res, 200, { templateKey: key, versions: t.versions.map(tvmeta).reverse() });
+      }
+      if (seg[1] === 'versions') {
+        const v = t.versions[parseInt(seg[2], 10) - 1];
+        if (!v) { res.writeHead(404); return res.end('Version not found'); }
+        return json(res, 200, { templateKey: key, version: tvmeta(v), doc: v.doc });
+      }
+      const cur = t.versions[t.versions.length - 1];
+      return json(res, 200, { ...tmeta(t), currentVersionId: cur ? cur.versionNumber : null,
+        changeSummary: cur ? cur.changeSummary : null, doc: cur ? cur.doc : null });
+    }
+
+    // Every mutation is admin-only, mirroring hasRole(req,'pricing_admin').
+    if (!admin) { res.writeHead(403); return res.end('pricing_admin required'); }
+    let b = ''; req.on('data', c => b += c);
+    return req.on('end', () => {
+      const body = b ? JSON.parse(b) : {};
+      if (req.method === 'POST') {
+        const k = String(body.templateKey || '').toLowerCase();
+        if (!/^[a-z0-9-]{1,64}$/.test(k)) { res.writeHead(400); return res.end('bad key'); }
+        if (templates.has(k)) { res.writeHead(409); return res.end('exists'); }
+        templates.set(k, {templateKey:k, name:body.name, budgetType:body.budgetType||body.name,
+          description:body.description||'', isActive:true, versions:[]});
+        return json(res, 200, {ok:true, templateKey:k, versionNumber: pushVersion(k, body, 'Initial version')});
+      }
+      if (!t) { res.writeHead(404); return res.end('Template not found'); }
+      if (req.method === 'PUT') {
+        if (!body.doc) { res.writeHead(400); return res.end('doc required'); }
+        return json(res, 200, {ok:true, templateKey:key, versionNumber: pushVersion(key, body, null)});
+      }
+      if (req.method === 'PATCH') {
+        ['name','budgetType','description'].forEach(f => { if (body[f] !== undefined) t[f] = body[f]; });
+        if (body.isActive !== undefined) t.isActive = !!body.isActive;
+        return json(res, 200, {ok:true, templateKey:key});
+      }
+      res.writeHead(405); res.end('method');
+    });
   }
 
   if (p === '/api/budgets') {

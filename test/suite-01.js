@@ -16,6 +16,12 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
   await p.goto('http://127.0.0.1:8099/index.html', { waitUntil: 'networkidle' });
   await p.waitForTimeout(600);
 
+  // The cold-start screen must clear even when the API is dead, or a paused
+  // database would leave the app stuck behind an overlay forever.
+  ok('Cold-start screen clears when the API is down',
+     (await p.locator('#bootScreen').count()) === 0);
+  ok('The app is usable behind it', await p.locator('#page-home').isVisible());
+
   // D3 â€” API is absent here, so the offline banner must be visible
   ok('D3 offline banner shows when API is unreachable', await p.locator('#apiBanner').isVisible());
   ok('D3 banner text is specific', /pricing library/i.test(await p.locator('#apiBannerMsg').textContent()));
@@ -30,7 +36,11 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
 
   // New budget
   await p.click('#nav-home');
+  // Creating a budget is async now â€” it fetches the template's current published
+  // version first, and offline it falls back to the built-in defaults. isVisible()
+  // does not auto-wait, so give the fallback a moment to land.
   await p.click('button:has-text("+ New Multifamily Budget")');
+  await p.waitForTimeout(400);
   ok('Inputs page after new budget', await p.locator('#page-input').isVisible());
   ok('U4 hash for inputs', p.url().endsWith('#/inputs'), p.url());
 

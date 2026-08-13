@@ -107,6 +107,88 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await file.saveAs(path);
  ok('Excel downloads', !!path, file.suggestedFilename());
 
+
+ // ================= BUDGET TEMPLATES =================
+ await p.click('#nav-pricing'); await p.waitForTimeout(500);
+ ok('Budget Templates section is present', await p.locator('#tplCard').isVisible());
+ ok('Template selector lists the seeded multifamily template',
+    (await p.locator('#tplSelect option').allTextContents()).some(t => /Multifamily/.test(t)));
+ ok('Admin controls are shown to a pricing_admin', await p.locator('#tplAdminCtl').isVisible());
+ ok('Version history is listed', (await p.locator('#tplDetail .tpl-row').count()) >= 1);
+ ok('The current template version is marked', (await p.locator('#tplDetail .tpl-row.current').count()) === 1);
+
+ // publishing affects only future budgets — existing ones must not move
+ await p.click('#nav-home'); await p.waitForTimeout(300);
+ await p.click('button:has-text("+ New Multifamily Budget")'); await p.waitForTimeout(500);
+ await p.fill('#pId','TST-4242'); await p.fill('#pName','Before Publish');
+ const beforeDoc = await p.evaluate(async () => {
+   pullForms();
+   const m = {projectId:doc.projectId,name:doc.name,type:doc.type,status:doc.status,
+              contractSum:parts().contract,projectCost:parts().project,updated:doc.updated};
+   await api('budget/TST-4242',{method:'PUT',body:JSON.stringify({meta:m,doc})});
+   return {contract: parts().contract, tplKey: doc.templateKey, tplVer: doc.templateVersionId,
+           firstRate: doc.lines[0].unit, lineIds: doc.lines.slice(0,3).map(l => l.lineId)};
+ });
+ ok('A new budget records its template provenance',
+    beforeDoc.tplKey === 'multifamily' && beforeDoc.tplVer >= 1,
+    beforeDoc.tplKey + ' v' + beforeDoc.tplVer);
+
+ // publish a changed template version
+ const pub = await p.evaluate(async () => {
+   const t = await api('templates/multifamily');
+   const d = JSON.parse(JSON.stringify(t.doc));
+   d.lines[0].unit = d.lines[0].unit + 50;          // a clearly visible change
+   const r = await api('templates/multifamily',{method:'PUT',
+     body:JSON.stringify({doc:d, changeSummary:'Raised the first line by $50 for the test'})});
+   return {version: r.versionNumber, from: t.currentVersion};
+ });
+ ok('Publishing creates a new immutable version', pub.version === pub.from + 1,
+    'v' + pub.from + ' → v' + pub.version);
+
+ const after = await p.evaluate(async () => {
+   const saved = await api('budget/TST-4242');
+   const v1 = await api('templates/multifamily/versions/1');
+   return {savedFirstRate: saved.lines[0].unit, v1FirstRate: v1.doc.lines[0].unit};
+ });
+ ok('Publishing does not touch an existing saved budget',
+    after.savedFirstRate === beforeDoc.firstRate,
+    'saved ' + after.savedFirstRate + ' vs ' + beforeDoc.firstRate + ' before publication');
+ const curRate = await p.evaluate(async () => (await api('templates/multifamily')).doc.lines[0].unit);
+ ok('The earlier template version stays immutable',
+    after.v1FirstRate === beforeDoc.firstRate && curRate === beforeDoc.firstRate + 50,
+    'v1 ' + after.v1FirstRate + ', current ' + curRate);
+
+ // a budget created now picks up the new version, with fresh line IDs
+ await p.click('#nav-home'); await p.waitForTimeout(300);
+ await p.click('button:has-text("+ New Multifamily Budget")'); await p.waitForTimeout(500);
+ const fresh = await p.evaluate(() => ({ver: doc.templateVersionId, rate: doc.lines[0].unit,
+                                        ids: doc.lines.slice(0,3).map(l => l.lineId)}));
+ ok('A budget created after publication uses the new version', fresh.ver === pub.version,
+    'v' + fresh.ver);
+ ok('The new budget carries the published change', fresh.rate === after.v1FirstRate + 50);
+ ok('Template line IDs are regenerated per budget',
+    fresh.ids.every(id => !beforeDoc.lineIds.includes(id)));
+
+ // deactivation hides it from new-budget choices but existing budgets still open
+ await p.evaluate(() => api('templates/multifamily',{method:'PATCH',body:JSON.stringify({isActive:false})}));
+ await p.evaluate(() => loadTemplates()); await p.waitForTimeout(300);
+ ok('A deactivated template leaves the new-budget choices',
+    (await p.evaluate(() => activeTemplates().some(t => t.templateKey === 'multifamily'))) === false);
+ ok('A budget using a deactivated template still opens',
+    await p.evaluate(async () => { const d = await api('budget/TST-4242'); return !!d && d.projectId === 'TST-4242'; }));
+ await p.evaluate(() => api('templates/multifamily',{method:'PATCH',body:JSON.stringify({isActive:true})}));
+ await p.evaluate(() => loadTemplates()); await p.waitForTimeout(300);
+
+ // non-admins cannot mutate
+ const forbidden = await p.evaluate(async () => {
+   const r = await fetch('/api/templates/multifamily',{method:'PATCH',
+     headers:{'Content-Type':'application/json','x-mock-noadmin':'1'},body:JSON.stringify({name:'Nope'})});
+   return r.status;
+ });
+ ok('Template mutations are role-gated server-side', forbidden === 403, 'status ' + forbidden);
+ ok('A rejected mutation changes nothing',
+    await p.evaluate(async () => (await api('templates/multifamily')).name === 'Multifamily'));
+
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();
