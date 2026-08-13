@@ -347,7 +347,7 @@ BEGIN
     + N',"baseUnit":'  + ISNULL(JSON_VALUE(j.[value], '$.unit'), N'0')
     + N',"qty":'  + IIF(JSON_VALUE(j.[value], '$.basis') = 'ls', N'1', N'0')
     + N',"auto":' + IIF(JSON_VALUE(j.[value], '$.basis') = 'ls', N'false', N'true')
-    + N'}' AS NVARCHAR(MAX)), N',') WITHIN GROUP (ORDER BY CAST(j.[key] AS INT))
+    + N'}' AS NVARCHAR(MAX)), N',') WITHIN GROUP (ORDER BY CAST(j.[key] AS INT)) + N']'
   FROM OPENJSON(@pricingDoc, '$.lines') AS j;
 
   IF @lines IS NULL
