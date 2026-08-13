@@ -543,7 +543,7 @@ th.sortable.sorted{color:var(--ink-900)}
           <table class="tbl"><tbody id="coBody"></tbody></table>
         </div>
         <div>
-          <div class="eyebrow" style="margin-bottom:8px">Construction contingency</div>
+          <div class="eyebrow" style="margin-bottom:8px">Construction Contingency</div>
           <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
             <div class="seg">
               <button id="cPct" onclick="setCMode('pct')">% Hard</button>
@@ -670,7 +670,7 @@ th.sortable.sorted{color:var(--ink-900)}
           </div>
         </div>
         <div>
-          <div class="eyebrow" style="margin-bottom:8px">SOV rollup — construction contract</div>
+          <div class="eyebrow" style="margin-bottom:8px">SOV Rollup — Construction Contract</div>
           <table class="tbl"><tbody id="sovBody"></tbody></table>
         </div>
       </div>
@@ -1022,7 +1022,7 @@ th.sortable.sorted{color:var(--ink-900)}
             <code>99 03 00</code> and never blended into a trade line.</li>
           <li><b>Soft costs are listed separately</b> and are not part of the contract sum — the bank sees the
             construction contract, not the total project cost.</li>
-          <li>Hand-added lines with no CSI code collect under <b>Uncoded / custom scope</b>, a prompt to give them a
+          <li>Hand-added lines with no CSI code collect under <b>Uncoded / Custom Scope</b>, a prompt to give them a
             real code before the budget goes out.</li>
         </ul>
         <p>The <b>Residential</b> and <b>Amenity</b> tags on each line say which building the work belongs to, so a
@@ -1108,7 +1108,7 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="card" style="width:460px;max-width:92vw;margin:0">
     <div class="card-hd"><h2>Export Budget</h2><button class="btn-x" onclick="closeExport()">×</button></div>
     <div class="card-bd">
-      <div class="eyebrow" style="margin-bottom:10px">Include sections</div>
+      <div class="eyebrow" style="margin-bottom:10px">Include Sections</div>
       <div style="display:grid;gap:10px;margin-bottom:20px">
         <label class="chk"><input type="checkbox" id="ex-stats" checked> Project Summary &amp; Key Metrics</label>
         <label class="chk"><input type="checkbox" id="ex-units" checked> Unit Mix &amp; Rent Revenue</label>
@@ -1299,6 +1299,13 @@ const L=(code,grp,scope,desc,basis,unit)=>({code,grp,scope,desc,basis,unit});
    To change it: sha256 the new passphrase and replace the digest. */
 const ADMIN_PASS_SHA256='52e20e96fd28257e018abac67cd8e1f4863b1cac1fdfb6cb0a96c963b9437548';
 
+/* OFFLINE FALLBACK ONLY. The authoritative source of new-budget defaults is the
+   budget template system (dbo.BudgetTemplateVersions), whose rates come from the
+   published pricing library (dbo.PricingLibrary). This constant exists so the app
+   still renders when /api/pricing cannot be reached — the offline banner says as
+   much — and it must never be treated as the source of a saved budget's rates
+   while the API is up. To change rates, publish the pricing library; do not
+   hand-edit this. See docs/DATA_CONTRACT.md, "Single source of truth". */
 const DEFAULT_PRICING={version:'2026.08-v2',effective:'2026-08-10',
 lines:[
  // ---- RESIDENTIAL: General Conditions
@@ -2177,7 +2184,7 @@ function csiSchedule(){
     const rows=divs.get(k).sort((a,z)=>String(a.code).localeCompare(String(z.code)));
     return {key:k,title:CSI_DIV[k],rows,total:rows.reduce((s,r)=>s+r.total,0)};
   });
-  if(orphans.length)divisions.push({key:'--',title:'Uncoded / custom scope',
+  if(orphans.length)divisions.push({key:'--',title:'Uncoded / Custom Scope',
     rows:orphans.sort((a,z)=>String(a.code).localeCompare(String(z.code))),
     total:orphans.reduce((s,r)=>s+r.total,0)});
   const markups=[];
