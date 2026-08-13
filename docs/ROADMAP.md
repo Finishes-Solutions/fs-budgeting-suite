@@ -102,3 +102,77 @@ re-implemented against the data model.
 Outlook with the recipient and a subject prefilled, leaving them to attach the files they
 just downloaded. No infrastructure, no server rendering, and it covers the common "send
 this to myself" case — at the cost of being manual.
+
+---
+
+## Planned — Mobile read-only view (not built)
+
+Today the app has no breakpoint below 900px, so a phone gets the desktop layout and
+scrolls sideways. The goal is a mobile view that shows high-level budget information,
+allows no editing, and makes the restriction obvious rather than mysterious.
+
+### What makes this more than a stylesheet
+
+The editable budget grid renders about five inputs per line — a 103-line multifamily
+budget is roughly 500 input elements. Hiding them with CSS still builds them, which is
+slow on a phone and leaves an editing surface one missed selector away from being
+reachable. The read-only view should therefore be a **separate render path**, not the
+same DOM with inputs disabled.
+
+The codebase already has two precedents for rendering read-only from the data model:
+`buildReport()` (the PDF) and the version-detail table. Mobile should follow the same
+pattern — compose static markup from `parts()` and `csiSchedule()`, the same functions
+the desktop maths already uses, so the numbers cannot diverge.
+
+### What mobile shows
+
+| Shown | Hidden |
+|---|---|
+| Home list as cards: project ID, name, status, contract sum, total project, updated | The editable budget grid |
+| Budget summary: the stat band, contract composition (hard → profit → contingency → contract sum → soft/land/fees → total project) | The Inputs page |
+| CSI division rollup — division totals and percentages, expandable to lines | Pricing Library and Budget Templates administration |
+| Version history (already read-only) | Batch selection, CSI code editing, Save, Reprice |
+| PDF export (the browser print pipeline works on mobile) | Excel export — the download is awkward on iOS |
+
+### Detection
+
+Drive it from `matchMedia('(max-width: 720px)')`, not the user agent: a narrow desktop
+window then behaves the same way, which is both correct and testable — the Playwright
+suites already exercise several viewport widths, so this needs no new harness.
+
+Listen for `change` on the media query so rotating a tablet re-evaluates rather than
+stranding the user in the wrong mode.
+
+### Making the restriction obvious
+
+One signal is not enough; use three.
+
+1. A **persistent banner**, not a toast: "Read-only on mobile — open on a desktop to
+   edit." A toast disappears and the user concludes the app is broken.
+2. **Omit** the editing tabs rather than disabling them. Absence reads as "not here";
+   a greyed-out tab reads as "broken".
+3. **Guard the routes.** A deep link to `#/inputs/BD-0001` — from an email, a bookmark —
+   must land on the read-only summary and say why, not render a dead page.
+
+Worth deciding: whether to offer a deliberate "Use Full Version" escape hatch for
+someone on a tablet who genuinely needs to edit. Recommendation is yes, defaulting to
+restricted, because a locked-out user with no way forward becomes a support call.
+
+### This is a UX restriction, not a security boundary
+
+The API accepts a write from any authenticated user regardless of device, and there is
+no trustworthy server-side signal for "is mobile" — User-Agent is spoofable. This
+prevents accidental edits and fat-fingering on a phone. It does not prevent a determined
+one, and should not be described to users as though it does. If a real guarantee is ever
+needed, it has to be a role or a per-budget lock enforced in the API, which is a
+different feature.
+
+### Effort
+
+Roughly a day to a day and a half including tests: one media-query flag, one render
+function, nav filtering, a route guard, the banner, and the card layout. Splittable if
+value is wanted sooner — phase one is the home list, the summary, the banner and the
+guard; phase two adds the CSI rollup detail.
+
+Incidental cleanup to fold in: two `@media` rules still target `#whoami`, which no
+longer exists — it was replaced by the account avatar.
