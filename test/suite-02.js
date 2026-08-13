@@ -129,6 +129,22 @@ const BASE = 'http://127.0.0.1:8100';
   //     so the Excel binary path cannot be exercised here)
   await p.click("#page-budget button:has-text(\"Export…\")");
   ok('Export modal opens', await p.locator('#exportModal').isVisible());
+  // Email export is announced but not built; it must be visibly unavailable and inert.
+  ok('Email export is offered as coming soon', await p.locator('#ex-email').isVisible());
+  ok('Email export is marked unavailable',
+     (await p.locator('#ex-email').getAttribute('aria-disabled')) === 'true');
+  ok('Email export explains itself on hover',
+     /coming soon/i.test(await p.locator('#ex-email').getAttribute('title')));
+  await p.evaluate(() => { window.__printed = 0; window.print = () => window.__printed++; });
+  // Playwright honours aria-disabled in its actionability check and would wait for the
+  // button to become enabled, which is itself proof the state is announced correctly.
+  // Dispatch directly to assert what the handler does.
+  await p.locator('#ex-email').dispatchEvent('click'); await p.waitForTimeout(250);
+  ok('Clicking Email exports nothing', (await p.evaluate(() => window.__printed)) === 0);
+  ok('Clicking Email says it is coming soon',
+     /coming soon/i.test(await p.locator('#toast').textContent()),
+     await p.locator('#toast').textContent());
+  ok('Email does not close the export modal', await p.locator('#exportModal').isVisible());
   await p.uncheck('#ex-stats');
   await p.evaluate(() => { window.__printed = 0; window.print = () => window.__printed++; });   // keep printDoc populated
   await p.click('button:has-text("PDF (Print)")');

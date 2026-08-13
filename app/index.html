@@ -95,6 +95,13 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .btn-x{background:none;border:none;color:var(--ink-400);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:var(--r)}
 .btn-x:hover{color:var(--danger);background:var(--ink-100)}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
+/* Announced as unavailable but still focusable, so the reason is discoverable by
+   keyboard and not only on mouse hover. */
+.btn-soon{opacity:.55;cursor:not-allowed}
+.btn-soon:hover{background:transparent;border-color:var(--ink-200);color:var(--ink-600)}
+.soon-pill{display:inline-block;margin-left:7px;padding:1px 6px;border-radius:999px;
+  background:var(--ink-150);color:var(--ink-600);font-family:var(--fm);font-size:9px;
+  letter-spacing:.08em;text-transform:uppercase;vertical-align:1px}
 
 /* Row actions menu on the Budgets list. Positioned fixed from the trigger's
    bounding rect rather than nested in the row, so a scrolling table can never
@@ -1204,7 +1211,13 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="chk"><input type="checkbox" id="ex-csi" checked> CSI MasterFormat Schedule of Values</label>
         <label class="chk"><input type="checkbox" id="ex-summary" checked> Contract &amp; Project Summary / SOV</label>
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end">
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
+        <!-- Not `disabled`: a disabled button is skipped by keyboard navigation and shows
+             no tooltip, so the "coming soon" affordance would be invisible to anyone not
+             using a mouse. aria-disabled announces the state while keeping it reachable. -->
+        <button class="btn btn-ghost btn-soon" id="ex-email" aria-disabled="true"
+          title="Coming soon — emailing the workbook and report is not built yet"
+          onclick="comingSoon('Emailing exports')">Email <span class="soon-pill">Soon</span></button>
         <button class="btn btn-ghost" onclick="exportExcel()">Excel (.xlsx)</button>
         <button class="btn btn-primary" onclick="exportPDF()">PDF (Print)</button>
       </div>
@@ -2951,6 +2964,9 @@ const BRAND={ink900:'16191A',ink700:'353B3D',ink500:'6B7174',ink200:'DDE1E2',ink
              ink50:'F8F9F9',green:'006527',green50:'F1F8F4',white:'FFFFFF',edit:'2563C9'};
 const MONEY='"$"#,##0';const MONEY2='"$"#,##0.00';const QTY='#,##0';const PCT='0.0%';
 
+/* Placeholder for controls that are visible but not built yet, so a click says why
+   instead of appearing broken. */
+function comingSoon(what){toast((what||'That')+' is coming soon.');}
 function openExport(){document.getElementById('exportModal').style.display='flex';}
 function closeExport(){document.getElementById('exportModal').style.display='none';}
 function sel(){const c=id=>{const e=document.getElementById(id);return e?e.checked:false;};
