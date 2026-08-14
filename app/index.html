@@ -17,6 +17,11 @@
      network that blocked cdnjs, and the community build of the old library could not style
      cells at all. MIT licence in vendor/exceljs-LICENSE.txt. -->
 <script src="vendor/exceljs.min.js"></script>
+<!-- The investment-analysis workflow is an external no-build module (IIFE) so
+     the inline script stays the budget application. index.html contributes only
+     the nav button, page containers, routes, and the adapter passed to init. -->
+<link rel="stylesheet" href="investment-analysis.css">
+<script src="investment-analysis.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 :root{
@@ -480,6 +485,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <button id="nav-input" onclick="go('input')" data-edit-only disabled>Inputs</button>
       <button id="nav-budget" onclick="go('budget')" data-edit-only disabled>Budget</button>
       <button id="nav-csi" onclick="go('csi')" data-edit-only disabled>CSI Schedule</button>
+      <button id="nav-analyses" onclick="go('analyses')">Investment Analysis</button>
       <button id="nav-pricing" onclick="go('pricing')" data-edit-only>Pricing Library</button>
       <button id="nav-help" onclick="go('help')">How to Use</button>
     </nav>
@@ -710,6 +716,8 @@ th.sortable.sorted{color:var(--ink-900)}
       </label>
       <button class="btn btn-ghost" onclick="go('input')">← Inputs</button>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
+      <button class="btn btn-ghost" onclick="createAnalysisFromBudget()"
+        title="Save this budget and start a five-year investment analysis from the saved version">Create Investment Analysis</button>
       <button class="btn btn-dark" onclick="openExport()">Export…</button>
     </div>
   </div>
@@ -916,6 +924,10 @@ th.sortable.sorted{color:var(--ink-900)}
 </div>
 
 <!-- ================= HOW TO USE ================= -->
+<!-- ================= INVESTMENT ANALYSIS (rendered by investment-analysis.js) -->
+<div class="page" id="page-analyses"></div>
+<div class="page" id="page-analysis"></div>
+
 <div class="page" id="page-help">
   <div class="page-title">
     <div><h1>How to Use the Budgeting Suite</h1>
@@ -1848,13 +1860,18 @@ function editReason(it){
 /* ============ NAV + HASH ROUTING ============
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
-const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',csi:'csi',pricing:'pricing',help:'help'};
-const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',pricing:'pricing',help:'help'};
+const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help'};
+const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help'};
 const DOC_PAGES=['input','budget','csi'];
 
 function hashFor(p){
   const s=PAGE_SLUG[p]||'budgets';
-  return DOC_PAGES.includes(p)&&doc&&doc.projectId?'#/'+s+'/'+doc.projectId:'#/'+s;
+  if(DOC_PAGES.includes(p)&&doc&&doc.projectId)return '#/'+s+'/'+doc.projectId;
+  // Analysis IDs are GUIDs, not project IDs — they stay lowercase and are
+  // resolved by the investment module, never by openBudget().
+  if(p==='analysis'&&window.FSInvestmentUI&&FSInvestmentUI.currentId())
+    return '#/analysis/'+FSInvestmentUI.currentId();
+  return '#/'+s;
 }
 function syncHash(p){const h=hashFor(p);if(location.hash!==h)location.hash=h;}
 
@@ -1912,14 +1929,22 @@ function go(p){
   if(p!==currentPage&&DOC_PAGES.includes(currentPage)&&!DOC_PAGES.includes(p)&&!confirmDiscard()){
     syncHash(currentPage);return;
   }
+  // Same courtesy for an analysis with unsaved assumption edits.
+  if(p!==currentPage&&currentPage==='analysis'&&window.FSInvestmentUI&&!FSInvestmentUI.confirmLeave()){
+    syncHash(currentPage);return;
+  }
   currentPage=p;
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   document.getElementById('page-'+p).classList.add('on');
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
-  document.getElementById('nav-'+p).classList.add('on');
+  // The analysis editor has no nav button of its own — it lights the
+  // Investment Analysis tab, the way budget pages light their own tabs.
+  const nb=document.getElementById('nav-'+(p==='analysis'?'analyses':p));
+  if(nb)nb.classList.add('on');
   syncHash(p);
   renderSaveState();
   if(p==='home')renderHome();
+  if(p==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
   if(p==='pricing'){renderPricing();renderCatalog();}
   if(p==='budget'||p==='input'||p==='csi')recalc();
   window.scrollTo(0,0);
@@ -1932,6 +1957,15 @@ async function routeFromHash(){
   if(h&&h.slice(0,2)!=='#/')return;
   const seg=h.replace(/^#\/?/,'').split('/');
   const p=SLUG_PAGE[seg[0]]||'home';
+  // Analysis routes carry a GUID, which must never be uppercased or matched
+  // against ID_RX — the investment module owns loading it.
+  if(p==='analysis'){
+    const gid=(seg[1]||'').toLowerCase();
+    if(!gid){go('analyses');return;}
+    if(currentPage==='analysis'&&window.FSInvestmentUI&&FSInvestmentUI.currentId()===gid)return;
+    if(window.FSInvestmentUI){await FSInvestmentUI.open(gid);go('analysis');}
+    return;
+  }
   const id=(seg[1]||'').toUpperCase();
   if(p===currentPage&&(!id||(doc&&doc.projectId===id)))return;   // already where the hash points
   if(DOC_PAGES.includes(p)){
@@ -3048,6 +3082,37 @@ function recalc(){
 }
 
 /* ============ SAVE ============ */
+/* ---- investment-analysis integration ----
+   The module needs structured errors (409 conflicts, field-keyed validation),
+   which the budget api() helper flattens into messages, so it gets its own
+   thin wrapper sharing the same health banner. */
+async function invApi(path,opts={}){
+  let r;
+  try{
+    r=await fetch('/api/'+path,{headers:{'Content-Type':'application/json'},...opts});
+  }catch(e){setApiHealth(false,'Cannot reach the server — check your connection, then reload.');
+    const err=new Error('Network error');throw err;}
+  if(r.status>=500)setApiHealth(false,'The server returned '+r.status+' on /api/'+path+'.');
+  else setApiHealth(true);
+  let body=null;try{body=await r.json();}catch(_){}
+  if(!r.ok){
+    const err=new Error((body&&body.message)||('API '+r.status));
+    err.status=r.status;err.body=body;err.fields=body&&body.fields;
+    throw err;
+  }
+  return body;
+}
+/* Creating an analysis snapshots an exact immutable budget version, so unsaved
+   edits are saved first — the analysis must be born from what the database
+   holds, not from what the screen shows. */
+async function createAnalysisFromBudget(){
+  if(!doc){toast('Open or create a budget first');return;}
+  if(dirty||!doc.updated){await saveBudget(false);if(dirty){return;}}
+  try{
+    await FSInvestmentUI.createFromBudget(doc.projectId);
+  }catch(e){toast('Could not create the analysis — '+e.message);}
+}
+
 async function saveBudget(show){
   if(!doc||saving)return;
   // In template mode the same Save affordance publishes a template version instead
@@ -3649,6 +3714,11 @@ function wireDelegates(){
     // Cmd/Ctrl+S saves rather than letting the browser offer to save the page.
     if((e.metaKey||e.ctrlKey)&&(e.key==='s'||e.key==='S')){
       e.preventDefault();
+      // The shortcut saves the ACTIVE document type — an open analysis on its
+      // page, the budget everywhere else. Never both.
+      if(currentPage==='analysis'&&window.FSInvestmentUI&&FSInvestmentUI.currentId()){
+        FSInvestmentUI.save();return;
+      }
       if(!doc){toast('Open or create a budget first');return;}
       if(saving)return;
       // commit whatever field is focused before reading the form
@@ -3690,6 +3760,10 @@ function endBoot(){
 (async function init(){
   startBoot();
   try{
+    if(window.FSInvestmentUI)FSInvestmentUI.init({
+      api:invApi,toast,esc,
+      navigate:h=>{location.hash=h;}
+    });
     await initAuth();
     const published=await sGet('pricing-multifamily');   // API-first; built-in seed as fallback
     pricingFromApi=!!published;
