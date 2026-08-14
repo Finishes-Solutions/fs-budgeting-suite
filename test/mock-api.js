@@ -9,6 +9,32 @@ const APP = process.env.APP_DIR || require('path').join(__dirname,'..','app');
 // api/budget/index.js derives it, so a client-supplied meta.contractSum is
 // ignored here too and parity cannot drift.
 const { parts } = require('../api/shared/budget-calc');
+// The investment routes run the REAL engine and hash convention, so preview,
+// save-recomputation, and no-op detection behave byte-for-byte like Azure.
+const bc = require('../api/shared/budget-calc');
+const { calculateInvestmentAnalysis } = require('../api/shared/investment/calculate');
+const INV_C = require('../api/shared/investment/constants');
+const INV_D = require('../api/shared/investment/defaults');
+const crypto = require('crypto');
+const GUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// id -> {projectId, name, status, sourceBudgetVersionNumber, input, result,
+//        currentVersionNumber, deleted, versions:[...]}  (mirrors the SQL rows)
+const invAnalyses = new Map();
+const invHash = (rawInput, sourceBudgetVersionId) =>
+  crypto.createHash('sha256').update(canonical({ rawInput,
+    sourceBudgetVersionId: sourceBudgetVersionId || null,
+    calculationVersion: INV_C.CALCULATION_VERSION }), 'utf8').digest('hex');
+const invSummary = a => ({
+  analysisId: a.id, projectId: a.projectId, name: a.name, status: a.status,
+  currentVersionNumber: a.currentVersionNumber,
+  sourceBudgetVersionNumber: a.sourceBudgetVersionNumber,
+  purchasePrice: a.result ? a.result.summary.purchasePrice : null,
+  year1NOI: a.result ? a.result.summary.year1NOI : null,
+  initialEquity: a.result ? a.result.summary.initialEquity : null,
+  finalYearEquityIRR: a.result ? a.result.summary.finalYearEquityIRR : null,
+  optimalHoldingYear: a.result ? a.result.summary.optimalHoldingYear : null,
+  calculationVersion: INV_C.CALCULATION_VERSION,
+  createdAt: a.createdAt, updatedAt: a.updatedAt });
 const PORT = +(process.env.PORT || 8100);
 // NO_API=1 serves the frontend with every /api/* route dead, which is how the offline
 // banner and the built-in pricing fallback get exercised (suite-01 runs against this).
@@ -254,6 +280,207 @@ http.createServer((req, res) => {
       }
       budgets.set(id, entry);
       json(res, 200, { ok: true, versionNumber: entry.versions.length, versionCreated });
+    });
+  }
+
+  // ---- investment analyses: same semantics as the four Azure Functions ----
+  if (p === '/api/investment-calculations' && req.method === 'POST') {
+    let b = ''; req.on('data', c => b += c);
+    return req.on('end', () => {
+      try { return json(res, 200, { ok: true, result: calculateInvestmentAnalysis(JSON.parse(b)) }); }
+      catch (e) {
+        if (e.validation) return json(res, 400, { error: 'validation_failed',
+          message: 'Correct the highlighted assumptions.', fields: e.validation });
+        return json(res, 500, { error: 'calculation_failed', message: 'The calculation could not be completed.' });
+      }
+    });
+  }
+
+  if (p === '/api/investment-analyses') {
+    if (req.method === 'GET') {
+      const q = new URL(req.url, 'http://x').searchParams;
+      const pid = (q.get('projectId') || '').toUpperCase();
+      if (pid && !/^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/.test(pid))
+        return json(res, 400, { error: 'bad_request', message: 'Invalid project ID filter.' });
+      return json(res, 200, [...invAnalyses.values()]
+        .filter(a => !a.deleted && (!pid || a.projectId === pid))
+        .sort((x, y) => y.updatedAt.localeCompare(x.updatedAt))
+        .map(invSummary));
+    }
+    let b = ''; req.on('data', c => b += c);
+    return req.on('end', () => {
+      const body = JSON.parse(b || '{}');
+      let input, projectId = null, sourceBudgetVersionNumber = null;
+      if (body.mode === 'fromBudget') {
+        projectId = (body.projectId || '').toUpperCase();
+        const rec = budgets.get(projectId);
+        const live = rec && !rec.deleted ? rec : null;
+        const vn = body.budgetVersionNumber !== undefined ? body.budgetVersionNumber
+          : (live ? live.versions.length : 0);
+        const v = live ? live.versions[vn - 1] : null;
+        if (!v) { return json(res, 404, { error: 'not_found', message: 'Budget version not found.' }); }
+        sourceBudgetVersionNumber = vn;
+        const doc = v.doc, p2 = bc.parts(doc), gi = bc.grossIncome(doc), tu = bc.totUnits(doc);
+        const siteSF = bc.nz(doc.siteSF), bldgSF = bc.nz(doc.resSF) + bc.nz(doc.amenSF);
+        const round2 = x => Math.round(x * 100) / 100;
+        input = {
+          schemaVersion: 1,
+          analysisName: (body.analysisName || (v.meta.name + ' — Investment Analysis')).slice(0, 200),
+          source: { projectId, budgetVersionId: vn, budgetVersionNumber: vn,
+            importedAt: new Date().toISOString(),
+            fieldOrigins: {
+              'property.name': 'Budget name', 'property.address': 'Budget address',
+              'property.size': siteSF > 0 ? 'Budget Site SF' : 'Budget Residential + Amenity SF',
+              'property.unitCount': 'Budget unit mix',
+              'acquisition.basis': 'Budget Total Project Cost',
+              'income.year1PotentialIncome': 'Budget unit mix — gross scheduled rent × 12',
+              'income.otherIncome': 'Budget other-income rows × 12' },
+            support: { contractSum: round2(p2.contract), projectCost: round2(p2.project),
+              annualServiceExpenses: round2(12 * gi.expMo),
+              serviceExpenseRows: (doc.expenses || []).map(e => ({ label: e.label,
+                annualAmount: round2(12 * bc.nz(e.rate) * (e.per === 'fixed' ? (bc.nz(e.count) || 1) : (e.auto ? tu : bc.nz(e.count)))) })),
+              unitMix: (doc.units || []).map(u => ({ label: u.label, count: bc.nz(u.count), rent: bc.nz(u.rent) })) } },
+          property: { name: doc.name || projectId, address: doc.address || '',
+            size: { unit: 'squareFeet', value: siteSF > 0 ? siteSF : bldgSF },
+            unitCount: tu || null, purchaseMonth: null },
+          projection: { years: 5, taxMode: 'beforeTax' },
+          acquisition: { basis: { mode: 'purchasePrice', value: round2(p2.project) }, costPercent: INV_D.acquisitionCostPercent },
+          income: { mode: 'aggregate', year1PotentialIncome: round2(12 * gi.rentMo),
+            growth: { mode: 'constant', value: INV_D.incomeGrowth },
+            otherIncome: (doc.other || []).map(o => ({ label: o.label || 'Other Income',
+              year1Amount: round2(12 * bc.nz(o.rate) * (o.auto ? tu : bc.nz(o.count))),
+              growth: { mode: 'constant', value: INV_D.otherIncomeGrowth } })) },
+          vacancy: { mode: 'constant', value: INV_D.vacancy },
+          expenses: { mode: 'percentOfGOI', value: null },
+          capitalExpenses: [],
+          financing: { loans: [] },
+          disposition: { exitCapRate: { mode: 'constant', value: null }, sellingCostPercent: INV_D.sellingCostPercent },
+          reportOptions: { includeSensitivity: true }
+        };
+      } else if (body.mode === 'standalone') {
+        const name = (body.analysisName || (body.input && body.input.analysisName) || '').trim();
+        if (!name) return json(res, 400, { error: 'bad_request', message: 'analysisName is required.' });
+        input = Object.assign({
+          schemaVersion: 1,
+          property: { name, address: '', size: { unit: 'squareFeet', value: null }, purchaseMonth: null },
+          projection: { years: 5, taxMode: 'beforeTax' },
+          acquisition: { basis: { mode: 'purchasePrice', value: null }, costPercent: INV_D.acquisitionCostPercent },
+          income: { mode: 'aggregate', year1PotentialIncome: null, growth: { mode: 'constant', value: INV_D.incomeGrowth }, otherIncome: [] },
+          vacancy: { mode: 'constant', value: INV_D.vacancy },
+          expenses: { mode: 'percentOfGOI', value: null },
+          capitalExpenses: [],
+          financing: { loans: [] },
+          disposition: { exitCapRate: { mode: 'constant', value: null }, sellingCostPercent: INV_D.sellingCostPercent },
+          reportOptions: { includeSensitivity: true }
+        }, body.input || {}, { schemaVersion: 1, analysisName: name.slice(0, 200), source: null });
+      } else {
+        return json(res, 400, { error: 'bad_request', message: "mode must be 'fromBudget' or 'standalone'." });
+      }
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+      invAnalyses.set(id, { id, projectId, name: input.analysisName, status: 'Draft',
+        sourceBudgetVersionNumber, input, result: null, currentVersionNumber: 0,
+        deleted: false, versions: [], createdAt: now, updatedAt: now });
+      return json(res, 201, { ok: true, analysisId: id, input, currentVersionNumber: 0,
+        source: input.source ? { projectId, budgetVersionId: sourceBudgetVersionNumber,
+          budgetVersionNumber: sourceBudgetVersionNumber } : null });
+    });
+  }
+
+  if (p.startsWith('/api/investment-analysis/')) {
+    const seg = decodeURIComponent(p.slice('/api/investment-analysis/'.length)).split('/');
+    const id = (seg[0] || '').toLowerCase();
+    if (!GUID_RX.test(id)) return json(res, 400, { error: 'bad_request', message: 'Invalid analysis ID.' });
+    const a = invAnalyses.get(id);
+    const live = a && !a.deleted ? a : null;
+
+    if (seg[1] === 'versions') {
+      if (req.method !== 'GET') { res.writeHead(405); return res.end('Method not allowed'); }
+      if (!live) return json(res, 404, { error: 'not_found', message: 'Not found' });
+      if (seg[2] === undefined || seg[2] === '') {
+        return json(res, 200, { analysisId: id, currentVersion: live.currentVersionNumber,
+          versions: live.versions.map(v => ({
+            versionNumber: v.versionNumber, name: v.name, changeSummary: v.changeSummary,
+            calculationVersion: v.calculationVersion, inputSchemaVersion: 1,
+            purchasePrice: v.result.summary.purchasePrice, year1NOI: v.result.summary.year1NOI,
+            initialEquity: v.result.summary.initialEquity,
+            finalYearEquityIRR: v.result.summary.finalYearEquityIRR,
+            optimalHoldingYear: v.result.summary.optimalHoldingYear,
+            createdByName: v.createdByName, createdAt: v.createdAt,
+            isCurrent: v.versionNumber === live.currentVersionNumber
+          })).reverse() });
+      }
+      if (!/^\d+$/.test(seg[2])) return json(res, 400, { error: 'bad_request', message: 'Version number must be a positive integer.' });
+      const v = live.versions[parseInt(seg[2], 10) - 1];
+      if (!v) return json(res, 404, { error: 'not_found', message: 'Version not found' });
+      return json(res, 200, { analysisId: id, currentVersion: live.currentVersionNumber,
+        version: { versionNumber: v.versionNumber, name: v.name, changeSummary: v.changeSummary,
+          calculationVersion: v.calculationVersion, inputSchemaVersion: 1,
+          sourceBudgetVersionId: live.sourceBudgetVersionNumber,
+          createdByName: v.createdByName, createdAt: v.createdAt,
+          isCurrent: v.versionNumber === live.currentVersionNumber },
+        input: v.input, result: v.result });
+    }
+    if (seg.length > 1) return json(res, 404, { error: 'not_found', message: 'Not found' });
+
+    if (req.method === 'GET') {
+      if (!live) return json(res, 404, { error: 'not_found', message: 'Not found' });
+      return json(res, 200, { analysisId: id, projectId: live.projectId, name: live.name,
+        status: live.status, currentVersionNumber: live.currentVersionNumber,
+        source: live.sourceBudgetVersionNumber ? { projectId: live.projectId,
+          budgetVersionId: live.sourceBudgetVersionNumber,
+          budgetVersionNumber: live.sourceBudgetVersionNumber } : null,
+        input: live.input, result: live.result,
+        inputSchemaVersion: 1, calculationVersion: INV_C.CALCULATION_VERSION,
+        createdAt: live.createdAt, updatedAt: live.updatedAt });
+    }
+    if (req.method === 'DELETE') {
+      if (!a) return json(res, 404, { error: 'not_found', message: 'Not found' });
+      if (a.deleted) return json(res, 404, { error: 'not_found', message: 'Not found' });
+      a.deleted = true; a.deletedAt = new Date().toISOString();
+      res.writeHead(204); return res.end();
+    }
+    // PUT — recalculate server-side, ignore client results, 409 on stale saves
+    let b = ''; req.on('data', c => b += c);
+    return req.on('end', () => {
+      if (!a) return json(res, 404, { error: 'not_found', message: 'Not found' });
+      const body = JSON.parse(b || '{}');
+      const input = body.input;
+      if (!input || typeof input !== 'object')
+        return json(res, 400, { error: 'bad_request', message: 'Body must be { input, expectedVersionNumber }.' });
+      if (body.expectedVersionNumber !== undefined && body.expectedVersionNumber !== null
+          && body.expectedVersionNumber !== a.currentVersionNumber)
+        return json(res, 409, { error: 'version_conflict',
+          message: 'Someone saved a newer version of this analysis after you loaded it.',
+          currentVersionNumber: a.currentVersionNumber });
+      let result;
+      try { result = calculateInvestmentAnalysis(input); }
+      catch (e) {
+        if (e.validation) return json(res, 400, { error: 'validation_failed',
+          message: 'Correct the highlighted assumptions.', fields: e.validation });
+        return json(res, 500, { error: 'calculation_failed', message: 'The calculation could not be completed.' });
+      }
+      if (input.source && typeof input.source === 'object')
+        input.source.budgetVersionId = a.sourceBudgetVersionNumber;   // provenance is server-owned
+      const hash = invHash(input, a.sourceBudgetVersionNumber);
+      const unchanged = a.currentVersionNumber >= 1 && a.contentHash === hash;
+      if (!unchanged) {
+        a.currentVersionNumber += 1;
+        a.versions.push({ versionNumber: a.currentVersionNumber,
+          name: result.normalizedInput.analysisName,
+          changeSummary: typeof body.changeSummary === 'string' ? body.changeSummary : null,
+          calculationVersion: INV_C.CALCULATION_VERSION,
+          input: JSON.parse(JSON.stringify(input)), result,
+          createdByName: principal.clientPrincipal.userDetails,
+          createdAt: new Date().toISOString() });
+      }
+      a.name = result.normalizedInput.analysisName;
+      a.status = typeof body.status === 'string' ? body.status.slice(0, 30) : 'Draft';
+      a.input = input; a.result = result; a.contentHash = hash;
+      a.deleted = false; a.deletedAt = null;
+      a.updatedAt = new Date().toISOString();
+      return json(res, 200, { ok: true, versionNumber: a.currentVersionNumber,
+        versionCreated: !unchanged, result });
     });
   }
 
