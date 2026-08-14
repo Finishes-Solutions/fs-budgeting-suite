@@ -1,0 +1,50 @@
+{
+  "name": "Barker Cypress",
+  "input": {
+    "schemaVersion": 1,
+    "analysisName": "Barker Cypress Base Case",
+    "property": {
+      "name": "Barker Cypress Apt.",
+      "address": "0 Northwest FWY",
+      "size": { "unit": "acres", "value": 2.5 },
+      "purchaseMonth": "2025-11"
+    },
+    "projection": { "years": 5, "taxMode": "beforeTax" },
+    "acquisition": { "basis": { "mode": "purchasePrice", "value": 12324946 }, "costPercent": 0.02 },
+    "income": {
+      "mode": "aggregate",
+      "year1PotentialIncome": 1218602,
+      "growth": { "mode": "constant", "value": 0.03 },
+      "otherIncome": []
+    },
+    "vacancy": { "mode": "constant", "value": 0.10 },
+    "expenses": { "mode": "percentOfGOI", "value": 0.25 },
+    "capitalExpenses": [],
+    "financing": {
+      "loans": [{
+        "label": "First Mortgage", "kind": "newAmortizing",
+        "amount": { "mode": "amount", "value": 8011215 },
+        "annualRate": 0.065, "amortizationYears": 25, "termYears": 5,
+        "feePercent": 0.01, "interestCalculation": "30/360"
+      }]
+    },
+    "disposition": { "exitCapRate": { "mode": "constant", "value": 0.065 }, "sellingCostPercent": 0.05 },
+    "reportOptions": { "includeSensitivity": false }
+  },
+  "expected": {
+    "purchasePrice": 12324946,
+    "acquisitionCapRatePct": 6.67,
+    "initialEquity": 4640342,
+    "pricePerSquareFoot": 113.18,
+    "year1PeriodEnd": "2026-10",
+    "year1NOI": 822556,
+    "year1DSCR": 1.27,
+    "year1CashOnCashPct": 3.74,
+    "year5EquityIRRPct": 11.68,
+    "year5EquityMultiple": 1.68,
+    "year5GrossSalePrice": 14670000,
+    "year5NetSaleProceeds": 6681370,
+    "optimalHoldingYear": 5,
+    "optimalHoldingYieldPct": 11.68
+  }
+}
