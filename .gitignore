@@ -6,3 +6,12 @@ docs/BUILD_GUIDE.filled.md
 api/local.settings.json
 node_modules/
 .DS_Store
+
+# The frontend has no build step and nothing here is bundled — these are only ever
+# developer-local: Playwright for test/run-all.sh, mssql for the Functions.
+# (node_modules/ above has no leading slash, so it already matches api/node_modules/.)
+
+# Test harness output — screenshots land in OUT_DIR, which defaults to the system
+# temp dir, but not every run overrides it.
+test/out/
+*.log

@@ -15,6 +15,15 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // --- group selector
  await p.click('button:has-text("+ Add Line Item")'); await p.waitForTimeout(300);
  ok('group selector present', await p.locator('#pickGroup').isVisible());
+ // the dialog has an unambiguous close control
+ ok('picker has a labelled close button',
+    (await p.locator('#pickModal .btn-x[aria-label="Close"]').count()) === 1);
+ await p.click('#pickModal .btn-x'); await p.waitForTimeout(200);
+ ok('the close button closes the picker', !(await p.locator('#pickModal').isVisible()));
+ ok('footer offers Add Blank Line, not "Instead"', await p.evaluate(() =>
+    [...document.querySelectorAll('#pickModal .card-bd button')]
+      .some(x => x.textContent.trim() === 'Add Blank Line')));
+ await p.click('button:has-text("+ Add Line Item")'); await p.waitForTimeout(300);
  const opts=await p.locator('#pickGroup option').allTextContents();
  ok('lists the residential groups in use',
     opts.includes('Site Finish')&&opts.includes('Interiors')&&opts.includes('Shell of Building'),

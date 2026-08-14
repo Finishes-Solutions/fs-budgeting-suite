@@ -186,7 +186,9 @@ http.createServer((req, res) => {
   }
 
   if (p === '/api/budgets') {
-    return json(res, 200, [...budgets.values()].filter(x => !x.deleted).map(x => x.meta));
+    // Address comes off the document, mirroring the JSON_VALUE the real API uses.
+    return json(res, 200, [...budgets.values()].filter(x => !x.deleted)
+      .map(x => ({ ...x.meta, address: (x.doc && x.doc.address) || '' })));
   }
 
   if (p.startsWith('/api/budget/')) {
