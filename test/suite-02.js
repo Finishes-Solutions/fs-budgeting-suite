@@ -59,9 +59,13 @@ const BASE = 'http://127.0.0.1:8100';
     const mk = (id, name, cs, status, updated) => fetch('/api/budget/' + id, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        // contractSum/projectCost are derived from the doc server-side now, so the
+        // doc itself must carry the money: one lump-sum line worth cs.
         meta: { projectId: id, name, type: 'Multifamily', status, contractSum: cs, projectCost: cs * 1.3, updated },
-        doc: { projectId: id, name, status, resSF: 1000, amenSF: 0, units: [], other: [], expenses: [], lines: [],
-               companies: [], contingency: { mode: 'psf', val: 2 }, projectCosts: { land: 0, dev: 0, mkt: 0, cls: 0 },
+        doc: { projectId: id, name, status, resSF: 1000, amenSF: 0, units: [], other: [], expenses: [],
+               lines: [{ lineId: id + '-shell', scope: 'res', grp: 'General', code: '', desc: 'Shell',
+                         basis: 'ls', auto: true, qty: 0, unit: cs }],
+               companies: [], contingency: { mode: 'fixed', val: 0 }, projectCosts: { land: 0, dev: 0, mkt: 0, cls: 0 },
                pricingVersion: '2026.08-v2' }
       })
     });

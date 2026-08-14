@@ -5,6 +5,10 @@ const fs = require('fs');
 const path = require('path');
 
 const APP = process.env.APP_DIR || require('path').join(__dirname,'..','app');
+// The real module, not a copy: summary money is derived from the doc exactly as
+// api/budget/index.js derives it, so a client-supplied meta.contractSum is
+// ignored here too and parity cannot drift.
+const { parts } = require('../api/shared/budget-calc');
 const PORT = +(process.env.PORT || 8100);
 // NO_API=1 serves the frontend with every /api/* route dead, which is how the offline
 // banner and the built-in pricing fallback get exercised (suite-01 runs against this).
@@ -231,6 +235,9 @@ http.createServer((req, res) => {
     return req.on('end', () => {
       const { meta, doc } = JSON.parse(b);
       if ((doc.projectId || '').toUpperCase() !== id) { res.writeHead(400); return res.end('id mismatch'); }
+      const calc = parts(doc);
+      meta.contractSum = Math.round(calc.contract * 100) / 100;
+      meta.projectCost = Math.round(calc.project * 100) / 100;
       const prev = budgets.get(id) || { versions: [] };
       const entry = { meta, doc, deleted: false, versions: prev.versions };  // PUT restores
       const last = entry.versions[entry.versions.length - 1];
