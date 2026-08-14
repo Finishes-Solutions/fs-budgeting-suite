@@ -23,6 +23,27 @@ ORDER BY b.DeletedAt DESC;
 
 BEGIN TRANSACTION;
 
+-- Investment analyses may reference the budget (ProjectId) or one of its
+-- immutable versions (SourceBudgetVersionId) through NO ACTION foreign keys.
+-- Detach them before the budget rows go: the provenance survives inside the
+-- analysis documents (source project/version are stored in the JSON), so
+-- nulling the link loses nothing the purge should keep.
+IF OBJECT_ID('dbo.InvestmentAnalyses', 'U') IS NOT NULL
+BEGIN
+  UPDATE a SET a.SourceBudgetVersionId = NULL
+  FROM dbo.InvestmentAnalyses AS a
+  JOIN dbo.BudgetVersions AS v ON v.Id = a.SourceBudgetVersionId
+  JOIN dbo.Budgets        AS b ON b.ProjectId = v.ProjectId
+  WHERE b.IsDeleted = 1;
+  PRINT CONCAT('Analysis source-version links detached: ', @@ROWCOUNT);
+
+  UPDATE a SET a.ProjectId = NULL
+  FROM dbo.InvestmentAnalyses AS a
+  JOIN dbo.Budgets AS b ON b.ProjectId = a.ProjectId
+  WHERE b.IsDeleted = 1;
+  PRINT CONCAT('Analysis project links detached: ', @@ROWCOUNT);
+END
+
 DELETE vs
 FROM dbo.BudgetVersionSovLines AS vs
 JOIN dbo.BudgetVersions AS v ON v.Id = vs.BudgetVersionId
