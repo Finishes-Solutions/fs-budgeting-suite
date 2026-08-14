@@ -104,8 +104,11 @@
     try {
       await A.api('investment-analysis/' + id, { method: 'DELETE' });
       A.toast('Analysis deleted.');
-      if (st.id === id) { st.id = null; A.navigate('#/analyses'); }
-      else renderList();
+      if (st.id === id) st.id = null;
+      // Setting a hash to its current value fires no hashchange, so refresh
+      // the list directly when it is already the visible page.
+      if (/#\/analyses$/.test(location.hash)) renderList();
+      else A.navigate('#/analyses');
     } catch (e) { A.toast('Delete failed — ' + e.message); }
   }
 
