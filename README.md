@@ -41,6 +41,7 @@ templates requires the `pricing_admin` custom role.
 
 | Path | What it is |
 |---|---|
+| `AGENTS.md` | Ground rules and context for AI agents working in this repo (`CLAUDE.md` points here) |
 | `app/index.html` | **The entire frontend** — HTML + inline CSS + inline JS, no build step |
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement |
 | `app/vendor/exceljs.min.js` | ExcelJS 4.4.0, MIT, vendored |

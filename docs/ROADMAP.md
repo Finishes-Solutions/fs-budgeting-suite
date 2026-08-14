@@ -176,3 +176,23 @@ guard; phase two adds the CSI rollup detail.
 
 Incidental cleanup to fold in: two `@media` rules still target `#whoami`, which no
 longer exists — it was replaced by the account avatar.
+
+---
+
+## Decided — Charts in the exports (2026-08)
+
+Three inline-SVG charts were built for the PDF report (project cost build-up waterfall,
+cost by CSI division, monthly income / expenses / net), composed from the data model
+like every other export surface — and then **removed at the owner's request** (2026-08):
+the feature isn't wanted right now. If charts come back, that model-composed inline-SVG
+approach is the recorded path; the git history has the working implementation
+(`git log --all -S 'data-chart' -- app/index.html`). The "Show Edited Line Flags"
+export toggle from the same wave stays: it gates the blue edited badges in the PDF and
+the Edited / Library Rate columns in the workbook.
+
+**The Excel workbook deliberately has no charts.** The vendored ExcelJS build has zero
+native chart support (verified — no chart code in the build), so the options were
+static embedded pictures, in-cell data bars via conditional formatting (which the build
+does support), or hand-injecting OOXML chart parts. Decision: tables only for now;
+data bars and embedded images are the recorded future path if workbook visuals are
+ever wanted. Do not reach for a chart library — the constraint is the vendored build.

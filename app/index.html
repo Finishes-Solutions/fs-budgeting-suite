@@ -897,10 +897,11 @@ th.sortable.sorted{color:var(--ink-900)}
       <h2>CSI MasterFormat Code Catalog</h2>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap" class="no-print">
         <span class="eyebrow" id="catCount">—</span>
-        <select id="catScope" style="width:150px;font-size:12px;padding:6px 8px">
-          <option value="res">→ Residential</option>
-          <option value="amen">→ Amenity</option>
-          <option value="soft">→ Soft Costs</option>
+        <select id="catScope" style="width:200px;font-size:12px;padding:6px 8px" aria-label="Add To"
+          title="Whose cost a line added from here becomes — see the How to Use guide">
+          <option value="res">Residential Construction</option>
+          <option value="amen">Amenity / Clubhouse</option>
+          <option value="soft">Soft Costs</option>
         </select>
         <input type="text" id="catSearch" placeholder="Search code or title…" style="width:220px" oninput="renderCatalog()">
       </div>
@@ -1133,16 +1134,29 @@ th.sortable.sorted{color:var(--ink-900)}
         <p><span class="kbd">+ Add Line Item</span> opens the CSI MasterFormat catalog. Adding from the catalog
           means the line carries a real code into the SOV, which the lender package depends on. New lines arrive
           at rate $0 — set the rate before you trust the total.</p>
-        <p>Two dropdowns sit beside the search box. The first picks the <b>scope</b>; the second picks the
-          <b>group</b> the line joins:</p>
+        <p>The catalog is the same MasterFormat list wherever you open it — the fields above the search box
+          decide where the new line <i>goes</i>, not what you can pick from.</p>
+        <p><b>Add To</b> is the scope: whose cost the line is. The CSI code says <i>what the work is</i>; the
+          scope says <i>which bucket the money lands in</i> — and the same code can legitimately appear in more
+          than one scope. The standard template prices <span class="kbd">28 46 00 Fire Detection &amp; Alarm</span>
+          twice: once for the residential building and once for the clubhouse, at different rates.</p>
+        <table class="tbl"><tbody>
+          <tr><td>Residential Construction</td><td>Priced against residential SF by default. Rolls into hard cost
+            and the contract sum.</td></tr>
+          <tr><td>Amenity / Clubhouse</td><td>Priced against amenity SF. Rolls into hard cost — but when amenity
+            SF is 0 there is no amenity building, and the whole scope contributes nothing.</td></tr>
+          <tr><td>Soft Costs</td><td>Outside the construction contract sum. Joins at total project cost, and is
+            reported separately on the SOV.</td></tr>
+        </tbody></table>
+        <p><b>Group</b> picks the heading the line files under:</p>
         <table class="tbl"><tbody>
           <tr><td>An existing group</td><td>The line is filed under that heading — pick <b>Site Finish</b> and it
             lands with the other site finish lines instead of starting a section of its own. The list shows only
-            groups already in use for the chosen scope, so it follows the scope dropdown.</td></tr>
+            groups already in use for the chosen scope, so it follows the Add To dropdown.</td></tr>
           <tr><td>Auto</td><td>The default. The line is filed under its CSI division, creating a heading such as
             "Division 14 — Conveying Equipment".</td></tr>
-          <tr><td>New group…</td><td>Prompts for a name and files the line under it, for scope that does not belong
-            anywhere existing.</td></tr>
+          <tr><td>New group…</td><td>Reveals a <b>New Group Name</b> box so you can type your own heading, for
+            scope that does not belong anywhere existing.</td></tr>
         </tbody></table>
         <p>Lines are inserted next to the group they join rather than appended at the end, so a group never appears
           twice in the budget or in the exports.</p>
@@ -1258,6 +1272,8 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="chk"><input type="checkbox" id="ex-budget" checked> Budget Detail (All Scopes)</label>
         <label class="chk"><input type="checkbox" id="ex-csi" checked> CSI MasterFormat Schedule of Values</label>
         <label class="chk"><input type="checkbox" id="ex-summary" checked> Contract &amp; Project Summary / SOV</label>
+        <label class="chk"><input type="checkbox" id="ex-edits" checked
+          title="Untick to hide the blue edited flags and library-rate comparisons in the exports"> Show Edited Line Flags</label>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
         <!-- Not `disabled`: a disabled button is skipped by keyboard navigation and shows
@@ -1277,27 +1293,36 @@ th.sortable.sorted{color:var(--ink-900)}
 <div id="pickModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
   <div class="card" style="width:640px;max-width:94vw;margin:0">
     <div class="card-hd"><h2>Add Line From CSI Catalog</h2>
-      <div style="display:flex;gap:10px;align-items:center;flex:1;min-width:0">
-        <select id="pickScope" style="width:140px;font-size:12px;padding:6px 8px" onchange="fillPickGroups()">
-          <option value="res">→ Residential</option>
-          <option value="amen">→ Amenity</option>
-          <option value="soft">→ Soft Costs</option>
-        </select>
-        <select id="pickGroup" style="width:210px;font-size:12px;padding:6px 8px" title="Which group the line joins"></select>
-        <!-- The × used to sit flush against the dropdowns at the default 15px, where it
-             read as part of them rather than as the way out of the dialog. Larger, and
-             pinned to the far edge where a close control is expected. -->
-        <button class="btn-x" onclick="closePick()" aria-label="Close"
-          style="font-size:20px;margin-left:auto;padding:2px 8px">×</button>
-      </div></div>
+      <button class="btn-x" onclick="closePick()" aria-label="Close"
+        style="font-size:20px;padding:2px 8px">×</button></div>
     <div class="card-bd" style="padding-top:12px">
+      <!-- The controls used to be bare "→ Residential"-style dropdowns in the title bar,
+           which read as filters on the catalog. They are labelled fields now: the catalog
+           is the same everywhere — these decide where the new line GOES. -->
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px">
+        <label class="fld" style="width:210px"><span class="lab">Add To</span>
+          <select id="pickScope" style="font-size:12px;padding:6px 8px" onchange="fillPickGroups()"
+            title="Whose cost the line is. Residential and Amenity price against their building's square footage and roll into the contract sum; Soft Costs sit outside it.">
+            <option value="res">Residential Construction</option>
+            <option value="amen">Amenity / Clubhouse</option>
+            <option value="soft">Soft Costs</option>
+          </select></label>
+        <label class="fld" style="width:220px"><span class="lab">Group</span>
+          <select id="pickGroup" style="font-size:12px;padding:6px 8px" onchange="togglePickNewGroup()"
+            title="Which heading the line files under"></select></label>
+        <label class="fld" id="pickNewGroupFld" style="flex:1;min-width:170px;display:none">
+          <span class="lab">New Group Name</span>
+          <input type="text" id="pickNewGroup" placeholder="e.g., Sitework Extras" style="font-size:12px;padding:6px 8px"></label>
+      </div>
       <input type="text" id="pickSearch" placeholder="Search code or title — e.g., 09 60, flooring, elevator…" oninput="renderPick()" style="margin-bottom:12px">
       <div style="max-height:380px;overflow:auto;border:1px solid var(--ink-150);border-radius:var(--r)">
         <table class="tbl"><tbody id="pickBody"></tbody></table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
-        <span class="note">Added at qty auto / rate $0 — set the rate on the budget. Leave the group on
-          <b>Auto</b> to file the line under its CSI division.</span>
+        <span class="note">Added at qty auto / rate $0 — set the rate on the budget. <b>Add To</b> decides
+          whose cost it is: Residential and Amenity price against their building's SF and roll into the
+          contract sum; Soft Costs sit outside it. Leave the group on <b>Auto</b> to file the line under
+          its CSI division.</span>
         <button class="btn btn-ghost btn-sm" onclick="addBlankLine()">Add Blank Line</button>
       </div>
     </div>
@@ -2783,6 +2808,7 @@ function csiSchedule(){
           markupsTotal:markups.reduce((s,m)=>s+m.total,0),
           hard:p.hard,contract:p.contract,project:p.project};
 }
+
 function renderCsi(){
   if(!doc)return;
   const sch=csiSchedule(),b=document.getElementById('csiBody');if(!b)return;
@@ -2878,6 +2904,7 @@ function fillPickGroups(){
     +groupsFor(scope).map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('')
     +'<option value="__new">New group…</option>';
   if([...sel.options].some(o=>o.value===prev))sel.value=prev;
+  togglePickNewGroup();
 }
 /* Insert next to the group's existing lines rather than appending. renderBudget starts a
    new heading whenever grp changes, so an appended line would render a second, duplicate
@@ -2893,10 +2920,20 @@ function chosenGroup(fallback){
   const sel=document.getElementById('pickGroup');
   const v=sel?sel.value:'';
   if(v==='__new'){
-    const name=(prompt('Name the new group','New group')||'').trim();
+    // The name comes from the visible box, not a browser prompt — typing it in the
+    // dialog beats a modal-on-modal, and the empty case falls back sensibly.
+    const name=(document.getElementById('pickNewGroup').value||'').trim();
     return name||fallback;
   }
   return v||fallback;
+}
+/* The name box only exists while "New group…" is the choice; showing it disabled the
+   rest of the time would just invite typing into a field that does nothing. */
+function togglePickNewGroup(){
+  const on=document.getElementById('pickGroup').value==='__new';
+  const fld=document.getElementById('pickNewGroupFld');
+  fld.style.display=on?'':'none';
+  if(on)document.getElementById('pickNewGroup').focus();
 }
 function closePick(){document.getElementById('pickModal').style.display='none';}
 function addBlankLine(){
@@ -3142,7 +3179,8 @@ function openExport(){document.getElementById('exportModal').style.display='flex
 function closeExport(){document.getElementById('exportModal').style.display='none';}
 function sel(){const c=id=>{const e=document.getElementById(id);return e?e.checked:false;};
   return {stats:c('ex-stats'),units:c('ex-units'),other:c('ex-other'),
-          budget:c('ex-budget'),csi:c('ex-csi'),summary:c('ex-summary')};}
+          budget:c('ex-budget'),csi:c('ex-csi'),summary:c('ex-summary'),
+          edits:c('ex-edits')};}
 function exportBaseName(){
   return (doc.projectId||'FS-Budget')+'_'+String(doc.name||'budget').replace(/[^\w]+/g,'_').replace(/^_|_$/g,'');
 }
@@ -3188,7 +3226,8 @@ function buildReport(s){
   }
 
   if(s.summary){
-    h+='<section class="rpt-sec"><h2>Contract &amp; Project Summary</h2><div class="rpt-2col"><div>'
+    h+='<section class="rpt-sec"><h2>Contract &amp; Project Summary</h2>'
+      +'<div class="rpt-2col"><div>'
       +rptRow('Residential Construction',usd(p.res),'sub')
       +(scopeActive('amen')?rptRow('Amenity / Clubhouse',usd(p.amen),'sub'):'')
       +rptRow('Construction Hard Cost',usd(p.hard),'mid')
@@ -3215,7 +3254,8 @@ function buildReport(s){
   }
 
   if(s.units&&doc.units.length){
-    h+='<section class="rpt-sec"><h2>Unit Mix &amp; Rent Revenue</h2><table class="rpt-tbl full"><thead><tr>'
+    h+='<section class="rpt-sec"><h2>Unit Mix &amp; Rent Revenue</h2>'
+      +'<table class="rpt-tbl full"><thead><tr>'
       +'<th>Unit Type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF</th><th class="r">Units</th>'
       +'<th class="r">Rent / Mo</th><th class="r">$/SF</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead><tbody>';
     doc.units.forEach(u=>{h+='<tr><td>'+esc(u.label)+'</td><td class="r mono">'+u.bd+'</td><td class="r mono">'+u.bth+'</td>'
@@ -3253,7 +3293,7 @@ function buildReport(s){
           const gs=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
           h+='<tr class="grp"><td colspan="4">'+esc(it.grp)+'</td><td class="r mono">'+usd(gs)+'</td></tr>';}
         const q=lineQty(it);
-        h+='<tr><td><span class="mono code">'+esc(it.code)+'</span> '+esc(it.desc)+(isEdited(it)?' <span class="edited-mark">edited</span>':'')+'</td>'
+        h+='<tr><td><span class="mono code">'+esc(it.code)+'</span> '+esc(it.desc)+(s.edits&&isEdited(it)?' <span class="edited-mark">edited</span>':'')+'</td>'
           +'<td class="muted">'+esc(BASIS_LABEL[it.basis]||it.basis)+'</td><td class="r mono">'+num(q)+'</td>'
           +'<td class="r mono">'+usd2(it.unit)+'</td><td class="r mono">'+usd(q*it.unit)+'</td></tr>';
       });
@@ -3484,26 +3524,34 @@ async function exportExcel(){
   }
 
   if(s.budget){
-    const ws=sheet('Budget-SOV',[{width:13},{width:46},{width:14},{width:12},{width:12},{width:14},{width:12},{width:14},{width:18}],true);
-    titleBand(ws,'Budget Detail — Schedule of Values',9);
-    headerRow(ws,['Code','Description','Basis','Qty','Rate','Total','Edited','Library Rate','Provenance']);
-    const f=[null,null,null,QTY,MONEY2,MONEY,null,MONEY2,null];
+    // The Edited / Library Rate pair only exists when "Show Edited Line Flags" is
+    // ticked — the columns are omitted entirely rather than left blank, so a
+    // flag-free workbook does not carry an empty "Edited" heading.
+    const cols=[{width:13},{width:46},{width:14},{width:12},{width:12},{width:14}];
+    if(s.edits)cols.push({width:12},{width:14});
+    cols.push({width:18});
+    const span=cols.length;
+    const ws=sheet('Budget-SOV',cols,true);
+    titleBand(ws,'Budget Detail — Schedule of Values',span);
+    headerRow(ws,['Code','Description','Basis','Qty','Rate','Total',
+                  ...(s.edits?['Edited','Library Rate']:[]),'Provenance']);
+    const f=[null,null,null,QTY,MONEY2,MONEY,...(s.edits?[null,MONEY2]:[]),null];
     activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
-      groupRow(ws,SCOPES[sc].toUpperCase(),scopeSum(sc),9,true);
+      groupRow(ws,SCOPES[sc].toUpperCase(),scopeSum(sc),span,true);
       let last=null;
       ls.forEach(it=>{
         if(it.grp!==last){last=it.grp;
-          groupRow(ws,it.grp,doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0),9);}
+          groupRow(ws,it.grp,doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0),span);}
         const q=lineQty(it),ed=isEdited(it);
         const r=styleBody(ws.addRow([it.code,it.desc,BASIS_LABEL[it.basis]||it.basis,q,it.unit,q*it.unit,
-          ed?'YES':'',ed?(+it.baseUnit||0):null,'parametric-estimate']),f);
+          ...(s.edits?[ed?'YES':'',ed?(+it.baseUnit||0):null]:[]),'parametric-estimate']),f);
         r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
-        if(ed)r.getCell(7).font=F(9,{bold:true,color:{argb:'FF'+BRAND.edit}});
+        if(s.edits&&ed)r.getCell(7).font=F(9,{bold:true,color:{argb:'FF'+BRAND.edit}});
       });
     });
-    totalRow(ws,'CONSTRUCTION HARD COST',p.hard,9);
-    totalRow(ws,'SOFT COSTS',p.soft,9);
+    totalRow(ws,'CONSTRUCTION HARD COST',p.hard,span);
+    totalRow(ws,'SOFT COSTS',p.soft,span);
   }
 
   if(s.csi){

@@ -35,6 +35,31 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('print CSS unsticks the header', th === 'static', th);
  await p.emulateMedia({media:'screen'});
 
+ // ---- edited flags: shown by default, removable with the export toggle
+ // Mark one line edited first so the toggle has something to show.
+ await p.evaluate(()=>{doc.lines[0].unit+=1;touch();});
+ await p.waitForTimeout(250);
+ await p.click("#page-budget button:has-text(\"Export…\")");
+ await p.click('button:has-text("PDF (Print)")');
+ await p.waitForTimeout(300);
+ const flagged=await p.evaluate(()=>window.__rpt||'');
+ ok('edited flag shown when Show Edited Line Flags is on', flagged.includes('edited-mark'));
+ await p.waitForTimeout(700);
+
+ // ---- toggle off: no edited flags
+ await p.click("#page-budget button:has-text(\"Export…\")");
+ await p.uncheck('#ex-edits');
+ await p.click('button:has-text("PDF (Print)")');
+ await p.waitForTimeout(300);
+ const bare=await p.evaluate(()=>window.__rpt||'');
+ ok('unchecking Show Edited Line Flags removes the edited badges', !bare.includes('edited-mark'));
+ ok('the report tables are unaffected by the toggle',
+    (bare.match(/class="mono code"/g)||[]).length>=100);
+ await p.waitForTimeout(700);
+ await p.click("#page-budget button:has-text(\"Export…\")");
+ await p.check('#ex-edits');   // leave the default restored
+ await p.click('#exportModal .btn-x');
+
  ok('no JS errors', errs.length===0, errs.join('|'));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();
