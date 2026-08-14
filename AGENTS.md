@@ -38,10 +38,10 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
    staging database. A migration is live everywhere the moment it runs, so schema
    changes must be backward-compatible with the code currently deployed, and
    migrations are paired with prompt releases.
-5. **Exports build from the data model, never the DOM.** The PDF report, Excel
-   workbook, and charts are composed from `parts()`, `csiSchedule()`,
-   `grossIncome()`, and the document itself. Screen state (collapsed groups,
-   filters, scroll) must never change what an export contains.
+5. **Exports build from the data model, never the DOM.** The PDF report and Excel
+   workbook are composed from `parts()`, `csiSchedule()`, `grossIncome()`, and the
+   document itself. Screen state (collapsed groups, filters, scroll) must never
+   change what an export contains.
 
 ## Architecture map
 
@@ -170,9 +170,9 @@ custom provider for sign-in.
   in `app/index.html` is an *offline-only* fallback (commented as such). Never
   make it a source of defaults for a connected session.
 - **Vendored ExcelJS 4.4.0 cannot author native Excel charts** (it does support
-  images, data bars, and conditional formatting). Report charts are inline SVG in
-  the PDF only. Don't add a charting library to close the gap — the decision and
-  alternatives are recorded in `docs/ROADMAP.md`.
+  images, data bars, and conditional formatting). The exports are deliberately
+  chart-free — don't add a charting library; the decision and history are
+  recorded in `docs/ROADMAP.md`.
 - **Canonical JSON + SHA-256** (`api/shared/canonical.js`) defines "content
   changed": sorted keys, volatile keys (`updated`) excluded. Anything comparing
   documents must go through it, or unchanged saves will spawn versions.
@@ -215,4 +215,4 @@ custom provider for sign-in.
 | `docs/DATA_CONTRACT.md` | Touching the SOV document, versioning, templates, or deletion |
 | `docs/BUILD_GUIDE.md` | Provisioning the Azure stack from scratch |
 | `docs/NAMING.md` | Anything that names or renames an Azure resource |
-| `docs/ROADMAP.md` | Before building something "missing" — it may be deliberately deferred (email export, undo, mobile phase 2, Excel charts) |
+| `docs/ROADMAP.md` | Before building something "missing" — it may be deliberately deferred or removed (email export, undo, mobile phase 2, export charts) |
