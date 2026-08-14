@@ -409,6 +409,13 @@ th.sortable.sorted{color:var(--ink-900)}
   .rpt-sec h2{font-size:11pt;font-weight:700;color:var(--ink-950);margin-bottom:8px;
     padding-bottom:4px;border-bottom:1px solid var(--ink-300)}
   .rpt-note{font-size:8.5pt;color:var(--ink-600);margin-bottom:8px;max-width:62em}
+  .rpt-chart{margin:8px 0 14px;page-break-inside:avoid}
+  .rpt-chart .ct{font-family:var(--fm);font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-600);margin-bottom:6px}
+  .rpt-chart svg{display:block;max-width:100%}
+  .rpt-legend{display:flex;gap:16px;font-size:7.5pt;color:var(--ink-600);margin-top:5px}
+  .rpt-legend span{display:inline-flex;align-items:center;gap:5px}
+  .rpt-legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
   .rpt-2col{display:grid;grid-template-columns:1fr 1.15fr;gap:26px;break-inside:avoid}
 
   .rr{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--ink-100)}
@@ -1272,6 +1279,9 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="chk"><input type="checkbox" id="ex-budget" checked> Budget Detail (All Scopes)</label>
         <label class="chk"><input type="checkbox" id="ex-csi" checked> CSI MasterFormat Schedule of Values</label>
         <label class="chk"><input type="checkbox" id="ex-summary" checked> Contract &amp; Project Summary / SOV</label>
+        <label class="chk"><input type="checkbox" id="ex-charts" checked> Charts &amp; Graphs</label>
+        <label class="chk"><input type="checkbox" id="ex-edits" checked
+          title="Untick to hide the blue edited flags and library-rate comparisons in the exports"> Show Edited Line Flags</label>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
         <!-- Not `disabled`: a disabled button is skipped by keyboard navigation and shows
@@ -2806,6 +2816,158 @@ function csiSchedule(){
           markupsTotal:markups.reduce((s,m)=>s+m.total,0),
           hard:p.hard,contract:p.contract,project:p.project};
 }
+
+/* ============ REPORT CHARTS ============
+   Inline SVG for the printed report, composed from the data model like every
+   other export surface — never from the DOM. Color carries ROLE, not identity:
+   green-600 is the single data hue (contract-side money and income), ink-900
+   marks subtotals, ink-500 is deliberate de-emphasis (money outside the
+   contract; outflows). Identity always rides direct labels plus a legend, never
+   color alone — which is also what keeps these legible in grayscale print.
+   The role pairs pass the dataviz palette validator on the white report surface
+   (CVD ΔE 30+, contrast ≥3:1); the categorical lightness/chroma checks are for
+   hue-slot palettes and are not applicable to deliberate neutrals. */
+const CHART={data:'#0A7A36',total:'#16191A',mute:'#6B7174',grid:'#DDE1E2',ink:'#16191A',ink2:'#6B7174'};
+const fmtC=v=>{const a=Math.abs(nz(v));
+  return (v<0?'−':'')+(a>=1e6?'$'+(a/1e6).toFixed(2)+'M':a>=1e3?'$'+Math.round(a/1e3)+'K':'$'+Math.round(a));};
+function chartTicks(max,n){
+  const raw=(max||1)/(n||4);
+  const mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  const step=[1,2,2.5,5,10].map(m=>m*mag).find(x=>x>=raw)||10*mag;
+  const out=[];for(let v=0;v<=max+1e-9;v+=step)out.push(v);
+  return out;
+}
+function chartWrap(title,svg,legend){
+  return '<div class="rpt-chart"><div class="ct">'+esc(title)+'</div>'+svg
+    +(legend&&legend.length>1?'<div class="rpt-legend">'
+      +legend.map(x=>'<span><i style="background:'+x[1]+'"></i>'+esc(x[0])+'</span>').join('')+'</div>':'')
+    +'</div>';
+}
+/* Rounded top corners, square baseline — the mark spec for bars grown from a
+   baseline. Floating waterfall segments stay square: both ends are data. */
+function roundTopRect(x,y,w,h,r,fill,attrs){
+  r=Math.min(r,h/2,w/2);
+  return '<path d="M'+(x)+' '+(y+h)+' L'+x+' '+(y+r)+' Q'+x+' '+y+' '+(x+r)+' '+y
+    +' L'+(x+w-r)+' '+y+' Q'+(x+w)+' '+y+' '+(x+w)+' '+(y+r)+' L'+(x+w)+' '+(y+h)+' Z" fill="'+fill+'"'
+    +(attrs||'')+'/>';
+}
+
+/* Waterfall: how the total project cost builds. Components float from the
+   running total; Hard Cost / Contract Sum / Total Project drop to the baseline
+   as checkpoints. */
+function chartCostBuildup(){
+  const p=parts();
+  const steps=[{l:'Residential',v:p.res,c:CHART.data}];
+  if(scopeActive('amen'))steps.push({l:'Amenity',v:p.amen,c:CHART.data});
+  steps.push({l:'Hard Cost',sub:1,c:CHART.total},
+    {l:'Profit',v:p.profit,c:CHART.data},
+    {l:'Contingency',v:p.cont,c:CHART.data},
+    {l:'Contract Sum',sub:1,c:CHART.total},
+    {l:'Soft Costs',v:p.soft,c:CHART.mute},
+    {l:'Land',v:nz(doc.projectCosts.land),c:CHART.mute},
+    {l:'Fees',v:p.fees,c:CHART.mute},
+    {l:'Total Project',sub:1,c:CHART.total});
+  let run=0;
+  steps.forEach(st=>{if(st.sub){st.y0=0;st.y1=run;}else{st.y0=run;run+=nz(st.v);st.y1=run;}});
+  const max=run||1;
+  const W=700,H=235,padL=50,padT=12,padB=32,plotW=W-padL-8,plotH=H-padT-padB;
+  const Y=v=>padT+plotH*(1-v/max);
+  const n=steps.length,band=plotW/n,bw=Math.min(24,band*0.55);
+  let out='<svg data-chart="buildup" data-total="'+Math.round(run)+'" width="'+W+'" height="'+H
+    +'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Project cost build-up" xmlns="http://www.w3.org/2000/svg">';
+  chartTicks(max,4).forEach(t=>{
+    out+='<line x1="'+padL+'" y1="'+Y(t)+'" x2="'+(W-8)+'" y2="'+Y(t)+'" stroke="'+CHART.grid+'" stroke-width="1"/>'
+       +'<text x="'+(padL-6)+'" y="'+(Y(t)+2.5)+'" text-anchor="end" font-size="7.5" fill="'+CHART.ink2+'">'+fmtC(t)+'</text>';
+  });
+  steps.forEach((st,i)=>{
+    const x=padL+band*i+(band-bw)/2;
+    const top=Y(st.y1),h=Math.max(1.5,Y(st.y0)-Y(st.y1));
+    const v=st.sub?st.y1:nz(st.v);
+    out+=st.sub
+      ?roundTopRect(x,top,bw,(H-padB)-top,4,st.c,' data-v="'+Math.round(v)+'" data-sub="1"')
+      :'<rect x="'+x+'" y="'+top+'" width="'+bw+'" height="'+h+'" fill="'+st.c+'" data-v="'+Math.round(v)+'" data-comp="1"/>';
+    if(i<steps.length-1){ // connector at the running level into the next bar
+      const nx=padL+band*(i+1)+(band-bw)/2;
+      out+='<line x1="'+(x+bw)+'" y1="'+Y(st.y1)+'" x2="'+nx+'" y2="'+Y(st.y1)+'" stroke="'+CHART.grid+'" stroke-width="1"/>';
+    }
+    out+='<text x="'+(x+bw/2)+'" y="'+(top-3)+'" text-anchor="middle" font-size="8" font-weight="600" fill="'+CHART.ink+'">'+fmtC(v)+'</text>';
+    const words=st.l.split(' ');
+    out+='<text x="'+(x+bw/2)+'" y="'+(H-padB+11)+'" text-anchor="middle" font-size="7.5" fill="'+CHART.ink2+'">'
+      +(words.length>1?'<tspan x="'+(x+bw/2)+'" dy="0">'+esc(words[0])+'</tspan><tspan x="'+(x+bw/2)+'" dy="9">'+esc(words.slice(1).join(' '))+'</tspan>'
+                      :esc(st.l))+'</text>';
+  });
+  out+='</svg>';
+  return chartWrap('Project Cost Build-Up',out,
+    [['Contract components',CHART.data],['Checkpoints',CHART.total],['Outside the contract',CHART.mute]]);
+}
+
+/* Horizontal Pareto of CSI divisions plus Division 99, so the bars sum to the
+   contract sum; soft-cost groups follow as their own cluster with their own
+   denominator, matching the report's "% Soft" convention. */
+function chartDivisions(){
+  const sch=csiSchedule();
+  const rows=[...sch.divisions].sort((a,z)=>z.total-a.total)
+    .map(d=>({l:d.title,v:d.total,c:CHART.data,part:1}));
+  if(sch.markupsTotal>0)rows.push({l:'Division 99 — Markups',v:sch.markupsTotal,c:CHART.total,part:1});
+  const soft=sch.softGroups.map(g=>({l:g.grp,v:g.total,c:CHART.mute}));
+  const den=sch.contract||0,sden=sch.softTotal||0;
+  const W=700,labW=212,valW=112,rowH=17,barH=11,barW=W-labW-valW;
+  const max=Math.max(1,...rows.map(r=>r.v),...soft.map(r=>r.v));
+  const softHead=soft.length?rowH+4:0;
+  const H=rows.length*rowH+softHead+soft.length*rowH+6;
+  const trunc=t=>t.length>34?t.slice(0,33)+'…':t;
+  let out='<svg data-chart="divisions" data-contract="'+Math.round(den)+'" data-soft="'+Math.round(sden)
+    +'" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Cost by CSI division" xmlns="http://www.w3.org/2000/svg">';
+  const bar=(r,y,d,partAttr)=>{
+    const w=Math.max(1.5,barW*r.v/max);
+    out+='<text x="'+(labW-8)+'" y="'+(y+barH-2.5)+'" text-anchor="end" font-size="8" fill="'+CHART.ink+'">'+esc(trunc(r.l))+'</text>'
+      +'<rect x="'+labW+'" y="'+y+'" width="'+w+'" height="'+barH+'" rx="0" fill="'+r.c+'"'+partAttr+' data-v="'+Math.round(r.v)+'"/>'
+      +roundEnd(labW+w,y,barH,r.c)
+      +'<text x="'+(labW+w+6)+'" y="'+(y+barH-2.5)+'" font-size="8" fill="'+CHART.ink2+'">'+fmtC(r.v)
+      +(d?' · '+(100*r.v/d).toFixed(1)+'%':'')+'</text>';
+  };
+  rows.forEach((r,i)=>bar(r,i*rowH,den,' data-part="1"'));
+  if(soft.length){
+    const sy=rows.length*rowH+6;
+    out+='<text x="'+(labW-8)+'" y="'+(sy+9)+'" text-anchor="end" font-size="7.5" font-weight="600" fill="'+CHART.ink2+'" letter-spacing="1">SOFT COSTS · % OF SOFT TOTAL</text>';
+    soft.forEach((r,i)=>bar(r,sy+rowH+i*rowH-4,sden,' data-softpart="1"'));
+  }
+  out+='</svg>';
+  return chartWrap('Cost by CSI Division — Share of Contract Sum',out,
+    [['Division cost',CHART.data],['Markups (Profit + Contingency)',CHART.total],['Soft costs',CHART.mute]]);
+}
+/* 4px rounded cap on the data end of a horizontal bar (square at the label side). */
+function roundEnd(x,y,h,fill){
+  return '<path d="M'+(x-0.1)+' '+y+' Q'+(x+4)+' '+y+' '+(x+4)+' '+(y+h/2)
+    +' Q'+(x+4)+' '+(y+h)+' '+(x-0.1)+' '+(y+h)+' Z" fill="'+fill+'"/>';
+}
+
+/* Monthly income, expenses and the resulting net — the same arithmetic as the
+   Net Income / Yr stat, via grossIncome(). */
+function chartRevenue(){
+  const g=grossIncome();
+  const net=g.rentMo+g.netOtherMo;
+  const rows=[{l:'Rent Income',v:g.rentMo,c:CHART.data},
+              {l:'Other Income',v:g.otherMo,c:CHART.data},
+              {l:'Operating Expenses',v:g.expMo,c:CHART.mute,neg:1},
+              {l:'Net Income',v:net,c:CHART.total}];
+  const W=700,labW=150,valW=150,rowH=19,barH=12,barW=W-labW-valW;
+  const max=Math.max(1,...rows.map(r=>r.v));
+  const H=rows.length*rowH+4;
+  let out='<svg data-chart="revenue" data-net="'+Math.round(net)+'" data-netyr="'+Math.round(g.netYr)
+    +'" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Monthly income and expenses" xmlns="http://www.w3.org/2000/svg">';
+  rows.forEach((r,i)=>{
+    const y=i*rowH,w=Math.max(1.5,barW*r.v/max);
+    out+='<text x="'+(labW-8)+'" y="'+(y+barH-2.5)+'" text-anchor="end" font-size="8" fill="'+CHART.ink+'">'+esc(r.l)+'</text>'
+      +'<rect x="'+labW+'" y="'+y+'" width="'+w+'" height="'+barH+'" fill="'+r.c+'" data-v="'+Math.round(r.v*(r.neg?-1:1))+'"/>'
+      +roundEnd(labW+w,y,barH,r.c)
+      +'<text x="'+(labW+w+6)+'" y="'+(y+barH-2.5)+'" font-size="8" fill="'+CHART.ink2+'">'
+      +(r.neg?'− ':'')+fmtC(r.v)+' /mo</text>';
+  });
+  out+='</svg>';
+  return chartWrap('Monthly Income & Expenses — Net '+fmtC(net)+'/mo · '+fmtC(g.netYr)+'/yr',out,
+    [['Income',CHART.data],['Expenses',CHART.mute],['Net',CHART.total]]);
+}
 function renderCsi(){
   if(!doc)return;
   const sch=csiSchedule(),b=document.getElementById('csiBody');if(!b)return;
@@ -3176,7 +3338,8 @@ function openExport(){document.getElementById('exportModal').style.display='flex
 function closeExport(){document.getElementById('exportModal').style.display='none';}
 function sel(){const c=id=>{const e=document.getElementById(id);return e?e.checked:false;};
   return {stats:c('ex-stats'),units:c('ex-units'),other:c('ex-other'),
-          budget:c('ex-budget'),csi:c('ex-csi'),summary:c('ex-summary')};}
+          budget:c('ex-budget'),csi:c('ex-csi'),summary:c('ex-summary'),
+          charts:c('ex-charts'),edits:c('ex-edits')};}
 function exportBaseName(){
   return (doc.projectId||'FS-Budget')+'_'+String(doc.name||'budget').replace(/[^\w]+/g,'_').replace(/^_|_$/g,'');
 }
@@ -3222,7 +3385,9 @@ function buildReport(s){
   }
 
   if(s.summary){
-    h+='<section class="rpt-sec"><h2>Contract &amp; Project Summary</h2><div class="rpt-2col"><div>'
+    h+='<section class="rpt-sec"><h2>Contract &amp; Project Summary</h2>'
+      +(s.charts?chartCostBuildup():'')
+      +'<div class="rpt-2col"><div>'
       +rptRow('Residential Construction',usd(p.res),'sub')
       +(scopeActive('amen')?rptRow('Amenity / Clubhouse',usd(p.amen),'sub'):'')
       +rptRow('Construction Hard Cost',usd(p.hard),'mid')
@@ -3249,7 +3414,9 @@ function buildReport(s){
   }
 
   if(s.units&&doc.units.length){
-    h+='<section class="rpt-sec"><h2>Unit Mix &amp; Rent Revenue</h2><table class="rpt-tbl full"><thead><tr>'
+    h+='<section class="rpt-sec"><h2>Unit Mix &amp; Rent Revenue</h2>'
+      +(s.charts?chartRevenue():'')
+      +'<table class="rpt-tbl full"><thead><tr>'
       +'<th>Unit Type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF</th><th class="r">Units</th>'
       +'<th class="r">Rent / Mo</th><th class="r">$/SF</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead><tbody>';
     doc.units.forEach(u=>{h+='<tr><td>'+esc(u.label)+'</td><td class="r mono">'+u.bd+'</td><td class="r mono">'+u.bth+'</td>'
@@ -3287,7 +3454,7 @@ function buildReport(s){
           const gs=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
           h+='<tr class="grp"><td colspan="4">'+esc(it.grp)+'</td><td class="r mono">'+usd(gs)+'</td></tr>';}
         const q=lineQty(it);
-        h+='<tr><td><span class="mono code">'+esc(it.code)+'</span> '+esc(it.desc)+(isEdited(it)?' <span class="edited-mark">edited</span>':'')+'</td>'
+        h+='<tr><td><span class="mono code">'+esc(it.code)+'</span> '+esc(it.desc)+(s.edits&&isEdited(it)?' <span class="edited-mark">edited</span>':'')+'</td>'
           +'<td class="muted">'+esc(BASIS_LABEL[it.basis]||it.basis)+'</td><td class="r mono">'+num(q)+'</td>'
           +'<td class="r mono">'+usd2(it.unit)+'</td><td class="r mono">'+usd(q*it.unit)+'</td></tr>';
       });
@@ -3299,6 +3466,7 @@ function buildReport(s){
     const sch=csiSchedule();
     h+='<section class="rpt-sec break"><h2>CSI Schedule of Values</h2>'
       +'<p class="rpt-note">MasterFormat divisions. Contingency is carried explicitly as 99.03 and is never blended into a trade line. Soft costs are reported separately and are not part of the contract sum.</p>'
+      +(s.charts?chartDivisions():'')
       +'<table class="rpt-tbl full"><thead><tr><th>Code</th><th>Section</th><th>Scope</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Scheduled Value</th><th class="r">% Contract</th></tr></thead><tbody>';
     // Division totals and percentages are computed from the data model, exactly as
     // the CSI tab computes them — never scraped from the rendered page.
@@ -3518,26 +3686,34 @@ async function exportExcel(){
   }
 
   if(s.budget){
-    const ws=sheet('Budget-SOV',[{width:13},{width:46},{width:14},{width:12},{width:12},{width:14},{width:12},{width:14},{width:18}],true);
-    titleBand(ws,'Budget Detail — Schedule of Values',9);
-    headerRow(ws,['Code','Description','Basis','Qty','Rate','Total','Edited','Library Rate','Provenance']);
-    const f=[null,null,null,QTY,MONEY2,MONEY,null,MONEY2,null];
+    // The Edited / Library Rate pair only exists when "Show Edited Line Flags" is
+    // ticked — the columns are omitted entirely rather than left blank, so a
+    // flag-free workbook does not carry an empty "Edited" heading.
+    const cols=[{width:13},{width:46},{width:14},{width:12},{width:12},{width:14}];
+    if(s.edits)cols.push({width:12},{width:14});
+    cols.push({width:18});
+    const span=cols.length;
+    const ws=sheet('Budget-SOV',cols,true);
+    titleBand(ws,'Budget Detail — Schedule of Values',span);
+    headerRow(ws,['Code','Description','Basis','Qty','Rate','Total',
+                  ...(s.edits?['Edited','Library Rate']:[]),'Provenance']);
+    const f=[null,null,null,QTY,MONEY2,MONEY,...(s.edits?[null,MONEY2]:[]),null];
     activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
-      groupRow(ws,SCOPES[sc].toUpperCase(),scopeSum(sc),9,true);
+      groupRow(ws,SCOPES[sc].toUpperCase(),scopeSum(sc),span,true);
       let last=null;
       ls.forEach(it=>{
         if(it.grp!==last){last=it.grp;
-          groupRow(ws,it.grp,doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0),9);}
+          groupRow(ws,it.grp,doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0),span);}
         const q=lineQty(it),ed=isEdited(it);
         const r=styleBody(ws.addRow([it.code,it.desc,BASIS_LABEL[it.basis]||it.basis,q,it.unit,q*it.unit,
-          ed?'YES':'',ed?(+it.baseUnit||0):null,'parametric-estimate']),f);
+          ...(s.edits?[ed?'YES':'',ed?(+it.baseUnit||0):null]:[]),'parametric-estimate']),f);
         r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
-        if(ed)r.getCell(7).font=F(9,{bold:true,color:{argb:'FF'+BRAND.edit}});
+        if(s.edits&&ed)r.getCell(7).font=F(9,{bold:true,color:{argb:'FF'+BRAND.edit}});
       });
     });
-    totalRow(ws,'CONSTRUCTION HARD COST',p.hard,9);
-    totalRow(ws,'SOFT COSTS',p.soft,9);
+    totalRow(ws,'CONSTRUCTION HARD COST',p.hard,span);
+    totalRow(ws,'SOFT COSTS',p.soft,span);
   }
 
   if(s.csi){
