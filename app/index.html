@@ -234,10 +234,14 @@ body.mobile-ro [data-edit-only]{display:none!important}
 .tbl input[type=checkbox]:hover{border-color:var(--ink-500);background:#fff}
 .tbl input[type=checkbox]:checked,.tbl input[type=checkbox]:indeterminate{
   background:var(--green-600);border-color:var(--green-600)}
-.tbl input[type=checkbox]:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;
-  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
-.tbl input[type=checkbox]:indeterminate::after{content:'';position:absolute;left:2.5px;top:5.5px;
-  width:7px;border-top:2px solid #fff}
+/* The glyphs are centered geometrically (50%/50% + translate) rather than nudged
+   with fixed pixel offsets, which clipped at some zoom levels and pixel ratios.
+   The -62% vertical bias puts the check's visual weight in the middle: its stroke
+   hangs below the geometric center once rotated. */
+.tbl input[type=checkbox]:checked::after{content:'';position:absolute;left:50%;top:50%;width:4px;height:8px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:translate(-50%,-62%) rotate(45deg)}
+.tbl input[type=checkbox]:indeterminate::after{content:'';position:absolute;left:50%;top:50%;
+  width:7px;border-top:2px solid #fff;transform:translate(-50%,-50%)}
 .tbl input[type=checkbox]:focus-visible{outline:none;box-shadow:var(--focus)}
 .grp-hd td.calc,.grp-hd td.calc.strong{color:var(--ink-950)}
 tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
@@ -1273,14 +1277,18 @@ th.sortable.sorted{color:var(--ink-900)}
 <div id="pickModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
   <div class="card" style="width:640px;max-width:94vw;margin:0">
     <div class="card-hd"><h2>Add Line From CSI Catalog</h2>
-      <div style="display:flex;gap:10px;align-items:center">
+      <div style="display:flex;gap:10px;align-items:center;flex:1;min-width:0">
         <select id="pickScope" style="width:140px;font-size:12px;padding:6px 8px" onchange="fillPickGroups()">
           <option value="res">→ Residential</option>
           <option value="amen">→ Amenity</option>
           <option value="soft">→ Soft Costs</option>
         </select>
         <select id="pickGroup" style="width:210px;font-size:12px;padding:6px 8px" title="Which group the line joins"></select>
-        <button class="btn-x" onclick="closePick()">×</button>
+        <!-- The × used to sit flush against the dropdowns at the default 15px, where it
+             read as part of them rather than as the way out of the dialog. Larger, and
+             pinned to the far edge where a close control is expected. -->
+        <button class="btn-x" onclick="closePick()" aria-label="Close"
+          style="font-size:20px;margin-left:auto;padding:2px 8px">×</button>
       </div></div>
     <div class="card-bd" style="padding-top:12px">
       <input type="text" id="pickSearch" placeholder="Search code or title — e.g., 09 60, flooring, elevator…" oninput="renderPick()" style="margin-bottom:12px">
@@ -1290,7 +1298,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
         <span class="note">Added at qty auto / rate $0 — set the rate on the budget. Leave the group on
           <b>Auto</b> to file the line under its CSI division.</span>
-        <button class="btn btn-ghost btn-sm" onclick="addBlankLine()">Add Blank Line Instead</button>
+        <button class="btn btn-ghost btn-sm" onclick="addBlankLine()">Add Blank Line</button>
       </div>
     </div>
   </div>
