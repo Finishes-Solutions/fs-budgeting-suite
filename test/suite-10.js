@@ -24,6 +24,15 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     [...document.querySelectorAll('#pickModal .card-bd button')]
       .some(x => x.textContent.trim() === 'Add Blank Line')));
  await p.click('button:has-text("+ Add Line Item")'); await p.waitForTimeout(300);
+ // The scope field says whose cost the line is, in full — the old "→ Residential"
+ // arrows read as catalog filters, which they are not.
+ ok('Add To offers the full scope names',
+    (await p.locator('#pickScope option').allTextContents()).join('|')
+      === 'Residential Construction|Amenity / Clubhouse|Soft Costs');
+ ok('The scope field is labelled Add To', await p.evaluate(() =>
+    document.querySelector('#pickScope').closest('.fld').textContent.includes('Add To')));
+ ok('The new-group name box is hidden until New group… is chosen',
+    await p.locator('#pickNewGroupFld').isHidden());
  const opts=await p.locator('#pickGroup option').allTextContents();
  ok('lists the residential groups in use',
     opts.includes('Site Finish')&&opts.includes('Interiors')&&opts.includes('Shell of Building'),
@@ -60,9 +69,11 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('Auto files under the CSI division',
     await p.evaluate(()=>doc.lines.some(l=>l.custom&&/^Division 14/.test(l.grp))));
 
- // New group… prompts and uses the name
+ // New group… reveals an inline name box (it used to be a browser prompt)
  await p.click('button:has-text("+ Add Line Item")'); await p.waitForTimeout(250);
- await p.selectOption('#pickGroup','__new');
+ await p.selectOption('#pickGroup','__new'); await p.waitForTimeout(200);
+ ok('Choosing New group… reveals the name box', await p.locator('#pickNewGroupFld').isVisible());
+ await p.fill('#pickNewGroup','Sitework Extras');
  await p.fill('#pickSearch','irrigation'); await p.waitForTimeout(250);
  await p.click('#pickBody tr.clickable'); await p.waitForTimeout(500);
  ok('New group… uses the typed name',
