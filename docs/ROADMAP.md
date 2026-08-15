@@ -196,3 +196,21 @@ static embedded pictures, in-cell data bars via conditional formatting (which th
 does support), or hand-injecting OOXML chart parts. Decision: tables only for now;
 data bars and embedded images are the recorded future path if workbook visuals are
 ever wanted. Do not reach for a chart library — the constraint is the vendored build.
+
+---
+
+## Built — Investment Analysis (2026-08, pending staging release)
+
+Five-year before-tax investment analysis in the Investment Analysis tab: created
+from an exact saved budget version (or standalone), server-calculated
+(`api/shared/investment/`, engine `before-tax-5y-1.0.0`, fixture-proven against
+five recovered reference deals including a complete acquisition-sensitivity
+matrix), versioned with optimistic concurrency, soft-deletable, with an
+on-screen tabular report and a six-sheet table-only Excel workbook.
+
+Deliberately NOT built (validator rejects rather than approximates; revisit only
+with controlled calibration exports): charts/chart exports, after-tax analysis,
+ten-year reports, interest-only / assumed / second / refinance loans, partner
+waterfalls, MIRR/NPV, disposition-price sensitivity, AI summaries, external
+publishing. A future **Refresh From New Budget Version** action (diff + new
+analysis version) is the planned path for re-importing after a budget changes.

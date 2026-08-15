@@ -1,0 +1,7 @@
+{
+  "bindings": [
+    { "authLevel": "anonymous", "type": "httpTrigger", "direction": "in", "name": "req",
+      "methods": ["post"], "route": "investment-calculations" },
+    { "type": "http", "direction": "out", "name": "res" }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "name": "Wedgewood",
+  "note": "Canonical full-annual regression deal. Inputs from the recovered assumption table; expected values transcribed from the exported report. Loan entered as the exact recovered dollar amount (the export's own rounding of 65% LTV).",
+  "input": {
+    "schemaVersion": 1,
+    "analysisName": "Wedgewood Base Case",
+    "property": {
+      "name": "7.126 Acre at Wedgewood",
+      "address": "Wedgewood Dr.",
+      "size": { "unit": "acres", "value": 7.126 },
+      "purchaseMonth": "2025-12"
+    },
+    "projection": { "years": 5, "taxMode": "beforeTax" },
+    "acquisition": { "basis": { "mode": "purchasePrice", "value": 21763570 }, "costPercent": 0.02 },
+    "income": {
+      "mode": "aggregate",
+      "year1PotentialIncome": 2409852,
+      "growth": { "mode": "constant", "value": 0.03 },
+      "otherIncome": []
+    },
+    "vacancy": { "mode": "constant", "value": 0.10 },
+    "expenses": { "mode": "percentOfGOI", "value": 0.30 },
+    "capitalExpenses": [],
+    "financing": {
+      "loans": [{
+        "label": "First Mortgage", "kind": "newAmortizing",
+        "amount": { "mode": "amount", "value": 14146321 },
+        "annualRate": 0.065, "amortizationYears": 25, "termYears": 5,
+        "feePercent": 0.01, "interestCalculation": "30/360"
+      }]
+    },
+    "disposition": { "exitCapRate": { "mode": "constant", "value": 0.065 }, "sellingCostPercent": 0.05 },
+    "reportOptions": { "includeSensitivity": false }
+  },
+  "expected": {
+    "purchasePrice": 21763570,
+    "acquisitionCapRatePct": 6.98,
+    "initialEquity": 8193984,
+    "normalizedSquareFeet": 310408.56,
+    "pricePerSquareFoot": 70.11,
+    "year1PeriodEnd": "2026-11",
+    "annual": {
+      "potentialIncome":    [2409852, 2482148, 2556612, 2633310, 2712310],
+      "vacancyLoss":        [240985, 248215, 255661, 263331, 271231],
+      "GOI":                [2168867, 2233933, 2300951, 2369979, 2441079],
+      "operatingExpenses":  [650660, 670180, 690285, 710994, 732324],
+      "NOI":                [1518207, 1563753, 1610666, 1658985, 1708755],
+      "cashFlowBeforeTaxes":[372003, 417549, 464462, 512781, 562551],
+      "endingLoanBalance":  [13912751, 13663538, 13397636, 13113925, 12811214],
+      "projectedLTVPct":    [57.83, 55.14, 52.49, 49.88, 47.31],
+      "DSCR":               [1.32, 1.36, 1.41, 1.45, 1.49],
+      "cashOnCashPct":      [4.54, 5.10, 5.67, 6.26, 6.87],
+      "returnOnEquityPct":  [4.16, 4.23, 4.28, 4.32, 4.36],
+      "equityMultiple":     [1.14, 1.30, 1.48, 1.66, 1.86],
+      "propertyIRRPct":     [9.80, 9.82, 9.83, 9.83, 9.83],
+      "effectiveLoanRatePct":[7.53, 7.01, 6.83, 6.75, 6.69],
+      "equityIRRPct":       [13.67, 14.38, 14.43, 14.34, 14.21],
+      "leverageImpactPct":  [3.87, 4.56, 4.60, 4.51, 4.38]
+    },
+    "year5GrossSalePrice": 27077000,
+    "year5SellingCosts": 1353850,
+    "year5NetSaleProceeds": 12911936,
+    "optimalHoldingYear": 3,
+    "optimalHoldingYieldPct": 14.43
+  }
+}

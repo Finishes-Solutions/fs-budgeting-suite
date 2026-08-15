@@ -21,11 +21,12 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 
 ## Ground rules — read before touching anything
 
-1. **One HTML file, no build step.** The entire frontend is `app/index.html`
-   (HTML + inline CSS + inline JS). There is no bundler, no transpiler, no
-   minifier — a syntax error in the inline script ships as a blank page. Before
-   committing, verify the script parses (extract it and run `node --check`, or run
-   a test suite, which loads the page and fails loudly on a parse error).
+1. **No build step, ever.** The budget frontend is `app/index.html` (HTML +
+   inline CSS + inline JS); the investment workflow is the plain-JS IIFE
+   `app/investment-analysis.js`. There is no bundler, no transpiler, no
+   minifier — a syntax error ships as a broken page. Before committing, verify
+   the scripts parse (`node --check` on the module and on the extracted inline
+   script, or run a test suite, which loads the page and fails loudly).
 2. **Push to `origin/staging` only.** Never commit to or push `main`. Release to
    production is a staging→main pull request — a deliberate human decision, not a
    side effect of finishing work.
@@ -47,7 +48,8 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 
 | Path | What it is |
 |---|---|
-| `app/index.html` | The entire frontend — HTML + inline CSS + inline JS, no build step |
+| `app/index.html` | The budget frontend — HTML + inline CSS + inline JS, no build step |
+| `app/investment-analysis.js` / `.css` | The Investment Analysis workflow — external no-build IIFE behind `window.FSInvestmentUI`, wired through an adapter |
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement (first auth gate) |
 | `app/vendor/exceljs.min.js` | ExcelJS 4.4.0, vendored — see [Single sources of truth](#single-sources-of-truth) |
 | `app/assets/` | Logos + favicon set; regenerate with `tools/make-favicons.py`, don't hand-edit |
@@ -56,6 +58,8 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | `api/budget-versions/` | Read-only version history |
 | `api/pricing/` | Pricing library read + publish |
 | `api/templates/` | Budget templates: list, read, versions, create, publish, activate |
+| `api/investment-*/` | Investment analyses: list/create, CRUD + 409 concurrency, versions, stateless preview |
+| `api/shared/investment/` | The server-only before-tax calculation engine (fixture-proven; see Testing) |
 | `api/shared/` | `auth.js` (principal + roles), `db.js` (pool + cold-start retry), `canonical.js` (canonical JSON + hashing), `sov.js` (SOV projection), `versioning.js` (version writes) |
 | `sql/` | Idempotent schema + migration + views, seeds, and admin-run scripts |
 | `test/` | Ten Playwright suites, `node:test` logic tests, and `mock-api.js` (a local stand-in for the SWA API) |
@@ -175,7 +179,22 @@ custom provider for sign-in.
   recorded in `docs/ROADMAP.md`.
 - **Canonical JSON + SHA-256** (`api/shared/canonical.js`) defines "content
   changed": sorted keys, volatile keys (`updated`) excluded. Anything comparing
-  documents must go through it, or unchanged saves will spawn versions.
+  documents must go through it, or unchanged saves will spawn versions. Never
+  change its defaults — budget hashing depends on them byte-for-byte; the
+  investment module wraps it rather than modifying it.
+- **The investment engine is server-only and version-stamped**
+  (`api/shared/investment/`, `before-tax-5y-1.0.0`). The browser posts
+  assumptions and renders returned results; saves recalculate server-side and
+  ignore client results; old analysis versions are never recalculated. Formula
+  changes require a new version string and must keep
+  `test/investment-calculations.test.js` reconciling all five reference deals.
+  Budget summary money (`ContractSum`/`ProjectCost`) likewise derives
+  server-side via `api/shared/budget-calc.js` — mirror any browser CALC change
+  there or suite-09's parity check fails.
+- **Analysis routes carry GUIDs** (`#/analysis/{guid}`): handled before the
+  uppercase/ID_RX budget path in `routeFromHash`, never fed to `openBudget`.
+  `app/investment-analysis.js` talks to `index.html` only through the adapter
+  passed to `FSInvestmentUI.init()`.
 
 ## Testing
 
@@ -193,9 +212,9 @@ custom provider for sign-in.
   change without its mock change will pass locally and lie.
 - Pure logic (canonical JSON, hashing, SOV projection, calculations) goes in
   `test/*.test.js` under `node:test` — no browser required.
-- New features come with tests in the same commit. Ten suites exist
-  (`suite-01` … `suite-10`); extend the closest one rather than starting an
-  eleventh for a small feature.
+- New features come with tests in the same commit. Fourteen suites exist
+  (`suite-01` … `suite-14`; 11–14 are the investment-analysis suites); extend
+  the closest one rather than starting a fifteenth for a small feature.
 
 ## Style
 

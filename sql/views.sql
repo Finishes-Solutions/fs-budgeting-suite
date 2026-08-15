@@ -47,3 +47,20 @@ SELECT ProjectId, Name, Type, ContractSum, ProjectCost, DeletedAt
 FROM dbo.Budgets
 WHERE IsDeleted = 1;
 GO
+
+-- Investment analyses index: reporting surface for the underwriting module.
+-- Excludes TST-#### linked analyses (same convention as vw_Budgets); analyses
+-- with no linked project are business data and stay visible. Soft-deleted
+-- analyses stay visible with their flags — filter IsDeleted = 0 when needed.
+CREATE OR ALTER VIEW dbo.vw_InvestmentAnalyses AS
+SELECT a.AnalysisId, a.ProjectId, a.Name, a.Status,
+       a.ProjectionYears, a.TaxMode, a.CurrentVersionNumber,
+       a.SourceBudgetVersionId, bv.VersionNumber AS SourceBudgetVersionNumber,
+       a.PurchasePrice, a.Year1NOI, a.InitialEquity,
+       a.FinalYearEquityIRR, a.OptimalHoldingYear,
+       a.InputSchemaVersion, a.CalculationVersion,
+       a.CreatedAt, a.UpdatedAt, a.IsDeleted, a.DeletedAt
+FROM dbo.InvestmentAnalyses AS a
+LEFT JOIN dbo.BudgetVersions AS bv ON bv.Id = a.SourceBudgetVersionId
+WHERE a.ProjectId IS NULL OR a.ProjectId NOT LIKE 'TST-%';
+GO

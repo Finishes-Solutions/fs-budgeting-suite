@@ -1,0 +1,92 @@
+{
+  "name": "Combo 15 AC",
+  "note": "The twelve-page export: base case plus the complete acquisition-price sensitivity matrix, which must match every recovered cell to display precision.",
+  "input": {
+    "schemaVersion": 1,
+    "analysisName": "Combo 15 AC Base Case",
+    "property": {
+      "name": "8.3 .9 5.8",
+      "size": { "unit": "squareFeet", "value": 130000 },
+      "purchaseMonth": "2026-06"
+    },
+    "projection": { "years": 5, "taxMode": "beforeTax" },
+    "acquisition": { "basis": { "mode": "purchasePrice", "value": 26587301 }, "costPercent": 0.02 },
+    "income": {
+      "mode": "aggregate",
+      "year1PotentialIncome": 2835290,
+      "growth": { "mode": "constant", "value": 0.02 },
+      "otherIncome": []
+    },
+    "vacancy": { "mode": "constant", "value": 0.10 },
+    "expenses": { "mode": "percentOfGOI", "value": 0.07 },
+    "capitalExpenses": [],
+    "financing": {
+      "loans": [{
+        "label": "First Mortgage", "kind": "newAmortizing",
+        "amount": { "mode": "amount", "value": 17281746 },
+        "annualRate": 0.0725, "amortizationYears": 25, "termYears": 5,
+        "feePercent": 0.01, "interestCalculation": "30/360"
+      }]
+    },
+    "disposition": { "exitCapRate": { "mode": "constant", "value": 0.075 }, "sellingCostPercent": 0.05 },
+    "reportOptions": { "includeSensitivity": true }
+  },
+  "expected": {
+    "purchasePrice": 26587301,
+    "acquisitionCapRatePct": 8.93,
+    "initialEquity": 10010119,
+    "pricePerSquareFoot": 204.52,
+    "year1PeriodEnd": "2027-05",
+    "year1NOI": 2373138,
+    "year1DSCR": 1.58,
+    "year1CashOnCashPct": 8.73,
+    "year5EquityIRRPct": 19.52,
+    "year5EquityMultiple": 2.22,
+    "year5GrossSalePrice": 34935000,
+    "year5NetSaleProceeds": 17383918,
+    "optimalHoldingYear": 1,
+    "optimalHoldingYieldPct": 44.93,
+    "sensitivity": [
+      {
+        "purchasePrice": 23928571,
+        "acquisitionCapPct": 9.92,
+        "unleveragedCoC": [9.72, 9.92, 10.12, 10.32, 10.52],
+        "leveragedCoC": [11.37, 11.89, 12.43, 12.98, 13.54],
+        "unleveragedIRR": [35.35, 22.46, 18.45, 16.51, 15.36],
+        "leveragedIRR": [81.60, 44.24, 33.56, 28.49, 25.53]
+      },
+      {
+        "purchasePrice": 25257936,
+        "acquisitionCapPct": 9.40,
+        "unleveragedCoC": [9.21, 9.40, 9.58, 9.78, 9.97],
+        "leveragedCoC": [9.98, 10.48, 10.99, 11.51, 12.04],
+        "unleveragedIRR": [28.22, 19.06, 16.16, 14.74, 13.91],
+        "leveragedIRR": [62.30, 36.23, 28.45, 24.69, 22.46]
+      },
+      {
+        "purchasePrice": 26587301,
+        "acquisitionCapPct": 8.93,
+        "unleveragedCoC": [8.75, 8.93, 9.10, 9.29, 9.47],
+        "leveragedCoC": [8.73, 9.21, 9.69, 10.18, 10.69],
+        "unleveragedIRR": [21.81, 15.93, 14.04, 13.10, 12.55],
+        "leveragedIRR": [44.93, 28.65, 23.56, 21.04, 19.52]
+      },
+      {
+        "purchasePrice": 27916666,
+        "acquisitionCapPct": 8.50,
+        "unleveragedCoC": [8.33, 8.50, 8.67, 8.84, 9.02],
+        "leveragedCoC": [7.60, 8.06, 8.52, 8.99, 9.47],
+        "unleveragedIRR": [16.01, 13.03, 12.05, 11.57, 11.28],
+        "leveragedIRR": [29.22, 21.44, 18.86, 17.52, 16.69]
+      },
+      {
+        "purchasePrice": 29246031,
+        "acquisitionCapPct": 8.11,
+        "unleveragedCoC": [7.96, 8.11, 8.28, 8.44, 8.61],
+        "leveragedCoC": [6.58, 7.01, 7.45, 7.90, 8.35],
+        "unleveragedIRR": [10.74, 10.33, 10.20, 10.13, 10.09],
+        "leveragedIRR": [14.93, 14.54, 14.30, 14.10, 13.94]
+      }
+    ]
+  }
+}

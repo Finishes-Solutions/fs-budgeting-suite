@@ -45,6 +45,33 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  }));
  ok('browser save dialog is suppressed', prevented===true);
 
+ // ---- server budget-calc parity: the same document must total identically in
+ // the browser and in api/shared/budget-calc.js, and stored summary money must
+ // come from the doc, not from client meta.
+ const calc = require('../api/shared/budget-calc');
+ const pageState = await p.evaluate(()=>({doc:JSON.parse(JSON.stringify(doc)),
+   parts:parts(), gross:grossIncome()}));
+ const sp = calc.parts(pageState.doc), sg = calc.grossIncome(pageState.doc);
+ const close=(a,z)=>Math.abs(a-z)<0.005;
+ ok('server parts() matches the browser on a live document',
+    ['res','amen','soft','hard','profit','cont','contract','fees','project']
+      .every(k=>close(sp[k],pageState.parts[k])),
+    JSON.stringify(sp)+' vs '+JSON.stringify(pageState.parts));
+ ok('server grossIncome() matches the browser',
+    ['rentMo','otherMo','expMo','netOtherMo','grossYr','netYr']
+      .every(k=>close(sg[k],pageState.gross[k])));
+ // Tamper: a forged meta.contractSum must not survive the save.
+ const tampered = await p.evaluate(async()=>{
+   const m={projectId:doc.projectId,name:doc.name,type:'Multifamily',status:'Draft',
+            contractSum:999999999,projectCost:1};
+   await fetch('/api/budget/TST-9996',{method:'PUT',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({meta:m,doc})});
+   return (await (await fetch('/api/budgets')).json()).find(x=>x.projectId==='TST-9996');
+ });
+ ok('a forged contractSum is ignored — totals derive from the document',
+    close(tampered.contractSum, sp.contract) && close(tampered.projectCost, sp.project),
+    'stored '+tampered.contractSum+' expected '+sp.contract);
+
  // efficiency documentation
  await p.click('#nav-help'); await p.waitForTimeout(400);
  const t=await p.locator('#page-help').textContent();

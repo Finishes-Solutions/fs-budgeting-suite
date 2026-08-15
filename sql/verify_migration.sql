@@ -65,31 +65,44 @@ FROM (
     IIF((SELECT COUNT(*) FROM dbo.Budgets b
           WHERE NOT EXISTS (SELECT 1 FROM dbo.BudgetVersions v WHERE v.ProjectId = b.ProjectId)) = 0, 'PASS','FAIL')
 
-  UNION ALL SELECT 5, 'Baseline SOV row counts reconcile',
-    CAST(CONCAT('budgets whose v1 line count <> current SovLines: ',
+  -- Checks 5-6 originally compared the v1 baseline to current SovLines, which
+  -- only holds at migration time: the first post-migration edit legitimately
+  -- diverges current lines from the frozen v1 snapshot (observed 2026-08-14).
+  -- The invariant that must hold forever is latest version = current lines,
+  -- because every meaningful save rewrites both in one transaction.
+  UNION ALL SELECT 5, 'Latest-version SOV row counts reconcile',
+    CAST(CONCAT('budgets whose latest version line count <> current SovLines: ',
       (SELECT COUNT(*) FROM dbo.BudgetVersions v
+         JOIN (SELECT ProjectId, MAX(VersionNumber) mv FROM dbo.BudgetVersions GROUP BY ProjectId) mx
+           ON mx.ProjectId = v.ProjectId AND mx.mv = v.VersionNumber
          JOIN (SELECT ProjectId, COUNT(*) n FROM dbo.SovLines GROUP BY ProjectId) cur ON cur.ProjectId = v.ProjectId
          LEFT JOIN (SELECT BudgetVersionId, COUNT(*) n FROM dbo.BudgetVersionSovLines GROUP BY BudgetVersionId) ver
            ON ver.BudgetVersionId = v.Id
-        WHERE v.VersionNumber = 1 AND ISNULL(ver.n,0) <> cur.n)) AS NVARCHAR(300)),
+        WHERE ISNULL(ver.n,0) <> cur.n)) AS NVARCHAR(300)),
     IIF((SELECT COUNT(*) FROM dbo.BudgetVersions v
+           JOIN (SELECT ProjectId, MAX(VersionNumber) mv FROM dbo.BudgetVersions GROUP BY ProjectId) mx
+             ON mx.ProjectId = v.ProjectId AND mx.mv = v.VersionNumber
            JOIN (SELECT ProjectId, COUNT(*) n FROM dbo.SovLines GROUP BY ProjectId) cur ON cur.ProjectId = v.ProjectId
            LEFT JOIN (SELECT BudgetVersionId, COUNT(*) n FROM dbo.BudgetVersionSovLines GROUP BY BudgetVersionId) ver
              ON ver.BudgetVersionId = v.Id
-          WHERE v.VersionNumber = 1 AND ISNULL(ver.n,0) <> cur.n) = 0, 'PASS','FAIL')
+          WHERE ISNULL(ver.n,0) <> cur.n) = 0, 'PASS','FAIL')
 
-  UNION ALL SELECT 6, 'Baseline SOV dollar totals reconcile',
-    CAST(CONCAT('budgets whose v1 total <> current SovLines total: ',
+  UNION ALL SELECT 6, 'Latest-version SOV dollar totals reconcile',
+    CAST(CONCAT('budgets whose latest version total <> current SovLines total: ',
       (SELECT COUNT(*) FROM dbo.BudgetVersions v
+         JOIN (SELECT ProjectId, MAX(VersionNumber) mv FROM dbo.BudgetVersions GROUP BY ProjectId) mx
+           ON mx.ProjectId = v.ProjectId AND mx.mv = v.VersionNumber
          JOIN (SELECT ProjectId, SUM(Total) t FROM dbo.SovLines GROUP BY ProjectId) cur ON cur.ProjectId = v.ProjectId
          LEFT JOIN (SELECT BudgetVersionId, SUM(Total) t FROM dbo.BudgetVersionSovLines GROUP BY BudgetVersionId) ver
            ON ver.BudgetVersionId = v.Id
-        WHERE v.VersionNumber = 1 AND ISNULL(ver.t,0) <> cur.t)) AS NVARCHAR(300)),
+        WHERE ISNULL(ver.t,0) <> cur.t)) AS NVARCHAR(300)),
     IIF((SELECT COUNT(*) FROM dbo.BudgetVersions v
+           JOIN (SELECT ProjectId, MAX(VersionNumber) mv FROM dbo.BudgetVersions GROUP BY ProjectId) mx
+             ON mx.ProjectId = v.ProjectId AND mx.mv = v.VersionNumber
            JOIN (SELECT ProjectId, SUM(Total) t FROM dbo.SovLines GROUP BY ProjectId) cur ON cur.ProjectId = v.ProjectId
            LEFT JOIN (SELECT BudgetVersionId, SUM(Total) t FROM dbo.BudgetVersionSovLines GROUP BY BudgetVersionId) ver
              ON ver.BudgetVersionId = v.Id
-          WHERE v.VersionNumber = 1 AND ISNULL(ver.t,0) <> cur.t) = 0, 'PASS','FAIL')
+          WHERE ISNULL(ver.t,0) <> cur.t) = 0, 'PASS','FAIL')
 
   UNION ALL SELECT 7, 'No duplicate budget version numbers',
     CAST(CONCAT('duplicate (ProjectId, VersionNumber) groups: ',
