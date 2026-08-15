@@ -36,8 +36,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // versions modal: opened from the three-dot row menu on the tab's list —
  // the editor toolbar deliberately has no Versions button (matches budgets).
- ok('editor toolbar has no Versions button',
-    (await p.locator('#page-analysis .page-title button', { hasText: 'Versions' }).count())===0);
+ ok('editor toolbar has neither Versions nor Duplicate buttons',
+    (await p.locator('#page-analysis .page-title button', { hasText: 'Versions' }).count())===0
+    && (await p.locator('#page-analysis .page-title button', { hasText: 'Duplicate' }).count())===0);
  await p.click('#nav-analyses'); await p.waitForTimeout(500);
  const histRow=p.locator('#page-analyses [data-inv-list] tr',{hasText:'History Deal'}).first();
  await histRow.locator('.rowmenu-btn').click(); await p.waitForTimeout(200);

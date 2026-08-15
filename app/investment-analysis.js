@@ -281,7 +281,6 @@
             : 'Standalone analysis'} · engine <span class="mono">before-tax-1.1.0</span></div></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
           <span class="inv-statebar" id="invState"></span>
-          <button class="btn btn-ghost" data-inv-edit onclick="FSInvestmentUI.duplicate()">Duplicate</button>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
           <button class="btn btn-ghost" data-inv-edit id="invPdfBtn" onclick="FSInvestmentUI.exportPDF()">PDF (Print)</button>
@@ -688,7 +687,7 @@
         st.conflict = e.body || {};
         el('invConflict').innerHTML = `<div class="inv-warnings"><b>Someone saved a newer version of this analysis
           (now v${esc(st.conflict.currentVersionNumber)}).</b> Reload to see it — your current inputs will be discarded —
-          or keep editing and use Duplicate to save your variant as a new analysis.
+          or duplicate this analysis from its three-dot menu on the list to keep your variant separate.
           <div style="margin-top:8px"><button class="btn btn-sm btn-dark" onclick="FSInvestmentUI.reload()">Reload Latest</button></div></div>`;
       } else if (e.fields) { showErrors(e.fields); A.toast('Fix the highlighted assumptions first.'); }
       else A.toast('Save failed — ' + e.message);
