@@ -143,13 +143,14 @@ module.exports = async function (context, req) {
         .input('hash', sql.Char(64), hash)
         .input('schema', sql.Int, C.SCHEMA_VERSION)
         .input('calc', sql.VarChar(40), C.CALCULATION_VERSION)
+        .input('years', sql.TinyInt, result.normalizedInput.projection.years)
         .input('pp', sql.Decimal(19, 4), sum.purchasePrice)
         .input('noi', sql.Decimal(19, 4), sum.year1NOI)
         .input('eq', sql.Decimal(19, 4), sum.initialEquity)
         .input('irr', sql.Decimal(19, 10), sum.finalYearEquityIRR)
         .input('hold', sql.TinyInt, sum.optimalHoldingYear)
         .query(`UPDATE dbo.InvestmentAnalyses SET
-                  Name=@name, Status=@status, CurrentVersionNumber=@vn,
+                  Name=@name, Status=@status, CurrentVersionNumber=@vn, ProjectionYears=@years,
                   InputDoc=@input, NormalizedInputDoc=@norm, ResultDoc=@result,
                   ContentHash=@hash, InputSchemaVersion=@schema, CalculationVersion=@calc,
                   PurchasePrice=@pp, Year1NOI=@noi, InitialEquity=@eq,

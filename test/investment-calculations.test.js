@@ -79,7 +79,7 @@ test('Wedgewood reconciles every annual row', () => {
   exact(r.summary.optimalHoldingYear, e.optimalHoldingYear, 'optimal hold year');
   pct(r.summary.optimalHoldingYield, e.optimalHoldingYieldPct, 'optimal hold yield');
   assertNoNonFinite(r, 'result');
-  assert.equal(r.calculationVersion, 'before-tax-5y-1.0.0');
+  assert.equal(r.calculationVersion, 'before-tax-1.1.0');
 });
 
 // ---------- the other four deals: headline outputs ----------
@@ -214,7 +214,7 @@ test('dollar-expense mode grows from year 1', () => {
 
 test('unsupported branches are rejected with field errors, not guessed', () => {
   const cases = [
-    [{ projection: { years: 10, taxMode: 'beforeTax' } }, 'projection.years'],
+    [{ projection: { years: 7, taxMode: 'beforeTax' } }, 'projection.years'],
     [{ projection: { years: 5, taxMode: 'afterTax' } }, 'projection.taxMode'],
     [{ financing: { loans: [{ kind: 'interestOnly', amount: { mode: 'ltv', value: 0.5 },
         annualRate: 0.06, amortizationYears: 25, termYears: 5 }] } }, 'financing.loans.0.kind'],
@@ -249,4 +249,39 @@ test('result serializes with no NaN/Infinity anywhere, and annualRows is total',
   const rows = annualRows(r);
   assert.equal(rows.length, 5);
   rows.forEach(row => COLUMNS.forEach(c => assert.ok(c in row, 'missing column ' + c)));
+});
+
+test('ten-year projection: 10 annual rows, Y10 sale uses Y11 NOI, terminal audit', () => {
+  const input = minimalInput({
+    projection: { years: 10, taxMode: 'beforeTax' },
+    financing: { loans: [{ label: 'First Mortgage', kind: 'newAmortizing',
+      amount: { mode: 'ltv', value: 0.65 }, annualRate: 0.065, amortizationYears: 25,
+      termYears: 10, feePercent: 0.01, interestCalculation: '30/360' }] },
+    reportOptions: { includeSensitivity: true }
+  });
+  const r = calculateInvestmentAnalysis(input);
+  assert.equal(r.annual.length, 10);
+  assert.equal(r.normalizedInput.projection.years, 10);
+  // Y10 sale = Y11 NOI / exit cap, rounded to $1,000
+  const y10NOI = r.annual[9].netOperatingIncome;
+  const y11NOI = r.summary.terminalYearNOI;
+  dollars(y11NOI, y10NOI * 1.03, 'Y11 NOI grows one more year at 3%');
+  assert.equal(r.annual[9].grossSalePrice,
+    Math.round(y11NOI / 0.065 / 1000) * 1000, 'Y10 sale priced on Y11 NOI');
+  // period labels run ten full years
+  assert.equal(r.annual[9].periodEnd, periodEndFromPurchaseMonth('2026-01', 10));
+  // sensitivity series carry ten entries per scenario
+  assert.equal(r.sensitivity[0].leveragedIRR.length, 10);
+  // annual persistence rows are total for ten years too
+  assert.equal(annualRows(r).length, 10);
+  assertNoNonFinite(r, 'result');
+});
+
+test('a five-year loan cannot finance a ten-year projection', () => {
+  assert.throws(() => calculateInvestmentAnalysis(minimalInput({
+    projection: { years: 10, taxMode: 'beforeTax' },
+    financing: { loans: [{ label: 'L', kind: 'newAmortizing', amount: { mode: 'ltv', value: 0.5 },
+      annualRate: 0.06, amortizationYears: 25, termYears: 5, feePercent: 0.01,
+      interestCalculation: '30/360' }] } })),
+    e => e.validation && /10-year/.test(e.validation['financing.loans.0.termYears']));
 });

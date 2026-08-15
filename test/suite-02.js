@@ -294,25 +294,44 @@ const BASE = 'http://127.0.0.1:8100';
   ok('Sign Out is blocked by unsaved changes', stayed.includes('index.html') || stayed.startsWith('/'),
      stayed);
 
-  // ---- linked investment analyses appear as chips on the Home list
+  // ---- investment analyses list on the Home page, below the budgets
   await p.evaluate(async () => {
     await fetch('/api/investment-analyses', { method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: 'fromBudget', projectId: 'BD-0001', analysisName: 'Alpha Underwriting' }) });
   });
   await p.click('#nav-help'); await p.click('#nav-home');   // force a refetch
-  await p.waitForTimeout(400);
-  const chipRow = p.locator('#homeBody tr', { hasText: 'BD-0001' }).first();
-  ok('linked analysis renders as a chip under its budget',
-     /Alpha Underwriting/.test(await chipRow.locator('.ia-chip').first().textContent().catch(() => '')),
-     await chipRow.textContent());
-  ok('unlinked budgets carry no chips',
-     (await p.locator('#homeBody tr', { hasText: 'BD-0002' }).first().locator('.ia-chip').count()) === 0);
-  await chipRow.locator('.ia-chip').first().click();
+  await p.waitForTimeout(500);
+  ok('Home carries a separate Investment Analyses section below the budgets',
+     await p.evaluate(() => {
+       const budgets = document.getElementById('homeBody'), sec = document.getElementById('homeAnalyses');
+       return !!sec && !!(budgets.compareDocumentPosition(sec) & Node.DOCUMENT_POSITION_FOLLOWING);
+     }));
+  const iaRow = p.locator('#homeAnalyses [data-inv-list] tr', { hasText: 'Alpha Underwriting' }).first();
+  ok('the analysis lists with its project', /BD-0001/.test(await iaRow.textContent().catch(() => '')),
+     await iaRow.textContent().catch(() => 'row missing'));
+  ok('budget rows carry no analysis chips anymore', (await p.locator('.ia-chip').count()) === 0);
+  ok('no emoji in the analyses section', !/[\u{1F300}-\u{1FAFF}]/u.test(await p.locator('#homeAnalyses').textContent()));
+
+  // versions open from the row's three-dot menu, like budgets
+  await iaRow.locator('.rowmenu-btn').click();
+  await p.waitForTimeout(200);
+  const menuItems = await p.locator('#invRowMenu .rowmenu-item').allTextContents();
+  ok('three-dot menu offers Open, Versions, Duplicate, Delete',
+     JSON.stringify(menuItems) === JSON.stringify(['Open Analysis', 'Versions', 'Duplicate', 'Delete Analysis']),
+     menuItems.join(','));
+  await p.locator('#invRowMenu .rowmenu-item', { hasText: 'Versions' }).click();
+  await p.waitForTimeout(500);
+  ok('Versions opens the history modal from the Home list',
+     /Version History/.test(await p.locator('#invModal').textContent().catch(() => '')));
+  await p.click('#invModal .btn-x');
+  await iaRow.click();
   await p.waitForTimeout(600);
-  ok('chip opens the analysis, not the budget',
+  ok('clicking the row opens the analysis',
      /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()) && await p.locator('#page-analysis').evaluate(e => e.classList.contains('on')),
      p.url());
+  ok('the editor toolbar has no Versions button',
+     (await p.locator('#page-analysis .page-title button', { hasText: 'Versions' }).count()) === 0);
 
  ok('No uncaught JS errors', errs.length === 0, errs.join(' | '));
   console.log(R.join('\n'));

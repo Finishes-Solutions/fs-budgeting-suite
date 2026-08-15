@@ -20,12 +20,13 @@ function validate(input) {
     err('analysisName', 'Analysis Name is required.');
   else if (input.analysisName.length > C.MAX_TEXT) err('analysisName', 'Analysis Name is too long.');
 
-  // ---- projection: exactly the supported shape
+  // ---- projection: five or ten years, before tax
   const proj = input.projection || {};
-  if (proj.years !== C.SUPPORTED_YEARS)
-    err('projection.years', 'Only a five-year projection is supported in this release.');
+  if (!C.ALLOWED_YEARS.includes(proj.years))
+    err('projection.years', 'Projection must be ' + C.ALLOWED_YEARS.join(' or ') + ' years.');
   if (proj.taxMode !== C.SUPPORTED_TAX_MODE)
     err('projection.taxMode', 'Only before-tax analysis is supported in this release.');
+  const horizon = C.ALLOWED_YEARS.includes(proj.years) ? proj.years : C.ALLOWED_YEARS[0];
 
   // ---- property
   const prop = input.property || {};
@@ -85,7 +86,7 @@ function validate(input) {
   if (!Array.isArray(capex) || capex.length > C.MAX_CAPEX_ROWS) err('capitalExpenses', 'Too many capital-expense rows.');
   else capex.forEach((row, i) => {
     if (!row || typeof row.label !== 'string') err('capitalExpenses.' + i, 'Capital-expense rows need a label.');
-    else if (!Array.isArray(row.annualAmounts) || row.annualAmounts.length > C.SUPPORTED_YEARS
+    else if (!Array.isArray(row.annualAmounts) || row.annualAmounts.length > horizon
              || !row.annualAmounts.every(v => isNum(v) && v >= 0))
       err('capitalExpenses.' + i, 'Capital-expense amounts must be zero or more, one per year.');
   });
@@ -109,8 +110,8 @@ function validate(input) {
     if (!isNum(L.amortizationYears) || L.amortizationYears <= 0)
       err('financing.loans.0.amortizationYears', 'Amortization must be greater than zero.');
     if (!isNum(L.termYears) || L.termYears <= 0) err('financing.loans.0.termYears', 'Loan Term must be greater than zero.');
-    else if (L.termYears < C.SUPPORTED_YEARS)
-      err('financing.loans.0.termYears', 'Loan Term must cover the five-year projection — maturity and refinance modeling are not supported in this release.');
+    else if (L.termYears < horizon)
+      err('financing.loans.0.termYears', 'Loan Term must cover the ' + horizon + '-year projection — maturity and refinance modeling are not supported in this release.');
     if (L.feePercent !== undefined && !inRange01(L.feePercent))
       err('financing.loans.0.feePercent', 'Loan Fees must be between 0% and 100%.');
     if (L.interestCalculation !== undefined && L.interestCalculation !== C.SUPPORTED_INTEREST_CALC)

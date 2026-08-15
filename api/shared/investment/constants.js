@@ -3,12 +3,14 @@
 // version is never silently recalculated with a newer engine.
 module.exports = {
   SCHEMA_VERSION: 1,
-  CALCULATION_VERSION: 'before-tax-5y-1.0.0',
+  // 1.1.0: projections generalized to five OR ten years (Year-N sale still
+  // uses Year-N+1 NOI; one extra operating year is always computed).
+  CALCULATION_VERSION: 'before-tax-1.1.0',
   SQFT_PER_ACRE: 43560,
   // Sensitivity scenarios: percent of base acquisition price, base LTV preserved.
   SENSITIVITY_FACTORS: [0.90, 0.95, 1.00, 1.05, 1.10],
-  // Release 1 supports exactly this shape; the validator rejects everything else.
-  SUPPORTED_YEARS: 5,
+  // The validator rejects any horizon not in this list.
+  ALLOWED_YEARS: [5, 10],
   SUPPORTED_TAX_MODE: 'beforeTax',
   SUPPORTED_INTEREST_CALC: '30/360',
   MAX_OTHER_INCOME_ROWS: 20,

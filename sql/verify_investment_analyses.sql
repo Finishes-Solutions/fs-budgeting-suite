@@ -96,12 +96,17 @@ UNION ALL SELECT 10, 'Five current annual rows per calculated analysis',
         WHERE a.CurrentVersionNumber >= 1
           AND (SELECT COUNT(*) FROM dbo.InvestmentAnnualResults r WHERE r.AnalysisId = a.AnalysisId) <> a.ProjectionYears) = 0, 'PASS', 'FAIL')
 
-UNION ALL SELECT 11, 'Five annual rows per immutable version',
+-- A version's annual-row count must equal ITS OWN projection horizon (5 or 10):
+-- versions are immutable, so the horizon is read from the stored result, never
+-- from the parent analysis (which may have switched horizons since).
+UNION ALL SELECT 11, 'Annual rows per immutable version match its horizon',
   CONCAT('versions with wrong row count: ',
     (SELECT COUNT(*) FROM dbo.InvestmentAnalysisVersions v
-      WHERE (SELECT COUNT(*) FROM dbo.InvestmentVersionAnnualResults r WHERE r.AnalysisVersionId = v.Id) <> 5)),
+      WHERE (SELECT COUNT(*) FROM dbo.InvestmentVersionAnnualResults r WHERE r.AnalysisVersionId = v.Id)
+            <> ISNULL(TRY_CAST(JSON_VALUE(v.ResultDoc, '$.normalizedInput.projection.years') AS INT), 5))),
   IIF((SELECT COUNT(*) FROM dbo.InvestmentAnalysisVersions v
-        WHERE (SELECT COUNT(*) FROM dbo.InvestmentVersionAnnualResults r WHERE r.AnalysisVersionId = v.Id) <> 5) = 0, 'PASS', 'FAIL')
+        WHERE (SELECT COUNT(*) FROM dbo.InvestmentVersionAnnualResults r WHERE r.AnalysisVersionId = v.Id)
+              <> ISNULL(TRY_CAST(JSON_VALUE(v.ResultDoc, '$.normalizedInput.projection.years') AS INT), 5)) = 0, 'PASS', 'FAIL')
 
 UNION ALL SELECT 12, 'Current version number reconciles',
   CONCAT('analyses whose CurrentVersionNumber <> max version: ',

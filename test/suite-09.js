@@ -82,6 +82,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('explains the amber warning', /cannot be true/.test(t));
  ok('notes amenity is excluded', /Amenity SF is deliberately excluded/.test(t));
  ok('documents the shortcut', /Cmd\+S/.test(t));
+ ok('documents the investment analysis workflow',
+    /Investment Analysis/.test(t) && /Create Investment Analysis/.test(t)
+    && /snapshot, not a live link/.test(t) && /three-dot menu/.test(t)
+    && /five or ten years/.test(t));
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

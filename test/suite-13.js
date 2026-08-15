@@ -34,10 +34,15 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#invSaveBtn'); await p.waitForTimeout(800);
  ok('v2 saved', /Saved · v2/.test(await p.locator('#invState').textContent()));
 
- // versions modal: immutable v1 keeps its own numbers
- // (scoped to the analysis page — the budget UI also has Versions/Duplicate
- // controls elsewhere in the DOM, and an unscoped selector matches those.)
- await p.click('#page-analysis button:has-text("Versions")'); await p.waitForTimeout(500);
+ // versions modal: opened from the three-dot row menu on the tab's list —
+ // the editor toolbar deliberately has no Versions button (matches budgets).
+ ok('editor toolbar has no Versions button',
+    (await p.locator('#page-analysis .page-title button', { hasText: 'Versions' }).count())===0);
+ await p.click('#nav-analyses'); await p.waitForTimeout(500);
+ const histRow=p.locator('#page-analyses [data-inv-list] tr',{hasText:'History Deal'}).first();
+ await histRow.locator('.rowmenu-btn').click(); await p.waitForTimeout(200);
+ await p.locator('#invRowMenu .rowmenu-item',{hasText:'Versions'}).click();
+ await p.waitForTimeout(500);
  ok('two versions listed, newest first and marked current',
     (await p.locator('#invModal tbody tr').count())===2
     && /v2 ·current/.test(await p.locator('#invModal tbody tr').first().textContent()));
@@ -47,8 +52,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('version view offers no edit controls', (await p.locator('#invModal input').count())===0);
  await p.click('#invModal .btn-x');
 
- // duplicate: separate analysis, same assumptions, fresh history
- await p.click('#page-analysis button:has-text("Duplicate")'); await p.waitForTimeout(800);
+ // duplicate from the row menu: separate analysis, same assumptions, fresh history
+ await histRow.locator('.rowmenu-btn').click(); await p.waitForTimeout(200);
+ await p.locator('#invRowMenu .rowmenu-item',{hasText:'Duplicate'}).click();
+ await p.waitForTimeout(800);
  const aid2=p.url().match(/analysis\/([0-9a-f-]{36})/)[1];
  ok('duplicate opens a new analysis', aid2!==aid, aid2);
  ok('duplicate carries the assumptions', (await p.locator('[data-f="acquisition.basis.value"]').inputValue())==='1500000');
@@ -82,10 +89,13 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // ---- soft delete from the list
  await p.click('#nav-analyses'); await p.waitForTimeout(500);
- const rows0=await p.locator('#invListBody tr').count();
- await p.locator('#invListBody tr').first().locator('.btn-x').click();
+ const listRows='#page-analyses [data-inv-list] tr';
+ const rows0=await p.locator(listRows).count();
+ await p.locator(listRows).first().locator('.rowmenu-btn').click(); await p.waitForTimeout(200);
+ await p.locator('#invRowMenu .rowmenu-item',{hasText:'Delete Analysis'}).click();
  await p.waitForTimeout(600);
- ok('delete removes the analysis from the list', (await p.locator('#invListBody tr').count())===rows0-1);
+ ok('delete from the row menu removes the analysis from the list',
+    (await p.locator(listRows).count())===rows0-1);
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

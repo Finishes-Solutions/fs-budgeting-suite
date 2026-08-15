@@ -39,7 +39,7 @@ function normalize(input) {
       unitCount: Number.isFinite(+prop.unitCount) && +prop.unitCount > 0 ? +prop.unitCount : null,
       purchaseMonth: prop.purchaseMonth
     },
-    projection: { years: C.SUPPORTED_YEARS, taxMode: C.SUPPORTED_TAX_MODE },
+    projection: { years: input.projection.years, taxMode: C.SUPPORTED_TAX_MODE },
     acquisition: {
       basis: { mode: input.acquisition.basis.mode, value: input.acquisition.basis.value },
       costPercent: input.acquisition.costPercent === undefined ? D.acquisitionCostPercent : input.acquisition.costPercent
@@ -63,7 +63,7 @@ function normalize(input) {
     capitalExpenses: (input.capitalExpenses || []).map(r => ({
       label: r.label.slice(0, C.MAX_TEXT),
       // Pad to the full horizon so year indexing is total, not partial.
-      annualAmounts: Array.from({ length: C.SUPPORTED_YEARS }, (_, i) =>
+      annualAmounts: Array.from({ length: input.projection.years }, (_, i) =>
         Number.isFinite(+r.annualAmounts[i]) ? +r.annualAmounts[i] : 0)
     })),
     financing: { loans },

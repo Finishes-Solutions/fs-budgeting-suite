@@ -266,13 +266,6 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .sum-row.mid{border-top:1px solid var(--ink-300);padding-top:10px}
 .sum-row.mid .k{font-weight:700;color:var(--ink-900)}.sum-row.mid .v{font-weight:600}
 
-/* linked investment analyses on the Home list */
-.ia-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.ia-chip{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;
-  color:var(--green-700);background:var(--green-50);border:1px solid #CDE6D6;
-  border-radius:999px;padding:2px 9px;text-decoration:none;max-width:340px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ia-chip:hover{background:#E2F2E8}
 .badge{display:inline-block;font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
   padding:3px 8px;border-radius:var(--r);border:1px solid var(--ink-200);color:var(--ink-600)}
 .badge.warn{border-color:#e6d3ae;background:#fdf6e8;color:var(--warn)}
@@ -567,6 +560,14 @@ th.sortable.sorted{color:var(--ink-900)}
       <div id="homeEmptyMsg">Create one to get started. Budgets snapshot the pricing library at creation.</div>
     </div>
   </div></div>
+
+  <!-- Investment analyses: their own list below the budgets, rendered by the
+       investment module. Row actions (Versions, Duplicate, Delete) live in
+       each row's three-dot menu, exactly like the budget rows above. -->
+  <section class="card" style="margin-top:22px">
+    <div class="card-hd"><h2>Investment Analyses</h2></div>
+    <div class="card-bd" style="padding:0" id="homeAnalyses"></div>
+  </section>
 </div>
 
 <!-- ================= INPUTS ================= -->
@@ -951,6 +952,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <a href="#help-budget">The Budget Page</a>
       <a href="#help-csi">CSI Schedule</a>
       <a href="#help-pricing">Pricing Library</a>
+      <a href="#help-investment">Investment Analysis</a>
       <a href="#help-exports">Exports</a>
       <a href="#help-access">Who Can Do What</a>
       <a href="#help-faq">Troubleshooting</a>
@@ -1219,6 +1221,55 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></section>
 
       <section class="card"><div class="card-bd">
+        <h3 id="help-investment">Investment Analysis</h3>
+        <p>The Investment Analysis tab turns a construction budget into a five- or ten-year before-tax
+          underwriting model: operating cash flows, financing, hypothetical sales, and the returns an
+          investor would look at — cash-on-cash, DSCR, equity multiple, IRRs, leverage, and an
+          acquisition-price sensitivity table.</p>
+
+        <p><b>Starting one.</b> Open a budget and press <span class="kbd">Create Investment Analysis</span>.
+          The budget is saved first, and the analysis imports from that exact saved version — the property
+          name and address, the size, the unit mix, gross scheduled rent (unit rents × 12, never the
+          budget's net income figure), other-income rows, and the total project cost as a suggested
+          purchase price. Every imported value shows a green <b>From Budget</b> badge and stays fully
+          editable. A standalone analysis, with nothing imported, starts from the Investment Analysis tab.</p>
+
+        <div class="callout"><b>The import is a snapshot, not a live link.</b> Each analysis records the
+          exact budget version it came from. Changing the budget later never changes the analysis.</div>
+
+        <p><b>The six steps.</b> Work left to right: Source &amp; Property, Income, Vacancy &amp; Expenses,
+          Mortgage, Disposition, then Review &amp; Report. Each step ends with a <b>Next</b> button that
+          lights up green when the step's required fields are filled, and completed steps earn a checkmark
+          on their pill. Three things are never guessed for you and must be entered: the purchase month,
+          the property's complete operating expenses (the budget's service-expense rows appear as a partial
+          reference only), and the exit cap rate. Financing is either all cash or one fully amortizing
+          first mortgage entered as dollars or LTV. The projection runs five or ten years — pick on the
+          first step.</p>
+
+        <p><b>Calculate and Save.</b> <span class="kbd">Calculate</span> sends the assumptions to the
+          server and shows the report; the browser never computes results itself. Editing any input marks
+          the result stale until you recalculate. <span class="kbd">Save</span> (or
+          <span class="kbd">Cmd/Ctrl+S</span>) recalculates and stores the analysis — every meaningful save
+          records an immutable version, and a save that changed nothing records none, exactly like budgets.
+          If someone else saved the same analysis after you opened it, your save is refused with the option
+          to reload their version.</p>
+
+        <p><b>Versions.</b> Open version history from the <b>three-dot menu</b> on an analysis row — on the
+          Home page list or the Investment Analysis tab — the same way budget versions work. Old versions
+          open read-only, exactly as calculated when saved, and are never recalculated by newer formulas.</p>
+
+        <p><b>Reading the report.</b> A few conventions worth knowing: a sale at the end of a year is
+          priced on the <i>following</i> year's income at the exit cap rate, rounded to the nearest $1,000,
+          and selling costs and the loan payoff come out of that rounded price. Leverage compares the
+          equity IRR against the unleveraged property IRR — positive leverage means borrowing raised the
+          return. The optimal holding period is simply the sale year with the highest equity IRR.</p>
+
+        <p><b>Exports.</b> <span class="kbd">PDF (Print)</span> produces the branded report;
+          <span class="kbd">Excel Workbook</span> produces six worksheets of real numeric cells. Both are
+          built from the calculated result and are disabled while the result is stale, so an export can
+          never disagree with the assumptions on screen. On phones and small screens analyses are
+          view-only, like the rest of the suite.</p>
+
         <h3 id="help-exports">Exports</h3>
         <p><span class="kbd">Export…</span> lets you pick which sections to include, then produces either format.</p>
         <table class="tbl"><tbody>
@@ -1984,23 +2035,13 @@ async function routeFromHash(){
 window.addEventListener('hashchange',routeFromHash);
 
 /* ============ HOME ============ */
-let analysesByProject=new Map();
 async function renderHome(){
-  // Budgets and their linked investment analyses load together; the analyses
-  // call failing (older API, cold start race) must never blank the list —
-  // the chips just don't render.
-  const [budgets,analyses]=await Promise.all([
-    sGet('budgets-index'),
-    invApi('investment-analyses').catch(()=>[])
-  ]);
-  index=budgets||[];
-  analysesByProject=new Map();
-  (analyses||[]).forEach(a=>{
-    if(!a.projectId)return;
-    if(!analysesByProject.has(a.projectId))analysesByProject.set(a.projectId,[]);
-    analysesByProject.get(a.projectId).push(a);
-  });
+  index=(await sGet('budgets-index'))||[];
   paintHome();
+  // The investment analyses render as their own list below the budgets; a
+  // failure there must never blank the budget list, so it renders separately.
+  if(window.FSInvestmentUI)
+    FSInvestmentUI.renderListInto(document.getElementById('homeAnalyses'),{embedded:true});
 }
 function homeRows(){
   const q=homeView.q.trim().toLowerCase();
@@ -2068,22 +2109,11 @@ function paintHome(){
   } else rows.forEach(homeRow);
   paintHomeSortArrows();
 }
-/* Linked investment analyses render as chips under the budget name — a link,
-   not a row click, so opening an analysis never opens the budget. */
-function analysisChips(projectId){
-  const list=analysesByProject.get(projectId);
-  if(!list||!list.length)return '';
-  return '<div class="ia-chips no-print">'+list.map(a=>
-    `<a class="ia-chip" href="#/analysis/${esc(a.analysisId)}" onclick="event.stopPropagation()"
-       title="Open investment analysis${a.currentVersionNumber?' (version '+a.currentVersionNumber+')':''}">📈 ${esc(a.name)}${
-       a.finalYearEquityIRR!==null&&a.finalYearEquityIRR!==undefined
-         ?' · '+(a.finalYearEquityIRR*100).toFixed(1)+'% IRR':''}</a>`).join('')+'</div>';
-}
 function homeRow(x){
   document.getElementById('homeBody').insertAdjacentHTML('beforeend',
     `<tr class="clickable" onclick="openBudget('${x.projectId}')">
       <td class="mono" style="padding-left:22px;font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
-      <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}${analysisChips(x.projectId)}</td>
+      <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
       <td class="calc r">${usd(x.contractSum||0)}</td>
       <td class="calc r">${usd(x.projectCost||0)}</td>
       <td><span class="badge ${x.status==='Finalized'?'ok':''}">${esc(x.status)}</span></td>

@@ -183,7 +183,7 @@ custom provider for sign-in.
   change its defaults — budget hashing depends on them byte-for-byte; the
   investment module wraps it rather than modifying it.
 - **The investment engine is server-only and version-stamped**
-  (`api/shared/investment/`, `before-tax-5y-1.0.0`). The browser posts
+  (`api/shared/investment/`, `before-tax-1.1.0`). The browser posts
   assumptions and renders returned results; saves recalculate server-side and
   ignore client results; old analysis versions are never recalculated. Formula
   changes require a new version string and must keep

@@ -203,7 +203,7 @@ ever wanted. Do not reach for a chart library — the constraint is the vendored
 
 Five-year before-tax investment analysis in the Investment Analysis tab: created
 from an exact saved budget version (or standalone), server-calculated
-(`api/shared/investment/`, engine `before-tax-5y-1.0.0`, fixture-proven against
+(`api/shared/investment/`, engine `before-tax-1.1.0`, fixture-proven against
 five recovered reference deals including a complete acquisition-sensitivity
 matrix), versioned with optimistic concurrency, soft-deletable, with an
 on-screen tabular report and a six-sheet table-only Excel workbook.

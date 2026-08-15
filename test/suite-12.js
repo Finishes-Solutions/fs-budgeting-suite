@@ -75,7 +75,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     shows(a1.grossSalePrice)&&a1.grossSalePrice%1000===0, String(a1.grossSalePrice));
  ok('report shows net sale proceeds', shows(a1.netSaleProceeds));
  ok('all-cash report hides debt tables', !/DSCR/.test(rpt));
- ok('provenance names the engine version', /before-tax-5y-1\.0\.0/.test(rpt));
+ ok('provenance names the engine version', /before-tax-1\.1\.0/.test(rpt));
 
  // reload from the hash — the persisted state must reproduce the same report
  await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(800);
@@ -91,6 +91,21 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const rpt3=await p.locator('#invReport').textContent();
  ok('financed recalculation adds mortgage, DSCR and leverage', /DSCR/.test(rpt3)&&/Leverage Impact/.test(rpt3));
  ok('monthly payment appears in the mortgage step', /\$[\d,]+\.\d\d/.test(await p.locator('#invMonthlyPay').inputValue()));
+
+ // ---- ten-year projection
+ await p.click('#invSteps button[data-step="1"]');
+ await p.selectOption('[data-f="projection.years"]','10');
+ await p.click('#invCalcBtn'); await p.waitForTimeout(500);
+ ok('a five-year loan is rejected for a ten-year projection',
+    /10-year projection/.test(await p.locator('#page-analysis').textContent()));
+ await p.click('#invSteps button[data-step="4"]');
+ await p.fill('[data-f="loan.termYears"]','10');
+ await p.locator('[data-f="loan.termYears"]').dispatchEvent('change');
+ await p.click('#invCalcBtn'); await p.waitForTimeout(800);
+ const yearCols=await p.locator('#invReport .inv-rpt:has(td:text("Potential Rental Income"))')
+   .locator('thead th').count();
+ ok('ten-year report renders ten year columns', yearCols===11, yearCols+' header cells');
+ ok('ten-year sensitivity carries ten sale years', /Sale Y10/.test(await p.locator('#invReport').textContent()));
 
  // keyboard save on the analysis page saves the analysis
  await p.keyboard.press(MOD+'+s'); await p.waitForTimeout(800);

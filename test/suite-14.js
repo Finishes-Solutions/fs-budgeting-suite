@@ -53,7 +53,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  });
  ok('workbook produced', !wb.error, wb.error||'');
  ok('six sheets, in order', JSON.stringify(wb.names)===JSON.stringify(
-    ['Investment Summary','Five-Year Cash Flow','Debt and Sale','Returns','Acquisition Sensitivity','Assumptions']),
+    ['Investment Summary','Cash Flow','Debt and Sale','Returns','Acquisition Sensitivity','Assumptions']),
     JSON.stringify(wb.names));
  ok('no embedded media or chart images anywhere', wb.mediaCount===0, wb.mediaCount+' media parts');
 
@@ -64,11 +64,11 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const A=saved.result.annual, S=saved.result.summary;
  const find=(sheet,label)=>{const r=(wb.sheets[sheet]||[]).find(x=>x[0]===label);return r?r.slice(1):null;};
 
- const noi=find('Five-Year Cash Flow','Net Operating Income');
+ const noi=find('Cash Flow','Net Operating Income');
  ok('NOI row is numeric and reconciles with the canonical result',
     noi&&noi.every((v,i)=>typeof v==='number'&&Math.abs(v-A[i].netOperatingIncome)<0.01),
     JSON.stringify(noi));
- const cfbt=find('Five-Year Cash Flow','Cash Flow Before Taxes');
+ const cfbt=find('Cash Flow','Cash Flow Before Taxes');
  ok('CFBT row reconciles', cfbt&&cfbt.every((v,i)=>Math.abs(v-A[i].cashFlowBeforeTaxes)<0.01));
  const gsp=find('Debt and Sale','Gross Sale Price');
  ok('gross sale prices are the rounded thousands, as numbers',
@@ -82,7 +82,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('sensitivity sheet carries the five scenario prices',
     sens&&sens.length===5&&sens.every(v=>typeof v==='number'));
  const eng=find('Assumptions','Calculation Version');
- ok('workbook records the calculation version', eng&&eng[0]==='before-tax-5y-1.0.0', JSON.stringify(eng));
+ ok('workbook records the calculation version', eng&&eng[0]==='before-tax-1.1.0', JSON.stringify(eng));
  const sv=find('Assumptions','Saved Analysis Version');
  ok('workbook records the saved analysis version', sv&&sv[0]===1);
 
@@ -99,7 +99,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     showsPdf(A[0].netOperatingIncome) && showsPdf(A[4].grossSalePrice));
  ok('print doc shows net proceeds and equity', showsPdf(A[4].netSaleProceeds) && showsPdf(S.initialEquity));
  ok('print doc carries provenance and engine version',
-    /before-tax-5y-1\.0\.0/.test(pdf) && /Analysis v1/.test(pdf));
+    /before-tax-1\.1\.0/.test(pdf) && /Analysis v1/.test(pdf));
  ok('print doc includes the sensitivity matrix', /Acquisition-Price Sensitivity/.test(pdf));
  ok('print doc has no charts or SVG', !/<svg|data-chart/.test(pdf));
  await p.waitForTimeout(700);

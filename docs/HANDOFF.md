@@ -250,7 +250,7 @@ Each budget line has `code` (CSI), `grp`, `scope` (`res` | `amen` | `soft`), `de
 ### Investment-analysis invariants (added 2026-08)
 
 - **The engine lives on the server only** (`api/shared/investment/`), version-stamped
-  `before-tax-5y-1.0.0`. The browser posts assumptions and renders results; a save
+  `before-tax-1.1.0` (five- or ten-year horizon). The browser posts assumptions and renders results; a save
   recalculates server-side and ignores any client-supplied result. Never port the
   formulas into the frontend — that recreates the drift problem the design avoids.
 - **Old analysis versions are never recalculated.** Each records its calculation
@@ -273,7 +273,7 @@ Each budget line has `code` (CSI), `grp`, `scope` (`res` | `amen` | `soft`), `de
 
 ## 7 · Running the tests
 
-Fourteen Playwright suites, 436 assertions, plus 61 `node:test` assertions for the
+Fourteen Playwright suites, 446 assertions, plus 63 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus

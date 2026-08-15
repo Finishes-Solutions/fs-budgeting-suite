@@ -36,34 +36,45 @@
   const el = id => document.getElementById(id);
   const esc = s => A.esc(String(s === null || s === undefined ? '' : s));
 
-  /* ================= LIST PAGE ================= */
-  async function renderList() {
-    const host = el('page-analyses'); if (!host) return;
+  /* ================= LIST VIEWS =================
+     One row markup serves two hosts: the Investment Analysis tab (with the
+     creation controls) and the embedded section under the budgets on Home.
+     Row actions live in a three-dot menu, exactly like the budget rows —
+     Versions is reachable only from there, never from the editor toolbar. */
+  const listHosts = new Set();   // every host currently showing a list, for refresh
+
+  async function renderListInto(host, opts) {
+    if (!host) return;
+    opts = opts || {};
+    listHosts.add(host);
     let rows = [];
     try { rows = await A.api('investment-analyses'); }
     catch (e) { host.innerHTML = '<div class="empty">Could not load analyses — ' + esc(e.message) + '</div>'; return; }
-    host.innerHTML = `
+    const head = opts.embedded ? '' : `
       <div class="page-title">
         <div><h1>Investment Analyses</h1>
-          <div class="sub">Five-year before-tax underwriting, linked to exact saved budget versions</div></div>
+          <div class="sub">Before-tax underwriting, linked to exact saved budget versions</div></div>
       </div>
       <div class="inv-newrow no-print" data-inv-edit>
-        <input type="text" id="invNewName" data-k="inv.newName" placeholder="New standalone analysis name…">
+        <input type="text" id="invNewName" data-k="inv.newName" placeholder="New Standalone Analysis Name…">
         <button class="btn btn-dark" onclick="FSInvestmentUI.createStandalone()">+ New Standalone Analysis</button>
         <span style="font-size:12px;color:var(--ink-500)">or open a budget and use Create Investment Analysis</span>
-      </div>
+      </div>`;
+    host.innerHTML = head + `
       <table class="inv-table"><thead><tr>
-        <th>Analysis</th><th>Project</th><th>Status</th><th class="r">Purchase Price</th>
-        <th class="r">Year-1 NOI</th><th class="r">5-Yr Equity IRR</th><th class="r">Optimal Hold</th>
+        <th${opts.embedded ? ' style="padding-left:22px"' : ''}>Analysis</th><th>Project</th><th>Status</th><th class="r">Purchase Price</th>
+        <th class="r">Year-1 NOI</th><th class="r">Equity IRR</th><th class="r">Optimal Hold</th>
         <th class="r">Version</th><th>Updated</th><th class="no-print"></th>
-      </tr></thead><tbody id="invListBody"></tbody></table>
-      <div class="empty" id="invListEmpty" style="display:none">No investment analyses yet.</div>`;
-    const tb = el('invListBody');
-    if (!rows.length) { el('invListEmpty').style.display = 'block'; return; }
+      </tr></thead><tbody data-inv-list></tbody></table>
+      <div class="empty" data-inv-empty style="display:none">No investment analyses yet.</div>`;
+    const tb = host.querySelector('[data-inv-list]');
+    if (!rows.length) { host.querySelector('[data-inv-empty]').style.display = 'block'; return; }
     rows.forEach(r => {
       const tr = document.createElement('tr');
+      tr.className = 'clickable';
+      tr.addEventListener('click', () => { location.hash = '#/analysis/' + r.analysisId; });
       tr.innerHTML = `
-        <td><a href="#/analysis/${esc(r.analysisId)}"><b>${esc(r.name)}</b></a></td>
+        <td${opts.embedded ? ' style="padding-left:22px"' : ''}><b>${esc(r.name)}</b></td>
         <td class="mono">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-origin" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
         <td>${esc(r.status)}</td>
         <td class="r mono">${usd(r.purchasePrice)}</td>
@@ -72,12 +83,77 @@
         <td class="r mono">${r.optimalHoldingYear ? 'Year ' + r.optimalHoldingYear : '—'}</td>
         <td class="r mono">${r.currentVersionNumber || '—'}</td>
         <td>${esc((r.updatedAt || '').slice(0, 10))}</td>
-        <td class="no-print" style="white-space:nowrap">
-          <button class="btn btn-sm btn-ghost" onclick="location.hash='#/analysis/${esc(r.analysisId)}'">Open</button>
-          <button class="btn-x" data-inv-edit title="Delete analysis" onclick="FSInvestmentUI.softDelete('${esc(r.analysisId)}', this)">×</button>
-        </td>`;
+        <td class="no-print" style="text-align:right"><button class="rowmenu-btn" data-inv-menu
+          aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(r.name)}">⋮</button></td>`;
+      tr.querySelector('[data-inv-menu]').addEventListener('click', ev => {
+        ev.stopPropagation(); openInvRowMenu(ev.currentTarget, r.analysisId);
+      });
       tb.appendChild(tr);
     });
+  }
+
+  function renderList() { return renderListInto(el('page-analyses'), {}); }
+
+  function refreshLists() {
+    [...listHosts].forEach(h => {
+      if (!document.body.contains(h)) { listHosts.delete(h); return; }
+      renderListInto(h, { embedded: h.id !== 'page-analyses' });
+    });
+  }
+
+  /* ---- three-dot row menu (same classes and behavior as the budget rows) */
+  let invMenuTrigger = null;
+  function invMenuEl() {
+    let m = el('invRowMenu');
+    if (!m) {
+      m = document.createElement('div');
+      m.id = 'invRowMenu';
+      m.className = 'rowmenu';
+      m.setAttribute('role', 'menu');
+      m.setAttribute('aria-hidden', 'true');
+      m.style.cssText = 'position:fixed;display:none;z-index:70;background:#fff;border:1px solid var(--ink-200);border-radius:10px;box-shadow:0 8px 28px rgba(22,25,26,.14);padding:6px;min-width:180px';
+      document.body.appendChild(m);
+      document.addEventListener('click', e => { if (!m.contains(e.target) && e.target !== invMenuTrigger) closeInvRowMenu(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInvRowMenu(true); });
+    }
+    return m;
+  }
+  function openInvRowMenu(btn, analysisId) {
+    const wasOpen = invMenuTrigger === btn;
+    closeInvRowMenu();
+    if (wasOpen) return;
+    const m = invMenuEl();
+    m.dataset.aid = analysisId;          // never interpolated into markup
+    const items = [
+      ['open', 'Open Analysis'], ['versions', 'Versions'], ['duplicate', 'Duplicate'],
+      ['sep'], ['delete', 'Delete Analysis', 'danger']
+    ];
+    m.innerHTML = items.map(([act, label, danger]) => act === 'sep'
+      ? '<div class="rowmenu-sep"></div>'
+      : `<button class="rowmenu-item${danger ? ' danger' : ''}" role="menuitem" tabindex="-1" data-act="${act}">${label}</button>`).join('');
+    m.querySelectorAll('.rowmenu-item').forEach(x => { x.onclick = () => invRowMenuAction(x.dataset.act); });
+    m.style.display = 'block';
+    const r = btn.getBoundingClientRect();
+    m.style.top = (r.bottom + 4) + 'px';
+    m.style.left = Math.max(8, Math.min(r.right - m.offsetWidth, window.innerWidth - m.offsetWidth - 8)) + 'px';
+    m.setAttribute('aria-hidden', 'false');
+    btn.setAttribute('aria-expanded', 'true');
+    invMenuTrigger = btn;
+    m.querySelector('.rowmenu-item').focus();
+  }
+  function closeInvRowMenu(refocus) {
+    const m = el('invRowMenu'), t = invMenuTrigger;
+    invMenuTrigger = null;
+    if (m) { m.style.display = 'none'; m.setAttribute('aria-hidden', 'true'); m.innerHTML = ''; }
+    if (t) { t.setAttribute('aria-expanded', 'false'); if (refocus && document.body.contains(t)) t.focus(); }
+  }
+  function invRowMenuAction(act) {
+    const aid = el('invRowMenu').dataset.aid;
+    closeInvRowMenu(act === 'delete');
+    if (act === 'open') location.hash = '#/analysis/' + aid;
+    else if (act === 'versions') showVersions(aid);
+    else if (act === 'duplicate') duplicate(aid);
+    else if (act === 'delete') softDelete(aid);
   }
 
   async function createStandalone() {
@@ -99,16 +175,16 @@
     return r.analysisId;
   }
 
-  async function softDelete(id, btn) {
+  async function softDelete(id) {
     if (!confirm('Delete this investment analysis?\n\nIt can be restored by an administrator; its version history is kept.')) return;
     try {
       await A.api('investment-analysis/' + id, { method: 'DELETE' });
       A.toast('Analysis deleted.');
-      if (st.id === id) st.id = null;
-      // Setting a hash to its current value fires no hashchange, so refresh
-      // the list directly when it is already the visible page.
-      if (/#\/analyses$/.test(location.hash)) renderList();
-      else A.navigate('#/analyses');
+      const wasOpen = st.id === id;
+      if (wasOpen) st.id = null;
+      refreshLists();
+      // Only navigate away if the deleted analysis was the open editor page.
+      if (wasOpen && /#\/analysis\//.test(location.hash)) A.navigate('#/analyses');
     } catch (e) { A.toast('Delete failed — ' + e.message); }
   }
 
@@ -189,7 +265,7 @@
   function originBadge(path) {
     const src = st.input && st.input.source;
     const o = src && src.fieldOrigins && src.fieldOrigins[path];
-    return o ? `<span class="inv-origin" title="Imported: ${esc(o)} (budget version ${esc(src.budgetVersionNumber)})">from budget</span>` : '';
+    return o ? `<span class="inv-origin" title="Imported: ${esc(o)} (budget version ${esc(src.budgetVersionNumber)})">From Budget</span>` : '';
   }
 
   function renderEditor() {
@@ -202,10 +278,9 @@
         <div><h1 id="invTitle">${esc(inp.analysisName)}</h1>
           <div class="sub">${st.source
             ? 'From budget <span class="mono">' + esc(st.source.projectId) + '</span> version ' + esc(st.source.budgetVersionNumber)
-            : 'Standalone analysis'} · engine <span class="mono">before-tax-5y-1.0.0</span></div></div>
+            : 'Standalone analysis'} · engine <span class="mono">before-tax-1.1.0</span></div></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
           <span class="inv-statebar" id="invState"></span>
-          <button class="btn btn-ghost" data-inv-edit onclick="FSInvestmentUI.showVersions()">Versions</button>
           <button class="btn btn-ghost" data-inv-edit onclick="FSInvestmentUI.duplicate()">Duplicate</button>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
@@ -240,6 +315,11 @@
             <input type="number" min="0" step="1" data-f="property.unitCount" data-k="inv.unitCount" value="${inp.property.unitCount === null ? '' : inp.property.unitCount}"></label>
           <label class="fld"><span class="lab">Purchase Month</span>
             <input type="month" data-f="property.purchaseMonth" data-k="inv.purchaseMonth" value="${esc(inp.property.purchaseMonth || '')}"></label>
+          <label class="fld"><span class="lab">Projection Years</span>
+            <select data-f="projection.years" data-k="inv.years">
+              <option value="5" ${inp.projection.years === 5 ? 'selected' : ''}>5 Years</option>
+              <option value="10" ${inp.projection.years === 10 ? 'selected' : ''}>10 Years</option>
+            </select></label>
           <label class="fld"><span class="lab">Price Basis</span>
             <select data-f="acquisition.basis.mode" data-k="inv.basis.mode">
               <option value="purchasePrice" ${inp.acquisition.basis.mode === 'purchasePrice' ? 'selected' : ''}>Purchase Price ($)</option>
@@ -384,6 +464,15 @@
       case 'property.size.value': inp.property.size.value = num; break;
       case 'property.unitCount': inp.property.unitCount = num; break;
       case 'property.purchaseMonth': inp.property.purchaseMonth = v || null; break;
+      case 'projection.years': {
+        inp.projection.years = +v;
+        // Capital-expense rows carry one amount per projection year.
+        (inp.capitalExpenses || []).forEach(r => {
+          r.annualAmounts = Array.from({ length: +v }, (_, i) => nz(r.annualAmounts[i]));
+        });
+        renderCapexRows();
+        break;
+      }
       case 'acquisition.basis.mode': {
         inp.acquisition.basis.mode = v; inp.acquisition.basis.value = null;
         el('invBasisLab').textContent = v === 'acquisitionCapRate' ? 'Acquisition Cap Rate %' : 'Purchase Price';
@@ -481,8 +570,9 @@
   function renderCapexRows() {
     const host = el('invCapexRows'); if (!host) return;
     const rows = st.input.capitalExpenses || [];
-    host.innerHTML = rows.length ? `<table class="inv-table" style="max-width:760px"><thead>
-      <tr><th>Label</th>${[1, 2, 3, 4, 5].map(y => '<th class="r">Y' + y + '</th>').join('')}<th></th></tr></thead><tbody>` +
+    const yrs = st.input.projection.years || 5;
+    host.innerHTML = rows.length ? `<table class="inv-table" style="max-width:${300 + yrs * 92}px"><thead>
+      <tr><th>Label</th>${Array.from({ length: yrs }, (_, y) => '<th class="r">Y' + (y + 1) + '</th>').join('')}<th></th></tr></thead><tbody>` +
       rows.map((r, i) => `<tr>
         <td><input type="text" data-k="inv.capex.${i}.label" value="${esc(r.label)}"
              onchange="FSInvestmentUI._capex(${i},-1,this.value)"></td>
@@ -499,7 +589,8 @@
   }
   function _capexRemove(i) { st.input.capitalExpenses.splice(i, 1); markDirty(); renderCapexRows(); }
   function addCapex() {
-    st.input.capitalExpenses.push({ label: 'Reserves', annualAmounts: [0, 0, 0, 0, 0] });
+    st.input.capitalExpenses.push({ label: 'Reserves',
+      annualAmounts: Array.from({ length: st.input.projection.years || 5 }, () => 0) });
     markDirty(); renderCapexRows();
   }
 
@@ -607,10 +698,15 @@
 
   function reload() { open(st.id); }
 
-  async function duplicate() {
-    const name = (st.input.analysisName || 'Analysis') + ' (Copy)';
+  // Duplicates the open analysis by default; the list row menus pass an id,
+  // whose input is fetched rather than assumed loaded.
+  async function duplicate(id) {
     try {
-      const input = JSON.parse(JSON.stringify(st.input));
+      let input = id && id !== st.id
+        ? (await A.api('investment-analysis/' + id)).input
+        : st.input;
+      input = JSON.parse(JSON.stringify(input));
+      const name = (input.analysisName || 'Analysis') + ' (Copy)';
       input.analysisName = name;
       const r = await A.api('investment-analyses', { method: 'POST',
         body: JSON.stringify({ mode: 'standalone', analysisName: name, input }) });
@@ -619,10 +715,12 @@
     } catch (e) { A.toast('Duplicate failed — ' + e.message); }
   }
 
-  /* ---------- versions ---------- */
-  async function showVersions() {
+  /* ---------- versions (opened from the three-dot row menus) ---------- */
+  let versionsCtx = null;   // which analysis the open modal belongs to
+  async function showVersions(id) {
+    versionsCtx = id || st.id;
     try {
-      const r = await A.api('investment-analysis/' + st.id + '/versions');
+      const r = await A.api('investment-analysis/' + versionsCtx + '/versions');
       const rows = r.versions.map(v => `<tr onclick="FSInvestmentUI.viewVersion(${v.versionNumber})">
         <td class="mono">v${v.versionNumber}${v.isCurrent ? ' ·current' : ''}</td>
         <td>${esc((v.createdAt || '').slice(0, 16).replace('T', ' '))}</td>
@@ -634,14 +732,14 @@
         <p style="font-size:12.5px;color:var(--ink-500)">Versions are immutable — they are shown exactly as calculated
         when saved, by the engine version listed, and are never recalculated.</p>
         <table class="inv-table inv-verlist"><thead><tr><th>Version</th><th>Saved</th><th>By</th>
-        <th class="r">Purchase Price</th><th class="r">5-Yr Equity IRR</th><th>Engine</th></tr></thead>
+        <th class="r">Purchase Price</th><th class="r">Equity IRR</th><th>Engine</th></tr></thead>
         <tbody>${rows || '<tr><td colspan="6">No versions yet — save the analysis first.</td></tr>'}</tbody></table>`);
     } catch (e) { A.toast('Could not load versions — ' + e.message); }
   }
 
   async function viewVersion(n) {
     try {
-      const r = await A.api('investment-analysis/' + st.id + '/versions/' + n);
+      const r = await A.api('investment-analysis/' + (versionsCtx || st.id) + '/versions/' + n);
       openInvModal(`<h2 style="margin-top:0">Version ${n} — Read-Only</h2>
         <div class="inv-provenance">Saved ${esc((r.version.createdAt || '').slice(0, 16).replace('T', ' '))}
         by ${esc(r.version.createdByName || '—')} · engine ${esc(r.version.calculationVersion)}</div>
@@ -687,7 +785,7 @@
       <div class="kpi"><div class="k">Acquisition Cap</div><div class="v">${pctf(s.acquisitionCapRate)}</div></div>
       <div class="kpi"><div class="k">Initial Equity</div><div class="v">${usd(s.initialEquity)}</div></div>
       <div class="kpi"><div class="k">Year-1 NOI</div><div class="v">${usd(s.year1NOI)}</div></div>
-      <div class="kpi"><div class="k">5-Yr Equity IRR</div><div class="v">${pctf(s.finalYearEquityIRR)}</div></div>
+      <div class="kpi"><div class="k">Equity IRR</div><div class="v">${pctf(s.finalYearEquityIRR)}</div></div>
       <div class="kpi"><div class="k">Optimal Hold</div><div class="v">${s.optimalHoldingYear ? 'Year ' + s.optimalHoldingYear + ' · ' + pctf(s.optimalHoldingYield) : '—'}</div></div>
     </div>`;
 
@@ -716,7 +814,7 @@
         </tbody></table></div>`;
     }
 
-    h += '<h3>Five-Year Operating Projection</h3>' + t(
+    h += '<h3>Operating Projection</h3>' + t(
       row('Potential Rental Income', a => usd(a.potentialIncome))
       + row('Less: Vacancy / Credit Loss', a => '(' + usd(a.vacancyLoss) + ')')
       + row('Effective Rental Income', a => usd(a.effectiveRentalIncome))
@@ -758,7 +856,7 @@
       const sens = R.sensitivity;
       const shdr = sens.map(x => `<th>${usd(x.purchasePrice)}<br><span style="font-weight:400">${Math.round(x.factor * 100)}%</span></th>`).join('');
       const srow = (label, f) => `<tr><td>${label}</td>${sens.map(x => `<td>${f(x)}</td>`).join('')}</tr>`;
-      const seriesRows = (label, key) => [0, 1, 2, 3, 4].map(y =>
+      const seriesRows = (label, key) => years.map((_, y) =>
         srow(label + ' — Sale Y' + (y + 1), x => pctf(x[key][y]))).join('');
       h += `<h3>Acquisition-Price Sensitivity</h3>
         <div class="inv-rpt-scroll"><table class="inv-rpt"><thead><tr><th></th>${shdr}</tr></thead><tbody>
@@ -815,7 +913,7 @@
 
     let h = `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
       <div>
-        <div class="eyebrow">Finishes Solutions · Investment Analysis · Five-Year Before-Tax</div>
+        <div class="eyebrow">Finishes Solutions · Investment Analysis · ${years.length}-Year Before-Tax</div>
         <div style="font-size:17pt;font-weight:800">${esc(N.property.name)}</div>
         <div class="muted" style="font-size:9pt">${esc(N.analysisName)}${N.property.address ? ' · ' + esc(N.property.address) : ''}</div>
       </div>
@@ -826,7 +924,7 @@
 
     h += '<section class="rpt-stats">'
       + [['Purchase Price', usd(s.purchasePrice)], ['Acquisition Cap', pctf(s.acquisitionCapRate)],
-         ['Initial Equity', usd(s.initialEquity)], ['5-Yr Equity IRR', pctf(s.finalYearEquityIRR)],
+         ['Initial Equity', usd(s.initialEquity)], ['Equity IRR', pctf(s.finalYearEquityIRR)],
          ['Optimal Hold', s.optimalHoldingYear ? 'Year ' + s.optimalHoldingYear + ' · ' + pctf(s.optimalHoldingYield) : '—']]
         .map(([k, v]) => '<div><div class="k">' + k + '</div><div class="v">' + v + '</div></div>').join('')
       + '</section>';
@@ -850,7 +948,7 @@
         : rr('Financing', 'All cash'))
       + '</div></div></section>';
 
-    h += '<section class="rpt-sec"><h2>Five-Year Operating Projection</h2>'
+    h += '<section class="rpt-sec"><h2>Operating Projection</h2>'
       + tbl(yearHeads, [
           seriesRow('Potential Rental Income', a => usd(a.potentialIncome)),
           seriesRow('Less: Vacancy / Credit Loss (' + pctf(N.vacancy.value) + ')', a => '(' + usd(a.vacancyLoss) + ')'),
@@ -900,9 +998,9 @@
           [
             '<tr><td>Acquisition Cap Rate</td>' + R.sensitivity.map(x => '<td class="r mono">' + pctf(x.acquisitionCapRate) + '</td>').join('') + '</tr>',
             '<tr><td>Initial Equity</td>' + R.sensitivity.map(x => '<td class="r mono">' + usd(x.initialEquity) + '</td>').join('') + '</tr>',
-            ...[0, 1, 2, 3, 4].map(y => '<tr><td>Leveraged CoC — Sale Y' + (y + 1) + '</td>'
+            ...years.map((_, y) => '<tr><td>Leveraged CoC — Sale Y' + (y + 1) + '</td>'
               + R.sensitivity.map(x => '<td class="r mono">' + pctf(x.leveragedCoC[y]) + '</td>').join('') + '</tr>'),
-            ...[0, 1, 2, 3, 4].map(y => '<tr' + (y === 4 ? ' class="tot"' : '') + '><td>Leveraged IRR — Sale Y' + (y + 1) + '</td>'
+            ...years.map((_, y) => '<tr' + (y === years.length - 1 ? ' class="tot"' : '') + '><td>Leveraged IRR — Sale Y' + (y + 1) + '</td>'
               + R.sensitivity.map(x => '<td class="r mono">' + pctf(x.leveragedIRR[y]) + '</td>').join('') + '</tr>')
           ]) + '</section>';
     }
@@ -954,7 +1052,7 @@
     // 1 · Investment Summary
     const w1 = wb.addWorksheet('Investment Summary');
     w1.columns = [{ width: 38 }, { width: 20 }];
-    head(w1, (R.normalizedInput.property.name || 'Investment Analysis') + ' — Five-Year Before-Tax Analysis');
+    head(w1, (R.normalizedInput.property.name || 'Investment Analysis') + ' — ' + R.annual.length + '-Year Before-Tax Analysis');
     label(w1, 'Analysis', R.normalizedInput.analysisName);
     label(w1, 'Purchase Price', s.purchasePrice, MONEY);
     label(w1, 'Acquisition Cap Rate', s.acquisitionCapRate, PCT);
@@ -966,8 +1064,8 @@
     label(w1, 'Gross Rent Multiplier', s.grossRentMultiplier, RATIO);
     if (s.pricePerSquareFoot !== null) label(w1, 'Price / SF', s.pricePerSquareFoot, MONEY2);
     if (s.pricePerUnit !== null) label(w1, 'Price / Unit', s.pricePerUnit, MONEY);
-    label(w1, 'Five-Year Equity IRR', s.finalYearEquityIRR, PCT);
-    label(w1, 'Five-Year Equity Multiple', s.finalYearEquityMultiple, RATIO);
+    label(w1, 'Final-Year Equity IRR', s.finalYearEquityIRR, PCT);
+    label(w1, 'Final-Year Equity Multiple', s.finalYearEquityMultiple, RATIO);
     label(w1, 'Optimal Holding Year', s.optimalHoldingYear);
     label(w1, 'Optimal Holding Yield', s.optimalHoldingYield, PCT);
 
@@ -977,8 +1075,8 @@
       for (let i = 2; i <= 6; i++) if (fmt) r.getCell(i).numFmt = fmt;
     };
 
-    // 2 · Five-Year Cash Flow
-    const w2 = wb.addWorksheet('Five-Year Cash Flow');
+    // 2 · Cash Flow
+    const w2 = wb.addWorksheet('Cash Flow');
     w2.columns = [{ width: 32 }, ...Array(5).fill({ width: 16 })];
     head(w2, 'Operating Projection');
     tblHeader(w2, yearsHdr);
@@ -1049,10 +1147,10 @@
       srow('Acquisition Cap Rate', x => x.acquisitionCapRate, PCT);
       srow('Loan Amount', x => x.loanAmount, MONEY);
       srow('Initial Equity', x => x.initialEquity, MONEY);
-      for (let y = 0; y < 5; y++) srow('Unleveraged CoC — Sale Y' + (y + 1), x => x.unleveragedCoC[y], PCT);
-      for (let y = 0; y < 5; y++) srow('Leveraged CoC — Sale Y' + (y + 1), x => x.leveragedCoC[y], PCT);
-      for (let y = 0; y < 5; y++) srow('Unleveraged IRR — Sale Y' + (y + 1), x => x.unleveragedIRR[y], PCT);
-      for (let y = 0; y < 5; y++) srow('Leveraged IRR — Sale Y' + (y + 1), x => x.leveragedIRR[y], PCT);
+      for (let y = 0; y < R.annual.length; y++) srow('Unleveraged CoC — Sale Y' + (y + 1), x => x.unleveragedCoC[y], PCT);
+      for (let y = 0; y < R.annual.length; y++) srow('Leveraged CoC — Sale Y' + (y + 1), x => x.leveragedCoC[y], PCT);
+      for (let y = 0; y < R.annual.length; y++) srow('Unleveraged IRR — Sale Y' + (y + 1), x => x.unleveragedIRR[y], PCT);
+      for (let y = 0; y < R.annual.length; y++) srow('Leveraged IRR — Sale Y' + (y + 1), x => x.leveragedIRR[y], PCT);
     }
 
     // 6 · Assumptions and Provenance
@@ -1094,7 +1192,7 @@
   /* ================= public surface ================= */
   window.FSInvestmentUI = {
     init(adapter) { A = adapter; },
-    renderList, open, createFromBudget, createStandalone, softDelete,
+    renderList, renderListInto, open, createFromBudget, createStandalone, softDelete,
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep,
     exportWorkbook, exportPDF, addOtherIncome, addCapex,
     _other, _otherRemove, _capex, _capexRemove,

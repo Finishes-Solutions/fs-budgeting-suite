@@ -127,7 +127,7 @@ test('immutable version history is stored, not recalculated', async () => {
   assert.equal(list.body.versions[0].isCurrent, true);
   const v1 = await api('/api/investment-analysis/' + analysisId + '/versions/1');
   assert.equal(v1.body.result.normalizedInput.vacancy.value, 0.10, 'version 1 keeps its original vacancy');
-  assert.equal(v1.body.version.calculationVersion, 'before-tax-5y-1.0.0');
+  assert.equal(v1.body.version.calculationVersion, 'before-tax-1.1.0');
 });
 
 test('soft delete hides, history survives, save restores', async () => {

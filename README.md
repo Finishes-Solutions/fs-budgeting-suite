@@ -34,7 +34,7 @@ templates requires the `pricing_admin` custom role.
 | **Deletion** | Recoverable. Deleting a budget flags it; its history survives and re-saving the same project ID restores it |
 | **Exports** | Excel workbook (vendored ExcelJS) and a print/PDF report, both built from the data model |
 | **CSI schedule** | Division totals and percentages that reconcile to the contract sum, feeding the lender package |
-| **Investment analysis** | Five-year before-tax underwriting created from an exact saved budget version (or standalone): operating projection, one amortizing 30/360 mortgage or all-cash, exit-cap disposition, CoC/ROE/equity multiple, property and equity IRRs, leverage, optimal hold, acquisition sensitivity. Server-calculated, versioned, soft-deletable, with a table-only Excel workbook — no charts |
+| **Investment analysis** | Five- or ten-year before-tax underwriting created from an exact saved budget version (or standalone): operating projection, one amortizing 30/360 mortgage or all-cash, exit-cap disposition, CoC/ROE/equity multiple, property and equity IRRs, leverage, optimal hold, acquisition sensitivity. Server-calculated, versioned, soft-deletable, with a table-only Excel workbook — no charts |
 
 ---
 
@@ -56,7 +56,7 @@ templates requires the `pricing_admin` custom role.
 | `sql/` | Schema, migration, views, seeds, admin scripts — see below |
 | `app/investment-analysis.js` / `.css` | The Investment Analysis workflow — an external no-build IIFE module; `index.html` contributes only nav, containers, routes and an adapter |
 | `api/investment-*/` | Investment analysis Functions: list/create, CRUD + concurrency, version history, stateless calculation preview |
-| `api/shared/investment/` | The authoritative before-tax calculation engine (`before-tax-5y-1.0.0`), dependency-free, fixture-proven against five recovered reference deals |
+| `api/shared/investment/` | The authoritative before-tax calculation engine (`before-tax-1.1.0`, five- or ten-year), dependency-free, fixture-proven against five recovered reference deals |
 | `api/shared/budget-calc.js` | Server-side port of the budget arithmetic — stored ContractSum/ProjectCost derive from the document, never from client meta |
 | `test/` | Fourteen Playwright suites, `node:test` logic tests, and a mock of the SWA API |
 | `docs/` | Build guide, data contract, handoff, roadmap, naming |
