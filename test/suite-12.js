@@ -21,6 +21,13 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('standalone analysis opens in the editor', /#\/analysis\//.test(p.url()));
  ok('six steps are presented', (await p.locator('#invSteps button').count())===6);
 
+ // ---- guided Next buttons: dark until the step's required fields are in
+ const next1=p.locator('[data-stepnav="1"] .inv-next');
+ ok('Next is disabled while step 1 is incomplete',
+    await next1.isDisabled() && !(await next1.evaluate(e=>e.classList.contains('ready'))));
+ ok('hint explains what to do', /Fill in the required fields/.test(
+    await p.locator('[data-stepnav="1"] .inv-stepnav-hint').textContent()));
+
  // calculating with missing assumptions surfaces field-keyed errors
  await p.click('#invCalcBtn'); await p.waitForTimeout(500);
  ok('missing assumptions are rejected with highlighted fields',
@@ -30,9 +37,19 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.fill('[data-f="property.size.value"]','100000');
  await p.fill('[data-f="property.purchaseMonth"]','2026-06');
  await p.fill('[data-f="acquisition.basis.value"]','2000000');
- await p.click('#invSteps button[data-step="2"]');
+ await p.locator('[data-f="acquisition.basis.value"]').dispatchEvent('change');
+ await p.waitForTimeout(150);
+ ok('Next lights up when step 1 completes',
+    await next1.isEnabled() && await next1.evaluate(e=>e.classList.contains('ready')));
+ ok('the step pill earns its checkmark',
+    await p.locator('#invSteps button[data-step="1"]').evaluate(e=>e.classList.contains('done')));
+ await next1.click(); await p.waitForTimeout(200);
+ ok('Next advances to Income', await p.locator('[data-steppane="2"]').evaluate(e=>e.classList.contains('on')));
  await p.fill('[data-f="income.year1PotentialIncome"]','300000');
  await p.click('#invSteps button[data-step="3"]');
+ // step 4 (all-cash) is already a complete answer — its Next is lit untouched
+ ok('all-cash Mortgage step counts as complete',
+    await p.locator('[data-stepnav="4"] .inv-next').evaluate(e=>e.classList.contains('ready')));
  await p.fill('[data-f="expenses.value"]','30');
  await p.click('#invSteps button[data-step="5"]');
  await p.fill('[data-f="disposition.exitCapRate.value"]','7');

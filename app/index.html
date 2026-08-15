@@ -266,6 +266,13 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .sum-row.mid{border-top:1px solid var(--ink-300);padding-top:10px}
 .sum-row.mid .k{font-weight:700;color:var(--ink-900)}.sum-row.mid .v{font-weight:600}
 
+/* linked investment analyses on the Home list */
+.ia-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.ia-chip{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;
+  color:var(--green-700);background:var(--green-50);border:1px solid #CDE6D6;
+  border-radius:999px;padding:2px 9px;text-decoration:none;max-width:340px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ia-chip:hover{background:#E2F2E8}
 .badge{display:inline-block;font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
   padding:3px 8px;border-radius:var(--r);border:1px solid var(--ink-200);color:var(--ink-600)}
 .badge.warn{border-color:#e6d3ae;background:#fdf6e8;color:var(--warn)}
@@ -1977,8 +1984,22 @@ async function routeFromHash(){
 window.addEventListener('hashchange',routeFromHash);
 
 /* ============ HOME ============ */
+let analysesByProject=new Map();
 async function renderHome(){
-  index=(await sGet('budgets-index'))||[];
+  // Budgets and their linked investment analyses load together; the analyses
+  // call failing (older API, cold start race) must never blank the list —
+  // the chips just don't render.
+  const [budgets,analyses]=await Promise.all([
+    sGet('budgets-index'),
+    invApi('investment-analyses').catch(()=>[])
+  ]);
+  index=budgets||[];
+  analysesByProject=new Map();
+  (analyses||[]).forEach(a=>{
+    if(!a.projectId)return;
+    if(!analysesByProject.has(a.projectId))analysesByProject.set(a.projectId,[]);
+    analysesByProject.get(a.projectId).push(a);
+  });
   paintHome();
 }
 function homeRows(){
@@ -2047,11 +2068,22 @@ function paintHome(){
   } else rows.forEach(homeRow);
   paintHomeSortArrows();
 }
+/* Linked investment analyses render as chips under the budget name — a link,
+   not a row click, so opening an analysis never opens the budget. */
+function analysisChips(projectId){
+  const list=analysesByProject.get(projectId);
+  if(!list||!list.length)return '';
+  return '<div class="ia-chips no-print">'+list.map(a=>
+    `<a class="ia-chip" href="#/analysis/${esc(a.analysisId)}" onclick="event.stopPropagation()"
+       title="Open investment analysis${a.currentVersionNumber?' (version '+a.currentVersionNumber+')':''}">📈 ${esc(a.name)}${
+       a.finalYearEquityIRR!==null&&a.finalYearEquityIRR!==undefined
+         ?' · '+(a.finalYearEquityIRR*100).toFixed(1)+'% IRR':''}</a>`).join('')+'</div>';
+}
 function homeRow(x){
   document.getElementById('homeBody').insertAdjacentHTML('beforeend',
     `<tr class="clickable" onclick="openBudget('${x.projectId}')">
       <td class="mono" style="padding-left:22px;font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
-      <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
+      <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}${analysisChips(x.projectId)}</td>
       <td class="calc r">${usd(x.contractSum||0)}</td>
       <td class="calc r">${usd(x.projectCost||0)}</td>
       <td><span class="badge ${x.status==='Finalized'?'ok':''}">${esc(x.status)}</span></td>
@@ -3762,7 +3794,16 @@ function endBoot(){
   try{
     if(window.FSInvestmentUI)FSInvestmentUI.init({
       api:invApi,toast,esc,
-      navigate:h=>{location.hash=h;}
+      navigate:h=>{location.hash=h;},
+      // Same print pipeline as the budget's exportPDF(): a purpose-made
+      // document in #printDoc, never the app UI.
+      print:html=>{
+        document.getElementById('printDoc').innerHTML=html;
+        document.body.classList.add('printing');
+        window.print();
+        setTimeout(()=>{document.body.classList.remove('printing');
+          document.getElementById('printDoc').innerHTML='';},600);
+      }
     });
     await initAuth();
     const published=await sGet('pricing-multifamily');   // API-first; built-in seed as fallback

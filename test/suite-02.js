@@ -294,6 +294,26 @@ const BASE = 'http://127.0.0.1:8100';
   ok('Sign Out is blocked by unsaved changes', stayed.includes('index.html') || stayed.startsWith('/'),
      stayed);
 
+  // ---- linked investment analyses appear as chips on the Home list
+  await p.evaluate(async () => {
+    await fetch('/api/investment-analyses', { method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'fromBudget', projectId: 'BD-0001', analysisName: 'Alpha Underwriting' }) });
+  });
+  await p.click('#nav-help'); await p.click('#nav-home');   // force a refetch
+  await p.waitForTimeout(400);
+  const chipRow = p.locator('#homeBody tr', { hasText: 'BD-0001' }).first();
+  ok('linked analysis renders as a chip under its budget',
+     /Alpha Underwriting/.test(await chipRow.locator('.ia-chip').first().textContent().catch(() => '')),
+     await chipRow.textContent());
+  ok('unlinked budgets carry no chips',
+     (await p.locator('#homeBody tr', { hasText: 'BD-0002' }).first().locator('.ia-chip').count()) === 0);
+  await chipRow.locator('.ia-chip').first().click();
+  await p.waitForTimeout(600);
+  ok('chip opens the analysis, not the budget',
+     /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()) && await p.locator('#page-analysis').evaluate(e => e.classList.contains('on')),
+     p.url());
+
  ok('No uncaught JS errors', errs.length === 0, errs.join(' | '));
   console.log(R.join('\n'));
   console.log('\n' + R.filter(r => r.startsWith('FAIL')).length + ' failures of ' + R.length);

@@ -129,6 +129,63 @@
 
   const STEPS = ['Source & Property', 'Income', 'Vacancy & Expenses', 'Mortgage', 'Disposition', 'Review & Report'];
 
+  // Which fields make a step "complete". This drives the guided Next buttons
+  // and the ✓ marks on the step pills — it never blocks the pills themselves,
+  // and the server-side validator remains the real gate on calculate/save.
+  const isNum = v => typeof v === 'number' && Number.isFinite(v);
+  function stepComplete(n) {
+    const i = st.input; if (!i) return false;
+    switch (n) {
+      case 1: return !!(i.analysisName && i.analysisName.trim()
+        && i.property.name && i.property.name.trim()
+        && isNum(i.property.size.value) && i.property.size.value > 0
+        && i.property.purchaseMonth
+        && isNum(i.acquisition.basis.value) && i.acquisition.basis.value > 0);
+      case 2: return isNum(i.income.year1PotentialIncome) && i.income.year1PotentialIncome >= 0
+        && (i.income.otherIncome || []).every(r => isNum(r.year1Amount));
+      case 3: return isNum(i.expenses.value);
+      case 4: {
+        const L = i.financing.loans[0];
+        if (!L) return true;                       // all-cash is a complete answer
+        return isNum(L.amount.value) && isNum(L.annualRate)
+          && isNum(L.amortizationYears) && L.amortizationYears > 0
+          && isNum(L.termYears) && L.termYears > 0;
+      }
+      case 5: return isNum(i.disposition.exitCapRate.value) && i.disposition.exitCapRate.value > 0;
+      default: return true;
+    }
+  }
+
+  // The per-pane footer: a hint plus a Next button that lights up when the
+  // step's required fields are in. Rendered once; state refreshed in place.
+  function stepNav(n) {
+    return `<div class="inv-stepnav no-print" data-stepnav="${n}">
+      <span class="inv-stepnav-hint"></span>
+      <button class="inv-next" data-inv-edit onclick="FSInvestmentUI.goStep(${n + 1})">
+        Next: ${STEPS[n]} →</button>
+    </div>`;
+  }
+
+  // Refresh the ✓ pills and every Next button without touching any input —
+  // called from field changes, so focus and caret are never disturbed.
+  function updateStepUI() {
+    document.querySelectorAll('#invSteps button[data-step]').forEach(b => {
+      const n = +b.dataset.step;
+      if (n === 6) return;
+      b.classList.toggle('done', stepComplete(n));
+    });
+    document.querySelectorAll('#page-analysis [data-stepnav]').forEach(nav => {
+      const n = +nav.dataset.stepnav;
+      const done = stepComplete(n);
+      const btn = nav.querySelector('.inv-next');
+      btn.disabled = !done;
+      btn.classList.toggle('ready', done);
+      nav.querySelector('.inv-stepnav-hint').textContent = done
+        ? 'Step complete.'
+        : 'Fill in the required fields on this step to continue.';
+    });
+  }
+
   function originBadge(path) {
     const src = st.input && st.input.source;
     const o = src && src.fieldOrigins && src.fieldOrigins[path];
@@ -152,6 +209,7 @@
           <button class="btn btn-ghost" data-inv-edit onclick="FSInvestmentUI.duplicate()">Duplicate</button>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
+          <button class="btn btn-ghost" data-inv-edit id="invPdfBtn" onclick="FSInvestmentUI.exportPDF()">PDF (Print)</button>
           <button class="btn btn-dark" data-inv-edit id="invXlsxBtn" onclick="FSInvestmentUI.exportWorkbook()">Excel Workbook</button>
         </div>
       </div>
@@ -192,6 +250,7 @@
           <label class="fld"><span class="lab">Acquisition Costs %</span>
             <input type="number" min="0" step="any" data-f="acquisition.costPercent" data-k="inv.costPct" value="${toPct(inp.acquisition.costPercent)}"></label>
         </div>
+        ${stepNav(1)}
       </div>
 
       <div class="inv-step ${st.step === 2 ? 'on' : ''}" data-steppane="2">
@@ -207,6 +266,7 @@
         <div id="invOtherRows"></div>
         <button class="btn btn-sm btn-ghost" data-inv-edit onclick="FSInvestmentUI.addOtherIncome()">+ Add Other Income</button>
         <div id="invUnitMix"></div>
+        ${stepNav(2)}
       </div>
 
       <div class="inv-step ${st.step === 3 ? 'on' : ''}" data-steppane="3">
@@ -229,6 +289,7 @@
         <div id="invCapexRows"></div>
         <button class="btn btn-sm btn-ghost" data-inv-edit onclick="FSInvestmentUI.addCapex()">+ Add Capital Expense</button>
         <div id="invExpSupport"></div>
+        ${stepNav(3)}
       </div>
 
       <div class="inv-step ${st.step === 4 ? 'on' : ''}" data-steppane="4">
@@ -256,6 +317,7 @@
           <label class="fld"><span class="lab">Monthly Payment (calculated)</span>
             <input type="text" id="invMonthlyPay" value="${st.result && st.result.loans[0] ? usd2(st.result.loans[0].monthlyPayment) : '—'}" disabled></label>
         </div>
+        ${stepNav(4)}
       </div>
 
       <div class="inv-step ${st.step === 5 ? 'on' : ''}" data-steppane="5">
@@ -269,6 +331,7 @@
         </div>
         <label class="chk" style="margin-top:12px"><input type="checkbox" id="invSensitivity" data-k="inv.sensitivity" ${inp.reportOptions && inp.reportOptions.includeSensitivity ? 'checked' : ''}>
           Include acquisition-price sensitivity (90% – 110% of price, LTV preserved)</label>
+        ${stepNav(5)}
       </div>
 
       <div class="inv-step ${st.step === 6 ? 'on' : ''}" data-steppane="6">
@@ -281,6 +344,7 @@
     renderSupportTables();
     renderReport();
     renderStateBar();
+    updateStepUI();
     bindEditor(host);
   }
 
@@ -366,6 +430,7 @@
 
   function markDirty() {
     if (!st.dirty || !st.stale) { st.dirty = true; st.stale = !!st.result; renderStateBar(); }
+    updateStepUI();   // keep the Next buttons and ✓ pills live as fields fill in
   }
 
   function renderStateBar() {
@@ -377,8 +442,10 @@
     if (st.stale && st.result) pills.push('<span class="inv-pill stale">Result is stale — recalculate</span>');
     if (!st.dirty && !st.busy && st.loadedVersion >= 1) pills.push('<span class="inv-pill saved">Saved · v' + st.loadedVersion + '</span>');
     bar.innerHTML = pills.join('');
-    const x = el('invXlsxBtn');
-    if (x) x.disabled = !st.result || st.stale;
+    // Both exports must match the inputs: disabled while the result is stale.
+    const exportable = !!st.result && !st.stale;
+    const x = el('invXlsxBtn'); if (x) x.disabled = !exportable;
+    const pdf = el('invPdfBtn'); if (pdf) pdf.disabled = !exportable;
   }
 
   /* ---- dynamic rows ---- */
@@ -725,6 +792,141 @@
     return h;
   }
 
+  /* ================= PDF (PRINT) EXPORT =================
+     Composed from the canonical result into the app's #printDoc via the
+     adapter — the same pipeline and print-styled classes the budget report
+     uses, so branding comes for free. Tables only; no charts, no SVG. */
+  function exportPDF() {
+    if (!st.result || st.stale) { A.toast('Calculate first so the PDF matches the inputs.'); return; }
+    A.print(printReportHTML(st.result));
+  }
+
+  function printReportHTML(R) {
+    const s = R.summary, loan = R.loans[0] || null, years = R.annual, N = R.normalizedInput;
+    const src = N.source;
+    const stamp = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const rr = (k, v, cls) => '<div class="rr ' + (cls || '') + '"><span>' + k + '</span><span class="v">' + v + '</span></div>';
+    const tbl = (headers, rows) => '<table class="rpt-tbl full"><thead><tr>'
+      + headers.map((h, i) => '<th' + (i ? ' class="r"' : '') + '>' + h + '</th>').join('')
+      + '</tr></thead><tbody>' + rows.join('') + '</tbody></table>';
+    const seriesRow = (label, f, tot) => '<tr' + (tot ? ' class="tot"' : '') + '><td>' + label + '</td>'
+      + years.map(a => '<td class="r mono">' + f(a) + '</td>').join('') + '</tr>';
+    const yearHeads = ['', ...years.map(a => 'Y' + a.year + ' · ' + a.periodEnd)];
+
+    let h = `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div class="eyebrow">Finishes Solutions · Investment Analysis · Five-Year Before-Tax</div>
+        <div style="font-size:17pt;font-weight:800">${esc(N.property.name)}</div>
+        <div class="muted" style="font-size:9pt">${esc(N.analysisName)}${N.property.address ? ' · ' + esc(N.property.address) : ''}</div>
+      </div>
+      <div class="muted" style="text-align:right;font-size:8.5pt">${esc(stamp)}<br>
+        ${src ? 'From budget <span class="mono">' + esc(src.projectId) + '</span> v' + esc(src.budgetVersionNumber) + '<br>' : 'Standalone analysis<br>'}
+        ${st.loadedVersion ? 'Analysis v' + st.loadedVersion + ' · ' : ''}engine <span class="mono">${esc(R.calculationVersion)}</span></div>
+    </div>`;
+
+    h += '<section class="rpt-stats">'
+      + [['Purchase Price', usd(s.purchasePrice)], ['Acquisition Cap', pctf(s.acquisitionCapRate)],
+         ['Initial Equity', usd(s.initialEquity)], ['5-Yr Equity IRR', pctf(s.finalYearEquityIRR)],
+         ['Optimal Hold', s.optimalHoldingYear ? 'Year ' + s.optimalHoldingYear + ' · ' + pctf(s.optimalHoldingYield) : '—']]
+        .map(([k, v]) => '<div><div class="k">' + k + '</div><div class="v">' + v + '</div></div>').join('')
+      + '</section>';
+
+    h += '<section class="rpt-sec"><h2>Acquisition &amp; Initial Investment</h2><div class="rpt-2col"><div>'
+      + rr('Purchase Price', usd(s.purchasePrice))
+      + rr('Acquisition Costs (' + pctf(N.acquisition.costPercent) + ')', usd(s.acquisitionCosts))
+      + (loan ? rr('Loan Fees (' + pctf(loan.feePercent) + ')', usd(s.loanFees)) : '')
+      + rr('Unleveraged Investment', usd(s.unleveragedInitialInvestment), 'mid')
+      + (loan ? rr('Less: Loan Principal', '(' + usd(loan.principal) + ')') : '')
+      + rr('Initial Equity Investment', usd(s.initialEquity), 'grand')
+      + '</div><div>'
+      + rr('Gross Rent Multiplier', rat(s.grossRentMultiplier))
+      + (s.pricePerSquareFoot !== null ? rr('Price / SF', usd2(s.pricePerSquareFoot)) : '')
+      + (s.pricePerUnit !== null ? rr('Price / Unit', usd(s.pricePerUnit)) : '')
+      + (loan
+        ? rr(esc(loan.label) + ' — ' + (loan.annualRate * 100).toFixed(3) + '% · ' + loan.amortizationYears + 'y am · ' + loan.termYears + 'y term', usd(loan.principal))
+          + rr('Monthly Payment (30/360)', usd2(loan.monthlyPayment))
+          + rr('Annual Debt Service', usd(loan.annualDebtService))
+          + rr('Initial LTV', pctf(s.initialLTV))
+        : rr('Financing', 'All cash'))
+      + '</div></div></section>';
+
+    h += '<section class="rpt-sec"><h2>Five-Year Operating Projection</h2>'
+      + tbl(yearHeads, [
+          seriesRow('Potential Rental Income', a => usd(a.potentialIncome)),
+          seriesRow('Less: Vacancy / Credit Loss (' + pctf(N.vacancy.value) + ')', a => '(' + usd(a.vacancyLoss) + ')'),
+          seriesRow('Effective Rental Income', a => usd(a.effectiveRentalIncome)),
+          seriesRow('Other Income', a => usd(a.otherIncome)),
+          seriesRow('Gross Operating Income', a => usd(a.grossOperatingIncome), true),
+          seriesRow('Operating Expenses', a => '(' + usd(a.operatingExpenses) + ')'),
+          seriesRow('Net Operating Income', a => usd(a.netOperatingIncome), true),
+          seriesRow('Capital Expenses / Reserves', a => a.capitalExpenses ? '(' + usd(a.capitalExpenses) + ')' : '—'),
+          seriesRow('Debt Service', a => a.debtService ? '(' + usd(a.debtService) + ')' : '—'),
+          seriesRow('Cash Flow Before Taxes', a => usd(a.cashFlowBeforeTaxes), true)
+        ]) + '</section>';
+
+    h += '<section class="rpt-sec"><h2>Hypothetical Sale at End of Each Year</h2>'
+      + '<p class="rpt-note">Each sale is priced on the following year’s NOI at the '
+      + pctf(N.disposition.exitCapRate.value) + ' exit cap, rounded to the nearest $1,000; selling costs ('
+      + pctf(N.disposition.sellingCostPercent) + ') and the loan payoff come out of that rounded price.</p>'
+      + tbl(yearHeads, [
+          seriesRow('Gross Sale Price', a => usd(a.grossSalePrice)),
+          seriesRow('Selling Costs', a => '(' + usd(a.sellingCosts) + ')'),
+          seriesRow('Loan Payoff', a => a.endingLoanBalance ? '(' + usd(a.endingLoanBalance) + ')' : '—'),
+          seriesRow('Net Sale Proceeds', a => usd(a.netSaleProceeds), true)
+        ]) + '</section>';
+
+    h += '<section class="rpt-sec"><h2>Returns' + (loan ? ', Debt Coverage' : '') + ' &amp; Leverage</h2>'
+      + tbl(yearHeads, [
+          ...(loan ? [
+            seriesRow('Projected LTV', a => pctf(a.projectedLTV)),
+            seriesRow('DSCR', a => rat(a.dscr)),
+            seriesRow('Debt Yield', a => pctf(a.debtYield))] : []),
+          seriesRow('Cash-on-Cash', a => pctf(a.cashOnCash)),
+          seriesRow('Return on Equity', a => pctf(a.returnOnEquity)),
+          seriesRow('Equity Multiple', a => mult(a.equityMultiple)),
+          seriesRow('Property IRR (unleveraged)', a => pctf(a.propertyIRR)),
+          ...(loan ? [seriesRow('Effective Borrowing Rate', a => pctf(a.effectiveLoanRate))] : []),
+          seriesRow('Equity IRR (leveraged)', a => pctf(a.equityIRR), true),
+          ...(loan ? [seriesRow('Leverage Impact', a => leveragePct(a))] : [])
+        ])
+      + '<p class="rpt-note">Optimal holding period: ' + (s.optimalHoldingYear
+          ? 'Year ' + s.optimalHoldingYear + ' at ' + pctf(s.optimalHoldingYield) + ' equity IRR'
+          : 'not determinable') + '.</p></section>';
+
+    if (R.sensitivity) {
+      h += '<section class="rpt-sec"><h2>Acquisition-Price Sensitivity</h2>'
+        + '<p class="rpt-note">Scenarios at 90–110% of the base price; base LTV, rates, operating cash flows and terminal sale prices preserved.</p>'
+        + tbl(['', ...R.sensitivity.map(x => Math.round(x.factor * 100) + '% · ' + usd(x.purchasePrice))],
+          [
+            '<tr><td>Acquisition Cap Rate</td>' + R.sensitivity.map(x => '<td class="r mono">' + pctf(x.acquisitionCapRate) + '</td>').join('') + '</tr>',
+            '<tr><td>Initial Equity</td>' + R.sensitivity.map(x => '<td class="r mono">' + usd(x.initialEquity) + '</td>').join('') + '</tr>',
+            ...[0, 1, 2, 3, 4].map(y => '<tr><td>Leveraged CoC — Sale Y' + (y + 1) + '</td>'
+              + R.sensitivity.map(x => '<td class="r mono">' + pctf(x.leveragedCoC[y]) + '</td>').join('') + '</tr>'),
+            ...[0, 1, 2, 3, 4].map(y => '<tr' + (y === 4 ? ' class="tot"' : '') + '><td>Leveraged IRR — Sale Y' + (y + 1) + '</td>'
+              + R.sensitivity.map(x => '<td class="r mono">' + pctf(x.leveragedIRR[y]) + '</td>').join('') + '</tr>')
+          ]) + '</section>';
+    }
+
+    h += '<section class="rpt-sec"><h2>Assumptions</h2><div class="rpt-2col"><div>'
+      + rr('Property Size', N.property.size.value + ' ' + (N.property.size.unit === 'squareFeet' ? 'SF' : N.property.size.unit))
+      + rr('Purchase Month', N.property.purchaseMonth)
+      + rr('Year-1 Potential Income', usd(N.income.year1PotentialIncome))
+      + rr('Income Growth', pctf(N.income.growth.value))
+      + rr('Vacancy / Credit Loss', pctf(N.vacancy.value))
+      + '</div><div>'
+      + rr('Operating Expenses', N.expenses.mode === 'percentOfGOI'
+          ? pctf(N.expenses.value) + ' of GOI'
+          : usd(N.expenses.value) + '/yr, growing ' + pctf(N.expenses.growth.value))
+      + rr('Acquisition Costs', pctf(N.acquisition.costPercent))
+      + rr('Exit Cap Rate', pctf(N.disposition.exitCapRate.value))
+      + rr('Selling Costs', pctf(N.disposition.sellingCostPercent))
+      + '</div></div>'
+      + (R.warnings && R.warnings.length
+          ? '<p class="rpt-note"><b>Warnings:</b> ' + R.warnings.map(esc).join(' · ') + '</p>' : '')
+      + '</section>';
+    return h;
+  }
+
   /* ================= EXCEL WORKBOOK (tables only — no charts, ever) ======= */
   async function exportWorkbook() {
     if (!st.result || st.stale) { A.toast('Calculate first so the workbook matches the inputs.'); return; }
@@ -894,7 +1096,7 @@
     init(adapter) { A = adapter; },
     renderList, open, createFromBudget, createStandalone, softDelete,
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep,
-    exportWorkbook, addOtherIncome, addCapex,
+    exportWorkbook, exportPDF, addOtherIncome, addCapex,
     _other, _otherRemove, _capex, _capexRemove,
     currentId: () => st.id,
     isDirty: () => st.dirty,

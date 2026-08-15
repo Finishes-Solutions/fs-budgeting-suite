@@ -86,12 +86,32 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const sv=find('Assumptions','Saved Analysis Version');
  ok('workbook records the saved analysis version', sv&&sv[0]===1);
 
- // exporting with stale inputs is refused (the workbook must match the inputs)
+ // ---- PDF (Print): composed from the canonical result into #printDoc via
+ // the app's print pipeline. Tables only — no charts, no SVG.
+ await p.evaluate(()=>{window.__rpt=null;window.print=()=>{window.__rpt=document.getElementById('printDoc').innerHTML;};});
+ await p.click('#invPdfBtn');
+ await p.waitForTimeout(400);
+ const pdf=await p.evaluate(()=>window.__rpt||'');
+ ok('PDF export produces a print document', pdf.length>2000, pdf.length+' chars');
+ ok('print doc carries the branded KPI band', /rpt-stats/.test(pdf) && /Purchase Price/.test(pdf));
+ const showsPdf=v=>pdf.includes('$'+Math.round(v).toLocaleString('en-US'));
+ ok('print doc shows the canonical NOI and sale price',
+    showsPdf(A[0].netOperatingIncome) && showsPdf(A[4].grossSalePrice));
+ ok('print doc shows net proceeds and equity', showsPdf(A[4].netSaleProceeds) && showsPdf(S.initialEquity));
+ ok('print doc carries provenance and engine version',
+    /before-tax-5y-1\.0\.0/.test(pdf) && /Analysis v1/.test(pdf));
+ ok('print doc includes the sensitivity matrix', /Acquisition-Price Sensitivity/.test(pdf));
+ ok('print doc has no charts or SVG', !/<svg|data-chart/.test(pdf));
+ await p.waitForTimeout(700);
+ ok('screen state untouched by printing', /Saved · v1/.test(await p.locator('#invState').textContent()));
+
+ // exporting with stale inputs is refused (both exports must match the inputs)
  await p.click('#invSteps button[data-step="2"]');
  await p.fill('[data-f="income.year1PotentialIncome"]','430000');
  await p.locator('[data-f="income.year1PotentialIncome"]').dispatchEvent('change');
  await p.waitForTimeout(200);
  ok('stale result disables the workbook button', await p.evaluate(()=>document.getElementById('invXlsxBtn').disabled));
+ ok('stale result disables the PDF button too', await p.evaluate(()=>document.getElementById('invPdfBtn').disabled));
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
