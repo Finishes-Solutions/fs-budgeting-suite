@@ -34,6 +34,7 @@ templates requires the `pricing_admin` custom role.
 | **Deletion** | Recoverable. Deleting a budget flags it; its history survives and re-saving the same project ID restores it |
 | **Exports** | Excel workbook (vendored ExcelJS) and a print/PDF report, both built from the data model |
 | **CSI schedule** | Division totals and percentages that reconcile to the contract sum, feeding the lender package |
+| **Investment analysis** | Five- or ten-year before-tax underwriting created from an exact saved budget version (or standalone): operating projection, one amortizing 30/360 mortgage or all-cash, exit-cap disposition, CoC/ROE/equity multiple, property and equity IRRs, leverage, optimal hold, acquisition sensitivity. Server-calculated, versioned, soft-deletable, with a table-only Excel workbook — no charts |
 
 ---
 
@@ -53,10 +54,16 @@ templates requires the `pricing_admin` custom role.
 | `api/templates/` | Budget templates: list, read, versions, create, publish, activate |
 | `api/shared/` | `auth.js` (principal + roles), `db.js` (pool + cold-start retry), `canonical.js`, `sov.js`, `versioning.js` |
 | `sql/` | Schema, migration, views, seeds, admin scripts — see below |
-| `test/` | Ten Playwright suites, `node:test` logic tests, and a mock of the SWA API |
+| `app/investment-analysis.js` / `.css` | The Investment Analysis workflow — an external no-build IIFE module; `index.html` contributes only nav, containers, routes and an adapter |
+| `api/investment-*/` | Investment analysis Functions: list/create, CRUD + concurrency, version history, stateless calculation preview |
+| `api/shared/investment/` | The authoritative before-tax calculation engine (`before-tax-1.1.0`, five- or ten-year), dependency-free, fixture-proven against five recovered reference deals — every formula documented in `docs/INVESTMENT_FORMULAS.md` |
+| `api/shared/budget-calc.js` | Server-side port of the budget arithmetic — stored ContractSum/ProjectCost derive from the document, never from client meta |
+| `test/` | Fourteen Playwright suites, `node:test` logic tests, and a mock of the SWA API |
 | `docs/` | Build guide, data contract, handoff, roadmap, naming |
 
-There is **one HTML file**. Every UI change happens in `app/index.html`. It is served
+There is **no build step**. Budget UI changes happen in `app/index.html`; the
+Investment Analysis workflow lives in `app/investment-analysis.js` (a plain IIFE
+initialized with a small adapter). Everything is served
 verbatim — nothing compiles, bundles or minifies it, so a syntax error ships.
 
 ---
@@ -71,22 +78,29 @@ Run against Azure SQL in this order.
    version history, templates, soft-delete columns and stable line keys, seeds the
    `multifamily` template, and backfills Version 1 for every existing budget. Has
    preflight and verification sections with expected results.
-2. `sql/views.sql` — reporting views (reads the soft-delete columns, so it must run second).
-3. `sql/verify_migration.sql` — read-only; returns one row per check with PASS / FAIL / INFO.
+2. `sql/migrate_investment_analyses.sql` — idempotent, transactional, purely additive:
+   the four investment-analysis tables. Safe to re-run.
+3. `sql/views.sql` — reporting views (reads columns the migrations add, so it runs after them).
+4. `sql/verify_migration.sql` — read-only; returns one row per check with PASS / FAIL / INFO.
+5. `sql/verify_investment_analyses.sql` — read-only; the same convention for the investment tables.
 
 **Fresh install**
 
-`sql/schema.sql` → `sql/seed_pricing.sql` → the migration → `sql/views.sql`.
+`sql/schema.sql` → `sql/seed_pricing.sql` → the migrations → `sql/views.sql`.
 
 **Admin-run, never part of a deployment**
 
 - `sql/purge_deleted_budgets.sql` — hard-deletes soft-deleted budgets and their history,
-  child-first in one transaction. The application itself has no hard delete.
+  child-first in one transaction (detaching investment-analysis provenance links first).
+  The application itself has no hard delete.
+- `sql/purge_deleted_investment_analyses.sql` — the same contract for analyses.
 - `sql/cleanup_test_budgets.sql` — purges `TST-####` rows.
 - `sql/migrate_op_ids.sql` — one-time `OP-###` → `OP-####` rename.
 
 Tables: `Budgets`, `SovLines`, `BudgetVersions`, `BudgetVersionSovLines`,
-`BudgetTemplates`, `BudgetTemplateVersions`, `PricingLibrary`.
+`BudgetTemplates`, `BudgetTemplateVersions`, `PricingLibrary`,
+`InvestmentAnalyses`, `InvestmentAnalysisVersions`, `InvestmentAnnualResults`,
+`InvestmentVersionAnnualResults`.
 
 ---
 
@@ -122,7 +136,7 @@ promptly. `TST-####` budgets are throwaway test records in those same tables.
 ## Running the tests
 
 ```bash
-./test/run-all.sh          # node:test logic suites, then all ten browser suites
+./test/run-all.sh          # node:test logic suites, then all fourteen browser suites
 ./test/run-all.sh 03 08    # only suites 03 and 08
 ```
 

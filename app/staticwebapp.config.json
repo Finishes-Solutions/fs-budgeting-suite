@@ -24,5 +24,5 @@
     }
   },
   "navigationFallback": { "rewrite": "/index.html", "exclude": ["/api/*", "/.auth/*"] },
-  "platform": { "apiRuntime": "node:18" }
+  "platform": { "apiRuntime": "node:22" }
 }

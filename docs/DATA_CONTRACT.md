@@ -160,3 +160,44 @@ Verify with `sql/verify_migration.sql` (read-only, one row per check).
 Fresh install: `schema.sql` → `seed_pricing.sql` → the migration → `views.sql`.
 `purge_deleted_budgets.sql` and `cleanup_test_budgets.sql` are admin-run and are never
 part of a deployment.
+
+---
+
+# Investment analyses (added 2026-08)
+
+## Separate aggregate — the lender-package contract is untouched
+
+The investment-analysis module writes ONLY to its own four tables
+(`InvestmentAnalyses`, `InvestmentAnalysisVersions`, `InvestmentAnnualResults`,
+`InvestmentVersionAnnualResults`). It never writes to `SovLines` or any budget
+table, and nothing above changes meaning: the lender-package read surface is
+exactly what this document already says it is.
+
+An analysis created from a budget stores `SourceBudgetVersionId` — a NO ACTION
+foreign key to the exact immutable `BudgetVersions` row it imported from — plus
+the same provenance inside its JSON documents. The budget changing later never
+changes the analysis; a new import is an explicit user action that creates a
+new analysis version.
+
+## What "content changed" means for an analysis
+
+The canonical hash covers `{rawInput, sourceBudgetVersionId, calculationVersion}`.
+Two consequences: a no-op save creates no version, and upgrading the engine
+(`calculationVersion`) versions on the next save instead of silently rewriting
+history. Old versions are returned exactly as stored — never recalculated.
+
+## Server authority
+
+The browser posts assumptions and renders returned results.
+`POST /api/investment-calculations` previews without persisting;
+`PUT /api/investment-analysis/{id}` recalculates server-side, ignores any
+client-supplied result object, and enforces `expectedVersionNumber` optimistic
+concurrency (HTTP 409 on a stale save). Rates in the API are decimal fractions
+(6.5% is 0.065); display conversion is the browser's job.
+
+## Annual rows
+
+Five current rows per calculated analysis and five immutable rows per version
+carry the reporting columns (`DECIMAL(19,4)` money, `DECIMAL(19,10)` ratios).
+`ResultDoc` remains the full-precision authority they must reconcile with —
+`sql/verify_investment_analyses.sql` checks exactly that.

@@ -46,7 +46,9 @@ Everyone in the tenant can build budgets. Publishing pricing requires the
 | `test/` | Browser test harness (see §7) |
 | `docs/` | Build guide, data contract, roadmap, naming, this file |
 
-There is **one HTML file**. Every UI change happens in `app/index.html`. It is served
+There is **no build step**. Budget UI changes happen in `app/index.html`; the
+Investment Analysis workflow lives in `app/investment-analysis.js` (external
+no-build IIFE, adapter-wired — see §6). Everything is served
 verbatim — nothing compiles, bundles or minifies it, so a syntax error ships.
 
 ---
@@ -245,10 +247,34 @@ Each budget line has `code` (CSI), `grp`, `scope` (`res` | `amen` | `soft`), `de
 
 ---
 
+### Investment-analysis invariants (added 2026-08)
+
+- **The engine lives on the server only** (`api/shared/investment/`), version-stamped
+  `before-tax-1.1.0` (five- or ten-year horizon). The browser posts assumptions and renders results; a save
+  recalculates server-side and ignores any client-supplied result. Never port the
+  formulas into the frontend — that recreates the drift problem the design avoids.
+- **Old analysis versions are never recalculated.** Each records its calculation
+  version; changing formulas means a new version string, and history stays as saved.
+- **The analysis hash covers `{rawInput, sourceBudgetVersionId, calculationVersion}`**
+  via the shared canonical JSON. Do not change `api/shared/canonical.js` defaults —
+  budget hashing depends on them byte-for-byte.
+- **Analysis routes carry GUIDs.** `routeFromHash` handles `#/analysis/{guid}` before
+  the uppercase/ID_RX budget path — a GUID must never be uppercased or fed to
+  `openBudget`.
+- **`FSInvestmentUI` talks to `index.html` only through the adapter** passed to
+  `init()`. Reaching into inline-script internals from the module (or vice versa)
+  is the coupling the external-module decision exists to prevent.
+- **The leverage line displays the difference of the two displayed two-decimal
+  IRRs** (13.67 − 9.80 = 3.87), matching the recovered reports; the engine keeps
+  full precision internally. `test/investment-calculations.test.js` pins both.
+- **The prefill invents no market assumptions.** Purchase month, expense ratio,
+  and exit cap arrive empty on purpose; imported service expenses are supporting
+  reference only. Warnings in the UI say so — keep them.
+
 ## 7 · Running the tests
 
-Ten Playwright suites, 349 assertions, plus 29 `node:test` assertions for the pure
-logic that needs no browser — all passing as of this commit. The browser suites drive
+Fourteen Playwright suites, 456 assertions, plus 63 `node:test` assertions for the
+pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus
 `test/pricing.json`, and mirrors soft-delete and no-op-save semantics).

@@ -168,3 +168,161 @@ CREATE TABLE dbo.BudgetVersionSovLines (
     CONSTRAINT UQ_BudgetVersionSovLines_Order UNIQUE (BudgetVersionId, LineOrder)
 );
 CREATE INDEX IX_BudgetVersionSovLines_LineKey ON dbo.BudgetVersionSovLines (LineKey) WHERE LineKey IS NOT NULL;
+
+-- ============================================================================
+-- Investment analyses — a separate underwriting aggregate. Never writes into
+-- SovLines and never changes what the budget tables mean; an analysis links to
+-- an immutable BudgetVersions row when it was created from a budget.
+-- ============================================================================
+
+CREATE TABLE dbo.InvestmentAnalyses (
+    AnalysisId            UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_InvestmentAnalyses_Id DEFAULT (NEWSEQUENTIALID()),
+    ProjectId             VARCHAR(16)    NULL,        -- optional link to the Finishes project
+    Name                  NVARCHAR(200)  NOT NULL,
+    Status                NVARCHAR(30)   NOT NULL CONSTRAINT DF_InvestmentAnalyses_Status DEFAULT (N'Draft'),
+    ProjectionYears       TINYINT        NOT NULL CONSTRAINT DF_InvestmentAnalyses_Years  DEFAULT (5),
+    TaxMode               VARCHAR(20)    NOT NULL CONSTRAINT DF_InvestmentAnalyses_Tax    DEFAULT ('beforeTax'),
+    CurrentVersionNumber  INT            NOT NULL CONSTRAINT DF_InvestmentAnalyses_CurVer DEFAULT (0),
+    SourceBudgetVersionId BIGINT         NULL,        -- exact immutable budget version imported from
+    InputDoc              NVARCHAR(MAX)  NOT NULL,    -- raw assumptions as entered
+    NormalizedInputDoc    NVARCHAR(MAX)  NOT NULL,    -- defaults applied, canonical numeric shape
+    ResultDoc             NVARCHAR(MAX)  NOT NULL,    -- canonical server-calculated result
+    ContentHash           CHAR(64)       NOT NULL,    -- SHA-256 over {rawInput, sourceBudgetVersionId, calculationVersion}
+    InputSchemaVersion    INT            NOT NULL CONSTRAINT DF_InvestmentAnalyses_Schema DEFAULT (1),
+    CalculationVersion    VARCHAR(40)    NOT NULL,    -- engine that produced ResultDoc, e.g. before-tax-5y-1.0.0
+    -- Queryable summary values for list views; ResultDoc stays authoritative.
+    PurchasePrice         DECIMAL(19,4)  NULL,
+    Year1NOI              DECIMAL(19,4)  NULL,
+    InitialEquity         DECIMAL(19,4)  NULL,
+    FinalYearEquityIRR    DECIMAL(19,10) NULL,
+    OptimalHoldingYear    TINYINT        NULL,
+    CreatedById           NVARCHAR(128)  NULL,
+    CreatedByName         NVARCHAR(200)  NULL,
+    CreatedAt             DATETIME2      NOT NULL CONSTRAINT DF_InvestmentAnalyses_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    UpdatedAt             DATETIME2      NOT NULL CONSTRAINT DF_InvestmentAnalyses_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+    IsDeleted             BIT            NOT NULL CONSTRAINT DF_InvestmentAnalyses_IsDeleted DEFAULT (0),
+    DeletedAt             DATETIME2      NULL,
+    CONSTRAINT PK_InvestmentAnalyses PRIMARY KEY (AnalysisId),
+    -- NO ACTION on both: soft delete keeps every row, and the admin purge
+    -- scripts handle ordering explicitly.
+    CONSTRAINT FK_InvestmentAnalyses_Budget        FOREIGN KEY (ProjectId)             REFERENCES dbo.Budgets (ProjectId),
+    CONSTRAINT FK_InvestmentAnalyses_BudgetVersion FOREIGN KEY (SourceBudgetVersionId) REFERENCES dbo.BudgetVersions (Id),
+    CONSTRAINT CK_InvestmentAnalyses_Input      CHECK (ISJSON(InputDoc) = 1),
+    CONSTRAINT CK_InvestmentAnalyses_Normalized CHECK (ISJSON(NormalizedInputDoc) = 1),
+    CONSTRAINT CK_InvestmentAnalyses_Result     CHECK (ISJSON(ResultDoc) = 1)
+);
+CREATE INDEX IX_InvestmentAnalyses_Project_Updated
+  ON dbo.InvestmentAnalyses (ProjectId, UpdatedAt DESC) WHERE IsDeleted = 0;
+CREATE INDEX IX_InvestmentAnalyses_Updated
+  ON dbo.InvestmentAnalyses (UpdatedAt DESC) WHERE IsDeleted = 0;
+
+-- Immutable analysis versions: raw input, normalized input, result, and
+-- provenance are copied whole. A version row is written once, never updated,
+-- and never recalculated when read.
+CREATE TABLE dbo.InvestmentAnalysisVersions (
+    Id                    BIGINT         IDENTITY(1,1) NOT NULL,
+    AnalysisId            UNIQUEIDENTIFIER NOT NULL,
+    VersionNumber         INT            NOT NULL,
+    ProjectId             VARCHAR(16)    NULL,
+    SourceBudgetVersionId BIGINT         NULL,
+    Name                  NVARCHAR(200)  NOT NULL CONSTRAINT DF_InvestmentAnalysisVersions_Name DEFAULT (N''),
+    InputDoc              NVARCHAR(MAX)  NOT NULL,
+    NormalizedInputDoc    NVARCHAR(MAX)  NOT NULL,
+    ResultDoc             NVARCHAR(MAX)  NOT NULL,
+    InputSchemaVersion    INT            NOT NULL CONSTRAINT DF_InvestmentAnalysisVersions_Schema DEFAULT (1),
+    CalculationVersion    VARCHAR(40)    NOT NULL,
+    ContentHash           CHAR(64)       NOT NULL,
+    ChangeSummary         NVARCHAR(1000) NULL,
+    PurchasePrice         DECIMAL(19,4)  NULL,
+    Year1NOI              DECIMAL(19,4)  NULL,
+    InitialEquity         DECIMAL(19,4)  NULL,
+    FinalYearEquityIRR    DECIMAL(19,10) NULL,
+    OptimalHoldingYear    TINYINT        NULL,
+    CreatedById           NVARCHAR(128)  NULL,
+    CreatedByName         NVARCHAR(200)  NULL,
+    CreatedAt             DATETIME2      NOT NULL CONSTRAINT DF_InvestmentAnalysisVersions_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT PK_InvestmentAnalysisVersions PRIMARY KEY (Id),
+    CONSTRAINT FK_InvestmentAnalysisVersions_Analysis FOREIGN KEY (AnalysisId) REFERENCES dbo.InvestmentAnalyses (AnalysisId),
+    CONSTRAINT UQ_InvestmentAnalysisVersions_Version UNIQUE (AnalysisId, VersionNumber),
+    CONSTRAINT CK_InvestmentAnalysisVersions_Input      CHECK (ISJSON(InputDoc) = 1),
+    CONSTRAINT CK_InvestmentAnalysisVersions_Normalized CHECK (ISJSON(NormalizedInputDoc) = 1),
+    CONSTRAINT CK_InvestmentAnalysisVersions_Result     CHECK (ISJSON(ResultDoc) = 1),
+    CONSTRAINT CK_InvestmentAnalysisVersions_Number     CHECK (VersionNumber >= 1)
+);
+CREATE INDEX IX_InvestmentAnalysisVersions_Analysis_VersionDesc
+  ON dbo.InvestmentAnalysisVersions (AnalysisId, VersionNumber DESC);
+
+-- Five current annual rows per calculated analysis — the queryable/report
+-- surface. Rewritten atomically by every meaningful save; ResultDoc remains
+-- the authority they must reconcile with.
+CREATE TABLE dbo.InvestmentAnnualResults (
+    Id                    BIGINT         IDENTITY(1,1) NOT NULL,
+    AnalysisId            UNIQUEIDENTIFIER NOT NULL,
+    AnalysisYear          TINYINT        NOT NULL,
+    PeriodEnd             CHAR(7)        NOT NULL,     -- YYYY-MM
+    PotentialIncome       DECIMAL(19,4)  NOT NULL,
+    VacancyLoss           DECIMAL(19,4)  NOT NULL,
+    EffectiveRentalIncome DECIMAL(19,4)  NOT NULL,
+    OtherIncome           DECIMAL(19,4)  NOT NULL,
+    GrossOperatingIncome  DECIMAL(19,4)  NOT NULL,
+    OperatingExpenses     DECIMAL(19,4)  NOT NULL,
+    NetOperatingIncome    DECIMAL(19,4)  NOT NULL,
+    CapitalExpenses       DECIMAL(19,4)  NOT NULL,
+    DebtService           DECIMAL(19,4)  NOT NULL,
+    CashFlowBeforeTaxes   DECIMAL(19,4)  NOT NULL,
+    EndingLoanBalance     DECIMAL(19,4)  NOT NULL,
+    GrossSalePrice        DECIMAL(19,4)  NOT NULL,
+    SellingCosts          DECIMAL(19,4)  NOT NULL,
+    NetSaleProceeds       DECIMAL(19,4)  NOT NULL,
+    ProjectedLTV          DECIMAL(19,10) NULL,
+    DSCR                  DECIMAL(19,10) NULL,
+    DebtYield             DECIMAL(19,10) NULL,
+    CashOnCash            DECIMAL(19,10) NULL,
+    ReturnOnEquity        DECIMAL(19,10) NULL,
+    EquityMultiple        DECIMAL(19,10) NULL,
+    PropertyIRR           DECIMAL(19,10) NULL,
+    EffectiveLoanRate     DECIMAL(19,10) NULL,
+    EquityIRR             DECIMAL(19,10) NULL,
+    LeverageImpact        DECIMAL(19,10) NULL,
+    CONSTRAINT PK_InvestmentAnnualResults PRIMARY KEY (Id),
+    CONSTRAINT FK_InvestmentAnnualResults_Analysis FOREIGN KEY (AnalysisId) REFERENCES dbo.InvestmentAnalyses (AnalysisId),
+    CONSTRAINT UQ_InvestmentAnnualResults_Year UNIQUE (AnalysisId, AnalysisYear),
+    CONSTRAINT CK_InvestmentAnnualResults_Year CHECK (AnalysisYear BETWEEN 1 AND 10)
+);
+
+-- Immutable copy of the annual rows for each analysis version, following the
+-- BudgetVersionSovLines pattern (CASCADE from the version row).
+CREATE TABLE dbo.InvestmentVersionAnnualResults (
+    Id                    BIGINT         IDENTITY(1,1) NOT NULL,
+    AnalysisVersionId     BIGINT         NOT NULL,
+    AnalysisYear          TINYINT        NOT NULL,
+    PeriodEnd             CHAR(7)        NOT NULL,
+    PotentialIncome       DECIMAL(19,4)  NOT NULL,
+    VacancyLoss           DECIMAL(19,4)  NOT NULL,
+    EffectiveRentalIncome DECIMAL(19,4)  NOT NULL,
+    OtherIncome           DECIMAL(19,4)  NOT NULL,
+    GrossOperatingIncome  DECIMAL(19,4)  NOT NULL,
+    OperatingExpenses     DECIMAL(19,4)  NOT NULL,
+    NetOperatingIncome    DECIMAL(19,4)  NOT NULL,
+    CapitalExpenses       DECIMAL(19,4)  NOT NULL,
+    DebtService           DECIMAL(19,4)  NOT NULL,
+    CashFlowBeforeTaxes   DECIMAL(19,4)  NOT NULL,
+    EndingLoanBalance     DECIMAL(19,4)  NOT NULL,
+    GrossSalePrice        DECIMAL(19,4)  NOT NULL,
+    SellingCosts          DECIMAL(19,4)  NOT NULL,
+    NetSaleProceeds       DECIMAL(19,4)  NOT NULL,
+    ProjectedLTV          DECIMAL(19,10) NULL,
+    DSCR                  DECIMAL(19,10) NULL,
+    DebtYield             DECIMAL(19,10) NULL,
+    CashOnCash            DECIMAL(19,10) NULL,
+    ReturnOnEquity        DECIMAL(19,10) NULL,
+    EquityMultiple        DECIMAL(19,10) NULL,
+    PropertyIRR           DECIMAL(19,10) NULL,
+    EffectiveLoanRate     DECIMAL(19,10) NULL,
+    EquityIRR             DECIMAL(19,10) NULL,
+    LeverageImpact        DECIMAL(19,10) NULL,
+    CONSTRAINT PK_InvestmentVersionAnnualResults PRIMARY KEY (Id),
+    CONSTRAINT FK_InvestmentVersionAnnualResults_Version FOREIGN KEY (AnalysisVersionId)
+      REFERENCES dbo.InvestmentAnalysisVersions (Id) ON DELETE CASCADE,
+    CONSTRAINT UQ_InvestmentVersionAnnualResults_Year UNIQUE (AnalysisVersionId, AnalysisYear)
+);

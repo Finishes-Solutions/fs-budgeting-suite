@@ -196,3 +196,57 @@ static embedded pictures, in-cell data bars via conditional formatting (which th
 does support), or hand-injecting OOXML chart parts. Decision: tables only for now;
 data bars and embedded images are the recorded future path if workbook visuals are
 ever wanted. Do not reach for a chart library — the constraint is the vendored build.
+
+---
+
+## Built — Investment Analysis (2026-08, pending staging release)
+
+Five-year before-tax investment analysis in the Investment Analysis tab: created
+from an exact saved budget version (or standalone), server-calculated
+(`api/shared/investment/`, engine `before-tax-1.1.0`, fixture-proven against
+five recovered reference deals including a complete acquisition-sensitivity
+matrix), versioned with optimistic concurrency, soft-deletable, with an
+on-screen tabular report and a six-sheet table-only Excel workbook.
+
+Deliberately NOT built (validator rejects rather than approximates; revisit only
+with controlled calibration exports): charts/chart exports, after-tax analysis,
+ten-year reports, interest-only / assumed / second / refinance loans, partner
+waterfalls, MIRR/NPV, disposition-price sensitivity, AI summaries, external
+publishing. A future **Refresh From New Budget Version** action (diff + new
+analysis version) is the planned path for re-importing after a budget changes.
+
+---
+
+## Planned — Investment Analysis phase 2 (recommended order)
+
+Recorded 2026-08 after the first staging review. Each item is independent; the
+order weighs user value against build risk. Email/SharePoint delivery is
+explicitly excluded from this plan per the owner.
+
+1. **Refresh From New Budget Version** — the analysis stays pinned to its
+   imported budget version by design; this adds the explicit re-import: pick a
+   newer version, see a field-by-field diff (imported value vs current
+   assumption), apply selectively, save as a new analysis version. The
+   provenance model already stores everything this needs.
+2. **Scenario comparison** — two or three analyses (or versions of one)
+   side-by-side: assumptions that differ highlighted, KPI/return tables in
+   columns. Reads existing endpoints only; pure UI.
+3. **More sensitivity axes** — exit-cap ± and income-growth ± grids using the
+   same preserved-base pattern the acquisition matrix proved. Engine-only
+   addition plus report tables; the fixture methodology carries over.
+4. **Goal seek** — solve purchase price for a target equity IRR or Year-1
+   DSCR (bisection over the existing engine, like the IRR solver). Turns the
+   tool from "check a deal" into "price a deal".
+5. **Assumption defaults admin** — vacancy/growth/cost defaults become an
+   admin-editable, versioned document like the pricing library
+   (pricing_admin-gated, both gates), instead of constants in
+   api/shared/investment/defaults.js.
+6. **Portfolio view** — KPI roll-up across active analyses (count, total
+   equity, weighted IRR, DSCR floor) on top of vw_InvestmentAnalyses; a
+   natural extension of the Home page linkage.
+7. **Lender tie-ins** — covenant flags on the report (DSCR below a set
+   threshold, debt yield below target) feeding the future lender-package
+   service.
+8. **After-tax & 10-year projections** — blocked on evidence, not effort:
+   requires controlled Analyst Pro calibration exports (reverse-engineering
+   spec §13) before any formula is trusted.

@@ -1,0 +1,50 @@
+{
+  "name": "Frisco",
+  "input": {
+    "schemaVersion": 1,
+    "analysisName": "Frisco Base Case",
+    "property": {
+      "name": "Frisco",
+      "address": "15390 Preston Road.",
+      "size": { "unit": "acres", "value": 6.7 },
+      "purchaseMonth": "2026-03"
+    },
+    "projection": { "years": 5, "taxMode": "beforeTax" },
+    "acquisition": { "basis": { "mode": "purchasePrice", "value": 27596732 }, "costPercent": 0.02 },
+    "income": {
+      "mode": "aggregate",
+      "year1PotentialIncome": 2713596,
+      "growth": { "mode": "constant", "value": 0.03 },
+      "otherIncome": []
+    },
+    "vacancy": { "mode": "constant", "value": 0.10 },
+    "expenses": { "mode": "percentOfGOI", "value": 0.15 },
+    "capitalExpenses": [],
+    "financing": {
+      "loans": [{
+        "label": "First Mortgage", "kind": "newAmortizing",
+        "amount": { "mode": "amount", "value": 19317712 },
+        "annualRate": 0.065, "amortizationYears": 25, "termYears": 5,
+        "feePercent": 0.01, "interestCalculation": "30/360"
+      }]
+    },
+    "disposition": { "exitCapRate": { "mode": "constant", "value": 0.07 }, "sellingCostPercent": 0.05 },
+    "reportOptions": { "includeSensitivity": false }
+  },
+  "expected": {
+    "purchasePrice": 27596732,
+    "acquisitionCapRatePct": 7.52,
+    "initialEquity": 9024131,
+    "pricePerSquareFoot": 94.56,
+    "year1PeriodEnd": "2027-02",
+    "year1NOI": 2075901,
+    "year1DSCR": 1.33,
+    "year1CashOnCashPct": 5.66,
+    "year5EquityIRRPct": 16.63,
+    "year5EquityMultiple": 2.03,
+    "year5GrossSalePrice": 34379000,
+    "year5NetSaleProceeds": 15165512,
+    "optimalHoldingYear": 2,
+    "optimalHoldingYieldPct": 17.23
+  }
+}

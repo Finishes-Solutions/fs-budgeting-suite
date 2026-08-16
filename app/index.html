@@ -17,6 +17,11 @@
      network that blocked cdnjs, and the community build of the old library could not style
      cells at all. MIT licence in vendor/exceljs-LICENSE.txt. -->
 <script src="vendor/exceljs.min.js"></script>
+<!-- The investment-analysis workflow is an external no-build module (IIFE) so
+     the inline script stays the budget application. index.html contributes only
+     the nav button, page containers, routes, and the adapter passed to init. -->
+<link rel="stylesheet" href="investment-analysis.css">
+<script src="investment-analysis.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 :root{
@@ -85,7 +90,7 @@ main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 
 label.fld{display:block}
 label.fld .lab{display:block;margin-bottom:6px;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
-input[type=text],input[type=number],input[type=password],select{
+input[type=text],input[type=number],input[type=password],input[type=month],select{
   width:100%;padding:9px 12px;border:1px solid var(--ink-200);border-radius:var(--r);
   font-family:var(--fb);font-size:14px;color:var(--ink-900);background:var(--white);outline:none;
   transition:border-color .12s,box-shadow .12s}
@@ -432,6 +437,15 @@ th.sortable.sorted{color:var(--ink-900)}
     letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:5px 6px}
   .rpt-tbl tr.grp td{background:var(--ink-100);font-family:var(--fm);font-size:7.5pt;
     letter-spacing:.08em;text-transform:uppercase;color:var(--ink-700);font-weight:600;padding:4px 6px}
+
+  /* Highlight Key Metrics (investment PDF export option): light green wash on
+     GOI, NOI, purchase price, initial investment, equity multiple, CoC and IRR.
+     The KPI band is dark, so highlighted cells there flip to dark-on-green. */
+  .rpt-tbl tr.hl td{background:#d8f3e0}
+  .rr.hl{background:#d8f3e0;padding-left:6px;padding-right:6px;margin:0 -6px;border-radius:3px}
+  .rpt-stats>div.hl{background:#d8f3e0}
+  .rpt-stats>div.hl .k{color:var(--ink-600)}
+  .rpt-stats>div.hl .v{color:var(--ink-950)}
   .rpt-tbl tr.sub-tot td{border-top:1px solid var(--ink-300);font-weight:600}
   .rpt-tbl tr.tot td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;padding-top:6px}
   .edited-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
@@ -480,6 +494,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <button id="nav-input" onclick="go('input')" data-edit-only disabled>Inputs</button>
       <button id="nav-budget" onclick="go('budget')" data-edit-only disabled>Budget</button>
       <button id="nav-csi" onclick="go('csi')" data-edit-only disabled>CSI Schedule</button>
+      <button id="nav-analyses" onclick="go('analyses')">Investment Analysis</button>
       <button id="nav-pricing" onclick="go('pricing')" data-edit-only>Pricing Library</button>
       <button id="nav-help" onclick="go('help')">How to Use</button>
     </nav>
@@ -554,6 +569,14 @@ th.sortable.sorted{color:var(--ink-900)}
       <div id="homeEmptyMsg">Create one to get started. Budgets snapshot the pricing library at creation.</div>
     </div>
   </div></div>
+
+  <!-- Investment analyses: their own list below the budgets, rendered by the
+       investment module. Row actions (Versions, Duplicate, Delete) live in
+       each row's three-dot menu, exactly like the budget rows above. -->
+  <section class="card" style="margin-top:22px">
+    <div class="card-hd"><h2>Investment Analyses</h2></div>
+    <div class="card-bd" style="padding:0" id="homeAnalyses"></div>
+  </section>
 </div>
 
 <!-- ================= INPUTS ================= -->
@@ -710,6 +733,8 @@ th.sortable.sorted{color:var(--ink-900)}
       </label>
       <button class="btn btn-ghost" onclick="go('input')">← Inputs</button>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
+      <button class="btn btn-ghost" onclick="createAnalysisFromBudget()"
+        title="Save this budget and start a five-year investment analysis from the saved version">Create Investment Analysis</button>
       <button class="btn btn-dark" onclick="openExport()">Export…</button>
     </div>
   </div>
@@ -916,6 +941,10 @@ th.sortable.sorted{color:var(--ink-900)}
 </div>
 
 <!-- ================= HOW TO USE ================= -->
+<!-- ================= INVESTMENT ANALYSIS (rendered by investment-analysis.js) -->
+<div class="page" id="page-analyses"></div>
+<div class="page" id="page-analysis"></div>
+
 <div class="page" id="page-help">
   <div class="page-title">
     <div><h1>How to Use the Budgeting Suite</h1>
@@ -932,6 +961,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <a href="#help-budget">The Budget Page</a>
       <a href="#help-csi">CSI Schedule</a>
       <a href="#help-pricing">Pricing Library</a>
+      <a href="#help-investment">Investment Analysis</a>
       <a href="#help-exports">Exports</a>
       <a href="#help-access">Who Can Do What</a>
       <a href="#help-faq">Troubleshooting</a>
@@ -1200,6 +1230,58 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></section>
 
       <section class="card"><div class="card-bd">
+        <h3 id="help-investment">Investment Analysis</h3>
+        <p>The Investment Analysis tab turns a construction budget into a five- or ten-year before-tax
+          underwriting model: operating cash flows, financing, hypothetical sales, and the returns an
+          investor would look at — cash-on-cash, DSCR, equity multiple, IRRs, leverage, and an
+          acquisition-price sensitivity table.</p>
+
+        <p><b>Starting one.</b> Open a budget and press <span class="kbd">Create Investment Analysis</span>.
+          The budget is saved first, and the analysis imports from that exact saved version — the property
+          name and address, the size, the unit mix, gross scheduled rent (unit rents × 12, never the
+          budget's net income figure), other-income rows, and the total project cost as a suggested
+          purchase price. Every imported value shows a green <b>From Budget</b> badge and stays fully
+          editable. A standalone analysis, with nothing imported, starts from the Investment Analysis tab.</p>
+
+        <div class="callout"><b>The import is a snapshot, not a live link.</b> Each analysis records the
+          exact budget version it came from. Changing the budget later never changes the analysis.</div>
+
+        <p><b>The six steps.</b> Work left to right: Source &amp; Property, Income, Vacancy &amp; Expenses,
+          Mortgage, Disposition, then Review &amp; Report. Each step ends with a <b>Next</b> button that
+          lights up green when the step's required fields are filled, and completed steps earn a checkmark
+          on their pill. Three things are never guessed for you and must be entered: the purchase month,
+          the property's complete operating expenses (the budget's service-expense rows appear as a partial
+          reference only), and the exit cap rate. Financing is either all cash or one fully amortizing
+          first mortgage entered as dollars or LTV. The projection runs five or ten years — pick on the
+          first step.</p>
+
+        <p><b>Calculate and Save.</b> <span class="kbd">Calculate</span> sends the assumptions to the
+          server and shows the report; the browser never computes results itself. Editing any input marks
+          the result stale until you recalculate. <span class="kbd">Save</span> (or
+          <span class="kbd">Cmd/Ctrl+S</span>) recalculates and stores the analysis — every meaningful save
+          records an immutable version, and a save that changed nothing records none, exactly like budgets.
+          If someone else saved the same analysis after you opened it, your save is refused with the option
+          to reload their version.</p>
+
+        <p><b>Versions.</b> Open version history from the <b>three-dot menu</b> on an analysis row — on the
+          Home page list or the Investment Analysis tab — the same way budget versions work. Old versions
+          open read-only, exactly as calculated when saved, and are never recalculated by newer formulas.</p>
+
+        <p><b>Reading the report.</b> A few conventions worth knowing: a sale at the end of a year is
+          priced on the <i>following</i> year's income at the exit cap rate, rounded to the nearest $1,000,
+          and selling costs and the loan payoff come out of that rounded price. Leverage compares the
+          equity IRR against the unleveraged property IRR — positive leverage means borrowing raised the
+          return. The optimal holding period is simply the sale year with the highest equity IRR.</p>
+
+        <p><b>Exports.</b> <span class="kbd">Export…</span> works like the budget's: pick which sections
+          to include, then produce either the branded PDF report or an Excel workbook of real numeric
+          cells. Ticking <b>Highlight Key Metrics</b> puts a light green highlight on the PDF's gross
+          operating income, net operating income, purchase price, initial investment, equity multiple,
+          cash-on-cash and IRR so they stand out at a glance. Both formats are built from the calculated
+          result and the button is disabled while the result is stale, so an export can never disagree
+          with the assumptions on screen. On phones and small screens analyses are view-only, like the
+          rest of the suite.</p>
+
         <h3 id="help-exports">Exports</h3>
         <p><span class="kbd">Export…</span> lets you pick which sections to include, then produces either format.</p>
         <table class="tbl"><tbody>
@@ -1848,13 +1930,18 @@ function editReason(it){
 /* ============ NAV + HASH ROUTING ============
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
-const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',csi:'csi',pricing:'pricing',help:'help'};
-const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',pricing:'pricing',help:'help'};
+const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help'};
+const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help'};
 const DOC_PAGES=['input','budget','csi'];
 
 function hashFor(p){
   const s=PAGE_SLUG[p]||'budgets';
-  return DOC_PAGES.includes(p)&&doc&&doc.projectId?'#/'+s+'/'+doc.projectId:'#/'+s;
+  if(DOC_PAGES.includes(p)&&doc&&doc.projectId)return '#/'+s+'/'+doc.projectId;
+  // Analysis IDs are GUIDs, not project IDs — they stay lowercase and are
+  // resolved by the investment module, never by openBudget().
+  if(p==='analysis'&&window.FSInvestmentUI&&FSInvestmentUI.currentId())
+    return '#/analysis/'+FSInvestmentUI.currentId();
+  return '#/'+s;
 }
 function syncHash(p){const h=hashFor(p);if(location.hash!==h)location.hash=h;}
 
@@ -1912,14 +1999,22 @@ function go(p){
   if(p!==currentPage&&DOC_PAGES.includes(currentPage)&&!DOC_PAGES.includes(p)&&!confirmDiscard()){
     syncHash(currentPage);return;
   }
+  // Same courtesy for an analysis with unsaved assumption edits.
+  if(p!==currentPage&&currentPage==='analysis'&&window.FSInvestmentUI&&!FSInvestmentUI.confirmLeave()){
+    syncHash(currentPage);return;
+  }
   currentPage=p;
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   document.getElementById('page-'+p).classList.add('on');
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
-  document.getElementById('nav-'+p).classList.add('on');
+  // The analysis editor has no nav button of its own — it lights the
+  // Investment Analysis tab, the way budget pages light their own tabs.
+  const nb=document.getElementById('nav-'+(p==='analysis'?'analyses':p));
+  if(nb)nb.classList.add('on');
   syncHash(p);
   renderSaveState();
   if(p==='home')renderHome();
+  if(p==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
   if(p==='pricing'){renderPricing();renderCatalog();}
   if(p==='budget'||p==='input'||p==='csi')recalc();
   window.scrollTo(0,0);
@@ -1932,6 +2027,15 @@ async function routeFromHash(){
   if(h&&h.slice(0,2)!=='#/')return;
   const seg=h.replace(/^#\/?/,'').split('/');
   const p=SLUG_PAGE[seg[0]]||'home';
+  // Analysis routes carry a GUID, which must never be uppercased or matched
+  // against ID_RX — the investment module owns loading it.
+  if(p==='analysis'){
+    const gid=(seg[1]||'').toLowerCase();
+    if(!gid){go('analyses');return;}
+    if(currentPage==='analysis'&&window.FSInvestmentUI&&FSInvestmentUI.currentId()===gid)return;
+    if(window.FSInvestmentUI){await FSInvestmentUI.open(gid);go('analysis');}
+    return;
+  }
   const id=(seg[1]||'').toUpperCase();
   if(p===currentPage&&(!id||(doc&&doc.projectId===id)))return;   // already where the hash points
   if(DOC_PAGES.includes(p)){
@@ -1946,6 +2050,10 @@ window.addEventListener('hashchange',routeFromHash);
 async function renderHome(){
   index=(await sGet('budgets-index'))||[];
   paintHome();
+  // The investment analyses render as their own list below the budgets; a
+  // failure there must never blank the budget list, so it renders separately.
+  if(window.FSInvestmentUI)
+    FSInvestmentUI.renderListInto(document.getElementById('homeAnalyses'),{embedded:true});
 }
 function homeRows(){
   const q=homeView.q.trim().toLowerCase();
@@ -3048,6 +3156,37 @@ function recalc(){
 }
 
 /* ============ SAVE ============ */
+/* ---- investment-analysis integration ----
+   The module needs structured errors (409 conflicts, field-keyed validation),
+   which the budget api() helper flattens into messages, so it gets its own
+   thin wrapper sharing the same health banner. */
+async function invApi(path,opts={}){
+  let r;
+  try{
+    r=await fetch('/api/'+path,{headers:{'Content-Type':'application/json'},...opts});
+  }catch(e){setApiHealth(false,'Cannot reach the server — check your connection, then reload.');
+    const err=new Error('Network error');throw err;}
+  if(r.status>=500)setApiHealth(false,'The server returned '+r.status+' on /api/'+path+'.');
+  else setApiHealth(true);
+  let body=null;try{body=await r.json();}catch(_){}
+  if(!r.ok){
+    const err=new Error((body&&body.message)||('API '+r.status));
+    err.status=r.status;err.body=body;err.fields=body&&body.fields;
+    throw err;
+  }
+  return body;
+}
+/* Creating an analysis snapshots an exact immutable budget version, so unsaved
+   edits are saved first — the analysis must be born from what the database
+   holds, not from what the screen shows. */
+async function createAnalysisFromBudget(){
+  if(!doc){toast('Open or create a budget first');return;}
+  if(dirty||!doc.updated){await saveBudget(false);if(dirty){return;}}
+  try{
+    await FSInvestmentUI.createFromBudget(doc.projectId);
+  }catch(e){toast('Could not create the analysis — '+e.message);}
+}
+
 async function saveBudget(show){
   if(!doc||saving)return;
   // In template mode the same Save affordance publishes a template version instead
@@ -3649,6 +3788,11 @@ function wireDelegates(){
     // Cmd/Ctrl+S saves rather than letting the browser offer to save the page.
     if((e.metaKey||e.ctrlKey)&&(e.key==='s'||e.key==='S')){
       e.preventDefault();
+      // The shortcut saves the ACTIVE document type — an open analysis on its
+      // page, the budget everywhere else. Never both.
+      if(currentPage==='analysis'&&window.FSInvestmentUI&&FSInvestmentUI.currentId()){
+        FSInvestmentUI.save();return;
+      }
       if(!doc){toast('Open or create a budget first');return;}
       if(saving)return;
       // commit whatever field is focused before reading the form
@@ -3690,6 +3834,19 @@ function endBoot(){
 (async function init(){
   startBoot();
   try{
+    if(window.FSInvestmentUI)FSInvestmentUI.init({
+      api:invApi,toast,esc,
+      navigate:h=>{location.hash=h;},
+      // Same print pipeline as the budget's exportPDF(): a purpose-made
+      // document in #printDoc, never the app UI.
+      print:html=>{
+        document.getElementById('printDoc').innerHTML=html;
+        document.body.classList.add('printing');
+        window.print();
+        setTimeout(()=>{document.body.classList.remove('printing');
+          document.getElementById('printDoc').innerHTML='';},600);
+      }
+    });
     await initAuth();
     const published=await sGet('pricing-multifamily');   // API-first; built-in seed as fallback
     pricingFromApi=!!published;

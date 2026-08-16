@@ -11,7 +11,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // every TOC entry must scroll within the guide, never navigate away
  const links=await p.locator('#helpToc a').all();
- ok('TOC has 10 entries', links.length===10, links.length+'');
+ ok('TOC has 11 entries', links.length===11, links.length+'');
  let bad=[];
  for(const a of links){
    const href=await a.getAttribute('href');

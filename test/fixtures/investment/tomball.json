@@ -1,0 +1,50 @@
+{
+  "name": "Tomball",
+  "input": {
+    "schemaVersion": 1,
+    "analysisName": "Tomball Base Case",
+    "property": {
+      "name": "Tomball Gas Station",
+      "address": "0 Medical Complex Dr",
+      "size": { "unit": "acres", "value": 4.3 },
+      "purchaseMonth": "2025-12"
+    },
+    "projection": { "years": 5, "taxMode": "beforeTax" },
+    "acquisition": { "basis": { "mode": "purchasePrice", "value": 9847953 }, "costPercent": 0.02 },
+    "income": {
+      "mode": "aggregate",
+      "year1PotentialIncome": 848050,
+      "growth": { "mode": "constant", "value": 0.03 },
+      "otherIncome": []
+    },
+    "vacancy": { "mode": "constant", "value": 0.10 },
+    "expenses": { "mode": "percentOfGOI", "value": 0.05 },
+    "capitalExpenses": [],
+    "financing": {
+      "loans": [{
+        "label": "First Mortgage", "kind": "newAmortizing",
+        "amount": { "mode": "amount", "value": 6401170 },
+        "annualRate": 0.065, "amortizationYears": 25, "termYears": 5,
+        "feePercent": 0.01, "interestCalculation": "30/360"
+      }]
+    },
+    "disposition": { "exitCapRate": { "mode": "constant", "value": 0.07 }, "sellingCostPercent": 0.05 },
+    "reportOptions": { "includeSensitivity": false }
+  },
+  "expected": {
+    "purchasePrice": 9847953,
+    "acquisitionCapRatePct": 7.36,
+    "initialEquity": 3707754,
+    "pricePerSquareFoot": 52.58,
+    "year1PeriodEnd": "2026-11",
+    "year1NOI": 725083,
+    "year1DSCR": 1.40,
+    "year1CashOnCashPct": 5.57,
+    "year5EquityIRRPct": 14.33,
+    "year5EquityMultiple": 1.85,
+    "year5GrossSalePrice": 12008000,
+    "year5NetSaleProceeds": 5610562,
+    "optimalHoldingYear": 5,
+    "optimalHoldingYieldPct": 14.33
+  }
+}

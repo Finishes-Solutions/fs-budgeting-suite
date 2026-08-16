@@ -2,6 +2,7 @@ const { getPool, sql } = require('../shared/db');
 const { getPrincipal } = require('../shared/auth');
 const { contentHash, contentEquals, parseDoc } = require('../shared/canonical');
 const { sovRows, writeSovLines, insertVersion } = require('../shared/versioning');
+const { parts } = require('../shared/budget-calc');
 
 // TST-#### are throwaway test budgets used to exercise preview environments against
 // this same database. They are real rows; sql/cleanup_test_budgets.sql purges them and
@@ -108,14 +109,23 @@ module.exports = async function (context, req) {
       const templateVersionId = doc.templateVersionId || (existing && existing.TemplateVersionId) || null;
       const docJson = JSON.stringify(doc);
 
+      // Summary money is derived from the document, never trusted from meta:
+      // a tampered meta.contractSum/projectCost must not change stored totals,
+      // and the investment-analysis prefill reads these values back. The meta
+      // fields stay in the request shape for client compatibility; they are
+      // simply no longer believed.
+      const calc = parts(doc);
+      const contractSum = Math.round(calc.contract * 100) / 100;
+      const projectCost = Math.round(calc.project * 100) / 100;
+
       // Saving a soft-deleted ProjectId restores it: recreate means recover.
       await new sql.Request(tx)
         .input('id', sql.VarChar(16), id)
         .input('name', sql.NVarChar(200), meta.name || '')
         .input('type', sql.NVarChar(50), meta.type || 'Multifamily')
         .input('status', sql.NVarChar(30), meta.status || 'Draft')
-        .input('cs', sql.Decimal(18, 2), meta.contractSum || 0)
-        .input('pc', sql.Decimal(18, 2), meta.projectCost || 0)
+        .input('cs', sql.Decimal(18, 2), contractSum)
+        .input('pc', sql.Decimal(18, 2), projectCost)
         .input('pv', sql.NVarChar(32), doc.pricingVersion || '')
         .input('tk', sql.VarChar(64), templateKey)
         .input('tv', sql.BigInt, templateVersionId)
@@ -147,7 +157,7 @@ module.exports = async function (context, req) {
         await insertVersion(tx, {
           projectId: id, versionNumber,
           name: meta.name, type: meta.type, status: meta.status,
-          contractSum: meta.contractSum, projectCost: meta.projectCost,
+          contractSum, projectCost,
           pricingVersion: doc.pricingVersion,
           templateKey, templateVersionId,
           docJson, contentHash: incomingHash,

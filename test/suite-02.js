@@ -59,9 +59,13 @@ const BASE = 'http://127.0.0.1:8100';
     const mk = (id, name, cs, status, updated) => fetch('/api/budget/' + id, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        // contractSum/projectCost are derived from the doc server-side now, so the
+        // doc itself must carry the money: one lump-sum line worth cs.
         meta: { projectId: id, name, type: 'Multifamily', status, contractSum: cs, projectCost: cs * 1.3, updated },
-        doc: { projectId: id, name, status, resSF: 1000, amenSF: 0, units: [], other: [], expenses: [], lines: [],
-               companies: [], contingency: { mode: 'psf', val: 2 }, projectCosts: { land: 0, dev: 0, mkt: 0, cls: 0 },
+        doc: { projectId: id, name, status, resSF: 1000, amenSF: 0, units: [], other: [], expenses: [],
+               lines: [{ lineId: id + '-shell', scope: 'res', grp: 'General', code: '', desc: 'Shell',
+                         basis: 'ls', auto: true, qty: 0, unit: cs }],
+               companies: [], contingency: { mode: 'fixed', val: 0 }, projectCosts: { land: 0, dev: 0, mkt: 0, cls: 0 },
                pricingVersion: '2026.08-v2' }
       })
     });
@@ -289,6 +293,45 @@ const BASE = 'http://127.0.0.1:8100';
   });
   ok('Sign Out is blocked by unsaved changes', stayed.includes('index.html') || stayed.startsWith('/'),
      stayed);
+
+  // ---- investment analyses list on the Home page, below the budgets
+  await p.evaluate(async () => {
+    await fetch('/api/investment-analyses', { method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'fromBudget', projectId: 'BD-0001', analysisName: 'Alpha Underwriting' }) });
+  });
+  await p.click('#nav-help'); await p.click('#nav-home');   // force a refetch
+  await p.waitForTimeout(500);
+  ok('Home carries a separate Investment Analyses section below the budgets',
+     await p.evaluate(() => {
+       const budgets = document.getElementById('homeBody'), sec = document.getElementById('homeAnalyses');
+       return !!sec && !!(budgets.compareDocumentPosition(sec) & Node.DOCUMENT_POSITION_FOLLOWING);
+     }));
+  const iaRow = p.locator('#homeAnalyses [data-inv-list] tr', { hasText: 'Alpha Underwriting' }).first();
+  ok('the analysis lists with its project', /BD-0001/.test(await iaRow.textContent().catch(() => '')),
+     await iaRow.textContent().catch(() => 'row missing'));
+  ok('budget rows carry no analysis chips anymore', (await p.locator('.ia-chip').count()) === 0);
+  ok('no emoji in the analyses section', !/[\u{1F300}-\u{1FAFF}]/u.test(await p.locator('#homeAnalyses').textContent()));
+
+  // versions open from the row's three-dot menu, like budgets
+  await iaRow.locator('.rowmenu-btn').click();
+  await p.waitForTimeout(200);
+  const menuItems = await p.locator('#invRowMenu .rowmenu-item').allTextContents();
+  ok('three-dot menu offers Open, Versions, Duplicate, Delete',
+     JSON.stringify(menuItems) === JSON.stringify(['Open Analysis', 'Versions', 'Duplicate', 'Delete Analysis']),
+     menuItems.join(','));
+  await p.locator('#invRowMenu .rowmenu-item', { hasText: 'Versions' }).click();
+  await p.waitForTimeout(500);
+  ok('Versions opens the history modal from the Home list',
+     /Version History/.test(await p.locator('#invModal').textContent().catch(() => '')));
+  await p.click('#invModal .btn-x');
+  await iaRow.click();
+  await p.waitForTimeout(600);
+  ok('clicking the row opens the analysis',
+     /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()) && await p.locator('#page-analysis').evaluate(e => e.classList.contains('on')),
+     p.url());
+  ok('the editor toolbar has no Versions button',
+     (await p.locator('#page-analysis .page-title button', { hasText: 'Versions' }).count()) === 0);
 
  ok('No uncaught JS errors', errs.length === 0, errs.join(' | '));
   console.log(R.join('\n'));
