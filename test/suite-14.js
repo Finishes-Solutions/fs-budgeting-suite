@@ -85,6 +85,16 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('workbook records the calculation version', eng&&eng[0]==='before-tax-1.1.0', JSON.stringify(eng));
  const sv=find('Assumptions','Saved Analysis Version');
  ok('workbook records the saved analysis version', sv&&sv[0]===1);
+ ok('every sheet opens with the brand band',
+    wb.names.every(n=>wb.sheets[n][0]&&wb.sheets[n][0][0]==='FINISHES SOLUTIONS'),
+    JSON.stringify(wb.names.map(n=>wb.sheets[n][0]&&wb.sheets[n][0][0])));
+ ok('summary sheet carries the mortgage details like the PDF',
+    find('Investment Summary','Monthly Payment')!==null
+    && find('Investment Summary','Initial LTV')!==null);
+ ok('sale sheet carries the loan payoff', (()=>{const lp=find('Debt and Sale','Loan Payoff');
+    return lp&&lp.every((v,i)=>Math.abs(-v-A[i].endingLoanBalance)<0.01);})());
+ ok('returns sheet notes the optimal holding period',
+    wb.sheets['Returns'].some(r=>/Optimal holding period/.test(String(r[0]))));
 
  // ---- PDF (Print): reached through the Export… modal (like the budget),
  // composed from the canonical result into #printDoc. Tables only — no charts.
