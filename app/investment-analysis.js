@@ -175,6 +175,42 @@
     return r.analysisId;
   }
 
+  /* ---- Home-page creation, mirroring the budget buttons ----
+     "+ Blank Investment Analysis" creates an unlinked analysis directly (the
+     name is edited on step 1); "+ New Investment Analysis" asks which project
+     it is for, then snapshots that project's latest saved budget version. */
+  async function createBlank() {
+    try {
+      const r = await A.api('investment-analyses', { method: 'POST',
+        body: JSON.stringify({ mode: 'standalone', analysisName: 'Untitled Analysis' }) });
+      A.toast('Blank analysis — name it on the Source & Property step.');
+      A.navigate('#/analysis/' + r.analysisId);
+    } catch (e) { A.toast('Could not create the analysis — ' + e.message); }
+  }
+
+  async function openProjectPicker() {
+    let budgets = [];
+    try { budgets = await A.api('budgets'); }
+    catch (e) { A.toast('Could not load the project list — ' + e.message); return; }
+    const rows = budgets.map((b, i) => `<tr class="clickable" data-pick="${i}">
+        <td class="mono">${esc(b.projectId)}</td><td><b>${esc(b.name || '—')}</b></td>
+        <td>${esc(b.status || '—')}</td><td>${esc((b.updated || '').slice(0, 10))}</td></tr>`).join('');
+    openInvModal(`<h2 style="margin-top:0">New Investment Analysis</h2>
+      <p style="font-size:12.5px;color:var(--ink-500)">Select the project this analysis is for. It is created
+      from that project's latest saved budget version — an exact snapshot, so the budget changing later
+      never changes the analysis.</p>
+      ${budgets.length
+        ? `<table class="inv-table" id="invProjectPick"><thead><tr><th>Project ID</th><th>Name</th>
+           <th>Status</th><th>Updated</th></tr></thead><tbody>${rows}</tbody></table>`
+        : '<div class="empty">No budgets yet. Create a budget first, or start a Blank Investment Analysis.</div>'}`, 640);
+    el('invModal').querySelectorAll('[data-pick]').forEach(tr => tr.addEventListener('click', async () => {
+      const b = budgets[+tr.dataset.pick];
+      closeInvModal();
+      try { await createFromBudget(b.projectId); }
+      catch (e) { A.toast('Could not create the analysis — ' + e.message); }
+    }));
+  }
+
   async function softDelete(id) {
     if (!confirm('Delete this investment analysis?\n\nIt can be restored by an administrator; its version history is kept.')) return;
     try {
@@ -952,7 +988,7 @@
       return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + label + '</td>'
         + years.map(a => '<td class="r mono">' + f(a) + '</td>').join('') + '</tr>';
     };
-    const hlc = base => (base || '') + (o.highlight ? ' hl' : '');
+    const hlc = base => o.highlight ? (base ? base + ' hl' : 'hl') : (base || '');
     const yearHeads = ['', ...years.map(a => 'Y' + a.year + ' · ' + a.periodEnd)];
 
     let h = `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
@@ -965,12 +1001,14 @@
         ${src ? 'From budget <span class="mono">' + esc(src.projectId) + '</span> v' + esc(src.budgetVersionNumber) : 'Standalone Analysis'}${st.loadedVersion ? '<br>Analysis v' + st.loadedVersion : ''}</div>
     </div>`;
 
+    // The KPI band never highlights — Highlight Key Metrics marks only the
+    // table and line-item rows further down, per the owner's preference.
     if (o.kpis) {
     h += '<section class="rpt-stats">'
-      + [['Purchase Price', usd(s.purchasePrice), 1], ['Acquisition Cap', pctf(s.acquisitionCapRate), 0],
-         ['Initial Equity', usd(s.initialEquity), 1], ['Equity IRR', pctf(s.finalYearEquityIRR), 1],
-         ['Optimal Hold', s.optimalHoldingYear ? 'Year ' + s.optimalHoldingYear + ' · ' + pctf(s.optimalHoldingYield) : '—', 0]]
-        .map(([k, v, hl]) => '<div' + (hl && o.highlight ? ' class="hl"' : '') + '><div class="k">' + k + '</div><div class="v">' + v + '</div></div>').join('')
+      + [['Purchase Price', usd(s.purchasePrice)], ['Acquisition Cap', pctf(s.acquisitionCapRate)],
+         ['Initial Equity', usd(s.initialEquity)], ['Equity IRR', pctf(s.finalYearEquityIRR)],
+         ['Optimal Hold', s.optimalHoldingYear ? 'Year ' + s.optimalHoldingYear + ' · ' + pctf(s.optimalHoldingYield) : '—']]
+        .map(([k, v]) => '<div><div class="k">' + k + '</div><div class="v">' + v + '</div></div>').join('')
       + '</section>';
 
     h += '<section class="rpt-sec"><h2>Acquisition &amp; Initial Investment</h2><div class="rpt-2col"><div>'
@@ -1261,7 +1299,8 @@
   /* ================= public surface ================= */
   window.FSInvestmentUI = {
     init(adapter) { A = adapter; },
-    renderList, renderListInto, open, createFromBudget, createStandalone, softDelete,
+    renderList, renderListInto, open, createFromBudget, createStandalone,
+    createBlank, openProjectPicker, softDelete,
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep,
     openExport, exportWorkbook, exportPDF, addOtherIncome, addCapex,
     _other, _otherRemove, _capex, _capexRemove,

@@ -89,6 +89,32 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('analysis input unchanged by the budget edit',
     after.input.acquisition.basis.value===5000000);
 
+ // ---- Home-page creation buttons, mirroring the budget buttons above them
+ await p.click('#nav-home'); await p.waitForTimeout(600);
+ ok('Home offers both analysis creation buttons',
+    (await p.locator('#page-home button:has-text("+ New Investment Analysis")').count())===1
+    && (await p.locator('#page-home button:has-text("+ Blank Investment Analysis")').count())===1);
+ await p.click('#page-home button:has-text("+ New Investment Analysis")');
+ await p.waitForTimeout(400);
+ ok('New Investment Analysis asks which project it is for',
+    (await p.locator('#invProjectPick tbody tr',{hasText:'TST-9911'}).count())===1);
+ await p.locator('#invProjectPick tbody tr',{hasText:'TST-9911'}).first().click();
+ await p.waitForTimeout(900);
+ ok('picking a project opens a linked analysis', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
+ const linked=await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
+   return await (await fetch('/api/investment-analysis/'+id)).json();});
+ ok('the picked analysis is linked to the selected project',
+    linked.source&&linked.source.projectId==='TST-9911', JSON.stringify(linked.source||null));
+ await p.click('#nav-home'); await p.waitForTimeout(600);
+ await p.click('#page-home button:has-text("+ Blank Investment Analysis")');
+ await p.waitForTimeout(900);
+ ok('Blank Investment Analysis opens a new editor directly', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
+ const blank=await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
+   return await (await fetch('/api/investment-analysis/'+id)).json();});
+ ok('the blank analysis is unlinked and carries the placeholder name',
+    !blank.source && blank.input.analysisName==='Untitled Analysis',
+    JSON.stringify({source:blank.source,name:blank.input&&blank.input.analysisName}));
+
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();
