@@ -439,13 +439,10 @@ th.sortable.sorted{color:var(--ink-900)}
     letter-spacing:.08em;text-transform:uppercase;color:var(--ink-700);font-weight:600;padding:4px 6px}
 
   /* Highlight Key Metrics (investment PDF export option): light green wash on
-     GOI, NOI, purchase price, initial investment, equity multiple, CoC and IRR.
-     The KPI band is dark, so highlighted cells there flip to dark-on-green. */
+     GOI, NOI, purchase price, initial investment, equity multiple, CoC and IRR —
+     table and line-item rows only, never the KPI band at the top of page one. */
   .rpt-tbl tr.hl td{background:#d8f3e0}
   .rr.hl{background:#d8f3e0;padding-left:6px;padding-right:6px;margin:0 -6px;border-radius:3px}
-  .rpt-stats>div.hl{background:#d8f3e0}
-  .rpt-stats>div.hl .k{color:var(--ink-600)}
-  .rpt-stats>div.hl .v{color:var(--ink-950)}
   .rpt-tbl tr.sub-tot td{border-top:1px solid var(--ink-300);font-weight:600}
   .rpt-tbl tr.tot td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;padding-top:6px}
   .edited-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
@@ -574,7 +571,12 @@ th.sortable.sorted{color:var(--ink-900)}
        investment module. Row actions (Versions, Duplicate, Delete) live in
        each row's three-dot menu, exactly like the budget rows above. -->
   <section class="card" style="margin-top:22px">
-    <div class="card-hd"><h2>Investment Analyses</h2></div>
+    <div class="card-hd"><h2>Investment Analyses</h2>
+      <div style="display:flex;gap:10px" data-edit-only>
+        <button class="btn btn-ghost" onclick="FSInvestmentUI.createBlank()">+ Blank Investment Analysis</button>
+        <button class="btn btn-primary" onclick="FSInvestmentUI.openProjectPicker()">+ New Investment Analysis</button>
+      </div>
+    </div>
     <div class="card-bd" style="padding:0" id="homeAnalyses"></div>
   </section>
 </div>
@@ -1236,12 +1238,17 @@ th.sortable.sorted{color:var(--ink-900)}
           investor would look at — cash-on-cash, DSCR, equity multiple, IRRs, leverage, and an
           acquisition-price sensitivity table.</p>
 
-        <p><b>Starting one.</b> Open a budget and press <span class="kbd">Create Investment Analysis</span>.
-          The budget is saved first, and the analysis imports from that exact saved version — the property
+        <p><b>Starting one.</b> Three ways, all equivalent once the editor opens. On the Home page,
+          <span class="kbd">+ New Investment Analysis</span> asks which project the analysis is for and
+          creates it from that project's latest saved budget version, while
+          <span class="kbd">+ Blank Investment Analysis</span> creates one unlinked to any project (named
+          Untitled Analysis until you rename it on the first step). Or open a budget and press
+          <span class="kbd">Create Investment Analysis</span> — the budget is saved first, and the
+          analysis imports from that exact saved version. A linked analysis imports the property
           name and address, the size, the unit mix, gross scheduled rent (unit rents × 12, never the
           budget's net income figure), other-income rows, and the total project cost as a suggested
           purchase price. Every imported value shows a green <b>From Budget</b> badge and stays fully
-          editable. A standalone analysis, with nothing imported, starts from the Investment Analysis tab.</p>
+          editable. Standalone analyses can also be started by name from the Investment Analysis tab.</p>
 
         <div class="callout"><b>The import is a snapshot, not a live link.</b> Each analysis records the
           exact budget version it came from. Changing the budget later never changes the analysis.</div>

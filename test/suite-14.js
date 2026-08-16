@@ -123,9 +123,11 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('highlighted PDF marks GOI and NOI', hlRow('Gross Operating Income')&&hlRow('Net Operating Income'));
  ok('highlighted PDF marks CoC, equity multiple and IRR rows',
     hlRow('Cash-on-Cash')&&hlRow('Equity Multiple')&&hlRow('Equity IRR')&&hlRow('Property IRR'));
- ok('highlighted PDF marks purchase price and initial investment',
-    /class="hl"><div class="k">Purchase Price/.test(pdfH)
+ ok('highlighted PDF marks the purchase price and initial investment line items',
+    /class="rr hl"><span>Purchase Price/.test(pdfH)
     && /class="[^"]*\bhl\b[^"]*"><span>Initial Equity Investment/.test(pdfH));
+ ok('the KPI band at the top never highlights',
+    !/rpt-stats[^]*?class="[^"]*\bhl\b/.test(pdfH.split('rpt-sec')[0]));
  ok('the on-screen report never carries the highlight',
     !/class="[^"]*\bhl\b/.test(await p.evaluate(()=>document.getElementById('invReport').innerHTML)));
  // the choice sticks for the next export from this page
