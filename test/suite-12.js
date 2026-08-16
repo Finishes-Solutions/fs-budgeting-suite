@@ -61,8 +61,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // save → version 1; reload and compare the persisted report values
  // (report fidelity is asserted against the SAVED canonical result below)
  await p.click('#invSaveBtn'); await p.waitForTimeout(800);
- ok('save records version 1', /Saved · v1/.test(await p.locator('#invState').textContent()),
+ ok('save shows the Saved pill', /Saved/.test(await p.locator('#invState').textContent()),
     await p.locator('#invState').textContent());
+ ok('save recorded version 1', (await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];return (await (await fetch('/api/investment-analysis/'+id)).json()).currentVersionNumber;}))===1);
  const aid=p.url().match(/analysis\/([0-9a-f-]{36})/)[1];
  const saved=await p.evaluate(async id=>await (await fetch('/api/investment-analysis/'+id)).json(),aid);
  const a1=saved.result.annual[0];
@@ -75,13 +76,14 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     shows(a1.grossSalePrice)&&a1.grossSalePrice%1000===0, String(a1.grossSalePrice));
  ok('report shows net sale proceeds', shows(a1.netSaleProceeds));
  ok('all-cash report hides debt tables', !/DSCR/.test(rpt));
- ok('provenance names the engine version', /before-tax-1\.1\.0/.test(rpt));
+ ok('on-screen report carries no engine version string', !/before-tax-1\.1\.0/.test(rpt));
 
  // reload from the hash — the persisted state must reproduce the same report
  await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(800);
  const rpt2=await p.locator('#invReport').textContent();
  ok('reload reproduces the saved report', rpt2.includes('$'+Math.round(a1.netOperatingIncome).toLocaleString('en-US')));
- ok('reopen restores Saved state', /Saved · v1/.test(await p.locator('#invState').textContent()));
+ ok('reopen restores Saved state', /Saved/.test(await p.locator('#invState').textContent()));
+ ok('pill carries no version number', !/v\d/.test(await p.locator('#invState').textContent()));
 
  // switch to financed → stale → recalc shows debt tables
  await p.click('#invSteps button[data-step="4"]');
@@ -109,8 +111,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // keyboard save on the analysis page saves the analysis
  await p.keyboard.press(MOD+'+s'); await p.waitForTimeout(800);
- ok('Cmd/Ctrl+S saves the analysis as version 2', /Saved · v2/.test(await p.locator('#invState').textContent()),
+ ok('Cmd/Ctrl+S saves the analysis', /Saved/.test(await p.locator('#invState').textContent()),
     await p.locator('#invState').textContent());
+ ok('keyboard save recorded version 2', (await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];return (await (await fetch('/api/investment-analysis/'+id)).json()).currentVersionNumber;}))===2);
 
  // navigation guard: dirty analysis prompts before leaving
  // (calculate jumped the editor to the Review step, so surface step 4 again)

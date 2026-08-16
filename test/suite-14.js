@@ -27,7 +27,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#invSteps button[data-step="5"]');
  await p.fill('[data-f="disposition.exitCapRate.value"]','6.8');
  await p.click('#invSaveBtn'); await p.waitForTimeout(900);
- ok('analysis saved for export', /Saved · v1/.test(await p.locator('#invState').textContent()));
+ ok('analysis saved for export', /Saved/.test(await p.locator('#invState').textContent()));
 
  // capture the download and re-open the workbook with the same ExcelJS build
  const wb=await p.evaluate(async()=>{
@@ -86,12 +86,17 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const sv=find('Assumptions','Saved Analysis Version');
  ok('workbook records the saved analysis version', sv&&sv[0]===1);
 
- // ---- PDF (Print): composed from the canonical result into #printDoc via
- // the app's print pipeline. Tables only — no charts, no SVG.
+ // ---- PDF (Print): reached through the Export… modal (like the budget),
+ // composed from the canonical result into #printDoc. Tables only — no charts.
  await p.evaluate(()=>{window.__rpt=null;window.print=()=>{window.__rpt=document.getElementById('printDoc').innerHTML;};});
- await p.click('#invPdfBtn');
+ await p.click('#invExportBtn'); await p.waitForTimeout(200);
+ ok('Export button opens the options modal with the highlight choice',
+    await p.locator('#invModal #inv-ex-highlight').count()===1
+    && !(await p.locator('#invModal #inv-ex-highlight').isChecked()));
+ await p.click('#invModal button:has-text("PDF (Print)")');
  await p.waitForTimeout(400);
  const pdf=await p.evaluate(()=>window.__rpt||'');
+ ok('export modal closes after producing the PDF', (await p.locator('#invModal').count())===0);
  ok('PDF export produces a print document', pdf.length>2000, pdf.length+' chars');
  ok('print doc carries the branded KPI band', /rpt-stats/.test(pdf) && /Purchase Price/.test(pdf));
  const showsPdf=v=>pdf.includes('$'+Math.round(v).toLocaleString('en-US'));
@@ -102,16 +107,38 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     /before-tax-1\.1\.0/.test(pdf) && /Analysis v1/.test(pdf));
  ok('print doc includes the sensitivity matrix', /Acquisition-Price Sensitivity/.test(pdf));
  ok('print doc has no charts or SVG', !/<svg|data-chart/.test(pdf));
+ ok('highlight is off by default — no hl classes in the PDF', !/class="[^"]*\bhl\b/.test(pdf));
  await p.waitForTimeout(700);
- ok('screen state untouched by printing', /Saved · v1/.test(await p.locator('#invState').textContent()));
+ ok('screen state untouched by printing', /Saved/.test(await p.locator('#invState').textContent()));
+
+ // ---- Highlight Key Metrics: rerun the PDF with the option ticked — GOI,
+ // NOI, purchase price, initial investment, equity multiple, CoC and IRR
+ // rows carry the light green hl class.
+ await p.click('#invExportBtn'); await p.waitForTimeout(200);
+ await p.check('#inv-ex-highlight');
+ await p.click('#invModal button:has-text("PDF (Print)")');
+ await p.waitForTimeout(400);
+ const pdfH=await p.evaluate(()=>window.__rpt||'');
+ const hlRow=l=>new RegExp('<tr class="[^"]*\\bhl\\b[^"]*"><td>'+l).test(pdfH);
+ ok('highlighted PDF marks GOI and NOI', hlRow('Gross Operating Income')&&hlRow('Net Operating Income'));
+ ok('highlighted PDF marks CoC, equity multiple and IRR rows',
+    hlRow('Cash-on-Cash')&&hlRow('Equity Multiple')&&hlRow('Equity IRR')&&hlRow('Property IRR'));
+ ok('highlighted PDF marks purchase price and initial investment',
+    /class="hl"><div class="k">Purchase Price/.test(pdfH)
+    && /class="[^"]*\bhl\b[^"]*"><span>Initial Equity Investment/.test(pdfH));
+ ok('the on-screen report never carries the highlight',
+    !/class="[^"]*\bhl\b/.test(await p.evaluate(()=>document.getElementById('invReport').innerHTML)));
+ // the choice sticks for the next export from this page
+ await p.click('#invExportBtn'); await p.waitForTimeout(200);
+ ok('highlight choice is remembered in the modal', await p.locator('#inv-ex-highlight').isChecked());
+ await p.click('#invModal .btn-x'); await p.waitForTimeout(150);
 
  // exporting with stale inputs is refused (both exports must match the inputs)
  await p.click('#invSteps button[data-step="2"]');
  await p.fill('[data-f="income.year1PotentialIncome"]','430000');
  await p.locator('[data-f="income.year1PotentialIncome"]').dispatchEvent('change');
  await p.waitForTimeout(200);
- ok('stale result disables the workbook button', await p.evaluate(()=>document.getElementById('invXlsxBtn').disabled));
- ok('stale result disables the PDF button too', await p.evaluate(()=>document.getElementById('invPdfBtn').disabled));
+ ok('stale result disables the Export button', await p.evaluate(()=>document.getElementById('invExportBtn').disabled));
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

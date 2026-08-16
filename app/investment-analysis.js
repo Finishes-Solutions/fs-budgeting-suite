@@ -257,7 +257,7 @@
       btn.disabled = !done;
       btn.classList.toggle('ready', done);
       nav.querySelector('.inv-stepnav-hint').textContent = done
-        ? 'Step complete.'
+        ? 'Step Complete'
         : 'Fill in the required fields on this step to continue.';
     });
   }
@@ -278,13 +278,12 @@
         <div><h1 id="invTitle">${esc(inp.analysisName)}</h1>
           <div class="sub">${st.source
             ? 'From budget <span class="mono">' + esc(st.source.projectId) + '</span> version ' + esc(st.source.budgetVersionNumber)
-            : 'Standalone analysis'} · engine <span class="mono">before-tax-1.1.0</span></div></div>
+            : 'Standalone Analysis'}</div></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
           <span class="inv-statebar" id="invState"></span>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
-          <button class="btn btn-ghost" data-inv-edit id="invPdfBtn" onclick="FSInvestmentUI.exportPDF()">PDF (Print)</button>
-          <button class="btn btn-dark" data-inv-edit id="invXlsxBtn" onclick="FSInvestmentUI.exportWorkbook()">Excel Workbook</button>
+          <button class="btn btn-dark" data-inv-edit id="invExportBtn" onclick="FSInvestmentUI.openExport()">Export…</button>
         </div>
       </div>
       <div id="invConflict"></div>
@@ -528,12 +527,10 @@
     if (st.conflict) pills.push('<span class="inv-pill conflict">Save conflict</span>');
     if (st.dirty) pills.push('<span class="inv-pill dirty">Unsaved changes</span>');
     if (st.stale && st.result) pills.push('<span class="inv-pill stale">Result is stale — recalculate</span>');
-    if (!st.dirty && !st.busy && st.loadedVersion >= 1) pills.push('<span class="inv-pill saved">Saved · v' + st.loadedVersion + '</span>');
+    if (!st.dirty && !st.busy && st.loadedVersion >= 1) pills.push('<span class="inv-pill saved">Saved</span>');
     bar.innerHTML = pills.join('');
     // Both exports must match the inputs: disabled while the result is stale.
-    const exportable = !!st.result && !st.stale;
-    const x = el('invXlsxBtn'); if (x) x.disabled = !exportable;
-    const pdf = el('invPdfBtn'); if (pdf) pdf.disabled = !exportable;
+    const ex = el('invExportBtn'); if (ex) ex.disabled = !st.result || st.stale;
   }
 
   /* ---- dynamic rows ---- */
@@ -725,14 +722,13 @@
         <td>${esc((v.createdAt || '').slice(0, 16).replace('T', ' '))}</td>
         <td>${esc(v.createdByName || '—')}</td>
         <td class="r mono">${usd(v.purchasePrice)}</td>
-        <td class="r mono">${pctf(v.finalYearEquityIRR)}</td>
-        <td class="mono" style="font-size:11px">${esc(v.calculationVersion)}</td></tr>`).join('');
+        <td class="r mono">${pctf(v.finalYearEquityIRR)}</td></tr>`).join('');
       openInvModal(`<h2 style="margin-top:0">Version History</h2>
         <p style="font-size:12.5px;color:var(--ink-500)">Versions are immutable — they are shown exactly as calculated
-        when saved, by the engine version listed, and are never recalculated.</p>
+        when saved and are never recalculated.</p>
         <table class="inv-table inv-verlist"><thead><tr><th>Version</th><th>Saved</th><th>By</th>
-        <th class="r">Purchase Price</th><th class="r">Equity IRR</th><th>Engine</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="6">No versions yet — save the analysis first.</td></tr>'}</tbody></table>`);
+        <th class="r">Purchase Price</th><th class="r">Equity IRR</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5">No versions yet — save the analysis first.</td></tr>'}</tbody></table>`);
     } catch (e) { A.toast('Could not load versions — ' + e.message); }
   }
 
@@ -741,12 +737,12 @@
       const r = await A.api('investment-analysis/' + (versionsCtx || st.id) + '/versions/' + n);
       openInvModal(`<h2 style="margin-top:0">Version ${n} — Read-Only</h2>
         <div class="inv-provenance">Saved ${esc((r.version.createdAt || '').slice(0, 16).replace('T', ' '))}
-        by ${esc(r.version.createdByName || '—')} · engine ${esc(r.version.calculationVersion)}</div>
+        by ${esc(r.version.createdByName || '—')}</div>
         <div class="inv-report">${reportHTML(r.result)}</div>`);
     } catch (e) { A.toast('Could not load the version — ' + e.message); }
   }
 
-  function openInvModal(html) {
+  function openInvModal(html, maxWidth) {
     let m = el('invModal');
     if (!m) {
       m = document.createElement('div');
@@ -755,10 +751,11 @@
       m.addEventListener('click', e => { if (e.target === m) m.remove(); });
       document.body.appendChild(m);
     }
-    m.innerHTML = `<div style="background:#fff;border-radius:12px;max-width:960px;width:100%;padding:22px 26px;position:relative">
+    m.innerHTML = `<div style="background:#fff;border-radius:12px;max-width:${maxWidth || 960}px;width:100%;padding:22px 26px;position:relative">
       <button class="btn-x" style="position:absolute;top:14px;right:14px" title="Close" onclick="document.getElementById('invModal').remove()">×</button>
       ${html}</div>`;
   }
+  function closeInvModal() { const m = el('invModal'); if (m) m.remove(); }
 
   /* ================= REPORT ================= */
   function renderReport() {
@@ -875,9 +872,8 @@
     const src = R.normalizedInput && R.normalizedInput.source;
     h += `<h3>Assumptions &amp; Provenance</h3>
       <div class="inv-provenance">
-      Input schema v${R.inputSchemaVersion} · calculation engine <span class="mono">${esc(R.calculationVersion)}</span>.
-      ${src ? ' Created from budget <span class="mono">' + esc(src.projectId) + '</span> version ' + esc(src.budgetVersionNumber)
-            + (src.importedAt ? ' (imported ' + esc(String(src.importedAt).slice(0, 10)) + ')' : '') + '.' : ' Standalone analysis.'}
+      ${src ? 'Created from budget <span class="mono">' + esc(src.projectId) + '</span> version ' + esc(src.budgetVersionNumber)
+            + (src.importedAt ? ' (imported ' + esc(String(src.importedAt).slice(0, 10)) + ')' : '') + '.' : 'Standalone Analysis.'}
       Vacancy ${pctf(R.normalizedInput.vacancy.value)} · expenses ${R.normalizedInput.expenses.mode === 'percentOfGOI'
         ? pctf(R.normalizedInput.expenses.value) + ' of GOI'
         : usd(R.normalizedInput.expenses.value) + '/yr growing ' + pctf(R.normalizedInput.expenses.growth.value)}
@@ -889,16 +885,61 @@
     return h;
   }
 
-  /* ================= PDF (PRINT) EXPORT =================
-     Composed from the canonical result into the app's #printDoc via the
-     adapter — the same pipeline and print-styled classes the budget report
-     uses, so branding comes for free. Tables only; no charts, no SVG. */
-  function exportPDF() {
-    if (!st.result || st.stale) { A.toast('Calculate first so the PDF matches the inputs.'); return; }
-    A.print(printReportHTML(st.result));
+  /* ================= EXPORT (modal, options, PDF, workbook) =================
+     One Export… button, like the budget: a modal picks the sections and
+     options, then produces either format from the same canonical result. */
+  const exOpts = { kpis: true, cash: true, sale: true, returns: true, sens: true,
+    assumptions: true, highlight: false };
+  const EX_IDS = { kpis: 'inv-ex-kpis', cash: 'inv-ex-cash', sale: 'inv-ex-sale',
+    returns: 'inv-ex-returns', sens: 'inv-ex-sens', assumptions: 'inv-ex-assump',
+    highlight: 'inv-ex-highlight' };
+
+  function openExport() {
+    if (!st.result || st.stale) { A.toast('Calculate first so the exports match the inputs.'); return; }
+    const chk = (k, label, title) => `<label class="chk"${title ? ' title="' + title + '"' : ''}>
+      <input type="checkbox" id="${EX_IDS[k]}" ${exOpts[k] ? 'checked' : ''}> ${label}</label>`;
+    openInvModal(`<h2 style="margin-top:0">Export Analysis</h2>
+      <div class="eyebrow" style="margin-bottom:10px">Include Sections</div>
+      <div style="display:grid;gap:10px;margin-bottom:18px">
+        ${chk('kpis', 'Summary &amp; Key Metrics')}
+        ${chk('cash', 'Operating Projection')}
+        ${chk('sale', 'Hypothetical Sale by Year')}
+        ${chk('returns', 'Returns &amp; Leverage')}
+        ${chk('sens', 'Acquisition-Price Sensitivity')}
+        ${chk('assumptions', 'Assumptions &amp; Provenance',
+          'The Excel workbook always carries its Assumptions sheet as the provenance record; this governs the PDF section')}
+      </div>
+      <div class="eyebrow" style="margin-bottom:10px">Options</div>
+      <div style="display:grid;gap:10px;margin-bottom:20px">
+        ${chk('highlight', 'Highlight Key Metrics',
+          'Light green highlight on GOI, NOI, Purchase Price, Initial Investment, Equity Multiple, Cash-on-Cash and IRR in the PDF')}
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="FSInvestmentUI.exportWorkbook()">Excel Workbook</button>
+        <button class="btn btn-primary" onclick="FSInvestmentUI.exportPDF()">PDF (Print)</button>
+      </div>`, 460);
   }
 
-  function printReportHTML(R) {
+  // The modal's checkboxes win when it is open; direct calls keep the last
+  // (or default all-sections, no-highlight) choices.
+  function readExportOpts() {
+    for (const k in EX_IDS) {
+      const c = document.getElementById(EX_IDS[k]);
+      if (c) exOpts[k] = c.checked;
+    }
+  }
+
+  /* ---- PDF (Print): composed from the canonical result into the app's
+     #printDoc via the adapter — the same pipeline and print-styled classes
+     the budget report uses. Tables only; no charts, no SVG. */
+  function exportPDF() {
+    if (!st.result || st.stale) { A.toast('Calculate first so the PDF matches the inputs.'); return; }
+    readExportOpts(); closeInvModal();
+    A.print(printReportHTML(st.result, exOpts));
+  }
+
+  function printReportHTML(R, opts) {
+    const o = opts || exOpts;
     const s = R.summary, loan = R.loans[0] || null, years = R.annual, N = R.normalizedInput;
     const src = N.source;
     const stamp = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -906,8 +947,12 @@
     const tbl = (headers, rows) => '<table class="rpt-tbl full"><thead><tr>'
       + headers.map((h, i) => '<th' + (i ? ' class="r"' : '') + '>' + h + '</th>').join('')
       + '</tr></thead><tbody>' + rows.join('') + '</tbody></table>';
-    const seriesRow = (label, f, tot) => '<tr' + (tot ? ' class="tot"' : '') + '><td>' + label + '</td>'
-      + years.map(a => '<td class="r mono">' + f(a) + '</td>').join('') + '</tr>';
+    const seriesRow = (label, f, tot, hl) => {
+      const cls = ((tot ? 'tot' : '') + (hl && o.highlight ? ' hl' : '')).trim();
+      return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + label + '</td>'
+        + years.map(a => '<td class="r mono">' + f(a) + '</td>').join('') + '</tr>';
+    };
+    const hlc = base => (base || '') + (o.highlight ? ' hl' : '');
     const yearHeads = ['', ...years.map(a => 'Y' + a.year + ' · ' + a.periodEnd)];
 
     let h = `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
@@ -917,24 +962,24 @@
         <div class="muted" style="font-size:9pt">${esc(N.analysisName)}${N.property.address ? ' · ' + esc(N.property.address) : ''}</div>
       </div>
       <div class="muted" style="text-align:right;font-size:8.5pt">${esc(stamp)}<br>
-        ${src ? 'From budget <span class="mono">' + esc(src.projectId) + '</span> v' + esc(src.budgetVersionNumber) + '<br>' : 'Standalone analysis<br>'}
-        ${st.loadedVersion ? 'Analysis v' + st.loadedVersion + ' · ' : ''}engine <span class="mono">${esc(R.calculationVersion)}</span></div>
+        ${src ? 'From budget <span class="mono">' + esc(src.projectId) + '</span> v' + esc(src.budgetVersionNumber) : 'Standalone Analysis'}${st.loadedVersion ? '<br>Analysis v' + st.loadedVersion : ''}</div>
     </div>`;
 
+    if (o.kpis) {
     h += '<section class="rpt-stats">'
-      + [['Purchase Price', usd(s.purchasePrice)], ['Acquisition Cap', pctf(s.acquisitionCapRate)],
-         ['Initial Equity', usd(s.initialEquity)], ['Equity IRR', pctf(s.finalYearEquityIRR)],
-         ['Optimal Hold', s.optimalHoldingYear ? 'Year ' + s.optimalHoldingYear + ' · ' + pctf(s.optimalHoldingYield) : '—']]
-        .map(([k, v]) => '<div><div class="k">' + k + '</div><div class="v">' + v + '</div></div>').join('')
+      + [['Purchase Price', usd(s.purchasePrice), 1], ['Acquisition Cap', pctf(s.acquisitionCapRate), 0],
+         ['Initial Equity', usd(s.initialEquity), 1], ['Equity IRR', pctf(s.finalYearEquityIRR), 1],
+         ['Optimal Hold', s.optimalHoldingYear ? 'Year ' + s.optimalHoldingYear + ' · ' + pctf(s.optimalHoldingYield) : '—', 0]]
+        .map(([k, v, hl]) => '<div' + (hl && o.highlight ? ' class="hl"' : '') + '><div class="k">' + k + '</div><div class="v">' + v + '</div></div>').join('')
       + '</section>';
 
     h += '<section class="rpt-sec"><h2>Acquisition &amp; Initial Investment</h2><div class="rpt-2col"><div>'
-      + rr('Purchase Price', usd(s.purchasePrice))
+      + rr('Purchase Price', usd(s.purchasePrice), hlc(''))
       + rr('Acquisition Costs (' + pctf(N.acquisition.costPercent) + ')', usd(s.acquisitionCosts))
       + (loan ? rr('Loan Fees (' + pctf(loan.feePercent) + ')', usd(s.loanFees)) : '')
       + rr('Unleveraged Investment', usd(s.unleveragedInitialInvestment), 'mid')
       + (loan ? rr('Less: Loan Principal', '(' + usd(loan.principal) + ')') : '')
-      + rr('Initial Equity Investment', usd(s.initialEquity), 'grand')
+      + rr('Initial Equity Investment', usd(s.initialEquity), hlc('grand'))
       + '</div><div>'
       + rr('Gross Rent Multiplier', rat(s.grossRentMultiplier))
       + (s.pricePerSquareFoot !== null ? rr('Price / SF', usd2(s.pricePerSquareFoot)) : '')
@@ -946,21 +991,25 @@
           + rr('Initial LTV', pctf(s.initialLTV))
         : rr('Financing', 'All cash'))
       + '</div></div></section>';
+    }
 
+    if (o.cash) {
     h += '<section class="rpt-sec"><h2>Operating Projection</h2>'
       + tbl(yearHeads, [
           seriesRow('Potential Rental Income', a => usd(a.potentialIncome)),
           seriesRow('Less: Vacancy / Credit Loss (' + pctf(N.vacancy.value) + ')', a => '(' + usd(a.vacancyLoss) + ')'),
           seriesRow('Effective Rental Income', a => usd(a.effectiveRentalIncome)),
           seriesRow('Other Income', a => usd(a.otherIncome)),
-          seriesRow('Gross Operating Income', a => usd(a.grossOperatingIncome), true),
+          seriesRow('Gross Operating Income', a => usd(a.grossOperatingIncome), true, true),
           seriesRow('Operating Expenses', a => '(' + usd(a.operatingExpenses) + ')'),
-          seriesRow('Net Operating Income', a => usd(a.netOperatingIncome), true),
+          seriesRow('Net Operating Income', a => usd(a.netOperatingIncome), true, true),
           seriesRow('Capital Expenses / Reserves', a => a.capitalExpenses ? '(' + usd(a.capitalExpenses) + ')' : '—'),
           seriesRow('Debt Service', a => a.debtService ? '(' + usd(a.debtService) + ')' : '—'),
           seriesRow('Cash Flow Before Taxes', a => usd(a.cashFlowBeforeTaxes), true)
         ]) + '</section>';
+    }
 
+    if (o.sale) {
     h += '<section class="rpt-sec"><h2>Hypothetical Sale at End of Each Year</h2>'
       + '<p class="rpt-note">Each sale is priced on the following year’s NOI at the '
       + pctf(N.disposition.exitCapRate.value) + ' exit cap, rounded to the nearest $1,000; selling costs ('
@@ -971,26 +1020,29 @@
           seriesRow('Loan Payoff', a => a.endingLoanBalance ? '(' + usd(a.endingLoanBalance) + ')' : '—'),
           seriesRow('Net Sale Proceeds', a => usd(a.netSaleProceeds), true)
         ]) + '</section>';
+    }
 
+    if (o.returns) {
     h += '<section class="rpt-sec"><h2>Returns' + (loan ? ', Debt Coverage' : '') + ' &amp; Leverage</h2>'
       + tbl(yearHeads, [
           ...(loan ? [
             seriesRow('Projected LTV', a => pctf(a.projectedLTV)),
             seriesRow('DSCR', a => rat(a.dscr)),
             seriesRow('Debt Yield', a => pctf(a.debtYield))] : []),
-          seriesRow('Cash-on-Cash', a => pctf(a.cashOnCash)),
+          seriesRow('Cash-on-Cash', a => pctf(a.cashOnCash), false, true),
           seriesRow('Return on Equity', a => pctf(a.returnOnEquity)),
-          seriesRow('Equity Multiple', a => mult(a.equityMultiple)),
-          seriesRow('Property IRR (unleveraged)', a => pctf(a.propertyIRR)),
+          seriesRow('Equity Multiple', a => mult(a.equityMultiple), false, true),
+          seriesRow('Property IRR (unleveraged)', a => pctf(a.propertyIRR), false, true),
           ...(loan ? [seriesRow('Effective Borrowing Rate', a => pctf(a.effectiveLoanRate))] : []),
-          seriesRow('Equity IRR (leveraged)', a => pctf(a.equityIRR), true),
+          seriesRow('Equity IRR (leveraged)', a => pctf(a.equityIRR), true, true),
           ...(loan ? [seriesRow('Leverage Impact', a => leveragePct(a))] : [])
         ])
       + '<p class="rpt-note">Optimal holding period: ' + (s.optimalHoldingYear
           ? 'Year ' + s.optimalHoldingYear + ' at ' + pctf(s.optimalHoldingYield) + ' equity IRR'
           : 'not determinable') + '.</p></section>';
+    }
 
-    if (R.sensitivity) {
+    if (o.sens && R.sensitivity) {
       h += '<section class="rpt-sec"><h2>Acquisition-Price Sensitivity</h2>'
         + '<p class="rpt-note">Scenarios at 90–110% of the base price; base LTV, rates, operating cash flows and terminal sale prices preserved.</p>'
         + tbl(['', ...R.sensitivity.map(x => Math.round(x.factor * 100) + '% · ' + usd(x.purchasePrice))],
@@ -1004,6 +1056,7 @@
           ]) + '</section>';
     }
 
+    if (o.assumptions) {
     h += '<section class="rpt-sec"><h2>Assumptions</h2><div class="rpt-2col"><div>'
       + rr('Property Size', N.property.size.value + ' ' + (N.property.size.unit === 'squareFeet' ? 'SF' : N.property.size.unit))
       + rr('Purchase Month', N.property.purchaseMonth)
@@ -1021,6 +1074,11 @@
       + (R.warnings && R.warnings.length
           ? '<p class="rpt-note"><b>Warnings:</b> ' + R.warnings.map(esc).join(' · ') + '</p>' : '')
       + '</section>';
+    }
+    // The engine identity lives only here on the PDF (and on the workbook's
+    // Assumptions sheet) — never on the app UI.
+    h += '<p class="rpt-note" style="margin-top:20px">Calculated by engine <span class="mono">'
+      + esc(R.calculationVersion) + '</span> · input schema v' + R.inputSchemaVersion + '</p>';
     return h;
   }
 
@@ -1028,6 +1086,8 @@
   async function exportWorkbook() {
     if (!st.result || st.stale) { A.toast('Calculate first so the workbook matches the inputs.'); return; }
     if (typeof ExcelJS === 'undefined') { A.toast('Excel library is unavailable.'); return; }
+    readExportOpts(); closeInvModal();
+    const o = exOpts;
     const R = st.result, s = R.summary, loan = R.loans[0] || null;
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Finishes Solutions Budgeting Suite';
@@ -1049,6 +1109,7 @@
     };
 
     // 1 · Investment Summary
+    if (o.kpis) {
     const w1 = wb.addWorksheet('Investment Summary');
     w1.columns = [{ width: 38 }, { width: 20 }];
     head(w1, (R.normalizedInput.property.name || 'Investment Analysis') + ' — ' + R.annual.length + '-Year Before-Tax Analysis');
@@ -1067,6 +1128,7 @@
     label(w1, 'Final-Year Equity Multiple', s.finalYearEquityMultiple, RATIO);
     label(w1, 'Optimal Holding Year', s.optimalHoldingYear);
     label(w1, 'Optimal Holding Yield', s.optimalHoldingYield, PCT);
+    }
 
     const yearsHdr = ['', ...R.annual.map(a => 'Y' + a.year + ' (' + a.periodEnd + ')')];
     const series = (ws, label_, f, fmt) => {
@@ -1075,6 +1137,7 @@
     };
 
     // 2 · Cash Flow
+    if (o.cash) {
     const w2 = wb.addWorksheet('Cash Flow');
     w2.columns = [{ width: 32 }, ...Array(5).fill({ width: 16 })];
     head(w2, 'Operating Projection');
@@ -1089,8 +1152,10 @@
     series(w2, 'Capital Expenses / Reserves', a => -a.capitalExpenses, MONEY);
     series(w2, 'Debt Service', a => -a.debtService, MONEY);
     series(w2, 'Cash Flow Before Taxes', a => a.cashFlowBeforeTaxes, MONEY);
+    }
 
     // 3 · Debt and Sale
+    if (o.sale) {
     const w3 = wb.addWorksheet('Debt and Sale');
     w3.columns = [{ width: 32 }, ...Array(5).fill({ width: 16 })];
     if (loan) {
@@ -1116,8 +1181,10 @@
       series(w3, 'DSCR', a => a.dscr, RATIO);
       series(w3, 'Debt Yield', a => a.debtYield, PCT);
     }
+    }
 
     // 4 · Returns
+    if (o.returns) {
     const w4 = wb.addWorksheet('Returns');
     w4.columns = [{ width: 32 }, ...Array(5).fill({ width: 16 })];
     head(w4, 'Returns by Sale Year');
@@ -1131,9 +1198,10 @@
     if (loan) series(w4, 'Leverage Impact', a =>
       a.equityIRR === null || a.propertyIRR === null ? null
       : Math.round(a.equityIRR * 10000) / 10000 - Math.round(a.propertyIRR * 10000) / 10000, PCT);
+    }
 
     // 5 · Acquisition Sensitivity
-    if (R.sensitivity) {
+    if (o.sens && R.sensitivity) {
       const w5 = wb.addWorksheet('Acquisition Sensitivity');
       w5.columns = [{ width: 30 }, ...Array(5).fill({ width: 16 })];
       head(w5, 'Purchase-Price Scenarios (base LTV preserved)');
@@ -1152,7 +1220,9 @@
       for (let y = 0; y < R.annual.length; y++) srow('Leveraged IRR — Sale Y' + (y + 1), x => x.leveragedIRR[y], PCT);
     }
 
-    // 6 · Assumptions and Provenance
+    // 6 · Assumptions and Provenance — always present: this sheet is the
+    // workbook's provenance record (engine + schema + saved version), the
+    // one place those identities are allowed to live outside the PDF footer.
     const w6 = wb.addWorksheet('Assumptions');
     w6.columns = [{ width: 38 }, { width: 26 }];
     head(w6, 'Assumptions & Provenance');
@@ -1193,7 +1263,7 @@
     init(adapter) { A = adapter; },
     renderList, renderListInto, open, createFromBudget, createStandalone, softDelete,
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep,
-    exportWorkbook, exportPDF, addOtherIncome, addCapex,
+    openExport, exportWorkbook, exportPDF, addOtherIncome, addCapex,
     _other, _otherRemove, _capex, _capexRemove,
     currentId: () => st.id,
     isDirty: () => st.dirty,

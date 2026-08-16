@@ -90,7 +90,7 @@ main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 
 label.fld{display:block}
 label.fld .lab{display:block;margin-bottom:6px;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
-input[type=text],input[type=number],input[type=password],select{
+input[type=text],input[type=number],input[type=password],input[type=month],select{
   width:100%;padding:9px 12px;border:1px solid var(--ink-200);border-radius:var(--r);
   font-family:var(--fb);font-size:14px;color:var(--ink-900);background:var(--white);outline:none;
   transition:border-color .12s,box-shadow .12s}
@@ -437,6 +437,15 @@ th.sortable.sorted{color:var(--ink-900)}
     letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:5px 6px}
   .rpt-tbl tr.grp td{background:var(--ink-100);font-family:var(--fm);font-size:7.5pt;
     letter-spacing:.08em;text-transform:uppercase;color:var(--ink-700);font-weight:600;padding:4px 6px}
+
+  /* Highlight Key Metrics (investment PDF export option): light green wash on
+     GOI, NOI, purchase price, initial investment, equity multiple, CoC and IRR.
+     The KPI band is dark, so highlighted cells there flip to dark-on-green. */
+  .rpt-tbl tr.hl td{background:#d8f3e0}
+  .rr.hl{background:#d8f3e0;padding-left:6px;padding-right:6px;margin:0 -6px;border-radius:3px}
+  .rpt-stats>div.hl{background:#d8f3e0}
+  .rpt-stats>div.hl .k{color:var(--ink-600)}
+  .rpt-stats>div.hl .v{color:var(--ink-950)}
   .rpt-tbl tr.sub-tot td{border-top:1px solid var(--ink-300);font-weight:600}
   .rpt-tbl tr.tot td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;padding-top:6px}
   .edited-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
@@ -1264,11 +1273,14 @@ th.sortable.sorted{color:var(--ink-900)}
           equity IRR against the unleveraged property IRR — positive leverage means borrowing raised the
           return. The optimal holding period is simply the sale year with the highest equity IRR.</p>
 
-        <p><b>Exports.</b> <span class="kbd">PDF (Print)</span> produces the branded report;
-          <span class="kbd">Excel Workbook</span> produces six worksheets of real numeric cells. Both are
-          built from the calculated result and are disabled while the result is stale, so an export can
-          never disagree with the assumptions on screen. On phones and small screens analyses are
-          view-only, like the rest of the suite.</p>
+        <p><b>Exports.</b> <span class="kbd">Export…</span> works like the budget's: pick which sections
+          to include, then produce either the branded PDF report or an Excel workbook of real numeric
+          cells. Ticking <b>Highlight Key Metrics</b> puts a light green highlight on the PDF's gross
+          operating income, net operating income, purchase price, initial investment, equity multiple,
+          cash-on-cash and IRR so they stand out at a glance. Both formats are built from the calculated
+          result and the button is disabled while the result is stale, so an export can never disagree
+          with the assumptions on screen. On phones and small screens analyses are view-only, like the
+          rest of the suite.</p>
 
         <h3 id="help-exports">Exports</h3>
         <p><span class="kbd">Export…</span> lets you pick which sections to include, then produces either format.</p>

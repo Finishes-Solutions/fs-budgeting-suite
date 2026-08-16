@@ -25,14 +25,14 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#invSteps button[data-step="5"]');
  await p.fill('[data-f="disposition.exitCapRate.value"]','7.5');
  await p.click('#invSaveBtn'); await p.waitForTimeout(800);
- ok('v1 saved', /Saved · v1/.test(await p.locator('#invState').textContent()));
+ ok('v1 saved', /Saved/.test(await p.locator('#invState').textContent()) && (await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];return (await (await fetch('/api/investment-analysis/'+id)).json()).currentVersionNumber;}))===1);
 
  // v2 with a changed vacancy
  await p.click('#invSteps button[data-step="3"]');
  await p.fill('[data-f="vacancy.value"]','8');
  await p.locator('[data-f="vacancy.value"]').dispatchEvent('change');
  await p.click('#invSaveBtn'); await p.waitForTimeout(800);
- ok('v2 saved', /Saved · v2/.test(await p.locator('#invState').textContent()));
+ ok('v2 saved', /Saved/.test(await p.locator('#invState').textContent()) && (await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];return (await (await fetch('/api/investment-analysis/'+id)).json()).currentVersionNumber;}))===2);
 
  // versions modal: opened from the three-dot row menu on the tab's list —
  // the editor toolbar deliberately has no Versions button (matches budgets).
@@ -84,7 +84,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
    (await (await fetch('/api/investment-analysis/'+id)).json()).currentVersionNumber,aid);
  ok('the other session\'s v3 survives', vAfter===3, 'v'+vAfter);
  await p.click('#invConflict button:has-text("Reload Latest")'); await p.waitForTimeout(800);
- ok('Reload Latest loads v3', /Saved · v3/.test(await p.locator('#invState').textContent()));
+ ok('Reload Latest loads v3', /Saved/.test(await p.locator('#invState').textContent()) && (await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];return (await (await fetch('/api/investment-analysis/'+id)).json()).currentVersionNumber;}))===3);
  ok('reloaded vacancy is the other session\'s value',
     (await p.locator('[data-f="vacancy.value"]').inputValue())==='12');
 
