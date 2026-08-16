@@ -235,3 +235,4 @@ custom provider for sign-in.
 | `docs/BUILD_GUIDE.md` | Provisioning the Azure stack from scratch |
 | `docs/NAMING.md` | Anything that names or renames an Azure resource |
 | `docs/ROADMAP.md` | Before building something "missing" — it may be deliberately deferred or removed (email export, undo, mobile phase 2, export charts) |
+| `docs/INVESTMENT_FORMULAS.md` | Every investment-engine formula, per data point, keyed to its source module |

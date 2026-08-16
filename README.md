@@ -56,7 +56,7 @@ templates requires the `pricing_admin` custom role.
 | `sql/` | Schema, migration, views, seeds, admin scripts — see below |
 | `app/investment-analysis.js` / `.css` | The Investment Analysis workflow — an external no-build IIFE module; `index.html` contributes only nav, containers, routes and an adapter |
 | `api/investment-*/` | Investment analysis Functions: list/create, CRUD + concurrency, version history, stateless calculation preview |
-| `api/shared/investment/` | The authoritative before-tax calculation engine (`before-tax-1.1.0`, five- or ten-year), dependency-free, fixture-proven against five recovered reference deals |
+| `api/shared/investment/` | The authoritative before-tax calculation engine (`before-tax-1.1.0`, five- or ten-year), dependency-free, fixture-proven against five recovered reference deals — every formula documented in `docs/INVESTMENT_FORMULAS.md` |
 | `api/shared/budget-calc.js` | Server-side port of the budget arithmetic — stored ContractSum/ProjectCost derive from the document, never from client meta |
 | `test/` | Fourteen Playwright suites, `node:test` logic tests, and a mock of the SWA API |
 | `docs/` | Build guide, data contract, handoff, roadmap, naming |
