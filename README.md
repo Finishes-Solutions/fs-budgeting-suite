@@ -1,6 +1,6 @@
 # Finishes Solutions Budgeting Suite
 
-Internal Business Development tool for building multifamily project budgets. A budget is
+This is an internal Business Development tool for building multifamily (for now) project budgets. A budget is
 priced from a versioned, admin-controlled pricing library, adds unit-mix revenue, other
 income and operating expenses, and rolls up to a construction contract sum and a total
 project cost. It emits a normalized SOV (schedule of values) that the Master Lender
