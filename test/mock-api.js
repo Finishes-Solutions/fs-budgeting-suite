@@ -412,11 +412,15 @@ http.createServer((req, res) => {
       if (!result) return json(res, 409, { error: 'no_result', message: 'This analysis has no saved calculation yet — save it first.' });
       if (!['pdf', 'xlsx', 'csv'].includes(format))
         return json(res, 400, { error: 'bad_request', message: 'format must be pdf, xlsx or csv.' });
-      const render = require('../api/shared/investment/export-render');
-      const doc = render.buildExportDoc(result,
+      const producer = require('../api/shared/investment/export-render');
+      const { toFsdoc } = require('../api/shared/investment/to-fsdoc');
+      const fsRender = require('../api/shared/fs-render/src/index');
+      const THEME = fsRender.themes['finishes-solutions'];
+      const doc = producer.buildExportDoc(result,
         { kpis: true, cash: true, sale: true, returns: true, sens: true, assumptions: true, highlight: false,
           signature: /^(1|true)$/i.test(String(q.get('signature') || '')) },
         { savedVersion, generatedAt: new Date().toISOString() });
+      const fsdoc = toFsdoc(doc, { docId: id + '-v' + savedVersion });
       const base = (live.name || 'Investment_Analysis').replace(/[^\w]+/g, '_')
         + '_Investment_Analysis' + (versionParam ? '_v' + savedVersion : '');
       const send = (mime, ext, buf) => {
@@ -425,10 +429,10 @@ http.createServer((req, res) => {
         res.end(buf);
       };
       if (format === 'csv')
-        return send('text/csv; charset=utf-8', 'csv', Buffer.from(render.buildCsv(doc), 'utf8'));
+        return send('text/csv; charset=utf-8', 'csv', Buffer.from(fsRender.buildCsv(fsdoc), 'utf8'));
       if (format === 'xlsx') {
         const ExcelJS = require('exceljs');
-        return render.buildWorkbook(ExcelJS, doc).xlsx.writeBuffer()
+        return fsRender.buildWorkbook(ExcelJS, fsdoc, THEME).xlsx.writeBuffer()
           .then(buf => send('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx', Buffer.from(buf)))
           .catch(e => json(res, 500, { error: 'render_failed', message: e.message }));
       }
@@ -438,7 +442,10 @@ http.createServer((req, res) => {
         const printer = new PdfPrinter({ Montserrat: {
           normal: F('Montserrat-Regular.ttf'), bold: F('Montserrat-Bold.ttf'),
           italics: F('Montserrat-Regular.ttf'), bolditalics: F('Montserrat-Bold.ttf') } });
-        const pdoc = printer.createPdfKitDocument(render.buildPdfDocDefinition(doc));
+        const preset = doc.meta.years > 5 ? 'landscape' : 'portrait';
+        const dd = fsRender.buildPdfDocDefinition(fsdoc, THEME, preset);
+        producer.appendApprovalPage(dd, doc.signature);
+        const pdoc = printer.createPdfKitDocument(dd);
         const chunks = [];
         pdoc.on('data', c => chunks.push(c));
         pdoc.on('end', () => send('application/pdf', 'pdf', Buffer.concat(chunks)));

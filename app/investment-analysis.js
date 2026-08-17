@@ -995,16 +995,29 @@
     return FSExportRender.buildExportDoc(st.result, exOpts,
       { savedVersion: st.loadedVersion, generatedAt: new Date().toISOString() });
   }
+  // The fsdoc/1 + fs-render path: content from the producer, layout from the
+  // engine. Ten-year projections carry 11 matrix columns, which physically
+  // need landscape on letter (the engine's stated policy); five-year docs
+  // keep the house-portrait preset.
+  function fsdocOf(doc) {
+    return FSToFsdoc.toFsdoc(doc,
+      { docId: st.id ? st.id + (st.loadedVersion ? '-v' + st.loadedVersion : '') : undefined });
+  }
+  function pdfPreset(doc) { return doc.meta.years > 5 ? 'landscape' : 'portrait'; }
+  const FS_THEME = () => fsRender.themes['finishes-solutions'];
 
-  /* ---- PDF: a real .pdf file, rendered by the shared document model through
-     the vendored pdfmake build and downloaded directly — no print dialog. */
+  /* ---- PDF: a real .pdf file — fsdoc/1 rendered by the vendored fs-render
+     engine through pdfmake and downloaded directly, no print dialog. The
+     Signature Needed approval page is a suite policy appended after. */
   function exportPDF() {
     if (!st.result || st.stale) { A.toast('Calculate first so the PDF matches the inputs.'); return; }
-    if (typeof pdfMake === 'undefined' || typeof FSExportRender === 'undefined') {
+    if (typeof pdfMake === 'undefined' || typeof fsRender === 'undefined') {
       A.toast('PDF library is unavailable — reload the page.'); return;
     }
     readExportOpts(); closeInvModal();
-    const dd = FSExportRender.buildPdfDocDefinition(exportDoc());
+    const doc = exportDoc();
+    const dd = fsRender.buildPdfDocDefinition(fsdocOf(doc), FS_THEME(), pdfPreset(doc));
+    FSExportRender.appendApprovalPage(dd, doc.signature);
     pdfMake.createPdf(dd).getBlob(blob => downloadBlob(blob, exportBaseName() + '.pdf'));
   }
 
@@ -1186,17 +1199,17 @@
     return h;
   }
 
-  /* ================= EXCEL WORKBOOK ================= 
-     Built by the shared renderer (export-render.js) from the same document
-     model the PDF uses — branded bands, frozen headers, landscape printing.
-     Tables only; no charts, no media, ever. */
+  /* ================= EXCEL WORKBOOK =================
+     Built by the fs-render engine from the same fsdoc/1 the PDF uses —
+     branded bands, frozen headers, landscape fitted printing come from the
+     engine's default preset. Tables only; no charts, no media, ever. */
   async function exportWorkbook() {
     if (!st.result || st.stale) { A.toast('Calculate first so the workbook matches the inputs.'); return; }
-    if (typeof ExcelJS === 'undefined' || typeof FSExportRender === 'undefined') {
+    if (typeof ExcelJS === 'undefined' || typeof fsRender === 'undefined') {
       A.toast('Excel library is unavailable — reload the page.'); return;
     }
     readExportOpts(); closeInvModal();
-    const wb = FSExportRender.buildWorkbook(ExcelJS, exportDoc());
+    const wb = fsRender.buildWorkbook(ExcelJS, fsdocOf(exportDoc()), FS_THEME());
     const buf = await wb.xlsx.writeBuffer();
     downloadBlob(new Blob([buf],
       { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),

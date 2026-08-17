@@ -7,6 +7,6 @@
     "exceljs": "^4.4.0",
     "pdfmake": "^0.2.20",
     "playwright": "^1.49.0",
-    "fs-render": "file:../fs-courier/engine"
+    "fs-render": "file:api/shared/fs-render"
   }
 }

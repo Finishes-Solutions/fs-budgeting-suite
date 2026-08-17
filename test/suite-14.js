@@ -194,8 +194,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const ddHl=await p.evaluate(async()=>{
    const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
    const result=(await (await fetch('/api/investment-analysis/'+id)).json()).result;
-   const dd=h=>JSON.stringify(FSExportRender.buildPdfDocDefinition(FSExportRender.buildExportDoc(
-     result, {kpis:1,cash:1,sale:1,returns:1,sens:1,assumptions:1,highlight:h}, {})));
+   const dd=h=>JSON.stringify(fsRender.buildPdfDocDefinition(
+     FSToFsdoc.toFsdoc(FSExportRender.buildExportDoc(
+       result, {kpis:1,cash:1,sale:1,returns:1,sens:1,assumptions:1,highlight:h}, {})),
+     fsRender.themes['finishes-solutions'], 'portrait'));
    return {on:/D8F3E0/.test(dd(true)),off:/D8F3E0/.test(dd(false))};
  });
  ok('downloaded PDF highlights rows only when the option is on', ddHl.on&&!ddHl.off, JSON.stringify(ddHl));

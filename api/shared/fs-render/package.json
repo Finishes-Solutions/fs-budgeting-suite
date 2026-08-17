@@ -1,0 +1,8 @@
+{
+  "name": "fs-render",
+  "version": "0.2.0",
+  "private": true,
+  "description": "VENDORED copy of fs-courier engine/ (fs-render) \u2014 fsdoc/1 schema, finishes-solutions theme, presets, and the PDF/XLSX/CSV renderers. Source of truth: Finishes-Solutions/fs-courier @ df9defb; update by re-copying engine/src and bumping this note. Zero runtime deps: pdfmake/ExcelJS are injected by the caller; fonts come from api/shared/fonts.",
+  "main": "src/index.js",
+  "license": "UNLICENSED"
+}

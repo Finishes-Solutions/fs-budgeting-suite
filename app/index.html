@@ -18,12 +18,17 @@
      cells at all. MIT licence in vendor/exceljs-LICENSE.txt. -->
 <script src="vendor/exceljs.min.js"></script>
 <!-- pdfmake is vendored for the same reason; fs-pdf-fonts.js registers the
-     Montserrat subset the server also embeds. export-render.js is the shared
-     document model + renderers — byte-identical to the copy the API requires
-     (api/shared/investment/export-render.js), enforced by a node test. -->
+     Montserrat subset the server also embeds. fs-render.browser.js is the
+     fs-courier rendering engine (global: fsRender) — the API requires the
+     identical vendored source at api/shared/fs-render. export-render.js is
+     the investment content PRODUCER and to-fsdoc.js adapts its output to
+     fsdoc/1 — both byte-identical to the copies the API requires
+     (api/shared/investment/), enforced by a node test. -->
 <script src="vendor/pdfmake.min.js"></script>
 <script src="vendor/fs-pdf-fonts.js"></script>
+<script src="vendor/fs-render.browser.js"></script>
 <script src="export-render.js"></script>
+<script src="to-fsdoc.js"></script>
 <!-- The investment-analysis workflow is an external no-build module (IIFE) so
      the inline script stays the budget application. index.html contributes only
      the nav button, page containers, routes, and the adapter passed to init. -->
@@ -1142,10 +1147,12 @@ th.sortable.sorted{color:var(--ink-900)}
         </tbody></table>
         <p>Typing over a quantity breaks the link for that line only, and it will no longer follow the inputs.</p>
 
-        <h4>Undo</h4>
+        <h4>Undo &amp; Redo</h4>
         <p><b>Cmd+Z</b> (or <b>Ctrl+Z</b>) undoes your last committed change — a deleted line item comes
-          back, an edited rate or quantity reverts — up to <b>five steps</b>. One step is one change, not
-          one keystroke. The history is deliberately small and in memory only: it clears when you open
+          back, an edited rate or quantity reverts — up to <b>ten steps</b>. <b>Cmd+Shift+Z</b> (or
+          <b>Ctrl+Y</b>) redoes what you just undid, also up to ten steps; making a new change after an
+          undo clears the redo path, like any desktop application. One step is one change, not one
+          keystroke. The history is deliberately small and in memory only: it clears when you open
           another budget or reload the page, and it never touches saved versions. If you are typing in a
           field when you press it, the field commits first and that edit is what gets undone.</p>
 
@@ -1397,11 +1404,12 @@ th.sortable.sorted{color:var(--ink-900)}
           <tr><td>A budget shows $0 totals</td>
             <td>Almost always residential SF is 0, or every line was switched to lump sum with no rate set.</td></tr>
           <tr><td>I deleted a line by accident</td>
-            <td><b>Cmd/Ctrl+Z</b> restores it — up to five changes back, while the budget stays open.</td></tr>
+            <td><b>Cmd/Ctrl+Z</b> restores it — up to ten changes back, while the budget stays open.
+              <b>Cmd/Ctrl+Shift+Z</b> (or <b>Ctrl+Y</b>) redoes an undo.</td></tr>
           <tr><td>I lost my edits</td>
             <td>Nothing autosaves. The header pill shows unsaved state and the browser warns before closing —
               if that warning was dismissed, the work is gone. While the budget is still open,
-              <b>Cmd/Ctrl+Z</b> steps back up to five changes.</td></tr>
+              <b>Cmd/Ctrl+Z</b> steps back up to ten changes.</td></tr>
         </tbody></table>
       </div></section>
 
@@ -1892,30 +1900,44 @@ const BASIS_LABEL={sf:'Per Res SF',asf:'Per Amen SF',unit:'Per Unit',ls:'Lump Su
 function markDirty(){recordUndo();if(!dirty){dirty=true;renderSaveState();}}   // edits that need no recalc
 function touch(){recordUndo();dirty=true;renderSaveState();recalc();}
 
-/* ---- undo (Cmd/Ctrl+Z) ----
-   A small ring of document snapshots: the current state plus up to five back.
-   Snapshots record in touch()/markDirty() — i.e. after every COMMITTED
-   mutation — so one undo step equals one user-visible change (a deleted
-   line, an edited rate), never one keystroke. Deliberately tiny and
-   in-memory only: opening another budget or reloading clears it, and saved
+/* ---- undo / redo (Cmd/Ctrl+Z · Cmd/Ctrl+Shift+Z or Ctrl+Y) ----
+   A small ring of document snapshots: the current state plus up to ten
+   back, and a redo stack the same depth. Snapshots record in
+   touch()/markDirty() — i.e. after every COMMITTED mutation — so one step
+   equals one user-visible change (a deleted line, an edited rate), never
+   one keystroke. A NEW change after an undo clears the redo path, the way
+   desktop applications behave. Deliberately small and in-memory only:
+   opening another budget or reloading clears both stacks, and saved
    versions are never touched. */
-const UNDO_MAX=5;
-let undoStack=[];
-function resetUndo(){undoStack=doc?[JSON.stringify(doc)]:[];}
+const UNDO_MAX=10;
+let undoStack=[],redoStack=[];
+function resetUndo(){undoStack=doc?[JSON.stringify(doc)]:[];redoStack=[];}
 function recordUndo(){
   if(!doc)return;
   const snap=JSON.stringify(doc);
   if(undoStack[undoStack.length-1]===snap)return;   // no-op mutation → no step
   undoStack.push(snap);
-  if(undoStack.length>UNDO_MAX+1)undoStack.shift(); // current + five back
+  if(undoStack.length>UNDO_MAX+1)undoStack.shift(); // current + ten back
+  redoStack=[];                                     // a new change forks history
+}
+function restoreSnap(snap,msg){
+  doc=migrate(JSON.parse(snap));
+  dirty=true;selected.clear();
+  fillForms();recalc();renderSaveState();
+  toast(msg);
 }
 function undoBudget(){
   if(undoStack.length<2){toast('Nothing to undo.');return;}
-  undoStack.pop();
-  doc=migrate(JSON.parse(undoStack[undoStack.length-1]));
-  dirty=true;selected.clear();
-  fillForms();recalc();renderSaveState();
-  toast('Undid the last change.');
+  redoStack.push(undoStack.pop());
+  if(redoStack.length>UNDO_MAX)redoStack.shift();
+  restoreSnap(undoStack[undoStack.length-1],'Undid the last change.');
+}
+function redoBudget(){
+  if(!redoStack.length){toast('Nothing to redo.');return;}
+  const snap=redoStack.pop();
+  undoStack.push(snap);
+  if(undoStack.length>UNDO_MAX+1)undoStack.shift();
+  restoreSnap(snap,'Redid the change.');
 }
 function markSaved(){dirty=false;lastSaved=new Date();renderSaveState();}
 function renderSaveState(){
@@ -3614,17 +3636,21 @@ function buildReport(s){
 function sigRow(k,v){return '<div class="rr"><span>'+k+'</span><span class="v">'+v+'</span></div>';}
 
 /* ---------------- PDF: the real downloaded file ----------------
-   The budget builds the same generic document model the investment analysis
-   uses (meta + sheets of kv/table/note blocks) and hands it to the shared
-   renderer in export-render.js — so both PDFs are portrait letter, branded
-   the same way, and the composed content mirrors buildReport() exactly. */
-function buildBudgetPdfDoc(s){
+   The budget is the suite's second fsdoc/1 producer: buildBudgetFsdoc()
+   composes a document under the fs-courier contract (columnar 'table'
+   blocks carry per-column formats; scope/group structure becomes group
+   heads whose labels carry the subtotals) and the vendored fs-render
+   engine lays it out. Signature Needed stays a suite policy, appended
+   onto the finished docDefinition by FSExportRender.appendApprovalPage.
+   Content mirrors buildReport() — same numbers, never the DOM. */
+function buildBudgetFsdoc(s){
   const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF,sm=siteMetrics();
   const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
   const sheets=[];
   const kv=(k,v,fmt,total)=>({k,v,fmt,total:!!total});
-  const tRow=(label,values,fmt,total)=>({label,values,fmt,total:!!total});
-  const band=(label,values,fmt,dark)=>({label,values,fmt,band:dark?'dark':'light'});
+  // 1-decimal shares are preformatted strings — fsdoc's pct is 2-decimal,
+  // and strings pass through every renderer verbatim.
+  const share1=(v,base)=>base?(100*v/base).toFixed(1)+'%':'—';
 
   const blocks1=[];
   if(s.stats){
@@ -3653,96 +3679,126 @@ function buildBudgetPdfDoc(s){
     ['res','amen'].filter(scopeActive).forEach(sc=>{
       [...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))].forEach(gp=>{
         const v=doc.lines.filter(l=>l.scope===sc&&l.grp===gp).reduce((x,l)=>x+lineQty(l)*l.unit,0);
-        if(v>0)sovRows.push(tRow((sc==='amen'?'Amenity — ':'')+gp,[v,p.contract?v/p.contract:0],['money','pct1']));
+        if(v>0)sovRows.push({item:(sc==='amen'?'Amenity — ':'')+gp,value:v,share:share1(v,p.contract)});
       });
     });
     doc.companies.forEach(c=>{if(c.pct>0){const v=p.hard*c.pct/100;
-      sovRows.push(tRow('Profit — '+c.name,[v,p.contract?v/p.contract:0],['money','pct1']));}});
-    if(p.cont>0)sovRows.push(tRow('99.03 Contingency',[p.cont,p.contract?p.cont/p.contract:0],['money','pct1']));
-    sovRows.push(tRow('Contract Sum',[p.contract,p.contract?1:0],['money','pct1'],true));
-    blocks1.push({kind:'table',headers:['Scheduled Value','% Contract'],rows:sovRows});
+      sovRows.push({item:'Profit — '+c.name,value:v,share:share1(v,p.contract)});}});
+    if(p.cont>0)sovRows.push({item:'99.03 Contingency',value:p.cont,share:share1(p.cont,p.contract)});
+    blocks1.push({kind:'table',
+      columns:[{key:'item',label:'Item'},{key:'value',label:'Scheduled Value',fmt:'money'},{key:'share',label:'% Contract'}],
+      rows:sovRows,totals:{item:'Contract Sum',value:p.contract,share:p.contract?'100.0%':'—'}});
   }
   if(blocks1.length)sheets.push({key:'kpis',name:'Summary',title:'',blocks:blocks1});
 
   if(s.units&&doc.units.length){
-    const F=['qty','qty','qty','qty','money','money2','money','money'];
     sheets.push({key:'units',name:'Unit Mix',title:'Unit Mix & Rent Revenue',blocks:[
-      {kind:'table',headers:['BD','BTH','SF','Units','Rent / Mo','$ / SF','Monthly','Yearly'],rows:
-        doc.units.map(u=>tRow(u.label,[u.bd,u.bth,u.sf,u.count,u.rent,u.sf?u.rent/u.sf:null,
-          u.rent*u.count,12*u.rent*u.count],F))
-        .concat([tRow('Total',[undefined,undefined,doc.units.reduce((x,u)=>x+u.sf*u.count,0),tu,undefined,undefined,
-          g.rentMo,12*g.rentMo],F,true)])}]});
+      {kind:'table',
+       columns:[{key:'type',label:'Unit Type'},{key:'bd',label:'BD'},{key:'bth',label:'BTH'},
+         {key:'sf',label:'SF',fmt:'qty'},{key:'units',label:'Units',fmt:'qty'},
+         {key:'rent',label:'Rent / Mo',fmt:'money'},{key:'psf',label:'$ / SF',fmt:'money2'},
+         {key:'monthly',label:'Monthly',fmt:'money'},{key:'yearly',label:'Yearly',fmt:'money'}],
+       rows:doc.units.map(u=>({type:u.label,bd:u.bd,bth:u.bth,sf:u.sf,units:u.count,rent:u.rent,
+         psf:u.sf?u.rent/u.sf:null,monthly:u.rent*u.count,yearly:12*u.rent*u.count})),
+       totals:{type:'Total',sf:doc.units.reduce((x,u)=>x+u.sf*u.count,0),units:tu,
+         monthly:g.rentMo,yearly:12*g.rentMo}}]});
   }
 
   if(s.other&&(doc.other.length||doc.expenses.length)){
-    const F=['text','money','qty','money','money'];
-    const rows=[];
-    doc.other.forEach(o=>{const c=o.auto?tu:o.count;
-      rows.push(tRow(o.label,['gross income',o.rate,c,o.rate*c,12*o.rate*c],F));});
-    rows.push(tRow('Total Gross Other Income',[undefined,undefined,undefined,g.otherMo,12*g.otherMo],F,true));
-    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-      rows.push(tRow(e.label,[e.per==='fixed'?'fixed / mo':'per unit',e.rate,c,-e.rate*c,-12*e.rate*c],F));});
-    rows.push(tRow('Total Operating Expenses',[undefined,undefined,undefined,-g.expMo,-12*g.expMo],F,true));
-    rows.push(tRow('Net Income (Rent + Net Other)',[undefined,undefined,undefined,g.rentMo+g.netOtherMo,g.netYr],F,true));
-    sheets.push({key:'other',name:'Income',title:'Other Income & Operating Expenses',blocks:[
-      {kind:'table',headers:['Basis','$ / Mo','Count','Monthly','Yearly'],rows}]});
+    const cols=[{key:'line',label:'Line'},{key:'basis',label:'Basis'},
+      {key:'rate',label:'$ / Mo',fmt:'money'},{key:'count',label:'Count',fmt:'qty'},
+      {key:'monthly',label:'Monthly',fmt:'money'},{key:'yearly',label:'Yearly',fmt:'money'}];
+    const blocks=[];
+    if(doc.other.length){
+      blocks.push({kind:'table',columns:cols,
+        rows:doc.other.map(o=>{const c=o.auto?tu:o.count;
+          return {line:o.label,basis:'gross income',rate:o.rate,count:c,monthly:o.rate*c,yearly:12*o.rate*c};}),
+        totals:{line:'Total Gross Other Income',monthly:g.otherMo,yearly:12*g.otherMo}});
+    }
+    if(doc.expenses.length){
+      blocks.push({kind:'table',columns:cols,
+        rows:doc.expenses.map(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
+          return {line:e.label,basis:e.per==='fixed'?'fixed / mo':'per unit',rate:e.rate,count:c,
+            monthly:-e.rate*c,yearly:-12*e.rate*c};}),
+        totals:{line:'Total Operating Expenses',monthly:-g.expMo,yearly:-12*g.expMo}});
+    }
+    blocks.push({kind:'kv',rows:[kv('Net Income (Rent + Net Other), Monthly',g.rentMo+g.netOtherMo,'money'),
+      kv('Net Income (Rent + Net Other), Yearly',g.netYr,'money',true)]});
+    sheets.push({key:'other',name:'Income',title:'Other Income & Operating Expenses',blocks});
   }
 
   if(s.budget){
-    const F=['text','qty','money2','money'];
-    const rows=[];let anyEdited=false;
+    const cols=[{key:'item',label:'Line Item'},{key:'basis',label:'Basis'},
+      {key:'qty',label:'Qty',fmt:'qty'},{key:'rate',label:'Rate',fmt:'money2'},{key:'total',label:'Total',fmt:'money'}];
+    const blocks=[];let anyEdited=false;
     activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
-      rows.push(band(SCOPES[sc],[null,null,null,scopeSum(sc)],F,true));
-      let last=null;
-      ls.forEach(it=>{
-        if(it.grp!==last){last=it.grp;
-          const gs=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
-          rows.push(band(it.grp,[null,null,null,gs],F,false));}
-        const q=lineQty(it),ed=s.edits&&isEdited(it);if(ed)anyEdited=true;
-        rows.push(tRow(it.code+'  '+it.desc+(ed?' *':''),
-          [BASIS_LABEL[it.basis]||it.basis,q,it.unit,q*it.unit],F));
+      blocks.push({kind:'group',label:SCOPES[sc].toUpperCase()+'   ·   '+usd(scopeSum(sc))});
+      [...new Set(ls.map(l=>l.grp))].forEach(gp=>{
+        const rows=ls.filter(l=>l.grp===gp).map(it=>{
+          const q=lineQty(it),ed=s.edits&&isEdited(it);if(ed)anyEdited=true;
+          return {item:it.code+'  '+it.desc+(ed?' *':''),basis:BASIS_LABEL[it.basis]||it.basis,
+            qty:q,rate:it.unit,total:q*it.unit};});
+        const gs=ls.filter(l=>l.grp===gp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
+        blocks.push({kind:'table',columns:cols,rows,
+          totals:{item:gp,total:gs}});
       });
     });
-    const blocks=[{kind:'table',headers:['Basis','Qty','Rate','Total'],rows}];
     if(anyEdited)blocks.push({kind:'note',text:'* marks a line manually edited away from the pricing library.'});
     sheets.push({key:'budget',name:'Budget Detail',title:'Budget Detail',blocks});
   }
 
   if(s.csi){
     const sch=csiSchedule();
-    const F=['text','qty','money2','money','pct1'];
-    const cp=v=>sch.contract?v/sch.contract:0;
-    const rows=[];
+    const cols=[{key:'item',label:'Section'},{key:'scope',label:'Scope'},
+      {key:'qty',label:'Qty',fmt:'qty'},{key:'rate',label:'Rate',fmt:'money2'},
+      {key:'value',label:'Scheduled Value',fmt:'money'},{key:'share',label:'% Contract'}];
+    const blocks=[
+      {kind:'note',text:'MasterFormat divisions. Contingency is carried explicitly as 99.03 and is never blended into a trade line. Soft costs are reported separately and are not part of the contract sum.'}];
     sch.divisions.forEach(d=>{
-      rows.push(band(d.title,[null,null,null,d.total,cp(d.total)],F,true));
-      d.rows.forEach(r=>rows.push(tRow(r.code+'  '+r.desc,
-        [r.scope==='amen'?'Amenity':'Residential',r.qty,r.rate,r.total,cp(r.total)],F)));
+      blocks.push({kind:'group',label:d.title.toUpperCase()+'   ·   '+usd(d.total)+'   ·   '+share1(d.total,sch.contract)});
+      blocks.push({kind:'table',columns:cols,
+        rows:d.rows.map(r=>({item:r.code+'  '+r.desc,scope:r.scope==='amen'?'Amenity':'Residential',
+          qty:r.qty,rate:r.rate,value:r.total,share:share1(r.total,sch.contract)}))});
     });
     if(sch.markups.length){
-      rows.push(band('Division 99 — Markups',[null,null,null,sch.markupsTotal,cp(sch.markupsTotal)],F,true));
-      sch.markups.forEach(m=>rows.push(tRow(m.code+'  '+m.desc,[undefined,undefined,undefined,m.total,cp(m.total)],F)));
+      blocks.push({kind:'group',label:'DIVISION 99 — MARKUPS   ·   '+usd(sch.markupsTotal)+'   ·   '+share1(sch.markupsTotal,sch.contract)});
+      blocks.push({kind:'table',columns:cols,
+        rows:sch.markups.map(m=>({item:m.code+'  '+m.desc,value:m.total,share:share1(m.total,sch.contract)}))});
     }
-    rows.push(tRow('Contract Sum',[undefined,undefined,undefined,sch.contract,sch.contract?1:0],F,true));
-    const blocks=[
-      {kind:'note',text:'MasterFormat divisions. Contingency is carried explicitly as 99.03 and is never blended into a trade line. Soft costs are reported separately and are not part of the contract sum.'},
-      {kind:'table',headers:['Scope','Qty','Rate','Scheduled Value','% Contract'],rows}];
+    blocks.push({kind:'kv',rows:[kv('Contract Sum',sch.contract,'money',true)]});
     if(sch.soft.length){
-      const sp=v=>sch.softTotal?v/sch.softTotal:0;
-      const F2=['qty','money2','money','pct1'];
-      const soft=[];
-      sch.softGroups.forEach(gp=>{
-        soft.push(band(gp.grp,[null,null,gp.total,sp(gp.total)],F2,true));
-        gp.rows.forEach(r=>soft.push(tRow(r.code+'  '+r.desc,[r.qty,r.rate,r.total,sp(r.total)],F2)));
-      });
-      soft.push(tRow('Total Soft Costs',[undefined,undefined,sch.softTotal,sch.softTotal?1:0],F2,true));
-      blocks.push({kind:'group',label:'SOFT COSTS'});
+      blocks.push({kind:'group',label:'SOFT COSTS   ·   '+usd(sch.softTotal)});
       blocks.push({kind:'note',text:'Percentages here are a share of total soft costs, which sit outside the contract sum.'});
-      blocks.push({kind:'table',headers:['Qty','Rate','Total','% Soft'],rows:soft});
+      const scols=[{key:'item',label:'Item'},{key:'qty',label:'Qty',fmt:'qty'},
+        {key:'rate',label:'Rate',fmt:'money2'},{key:'value',label:'Total',fmt:'money'},{key:'share',label:'% Soft'}];
+      sch.softGroups.forEach(gp=>{
+        blocks.push({kind:'table',columns:scols,
+          rows:gp.rows.map(r=>({item:r.code+'  '+r.desc,qty:r.qty,rate:r.rate,value:r.total,share:share1(r.total,sch.softTotal)})),
+          totals:{item:gp.grp,value:gp.total,share:share1(gp.total,sch.softTotal)}});
+      });
+      blocks.push({kind:'kv',rows:[kv('Total Soft Costs',sch.softTotal,'money',true)]});
     }
     sheets.push({key:'csi',name:'CSI Schedule',title:'CSI Schedule of Values',blocks});
   }
 
+  const fsdoc={
+    fsdoc:'1',
+    meta:{
+      title:doc.name||'Untitled Project',
+      eyebrow:'FINISHES SOLUTIONS · PROJECT BUDGET · '+(doc.projectId||'—'),
+      subline:[doc.address,num(doc.resSF)+' SF residential',
+        doc.amenSF?num(doc.amenSF)+' SF amenity':'',
+        sm.site?sm.acres.toFixed(2)+' ac site':'',tu+' units',
+        'Pricing '+(doc.pricingVersion||'—')].filter(Boolean).join(' · '),
+      rightLines:[stamp,(doc.projectId||'—')+(doc.type?' · '+doc.type:''),'Status: '+(doc.status||'Draft')],
+      bandLine:(doc.projectId||'—')+' · '+(doc.name||'Untitled Project'),
+      footerRight:doc.projectId||'',
+      docId:doc.projectId||undefined,
+      generatedAt:new Date().toISOString()
+    },
+    sheets
+  };
   const signature=s.sign?{
     heading:'Approval',
     statement:'The signature below approves the project budget identified here, exactly as presented in this '
@@ -3756,28 +3812,15 @@ function buildBudgetPdfDoc(s){
       ['Total Units · SF',num(tu)+' units · '+num(tsf)+' SF'],
       ['Last Saved',(doc.updated||'').slice(0,10)||'—'],['Exported',stamp]
     ]}:null;
-
-  return {
-    meta:{
-      product:'FINISHES SOLUTIONS',
-      eyebrow:'FINISHES SOLUTIONS · PROJECT BUDGET · '+(doc.projectId||'—'),
-      title:doc.name||'Untitled Project',
-      subtitle:[doc.address,num(doc.resSF)+' SF residential',
-        doc.amenSF?num(doc.amenSF)+' SF amenity':'',
-        sm.site?sm.acres.toFixed(2)+' ac site':'',tu+' units',
-        'Pricing '+(doc.pricingVersion||'—')].filter(Boolean).join(' · '),
-      rightLines:[stamp,(doc.projectId||'—')+(doc.type?' · '+doc.type:''),'Status: '+(doc.status||'Draft')],
-      footerRight:doc.projectId||'',
-      engineLine:'',highlight:false
-    },
-    signature,sheets
-  };
+  return {fsdoc,signature};
 }
 function exportBudgetPdf(){
-  if(typeof pdfMake==='undefined'||typeof FSExportRender==='undefined'){
+  if(typeof pdfMake==='undefined'||typeof fsRender==='undefined'){
     toast('PDF library is unavailable — reload the page');return;}
   const s=sel();closeExport();
-  const dd=FSExportRender.buildPdfDocDefinition(buildBudgetPdfDoc(s));
+  const built=buildBudgetFsdoc(s);
+  const dd=fsRender.buildPdfDocDefinition(built.fsdoc,fsRender.themes['finishes-solutions'],'portrait');
+  FSExportRender.appendApprovalPage(dd,built.signature);
   pdfMake.createPdf(dd).getBlob(b=>{
     const a=document.createElement('a');
     a.href=URL.createObjectURL(b);a.download=exportBaseName()+'.pdf';a.click();
@@ -4107,14 +4150,16 @@ function wireDelegates(){
       if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
       saveBudget(true);
     }
-    // Cmd/Ctrl+Z: app-level undo on the budget document pages. A focused
-    // field is blurred first, so an in-progress edit commits and becomes the
-    // change that gets undone — the way desktop applications behave.
-    if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&(e.key==='z'||e.key==='Z')){
+    // Cmd/Ctrl+Z undo · Cmd/Ctrl+Shift+Z or Ctrl+Y redo, on the budget
+    // document pages. A focused field is blurred first, so an in-progress
+    // edit commits and becomes the change that gets undone — the way
+    // desktop applications behave.
+    const zKey=e.key==='z'||e.key==='Z', yKey=e.key==='y'||e.key==='Y';
+    if((e.metaKey||e.ctrlKey)&&(zKey||yKey)){
       if(!doc||!DOC_PAGES.includes(currentPage))return;   // native undo elsewhere
       e.preventDefault();
       if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
-      undoBudget();
+      if(yKey||(zKey&&e.shiftKey))redoBudget();else undoBudget();
     }
   });
   document.querySelectorAll('#helpToc a').forEach(a=>a.addEventListener('click',e=>{

@@ -279,22 +279,26 @@ Each budget line has `code` (CSI), `grp`, `scope` (`res` | `amen` | `soft`), `de
 
 ## 7 · Running the tests
 
-**Export rendering.** Exports run through one shared module,
-`export-render.js`: a document-model builder plus PDF (pdfmake), XLSX (ExcelJS) and
-CSV renderers. The SAME file exists twice — `app/export-render.js` (loaded as a
-browser script beside the vendored `pdfmake.min.js` + `fs-pdf-fonts.js` Montserrat
-subset) and `api/shared/investment/export-render.js` (required by
-`api/investment-analysis-export`, which serves
-`GET /api/investment-analysis/{id}/export?format=pdf|xlsx|csv[&version=N]` from the
-saved ResultDoc, never recalculating). The copies MUST stay byte-identical —
-`test/export-render.test.js` fails if they drift; edit `app/export-render.js` and
-copy it over. Content changes belong in `buildExportDoc`; renderers only format. The PDF
-renderer is generic (portrait letter; reads meta.eyebrow/title/subtitle/
-rightLines/footerRight + sheets of kv/table/note/kpiBand blocks), so the
-budget's real PDF download is a second producer — `buildBudgetPdfDoc()` in
-app/index.html — feeding the same renderer.
+**Export rendering (fs-courier cutover).** Rendering now belongs to **fs-render**,
+fs-courier's engine, consumed two ways: the browser vendors the esbuild bundle
+`app/vendor/fs-render.browser.js` (global `fsRender`) and the API requires the
+VENDORED SOURCE at `api/shared/fs-render/` (source of truth:
+Finishes-Solutions/fs-courier — update by re-copying `engine/src` + rebuilding the
+bundle; the copy's package.json records the pinned commit). The root package.json
+maps the `fs-render` name to that vendored copy so tests need no sibling checkout.
+The suite keeps the PRODUCER side: `export-render.js` (buildExportDoc — content —
+plus `appendApprovalPage`, the Signature Needed page fsdoc/1 deliberately omits,
+appended onto the finished docDefinition) and `to-fsdoc.js` (adapts the doc to the
+fsdoc/1 contract). Both producer files exist twice (app/ and
+api/shared/investment/) and MUST stay byte-identical — `test/export-render.test.js`
+fails on drift. The budget is the second producer: `buildBudgetFsdoc()` in
+app/index.html emits fsdoc/1 directly (columnar `table` blocks; group heads carry
+scope/group subtotals). Orientation policy: PDFs are portrait letter EXCEPT
+ten-year projections, whose 11 matrix columns need the `landscape` preset (the
+engine's stated rule). Content changes belong in the producers; the engine only
+formats; nothing recalculates.
 
-Fourteen Playwright suites, 496 assertions, plus 70 `node:test` assertions for the
+Fourteen Playwright suites, 500 assertions, plus 78 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus
