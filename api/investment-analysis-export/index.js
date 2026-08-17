@@ -13,6 +13,7 @@ const { GUID_RX, jsonRes } = require('../shared/investment-persistence');
 const producer = require('../shared/investment/export-render');
 const { toFsdoc } = require('../shared/investment/to-fsdoc');
 const fsRender = require('../shared/fs-render/src/index');
+const legacy = require('../shared/investment/legacy-render');
 
 const FORMATS = {
   pdf: { mime: 'application/pdf', ext: 'pdf' },
@@ -93,22 +94,37 @@ module.exports = async function (context, req) {
     { signature: /^(1|true)$/i.test(String((req.query && req.query.signature) || '')) });
   const doc = producer.buildExportDoc(result, opts,
     { savedVersion, generatedAt: new Date().toISOString() });
-  const fsdoc = toFsdoc(doc, { docId: id + '-v' + savedVersion });
+
+  // Renderer selection: ?renderer= wins per request, then the
+  // FS_EXPORT_RENDERER application setting, then the engine.
+  const rendererParam = String((req.query && req.query.renderer)
+    || process.env.FS_EXPORT_RENDERER || 'engine').toLowerCase();
+  if (rendererParam !== 'engine' && rendererParam !== 'local') {
+    context.res = jsonRes(400, { error: 'bad_request', message: 'renderer must be engine or local.' }); return;
+  }
+  const useLegacy = rendererParam === 'local';
+  const fsdoc = useLegacy ? null : toFsdoc(doc, { docId: id + '-v' + savedVersion });
 
   let body;
   if (format === 'pdf') {
-    // Ten-year projections (11 matrix columns) physically need landscape on
-    // letter — the engine's stated policy; five-year docs stay portrait.
-    const preset = doc.meta.years > 5 ? 'landscape' : 'portrait';
-    const dd = fsRender.buildPdfDocDefinition(fsdoc, THEME, preset);
-    producer.appendApprovalPage(dd, doc.signature);
+    let dd;
+    if (useLegacy) {
+      dd = legacy.buildPdfDocDefinition(doc);   // renders doc.signature itself
+    } else {
+      // Ten-year projections (11 matrix columns) physically need landscape on
+      // letter — the engine's stated policy; five-year docs stay portrait.
+      const preset = doc.meta.years > 5 ? 'landscape' : 'portrait';
+      dd = fsRender.buildPdfDocDefinition(fsdoc, THEME, preset);
+      producer.appendApprovalPage(dd, doc.signature);
+    }
     body = await pdfBuffer(dd);
   } else if (format === 'xlsx') {
     const ExcelJS = require('exceljs');
-    const wb = fsRender.buildWorkbook(ExcelJS, fsdoc, THEME);
+    const wb = useLegacy ? legacy.buildWorkbook(ExcelJS, doc)
+      : fsRender.buildWorkbook(ExcelJS, fsdoc, THEME);
     body = Buffer.from(await wb.xlsx.writeBuffer());
   } else {
-    body = Buffer.from(fsRender.buildCsv(fsdoc), 'utf8');
+    body = Buffer.from(useLegacy ? legacy.buildCsv(doc) : fsRender.buildCsv(fsdoc), 'utf8');
   }
 
   const base = (analysisName || 'Investment_Analysis').replace(/[^\w]+/g, '_') + '_Investment_Analysis'

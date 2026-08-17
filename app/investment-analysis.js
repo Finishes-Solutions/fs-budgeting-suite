@@ -1005,6 +1005,10 @@
   }
   function pdfPreset(doc) { return doc.meta.years > 5 ? 'landscape' : 'portrait'; }
   const FS_THEME = () => fsRender.themes['finishes-solutions'];
+  // FS_EXPORT_RENDERER: the app shell resolves the setting (env via
+  // /api/export-config, localStorage override); 'local' falls back to the
+  // frozen pre-cutover renderers in legacy-render.js.
+  const useLegacy = () => typeof exportRenderer === 'function' && exportRenderer() === 'local';
 
   /* ---- PDF: a real .pdf file — fsdoc/1 rendered by the vendored fs-render
      engine through pdfmake and downloaded directly, no print dialog. The
@@ -1016,8 +1020,13 @@
     }
     readExportOpts(); closeInvModal();
     const doc = exportDoc();
-    const dd = fsRender.buildPdfDocDefinition(fsdocOf(doc), FS_THEME(), pdfPreset(doc));
-    FSExportRender.appendApprovalPage(dd, doc.signature);
+    let dd;
+    if (useLegacy()) {
+      dd = FSLegacyRender.buildPdfDocDefinition(doc);   // renders doc.signature itself
+    } else {
+      dd = fsRender.buildPdfDocDefinition(fsdocOf(doc), FS_THEME(), pdfPreset(doc));
+      FSExportRender.appendApprovalPage(dd, doc.signature);
+    }
     pdfMake.createPdf(dd).getBlob(blob => downloadBlob(blob, exportBaseName() + '.pdf'));
   }
 
@@ -1209,7 +1218,10 @@
       A.toast('Excel library is unavailable — reload the page.'); return;
     }
     readExportOpts(); closeInvModal();
-    const wb = fsRender.buildWorkbook(ExcelJS, fsdocOf(exportDoc()), FS_THEME());
+    const doc = exportDoc();
+    const wb = useLegacy()
+      ? FSLegacyRender.buildWorkbook(ExcelJS, doc)
+      : fsRender.buildWorkbook(ExcelJS, fsdocOf(doc), FS_THEME());
     const buf = await wb.xlsx.writeBuffer();
     downloadBlob(new Blob([buf],
       { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),

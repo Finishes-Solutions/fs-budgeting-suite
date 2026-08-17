@@ -215,6 +215,11 @@ http.createServer((req, res) => {
     });
   }
 
+  if (p === '/api/export-config') {
+    const v = String(process.env.FS_EXPORT_RENDERER || '').toLowerCase();
+    return json(res, 200, { renderer: v === 'local' ? 'local' : 'engine' });
+  }
+
   if (p === '/api/budgets') {
     // Address comes off the document, mirroring the JSON_VALUE the real API uses.
     return json(res, 200, [...budgets.values()].filter(x => !x.deleted)
@@ -415,12 +420,17 @@ http.createServer((req, res) => {
       const producer = require('../api/shared/investment/export-render');
       const { toFsdoc } = require('../api/shared/investment/to-fsdoc');
       const fsRender = require('../api/shared/fs-render/src/index');
+      const legacy = require('../api/shared/investment/legacy-render');
       const THEME = fsRender.themes['finishes-solutions'];
       const doc = producer.buildExportDoc(result,
         { kpis: true, cash: true, sale: true, returns: true, sens: true, assumptions: true, highlight: false,
           signature: /^(1|true)$/i.test(String(q.get('signature') || '')) },
         { savedVersion, generatedAt: new Date().toISOString() });
-      const fsdoc = toFsdoc(doc, { docId: id + '-v' + savedVersion });
+      const rendererParam = String(q.get('renderer') || process.env.FS_EXPORT_RENDERER || 'engine').toLowerCase();
+      if (rendererParam !== 'engine' && rendererParam !== 'local')
+        return json(res, 400, { error: 'bad_request', message: 'renderer must be engine or local.' });
+      const useLegacy = rendererParam === 'local';
+      const fsdoc = useLegacy ? null : toFsdoc(doc, { docId: id + '-v' + savedVersion });
       const base = (live.name || 'Investment_Analysis').replace(/[^\w]+/g, '_')
         + '_Investment_Analysis' + (versionParam ? '_v' + savedVersion : '');
       const send = (mime, ext, buf) => {
@@ -429,10 +439,12 @@ http.createServer((req, res) => {
         res.end(buf);
       };
       if (format === 'csv')
-        return send('text/csv; charset=utf-8', 'csv', Buffer.from(fsRender.buildCsv(fsdoc), 'utf8'));
+        return send('text/csv; charset=utf-8', 'csv',
+          Buffer.from(useLegacy ? legacy.buildCsv(doc) : fsRender.buildCsv(fsdoc), 'utf8'));
       if (format === 'xlsx') {
         const ExcelJS = require('exceljs');
-        return fsRender.buildWorkbook(ExcelJS, fsdoc, THEME).xlsx.writeBuffer()
+        return (useLegacy ? legacy.buildWorkbook(ExcelJS, doc)
+          : fsRender.buildWorkbook(ExcelJS, fsdoc, THEME)).xlsx.writeBuffer()
           .then(buf => send('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx', Buffer.from(buf)))
           .catch(e => json(res, 500, { error: 'render_failed', message: e.message }));
       }
@@ -442,9 +454,14 @@ http.createServer((req, res) => {
         const printer = new PdfPrinter({ Montserrat: {
           normal: F('Montserrat-Regular.ttf'), bold: F('Montserrat-Bold.ttf'),
           italics: F('Montserrat-Regular.ttf'), bolditalics: F('Montserrat-Bold.ttf') } });
-        const preset = doc.meta.years > 5 ? 'landscape' : 'portrait';
-        const dd = fsRender.buildPdfDocDefinition(fsdoc, THEME, preset);
-        producer.appendApprovalPage(dd, doc.signature);
+        let dd;
+        if (useLegacy) {
+          dd = legacy.buildPdfDocDefinition(doc);   // renders doc.signature itself
+        } else {
+          const preset = doc.meta.years > 5 ? 'landscape' : 'portrait';
+          dd = fsRender.buildPdfDocDefinition(fsdoc, THEME, preset);
+          producer.appendApprovalPage(dd, doc.signature);
+        }
         const pdoc = printer.createPdfKitDocument(dd);
         const chunks = [];
         pdoc.on('data', c => chunks.push(c));

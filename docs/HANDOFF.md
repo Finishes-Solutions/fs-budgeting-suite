@@ -298,7 +298,18 @@ ten-year projections, whose 11 matrix columns need the `landscape` preset (the
 engine's stated rule). Content changes belong in the producers; the engine only
 formats; nothing recalculates.
 
-Fourteen Playwright suites, 500 assertions, plus 78 `node:test` assertions for the
+**Renderer fallback (`FS_EXPORT_RENDERER`).** The pre-cutover renderers survive,
+frozen, in `legacy-render.js` (dual-copied and parity-tested like the producers;
+the budget's legacy producer is `legacyBudgetPdfDoc()` in app/index.html). The
+SWA application setting `FS_EXPORT_RENDERER` — `engine` (default) or `local` —
+flips EVERY export to them; `GET /api/export-config` serves the value to the
+browser at boot. Overrides: `localStorage.setItem('fsExportRenderer','local')`
+flips one browser (remove the key to restore), and `&renderer=local|engine` on
+the export endpoint flips one request. Repair playbook: set the app setting to
+`local`, fix fs-render, flip back. Do not evolve the legacy files — new export
+work happens in the producers and fs-render.
+
+Fourteen Playwright suites, 505 assertions, plus 79 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus

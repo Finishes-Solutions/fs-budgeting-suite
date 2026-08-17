@@ -159,6 +159,43 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('API export downloads as an attachment', /attachment/.test(srv.csvDisp), srv.csvDisp);
  ok('API rejects unknown formats', srv.badStatus===400, String(srv.badStatus));
 
+ // ---- FS_EXPORT_RENDERER: the repair fallback. The config endpoint reports
+ // the deployment default; ?renderer=local flips one API request to the
+ // frozen legacy renderers; a localStorage override flips this browser.
+ const swtch=await p.evaluate(async()=>{
+   const cfg=await (await fetch('/api/export-config')).json();
+   const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
+   const legPdf=await (await fetch('/api/investment-analysis/'+id+'/export?format=pdf&renderer=local')).arrayBuffer();
+   const legCsv=await (await fetch('/api/investment-analysis/'+id+'/export?format=csv&renderer=local')).text();
+   const bad=await fetch('/api/investment-analysis/'+id+'/export?format=pdf&renderer=fax');
+   return {cfg:cfg.renderer,
+     legHead:String.fromCharCode.apply(null,new Uint8Array(legPdf.slice(0,5))),
+     legLen:legPdf.byteLength,legCsvOk:/Net Operating Income/.test(legCsv),badStatus:bad.status};
+ });
+ ok('config endpoint defaults to the engine renderer', swtch.cfg==='engine', swtch.cfg);
+ ok('renderer=local renders a real PDF through the legacy fallback',
+    swtch.legHead==='%PDF-'&&swtch.legLen>30000, JSON.stringify(swtch.legLen));
+ ok('renderer=local CSV carries the tables', swtch.legCsvOk);
+ ok('unknown renderer values are rejected', swtch.badStatus===400, String(swtch.badStatus));
+ await p.evaluate(()=>{localStorage.setItem('fsExportRenderer','local');
+   window.__dl=null;
+   const orig=HTMLAnchorElement.prototype.click;
+   HTMLAnchorElement.prototype.click=function(){window.__dl={href:this.href,name:this.download};};
+   window.__restoreClick=()=>{HTMLAnchorElement.prototype.click=orig;};});
+ await p.click('#invExportBtn'); await p.waitForTimeout(200);
+ await p.click('#invModal button:has-text("PDF")');
+ await p.waitForFunction(()=>window.__dl,{timeout:15000});
+ const legDl=await p.evaluate(async()=>{
+   window.__restoreClick();
+   localStorage.removeItem('fsExportRenderer');   // restore the engine default
+   const buf=await (await fetch(window.__dl.href)).arrayBuffer();
+   const txt=new TextDecoder('latin1').decode(buf);
+   return {head:txt.slice(0,5),len:buf.byteLength,
+     portrait:/MediaBox\s*\[\s*0\s+0\s+612\s+792/.test(txt)};
+ });
+ ok('localStorage override routes the PDF button through the legacy renderer',
+    legDl.head==='%PDF-'&&legDl.len>30000&&legDl.portrait, JSON.stringify(legDl));
+
  // ---- Print: the original #printDoc pipeline, kept as the third option.
  await p.evaluate(()=>{window.__rpt=null;window.print=()=>{window.__rpt=document.getElementById('printDoc').innerHTML;};});
  await p.click('#invExportBtn'); await p.waitForTimeout(200);

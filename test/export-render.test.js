@@ -22,11 +22,31 @@ const doc = producer.buildExportDoc(result, ALL, { savedVersion: 3, generatedAt:
 const fsdoc = toFsdoc(doc, { docId: 'combo-15ac-v3' });
 
 test('the app and api copies of the producer files are byte-identical', () => {
-  for (const f of ['export-render.js', 'to-fsdoc.js']) {
+  for (const f of ['export-render.js', 'to-fsdoc.js', 'legacy-render.js']) {
     const a = fs.readFileSync(path.join(__dirname, '../app', f), 'utf8');
     const b = fs.readFileSync(path.join(__dirname, '../api/shared/investment', f), 'utf8');
     assert.strictEqual(a, b, 'app/' + f + ' and api/shared/investment/' + f + ' have drifted');
   }
+});
+
+test('the legacy fallback still renders all three formats from the same doc', async () => {
+  const legacy = require('../api/shared/investment/legacy-render');
+  const sd = producer.buildExportDoc(result, Object.assign({}, ALL, { signature: true }),
+    { savedVersion: 1, generatedAt: '2026-08-17T00:00:00.000Z' });
+  const dd = legacy.buildPdfDocDefinition(sd);
+  assert.strictEqual(dd.pageOrientation, 'portrait');
+  const s = JSON.stringify(dd);
+  assert.match(s, /Approval/);          // the legacy renderer draws the approval page itself
+  assert.match(s, /accompanies is void/);
+  const ExcelJS = require('exceljs');
+  const wb = legacy.buildWorkbook(ExcelJS, sd);
+  const buf = await wb.xlsx.writeBuffer();
+  const wb2 = new ExcelJS.Workbook();
+  await wb2.xlsx.load(buf);
+  assert.deepStrictEqual(wb2.worksheets.map(w => w.name),
+    ['Investment Summary', 'Cash Flow', 'Debt and Sale', 'Returns', 'Acquisition Sensitivity', 'Assumptions']);
+  assert.strictEqual(wb2.worksheets[0].getCell(1, 1).value, 'FINISHES SOLUTIONS');
+  assert.match(legacy.buildCsv(sd), /Net Operating Income/);
 });
 
 test('document model reconciles with the canonical engine result', () => {
