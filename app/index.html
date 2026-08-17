@@ -1142,6 +1142,13 @@ th.sortable.sorted{color:var(--ink-900)}
         </tbody></table>
         <p>Typing over a quantity breaks the link for that line only, and it will no longer follow the inputs.</p>
 
+        <h4>Undo</h4>
+        <p><b>Cmd+Z</b> (or <b>Ctrl+Z</b>) undoes your last committed change — a deleted line item comes
+          back, an edited rate or quantity reverts — up to <b>five steps</b>. One step is one change, not
+          one keystroke. The history is deliberately small and in memory only: it clears when you open
+          another budget or reload the page, and it never touches saved versions. If you are typing in a
+          field when you press it, the field commits first and that edit is what gets undone.</p>
+
         <h4>Manually Edited Lines</h4>
         <p>A <span class="editdot on" style="margin:0 2px"></span> blue dot to the left of a line means you changed it
           rather than taking the library's number. A line is marked when you override its quantity, set a rate that
@@ -1388,9 +1395,12 @@ th.sortable.sorted{color:var(--ink-900)}
               Send the URL to whoever set up the environment.</td></tr>
           <tr><td>A budget shows $0 totals</td>
             <td>Almost always residential SF is 0, or every line was switched to lump sum with no rate set.</td></tr>
+          <tr><td>I deleted a line by accident</td>
+            <td><b>Cmd/Ctrl+Z</b> restores it — up to five changes back, while the budget stays open.</td></tr>
           <tr><td>I lost my edits</td>
             <td>Nothing autosaves. The header pill shows unsaved state and the browser warns before closing —
-              if that warning was dismissed, the work is gone.</td></tr>
+              if that warning was dismissed, the work is gone. While the budget is still open,
+              <b>Cmd/Ctrl+Z</b> steps back up to five changes.</td></tr>
         </tbody></table>
       </div></section>
 
@@ -1878,8 +1888,34 @@ const BASIS_LABEL={sf:'Per Res SF',asf:'Per Amen SF',unit:'Per Unit',ls:'Lump Su
    touch() is recalc() plus "the user changed something". Mutation handlers call it;
    navigation and initial paints call plain recalc(), so simply opening a budget or
    switching tabs never marks it dirty. */
-function markDirty(){if(!dirty){dirty=true;renderSaveState();}}   // edits that need no recalc
-function touch(){dirty=true;renderSaveState();recalc();}
+function markDirty(){recordUndo();if(!dirty){dirty=true;renderSaveState();}}   // edits that need no recalc
+function touch(){recordUndo();dirty=true;renderSaveState();recalc();}
+
+/* ---- undo (Cmd/Ctrl+Z) ----
+   A small ring of document snapshots: the current state plus up to five back.
+   Snapshots record in touch()/markDirty() — i.e. after every COMMITTED
+   mutation — so one undo step equals one user-visible change (a deleted
+   line, an edited rate), never one keystroke. Deliberately tiny and
+   in-memory only: opening another budget or reloading clears it, and saved
+   versions are never touched. */
+const UNDO_MAX=5;
+let undoStack=[];
+function resetUndo(){undoStack=doc?[JSON.stringify(doc)]:[];}
+function recordUndo(){
+  if(!doc)return;
+  const snap=JSON.stringify(doc);
+  if(undoStack[undoStack.length-1]===snap)return;   // no-op mutation → no step
+  undoStack.push(snap);
+  if(undoStack.length>UNDO_MAX+1)undoStack.shift(); // current + five back
+}
+function undoBudget(){
+  if(undoStack.length<2){toast('Nothing to undo.');return;}
+  undoStack.pop();
+  doc=migrate(JSON.parse(undoStack[undoStack.length-1]));
+  dirty=true;selected.clear();
+  fillForms();recalc();renderSaveState();
+  toast('Undid the last change.');
+}
 function markSaved(){dirty=false;lastSaved=new Date();renderSaveState();}
 function renderSaveState(){
   const el=document.getElementById('saveState');if(!el)return;
@@ -2413,7 +2449,7 @@ async function newBudgetFromTemplate(key){
   d.created=new Date().toISOString();d.updated=d.created;
   templateEdit=null;renderTemplateBanner();
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
-  enableDocNav();fillForms();go('input');
+  enableDocNav();fillForms();resetUndo();go('input');
   toast('New '+(t.name||'budget')+' from template version '+(t.currentVersion||1));
 }
 
@@ -2425,7 +2461,7 @@ function newBudget(kind){
 function applyNewBudget(kind){
   doc=blankDoc(kind);dirty=false;lastSaved=null;selected.clear();
   templateEdit=null;renderTemplateBanner();
-  enableDocNav();fillForms();go('input');
+  enableDocNav();fillForms();resetUndo();go('input');
   if(kind==='blank')toast('Blank budget — build the scope from the CSI catalog on the Budget page');
 }
 async function openBudget(pid,page){
@@ -2434,7 +2470,7 @@ async function openBudget(pid,page){
   if(!d){toast('Could not load '+pid);return;}
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
   templateEdit=null;renderTemplateBanner();      // opening a budget leaves template mode
-  enableDocNav();fillForms();
+  enableDocNav();fillForms();resetUndo();
   if(mobileRestricted()){
     // The read-only summary is not built yet, so a tap on a row explains itself
     // rather than opening a page the user cannot use. Versions remain available.
@@ -2847,7 +2883,7 @@ function setLineRate(id,v){const l=lineById(id);if(!l)return;l.unit=+v;touch();}
 function removeLine(id){
   const i=lineIndexById(id);if(i<0)return;
   const l=doc.lines[i],what=(l.desc||l.code||'this line item').trim();
-  if(!confirm('Delete "'+what+'"?\n\nThis cannot be undone. The line is removed from the open budget and the change is written to the database the next time you save.'))return;
+  if(!confirm('Delete "'+what+'"?\n\nCmd/Ctrl+Z brings it back while this budget stays open. The change is written to the database the next time you save.'))return;
   selected.delete(id);
   doc.lines.splice(i,1);
   touch();
@@ -4069,6 +4105,15 @@ function wireDelegates(){
       // commit whatever field is focused before reading the form
       if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
       saveBudget(true);
+    }
+    // Cmd/Ctrl+Z: app-level undo on the budget document pages. A focused
+    // field is blurred first, so an in-progress edit commits and becomes the
+    // change that gets undone — the way desktop applications behave.
+    if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&(e.key==='z'||e.key==='Z')){
+      if(!doc||!DOC_PAGES.includes(currentPage))return;   // native undo elsewhere
+      e.preventDefault();
+      if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+      undoBudget();
     }
   });
   document.querySelectorAll('#helpToc a').forEach(a=>a.addEventListener('click',e=>{

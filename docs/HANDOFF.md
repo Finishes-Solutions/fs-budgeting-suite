@@ -288,7 +288,7 @@ rightLines/footerRight + sheets of kv/table/note/kpiBand blocks), so the
 budget's real PDF download is a second producer — `buildBudgetPdfDoc()` in
 app/index.html — feeding the same renderer.
 
-Fourteen Playwright suites, 492 assertions, plus 70 `node:test` assertions for the
+Fourteen Playwright suites, 496 assertions, plus 70 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus

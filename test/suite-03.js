@@ -115,6 +115,27 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('budget PDF is portrait letter', pdfDl.portrait);
  ok('budget PDF filename carries the project', /TST-9999.*\.pdf$/.test(pdfDl.name), pdfDl.name);
 
+ // ---- undo: Cmd/Ctrl+Z restores committed changes, up to five back
+ await p.click('button:has-text("Expand All")'); await p.waitForTimeout(300);
+ const lineIds0=await p.evaluate(()=>JSON.stringify(doc.lines.map(l=>l.lineId)));
+ const rows0=await p.evaluate(()=>doc.lines.length);
+ await p.locator('#budBody .btn-x').first().click(); await p.waitForTimeout(250);
+ ok('a line item deletes', (await p.evaluate(()=>doc.lines.length))===rows0-1);
+ await p.keyboard.press('Control+z'); await p.waitForTimeout(350);
+ ok('Ctrl+Z restores the deleted line exactly',
+    (await p.evaluate(()=>JSON.stringify(doc.lines.map(l=>l.lineId))))===lineIds0);
+ // an edited rate reverts too
+ const rate0=await p.evaluate(()=>doc.lines[0].unit);
+ await p.evaluate(()=>{doc.lines[0].unit=123456;touch();});
+ await p.keyboard.press('Control+z'); await p.waitForTimeout(350);
+ ok('Ctrl+Z reverts an edited rate', (await p.evaluate(()=>doc.lines[0].unit))===rate0,
+    String(await p.evaluate(()=>doc.lines[0].unit)));
+ // depth cap: six deletes, but only five undos recover
+ for(let i=0;i<6;i++){await p.locator('#budBody .btn-x').first().click();await p.waitForTimeout(150);}
+ for(let i=0;i<8;i++){await p.keyboard.press('Control+z');await p.waitForTimeout(180);}
+ ok('undo depth is capped at five changes', (await p.evaluate(()=>doc.lines.length))===rows0-1,
+    (await p.evaluate(()=>doc.lines.length))+' vs '+rows0);
+
  ok('no JS errors', errs.length===0, errs.join('|'));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();
