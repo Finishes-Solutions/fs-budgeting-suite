@@ -394,6 +394,60 @@ http.createServer((req, res) => {
     const a = invAnalyses.get(id);
     const live = a && !a.deleted ? a : null;
 
+    // Server-rendered exports — the SAME shared renderer module the real
+    // function uses, so suites assert the genuine file bytes.
+    if (seg[1] === 'export') {
+      if (req.method !== 'GET') { res.writeHead(405); return res.end('Method not allowed'); }
+      if (!live) return json(res, 404, { error: 'not_found', message: 'Not found' });
+      const q = new URL(req.url, 'http://x').searchParams;
+      const format = String(q.get('format') || 'pdf').toLowerCase();
+      const versionParam = q.get('version');
+      let result = live.result, savedVersion = live.currentVersionNumber;
+      if (versionParam) {
+        if (!/^\d+$/.test(versionParam)) return json(res, 400, { error: 'bad_request', message: 'version must be a positive integer.' });
+        const v = live.versions[parseInt(versionParam, 10) - 1];
+        if (!v) return json(res, 404, { error: 'not_found', message: 'Version not found.' });
+        result = v.result; savedVersion = v.versionNumber;
+      }
+      if (!result) return json(res, 409, { error: 'no_result', message: 'This analysis has no saved calculation yet — save it first.' });
+      if (!['pdf', 'xlsx', 'csv'].includes(format))
+        return json(res, 400, { error: 'bad_request', message: 'format must be pdf, xlsx or csv.' });
+      const render = require('../api/shared/investment/export-render');
+      const doc = render.buildExportDoc(result,
+        { kpis: true, cash: true, sale: true, returns: true, sens: true, assumptions: true, highlight: false,
+          signature: /^(1|true)$/i.test(String(q.get('signature') || '')) },
+        { savedVersion, generatedAt: new Date().toISOString() });
+      const base = (live.name || 'Investment_Analysis').replace(/[^\w]+/g, '_')
+        + '_Investment_Analysis' + (versionParam ? '_v' + savedVersion : '');
+      const send = (mime, ext, buf) => {
+        res.writeHead(200, { 'Content-Type': mime,
+          'Content-Disposition': 'attachment; filename="' + base + '.' + ext + '"' });
+        res.end(buf);
+      };
+      if (format === 'csv')
+        return send('text/csv; charset=utf-8', 'csv', Buffer.from(render.buildCsv(doc), 'utf8'));
+      if (format === 'xlsx') {
+        const ExcelJS = require('exceljs');
+        return render.buildWorkbook(ExcelJS, doc).xlsx.writeBuffer()
+          .then(buf => send('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx', Buffer.from(buf)))
+          .catch(e => json(res, 500, { error: 'render_failed', message: e.message }));
+      }
+      try {
+        const PdfPrinter = require('pdfmake');
+        const F = f => path.join(__dirname, '..', 'api', 'shared', 'fonts', f);
+        const printer = new PdfPrinter({ Montserrat: {
+          normal: F('Montserrat-Regular.ttf'), bold: F('Montserrat-Bold.ttf'),
+          italics: F('Montserrat-Regular.ttf'), bolditalics: F('Montserrat-Bold.ttf') } });
+        const pdoc = printer.createPdfKitDocument(render.buildPdfDocDefinition(doc));
+        const chunks = [];
+        pdoc.on('data', c => chunks.push(c));
+        pdoc.on('end', () => send('application/pdf', 'pdf', Buffer.concat(chunks)));
+        pdoc.on('error', e => json(res, 500, { error: 'render_failed', message: e.message }));
+        pdoc.end();
+        return;
+      } catch (e) { return json(res, 500, { error: 'render_failed', message: e.message }); }
+    }
+
     if (seg[1] === 'versions') {
       if (req.method !== 'GET') { res.writeHead(405); return res.end('Method not allowed'); }
       if (!live) return json(res, 404, { error: 'not_found', message: 'Not found' });

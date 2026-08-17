@@ -319,7 +319,7 @@
           <span class="inv-statebar" id="invState"></span>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
-          <button class="btn btn-dark" data-inv-edit id="invExportBtn" onclick="FSInvestmentUI.openExport()">Export…</button>
+          <button class="btn btn-dark" data-inv-edit id="invExportBtn" onclick="FSInvestmentUI.openExport()">Export</button>
         </div>
       </div>
       <div id="invConflict"></div>
@@ -783,11 +783,14 @@
     if (!m) {
       m = document.createElement('div');
       m.id = 'invModal';
-      m.style.cssText = 'position:fixed;inset:0;background:rgba(22,25,26,.45);display:flex;align-items:flex-start;justify-content:center;z-index:60;padding:5vh 16px;overflow:auto';
+      // Centered like the budget's export modal. margin:auto on the card (not
+      // align-items:center here) so a taller-than-viewport modal — the version
+      // history can be — scrolls from its top instead of clipping it.
+      m.style.cssText = 'position:fixed;inset:0;background:rgba(22,25,26,.45);display:flex;z-index:60;padding:24px 16px;overflow:auto';
       m.addEventListener('click', e => { if (e.target === m) m.remove(); });
       document.body.appendChild(m);
     }
-    m.innerHTML = `<div style="background:#fff;border-radius:12px;max-width:${maxWidth || 960}px;width:100%;padding:22px 26px;position:relative">
+    m.innerHTML = `<div style="background:#fff;border-radius:12px;max-width:${maxWidth || 960}px;width:100%;padding:22px 26px;position:relative;margin:auto">
       <button class="btn-x" style="position:absolute;top:14px;right:14px" title="Close" onclick="document.getElementById('invModal').remove()">×</button>
       ${html}</div>`;
   }
@@ -922,21 +925,23 @@
   }
 
   /* ================= EXPORT (modal, options, PDF, workbook) =================
-     One Export… button, like the budget: a modal picks the sections and
+     One Export button, like the budget: a modal picks the sections and
      options, then produces either format from the same canonical result. */
   const exOpts = { kpis: true, cash: true, sale: true, returns: true, sens: true,
-    assumptions: true, highlight: false };
+    assumptions: true, highlight: false, signature: false };
   const EX_IDS = { kpis: 'inv-ex-kpis', cash: 'inv-ex-cash', sale: 'inv-ex-sale',
     returns: 'inv-ex-returns', sens: 'inv-ex-sens', assumptions: 'inv-ex-assump',
-    highlight: 'inv-ex-highlight' };
+    highlight: 'inv-ex-highlight', signature: 'inv-ex-signature' };
 
   function openExport() {
     if (!st.result || st.stale) { A.toast('Calculate first so the exports match the inputs.'); return; }
     const chk = (k, label, title) => `<label class="chk"${title ? ' title="' + title + '"' : ''}>
       <input type="checkbox" id="${EX_IDS[k]}" ${exOpts[k] ? 'checked' : ''}> ${label}</label>`;
+    // The button row matches the budget export modal exactly — one order
+    // everywhere: Email (Soon) · Print · PDF · Excel (.xlsx).
     openInvModal(`<h2 style="margin-top:0">Export Analysis</h2>
-      <div class="eyebrow" style="margin-bottom:10px">Include Sections</div>
-      <div style="display:grid;gap:10px;margin-bottom:18px">
+      <div class="eyebrow" style="margin-bottom:12px">Include Sections</div>
+      <div style="display:grid;gap:12px;margin-bottom:24px">
         ${chk('kpis', 'Summary &amp; Key Metrics')}
         ${chk('cash', 'Operating Projection')}
         ${chk('sale', 'Hypothetical Sale by Year')}
@@ -945,16 +950,26 @@
         ${chk('assumptions', 'Assumptions &amp; Provenance',
           'The Excel workbook always carries its Assumptions sheet as the provenance record; this governs the PDF section')}
       </div>
-      <div class="eyebrow" style="margin-bottom:10px">Options</div>
-      <div style="display:grid;gap:10px;margin-bottom:20px">
+      <div class="eyebrow" style="margin-bottom:12px">Options</div>
+      <div style="display:grid;gap:12px;margin-bottom:24px">
         ${chk('highlight', 'Highlight Key Metrics',
           'Light green highlight on GOI, NOI, Purchase Price, Initial Investment, Equity Multiple, Cash-on-Cash and IRR in the PDF')}
+        ${chk('signature', 'Signature Needed',
+          'Adds a final approval page to the PDF with signature and date lines, identified so it cannot be attached to any other analysis')}
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button class="btn btn-ghost" onclick="FSInvestmentUI.exportWorkbook()">Excel Workbook</button>
-        <button class="btn btn-primary" onclick="FSInvestmentUI.exportPDF()">PDF (Print)</button>
-      </div>`, 460);
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-soon" aria-disabled="true"
+          title="Coming soon — emailing exports is not built yet"
+          onclick="FSInvestmentUI.emailSoon()">Email <span class="soon-pill">Soon</span></button>
+        <button class="btn btn-ghost" title="Open the browser print dialog with the composed report"
+          onclick="FSInvestmentUI.exportPrint()">Print</button>
+        <button class="btn btn-primary" title="Download the branded PDF report"
+          onclick="FSInvestmentUI.exportPDF()">PDF</button>
+        <button class="btn btn-ghost" title="Download the branded Excel workbook"
+          onclick="FSInvestmentUI.exportWorkbook()">Excel (.xlsx)</button>
+      </div>`, 580);
   }
+  function emailSoon() { A.toast('Emailing exports is coming soon.'); }
 
   // The modal's checkboxes win when it is open; direct calls keep the last
   // (or default all-sections, no-highlight) choices.
@@ -965,11 +980,38 @@
     }
   }
 
-  /* ---- PDF (Print): composed from the canonical result into the app's
-     #printDoc via the adapter — the same pipeline and print-styled classes
-     the budget report uses. Tables only; no charts, no SVG. */
+  function exportBaseName() {
+    return ((st.input && st.input.analysisName) || 'Investment_Analysis')
+      .replace(/[^\w]+/g, '_') + '_Investment_Analysis';
+  }
+  function downloadBlob(blob, filename) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  function exportDoc() {
+    return FSExportRender.buildExportDoc(st.result, exOpts,
+      { savedVersion: st.loadedVersion, generatedAt: new Date().toISOString() });
+  }
+
+  /* ---- PDF: a real .pdf file, rendered by the shared document model through
+     the vendored pdfmake build and downloaded directly — no print dialog. */
   function exportPDF() {
     if (!st.result || st.stale) { A.toast('Calculate first so the PDF matches the inputs.'); return; }
+    if (typeof pdfMake === 'undefined' || typeof FSExportRender === 'undefined') {
+      A.toast('PDF library is unavailable — reload the page.'); return;
+    }
+    readExportOpts(); closeInvModal();
+    const dd = FSExportRender.buildPdfDocDefinition(exportDoc());
+    pdfMake.createPdf(dd).getBlob(blob => downloadBlob(blob, exportBaseName() + '.pdf'));
+  }
+
+  /* ---- Print: the original #printDoc pipeline via the adapter — the same
+     print-styled classes the budget report uses. Kept as a third option. */
+  function exportPrint() {
+    if (!st.result || st.stale) { A.toast('Calculate first so the print matches the inputs.'); return; }
     readExportOpts(); closeInvModal();
     A.print(printReportHTML(st.result, exOpts));
   }
@@ -1117,183 +1159,48 @@
     // Assumptions sheet) — never on the app UI.
     h += '<p class="rpt-note" style="margin-top:20px">Calculated by engine <span class="mono">'
       + esc(R.calculationVersion) + '</span> · input schema v' + R.inputSchemaVersion + '</p>';
+
+    // Signature Needed: the approval page, always last, identified so a
+    // signed page cannot be attached to a different analysis.
+    if (o.signature) {
+      h += `<section class="rpt-sec rpt-sig"><h2>Approval</h2>
+        <p class="rpt-note">The signature below approves the investment analysis identified here, exactly as
+        calculated and presented in this document. The identification binds this approval page to this document
+        alone — an approval page whose identification does not match the document it accompanies is void.</p>
+        <div class="rpt-2col"><div>`
+        + rr('Analysis', esc(N.analysisName))
+        + rr('Property', esc(N.property.name) + (N.property.address ? ' · ' + esc(N.property.address) : ''))
+        + rr('Source', src ? 'Budget <span class="mono">' + esc(src.projectId) + '</span> version ' + esc(src.budgetVersionNumber) : 'Standalone Analysis')
+        + rr('Saved Analysis Version', st.loadedVersion ? 'v' + st.loadedVersion : '(unsaved)')
+        + rr('Projection', years.length + '-Year Before-Tax')
+        + '</div><div>'
+        + rr('Purchase Price', usd(s.purchasePrice))
+        + rr('Initial Equity Investment', usd(s.initialEquity))
+        + rr('Final-Year Equity IRR', pctf(s.finalYearEquityIRR))
+        + rr('Calculation Engine', '<span class="mono">' + esc(R.calculationVersion) + '</span> · schema v' + R.inputSchemaVersion)
+        + rr('Generated', esc(stamp))
+        + '</div></div>'
+        + '<div class="sig-row"><div class="s1"><div class="sig-line"></div><div class="sig-cap">Signature</div></div>'
+        + '<div class="s2"><div class="sig-line"></div><div class="sig-cap">Date</div></div></div></section>';
+    }
     return h;
   }
 
-  /* ================= EXCEL WORKBOOK (tables only — no charts, ever) ======= */
+  /* ================= EXCEL WORKBOOK ================= 
+     Built by the shared renderer (export-render.js) from the same document
+     model the PDF uses — branded bands, frozen headers, landscape printing.
+     Tables only; no charts, no media, ever. */
   async function exportWorkbook() {
     if (!st.result || st.stale) { A.toast('Calculate first so the workbook matches the inputs.'); return; }
-    if (typeof ExcelJS === 'undefined') { A.toast('Excel library is unavailable.'); return; }
+    if (typeof ExcelJS === 'undefined' || typeof FSExportRender === 'undefined') {
+      A.toast('Excel library is unavailable — reload the page.'); return;
+    }
     readExportOpts(); closeInvModal();
-    const o = exOpts;
-    const R = st.result, s = R.summary, loan = R.loans[0] || null;
-    const wb = new ExcelJS.Workbook();
-    wb.creator = 'Finishes Solutions Budgeting Suite';
-    const INK = 'FF16191A', WHITE = 'FFFFFFFF', GREEN = 'FF006527';
-    const MONEY = '"$"#,##0', MONEY2 = '"$"#,##0.00', PCT = '0.00%', RATIO = '0.00';
-    const head = (ws, title) => {
-      const r = ws.addRow([title]); r.font = { bold: true, size: 14 }; ws.addRow([]);
-    };
-    const tblHeader = (ws, cells) => {
-      const r = ws.addRow(cells);
-      r.eachCell(c => { c.font = { bold: true, color: { argb: WHITE } };
-        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: INK } }; });
-      return r;
-    };
-    const label = (ws, k, v, fmt) => {
-      const r = ws.addRow([k, v]);
-      if (fmt) r.getCell(2).numFmt = fmt;
-      return r;
-    };
-
-    // 1 · Investment Summary
-    if (o.kpis) {
-    const w1 = wb.addWorksheet('Investment Summary');
-    w1.columns = [{ width: 38 }, { width: 20 }];
-    head(w1, (R.normalizedInput.property.name || 'Investment Analysis') + ' — ' + R.annual.length + '-Year Before-Tax Analysis');
-    label(w1, 'Analysis', R.normalizedInput.analysisName);
-    label(w1, 'Purchase Price', s.purchasePrice, MONEY);
-    label(w1, 'Acquisition Cap Rate', s.acquisitionCapRate, PCT);
-    label(w1, 'Acquisition Costs', s.acquisitionCosts, MONEY);
-    if (loan) label(w1, 'Loan Fees', s.loanFees, MONEY);
-    label(w1, 'Unleveraged Investment', s.unleveragedInitialInvestment, MONEY);
-    label(w1, 'Initial Equity Investment', s.initialEquity, MONEY);
-    label(w1, 'Year-1 NOI', s.year1NOI, MONEY);
-    label(w1, 'Gross Rent Multiplier', s.grossRentMultiplier, RATIO);
-    if (s.pricePerSquareFoot !== null) label(w1, 'Price / SF', s.pricePerSquareFoot, MONEY2);
-    if (s.pricePerUnit !== null) label(w1, 'Price / Unit', s.pricePerUnit, MONEY);
-    label(w1, 'Final-Year Equity IRR', s.finalYearEquityIRR, PCT);
-    label(w1, 'Final-Year Equity Multiple', s.finalYearEquityMultiple, RATIO);
-    label(w1, 'Optimal Holding Year', s.optimalHoldingYear);
-    label(w1, 'Optimal Holding Yield', s.optimalHoldingYield, PCT);
-    }
-
-    const yearsHdr = ['', ...R.annual.map(a => 'Y' + a.year + ' (' + a.periodEnd + ')')];
-    const series = (ws, label_, f, fmt) => {
-      const r = ws.addRow([label_, ...R.annual.map(f)]);
-      for (let i = 2; i <= 6; i++) if (fmt) r.getCell(i).numFmt = fmt;
-    };
-
-    // 2 · Cash Flow
-    if (o.cash) {
-    const w2 = wb.addWorksheet('Cash Flow');
-    w2.columns = [{ width: 32 }, ...Array(5).fill({ width: 16 })];
-    head(w2, 'Operating Projection');
-    tblHeader(w2, yearsHdr);
-    series(w2, 'Potential Rental Income', a => a.potentialIncome, MONEY);
-    series(w2, 'Vacancy / Credit Loss', a => -a.vacancyLoss, MONEY);
-    series(w2, 'Effective Rental Income', a => a.effectiveRentalIncome, MONEY);
-    series(w2, 'Other Income', a => a.otherIncome, MONEY);
-    series(w2, 'Gross Operating Income', a => a.grossOperatingIncome, MONEY);
-    series(w2, 'Operating Expenses', a => -a.operatingExpenses, MONEY);
-    series(w2, 'Net Operating Income', a => a.netOperatingIncome, MONEY);
-    series(w2, 'Capital Expenses / Reserves', a => -a.capitalExpenses, MONEY);
-    series(w2, 'Debt Service', a => -a.debtService, MONEY);
-    series(w2, 'Cash Flow Before Taxes', a => a.cashFlowBeforeTaxes, MONEY);
-    }
-
-    // 3 · Debt and Sale
-    if (o.sale) {
-    const w3 = wb.addWorksheet('Debt and Sale');
-    w3.columns = [{ width: 32 }, ...Array(5).fill({ width: 16 })];
-    if (loan) {
-      head(w3, 'Mortgage');
-      label(w3, loan.label + ' Principal', loan.principal, MONEY);
-      label(w3, 'Annual Rate', loan.annualRate, '0.000%');
-      label(w3, 'Amortization (Years)', loan.amortizationYears);
-      label(w3, 'Term (Years)', loan.termYears);
-      label(w3, 'Monthly Payment', loan.monthlyPayment, MONEY2);
-      label(w3, 'Annual Debt Service', loan.annualDebtService, MONEY);
-      w3.addRow([]);
-    }
-    head(w3, 'Hypothetical Sale by Year');
-    tblHeader(w3, yearsHdr);
-    series(w3, 'Gross Sale Price', a => a.grossSalePrice, MONEY);
-    series(w3, 'Selling Costs', a => -a.sellingCosts, MONEY);
-    series(w3, 'Ending Loan Balance', a => -a.endingLoanBalance, MONEY);
-    series(w3, 'Net Sale Proceeds', a => a.netSaleProceeds, MONEY);
-    if (loan) {
-      w3.addRow([]);
-      tblHeader(w3, yearsHdr);
-      series(w3, 'Projected LTV', a => a.projectedLTV, PCT);
-      series(w3, 'DSCR', a => a.dscr, RATIO);
-      series(w3, 'Debt Yield', a => a.debtYield, PCT);
-    }
-    }
-
-    // 4 · Returns
-    if (o.returns) {
-    const w4 = wb.addWorksheet('Returns');
-    w4.columns = [{ width: 32 }, ...Array(5).fill({ width: 16 })];
-    head(w4, 'Returns by Sale Year');
-    tblHeader(w4, yearsHdr);
-    series(w4, 'Cash-on-Cash', a => a.cashOnCash, PCT);
-    series(w4, 'Return on Equity', a => a.returnOnEquity, PCT);
-    series(w4, 'Equity Multiple', a => a.equityMultiple, RATIO);
-    series(w4, 'Property IRR', a => a.propertyIRR, PCT);
-    if (loan) series(w4, 'Effective Borrowing Rate', a => a.effectiveLoanRate, PCT);
-    series(w4, 'Equity IRR', a => a.equityIRR, PCT);
-    if (loan) series(w4, 'Leverage Impact', a =>
-      a.equityIRR === null || a.propertyIRR === null ? null
-      : Math.round(a.equityIRR * 10000) / 10000 - Math.round(a.propertyIRR * 10000) / 10000, PCT);
-    }
-
-    // 5 · Acquisition Sensitivity
-    if (o.sens && R.sensitivity) {
-      const w5 = wb.addWorksheet('Acquisition Sensitivity');
-      w5.columns = [{ width: 30 }, ...Array(5).fill({ width: 16 })];
-      head(w5, 'Purchase-Price Scenarios (base LTV preserved)');
-      tblHeader(w5, ['', ...R.sensitivity.map(x => Math.round(x.factor * 100) + '% of Price')]);
-      const srow = (lab, f, fmt) => {
-        const r = w5.addRow([lab, ...R.sensitivity.map(f)]);
-        for (let i = 2; i <= 6; i++) if (fmt) r.getCell(i).numFmt = fmt;
-      };
-      srow('Purchase Price', x => x.purchasePrice, MONEY);
-      srow('Acquisition Cap Rate', x => x.acquisitionCapRate, PCT);
-      srow('Loan Amount', x => x.loanAmount, MONEY);
-      srow('Initial Equity', x => x.initialEquity, MONEY);
-      for (let y = 0; y < R.annual.length; y++) srow('Unleveraged CoC — Sale Y' + (y + 1), x => x.unleveragedCoC[y], PCT);
-      for (let y = 0; y < R.annual.length; y++) srow('Leveraged CoC — Sale Y' + (y + 1), x => x.leveragedCoC[y], PCT);
-      for (let y = 0; y < R.annual.length; y++) srow('Unleveraged IRR — Sale Y' + (y + 1), x => x.unleveragedIRR[y], PCT);
-      for (let y = 0; y < R.annual.length; y++) srow('Leveraged IRR — Sale Y' + (y + 1), x => x.leveragedIRR[y], PCT);
-    }
-
-    // 6 · Assumptions and Provenance — always present: this sheet is the
-    // workbook's provenance record (engine + schema + saved version), the
-    // one place those identities are allowed to live outside the PDF footer.
-    const w6 = wb.addWorksheet('Assumptions');
-    w6.columns = [{ width: 38 }, { width: 26 }];
-    head(w6, 'Assumptions & Provenance');
-    const N = R.normalizedInput, src = N.source;
-    label(w6, 'Analysis Name', N.analysisName);
-    label(w6, 'Property', N.property.name);
-    label(w6, 'Address', N.property.address || '—');
-    label(w6, 'Size', N.property.size.value + ' ' + N.property.size.unit);
-    label(w6, 'Purchase Month', N.property.purchaseMonth);
-    label(w6, 'Price Basis', N.acquisition.basis.mode);
-    label(w6, 'Acquisition Costs %', N.acquisition.costPercent, PCT);
-    label(w6, 'Year-1 Potential Income', N.income.year1PotentialIncome, MONEY);
-    label(w6, 'Income Growth', N.income.growth.value, PCT);
-    label(w6, 'Vacancy / Credit Loss', N.vacancy.value, PCT);
-    label(w6, 'Expense Mode', N.expenses.mode);
-    label(w6, 'Expense Value', N.expenses.value, N.expenses.mode === 'percentOfGOI' ? PCT : MONEY);
-    label(w6, 'Exit Cap Rate', N.disposition.exitCapRate.value, PCT);
-    label(w6, 'Selling Costs', N.disposition.sellingCostPercent, PCT);
-    w6.addRow([]);
-    label(w6, 'Input Schema Version', R.inputSchemaVersion);
-    label(w6, 'Calculation Version', R.calculationVersion);
-    label(w6, 'Saved Analysis Version', st.loadedVersion || '(unsaved)');
-    label(w6, 'Source', src ? 'Budget ' + src.projectId + ' version ' + src.budgetVersionNumber : 'Standalone');
-    label(w6, 'Generated', new Date().toISOString());
-    (R.warnings || []).forEach(warn => label(w6, 'Warning', warn));
-
+    const wb = FSExportRender.buildWorkbook(ExcelJS, exportDoc());
     const buf = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = (N.analysisName || 'Investment_Analysis').replace(/[^\w]+/g, '_') + '_Investment_Analysis.xlsx';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    downloadBlob(new Blob([buf],
+      { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+      exportBaseName() + '.xlsx');
   }
 
   /* ================= public surface ================= */
@@ -1302,7 +1209,7 @@
     renderList, renderListInto, open, createFromBudget, createStandalone,
     createBlank, openProjectPicker, softDelete,
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep,
-    openExport, exportWorkbook, exportPDF, addOtherIncome, addCapex,
+    openExport, emailSoon, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,
     _other, _otherRemove, _capex, _capexRemove,
     currentId: () => st.id,
     isDirty: () => st.dirty,

@@ -85,19 +85,88 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('workbook records the calculation version', eng&&eng[0]==='before-tax-1.1.0', JSON.stringify(eng));
  const sv=find('Assumptions','Saved Analysis Version');
  ok('workbook records the saved analysis version', sv&&sv[0]===1);
+ ok('every sheet opens with the brand band',
+    wb.names.every(n=>wb.sheets[n][0]&&wb.sheets[n][0][0]==='FINISHES SOLUTIONS'),
+    JSON.stringify(wb.names.map(n=>wb.sheets[n][0]&&wb.sheets[n][0][0])));
+ ok('summary sheet carries the mortgage details like the PDF',
+    find('Investment Summary','Monthly Payment')!==null
+    && find('Investment Summary','Initial LTV')!==null);
+ ok('sale sheet carries the loan payoff', (()=>{const lp=find('Debt and Sale','Loan Payoff');
+    return lp&&lp.every((v,i)=>Math.abs(-v-A[i].endingLoanBalance)<0.01);})());
+ ok('returns sheet notes the optimal holding period',
+    wb.sheets['Returns'].some(r=>/Optimal holding period/.test(String(r[0]))));
 
- // ---- PDF (Print): reached through the Export… modal (like the budget),
- // composed from the canonical result into #printDoc. Tables only — no charts.
+ // ---- real PDF download: the modal's PDF button renders through the shared
+ // document model + vendored pdfmake and saves an actual .pdf file.
+ await p.click('#invExportBtn'); await p.waitForTimeout(200);
+ ok('Export button opens the options modal with the highlight and signature choices',
+    await p.locator('#invModal #inv-ex-highlight').count()===1
+    && !(await p.locator('#invModal #inv-ex-highlight').isChecked())
+    && await p.locator('#invModal #inv-ex-signature').count()===1
+    && !(await p.locator('#invModal #inv-ex-signature').isChecked()));
+ // centered on screen, like the budget's export modal (viewport 1400x1000)
+ const mbb=await p.locator('#invModal > div').boundingBox();
+ ok('export popup centers on screen',
+    Math.abs((mbb.x+mbb.width/2)-700)<40 && Math.abs((mbb.y+mbb.height/2)-500)<40,
+    JSON.stringify(mbb));
+ // the one button order shared with the budget's export modal
+ ok('modal buttons are Email (Soon), Print, PDF, Excel (.xlsx) in that order',
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#invModal .btn')]
+      .map(b=>b.textContent.trim().replace(/\s+/g,' '))))
+    ===JSON.stringify(['Email Soon','Print','PDF','Excel (.xlsx)']),
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#invModal .btn')]
+      .map(b=>b.textContent.trim().replace(/\s+/g,' ')))));
+ await p.evaluate(()=>{window.__dl=null;
+   const orig=HTMLAnchorElement.prototype.click;
+   HTMLAnchorElement.prototype.click=function(){window.__dl={href:this.href,name:this.download};};
+   window.__restoreClick=()=>{HTMLAnchorElement.prototype.click=orig;};});
+ await p.click('#invModal button:has-text("PDF")');
+ await p.waitForFunction(()=>window.__dl,{timeout:15000});
+ const pdfDl=await p.evaluate(async()=>{
+   window.__restoreClick();
+   const buf=await (await fetch(window.__dl.href)).arrayBuffer();
+   const txt=new TextDecoder('latin1').decode(buf);
+   return {name:window.__dl.name,len:buf.byteLength,head:txt.slice(0,5),
+     portrait:/MediaBox\s*\[\s*0\s+0\s+612\s+792/.test(txt)};
+ });
+ ok('PDF button downloads a real PDF file', pdfDl.head==='%PDF-'&&pdfDl.len>30000,
+    JSON.stringify({name:pdfDl.name,len:pdfDl.len,head:pdfDl.head}));
+ ok('PDF is portrait letter with the shared layout', pdfDl.portrait);
+ ok('PDF filename carries the analysis name', /Workbook_Deal.*\.pdf$/.test(pdfDl.name), pdfDl.name);
+ ok('export modal closes after the PDF download', (await p.locator('#invModal').count())===0);
+
+ // ---- server-side rendering endpoint: the same shared renderer running in
+ // the API returns real files for pdf, xlsx and csv.
+ const srv=await p.evaluate(async()=>{
+   const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
+   const pdfB=await (await fetch('/api/investment-analysis/'+id+'/export?format=pdf')).arrayBuffer();
+   const csvR=await fetch('/api/investment-analysis/'+id+'/export?format=csv');
+   const csv=await csvR.text();
+   const xlsxB=await (await fetch('/api/investment-analysis/'+id+'/export?format=xlsx')).arrayBuffer();
+   const wb3=new ExcelJS.Workbook(); await wb3.xlsx.load(xlsxB);
+   const bad=await fetch('/api/investment-analysis/'+id+'/export?format=exe');
+   return {pdfHead:String.fromCharCode.apply(null,new Uint8Array(pdfB.slice(0,5))),
+     pdfLen:pdfB.byteLength,
+     csvDisp:csvR.headers.get('content-disposition')||'',
+     csvHasNOI:/Net Operating Income/.test(csv)&&/Calculated by engine/.test(csv),
+     sheets:wb3.worksheets.map(w=>w.name),badStatus:bad.status};
+ });
+ ok('API renders a real PDF', srv.pdfHead==='%PDF-'&&srv.pdfLen>30000, JSON.stringify(srv.pdfLen));
+ ok('API renders the six-sheet workbook', JSON.stringify(srv.sheets)===JSON.stringify(
+    ['Investment Summary','Cash Flow','Debt and Sale','Returns','Acquisition Sensitivity','Assumptions']),
+    JSON.stringify(srv.sheets));
+ ok('API renders CSV with the tables and engine line', srv.csvHasNOI);
+ ok('API export downloads as an attachment', /attachment/.test(srv.csvDisp), srv.csvDisp);
+ ok('API rejects unknown formats', srv.badStatus===400, String(srv.badStatus));
+
+ // ---- Print: the original #printDoc pipeline, kept as the third option.
  await p.evaluate(()=>{window.__rpt=null;window.print=()=>{window.__rpt=document.getElementById('printDoc').innerHTML;};});
  await p.click('#invExportBtn'); await p.waitForTimeout(200);
- ok('Export button opens the options modal with the highlight choice',
-    await p.locator('#invModal #inv-ex-highlight').count()===1
-    && !(await p.locator('#invModal #inv-ex-highlight').isChecked()));
- await p.click('#invModal button:has-text("PDF (Print)")');
+ await p.click('#invModal button:has-text("Print")');
  await p.waitForTimeout(400);
  const pdf=await p.evaluate(()=>window.__rpt||'');
- ok('export modal closes after producing the PDF', (await p.locator('#invModal').count())===0);
- ok('PDF export produces a print document', pdf.length>2000, pdf.length+' chars');
+ ok('export modal closes after printing', (await p.locator('#invModal').count())===0);
+ ok('Print produces a composed print document', pdf.length>2000, pdf.length+' chars');
  ok('print doc carries the branded KPI band', /rpt-stats/.test(pdf) && /Purchase Price/.test(pdf));
  const showsPdf=v=>pdf.includes('$'+Math.round(v).toLocaleString('en-US'));
  ok('print doc shows the canonical NOI and sale price',
@@ -108,6 +177,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('print doc includes the sensitivity matrix', /Acquisition-Price Sensitivity/.test(pdf));
  ok('print doc has no charts or SVG', !/<svg|data-chart/.test(pdf));
  ok('highlight is off by default — no hl classes in the PDF', !/class="[^"]*\bhl\b/.test(pdf));
+ ok('signature page absent by default', !/rpt-sig|Approval/.test(pdf));
  await p.waitForTimeout(700);
  ok('screen state untouched by printing', /Saved/.test(await p.locator('#invState').textContent()));
 
@@ -116,9 +186,19 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // rows carry the light green hl class.
  await p.click('#invExportBtn'); await p.waitForTimeout(200);
  await p.check('#inv-ex-highlight');
- await p.click('#invModal button:has-text("PDF (Print)")');
+ await p.click('#invModal button:has-text("Print")');
  await p.waitForTimeout(400);
  const pdfH=await p.evaluate(()=>window.__rpt||'');
+ // the downloaded PDF gets the same treatment: its docDefinition carries the
+ // light green fill on highlighted rows (and no fills when highlight is off)
+ const ddHl=await p.evaluate(async()=>{
+   const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
+   const result=(await (await fetch('/api/investment-analysis/'+id)).json()).result;
+   const dd=h=>JSON.stringify(FSExportRender.buildPdfDocDefinition(FSExportRender.buildExportDoc(
+     result, {kpis:1,cash:1,sale:1,returns:1,sens:1,assumptions:1,highlight:h}, {})));
+   return {on:/D8F3E0/.test(dd(true)),off:/D8F3E0/.test(dd(false))};
+ });
+ ok('downloaded PDF highlights rows only when the option is on', ddHl.on&&!ddHl.off, JSON.stringify(ddHl));
  const hlRow=l=>new RegExp('<tr class="[^"]*\\bhl\\b[^"]*"><td>'+l).test(pdfH);
  ok('highlighted PDF marks GOI and NOI', hlRow('Gross Operating Income')&&hlRow('Net Operating Income'));
  ok('highlighted PDF marks CoC, equity multiple and IRR rows',
@@ -130,9 +210,29 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     !/rpt-stats[^]*?class="[^"]*\bhl\b/.test(pdfH.split('rpt-sec')[0]));
  ok('the on-screen report never carries the highlight',
     !/class="[^"]*\bhl\b/.test(await p.evaluate(()=>document.getElementById('invReport').innerHTML)));
- // the choice sticks for the next export from this page
+ // ---- Signature Needed: the identified approval page on the printed report,
+ // the downloaded PDF's docDefinition, and the API export.
  await p.click('#invExportBtn'); await p.waitForTimeout(200);
  ok('highlight choice is remembered in the modal', await p.locator('#inv-ex-highlight').isChecked());
+ await p.check('#inv-ex-signature');
+ await p.click('#invModal button:has-text("Print")');
+ await p.waitForTimeout(400);
+ const pdfS=await p.evaluate(()=>window.__rpt||'');
+ ok('Signature Needed appends the approval page to the print',
+    /rpt-sig/.test(pdfS) && /Approval/.test(pdfS) && /accompanies is void/.test(pdfS)
+    && /sig-cap">Signature</.test(pdfS) && /sig-cap">Date</.test(pdfS));
+ ok('the approval page identifies this exact analysis',
+    /Workbook Deal/.test(pdfS.split('rpt-sig')[1]||'') && /v1/.test(pdfS.split('rpt-sig')[1]||''));
+ const sigSrv=await p.evaluate(async()=>{
+   const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
+   const withSig=(await (await fetch('/api/investment-analysis/'+id+'/export?format=pdf&signature=1')).arrayBuffer()).byteLength;
+   const noSig=(await (await fetch('/api/investment-analysis/'+id+'/export?format=pdf')).arrayBuffer()).byteLength;
+   return {withSig,noSig};
+ });
+ ok('API export honors signature=1 (approval page grows the PDF)', sigSrv.withSig>sigSrv.noSig,
+    JSON.stringify(sigSrv));
+ await p.click('#invExportBtn'); await p.waitForTimeout(200);
+ ok('signature choice is remembered in the modal', await p.locator('#inv-ex-signature').isChecked());
  await p.click('#invModal .btn-x'); await p.waitForTimeout(150);
 
  // exporting with stale inputs is refused (both exports must match the inputs)
