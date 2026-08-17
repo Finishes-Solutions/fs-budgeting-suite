@@ -1385,7 +1385,8 @@ th.sortable.sorted{color:var(--ink-900)}
               Reload. If it persists, the API or database is down — report it before doing more work, and copy
               anything unsaved out first.</td></tr>
           <tr><td>The first request of the day hangs</td>
-            <td>The database pauses when idle and takes a few seconds to wake. Retry once.</td></tr>
+            <td>The database pauses when idle and can take a couple minutes to resume — the loading screen
+              keeps you posted while it wakes. If a request still hangs after that, retry once.</td></tr>
           <tr><td>Publishing pricing returns "not authorized"</td>
             <td>Your account does not hold <code>pricing_admin</code> in this browser profile. Check
               <code>/.auth/me</code>; if the role is missing, the role invitation needs to be accepted in the
@@ -4130,9 +4131,10 @@ function wireDelegates(){
    retries transient faults for about a minute (api/shared/db.js). The messages
    escalate so a long wait reads as "still working", not as a hung page. */
 const BOOT_STAGES=[
-  [2500,'Waking the database — it pauses when idle and can take up to a minute to resume.'],
-  [15000,'Still waking the database. This is normal after a quiet spell.'],
-  [45000,'Taking longer than usual. Hang on — the app will load whatever it can.']
+  [2500,'Waking the database. It pauses when idle and can take a couple minutes to resume.'],
+  [20000,'Still waking. This is normal after a quiet spell — no need to refresh, the app connects the moment the database is up.'],
+  [60000,'Almost there. Cold starts occasionally run past a minute; your saved budgets and analyses are safe and untouched.'],
+  [120000,'Taking longer than usual. Hang on — the app will load whatever it can, and the red banner will say if the server is actually unreachable.']
 ];
 let bootTimers=[];
 function startBoot(){
