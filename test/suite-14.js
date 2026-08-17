@@ -96,18 +96,65 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('returns sheet notes the optimal holding period',
     wb.sheets['Returns'].some(r=>/Optimal holding period/.test(String(r[0]))));
 
- // ---- PDF (Print): reached through the Export modal (like the budget),
- // composed from the canonical result into #printDoc. Tables only — no charts.
- await p.evaluate(()=>{window.__rpt=null;window.print=()=>{window.__rpt=document.getElementById('printDoc').innerHTML;};});
+ // ---- real PDF download: the modal's PDF button renders through the shared
+ // document model + vendored pdfmake and saves an actual .pdf file.
  await p.click('#invExportBtn'); await p.waitForTimeout(200);
  ok('Export button opens the options modal with the highlight choice',
     await p.locator('#invModal #inv-ex-highlight').count()===1
     && !(await p.locator('#invModal #inv-ex-highlight').isChecked()));
- await p.click('#invModal button:has-text("PDF (Print)")');
+ ok('modal offers PDF, XLSX and Print',
+    (await p.locator('#invModal button:has-text("PDF")').count())===1
+    && (await p.locator('#invModal button:has-text("XLSX")').count())===1
+    && (await p.locator('#invModal button:has-text("Print")').count())===1);
+ await p.evaluate(()=>{window.__dl=null;
+   const orig=HTMLAnchorElement.prototype.click;
+   HTMLAnchorElement.prototype.click=function(){window.__dl={href:this.href,name:this.download};};
+   window.__restoreClick=()=>{HTMLAnchorElement.prototype.click=orig;};});
+ await p.click('#invModal button:has-text("PDF")');
+ await p.waitForFunction(()=>window.__dl,{timeout:15000});
+ const pdfDl=await p.evaluate(async()=>{
+   window.__restoreClick();
+   const buf=await (await fetch(window.__dl.href)).arrayBuffer();
+   return {name:window.__dl.name,len:buf.byteLength,
+     head:String.fromCharCode.apply(null,new Uint8Array(buf.slice(0,5)))};
+ });
+ ok('PDF button downloads a real PDF file', pdfDl.head==='%PDF-'&&pdfDl.len>30000,
+    JSON.stringify({name:pdfDl.name,len:pdfDl.len,head:pdfDl.head}));
+ ok('PDF filename carries the analysis name', /Workbook_Deal.*\.pdf$/.test(pdfDl.name), pdfDl.name);
+ ok('export modal closes after the PDF download', (await p.locator('#invModal').count())===0);
+
+ // ---- server-side rendering endpoint: the same shared renderer running in
+ // the API returns real files for pdf, xlsx and csv.
+ const srv=await p.evaluate(async()=>{
+   const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
+   const pdfB=await (await fetch('/api/investment-analysis/'+id+'/export?format=pdf')).arrayBuffer();
+   const csvR=await fetch('/api/investment-analysis/'+id+'/export?format=csv');
+   const csv=await csvR.text();
+   const xlsxB=await (await fetch('/api/investment-analysis/'+id+'/export?format=xlsx')).arrayBuffer();
+   const wb3=new ExcelJS.Workbook(); await wb3.xlsx.load(xlsxB);
+   const bad=await fetch('/api/investment-analysis/'+id+'/export?format=exe');
+   return {pdfHead:String.fromCharCode.apply(null,new Uint8Array(pdfB.slice(0,5))),
+     pdfLen:pdfB.byteLength,
+     csvDisp:csvR.headers.get('content-disposition')||'',
+     csvHasNOI:/Net Operating Income/.test(csv)&&/Calculated by engine/.test(csv),
+     sheets:wb3.worksheets.map(w=>w.name),badStatus:bad.status};
+ });
+ ok('API renders a real PDF', srv.pdfHead==='%PDF-'&&srv.pdfLen>30000, JSON.stringify(srv.pdfLen));
+ ok('API renders the six-sheet workbook', JSON.stringify(srv.sheets)===JSON.stringify(
+    ['Investment Summary','Cash Flow','Debt and Sale','Returns','Acquisition Sensitivity','Assumptions']),
+    JSON.stringify(srv.sheets));
+ ok('API renders CSV with the tables and engine line', srv.csvHasNOI);
+ ok('API export downloads as an attachment', /attachment/.test(srv.csvDisp), srv.csvDisp);
+ ok('API rejects unknown formats', srv.badStatus===400, String(srv.badStatus));
+
+ // ---- Print: the original #printDoc pipeline, kept as the third option.
+ await p.evaluate(()=>{window.__rpt=null;window.print=()=>{window.__rpt=document.getElementById('printDoc').innerHTML;};});
+ await p.click('#invExportBtn'); await p.waitForTimeout(200);
+ await p.click('#invModal button:has-text("Print")');
  await p.waitForTimeout(400);
  const pdf=await p.evaluate(()=>window.__rpt||'');
- ok('export modal closes after producing the PDF', (await p.locator('#invModal').count())===0);
- ok('PDF export produces a print document', pdf.length>2000, pdf.length+' chars');
+ ok('export modal closes after printing', (await p.locator('#invModal').count())===0);
+ ok('Print produces a composed print document', pdf.length>2000, pdf.length+' chars');
  ok('print doc carries the branded KPI band', /rpt-stats/.test(pdf) && /Purchase Price/.test(pdf));
  const showsPdf=v=>pdf.includes('$'+Math.round(v).toLocaleString('en-US'));
  ok('print doc shows the canonical NOI and sale price',
@@ -126,9 +173,19 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // rows carry the light green hl class.
  await p.click('#invExportBtn'); await p.waitForTimeout(200);
  await p.check('#inv-ex-highlight');
- await p.click('#invModal button:has-text("PDF (Print)")');
+ await p.click('#invModal button:has-text("Print")');
  await p.waitForTimeout(400);
  const pdfH=await p.evaluate(()=>window.__rpt||'');
+ // the downloaded PDF gets the same treatment: its docDefinition carries the
+ // light green fill on highlighted rows (and no fills when highlight is off)
+ const ddHl=await p.evaluate(async()=>{
+   const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
+   const result=(await (await fetch('/api/investment-analysis/'+id)).json()).result;
+   const dd=h=>JSON.stringify(FSExportRender.buildPdfDocDefinition(FSExportRender.buildExportDoc(
+     result, {kpis:1,cash:1,sale:1,returns:1,sens:1,assumptions:1,highlight:h}, {})));
+   return {on:/D8F3E0/.test(dd(true)),off:/D8F3E0/.test(dd(false))};
+ });
+ ok('downloaded PDF highlights rows only when the option is on', ddHl.on&&!ddHl.off, JSON.stringify(ddHl));
  const hlRow=l=>new RegExp('<tr class="[^"]*\\bhl\\b[^"]*"><td>'+l).test(pdfH);
  ok('highlighted PDF marks GOI and NOI', hlRow('Gross Operating Income')&&hlRow('Net Operating Income'));
  ok('highlighted PDF marks CoC, equity multiple and IRR rows',

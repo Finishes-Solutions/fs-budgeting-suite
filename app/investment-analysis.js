@@ -951,8 +951,12 @@
           'Light green highlight on GOI, NOI, Purchase Price, Initial Investment, Equity Multiple, Cash-on-Cash and IRR in the PDF')}
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button class="btn btn-ghost" onclick="FSInvestmentUI.exportWorkbook()">Excel Workbook</button>
-        <button class="btn btn-primary" onclick="FSInvestmentUI.exportPDF()">PDF (Print)</button>
+        <button class="btn btn-ghost" title="Open the browser print dialog"
+          onclick="FSInvestmentUI.exportPrint()">Print</button>
+        <button class="btn btn-ghost" title="Download the branded Excel workbook"
+          onclick="FSInvestmentUI.exportWorkbook()">XLSX</button>
+        <button class="btn btn-primary" title="Download the branded PDF report"
+          onclick="FSInvestmentUI.exportPDF()">PDF</button>
       </div>`, 460);
   }
 
@@ -965,11 +969,38 @@
     }
   }
 
-  /* ---- PDF (Print): composed from the canonical result into the app's
-     #printDoc via the adapter — the same pipeline and print-styled classes
-     the budget report uses. Tables only; no charts, no SVG. */
+  function exportBaseName() {
+    return ((st.input && st.input.analysisName) || 'Investment_Analysis')
+      .replace(/[^\w]+/g, '_') + '_Investment_Analysis';
+  }
+  function downloadBlob(blob, filename) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  function exportDoc() {
+    return FSExportRender.buildExportDoc(st.result, exOpts,
+      { savedVersion: st.loadedVersion, generatedAt: new Date().toISOString() });
+  }
+
+  /* ---- PDF: a real .pdf file, rendered by the shared document model through
+     the vendored pdfmake build and downloaded directly — no print dialog. */
   function exportPDF() {
     if (!st.result || st.stale) { A.toast('Calculate first so the PDF matches the inputs.'); return; }
+    if (typeof pdfMake === 'undefined' || typeof FSExportRender === 'undefined') {
+      A.toast('PDF library is unavailable — reload the page.'); return;
+    }
+    readExportOpts(); closeInvModal();
+    const dd = FSExportRender.buildPdfDocDefinition(exportDoc());
+    pdfMake.createPdf(dd).getBlob(blob => downloadBlob(blob, exportBaseName() + '.pdf'));
+  }
+
+  /* ---- Print: the original #printDoc pipeline via the adapter — the same
+     print-styled classes the budget report uses. Kept as a third option. */
+  function exportPrint() {
+    if (!st.result || st.stale) { A.toast('Calculate first so the print matches the inputs.'); return; }
     readExportOpts(); closeInvModal();
     A.print(printReportHTML(st.result, exOpts));
   }
@@ -1120,293 +1151,21 @@
     return h;
   }
 
-  /* ================= EXCEL WORKBOOK (tables only — no charts, ever) =======
-     Branded exactly like the budget workbook: Montserrat, the ink/green
-     palette, a two-row title band per sheet, frozen table headers, landscape
-     fit-to-width printing, and a branded footer. Detail parity with the PDF:
-     every section the report prints has a home here. No images, no charts —
-     branding is done entirely with cell styling so the file stays media-free. */
+  /* ================= EXCEL WORKBOOK ================= 
+     Built by the shared renderer (export-render.js) from the same document
+     model the PDF uses — branded bands, frozen headers, landscape printing.
+     Tables only; no charts, no media, ever. */
   async function exportWorkbook() {
     if (!st.result || st.stale) { A.toast('Calculate first so the workbook matches the inputs.'); return; }
-    if (typeof ExcelJS === 'undefined') { A.toast('Excel library is unavailable.'); return; }
+    if (typeof ExcelJS === 'undefined' || typeof FSExportRender === 'undefined') {
+      A.toast('Excel library is unavailable — reload the page.'); return;
+    }
     readExportOpts(); closeInvModal();
-    const o = exOpts;
-    const R = st.result, s = R.summary, loan = R.loans[0] || null, N = R.normalizedInput;
-    const src = N.source, yrs = R.annual.length;
-    const wb = new ExcelJS.Workbook();
-    wb.creator = 'Finishes Solutions Budgeting Suite';
-    wb.created = new Date();
-
-    const B = { ink900: 'FF16191A', ink700: 'FF353B3D', ink500: 'FF6B7174', ink200: 'FFDDE1E2',
-      ink100: 'FFF1F3F3', green: 'FF006527', green50: 'FFF1F8F4', white: 'FFFFFFFF' };
-    const MONEY = '"$"#,##0', MONEY2 = '"$"#,##0.00', PCT = '0.00%', RATE = '0.000%',
-      RATIO = '0.00', MULT = '0.00"x"', QTY = '#,##0';
-    const F = (n, ov) => Object.assign({ name: 'Montserrat', size: n, color: { argb: B.ink900 } }, ov || {});
-    const fillOf = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
-    const thin = { style: 'thin', color: { argb: B.ink200 } };
-    const box = { top: thin, left: thin, bottom: thin, right: thin };
-    const emTop = { style: 'medium', color: { argb: B.ink900 } };
-
-    const propName = N.property.name || 'Investment Analysis';
-    function sheet(name, cols) {
-      const ws = wb.addWorksheet(name, { pageSetup: { orientation: 'landscape',
-        fitToPage: true, fitToWidth: 1, fitToHeight: 0,
-        margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } },
-        headerFooter: { oddFooter: '&L&"Montserrat"Finishes Solutions — Building a Future Together&C&P of &N&R' + (N.analysisName || '') } });
-      ws.columns = cols;
-      return ws;
-    }
-    // Branded two-row title band at the top of every sheet, like the budget's.
-    function titleBand(ws, title, span) {
-      ws.mergeCells(1, 1, 1, span);
-      const t = ws.getCell(1, 1);
-      t.value = 'FINISHES SOLUTIONS';
-      t.font = F(12, { bold: true, color: { argb: B.white } });
-      t.fill = fillOf(B.ink900); t.alignment = { vertical: 'middle', indent: 1 };
-      ws.getRow(1).height = 26;
-      ws.mergeCells(2, 1, 2, span);
-      const u = ws.getCell(2, 1);
-      u.value = title + '   ·   ' + propName + '   ·   ' + yrs + '-Year Before-Tax';
-      u.font = F(9, { bold: true, color: { argb: B.white } });
-      u.fill = fillOf(B.green); u.alignment = { vertical: 'middle', indent: 1 };
-      ws.getRow(2).height = 18;
-      ws.addRow([]);
-    }
-    // Green uppercase section label with a hairline underline, like the budget's.
-    function head(ws, label, span) {
-      const r = ws.addRow([label]);
-      r.getCell(1).font = F(9, { bold: true, color: { argb: B.green } });
-      r.getCell(1).border = { bottom: thin };
-      ws.mergeCells(r.number, 1, r.number, span);
-      return r;
-    }
-    function headerRow(ws, labels) {
-      const r = ws.addRow(labels);
-      r.eachCell(c => { c.font = F(9, { bold: true, color: { argb: B.white } });
-        c.fill = fillOf(B.ink700); c.border = box; c.alignment = { vertical: 'middle', wrapText: true }; });
-      r.height = 20;
-      if (!ws.views || !ws.views.length) ws.views = [{ state: 'frozen', xSplit: 1, ySplit: r.number }];
-      return r;
-    }
-    function kv(ws, k, v, fmt) {
-      const r = ws.addRow([k, v]);
-      r.getCell(1).font = F(10, { color: { argb: B.ink700 } });
-      r.getCell(2).font = F(10, { bold: true });
-      if (fmt) r.getCell(2).numFmt = fmt;
-      return r;
-    }
-    function kvTotal(ws, k, v, fmt, span) {
-      const r = ws.addRow([k, v]);
-      r.eachCell(c => { c.font = F(11, { bold: true }); c.border = { top: emTop }; });
-      for (let i = (span || 2); i > 2; i--) r.getCell(i).border = { top: emTop };
-      if (fmt) r.getCell(2).numFmt = fmt;
-      return r;
-    }
-    function note(ws, text, span) {
-      const r = ws.addRow([text]);
-      r.getCell(1).font = F(8.5, { italic: true, color: { argb: B.ink500 } });
-      r.getCell(1).alignment = { wrapText: true, vertical: 'top' };
-      ws.mergeCells(r.number, 1, r.number, span);
-      return r;
-    }
-    const yearsHdr = ['', ...R.annual.map(a => 'Y' + a.year + ' · ' + a.periodEnd)];
-    function series(ws, label_, f, fmt, tot) {
-      const r = ws.addRow([label_, ...R.annual.map(f)]);
-      r.eachCell(c => { c.border = box; });
-      r.getCell(1).font = tot ? F(10, { bold: true }) : F(10, { color: { argb: B.ink700 } });
-      for (let i = 2; i <= yrs + 1; i++) {
-        const c = r.getCell(i);
-        if (fmt) c.numFmt = fmt;
-        c.font = F(10, tot ? { bold: true } : null);
-        if (tot) { c.fill = fillOf(B.green50); c.border = { ...box, top: emTop }; }
-      }
-      if (tot) r.getCell(1).border = { ...box, top: emTop };
-      return r;
-    }
-
-    // 1 · Investment Summary — the PDF's header block, KPI band, and the
-    // Acquisition & Initial Investment / Mortgage sections.
-    if (o.kpis) {
-      const w1 = sheet('Investment Summary', [{ width: 38 }, { width: 22 }, { width: 18 }]);
-      titleBand(w1, 'Investment Summary', 3);
-      head(w1, 'PROPERTY', 3);
-      kv(w1, 'Analysis', N.analysisName);
-      kv(w1, 'Property', propName);
-      kv(w1, 'Address', N.property.address || '—');
-      kv(w1, 'Size', N.property.size.value + ' ' + (N.property.size.unit === 'squareFeet' ? 'SF' : N.property.size.unit));
-      if (N.property.unitCount) kv(w1, 'Units', N.property.unitCount, QTY);
-      kv(w1, 'Purchase Month', N.property.purchaseMonth);
-      kv(w1, 'Projection', yrs + '-Year Before-Tax Analysis');
-      kv(w1, 'Source', src ? 'Budget ' + src.projectId + ' version ' + src.budgetVersionNumber : 'Standalone Analysis');
-      w1.addRow([]);
-      head(w1, 'KEY METRICS', 3);
-      kv(w1, 'Purchase Price', s.purchasePrice, MONEY);
-      kv(w1, 'Acquisition Cap Rate', s.acquisitionCapRate, PCT);
-      kv(w1, 'Initial Equity', s.initialEquity, MONEY);
-      kv(w1, 'Year-1 NOI', s.year1NOI, MONEY);
-      kv(w1, 'Final-Year Equity IRR', s.finalYearEquityIRR, PCT);
-      kv(w1, 'Final-Year Equity Multiple', s.finalYearEquityMultiple, MULT);
-      kv(w1, 'Optimal Holding Year', s.optimalHoldingYear || '—');
-      kv(w1, 'Optimal Holding Yield', s.optimalHoldingYield, PCT);
-      w1.addRow([]);
-      head(w1, 'ACQUISITION & INITIAL INVESTMENT', 3);
-      kv(w1, 'Purchase Price ', s.purchasePrice, MONEY);
-      kv(w1, 'Acquisition Costs (' + (N.acquisition.costPercent * 100).toFixed(2) + '%)', s.acquisitionCosts, MONEY);
-      if (loan) kv(w1, 'Loan Fees (' + (loan.feePercent * 100).toFixed(2) + '%)', s.loanFees, MONEY);
-      kv(w1, 'Unleveraged Investment', s.unleveragedInitialInvestment, MONEY);
-      if (loan) kv(w1, 'Less: Loan Principal', -loan.principal, MONEY);
-      kvTotal(w1, 'Initial Equity Investment', s.initialEquity, MONEY);
-      kv(w1, 'Gross Rent Multiplier', s.grossRentMultiplier, RATIO);
-      if (s.pricePerSquareFoot !== null) kv(w1, 'Price / SF', s.pricePerSquareFoot, MONEY2);
-      if (s.pricePerUnit !== null) kv(w1, 'Price / Unit', s.pricePerUnit, MONEY);
-      w1.addRow([]);
-      head(w1, 'MORTGAGE', 3);
-      if (loan) {
-        kv(w1, loan.label, loan.principal, MONEY);
-        kv(w1, 'Annual Rate', loan.annualRate, RATE);
-        kv(w1, 'Amortization · Term', loan.amortizationYears + 'y · ' + loan.termYears + 'y');
-        kv(w1, 'Interest Calculation', loan.interestCalculation);
-        kv(w1, 'Monthly Payment', loan.monthlyPayment, MONEY2);
-        kv(w1, 'Annual Debt Service', loan.annualDebtService, MONEY);
-        kv(w1, 'Initial LTV', s.initialLTV, PCT);
-      } else kv(w1, 'Financing', 'All cash');
-    }
-
-    // 2 · Cash Flow — the PDF's Operating Projection, year by year.
-    if (o.cash) {
-      const w2 = sheet('Cash Flow', [{ width: 34 }, ...Array(yrs).fill({ width: 16 })]);
-      titleBand(w2, 'Operating Projection', yrs + 1);
-      headerRow(w2, yearsHdr);
-      series(w2, 'Potential Rental Income', a => a.potentialIncome, MONEY);
-      series(w2, 'Vacancy / Credit Loss (' + (N.vacancy.value * 100).toFixed(2) + '%)', a => -a.vacancyLoss, MONEY);
-      series(w2, 'Effective Rental Income', a => a.effectiveRentalIncome, MONEY);
-      series(w2, 'Other Income', a => a.otherIncome, MONEY);
-      series(w2, 'Gross Operating Income', a => a.grossOperatingIncome, MONEY, true);
-      series(w2, 'Operating Expenses', a => -a.operatingExpenses, MONEY);
-      series(w2, 'Net Operating Income', a => a.netOperatingIncome, MONEY, true);
-      series(w2, 'Capital Expenses / Reserves', a => -a.capitalExpenses, MONEY);
-      series(w2, 'Debt Service', a => -a.debtService, MONEY);
-      series(w2, 'Cash Flow Before Taxes', a => a.cashFlowBeforeTaxes, MONEY, true);
-      w2.addRow([]);
-      note(w2, 'Expenses ' + (N.expenses.mode === 'percentOfGOI'
-        ? (N.expenses.value * 100).toFixed(2) + '% of GOI'
-        : 'fixed, growing ' + (N.expenses.growth.value * 100).toFixed(2) + '%/yr')
-        + ' · income growth ' + (N.income.growth.value * 100).toFixed(2) + '%/yr.', yrs + 1);
-    }
-
-    // 3 · Debt and Sale — the PDF's Hypothetical Sale section plus debt coverage.
-    if (o.sale) {
-      const w3 = sheet('Debt and Sale', [{ width: 34 }, ...Array(yrs).fill({ width: 16 })]);
-      titleBand(w3, 'Debt and Sale', yrs + 1);
-      head(w3, 'HYPOTHETICAL SALE AT END OF EACH YEAR', yrs + 1);
-      note(w3, 'Each sale is priced on the following year’s NOI at the '
-        + (N.disposition.exitCapRate.value * 100).toFixed(2) + '% exit cap, rounded to the nearest $1,000; selling costs ('
-        + (N.disposition.sellingCostPercent * 100).toFixed(2) + '%) and the loan payoff come out of that rounded price.', yrs + 1);
-      headerRow(w3, yearsHdr);
-      series(w3, 'Gross Sale Price', a => a.grossSalePrice, MONEY);
-      series(w3, 'Selling Costs', a => -a.sellingCosts, MONEY);
-      if (loan) series(w3, 'Loan Payoff', a => -a.endingLoanBalance, MONEY);
-      series(w3, 'Net Sale Proceeds', a => a.netSaleProceeds, MONEY, true);
-      if (loan) {
-        w3.addRow([]);
-        head(w3, 'LTV · DSCR · DEBT YIELD', yrs + 1);
-        headerRow(w3, yearsHdr);
-        series(w3, 'Projected LTV (balance ÷ sale value)', a => a.projectedLTV, PCT);
-        series(w3, 'DSCR (NOI ÷ debt service)', a => a.dscr, RATIO);
-        series(w3, 'Debt Yield (NOI ÷ original loan)', a => a.debtYield, PCT);
-      }
-    }
-
-    // 4 · Returns — the PDF's returns and IRR & leverage tables.
-    if (o.returns) {
-      const w4 = sheet('Returns', [{ width: 34 }, ...Array(yrs).fill({ width: 16 })]);
-      titleBand(w4, 'Returns, IRR & Leverage', yrs + 1);
-      headerRow(w4, yearsHdr);
-      series(w4, 'Cash-on-Cash', a => a.cashOnCash, PCT);
-      series(w4, 'Return on Equity', a => a.returnOnEquity, PCT);
-      series(w4, 'Equity Multiple', a => a.equityMultiple, MULT);
-      series(w4, 'Property IRR', a => a.propertyIRR, PCT);
-      if (loan) series(w4, 'Effective Borrowing Rate', a => a.effectiveLoanRate, PCT);
-      series(w4, 'Equity IRR', a => a.equityIRR, PCT, true);
-      if (loan) series(w4, 'Leverage Impact', a =>
-        a.equityIRR === null || a.propertyIRR === null ? null
-        : Math.round(a.equityIRR * 10000) / 10000 - Math.round(a.propertyIRR * 10000) / 10000, PCT);
-      w4.addRow([]);
-      note(w4, 'Optimal holding period: ' + (s.optimalHoldingYear
-        ? 'Year ' + s.optimalHoldingYear + ' at ' + (s.optimalHoldingYield * 100).toFixed(2) + '% equity IRR'
-        : 'not determinable') + '.'
-        + (loan ? ' Leverage is positive when the equity IRR exceeds the property IRR.' : ''), yrs + 1);
-    }
-
-    // 5 · Acquisition Sensitivity — every series, one row per sale year.
-    if (o.sens && R.sensitivity) {
-      const w5 = sheet('Acquisition Sensitivity', [{ width: 32 }, ...Array(5).fill({ width: 17 })]);
-      titleBand(w5, 'Acquisition-Price Sensitivity', 6);
-      note(w5, 'Scenarios at 90–110% of the base price; base LTV, rates, operating cash flows and terminal sale prices preserved.', 6);
-      headerRow(w5, ['', ...R.sensitivity.map(x => Math.round(x.factor * 100) + '% of Price')]);
-      const srow = (lab, f, fmt, tot) => {
-        const r = w5.addRow([lab, ...R.sensitivity.map(f)]);
-        r.eachCell(c => { c.border = box; });
-        r.getCell(1).font = tot ? F(10, { bold: true }) : F(10, { color: { argb: B.ink700 } });
-        for (let i = 2; i <= 6; i++) {
-          const c = r.getCell(i);
-          if (fmt) c.numFmt = fmt;
-          c.font = F(10, tot ? { bold: true } : null);
-          if (tot) c.fill = fillOf(B.green50);
-        }
-        return r;
-      };
-      srow('Purchase Price', x => x.purchasePrice, MONEY, true);
-      srow('Acquisition Cap Rate', x => x.acquisitionCapRate, PCT);
-      srow('Loan Amount', x => x.loanAmount, MONEY);
-      srow('Initial Equity', x => x.initialEquity, MONEY);
-      for (let y = 0; y < yrs; y++) srow('Unleveraged CoC — Sale Y' + (y + 1), x => x.unleveragedCoC[y], PCT);
-      for (let y = 0; y < yrs; y++) srow('Leveraged CoC — Sale Y' + (y + 1), x => x.leveragedCoC[y], PCT);
-      for (let y = 0; y < yrs; y++) srow('Unleveraged IRR — Sale Y' + (y + 1), x => x.unleveragedIRR[y], PCT);
-      for (let y = 0; y < yrs; y++) srow('Leveraged IRR — Sale Y' + (y + 1), x => x.leveragedIRR[y], PCT);
-    }
-
-    // 6 · Assumptions and Provenance — always present: this sheet is the
-    // workbook's provenance record (engine + schema + saved version), the
-    // one place those identities are allowed to live outside the PDF footer.
-    const w6 = sheet('Assumptions', [{ width: 38 }, { width: 26 }, { width: 16 }]);
-    titleBand(w6, 'Assumptions & Provenance', 3);
-    head(w6, 'ASSUMPTIONS', 3);
-    kv(w6, 'Analysis Name', N.analysisName);
-    kv(w6, 'Property', propName);
-    kv(w6, 'Address', N.property.address || '—');
-    kv(w6, 'Size', N.property.size.value + ' ' + N.property.size.unit);
-    kv(w6, 'Purchase Month', N.property.purchaseMonth);
-    kv(w6, 'Price Basis', N.acquisition.basis.mode);
-    kv(w6, 'Acquisition Costs %', N.acquisition.costPercent, PCT);
-    kv(w6, 'Year-1 Potential Income', N.income.year1PotentialIncome, MONEY);
-    kv(w6, 'Income Growth', N.income.growth.value, PCT);
-    kv(w6, 'Vacancy / Credit Loss', N.vacancy.value, PCT);
-    kv(w6, 'Expense Mode', N.expenses.mode);
-    kv(w6, 'Expense Value', N.expenses.value, N.expenses.mode === 'percentOfGOI' ? PCT : MONEY);
-    if (N.expenses.mode !== 'percentOfGOI') kv(w6, 'Expense Growth', N.expenses.growth.value, PCT);
-    kv(w6, 'Exit Cap Rate', N.disposition.exitCapRate.value, PCT);
-    kv(w6, 'Selling Costs', N.disposition.sellingCostPercent, PCT);
-    w6.addRow([]);
-    head(w6, 'PROVENANCE', 3);
-    kv(w6, 'Input Schema Version', R.inputSchemaVersion);
-    kv(w6, 'Calculation Version', R.calculationVersion);
-    kv(w6, 'Saved Analysis Version', st.loadedVersion || '(unsaved)');
-    kv(w6, 'Source', src ? 'Budget ' + src.projectId + ' version ' + src.budgetVersionNumber : 'Standalone');
-    kv(w6, 'Generated', new Date().toISOString());
-    if (R.warnings && R.warnings.length) {
-      w6.addRow([]);
-      head(w6, 'WARNINGS', 3);
-      R.warnings.forEach(warn => kv(w6, 'Warning', warn));
-    }
-
+    const wb = FSExportRender.buildWorkbook(ExcelJS, exportDoc());
     const buf = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = (N.analysisName || 'Investment_Analysis').replace(/[^\w]+/g, '_') + '_Investment_Analysis.xlsx';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    downloadBlob(new Blob([buf],
+      { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+      exportBaseName() + '.xlsx');
   }
 
   /* ================= public surface ================= */
@@ -1415,7 +1174,7 @@
     renderList, renderListInto, open, createFromBudget, createStandalone,
     createBlank, openProjectPicker, softDelete,
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep,
-    openExport, exportWorkbook, exportPDF, addOtherIncome, addCapex,
+    openExport, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,
     _other, _otherRemove, _capex, _capexRemove,
     currentId: () => st.id,
     isDirty: () => st.dirty,

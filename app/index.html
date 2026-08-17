@@ -17,6 +17,13 @@
      network that blocked cdnjs, and the community build of the old library could not style
      cells at all. MIT licence in vendor/exceljs-LICENSE.txt. -->
 <script src="vendor/exceljs.min.js"></script>
+<!-- pdfmake is vendored for the same reason; fs-pdf-fonts.js registers the
+     Montserrat subset the server also embeds. export-render.js is the shared
+     document model + renderers — byte-identical to the copy the API requires
+     (api/shared/investment/export-render.js), enforced by a node test. -->
+<script src="vendor/pdfmake.min.js"></script>
+<script src="vendor/fs-pdf-fonts.js"></script>
+<script src="export-render.js"></script>
 <!-- The investment-analysis workflow is an external no-build module (IIFE) so
      the inline script stays the budget application. index.html contributes only
      the nav button, page containers, routes, and the adapter passed to init. -->
@@ -1281,9 +1288,15 @@ th.sortable.sorted{color:var(--ink-900)}
           return. The optimal holding period is simply the sale year with the highest equity IRR.</p>
 
         <p><b>Exports.</b> <span class="kbd">Export</span> works like the budget's: pick which sections
-          to include, then produce either the branded PDF report or a branded Excel workbook of real
-          numeric cells — each sheet opens with the Finishes Solutions title band, table headers freeze,
-          and every sheet prints landscape and fits to width, matching the budget workbook. Ticking
+          to include, then choose the format. <span class="kbd">PDF</span> downloads a real, branded PDF
+          file directly — no print dialog. <span class="kbd">XLSX</span> downloads the branded Excel
+          workbook of real numeric cells — each sheet opens with the Finishes Solutions title band, table
+          headers freeze, and every sheet prints landscape and fits to width. <span class="kbd">Print</span>
+          opens the browser print dialog with the composed report, for paper or print-to-PDF. All three
+          are built from the same underlying document model, so they can never disagree with each other
+          or the screen. Saved analyses can also be fetched straight from the API as
+          <span class="mono">pdf</span>, <span class="mono">xlsx</span> or <span class="mono">csv</span>
+          via <span class="mono">/api/investment-analysis/&lt;id&gt;/export?format=…</span>. Ticking
           <b>Highlight Key Metrics</b> puts a light green highlight on the PDF's gross
           operating income, net operating income, purchase price, initial investment, equity multiple,
           cash-on-cash and IRR so they stand out at a glance. Both formats are built from the calculated

@@ -273,7 +273,18 @@ Each budget line has `code` (CSI), `grp`, `scope` (`res` | `amen` | `soft`), `de
 
 ## 7 · Running the tests
 
-Fourteen Playwright suites, 467 assertions, plus 63 `node:test` assertions for the
+**Export rendering.** Investment analysis exports run through one shared module,
+`export-render.js`: a document-model builder plus PDF (pdfmake), XLSX (ExcelJS) and
+CSV renderers. The SAME file exists twice — `app/export-render.js` (loaded as a
+browser script beside the vendored `pdfmake.min.js` + `fs-pdf-fonts.js` Montserrat
+subset) and `api/shared/investment/export-render.js` (required by
+`api/investment-analysis-export`, which serves
+`GET /api/investment-analysis/{id}/export?format=pdf|xlsx|csv[&version=N]` from the
+saved ResultDoc, never recalculating). The copies MUST stay byte-identical —
+`test/export-render.test.js` fails if they drift; edit `app/export-render.js` and
+copy it over. Content changes belong in `buildExportDoc`; renderers only format.
+
+Fourteen Playwright suites, 477 assertions, plus 69 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus
