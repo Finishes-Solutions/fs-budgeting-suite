@@ -77,7 +77,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.evaluate(()=>{window.__printed=0;window.print=()=>{window.__printed++;};});
  await p.click("#page-csi button:has-text(\"Export\")"); await p.waitForTimeout(200);
  ok('CSI export option present', await p.locator('#ex-csi').isVisible());
- await p.click('button:has-text("PDF (Print)")'); await p.waitForTimeout(300);
+ await p.click('button:has-text("Print")'); await p.waitForTimeout(300);
  ok('print invoked', await p.evaluate(()=>window.__printed)===1);
  const rpt=await p.locator('#printDoc').innerHTML();
  ok('report has branded header + logo', rpt.includes('finishes-logo-black.png'));

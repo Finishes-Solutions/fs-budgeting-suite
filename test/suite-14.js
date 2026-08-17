@@ -102,10 +102,13 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('Export button opens the options modal with the highlight choice',
     await p.locator('#invModal #inv-ex-highlight').count()===1
     && !(await p.locator('#invModal #inv-ex-highlight').isChecked()));
- ok('modal offers PDF, XLSX and Print',
-    (await p.locator('#invModal button:has-text("PDF")').count())===1
-    && (await p.locator('#invModal button:has-text("XLSX")').count())===1
-    && (await p.locator('#invModal button:has-text("Print")').count())===1);
+ // the one button order shared with the budget's export modal
+ ok('modal buttons are Email (Soon), Print, PDF, Excel (.xlsx) in that order',
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#invModal .btn')]
+      .map(b=>b.textContent.trim().replace(/\s+/g,' '))))
+    ===JSON.stringify(['Email Soon','Print','PDF','Excel (.xlsx)']),
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#invModal .btn')]
+      .map(b=>b.textContent.trim().replace(/\s+/g,' ')))));
  await p.evaluate(()=>{window.__dl=null;
    const orig=HTMLAnchorElement.prototype.click;
    HTMLAnchorElement.prototype.click=function(){window.__dl={href:this.href,name:this.download};};

@@ -1305,15 +1305,18 @@ th.sortable.sorted{color:var(--ink-900)}
           rest of the suite.</p>
 
         <h3 id="help-exports">Exports</h3>
-        <p><span class="kbd">Export</span> lets you pick which sections to include, then produces either format.</p>
+        <p><span class="kbd">Export</span> lets you pick which sections to include, then choose the format —
+          the same button row every export popup in the suite uses: Email (Soon), Print, PDF, Excel (.xlsx).</p>
         <table class="tbl"><tbody>
-          <tr><td>Excel</td><td>A branded workbook, one sheet per section — Summary, Unit Mix, Income &amp; Expenses,
+          <tr><td>Excel (.xlsx)</td><td>A branded workbook, one sheet per section — Summary, Unit Mix, Income &amp; Expenses,
             Budget-SOV, CSI Schedule and Contract Summary. Headers freeze, columns are sized, currency and
             percentages carry real number formats, and every sheet prints landscape and fits to width. Values are
             live numbers, not text, so they can be pivoted or re-totalled.</td></tr>
-          <tr><td>PDF</td><td>A composed report rather than a picture of the screen: logo lockup, project header,
+          <tr><td>Print</td><td>A composed report rather than a picture of the screen: logo lockup, project header,
             key metrics band, then whichever sections you ticked. Collapsed groups never affect it — the report is
-            always complete. Opens the browser print dialog; choose "Save as PDF".</td></tr>
+            always complete. Opens the browser print dialog; choose "Save as PDF" there for a file.</td></tr>
+          <tr><td>PDF</td><td>The direct branded PDF download. Live today on investment analyses; for budgets it is
+            marked Soon until the budget report moves onto the same document renderer — use Print in the meantime.</td></tr>
         </tbody></table>
         <div class="callout">Both exports read the same numbers the screen shows, so they cannot drift from the
           budget. The workbook also carries the <b>Manually edited</b> flag and each line's original library rate.</div>
@@ -1365,11 +1368,11 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <!-- ================= EXPORT MODAL ================= -->
 <div id="exportModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
-  <div class="card" style="width:460px;max-width:92vw;margin:0">
+  <div class="card" style="width:580px;max-width:92vw;margin:0">
     <div class="card-hd"><h2>Export Budget</h2><button class="btn-x" onclick="closeExport()">×</button></div>
-    <div class="card-bd">
-      <div class="eyebrow" style="margin-bottom:10px">Include Sections</div>
-      <div style="display:grid;gap:10px;margin-bottom:20px">
+    <div class="card-bd" style="padding:22px 26px">
+      <div class="eyebrow" style="margin-bottom:12px">Include Sections</div>
+      <div style="display:grid;gap:12px;margin-bottom:24px">
         <label class="chk"><input type="checkbox" id="ex-stats" checked> Project Summary &amp; Key Metrics</label>
         <label class="chk"><input type="checkbox" id="ex-units" checked> Unit Mix &amp; Rent Revenue</label>
         <label class="chk"><input type="checkbox" id="ex-other" checked> Other Income &amp; Operating Expenses</label>
@@ -1379,15 +1382,24 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="chk"><input type="checkbox" id="ex-edits" checked
           title="Untick to hide the blue edited flags and library-rate comparisons in the exports"> Show Edited Line Flags</label>
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
+      <!-- The same button row as the investment analysis export modal — one
+           order everywhere: Email (Soon) · Print · PDF · Excel (.xlsx). The
+           budget's direct PDF download stays Soon until budgets move onto the
+           shared export renderer; Print composes the same branded report
+           through the browser's print dialog (choose Save as PDF there). -->
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
         <!-- Not `disabled`: a disabled button is skipped by keyboard navigation and shows
              no tooltip, so the "coming soon" affordance would be invisible to anyone not
              using a mouse. aria-disabled announces the state while keeping it reachable. -->
         <button class="btn btn-ghost btn-soon" id="ex-email" aria-disabled="true"
           title="Coming soon — emailing the workbook and report is not built yet"
           onclick="comingSoon('Emailing exports')">Email <span class="soon-pill">Soon</span></button>
+        <button class="btn btn-primary" title="Open the browser print dialog with the composed report"
+          onclick="exportPDF()">Print</button>
+        <button class="btn btn-ghost btn-soon" aria-disabled="true"
+          title="Coming soon — the direct PDF download for budgets is not built yet; use Print and choose Save as PDF"
+          onclick="comingSoon('The direct PDF download for budgets')">PDF <span class="soon-pill">Soon</span></button>
         <button class="btn btn-ghost" onclick="exportExcel()">Excel (.xlsx)</button>
-        <button class="btn btn-primary" onclick="exportPDF()">PDF (Print)</button>
       </div>
     </div>
   </div>

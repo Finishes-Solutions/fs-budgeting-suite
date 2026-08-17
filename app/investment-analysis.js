@@ -934,9 +934,11 @@
     if (!st.result || st.stale) { A.toast('Calculate first so the exports match the inputs.'); return; }
     const chk = (k, label, title) => `<label class="chk"${title ? ' title="' + title + '"' : ''}>
       <input type="checkbox" id="${EX_IDS[k]}" ${exOpts[k] ? 'checked' : ''}> ${label}</label>`;
+    // The button row matches the budget export modal exactly — one order
+    // everywhere: Email (Soon) · Print · PDF · Excel (.xlsx).
     openInvModal(`<h2 style="margin-top:0">Export Analysis</h2>
-      <div class="eyebrow" style="margin-bottom:10px">Include Sections</div>
-      <div style="display:grid;gap:10px;margin-bottom:18px">
+      <div class="eyebrow" style="margin-bottom:12px">Include Sections</div>
+      <div style="display:grid;gap:12px;margin-bottom:24px">
         ${chk('kpis', 'Summary &amp; Key Metrics')}
         ${chk('cash', 'Operating Projection')}
         ${chk('sale', 'Hypothetical Sale by Year')}
@@ -945,20 +947,24 @@
         ${chk('assumptions', 'Assumptions &amp; Provenance',
           'The Excel workbook always carries its Assumptions sheet as the provenance record; this governs the PDF section')}
       </div>
-      <div class="eyebrow" style="margin-bottom:10px">Options</div>
-      <div style="display:grid;gap:10px;margin-bottom:20px">
+      <div class="eyebrow" style="margin-bottom:12px">Options</div>
+      <div style="display:grid;gap:12px;margin-bottom:24px">
         ${chk('highlight', 'Highlight Key Metrics',
           'Light green highlight on GOI, NOI, Purchase Price, Initial Investment, Equity Multiple, Cash-on-Cash and IRR in the PDF')}
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button class="btn btn-ghost" title="Open the browser print dialog"
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-soon" aria-disabled="true"
+          title="Coming soon — emailing exports is not built yet"
+          onclick="FSInvestmentUI.emailSoon()">Email <span class="soon-pill">Soon</span></button>
+        <button class="btn btn-ghost" title="Open the browser print dialog with the composed report"
           onclick="FSInvestmentUI.exportPrint()">Print</button>
-        <button class="btn btn-ghost" title="Download the branded Excel workbook"
-          onclick="FSInvestmentUI.exportWorkbook()">XLSX</button>
         <button class="btn btn-primary" title="Download the branded PDF report"
           onclick="FSInvestmentUI.exportPDF()">PDF</button>
-      </div>`, 460);
+        <button class="btn btn-ghost" title="Download the branded Excel workbook"
+          onclick="FSInvestmentUI.exportWorkbook()">Excel (.xlsx)</button>
+      </div>`, 580);
   }
+  function emailSoon() { A.toast('Emailing exports is coming soon.'); }
 
   // The modal's checkboxes win when it is open; direct calls keep the last
   // (or default all-sections, no-highlight) choices.
@@ -1174,7 +1180,7 @@
     renderList, renderListInto, open, createFromBudget, createStandalone,
     createBlank, openProjectPicker, softDelete,
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep,
-    openExport, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,
+    openExport, emailSoon, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,
     _other, _otherRemove, _capex, _capexRemove,
     currentId: () => st.id,
     isDirty: () => st.dirty,

@@ -17,7 +17,14 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // The report is composed from the data model, so a collapsed grid cannot truncate it.
  await p.evaluate(()=>{window.__rpt=null;window.print=()=>{window.__rpt=document.getElementById('printDoc').innerHTML;};});
  await p.click("#page-budget button:has-text(\"Export\")");
- await p.click('button:has-text("PDF (Print)")');
+ // the one button order shared with the investment analysis export modal
+ ok('budget export buttons are Email (Soon), Print, PDF (Soon), Excel (.xlsx) in order',
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#exportModal .btn')]
+      .map(b=>b.textContent.trim().replace(/\s+/g,' '))))
+    ===JSON.stringify(['Email Soon','Print','PDF Soon','Excel (.xlsx)']),
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#exportModal .btn')]
+      .map(b=>b.textContent.trim().replace(/\s+/g,' ')))));
+ await p.click('button:has-text("Print")');
  await p.waitForTimeout(300);
  const rpt=await p.evaluate(()=>window.__rpt||'');
  const lineCount=(rpt.match(/class="mono code"/g)||[]).length;
@@ -40,7 +47,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.evaluate(()=>{doc.lines[0].unit+=1;touch();});
  await p.waitForTimeout(250);
  await p.click("#page-budget button:has-text(\"Export\")");
- await p.click('button:has-text("PDF (Print)")');
+ await p.click('button:has-text("Print")');
  await p.waitForTimeout(300);
  const flagged=await p.evaluate(()=>window.__rpt||'');
  ok('edited flag shown when Show Edited Line Flags is on', flagged.includes('edited-mark'));
@@ -49,7 +56,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // ---- toggle off: no edited flags
  await p.click("#page-budget button:has-text(\"Export\")");
  await p.uncheck('#ex-edits');
- await p.click('button:has-text("PDF (Print)")');
+ await p.click('button:has-text("Print")');
  await p.waitForTimeout(300);
  const bare=await p.evaluate(()=>window.__rpt||'');
  ok('unchecking Show Edited Line Flags removes the edited badges', !bare.includes('edited-mark'));

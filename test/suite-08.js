@@ -58,7 +58,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // --- exports
  await p.evaluate(()=>{window.__rpt=null;window.print=()=>{window.__rpt=document.getElementById('printDoc').innerHTML;};});
  await p.click('#page-csi button:has-text("Export")'); await p.waitForTimeout(200);
- await p.click('button:has-text("PDF (Print)")'); await p.waitForTimeout(400);
+ await p.click('button:has-text("Print")'); await p.waitForTimeout(400);
  const rpt=await p.evaluate(()=>window.__rpt||'');
  ok('PDF omits the amenity scope band', !rpt.includes('Amenity / Clubhouse'));
  ok('PDF omits the amenity summary row', !rpt.includes('Amenity / clubhouse'));

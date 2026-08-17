@@ -206,7 +206,7 @@ const BASE = 'http://127.0.0.1:8100';
   ok('Email does not close the export modal', await p.locator('#exportModal').isVisible());
   await p.uncheck('#ex-stats');
   await p.evaluate(() => { window.__printed = 0; window.print = () => window.__printed++; });   // keep printDoc populated
-  await p.click('button:has-text("PDF (Print)")');
+  await p.click('button:has-text("Print")');
   await p.waitForTimeout(200);
   ok('PDF export invokes print', await p.evaluate(() => window.__printed) === 1);
   // sections are honoured by omission from the composed report, not by hiding app markup
