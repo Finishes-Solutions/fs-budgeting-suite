@@ -186,7 +186,7 @@ const BASE = 'http://127.0.0.1:8100';
 
   // --- export modal + PDF print wiring (SheetJS CDN is blocked in this sandbox,
   //     so the Excel binary path cannot be exercised here)
-  await p.click("#page-budget button:has-text(\"Export…\")");
+  await p.click("#page-budget button:has-text(\"Export\")");
   ok('Export modal opens', await p.locator('#exportModal').isVisible());
   // Email export is announced but not built; it must be visibly unavailable and inert.
   ok('Email export is offered as coming soon', await p.locator('#ex-email').isVisible());

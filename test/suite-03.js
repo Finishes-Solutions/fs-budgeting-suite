@@ -16,7 +16,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // The report is composed from the data model, so a collapsed grid cannot truncate it.
  await p.evaluate(()=>{window.__rpt=null;window.print=()=>{window.__rpt=document.getElementById('printDoc').innerHTML;};});
- await p.click("#page-budget button:has-text(\"Export…\")");
+ await p.click("#page-budget button:has-text(\"Export\")");
  await p.click('button:has-text("PDF (Print)")');
  await p.waitForTimeout(300);
  const rpt=await p.evaluate(()=>window.__rpt||'');
@@ -39,7 +39,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // Mark one line edited first so the toggle has something to show.
  await p.evaluate(()=>{doc.lines[0].unit+=1;touch();});
  await p.waitForTimeout(250);
- await p.click("#page-budget button:has-text(\"Export…\")");
+ await p.click("#page-budget button:has-text(\"Export\")");
  await p.click('button:has-text("PDF (Print)")');
  await p.waitForTimeout(300);
  const flagged=await p.evaluate(()=>window.__rpt||'');
@@ -47,7 +47,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.waitForTimeout(700);
 
  // ---- toggle off: no edited flags
- await p.click("#page-budget button:has-text(\"Export…\")");
+ await p.click("#page-budget button:has-text(\"Export\")");
  await p.uncheck('#ex-edits');
  await p.click('button:has-text("PDF (Print)")');
  await p.waitForTimeout(300);
@@ -56,7 +56,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the report tables are unaffected by the toggle',
     (bare.match(/class="mono code"/g)||[]).length>=100);
  await p.waitForTimeout(700);
- await p.click("#page-budget button:has-text(\"Export…\")");
+ await p.click("#page-budget button:has-text(\"Export\")");
  await p.check('#ex-edits');   // leave the default restored
  await p.click('#exportModal .btn-x');
 

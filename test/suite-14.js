@@ -96,7 +96,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('returns sheet notes the optimal holding period',
     wb.sheets['Returns'].some(r=>/Optimal holding period/.test(String(r[0]))));
 
- // ---- PDF (Print): reached through the Export… modal (like the budget),
+ // ---- PDF (Print): reached through the Export modal (like the budget),
  // composed from the canonical result into #printDoc. Tables only — no charts.
  await p.evaluate(()=>{window.__rpt=null;window.print=()=>{window.__rpt=document.getElementById('printDoc').innerHTML;};});
  await p.click('#invExportBtn'); await p.waitForTimeout(200);

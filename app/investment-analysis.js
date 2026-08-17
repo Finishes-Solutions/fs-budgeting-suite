@@ -319,7 +319,7 @@
           <span class="inv-statebar" id="invState"></span>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
-          <button class="btn btn-dark" data-inv-edit id="invExportBtn" onclick="FSInvestmentUI.openExport()">Export…</button>
+          <button class="btn btn-dark" data-inv-edit id="invExportBtn" onclick="FSInvestmentUI.openExport()">Export</button>
         </div>
       </div>
       <div id="invConflict"></div>
@@ -922,7 +922,7 @@
   }
 
   /* ================= EXPORT (modal, options, PDF, workbook) =================
-     One Export… button, like the budget: a modal picks the sections and
+     One Export button, like the budget: a modal picks the sections and
      options, then produces either format from the same canonical result. */
   const exOpts = { kpis: true, cash: true, sale: true, returns: true, sens: true,
     assumptions: true, highlight: false };

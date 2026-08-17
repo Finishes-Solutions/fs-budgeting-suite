@@ -75,7 +75,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // ---- PDF report
  await p.evaluate(()=>{window.__printed=0;window.print=()=>{window.__printed++;};});
- await p.click("#page-csi button:has-text(\"Export…\")"); await p.waitForTimeout(200);
+ await p.click("#page-csi button:has-text(\"Export\")"); await p.waitForTimeout(200);
  ok('CSI export option present', await p.locator('#ex-csi').isVisible());
  await p.click('button:has-text("PDF (Print)")'); await p.waitForTimeout(300);
  ok('print invoked', await p.evaluate(()=>window.__printed)===1);
@@ -103,7 +103,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  console.log('DBG export btns', JSON.stringify(await p.locator('#page-csi button').allTextContents()));
  const dl=p.waitForEvent('download',{timeout:20000});
  dl.catch(e=>console.log('DBG download rejected'));
- await p.click("#page-csi button:has-text(\"Export…\")"); await p.waitForTimeout(300);
+ await p.click("#page-csi button:has-text(\"Export\")"); await p.waitForTimeout(300);
  console.log('DBG modal visible', await p.locator('#exportModal').isVisible());
  console.log('DBG excel matches', await p.locator('button:has-text("Excel")').count());
  try{ await p.click('button:has-text("Excel")',{timeout:5000}); console.log('DBG excel clicked'); }

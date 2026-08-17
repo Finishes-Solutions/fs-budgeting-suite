@@ -737,7 +737,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
       <button class="btn btn-ghost" onclick="createAnalysisFromBudget()"
         title="Save this budget and start a five-year investment analysis from the saved version">Create Investment Analysis</button>
-      <button class="btn btn-dark" onclick="openExport()">Export…</button>
+      <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
   </div>
 
@@ -835,7 +835,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <div class="sub" id="csiSub">The same budget, ordered as MasterFormat divisions — the form a lender, architect or GC expects.</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap" class="no-print">
       <button class="btn btn-ghost" onclick="go('budget')">← Budget</button>
-      <button class="btn btn-dark" onclick="openExport()">Export…</button>
+      <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
   </div>
 
@@ -1002,7 +1002,7 @@ th.sortable.sorted{color:var(--ink-900)}
         <div class="step"><div class="n">4</div><div class="t"><b>Check the summary.</b>
           Contract sum, total project cost, cost per unit and the SOV rollup are at the bottom of the page.</div></div>
         <div class="step"><div class="n">5</div><div class="t"><b>Save, then export.</b>
-          <span class="kbd">Save</span> writes to the database; <span class="kbd">Export…</span> produces Excel or PDF.</div></div>
+          <span class="kbd">Save</span> writes to the database; <span class="kbd">Export</span> produces Excel or PDF.</div></div>
         <div class="callout">The header pill shows <b>Unsaved changes</b> until a save succeeds. Nothing is stored
           automatically — if you close the tab with that pill showing, the browser will warn you.
           <b>Cmd+S</b> (or <b>Ctrl+S</b>) saves from anywhere in a budget.</div>
@@ -1280,7 +1280,7 @@ th.sortable.sorted{color:var(--ink-900)}
           equity IRR against the unleveraged property IRR — positive leverage means borrowing raised the
           return. The optimal holding period is simply the sale year with the highest equity IRR.</p>
 
-        <p><b>Exports.</b> <span class="kbd">Export…</span> works like the budget's: pick which sections
+        <p><b>Exports.</b> <span class="kbd">Export</span> works like the budget's: pick which sections
           to include, then produce either the branded PDF report or a branded Excel workbook of real
           numeric cells — each sheet opens with the Finishes Solutions title band, table headers freeze,
           and every sheet prints landscape and fits to width, matching the budget workbook. Ticking
@@ -1292,7 +1292,7 @@ th.sortable.sorted{color:var(--ink-900)}
           rest of the suite.</p>
 
         <h3 id="help-exports">Exports</h3>
-        <p><span class="kbd">Export…</span> lets you pick which sections to include, then produces either format.</p>
+        <p><span class="kbd">Export</span> lets you pick which sections to include, then produces either format.</p>
         <table class="tbl"><tbody>
           <tr><td>Excel</td><td>A branded workbook, one sheet per section — Summary, Unit Mix, Income &amp; Expenses,
             Budget-SOV, CSI Schedule and Contract Summary. Headers freeze, columns are sized, currency and
