@@ -309,7 +309,7 @@ the export endpoint flips one request. Repair playbook: set the app setting to
 `local`, fix fs-render, flip back. Do not evolve the legacy files — new export
 work happens in the producers and fs-render.
 
-Fourteen Playwright suites, 505 assertions, plus 79 `node:test` assertions for the
+Fourteen Playwright suites, 512 assertions, plus 79 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus

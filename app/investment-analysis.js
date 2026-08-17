@@ -232,6 +232,9 @@
       st.source = r.source; st.loadedVersion = r.currentVersionNumber;
       st.dirty = false; st.stale = false; st.busy = ''; st.step = r.result ? 6 : 1;
       st.viewingVersion = null; st.conflict = null; st.errors = {};
+      // Badge baseline: values as loaded. Editing a field away from this
+      // hides its From Budget badge; putting it back restores it.
+      snapshotOrigins();
       renderEditor();
     } catch (e) {
       A.toast('Could not open the analysis — ' + e.message);
@@ -301,7 +304,30 @@
   function originBadge(path) {
     const src = st.input && st.input.source;
     const o = src && src.fieldOrigins && src.fieldOrigins[path];
-    return o ? `<span class="inv-origin" title="Imported: ${esc(o)} (budget version ${esc(src.budgetVersionNumber)})">From Budget</span>` : '';
+    return o ? `<span class="inv-origin" data-origin="${esc(path)}" title="Imported: ${esc(o)} (budget version ${esc(src.budgetVersionNumber)})">From Budget</span>` : '';
+  }
+
+  /* The badge means "this value IS the budget's" — so editing a field away
+     from its imported value removes it, and putting the value back restores
+     it. Originals are snapshotted when the analysis loads. */
+  function getPath(obj, path) {
+    return path.split('.').reduce((v, k) => (v === null || v === undefined ? v : v[k]), obj);
+  }
+  function snapshotOrigins() {
+    st.originVals = {};
+    const src = st.input && st.input.source;
+    if (!src || !src.fieldOrigins) return;
+    for (const path of Object.keys(src.fieldOrigins)) {
+      st.originVals[path] = JSON.stringify(getPath(st.input, path));
+    }
+  }
+  function refreshOriginBadges() {
+    if (!st.originVals) return;
+    document.querySelectorAll('#page-analysis [data-origin]').forEach(b => {
+      const path = b.dataset.origin;
+      b.style.display = JSON.stringify(getPath(st.input, path)) === st.originVals[path]
+        ? '' : 'none';
+    });
   }
 
   function renderEditor() {
@@ -553,7 +579,8 @@
 
   function markDirty() {
     if (!st.dirty || !st.stale) { st.dirty = true; st.stale = !!st.result; renderStateBar(); }
-    updateStepUI();   // keep the Next buttons and ✓ pills live as fields fill in
+    updateStepUI();          // keep the Next buttons and step dots live as fields fill in
+    refreshOriginBadges();   // From Budget disappears when a value is edited away
   }
 
   function renderStateBar() {

@@ -74,6 +74,27 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('origin badges mark imported values', (await p.locator('.inv-origin').count())>=4,
     (await p.locator('.inv-origin').count())+' badges');
 
+ // ---- the badge follows the value: editing away hides it, reverting restores
+ const nameBadge=p.locator('[data-origin="property.name"]');
+ ok('badge visible while the value matches the import', await nameBadge.isVisible());
+ const origName=await p.locator('[data-f="property.name"]').inputValue();
+ await p.fill('[data-f="property.name"]','Changed Name');
+ await p.locator('[data-f="property.name"]').dispatchEvent('change');
+ await p.waitForTimeout(150);
+ ok('editing an imported value removes its From Budget badge', !(await nameBadge.isVisible()));
+ await p.fill('[data-f="property.name"]',origName);
+ await p.locator('[data-f="property.name"]').dispatchEvent('change');
+ await p.waitForTimeout(150);
+ ok('restoring the imported value brings the badge back', await nameBadge.isVisible());
+
+ // ---- inputs align across a grid row even when a label carries the badge
+ await p.click('#invSteps button[data-step="2"]');
+ const aBox=await p.locator('[data-f="income.year1PotentialIncome"]').boundingBox();
+ const bBox=await p.locator('[data-f="income.growth.value"]').boundingBox();
+ ok('income inputs align despite the From Budget badge', Math.abs(aBox.y-bBox.y)<2,
+    JSON.stringify({a:aBox.y,b:bBox.y}));
+ await p.click('#invSteps button[data-step="1"]');
+
  // ---- version pinning: editing + saving the budget must NOT touch the analysis
  const aid=p.url().match(/analysis\/([0-9a-f-]{36})/)[1];
  await p.evaluate(async()=>{
@@ -94,6 +115,19 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('Home offers both analysis creation buttons',
     (await p.locator('#page-home button:has-text("+ New Investment Analysis")').count())===1
     && (await p.locator('#page-home button:has-text("+ Blank Investment Analysis")').count())===1);
+ // title row above the card, exactly like Project Budgets
+ ok('Investment Analyses heading and buttons sit above the list card',
+    await p.evaluate(()=>{
+      const hs=[...document.querySelectorAll('#page-home .page-title h1')].map(x=>x.textContent.trim());
+      if(JSON.stringify(hs)!==JSON.stringify(['Project Budgets','Investment Analyses']))return false;
+      const t=[...document.querySelectorAll('#page-home .page-title')][1];
+      return !t.closest('.card')&&!!t.nextElementSibling&&t.nextElementSibling.classList.contains('card');
+    }));
+ const bBtn=await p.locator('#page-home button:has-text("+ New Multifamily Budget")').boundingBox();
+ const iBtn=await p.locator('#page-home button:has-text("+ New Investment Analysis")').boundingBox();
+ ok('creation buttons right-align across both sections',
+    Math.abs((bBtn.x+bBtn.width)-(iBtn.x+iBtn.width))<2,
+    JSON.stringify({budget:bBtn.x+bBtn.width,analysis:iBtn.x+iBtn.width}));
  await p.click('#page-home button:has-text("+ New Investment Analysis")');
  await p.waitForTimeout(400);
  ok('New Investment Analysis asks which project it is for',

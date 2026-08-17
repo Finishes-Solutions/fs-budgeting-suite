@@ -41,8 +41,13 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.waitForTimeout(150);
  ok('Next lights up when step 1 completes',
     await next1.isEnabled() && await next1.evaluate(e=>e.classList.contains('ready')));
- ok('the step pill earns its checkmark',
+ ok('the step pill earns its done mark',
     await p.locator('#invSteps button[data-step="1"]').evaluate(e=>e.classList.contains('done')));
+ ok('the done mark is a green dot, not a check mark',
+    await p.locator('#invSteps button[data-step="1"]').evaluate(e=>{
+      const s=getComputedStyle(e,'::after');
+      return s.content==='""'&&s.width==='7px'&&s.borderRadius==='50%';
+    }));
  await next1.click(); await p.waitForTimeout(200);
  ok('Next advances to Income', await p.locator('[data-steppane="2"]').evaluate(e=>e.classList.contains('on')));
  await p.fill('[data-f="income.year1PotentialIncome"]','300000');
