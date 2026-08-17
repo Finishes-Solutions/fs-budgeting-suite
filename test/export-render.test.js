@@ -91,6 +91,25 @@ test('XLSX renderer produces the six branded sheets', async () => {
   assert.strictEqual((wb2.model.media || []).length, 0, 'workbook must stay media-free');
 });
 
+test('Signature Needed appends the identified approval page to the PDF', () => {
+  const sd = render.buildExportDoc(result, Object.assign({}, ALL, { signature: true }),
+    { savedVersion: 2, generatedAt: '2026-08-17T00:00:00.000Z' });
+  assert.strictEqual(sd.signature.heading, 'Approval');
+  const ids = Object.fromEntries(sd.signature.identity);
+  assert.strictEqual(ids['Saved Analysis Version'], 'v2');
+  assert.strictEqual(ids['Analysis'], result.normalizedInput.analysisName);
+  assert.match(ids['Calculation Engine'], /before-tax-/);
+  assert.match(ids['Purchase Price'], /^\$/);
+  const dd = JSON.stringify(render.buildPdfDocDefinition(sd));
+  assert.match(dd, /Approval/);
+  assert.match(dd, /"Signature"/);
+  assert.match(dd, /"Date"/);
+  assert.match(dd, /accompanies is void/);
+  // without the option, no approval page and no signature block at all
+  assert.strictEqual(doc.signature, null);
+  assert.ok(!JSON.stringify(render.buildPdfDocDefinition(doc)).includes('Approval'));
+});
+
 test('CSV renderer carries the tables and the engine line', () => {
   const csv = render.buildCsv(doc);
   assert.match(csv, /Net Operating Income/);

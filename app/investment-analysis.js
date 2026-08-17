@@ -928,10 +928,10 @@
      One Export button, like the budget: a modal picks the sections and
      options, then produces either format from the same canonical result. */
   const exOpts = { kpis: true, cash: true, sale: true, returns: true, sens: true,
-    assumptions: true, highlight: false };
+    assumptions: true, highlight: false, signature: false };
   const EX_IDS = { kpis: 'inv-ex-kpis', cash: 'inv-ex-cash', sale: 'inv-ex-sale',
     returns: 'inv-ex-returns', sens: 'inv-ex-sens', assumptions: 'inv-ex-assump',
-    highlight: 'inv-ex-highlight' };
+    highlight: 'inv-ex-highlight', signature: 'inv-ex-signature' };
 
   function openExport() {
     if (!st.result || st.stale) { A.toast('Calculate first so the exports match the inputs.'); return; }
@@ -954,6 +954,8 @@
       <div style="display:grid;gap:12px;margin-bottom:24px">
         ${chk('highlight', 'Highlight Key Metrics',
           'Light green highlight on GOI, NOI, Purchase Price, Initial Investment, Equity Multiple, Cash-on-Cash and IRR in the PDF')}
+        ${chk('signature', 'Signature Needed',
+          'Adds a final approval page to the PDF with signature and date lines, identified so it cannot be attached to any other analysis')}
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
         <button class="btn btn-ghost btn-soon" aria-disabled="true"
@@ -1157,6 +1159,30 @@
     // Assumptions sheet) — never on the app UI.
     h += '<p class="rpt-note" style="margin-top:20px">Calculated by engine <span class="mono">'
       + esc(R.calculationVersion) + '</span> · input schema v' + R.inputSchemaVersion + '</p>';
+
+    // Signature Needed: the approval page, always last, identified so a
+    // signed page cannot be attached to a different analysis.
+    if (o.signature) {
+      h += `<section class="rpt-sec rpt-sig"><h2>Approval</h2>
+        <p class="rpt-note">The signature below approves the investment analysis identified here, exactly as
+        calculated and presented in this document. The identification binds this approval page to this document
+        alone — an approval page whose identification does not match the document it accompanies is void.</p>
+        <div class="rpt-2col"><div>`
+        + rr('Analysis', esc(N.analysisName))
+        + rr('Property', esc(N.property.name) + (N.property.address ? ' · ' + esc(N.property.address) : ''))
+        + rr('Source', src ? 'Budget <span class="mono">' + esc(src.projectId) + '</span> version ' + esc(src.budgetVersionNumber) : 'Standalone Analysis')
+        + rr('Saved Analysis Version', st.loadedVersion ? 'v' + st.loadedVersion : '(unsaved)')
+        + rr('Projection', years.length + '-Year Before-Tax')
+        + '</div><div>'
+        + rr('Purchase Price', usd(s.purchasePrice))
+        + rr('Initial Equity Investment', usd(s.initialEquity))
+        + rr('Final-Year Equity IRR', pctf(s.finalYearEquityIRR))
+        + rr('Calculation Engine', '<span class="mono">' + esc(R.calculationVersion) + '</span> · schema v' + R.inputSchemaVersion)
+        + rr('Generated', esc(stamp))
+        + '</div></div>'
+        + '<div class="sig-row"><div class="s1"><div class="sig-line"></div><div class="sig-cap">Signature</div></div>'
+        + '<div class="s2"><div class="sig-line"></div><div class="sig-cap">Date</div></div></div></section>';
+    }
     return h;
   }
 

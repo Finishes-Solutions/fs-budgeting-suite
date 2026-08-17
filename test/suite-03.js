@@ -67,6 +67,26 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.check('#ex-edits');   // leave the default restored
  await p.click('#exportModal .btn-x');
 
+ // ---- Signature Needed: off by default, and when ticked the report ends
+ // with an approval page identified to this exact budget.
+ ok('no approval page unless Signature Needed is ticked', !/rpt-sig|Approval/.test(bare));
+ await p.click("#page-budget button:has-text(\"Export\")");
+ await p.check('#ex-sign');
+ await p.click('button:has-text("Print")');
+ await p.waitForTimeout(300);
+ const signed=await p.evaluate(()=>window.__rpt||'');
+ const sigPart=signed.split('rpt-sig')[1]||'';
+ ok('Signature Needed appends the approval page',
+    /Approval/.test(sigPart) && /accompanies is void/.test(sigPart)
+    && /sig-cap">Signature</.test(sigPart) && /sig-cap">Date</.test(sigPart));
+ ok('the approval page identifies this exact budget',
+    /TST-9999/.test(sigPart) && /Print Test/.test(sigPart) && /Contract Sum/.test(sigPart)
+    && /Total Project Cost/.test(sigPart));
+ await p.waitForTimeout(700);
+ await p.click("#page-budget button:has-text(\"Export\")");
+ await p.uncheck('#ex-sign');   // leave the default restored
+ await p.click('#exportModal .btn-x');
+
  ok('no JS errors', errs.length===0, errs.join('|'));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();

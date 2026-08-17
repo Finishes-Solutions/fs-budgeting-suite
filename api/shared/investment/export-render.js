@@ -258,6 +258,32 @@
     sheets.push({ key: 'assumptions', name: 'Assumptions', title: 'Assumptions & Provenance',
       pdfHidden: !o.assumptions, blocks: assumpBlocks });
 
+    // Signature Needed: a final approval page (PDF only). The identity rows
+    // bind the page to this exact analysis so a signed page cannot be lifted
+    // onto a different document.
+    var signature = null;
+    if (o.signature) {
+      signature = {
+        heading: 'Approval',
+        statement: 'The signature below approves the investment analysis identified here, exactly as '
+          + 'calculated and presented in this document. The identification binds this approval page to '
+          + 'this document alone — an approval page whose identification does not match the document it '
+          + 'accompanies is void.',
+        identity: [
+          ['Analysis', N.analysisName],
+          ['Property', propName + (N.property.address ? ' · ' + N.property.address : '')],
+          ['Source', src ? 'Budget ' + src.projectId + ' version ' + src.budgetVersionNumber : 'Standalone Analysis'],
+          ['Saved Analysis Version', meta.savedVersion ? 'v' + meta.savedVersion : '(unsaved)'],
+          ['Projection', yrs + '-Year Before-Tax'],
+          ['Purchase Price', fmtValue(s.purchasePrice, 'money')],
+          ['Initial Equity Investment', fmtValue(s.initialEquity, 'money')],
+          ['Final-Year Equity IRR', fmtValue(s.finalYearEquityIRR, 'pct')],
+          ['Calculation Engine', R.calculationVersion + ' · input schema v' + R.inputSchemaVersion],
+          ['Generated', meta.generatedAt || '']
+        ]
+      };
+    }
+
     return {
       meta: {
         product: 'FINISHES SOLUTIONS',
@@ -271,6 +297,7 @@
         engineLine: 'Calculated by engine ' + R.calculationVersion + ' · input schema v' + R.inputSchemaVersion,
         highlight: !!o.highlight
       },
+      signature: signature,
       sheets: sheets
     };
   }
@@ -403,6 +430,38 @@
 
     // engine identity — bottom of the document, nowhere else
     content.push({ text: M.engineLine, fontSize: 7.5, color: C.ink500, margin: [0, 16, 0, 0] });
+
+    // Signature Needed: the approval page, always the LAST page.
+    if (doc.signature) {
+      var sig = doc.signature;
+      content.push({ text: sig.heading, fontSize: 13, bold: true, color: C.ink900,
+        pageBreak: 'before', margin: [0, 0, 0, 2] });
+      content.push({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 720, y2: 0,
+        lineWidth: 0.8, lineColor: C.ink200 }], margin: [0, 0, 0, 8] });
+      content.push({ text: sig.statement, fontSize: 8.5, color: C.ink700, margin: [0, 0, 0, 12] });
+      content.push({ table: {
+        widths: [200, '*'],
+        body: sig.identity.map(function (r) { return [
+          { text: r[0], fontSize: 8.5, color: C.ink700 },
+          { text: r[1], fontSize: 8.5, bold: true }
+        ]; })
+      }, layout: {
+        hLineWidth: function () { return 0.5; }, hLineColor: function () { return C.ink100; },
+        vLineWidth: function () { return 0; },
+        paddingTop: function () { return 3; }, paddingBottom: function () { return 3; }
+      }, margin: [0, 0, 0, 8] });
+      content.push({ columns: [
+        { width: 330, stack: [
+          { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 330, y2: 0, lineWidth: 1.1, lineColor: C.ink900 }] },
+          { text: 'Signature', fontSize: 7.5, color: C.ink600, margin: [0, 4, 0, 0] }
+        ] },
+        { width: 50, text: '' },
+        { width: 200, stack: [
+          { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 1.1, lineColor: C.ink900 }] },
+          { text: 'Date', fontSize: 7.5, color: C.ink600, margin: [0, 4, 0, 0] }
+        ] }
+      ], margin: [0, 64, 0, 0] });
+    }
 
     return {
       pageSize: 'LETTER', pageOrientation: 'landscape',

@@ -99,9 +99,11 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // ---- real PDF download: the modal's PDF button renders through the shared
  // document model + vendored pdfmake and saves an actual .pdf file.
  await p.click('#invExportBtn'); await p.waitForTimeout(200);
- ok('Export button opens the options modal with the highlight choice',
+ ok('Export button opens the options modal with the highlight and signature choices',
     await p.locator('#invModal #inv-ex-highlight').count()===1
-    && !(await p.locator('#invModal #inv-ex-highlight').isChecked()));
+    && !(await p.locator('#invModal #inv-ex-highlight').isChecked())
+    && await p.locator('#invModal #inv-ex-signature').count()===1
+    && !(await p.locator('#invModal #inv-ex-signature').isChecked()));
  // centered on screen, like the budget's export modal (viewport 1400x1000)
  const mbb=await p.locator('#invModal > div').boundingBox();
  ok('export popup centers on screen',
@@ -173,6 +175,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('print doc includes the sensitivity matrix', /Acquisition-Price Sensitivity/.test(pdf));
  ok('print doc has no charts or SVG', !/<svg|data-chart/.test(pdf));
  ok('highlight is off by default — no hl classes in the PDF', !/class="[^"]*\bhl\b/.test(pdf));
+ ok('signature page absent by default', !/rpt-sig|Approval/.test(pdf));
  await p.waitForTimeout(700);
  ok('screen state untouched by printing', /Saved/.test(await p.locator('#invState').textContent()));
 
@@ -205,9 +208,29 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     !/rpt-stats[^]*?class="[^"]*\bhl\b/.test(pdfH.split('rpt-sec')[0]));
  ok('the on-screen report never carries the highlight',
     !/class="[^"]*\bhl\b/.test(await p.evaluate(()=>document.getElementById('invReport').innerHTML)));
- // the choice sticks for the next export from this page
+ // ---- Signature Needed: the identified approval page on the printed report,
+ // the downloaded PDF's docDefinition, and the API export.
  await p.click('#invExportBtn'); await p.waitForTimeout(200);
  ok('highlight choice is remembered in the modal', await p.locator('#inv-ex-highlight').isChecked());
+ await p.check('#inv-ex-signature');
+ await p.click('#invModal button:has-text("Print")');
+ await p.waitForTimeout(400);
+ const pdfS=await p.evaluate(()=>window.__rpt||'');
+ ok('Signature Needed appends the approval page to the print',
+    /rpt-sig/.test(pdfS) && /Approval/.test(pdfS) && /accompanies is void/.test(pdfS)
+    && /sig-cap">Signature</.test(pdfS) && /sig-cap">Date</.test(pdfS));
+ ok('the approval page identifies this exact analysis',
+    /Workbook Deal/.test(pdfS.split('rpt-sig')[1]||'') && /v1/.test(pdfS.split('rpt-sig')[1]||''));
+ const sigSrv=await p.evaluate(async()=>{
+   const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
+   const withSig=(await (await fetch('/api/investment-analysis/'+id+'/export?format=pdf&signature=1')).arrayBuffer()).byteLength;
+   const noSig=(await (await fetch('/api/investment-analysis/'+id+'/export?format=pdf')).arrayBuffer()).byteLength;
+   return {withSig,noSig};
+ });
+ ok('API export honors signature=1 (approval page grows the PDF)', sigSrv.withSig>sigSrv.noSig,
+    JSON.stringify(sigSrv));
+ await p.click('#invExportBtn'); await p.waitForTimeout(200);
+ ok('signature choice is remembered in the modal', await p.locator('#inv-ex-signature').isChecked());
  await p.click('#invModal .btn-x'); await p.waitForTimeout(150);
 
  // exporting with stale inputs is refused (both exports must match the inputs)

@@ -17,7 +17,7 @@ const FORMATS = {
   csv: { mime: 'text/csv; charset=utf-8', ext: 'csv' }
 };
 const ALL_SECTIONS = { kpis: true, cash: true, sale: true, returns: true,
-  sens: true, assumptions: true, highlight: false };
+  sens: true, assumptions: true, highlight: false, signature: false };
 
 const FONTS = {
   Montserrat: {
@@ -81,7 +81,10 @@ module.exports = async function (context, req) {
   }
 
   const result = typeof resultDoc === 'string' ? JSON.parse(resultDoc) : resultDoc;
-  const doc = render.buildExportDoc(result, ALL_SECTIONS,
+  // ?signature=1 appends the identified approval page to the PDF.
+  const opts = Object.assign({}, ALL_SECTIONS,
+    { signature: /^(1|true)$/i.test(String((req.query && req.query.signature) || '')) });
+  const doc = render.buildExportDoc(result, opts,
     { savedVersion, generatedAt: new Date().toISOString() });
 
   let body;

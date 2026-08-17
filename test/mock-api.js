@@ -414,7 +414,8 @@ http.createServer((req, res) => {
         return json(res, 400, { error: 'bad_request', message: 'format must be pdf, xlsx or csv.' });
       const render = require('../api/shared/investment/export-render');
       const doc = render.buildExportDoc(result,
-        { kpis: true, cash: true, sale: true, returns: true, sens: true, assumptions: true, highlight: false },
+        { kpis: true, cash: true, sale: true, returns: true, sens: true, assumptions: true, highlight: false,
+          signature: /^(1|true)$/i.test(String(q.get('signature') || '')) },
         { savedVersion, generatedAt: new Date().toISOString() });
       const base = (live.name || 'Investment_Analysis').replace(/[^\w]+/g, '_')
         + '_Investment_Analysis' + (versionParam ? '_v' + savedVersion : '');

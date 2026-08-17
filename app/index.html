@@ -355,12 +355,15 @@ th.sortable.sorted{color:var(--ink-900)}
   text-decoration:none;font-size:12.5px}
 #helpToc a:hover{color:var(--green-700);border-left-color:var(--green-200);background:var(--green-50)}
 #helpToc a.on{color:var(--green-800);border-left-color:var(--green-700);font-weight:600}
-.help h3{font-size:15px;font-weight:700;color:var(--ink-950);margin-bottom:8px;scroll-margin-top:20px}
-.help h4{font-size:13px;font-weight:700;color:var(--ink-800);margin:16px 0 6px}
-.help p{color:var(--ink-700);margin-bottom:10px;max-width:70ch}
-.help ul,.help ol{margin:0 0 12px 20px;color:var(--ink-700)}
-.help li{margin-bottom:6px;max-width:68ch}
-.help section{margin-bottom:30px}
+.help h3{font-size:15px;font-weight:700;color:var(--ink-950);margin-bottom:14px;scroll-margin-top:20px}
+.help h4{font-size:13px;font-weight:700;color:var(--ink-800);margin:26px 0 8px}
+.help p{color:var(--ink-700);margin-bottom:12px;max-width:70ch}
+.help ul,.help ol{margin:0 0 14px 20px;color:var(--ink-700)}
+.help li{margin-bottom:7px;max-width:68ch}
+.help section{margin-bottom:48px}
+.help .tbl{margin:10px 0 18px}
+.help .callout{margin-top:16px}
+.help section .card-bd{padding:26px 30px}
 .help code,.help .kbd{font-family:var(--fm);font-size:12.5px;background:var(--ink-100);
   border:1px solid var(--ink-200);border-radius:var(--r);padding:1px 5px;color:var(--ink-900)}
 .help .tbl td{font-size:13px;color:var(--ink-700);vertical-align:top}
@@ -450,6 +453,14 @@ th.sortable.sorted{color:var(--ink-900)}
      table and line-item rows only, never the KPI band at the top of page one. */
   .rpt-tbl tr.hl td{background:#d8f3e0}
   .rr.hl{background:#d8f3e0;padding-left:6px;padding-right:6px;margin:0 -6px;border-radius:3px}
+
+  /* Signature Needed: the identified approval page, always the last page. */
+  .rpt-sig{break-before:page}
+  .rpt-sig .sig-row{display:flex;gap:44px;margin-top:60px;break-inside:avoid}
+  .rpt-sig .sig-row .s1{flex:2}
+  .rpt-sig .sig-row .s2{flex:1}
+  .rpt-sig .sig-line{border-bottom:1.2pt solid var(--ink-900);height:36px}
+  .rpt-sig .sig-cap{font-size:8pt;color:var(--ink-600);margin-top:4px}
   .rpt-tbl tr.sub-tot td{border-top:1px solid var(--ink-300);font-weight:600}
   .rpt-tbl tr.tot td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;padding-top:6px}
   .edited-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
@@ -957,7 +968,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <div class="page" id="page-help">
   <div class="page-title">
     <div><h1>How to Use the Budgeting Suite</h1>
-      <div class="sub">Build a multifamily project budget from the shared pricing library, then export it.</div></div>
+      <div class="sub">Build a multifamily project budget from the shared pricing library, underwrite it as an investment analysis, and export both.</div></div>
     <div class="no-print"><button class="btn btn-dark" onclick="downloadGuide()">Download Guide</button></div>
   </div>
 
@@ -990,6 +1001,9 @@ th.sortable.sorted{color:var(--ink-900)}
         </ul>
         <p>Every saved budget also writes a normalized schedule-of-values table that the Master Lender Package
           pipeline reads later, so the line items you set here become the SOV rows in the lender package.</p>
+        <p>A saved budget can also be underwritten: the <b>Investment Analysis</b> tab turns it into a five- or
+          ten-year before-tax investment model — operating cash flows, financing, hypothetical sales, and
+          investor returns — described in its own section below.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -1009,10 +1023,16 @@ th.sortable.sorted{color:var(--ink-900)}
         <div class="step"><div class="n">4</div><div class="t"><b>Check the summary.</b>
           Contract sum, total project cost, cost per unit and the SOV rollup are at the bottom of the page.</div></div>
         <div class="step"><div class="n">5</div><div class="t"><b>Save, then export.</b>
-          <span class="kbd">Save</span> writes to the database; <span class="kbd">Export</span> produces Excel or PDF.</div></div>
+          <span class="kbd">Save</span> writes to the database; <span class="kbd">Export</span> opens the
+          export popup — the same button row everywhere in the suite: Email (Soon), Print, PDF,
+          Excel (.xlsx).</div></div>
+        <div class="step"><div class="n">6</div><div class="t"><b>Underwrite it, if the deal calls for it.</b>
+          <span class="kbd">Create Investment Analysis</span> on the budget page — or the buttons on the
+          Home page — turns the saved budget into a before-tax investment model. See the
+          <a href="#help-investment">Investment Analysis</a> section.</div></div>
         <div class="callout">The header pill shows <b>Unsaved changes</b> until a save succeeds. Nothing is stored
           automatically — if you close the tab with that pill showing, the browser will warn you.
-          <b>Cmd+S</b> (or <b>Ctrl+S</b>) saves from anywhere in a budget.</div>
+          <b>Cmd+S</b> (or <b>Ctrl+S</b>) saves from anywhere in a budget or an analysis.</div>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -1287,39 +1307,53 @@ th.sortable.sorted{color:var(--ink-900)}
           equity IRR against the unleveraged property IRR — positive leverage means borrowing raised the
           return. The optimal holding period is simply the sale year with the highest equity IRR.</p>
 
-        <p><b>Exports.</b> <span class="kbd">Export</span> works like the budget's: pick which sections
-          to include, then choose the format. <span class="kbd">PDF</span> downloads a real, branded PDF
-          file directly — no print dialog. <span class="kbd">XLSX</span> downloads the branded Excel
-          workbook of real numeric cells — each sheet opens with the Finishes Solutions title band, table
-          headers freeze, and every sheet prints landscape and fits to width. <span class="kbd">Print</span>
-          opens the browser print dialog with the composed report, for paper or print-to-PDF. All three
-          are built from the same underlying document model, so they can never disagree with each other
-          or the screen. Saved analyses can also be fetched straight from the API as
-          <span class="mono">pdf</span>, <span class="mono">xlsx</span> or <span class="mono">csv</span>
-          via <span class="mono">/api/investment-analysis/&lt;id&gt;/export?format=…</span>. Ticking
-          <b>Highlight Key Metrics</b> puts a light green highlight on the PDF's gross
-          operating income, net operating income, purchase price, initial investment, equity multiple,
-          cash-on-cash and IRR so they stand out at a glance. Both formats are built from the calculated
-          result and the button is disabled while the result is stale, so an export can never disagree
-          with the assumptions on screen. On phones and small screens analyses are view-only, like the
-          rest of the suite.</p>
+        <p><b>Exports.</b> <span class="kbd">Export</span> works like the budget's: pick which sections to
+          include, set the options, then choose the format from the shared button row. The analysis-specific
+          options: <b>Highlight Key Metrics</b> puts a light green highlight on the PDF's gross operating
+          income, net operating income, purchase price, initial investment, equity multiple, cash-on-cash
+          and IRR rows so they stand out at a glance, and <b>Signature Needed</b> appends the identified
+          approval page described under <a href="#help-exports">Exports</a>. Saved analyses can also be
+          fetched straight from the API as <span class="mono">pdf</span>, <span class="mono">xlsx</span> or
+          <span class="mono">csv</span> via
+          <span class="mono">/api/investment-analysis/&lt;id&gt;/export?format=…</span>. Every export is
+          built from the calculated result — never the screen — and the Export button is disabled while the
+          result is stale, so an export can never disagree with the assumptions. On phones and small screens
+          analyses are view-only, like the rest of the suite.</p>
+      </div></section>
 
+      <section class="card"><div class="card-bd">
         <h3 id="help-exports">Exports</h3>
-        <p><span class="kbd">Export</span> lets you pick which sections to include, then choose the format —
-          the same button row every export popup in the suite uses: Email (Soon), Print, PDF, Excel (.xlsx).</p>
+        <p>Every export popup in the suite works the same way: tick which sections to include, set the
+          options, then choose the format from the same button row — <b>Email (Soon)</b>, <b>Print</b>,
+          <b>PDF</b>, <b>Excel (.xlsx)</b>. Only the section checkboxes differ between budgets and
+          investment analyses.</p>
         <table class="tbl"><tbody>
-          <tr><td>Excel (.xlsx)</td><td>A branded workbook, one sheet per section — Summary, Unit Mix, Income &amp; Expenses,
-            Budget-SOV, CSI Schedule and Contract Summary. Headers freeze, columns are sized, currency and
-            percentages carry real number formats, and every sheet prints landscape and fits to width. Values are
-            live numbers, not text, so they can be pivoted or re-totalled.</td></tr>
-          <tr><td>Print</td><td>A composed report rather than a picture of the screen: logo lockup, project header,
-            key metrics band, then whichever sections you ticked. Collapsed groups never affect it — the report is
-            always complete. Opens the browser print dialog; choose "Save as PDF" there for a file.</td></tr>
-          <tr><td>PDF</td><td>The direct branded PDF download. Live today on investment analyses; for budgets it is
-            marked Soon until the budget report moves onto the same document renderer — use Print in the meantime.</td></tr>
+          <tr><td>Excel (.xlsx)</td><td>A branded workbook, one sheet per section. Every sheet opens with the
+            Finishes Solutions title band, table headers freeze, currency and percentages carry real number
+            formats, and every sheet prints landscape and fits to width. Values are live numbers, not text,
+            so they can be pivoted or re-totalled.</td></tr>
+          <tr><td>PDF</td><td>The direct branded PDF download — a real file, no print dialog. Live today on
+            investment analyses; for budgets it is marked Soon until the budget report moves onto the same
+            document renderer — use Print in the meantime.</td></tr>
+          <tr><td>Print</td><td>A composed report rather than a picture of the screen: logo lockup, project
+            header, key metrics band, then whichever sections you ticked. Collapsed groups never affect it —
+            the report is always complete. Opens the browser print dialog; choose "Save as PDF" there for a
+            file.</td></tr>
+          <tr><td>Email</td><td>Marked Soon — sending exports by email is planned but not built yet.</td></tr>
         </tbody></table>
-        <div class="callout">Both exports read the same numbers the screen shows, so they cannot drift from the
-          budget. The workbook also carries the <b>Manually edited</b> flag and each line's original library rate.</div>
+
+        <h4>Signature Needed</h4>
+        <p>Tick <b>Signature Needed</b> in the export options and the PDF (and the printed report) ends with
+          an approval page: a signature line and a date line, above an identification block naming the exact
+          document being approved — the project or analysis, its key money figures, its saved version, and
+          when it was generated. The identification is the point: a signed approval page cannot be detached
+          and combined with a different budget or analysis, because the page itself says precisely what was
+          signed for. An approval page whose identification does not match the document it accompanies is
+          void, and the page says so.</p>
+
+        <div class="callout">Every export reads the same numbers the screen shows, so exports cannot drift
+          from the saved document. The budget workbook also carries the <b>Manually edited</b> flag and each
+          line's original library rate.</div>
         <p><b>Download Guide</b>, at the top of this page, produces a formatted PDF of this guide. It is generated
           from this page rather than a separate copy, so it cannot fall out of date with what you are reading.</p>
       </div></section>
@@ -1328,7 +1362,7 @@ th.sortable.sorted{color:var(--ink-900)}
         <h3 id="help-access">Who Can Do What</h3>
         <table class="tbl"><tbody>
           <tr><td>Everyone</td><td>Anyone who can sign in with a Finishes account can create, edit, save, delete
-            and export budgets, and can read the pricing library.</td></tr>
+            and export budgets and investment analyses, and can read the pricing library.</td></tr>
           <tr><td>pricing_admin</td><td>Additionally can edit and publish the pricing library. This is deliberately
             a very short list, because a rate change affects every budget created afterwards.</td></tr>
         </tbody></table>
@@ -1381,6 +1415,11 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="chk"><input type="checkbox" id="ex-summary" checked> Contract &amp; Project Summary / SOV</label>
         <label class="chk"><input type="checkbox" id="ex-edits" checked
           title="Untick to hide the blue edited flags and library-rate comparisons in the exports"> Show Edited Line Flags</label>
+      </div>
+      <div class="eyebrow" style="margin-bottom:12px">Options</div>
+      <div style="display:grid;gap:12px;margin-bottom:24px">
+        <label class="chk"><input type="checkbox" id="ex-sign"
+          title="Adds a final approval page to the printed report with signature and date lines, identified so it cannot be attached to any other budget"> Signature Needed</label>
       </div>
       <!-- The same button row as the investment analysis export modal — one
            order everywhere: Email (Soon) · Print · PDF · Excel (.xlsx). The
@@ -3353,7 +3392,7 @@ function closeExport(){document.getElementById('exportModal').style.display='non
 function sel(){const c=id=>{const e=document.getElementById(id);return e?e.checked:false;};
   return {stats:c('ex-stats'),units:c('ex-units'),other:c('ex-other'),
           budget:c('ex-budget'),csi:c('ex-csi'),summary:c('ex-summary'),
-          edits:c('ex-edits')};}
+          edits:c('ex-edits'),sign:c('ex-sign')};}
 function exportBaseName(){
   return (doc.projectId||'FS-Budget')+'_'+String(doc.name||'budget').replace(/[^\w]+/g,'_').replace(/^_|_$/g,'');
 }
@@ -3507,10 +3546,37 @@ function buildReport(s){
     h+='</section>';
   }
 
+  // Signature Needed: an identified approval page, always last. The identity
+  // rows bind the page to this exact budget so a signed page cannot be lifted
+  // onto a different budget.
+  if(s.sign){
+    h+='<section class="rpt-sec rpt-sig"><h2>Approval</h2>'
+      +'<p class="rpt-note">The signature below approves the project budget identified here, exactly as '
+      +'presented in this document. The identification binds this approval page to this document alone — '
+      +'an approval page whose identification does not match the document it accompanies is void.</p>'
+      +'<div class="rpt-2col"><div>'
+      +sigRow('Project ID','<span class="mono">'+esc(doc.projectId||'—')+'</span>')
+      +sigRow('Name',esc(doc.name||'—'))
+      +sigRow('Address',esc(doc.address||'—'))
+      +sigRow('Type · Status',esc(doc.type||'—')+' · '+esc(doc.status||'Draft'))
+      +sigRow('Pricing Library',esc(doc.pricingVersion||'—'))
+      +'</div><div>'
+      +sigRow('Contract Sum',usd(p.contract))
+      +sigRow('Total Project Cost',usd(p.project))
+      +sigRow('Total Units · SF',num(tu)+' units · '+num(tsf)+' SF')
+      +sigRow('Last Saved',esc((doc.updated||'').slice(0,10)||'—'))
+      +sigRow('Exported',esc(stamp))
+      +'</div></div>'
+      +'<div class="sig-row"><div class="s1"><div class="sig-line"></div><div class="sig-cap">Signature</div></div>'
+      +'<div class="s2"><div class="sig-line"></div><div class="sig-cap">Date</div></div></div></section>';
+  }
+
   h+='<footer class="rpt-ft"><span>Finishes Solutions — Building a Future Together</span>'
     +'<span class="mono">'+esc(doc.projectId||'')+' · '+esc(stamp)+'</span></footer>';
   return h;
 }
+/* The signature identity rows reuse the report's .rr styling. */
+function sigRow(k,v){return '<div class="rr"><span>'+k+'</span><span class="v">'+v+'</span></div>';}
 
 /* ---------------- Guide PDF ----------------
    Built from the live help markup rather than a second copy of the text, so the printed
@@ -3529,7 +3595,7 @@ function downloadGuide(){
     +'<section class="rpt-title"><div class="eyebrow">Budgeting Suite</div>'
     +'<h1>How to Use the Budgeting Suite</h1>'
     +'<div class="rpt-meta">Business Development budgeting — building a multifamily project budget from the shared '
-    +'pricing library, and exporting it.</div></section>'
+    +'pricing library, underwriting it as an investment analysis, and exporting both.</div></section>'
     +'<section class="rpt-sec"><h2>Contents</h2><ol class="guide-toc">'+toc+'</ol></section>'
     +secs
     +'<footer class="rpt-ft"><span>Finishes Solutions — Building a Future Together</span>'

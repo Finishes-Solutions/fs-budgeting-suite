@@ -284,7 +284,7 @@ saved ResultDoc, never recalculating). The copies MUST stay byte-identical —
 `test/export-render.test.js` fails if they drift; edit `app/export-render.js` and
 copy it over. Content changes belong in `buildExportDoc`; renderers only format.
 
-Fourteen Playwright suites, 479 assertions, plus 69 `node:test` assertions for the
+Fourteen Playwright suites, 487 assertions, plus 70 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus
