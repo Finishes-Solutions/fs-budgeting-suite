@@ -783,11 +783,14 @@
     if (!m) {
       m = document.createElement('div');
       m.id = 'invModal';
-      m.style.cssText = 'position:fixed;inset:0;background:rgba(22,25,26,.45);display:flex;align-items:flex-start;justify-content:center;z-index:60;padding:5vh 16px;overflow:auto';
+      // Centered like the budget's export modal. margin:auto on the card (not
+      // align-items:center here) so a taller-than-viewport modal — the version
+      // history can be — scrolls from its top instead of clipping it.
+      m.style.cssText = 'position:fixed;inset:0;background:rgba(22,25,26,.45);display:flex;z-index:60;padding:24px 16px;overflow:auto';
       m.addEventListener('click', e => { if (e.target === m) m.remove(); });
       document.body.appendChild(m);
     }
-    m.innerHTML = `<div style="background:#fff;border-radius:12px;max-width:${maxWidth || 960}px;width:100%;padding:22px 26px;position:relative">
+    m.innerHTML = `<div style="background:#fff;border-radius:12px;max-width:${maxWidth || 960}px;width:100%;padding:22px 26px;position:relative;margin:auto">
       <button class="btn-x" style="position:absolute;top:14px;right:14px" title="Close" onclick="document.getElementById('invModal').remove()">×</button>
       ${html}</div>`;
   }

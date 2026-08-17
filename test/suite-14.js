@@ -102,6 +102,11 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('Export button opens the options modal with the highlight choice',
     await p.locator('#invModal #inv-ex-highlight').count()===1
     && !(await p.locator('#invModal #inv-ex-highlight').isChecked()));
+ // centered on screen, like the budget's export modal (viewport 1400x1000)
+ const mbb=await p.locator('#invModal > div').boundingBox();
+ ok('export popup centers on screen',
+    Math.abs((mbb.x+mbb.width/2)-700)<40 && Math.abs((mbb.y+mbb.height/2)-500)<40,
+    JSON.stringify(mbb));
  // the one button order shared with the budget's export modal
  ok('modal buttons are Email (Soon), Print, PDF, Excel (.xlsx) in that order',
     JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#invModal .btn')]
