@@ -2,10 +2,11 @@
   "name": "fs-budgeting-suite-dev",
   "version": "1.0.0",
   "private": true,
-  "description": "Developer-local test harness dependencies only — the frontend has no build step and nothing here is bundled or deployed. Playwright drives test/run-all.sh; exceljs and pdfmake let test/mock-api.js and the node tests run the real shared export renderers (api/shared/investment/export-render.js).",
+  "description": "Developer-local test harness dependencies only \u2014 the frontend has no build step and nothing here is bundled or deployed. Playwright drives test/run-all.sh; exceljs and pdfmake let test/mock-api.js and the node tests run the real shared export renderers (api/shared/investment/export-render.js).",
   "devDependencies": {
     "exceljs": "^4.4.0",
     "pdfmake": "^0.2.20",
-    "playwright": "^1.49.0"
+    "playwright": "^1.49.0",
+    "fs-render": "file:../fs-courier/engine"
   }
 }
