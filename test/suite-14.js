@@ -125,11 +125,13 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const pdfDl=await p.evaluate(async()=>{
    window.__restoreClick();
    const buf=await (await fetch(window.__dl.href)).arrayBuffer();
-   return {name:window.__dl.name,len:buf.byteLength,
-     head:String.fromCharCode.apply(null,new Uint8Array(buf.slice(0,5)))};
+   const txt=new TextDecoder('latin1').decode(buf);
+   return {name:window.__dl.name,len:buf.byteLength,head:txt.slice(0,5),
+     portrait:/MediaBox\s*\[\s*0\s+0\s+612\s+792/.test(txt)};
  });
  ok('PDF button downloads a real PDF file', pdfDl.head==='%PDF-'&&pdfDl.len>30000,
     JSON.stringify({name:pdfDl.name,len:pdfDl.len,head:pdfDl.head}));
+ ok('PDF is portrait letter with the shared layout', pdfDl.portrait);
  ok('PDF filename carries the analysis name', /Workbook_Deal.*\.pdf$/.test(pdfDl.name), pdfDl.name);
  ok('export modal closes after the PDF download', (await p.locator('#invModal').count())===0);
 

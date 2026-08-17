@@ -1332,9 +1332,9 @@ th.sortable.sorted{color:var(--ink-900)}
             Finishes Solutions title band, table headers freeze, currency and percentages carry real number
             formats, and every sheet prints landscape and fits to width. Values are live numbers, not text,
             so they can be pivoted or re-totalled.</td></tr>
-          <tr><td>PDF</td><td>The direct branded PDF download — a real file, no print dialog. Live today on
-            investment analyses; for budgets it is marked Soon until the budget report moves onto the same
-            document renderer — use Print in the meantime.</td></tr>
+          <tr><td>PDF</td><td>The direct branded PDF download — a real file, no print dialog, on budgets and
+            investment analyses alike. Portrait letter with generous margins, composed by the same document
+            renderer both products share.</td></tr>
           <tr><td>Print</td><td>A composed report rather than a picture of the screen: logo lockup, project
             header, key metrics band, then whichever sections you ticked. Collapsed groups never affect it —
             the report is always complete. Opens the browser print dialog; choose "Save as PDF" there for a
@@ -1413,19 +1413,18 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="chk"><input type="checkbox" id="ex-budget" checked> Budget Detail (All Scopes)</label>
         <label class="chk"><input type="checkbox" id="ex-csi" checked> CSI MasterFormat Schedule of Values</label>
         <label class="chk"><input type="checkbox" id="ex-summary" checked> Contract &amp; Project Summary / SOV</label>
-        <label class="chk"><input type="checkbox" id="ex-edits" checked
-          title="Untick to hide the blue edited flags and library-rate comparisons in the exports"> Show Edited Line Flags</label>
       </div>
       <div class="eyebrow" style="margin-bottom:12px">Options</div>
       <div style="display:grid;gap:12px;margin-bottom:24px">
+        <label class="chk"><input type="checkbox" id="ex-edits" checked
+          title="Untick to hide the blue edited flags and library-rate comparisons in the exports"> Show Edited Line Flags</label>
         <label class="chk"><input type="checkbox" id="ex-sign"
-          title="Adds a final approval page to the printed report with signature and date lines, identified so it cannot be attached to any other budget"> Signature Needed</label>
+          title="Adds a final approval page with signature and date lines, identified so it cannot be attached to any other budget"> Signature Needed</label>
       </div>
       <!-- The same button row as the investment analysis export modal — one
-           order everywhere: Email (Soon) · Print · PDF · Excel (.xlsx). The
-           budget's direct PDF download stays Soon until budgets move onto the
-           shared export renderer; Print composes the same branded report
-           through the browser's print dialog (choose Save as PDF there). -->
+           order everywhere: Email (Soon) · Print · PDF · Excel (.xlsx).
+           PDF downloads the real portrait-letter file via the shared renderer;
+           Print composes the same report through the browser's print dialog. -->
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
         <!-- Not `disabled`: a disabled button is skipped by keyboard navigation and shows
              no tooltip, so the "coming soon" affordance would be invisible to anyone not
@@ -1433,11 +1432,10 @@ th.sortable.sorted{color:var(--ink-900)}
         <button class="btn btn-ghost btn-soon" id="ex-email" aria-disabled="true"
           title="Coming soon — emailing the workbook and report is not built yet"
           onclick="comingSoon('Emailing exports')">Email <span class="soon-pill">Soon</span></button>
-        <button class="btn btn-primary" title="Open the browser print dialog with the composed report"
+        <button class="btn btn-ghost" title="Open the browser print dialog with the composed report"
           onclick="exportPDF()">Print</button>
-        <button class="btn btn-ghost btn-soon" aria-disabled="true"
-          title="Coming soon — the direct PDF download for budgets is not built yet; use Print and choose Save as PDF"
-          onclick="comingSoon('The direct PDF download for budgets')">PDF <span class="soon-pill">Soon</span></button>
+        <button class="btn btn-primary" title="Download the branded PDF report"
+          onclick="exportBudgetPdf()">PDF</button>
         <button class="btn btn-ghost" onclick="exportExcel()">Excel (.xlsx)</button>
       </div>
     </div>
@@ -3577,6 +3575,179 @@ function buildReport(s){
 }
 /* The signature identity rows reuse the report's .rr styling. */
 function sigRow(k,v){return '<div class="rr"><span>'+k+'</span><span class="v">'+v+'</span></div>';}
+
+/* ---------------- PDF: the real downloaded file ----------------
+   The budget builds the same generic document model the investment analysis
+   uses (meta + sheets of kv/table/note blocks) and hands it to the shared
+   renderer in export-render.js — so both PDFs are portrait letter, branded
+   the same way, and the composed content mirrors buildReport() exactly. */
+function buildBudgetPdfDoc(s){
+  const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF,sm=siteMetrics();
+  const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const sheets=[];
+  const kv=(k,v,fmt,total)=>({k,v,fmt,total:!!total});
+  const tRow=(label,values,fmt,total)=>({label,values,fmt,total:!!total});
+  const band=(label,values,fmt,dark)=>({label,values,fmt,band:dark?'dark':'light'});
+
+  const blocks1=[];
+  if(s.stats){
+    blocks1.push({kind:'kpiBand',tiles:[
+      {k:'Units',v:num(tu)},{k:'Net Income / Yr',v:usd(g.netYr)},
+      {k:'Contract $/SF',v:tsf?usd2(p.contract/tsf):'—'},
+      {k:'Project $/SF',v:tsf?usd2(p.project/tsf):'—'},
+      {k:'Cost / Unit',v:tu?usd(p.project/tu):'—'}]});
+  }
+  if(s.summary){
+    blocks1.push({kind:'group',label:'CONTRACT & PROJECT SUMMARY'});
+    blocks1.push({kind:'kv',rows:[
+      kv('Residential Construction',p.res,'money'),
+      scopeActive('amen')?kv('Amenity / Clubhouse',p.amen,'money'):null,
+      kv('Construction Hard Cost',p.hard,'money'),
+      kv('Profit — Total',p.profit,'money'),
+      kv('Contingency (99.03)',p.cont,'money'),
+      kv('Contract Sum (Construction)',p.contract,'money',true),
+      kv('Soft Costs',p.soft,'money'),
+      kv('Land',doc.projectCosts.land,'money'),
+      kv('Developer Fee · Marketing · Closing',p.fees,'money'),
+      kv('Total Project Cost',p.project,'money',true)
+    ].filter(Boolean)});
+    blocks1.push({kind:'group',label:'SOV ROLLUP — CONSTRUCTION CONTRACT'});
+    const sovRows=[];
+    ['res','amen'].filter(scopeActive).forEach(sc=>{
+      [...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))].forEach(gp=>{
+        const v=doc.lines.filter(l=>l.scope===sc&&l.grp===gp).reduce((x,l)=>x+lineQty(l)*l.unit,0);
+        if(v>0)sovRows.push(tRow((sc==='amen'?'Amenity — ':'')+gp,[v,p.contract?v/p.contract:0],['money','pct1']));
+      });
+    });
+    doc.companies.forEach(c=>{if(c.pct>0){const v=p.hard*c.pct/100;
+      sovRows.push(tRow('Profit — '+c.name,[v,p.contract?v/p.contract:0],['money','pct1']));}});
+    if(p.cont>0)sovRows.push(tRow('99.03 Contingency',[p.cont,p.contract?p.cont/p.contract:0],['money','pct1']));
+    sovRows.push(tRow('Contract Sum',[p.contract,p.contract?1:0],['money','pct1'],true));
+    blocks1.push({kind:'table',headers:['Scheduled Value','% Contract'],rows:sovRows});
+  }
+  if(blocks1.length)sheets.push({key:'kpis',name:'Summary',title:'',blocks:blocks1});
+
+  if(s.units&&doc.units.length){
+    const F=['qty','qty','qty','qty','money','money2','money','money'];
+    sheets.push({key:'units',name:'Unit Mix',title:'Unit Mix & Rent Revenue',blocks:[
+      {kind:'table',headers:['BD','BTH','SF','Units','Rent / Mo','$ / SF','Monthly','Yearly'],rows:
+        doc.units.map(u=>tRow(u.label,[u.bd,u.bth,u.sf,u.count,u.rent,u.sf?u.rent/u.sf:null,
+          u.rent*u.count,12*u.rent*u.count],F))
+        .concat([tRow('Total',[undefined,undefined,doc.units.reduce((x,u)=>x+u.sf*u.count,0),tu,undefined,undefined,
+          g.rentMo,12*g.rentMo],F,true)])}]});
+  }
+
+  if(s.other&&(doc.other.length||doc.expenses.length)){
+    const F=['text','money','qty','money','money'];
+    const rows=[];
+    doc.other.forEach(o=>{const c=o.auto?tu:o.count;
+      rows.push(tRow(o.label,['gross income',o.rate,c,o.rate*c,12*o.rate*c],F));});
+    rows.push(tRow('Total Gross Other Income',[undefined,undefined,undefined,g.otherMo,12*g.otherMo],F,true));
+    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
+      rows.push(tRow(e.label,[e.per==='fixed'?'fixed / mo':'per unit',e.rate,c,-e.rate*c,-12*e.rate*c],F));});
+    rows.push(tRow('Total Operating Expenses',[undefined,undefined,undefined,-g.expMo,-12*g.expMo],F,true));
+    rows.push(tRow('Net Income (Rent + Net Other)',[undefined,undefined,undefined,g.rentMo+g.netOtherMo,g.netYr],F,true));
+    sheets.push({key:'other',name:'Income',title:'Other Income & Operating Expenses',blocks:[
+      {kind:'table',headers:['Basis','$ / Mo','Count','Monthly','Yearly'],rows}]});
+  }
+
+  if(s.budget){
+    const F=['text','qty','money2','money'];
+    const rows=[];let anyEdited=false;
+    activeScopes().forEach(sc=>{
+      const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
+      rows.push(band(SCOPES[sc],[null,null,null,scopeSum(sc)],F,true));
+      let last=null;
+      ls.forEach(it=>{
+        if(it.grp!==last){last=it.grp;
+          const gs=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
+          rows.push(band(it.grp,[null,null,null,gs],F,false));}
+        const q=lineQty(it),ed=s.edits&&isEdited(it);if(ed)anyEdited=true;
+        rows.push(tRow(it.code+'  '+it.desc+(ed?' *':''),
+          [BASIS_LABEL[it.basis]||it.basis,q,it.unit,q*it.unit],F));
+      });
+    });
+    const blocks=[{kind:'table',headers:['Basis','Qty','Rate','Total'],rows}];
+    if(anyEdited)blocks.push({kind:'note',text:'* marks a line manually edited away from the pricing library.'});
+    sheets.push({key:'budget',name:'Budget Detail',title:'Budget Detail',blocks});
+  }
+
+  if(s.csi){
+    const sch=csiSchedule();
+    const F=['text','qty','money2','money','pct1'];
+    const cp=v=>sch.contract?v/sch.contract:0;
+    const rows=[];
+    sch.divisions.forEach(d=>{
+      rows.push(band(d.title,[null,null,null,d.total,cp(d.total)],F,true));
+      d.rows.forEach(r=>rows.push(tRow(r.code+'  '+r.desc,
+        [r.scope==='amen'?'Amenity':'Residential',r.qty,r.rate,r.total,cp(r.total)],F)));
+    });
+    if(sch.markups.length){
+      rows.push(band('Division 99 — Markups',[null,null,null,sch.markupsTotal,cp(sch.markupsTotal)],F,true));
+      sch.markups.forEach(m=>rows.push(tRow(m.code+'  '+m.desc,[undefined,undefined,undefined,m.total,cp(m.total)],F)));
+    }
+    rows.push(tRow('Contract Sum',[undefined,undefined,undefined,sch.contract,sch.contract?1:0],F,true));
+    const blocks=[
+      {kind:'note',text:'MasterFormat divisions. Contingency is carried explicitly as 99.03 and is never blended into a trade line. Soft costs are reported separately and are not part of the contract sum.'},
+      {kind:'table',headers:['Scope','Qty','Rate','Scheduled Value','% Contract'],rows}];
+    if(sch.soft.length){
+      const sp=v=>sch.softTotal?v/sch.softTotal:0;
+      const F2=['qty','money2','money','pct1'];
+      const soft=[];
+      sch.softGroups.forEach(gp=>{
+        soft.push(band(gp.grp,[null,null,gp.total,sp(gp.total)],F2,true));
+        gp.rows.forEach(r=>soft.push(tRow(r.code+'  '+r.desc,[r.qty,r.rate,r.total,sp(r.total)],F2)));
+      });
+      soft.push(tRow('Total Soft Costs',[undefined,undefined,sch.softTotal,sch.softTotal?1:0],F2,true));
+      blocks.push({kind:'group',label:'SOFT COSTS'});
+      blocks.push({kind:'note',text:'Percentages here are a share of total soft costs, which sit outside the contract sum.'});
+      blocks.push({kind:'table',headers:['Qty','Rate','Total','% Soft'],rows:soft});
+    }
+    sheets.push({key:'csi',name:'CSI Schedule',title:'CSI Schedule of Values',blocks});
+  }
+
+  const signature=s.sign?{
+    heading:'Approval',
+    statement:'The signature below approves the project budget identified here, exactly as presented in this '
+      +'document. The identification binds this approval page to this document alone — an approval page whose '
+      +'identification does not match the document it accompanies is void.',
+    identity:[
+      ['Project ID',doc.projectId||'—'],['Name',doc.name||'—'],['Address',doc.address||'—'],
+      ['Type · Status',(doc.type||'—')+' · '+(doc.status||'Draft')],
+      ['Pricing Library',doc.pricingVersion||'—'],
+      ['Contract Sum',usd(p.contract)],['Total Project Cost',usd(p.project)],
+      ['Total Units · SF',num(tu)+' units · '+num(tsf)+' SF'],
+      ['Last Saved',(doc.updated||'').slice(0,10)||'—'],['Exported',stamp]
+    ]}:null;
+
+  return {
+    meta:{
+      product:'FINISHES SOLUTIONS',
+      eyebrow:'FINISHES SOLUTIONS · PROJECT BUDGET · '+(doc.projectId||'—'),
+      title:doc.name||'Untitled Project',
+      subtitle:[doc.address,num(doc.resSF)+' SF residential',
+        doc.amenSF?num(doc.amenSF)+' SF amenity':'',
+        sm.site?sm.acres.toFixed(2)+' ac site':'',tu+' units',
+        'Pricing '+(doc.pricingVersion||'—')].filter(Boolean).join(' · '),
+      rightLines:[stamp,(doc.projectId||'—')+(doc.type?' · '+doc.type:''),'Status: '+(doc.status||'Draft')],
+      footerRight:doc.projectId||'',
+      engineLine:'',highlight:false
+    },
+    signature,sheets
+  };
+}
+function exportBudgetPdf(){
+  if(typeof pdfMake==='undefined'||typeof FSExportRender==='undefined'){
+    toast('PDF library is unavailable — reload the page');return;}
+  const s=sel();closeExport();
+  const dd=FSExportRender.buildPdfDocDefinition(buildBudgetPdfDoc(s));
+  pdfMake.createPdf(dd).getBlob(b=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b);a.download=exportBaseName()+'.pdf';a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    toast('PDF exported');
+  });
+}
 
 /* ---------------- Guide PDF ----------------
    Built from the live help markup rather than a second copy of the text, so the printed
