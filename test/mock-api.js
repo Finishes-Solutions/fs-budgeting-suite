@@ -28,17 +28,23 @@ const invHash = (rawInput, sourceBudgetVersionId) =>
   crypto.createHash('sha256').update(canonical({ rawInput,
     sourceBudgetVersionId: sourceBudgetVersionId || null,
     calculationVersion: INV_C.CALCULATION_VERSION }), 'utf8').digest('hex');
-const invSummary = a => ({
-  analysisId: a.id, projectId: a.projectId, name: a.name, status: a.status,
-  currentVersionNumber: a.currentVersionNumber,
-  sourceBudgetVersionNumber: a.sourceBudgetVersionNumber,
-  purchasePrice: a.result ? a.result.summary.purchasePrice : null,
-  year1NOI: a.result ? a.result.summary.year1NOI : null,
-  initialEquity: a.result ? a.result.summary.initialEquity : null,
-  finalYearEquityIRR: a.result ? a.result.summary.finalYearEquityIRR : null,
-  optimalHoldingYear: a.result ? a.result.summary.optimalHoldingYear : null,
-  calculationVersion: INV_C.CALCULATION_VERSION,
-  createdAt: a.createdAt, updatedAt: a.updatedAt });
+const invSummary = a => {
+  const uid = a.createdById || null;
+  const u = uid ? mockUsers.get(uid) : null;
+  return {
+    analysisId: a.id, projectId: a.projectId, name: a.name, status: a.status,
+    currentVersionNumber: a.currentVersionNumber,
+    sourceBudgetVersionNumber: a.sourceBudgetVersionNumber,
+    purchasePrice: a.result ? a.result.summary.purchasePrice : null,
+    year1NOI: a.result ? a.result.summary.year1NOI : null,
+    initialEquity: a.result ? a.result.summary.initialEquity : null,
+    finalYearEquityIRR: a.result ? a.result.summary.finalYearEquityIRR : null,
+    optimalHoldingYear: a.result ? a.result.summary.optimalHoldingYear : null,
+    calculationVersion: INV_C.CALCULATION_VERSION,
+    createdById: uid, createdByName: a.createdByName || null,
+    createdByAvatar: u && u.settings ? (u.settings.avatarColor || null) : null,
+    createdAt: a.createdAt, updatedAt: a.updatedAt };
+};
 const PORT = +(process.env.PORT || 8100);
 // NO_API=1 serves the frontend with every /api/* route dead, which is how the offline
 // banner and the built-in pricing fallback get exercised (suite-01 runs against this).
@@ -268,13 +274,13 @@ http.createServer((req, res) => {
     if (!mockUsers.has(uid)) mockUsers.set(uid, {
       userDetails: principal.clientPrincipal.userDetails, displayName: null,
       email: principal.clientPrincipal.userDetails,   // locked to the sign-in account
-      phone: null,
+      phone: null, appRole: 'super_admin',
       settings: {}, firstSeenAt: new Date().toISOString(),
       lastSeenAt: new Date(0).toISOString(), loginCount: 0 });
     const u = mockUsers.get(uid);
     const resp = () => json(res, 200, {
       userDetails: u.userDetails, displayName: u.displayName, email: u.email, phone: u.phone,
-      settings: usc.sanitizeSettings(u.settings),
+      appRole: u.appRole || 'user', settings: usc.sanitizeSettings(u.settings),
       firstSeenAt: u.firstSeenAt, lastSeenAt: u.lastSeenAt, loginCount: u.loginCount });
     if (req.method === 'GET') {
       const q = new URL(req.url, 'http://x').searchParams;
@@ -321,10 +327,41 @@ http.createServer((req, res) => {
     res.writeHead(405); return res.end('method');
   }
 
+  // ---- admin-roles (super_admin only in production; mock is permissive)
+  if (p === '/api/admin-roles' || p.startsWith('/api/admin-roles/')) {
+    if (p === '/api/admin-roles' && req.method === 'GET') {
+      const users = [...mockUsers.entries()].map(([uid, u]) => ({
+        userId: uid, userDetails: u.userDetails || null,
+        displayName: u.displayName || null, email: u.email || null,
+        appRole: u.appRole || 'user', lastSeenAt: u.lastSeenAt, loginCount: u.loginCount }));
+      return json(res, 200, users);
+    }
+    if (req.method === 'PUT') {
+      const targetId = decodeURIComponent(p.slice('/api/admin-roles/'.length));
+      let b = ''; req.on('data', c => b += c);
+      return req.on('end', () => {
+        const body = b ? JSON.parse(b) : {};
+        const validRoles = ['user', 'manager', 'director', 'super_admin'];
+        if (!validRoles.includes(body.appRole))
+          return json(res, 400, { error: 'appRole must be one of: ' + validRoles.join(', ') });
+        const u = mockUsers.get(targetId);
+        if (!u) return json(res, 404, { error: 'User not found' });
+        u.appRole = body.appRole;
+        return json(res, 200, { ok: true, userId: targetId, appRole: body.appRole });
+      });
+    }
+    res.writeHead(405); return res.end('method');
+  }
+
   if (p === '/api/budgets') {
-    // Address comes off the document, mirroring the JSON_VALUE the real API uses.
     return json(res, 200, [...budgets.values()].filter(x => !x.deleted)
-      .map(x => ({ ...x.meta, address: (x.doc && x.doc.address) || '' })));
+      .map(x => {
+        const uid = x.createdById || null;
+        const u = uid ? mockUsers.get(uid) : null;
+        return { ...x.meta, address: (x.doc && x.doc.address) || '',
+          createdById: uid, createdByName: x.createdByName || null,
+          createdByAvatar: u && u.settings ? (u.settings.avatarColor || null) : null };
+      }));
   }
 
   if (p.startsWith('/api/budget/')) {
@@ -381,7 +418,9 @@ http.createServer((req, res) => {
       meta.contractSum = Math.round(calc.contract * 100) / 100;
       meta.projectCost = Math.round(calc.project * 100) / 100;
       const prev = budgets.get(id) || { versions: [] };
-      const entry = { meta, doc, deleted: false, versions: prev.versions };  // PUT restores
+      const entry = { meta, doc, deleted: false, versions: prev.versions,
+        createdById: (prev && prev.createdById) || principal.clientPrincipal.userId,
+        createdByName: (prev && prev.createdByName) || principal.clientPrincipal.userDetails };  // PUT restores
       const last = entry.versions[entry.versions.length - 1];
       let versionCreated = false;
       if (!last || canonical(last.doc) !== canonical(doc)) {
@@ -505,7 +544,9 @@ http.createServer((req, res) => {
       const now = new Date().toISOString();
       invAnalyses.set(id, { id, projectId, name: input.analysisName, status: 'Draft',
         sourceBudgetVersionNumber, input, result: null, currentVersionNumber: 0,
-        deleted: false, versions: [], createdAt: now, updatedAt: now });
+        deleted: false, versions: [], createdAt: now, updatedAt: now,
+        createdById: principal.clientPrincipal.userId,
+        createdByName: principal.clientPrincipal.userDetails });
       return json(res, 201, { ok: true, analysisId: id, input, currentVersionNumber: 0,
         source: input.source ? { projectId, budgetVersionId: sourceBudgetVersionNumber,
           budgetVersionNumber: sourceBudgetVersionNumber } : null });

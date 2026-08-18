@@ -132,7 +132,7 @@
         </div>
       </div>
       <table class="inv-table inv-list"><thead><tr>
-        <th style="padding-left:22px">Analysis</th><th>Project / Budget</th><th>Status</th><th class="r">Purchase Price</th>
+        <th style="padding-left:22px;width:32px" class="no-print"></th><th>Analysis</th><th>Project / Budget</th><th>Status</th><th class="r">Purchase Price</th>
         <th class="r">Year 1 NOI</th><th class="r">Equity IRR</th><th class="r">Optimal Hold</th>
         <th class="r">Analysis Ver.</th><th class="r" style="padding-right:22px">Updated</th><th class="no-print"></th>
       </tr></thead><tbody data-inv-list></tbody></table>
@@ -207,7 +207,7 @@
       }).forEach(k => {
         const tr = document.createElement('tr');
         tr.className = 'inv-grp';
-        tr.innerHTML = `<td colspan="10"${pad}>${esc(k)}
+        tr.innerHTML = `<td colspan="11"${pad}>${esc(k)}
           <span class="shut">${map.get(k).length} ${map.get(k).length === 1 ? 'analysis' : 'analyses'}</span></td>`;
         tb.appendChild(tr);
         map.get(k).forEach(r => tb.appendChild(invListRow(r, pad)));
@@ -217,7 +217,7 @@
 
   function invCard(r) {
     return `<div class="hcard" data-inv-card="${esc(r.analysisId)}">
-      <div class="hc-id">${esc(r.projectId || 'Standalone')}${r.sourceBudgetVersionNumber
+      <div class="hc-id">${window.creatorAvatar ? creatorAvatar(r.createdByName, r.createdByAvatar) + ' ' : ''}${esc(r.projectId || 'Standalone')}${r.sourceBudgetVersionNumber
         ? ' <span class="inv-vsub">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</div>
       <div class="hc-name">${esc(r.name)}</div>
       <div class="hc-row"><span>Purchase Price</span><span class="v">${usd(r.purchasePrice)}</span></div>
@@ -233,6 +233,7 @@
     tr.className = 'clickable';
     tr.addEventListener('click', () => { location.hash = '#/analysis/' + r.analysisId; });
     tr.innerHTML = `
+      <td class="no-print" style="padding-left:22px;width:32px">${window.creatorAvatar ? creatorAvatar(r.createdByName, r.createdByAvatar) : ''}</td>
       <td${pad}>${esc(r.name)}</td>
       <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-vsub" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
       <td>${window.statusChip ? statusChip(r.status, 'analysis', r.analysisId) : esc(r.status)}</td>
@@ -543,7 +544,7 @@
       <div class="page-title">
         <div><h1 id="invTitle">${esc(inp.analysisName)}</h1>
           <div class="sub">${st.source
-            ? 'From budget <span class="mono">' + esc(st.source.projectId) + '</span> version ' + esc(st.source.budgetVersionNumber)
+            ? 'From Budget <span class="mono">' + esc(st.source.projectId) + '</span> <span class="inv-vsub">v' + esc(st.source.budgetVersionNumber) + '</span>'
             : 'Standalone Analysis'}</div></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
           <span id="invStatusHost"></span>
@@ -1192,7 +1193,7 @@
     const src = R.normalizedInput && R.normalizedInput.source;
     h += `<h3>Assumptions &amp; Provenance</h3>
       <div class="inv-provenance">
-      ${src ? 'Created from budget <span class="mono">' + esc(src.projectId) + '</span> version ' + esc(src.budgetVersionNumber)
+      ${src ? 'Created from Budget <span class="mono">' + esc(src.projectId) + '</span> <span class="inv-vsub">v' + esc(src.budgetVersionNumber) + '</span>'
             + (src.importedAt ? ' (imported ' + esc(fmtDay(src.importedAt)) + ')' : '') + '.' : 'Standalone Analysis.'}
       Vacancy ${pctf(R.normalizedInput.vacancy.value)} · expenses ${R.normalizedInput.expenses.mode === 'percentOfGOI'
         ? pctf(R.normalizedInput.expenses.value) + ' of GOI'
@@ -1358,7 +1359,7 @@
         <div class="muted" style="font-size:9pt">${esc(N.analysisName)}${N.property.address ? ' · ' + esc(N.property.address) : ''}</div>
       </div>
       <div class="muted" style="text-align:right;font-size:8.5pt">${esc(stamp)}<br>
-        ${src ? 'From budget <span class="mono">' + esc(src.projectId) + '</span> v' + esc(src.budgetVersionNumber) : 'Standalone Analysis'}${st.loadedVersion ? '<br>Analysis v' + st.loadedVersion : ''}</div>
+        ${src ? 'From Budget <span class="mono">' + esc(src.projectId) + '</span> <span class="inv-vsub">v' + esc(src.budgetVersionNumber) + '</span>' : 'Standalone Analysis'}${st.loadedVersion ? '<br>Analysis v' + st.loadedVersion : ''}</div>
     </div>`;
 
     // The KPI band never highlights — Highlight Key Metrics marks only the
@@ -1488,7 +1489,7 @@
         <div class="rpt-2col"><div>`
         + rr('Analysis', esc(N.analysisName))
         + rr('Property', esc(N.property.name) + (N.property.address ? ' · ' + esc(N.property.address) : ''))
-        + rr('Source', src ? 'Budget <span class="mono">' + esc(src.projectId) + '</span> version ' + esc(src.budgetVersionNumber) : 'Standalone Analysis')
+        + rr('Source', src ? 'Budget <span class="mono">' + esc(src.projectId) + '</span> <span class="inv-vsub">v' + esc(src.budgetVersionNumber) + '</span>' : 'Standalone Analysis')
         + rr('Saved Analysis Version', st.loadedVersion ? 'v' + st.loadedVersion : '(unsaved)')
         + rr('Projection', years.length + '-Year Before-Tax')
         + '</div><div>'

@@ -42,8 +42,8 @@ async function ensureUser(pool, principal, opts) {
             WHEN NOT MATCHED THEN INSERT (UserId, UserDetails, Email, LoginCount)
               VALUES (@uid, @details, @details, IIF(@boot = 1, 1, 0))
             OUTPUT INSERTED.UserId, INSERTED.UserDetails, INSERTED.DisplayName, INSERTED.Email,
-                   INSERTED.Phone, INSERTED.SettingsDoc, INSERTED.FirstSeenAt, INSERTED.LastSeenAt,
-                   INSERTED.LoginCount,
+                   INSERTED.Phone, INSERTED.SettingsDoc, INSERTED.AppRole, INSERTED.FirstSeenAt,
+                   INSERTED.LastSeenAt, INSERTED.LoginCount,
                    DELETED.LastSeenAt AS PrevSeenAt, DELETED.LoginCount AS PrevLogins;`);
   return r.recordset[0] || null;
 }
@@ -78,6 +78,7 @@ function userResponse(row) {
     displayName: row.DisplayName || null,
     email: row.Email || null,
     phone: row.Phone || null,
+    appRole: row.AppRole || 'user',
     settings: settingsOf(row),
     firstSeenAt: row.FirstSeenAt,
     lastSeenAt: row.LastSeenAt,

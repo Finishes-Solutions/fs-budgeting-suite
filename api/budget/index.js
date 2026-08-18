@@ -154,6 +154,8 @@ module.exports = async function (context, req) {
         .input('tk', sql.VarChar(64), templateKey)
         .input('tv', sql.BigInt, templateVersionId)
         .input('doc', sql.NVarChar(sql.MAX), docJson)
+        .input('cuid', sql.NVarChar(128), userId)
+        .input('cuname', sql.NVarChar(200), userName)
         .query(`MERGE dbo.Budgets AS t
                 USING (SELECT @id AS ProjectId) AS s ON t.ProjectId = s.ProjectId
                 WHEN MATCHED THEN UPDATE SET Name=@name, Type=@type, Status=@status,
@@ -161,8 +163,10 @@ module.exports = async function (context, req) {
                   TemplateKey=@tk, TemplateVersionId=@tv,
                   IsDeleted=0, DeletedAt=NULL, UpdatedAt=SYSUTCDATETIME()
                 WHEN NOT MATCHED THEN INSERT (ProjectId, Name, Type, Status, ContractSum,
-                  ProjectCost, PricingVersion, Doc, TemplateKey, TemplateVersionId)
-                  VALUES (@id, @name, @type, @status, @cs, @pc, @pv, @doc, @tk, @tv);`);
+                  ProjectCost, PricingVersion, Doc, TemplateKey, TemplateVersionId,
+                  CreatedById, CreatedByName)
+                  VALUES (@id, @name, @type, @status, @cs, @pc, @pv, @doc, @tk, @tv,
+                  @cuid, @cuname);`);
 
       await writeSovLines(tx, id, sovRows(doc));
 

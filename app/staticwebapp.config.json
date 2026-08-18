@@ -1,5 +1,7 @@
 {
   "routes": [
+    { "route": "/api/admin-roles", "allowedRoles": ["super_admin"] },
+    { "route": "/api/admin-roles/*", "allowedRoles": ["super_admin"] },
     { "route": "/api/analytics", "allowedRoles": ["super_admin"] },
     { "route": "/api/pricing", "methods": ["PUT"], "allowedRoles": ["pricing_admin", "super_admin"] },
     { "route": "/api/templates", "methods": ["POST", "PUT", "PATCH"], "allowedRoles": ["pricing_admin", "super_admin"] },

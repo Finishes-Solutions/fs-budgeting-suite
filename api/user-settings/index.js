@@ -59,8 +59,8 @@ module.exports = async function (context, req) {
   if (profile.phone !== undefined) { rq.input('ph', sql.NVarChar(40), profile.phone || null); sets.push('Phone=@ph'); }
   const r = await rq.query(`UPDATE dbo.Users SET ${sets.join(', ')}
     OUTPUT INSERTED.UserId, INSERTED.UserDetails, INSERTED.DisplayName, INSERTED.Email,
-           INSERTED.Phone, INSERTED.SettingsDoc, INSERTED.FirstSeenAt, INSERTED.LastSeenAt,
-           INSERTED.LoginCount
+           INSERTED.Phone, INSERTED.SettingsDoc, INSERTED.AppRole, INSERTED.FirstSeenAt,
+           INSERTED.LastSeenAt, INSERTED.LoginCount
     WHERE UserId=@uid;`);
 
   await U.recordActivity(pool, principal, 'settings_update', null, null, {

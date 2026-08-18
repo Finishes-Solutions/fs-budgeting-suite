@@ -47,8 +47,8 @@
 .inv-grid .wide{grid-column:span 2}
 
 /* the linked budget version, visually secondary to the Project ID */
-.inv-vsub{font-family:var(--fm);font-size:10.5px;color:var(--ink-400);font-weight:500;margin-left:6px;
-  white-space:nowrap}
+.inv-vsub{font-family:var(--fm);font-size:10.5px;color:var(--ink-500);font-weight:500;margin-left:6px;
+  white-space:nowrap;background:var(--ink-100);border-radius:999px;padding:1px 7px}
 
 /* imported-value badge */
 .inv-origin{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--green-700);

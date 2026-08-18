@@ -77,6 +77,8 @@ CREATE TABLE dbo.Budgets (
     Doc            NVARCHAR(MAX) NOT NULL CHECK (ISJSON(Doc) = 1),
     CreatedAt      DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME(),
     UpdatedAt      DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME(),
+    CreatedById    NVARCHAR(128) NULL,                  -- SWA principal.userId; NULL for legacy rows
+    CreatedByName  NVARCHAR(200) NULL,
     -- Soft delete: the app flags budgets instead of deleting rows, so history
     -- survives and PUT on the same ProjectId restores. Hard removal is the
     -- admin-run sql/purge_deleted_budgets.sql only.
@@ -90,6 +92,7 @@ CREATE TABLE dbo.Budgets (
     CONSTRAINT FK_Budgets_TemplateVersion FOREIGN KEY (TemplateVersionId) REFERENCES dbo.BudgetTemplateVersions (Id)
 );
 CREATE INDEX IX_Budgets_Template ON dbo.Budgets (TemplateKey, TemplateVersionId);
+CREATE INDEX IX_Budgets_CreatedById ON dbo.Budgets (CreatedById) WHERE IsDeleted = 0;
 
 -- Normalized SOV lines: the read surface for the Master Lender Package pipeline
 -- and future AIA-style draw sheets. Rewritten on every budget save.

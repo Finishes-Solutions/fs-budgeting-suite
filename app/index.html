@@ -185,6 +185,12 @@ html[data-theme=dark] .st-cancel{color:#E0685E;border-color:#6E2D28;background:#
 .hcard .hc-ft{display:flex;justify-content:space-between;align-items:center;margin-top:10px;
   padding-top:8px;border-top:1px solid var(--ink-100);font-size:11.5px;color:var(--ink-400)}
 .hcard .hc-menu{position:absolute;top:10px;right:10px}
+/* ---- creator avatar (initials circle) ---- */
+.creator-av{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;
+  border-radius:50%;background:var(--cav,var(--green-700));color:#fff;font-family:var(--fb);
+  font-size:10px;font-weight:700;letter-spacing:.02em;flex:none;vertical-align:middle}
+.admin-role-sel{font-family:var(--fb);font-size:13px;padding:4px 8px;border:1px solid var(--ink-200);
+  border-radius:var(--r);background:var(--white);color:var(--ink-900);cursor:pointer}
 /* ---- Settings modal (profile menu → Settings) ---- */
 .set-lab{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink-500);font-weight:500;margin:20px 0 8px}
@@ -785,6 +791,7 @@ th.sortable.sorted{color:var(--ink-900)}
         <div class="nav-drop" id="navDrop" role="menu">
           <button id="nav-help" role="menuitem" onclick="go('help');closeNavMore()">How to Use</button>
           <button id="nav-dashboard" role="menuitem" onclick="go('dashboard');closeNavMore()" style="display:none">Analytics</button>
+          <button id="nav-admin" role="menuitem" onclick="go('admin');closeNavMore()" style="display:none">Admin</button>
           <button id="nav-version" role="menuitem" onclick="go('version');closeNavMore()">Version</button>
         </div>
       </div>
@@ -848,7 +855,8 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="card-bd" style="padding:0;overflow-x:auto">
     <table class="tbl">
       <thead id="homeHead"><tr>
-        <th style="padding-left:22px" class="sortable" data-sort="projectId">Project ID</th>
+        <th style="padding-left:22px;width:32px" class="no-print"></th>
+        <th class="sortable" data-sort="projectId">Project ID</th>
         <th class="sortable" data-sort="name">Name</th>
         <th class="sortable" data-sort="status">Status</th>
         <th class="r sortable" data-sort="contractSum">Contract Sum</th>
@@ -1781,17 +1789,32 @@ th.sortable.sorted{color:var(--ink-900)}
 
       <section class="card"><div class="card-bd">
         <h3 id="help-access">Who Can Do What</h3>
+        <h4>Application Roles</h4>
+        <p>Every user who signs in gets a default application role. Roles control which budgets and analyses
+          you can see in the list view. A super admin can change any user's role from the Admin page.</p>
         <table class="tbl"><tbody>
-          <tr><td>Everyone</td><td>Anyone who can sign in with a Finishes account can create, edit, save, delete
-            and export budgets and investment analyses, and can read the pricing library.</td></tr>
-          <tr><td>pricing_admin</td><td>Additionally can edit and publish the pricing library. This is deliberately
-            a very short list, because a rate change affects every budget created afterwards.</td></tr>
-          <tr><td>super_admin</td><td>Everything pricing_admin can do, plus access to the Analytics dashboard
-            (platform-wide KPIs, status breakdowns, and user activity). The Analytics tab appears only for
-            accounts holding this role.</td></tr>
+          <tr><td style="white-space:nowrap"><b>User</b> <span class="muted">(default)</span></td>
+            <td>Can create, edit, save, delete and export budgets and investment analyses. Sees only budgets and
+              analyses they created.</td></tr>
+          <tr><td style="white-space:nowrap"><b>Manager</b></td>
+            <td>Same as User. Sees only budgets and analyses they created. Intended for team leads who do not
+              need visibility into other teams' work.</td></tr>
+          <tr><td style="white-space:nowrap"><b>Director</b></td>
+            <td>Can see all budgets and analyses across the organization, regardless of who created them.</td></tr>
+          <tr><td style="white-space:nowrap"><b>Super Admin</b></td>
+            <td>Everything Director can do, plus access to the Analytics dashboard, the Admin page for managing
+              user roles, and any platform administration features.</td></tr>
         </tbody></table>
-        <p>The pricing page shows whether your account holds the role. If you need it, ask the tool owner for a
-          role invitation.</p>
+        <h4>Platform Roles</h4>
+        <p>Platform roles are assigned through Azure and control access to specific features beyond the
+          application role.</p>
+        <table class="tbl"><tbody>
+          <tr><td>pricing_admin</td><td>Can edit and publish the pricing library. This is deliberately
+            a very short list, because a rate change affects every budget created afterwards.</td></tr>
+          <tr><td>super_admin</td><td>Grants Super Admin application role automatically. Required for the
+            Analytics dashboard and Admin page. The pricing page shows whether your account holds this role.</td></tr>
+        </tbody></table>
+        <p>If you need a role change, ask a super admin or the tool owner.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -1841,6 +1864,20 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="dash-section"><h2>Recent Activity</h2>
     <div id="dashActivity"></div>
   </div>
+</div>
+
+<!-- ================= ADMIN (super_admin only) ================= -->
+<div class="page" id="page-admin">
+  <div class="page-title">
+    <div><h1>User Management</h1>
+      <div class="sub">Assign application roles to control what each user can see and do.</div></div>
+    <div><button class="btn btn-dark" id="adminRefreshBtn" onclick="loadAdminUsers()">Refresh</button></div>
+  </div>
+  <section class="card"><div class="card-bd">
+    <table class="tbl" id="adminTable"><thead><tr>
+      <th style="padding-left:22px">User</th><th>Email</th><th>Role</th><th>Last Seen</th><th>Logins</th><th class="no-print"></th>
+    </tr></thead><tbody id="adminBody"></tbody></table>
+  </div></section>
 </div>
 
 <!-- ================= VERSION (internal diagnostics) ================= -->
@@ -2231,8 +2268,11 @@ async function loadUserSettings(){
   try{
     const r=await api('user-settings?boot=1');
     US={settings:r.settings,profile:{displayName:r.displayName||'',email:r.email||'',phone:r.phone||''},
-        userDetails:r.userDetails||'',loginCount:r.loginCount};
+        userDetails:r.userDetails||'',loginCount:r.loginCount,appRole:r.appRole||'user'};
     applyUserSettings();
+    if(US.appRole==='super_admin'||US.appRole==='director'){
+      document.getElementById('nav-admin').style.display=(US.appRole==='super_admin')?'':'none';
+    }
     renderProfile();          // the display name may override the platform name
   }catch(e){/* signed out or offline: the pre-paint caches already applied */}
 }
@@ -2339,6 +2379,57 @@ async function saveProfile(){
     toast('Profile saved to your account.');
   }catch(e){toast('Could not save your profile — '+e.message);}
 }
+/* ---- Admin: user role management (super_admin only) ---- */
+const ADMIN_ROLES=['user','manager','director','super_admin'];
+const ROLE_LABELS={user:'User',manager:'Manager',director:'Director',super_admin:'Super Admin'};
+let adminUsers=[];
+async function loadAdminUsers(){
+  const tb=document.getElementById('adminBody');if(!tb)return;
+  tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--ink-400)">Loading...</td></tr>';
+  try{
+    adminUsers=await api('admin-roles');
+    paintAdminTable();
+  }catch(e){tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--danger)">'+esc(e.message)+'</td></tr>';}
+}
+function paintAdminTable(){
+  const tb=document.getElementById('adminBody');if(!tb)return;
+  tb.innerHTML='';
+  adminUsers.forEach(u=>{
+    const displayName=u.displayName||u.userDetails||u.userId;
+    const ini=initialsOf(displayName);
+    tb.insertAdjacentHTML('beforeend',
+      `<tr>
+        <td style="padding-left:22px"><span class="creator-av" style="margin-right:8px">${esc(ini)}</span>${esc(displayName)}</td>
+        <td style="font-size:12px;color:var(--ink-400)">${esc(u.email||u.userDetails||'')}</td>
+        <td><select class="admin-role-sel" data-admin-uid="${esc(u.userId)}" onchange="changeAdminRole(this)">
+          ${ADMIN_ROLES.map(r=>'<option value="'+r+'"'+(u.appRole===r?' selected':'')+'>'+esc(ROLE_LABELS[r])+'</option>').join('')}
+        </select></td>
+        <td style="font-size:12px;color:var(--ink-400)">${u.lastSeenAt?esc(fmtDay(u.lastSeenAt)):'Never'}</td>
+        <td style="font-size:12px;color:var(--ink-400)">${u.loginCount||0}</td>
+        <td class="no-print"></td></tr>`);
+  });
+  if(!adminUsers.length)tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--ink-400)">No users found.</td></tr>';
+}
+async function changeAdminRole(sel){
+  const uid=sel.dataset.adminUid;
+  const role=sel.value;
+  try{
+    await api('admin-roles/'+encodeURIComponent(uid),{method:'PUT',body:JSON.stringify({appRole:role})});
+    const u=adminUsers.find(x=>x.userId===uid);
+    if(u)u.appRole=role;
+    toast('Role updated to '+ROLE_LABELS[role]+'.');
+  }catch(e){toast('Could not update role — '+e.message);loadAdminUsers();}
+}
+
+/* ---- created-by avatar (initials circle with user's avatar color) ---- */
+const DEFAULT_AVATAR_BG='var(--green-700)';
+function creatorAvatar(name,avatarColor){
+  if(!name)return '';
+  const ini=initialsOf(name);
+  const bg=avatarColor||DEFAULT_AVATAR_BG;
+  return '<span class="creator-av" style="--cav:'+esc(bg)+'" title="'+esc(name)+'">'+esc(ini)+'</span>';
+}
+
 const AVATAR_PRESETS=['','#14418A','#6D28D9','#B42318','#B7791F','#23282A'];
 const RAINBOW='conic-gradient(#e03131,#f59f00,#94d82d,#20c997,#339af0,#845ef7,#e03131)';
 function paintSettingsUI(){
@@ -2513,6 +2604,7 @@ async function initAuth(){
     adminUnlocked=roles.includes('pricing_admin')||isSuperAdmin;
     if(isSuperAdmin){
       document.getElementById('nav-dashboard').style.display='';
+      document.getElementById('nav-admin').style.display='';
       FSDashboard.init({esc:esc});
     }
   }
@@ -2982,8 +3074,8 @@ function editReason(it){
 /* ============ NAV + HASH ROUTING ============
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
-const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',version:'version'};
-const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',version:'version'};
+const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
 const DOC_PAGES=['input','budget','csi'];
 
 function hashFor(p){
@@ -3014,7 +3106,7 @@ function go(p){
   // Investment Analysis tab, the way budget pages light their own tabs.
   const nb=document.getElementById('nav-'+(p==='analysis'?'analyses':p));
   if(nb)nb.classList.add('on');
-  var MORE_PAGES=['help','dashboard','version'];
+  var MORE_PAGES=['help','dashboard','admin','version'];
   if(MORE_PAGES.includes(p))document.getElementById('nav-more-btn').classList.add('on');
   syncHash(p);
   renderSaveState();
@@ -3022,6 +3114,7 @@ function go(p){
   if(p==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
   if(p==='pricing'){renderPricing();renderCatalog();}
   if(p==='dashboard'&&window.FSDashboard)FSDashboard.render();
+  if(p==='admin')loadAdminUsers();
   if(p==='version')renderVersionPage();
   if(p==='budget'||p==='input'||p==='csi')recalc();
   window.scrollTo(0,0);
@@ -3207,7 +3300,7 @@ function paintHome(){
     groups.forEach(gr=>{
       // Totals sit in the Contract Sum and Total Project Cost columns,
       // matching the division headers on the budget grid.
-      b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="3" style="padding-left:22px">${esc(gr.key)}
+      b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4" style="padding-left:22px">${esc(gr.key)}
         <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'}</span></td>
         <td class="calc r strong">${usd(gr.contract)}</td><td class="calc r strong">${usd(gr.project)}</td>
         <td></td><td class="no-print"></td></tr>`);
@@ -3218,7 +3311,7 @@ function paintHome(){
 }
 function homeCard(x){
   return `<div class="hcard" onclick="openBudget('${x.projectId}')">
-    <div class="hc-id">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</div>
+    <div class="hc-id">${creatorAvatar(x.createdByName,x.createdByAvatar)} ${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</div>
     <div class="hc-name">${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</div>
     <div class="hc-row"><span>Contract Sum</span><span class="v">${usd(x.contractSum||0)}</span></div>
     <div class="hc-row"><span>Total Project</span><span class="v">${usd(x.projectCost||0)}</span></div>
@@ -3230,7 +3323,8 @@ function homeCard(x){
 function homeRow(x){
   document.getElementById('homeBody').insertAdjacentHTML('beforeend',
     `<tr class="clickable" onclick="openBudget('${x.projectId}')">
-      <td class="mono" style="padding-left:22px;font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
+      <td class="no-print" style="padding-left:22px;width:32px">${creatorAvatar(x.createdByName,x.createdByAvatar)}</td>
+      <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
       <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
       <td>${statusChip(x.status,'budget',x.projectId)}</td>
       <td class="calc r">${usd(x.contractSum||0)}</td>
