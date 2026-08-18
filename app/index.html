@@ -6,7 +6,7 @@
 <title>Finishes Solutions Budgeting Suite</title>
 <script>
 /* Apply the saved theme before first paint so switching never flashes. */
-try{var t=localStorage.getItem('fsTheme');if(t==='dark'||t==='evergreen')document.documentElement.setAttribute('data-theme',t);}catch(_){}
+try{var t=localStorage.getItem('fsTheme');if(t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(_){}
 </script>
 <!-- The FS monogram is black ink on transparency and would vanish against a dark tab
      strip, so the icon is the mark in white on the app's own ink-900 tile. Contrast is
@@ -76,37 +76,33 @@ html[data-theme=dark]{
   --sh:0 1px 2px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);
   --focus:0 0 0 3px rgba(63,174,102,.35);
 }
-html[data-theme=evergreen]{
-  --ink-50:#eef4f0;--ink-100:#e3ece6;--ink-150:#d9e5de;--ink-200:#c9d9d0;
-  --white:#fcfdfc;
-  --chrome:#00351a;
-  --sh:0 1px 2px rgba(0,53,26,.07),0 1px 3px rgba(0,53,26,.09);
-}
-/* Theme dock: always-available switcher pinned to the bottom-right corner.
-   The same three choices also live in the account menu, above Sign Out. */
-#themeDock{position:fixed;right:18px;bottom:18px;z-index:45;display:flex;gap:4px;
-  background:var(--white);border:1px solid var(--ink-200);border-radius:999px;
-  padding:4px;box-shadow:0 4px 14px rgba(11,13,12,.16)}
-#themeDock button{width:30px;height:30px;border:none;border-radius:50%;cursor:pointer;
-  background:transparent;color:var(--ink-500);display:flex;align-items:center;justify-content:center;padding:0}
-#themeDock button:hover{background:var(--ink-100);color:var(--ink-800)}
-#themeDock button.on{background:var(--green-700);color:#fff}
-#themeDock svg{width:15px;height:15px;display:block}
-.pm-theme-lab{padding:8px 12px 2px;font-family:var(--fm);font-size:10px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--ink-400)}
-.pm-theme .rowmenu-item{display:flex;align-items:center;gap:9px}
-.pm-theme .rowmenu-item svg{width:14px;height:14px;flex:none;color:var(--ink-500)}
-.pm-theme .rowmenu-item .tick{margin-left:auto;color:var(--green-700);font-weight:700;visibility:hidden}
-.pm-theme .rowmenu-item.on .tick{visibility:visible}
+/* Settings modal (profile menu → Settings). Theme is the only setting today;
+   the modal is the home for whatever arrives next. */
+.set-lab{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-500);font-weight:500;margin-bottom:8px}
+.set-theme{display:flex;gap:10px}
+.set-theme button{flex:1;display:flex;align-items:center;gap:9px;border:1px solid var(--ink-200);
+  background:var(--white);border-radius:8px;padding:11px 14px;cursor:pointer;
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-700)}
+.set-theme button:hover{border-color:var(--ink-300)}
+.set-theme button.on{border-color:var(--green-600);box-shadow:var(--focus)}
+.set-theme svg{width:15px;height:15px;flex:none;color:var(--ink-500)}
+.set-theme button.on svg{color:var(--green-700)}
+.set-theme .tick{margin-left:auto;color:var(--green-700);font-weight:700;visibility:hidden}
+.set-theme button.on .tick{visibility:visible}
 /* ---- Cmd/Ctrl+K global search palette ---- */
 #palette{position:fixed;inset:0;z-index:80;display:none;background:rgba(11,13,12,.45);
   align-items:flex-start;justify-content:center;padding:11vh 16px 16px}
 #palette.open{display:flex}
 .pal-card{width:600px;max-width:96vw;background:var(--white);border:1px solid var(--ink-200);
   border-radius:12px;box-shadow:0 18px 50px rgba(11,13,12,.35);overflow:hidden}
-.pal-card input{width:100%;border:none;outline:none;background:transparent;color:var(--ink-900);
-  font-family:var(--fb);font-size:15px;padding:15px 18px;border-bottom:1px solid var(--ink-150)}
-.pal-list{max-height:46vh;overflow:auto;padding:6px}
+/* The input is inset with its own rounded border, so the green focus ring
+   follows those corners INSIDE the card instead of being clipped by the
+   card's overflow at its rounded corners. */
+#palette .pal-card input{width:calc(100% - 24px);margin:12px 12px 10px;border:1px solid var(--ink-200);
+  border-radius:8px;outline:none;background:var(--white);color:var(--ink-900);
+  font-family:var(--fb);font-size:15px;padding:11px 14px}
+.pal-list{max-height:46vh;overflow:auto;padding:6px;border-top:1px solid var(--ink-150)}
 .pal-sec{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink-400);padding:8px 12px 4px}
 .pal-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer}
@@ -368,7 +364,7 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .seg button.on{background:var(--solid);color:#fff}
 .chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-700);cursor:pointer;user-select:none}
 .chk input{width:15px;height:15px;accent-color:var(--green-700)}
-.toast{position:fixed;bottom:64px;right:24px;background:var(--solid);color:#fff;padding:12px 20px;border-radius:var(--rm);   /* sits above the theme dock */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--solid);color:#fff;padding:12px 20px;border-radius:var(--rm);
   font-size:13px;box-shadow:0 8px 24px rgba(11,13,12,.25);opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:99}
 .toast.show{opacity:1;transform:none}
 .empty{padding:48px;text-align:center;color:var(--ink-400)}
@@ -1096,12 +1092,11 @@ th.sortable.sorted{color:var(--ink-900)}
           move the selection, <b>Enter</b> opens it, <b>Esc</b> closes. Both Home lists also have their own
           search box, status filter, and grouping — budgets and analyses alike.</p>
 
-        <h4>Themes</h4>
-        <p>The suite has three themes: <b>Light</b> (the default), <b>Dark</b>, and <b>Evergreen</b> — a
-          light look with the Finishes green worked into the chrome. Switch from either place: the icon dock
-          in the bottom-right corner of every page (sun, moon, and tree), or your profile menu — click your
-          avatar in the header and pick under <b>Theme</b>, above Sign Out. The choice is remembered per
-          browser. Printed reports and PDF exports always render in light, whatever theme the screen uses.</p>
+        <h4>Settings &amp; Themes</h4>
+        <p>Click your avatar in the header and choose <b>Settings</b>. Theme is the only setting today —
+          <b>Light</b> (the default) or <b>Dark</b> — with more settings arriving there over time. The
+          choice applies immediately and is remembered per browser. Printed reports and PDF exports always
+          render in light, whatever theme the screen uses.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -1621,30 +1616,33 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="pm-email" id="pmEmail"></div>
   </div>
   <div class="rowmenu-sep"></div>
-  <div class="pm-theme">
-    <div class="pm-theme-lab">Theme</div>
-    <button class="rowmenu-item" role="menuitem" data-theme-pick="light" onclick="setTheme('light')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9l-2.2 2.2M7.1 16.9l-2.2 2.2"/></svg>
-      Light<span class="tick">✓</span></button>
-    <button class="rowmenu-item" role="menuitem" data-theme-pick="dark" onclick="setTheme('dark')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-      Dark<span class="tick">✓</span></button>
-    <button class="rowmenu-item" role="menuitem" data-theme-pick="evergreen" onclick="setTheme('evergreen')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 5 12h4l-4 8h14l-4-8h4L12 2z"/><path d="M12 20v2"/></svg>
-      Evergreen<span class="tick">✓</span></button>
-  </div>
-  <div class="rowmenu-sep"></div>
+  <button class="rowmenu-item" role="menuitem" onclick="openSettings()">Settings</button>
   <button class="rowmenu-item" role="menuitem" onclick="logout()">Sign Out</button>
 </div>
 
-<!-- Theme dock: the same three choices as the account menu, always on screen. -->
-<div id="themeDock" class="no-print" role="group" aria-label="Theme">
-  <button data-theme-pick="light" title="Light Theme" aria-label="Light Theme" onclick="setTheme('light')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9l-2.2 2.2M7.1 16.9l-2.2 2.2"/></svg></button>
-  <button data-theme-pick="dark" title="Dark Theme" aria-label="Dark Theme" onclick="setTheme('dark')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
-  <button data-theme-pick="evergreen" title="Evergreen Theme" aria-label="Evergreen Theme" onclick="setTheme('evergreen')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 5 12h4l-4 8h14l-4-8h4L12 2z"/><path d="M12 20v2"/></svg></button>
+<!-- ================= SETTINGS MODAL =================
+     Reached from the account menu. Theme is the only setting today; this
+     modal is where future settings land. -->
+<div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:60;align-items:center;justify-content:center"
+  onclick="if(event.target===this)closeSettings()">
+  <div class="card" style="width:460px;max-width:94vw;margin:0" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="card-hd"><h2 id="settingsTitle">Settings</h2>
+      <button class="btn-x" onclick="closeSettings()" aria-label="Close settings">×</button></div>
+    <div class="card-bd">
+      <div class="set-lab">Theme</div>
+      <div class="set-theme" role="group" aria-label="Theme">
+        <button data-theme-pick="light" onclick="setTheme('light')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9l-2.2 2.2M7.1 16.9l-2.2 2.2"/></svg>
+          Light<span class="tick">✓</span></button>
+        <button data-theme-pick="dark" onclick="setTheme('dark')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+          Dark<span class="tick">✓</span></button>
+      </div>
+      <p style="font-size:12.5px;color:var(--ink-500);margin-top:14px">Applies immediately and is remembered
+        on this browser. Printed reports and PDF exports always use the light look. More settings will
+        arrive here over time.</p>
+    </div>
+  </div>
 </div>
 
 <!-- Cmd/Ctrl+K: search every budget and analysis from anywhere. -->
@@ -1709,13 +1707,15 @@ function fmtClock(d){
   return h+':'+String(d.getMinutes()).padStart(2,'0')+' '+ap;
 }
 /* ---- themes ----
-   Light is the default; Dark and Evergreen remap the CSS tokens on <html>.
-   The choice persists per browser and applies before first paint (head
-   script). Print always renders light: beforeprint strips the attribute and
-   afterprint restores it, so exports and the guide never print dark. */
+   Light is the default; Dark remaps the CSS tokens on <html>. Switched from
+   Settings (profile menu → Settings), persists per browser, and applies
+   before first paint (head script). Print always renders light: beforeprint
+   strips the attribute and afterprint restores it, so exports and the guide
+   never print dark. An unknown stored value (e.g. the retired evergreen)
+   falls back to light. */
 function currentTheme(){return document.documentElement.getAttribute('data-theme')||'light';}
 function setTheme(name){
-  if(!['light','dark','evergreen'].includes(name))name='light';
+  if(!['light','dark'].includes(name))name='light';
   if(name==='light')document.documentElement.removeAttribute('data-theme');
   else document.documentElement.setAttribute('data-theme',name);
   try{localStorage.setItem('fsTheme',name);}catch(_){}
@@ -1725,6 +1725,11 @@ function setTheme(name){
     b.setAttribute('aria-pressed',on?'true':'false');
   });
 }
+function openSettings(){
+  closeProfile(false);
+  document.getElementById('settingsModal').style.display='flex';
+}
+function closeSettings(){document.getElementById('settingsModal').style.display='none';}
 let printThemeStash=null;
 window.addEventListener('beforeprint',()=>{
   printThemeStash=currentTheme();
@@ -4577,7 +4582,7 @@ function wireDelegates(){
   document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
   document.getElementById('homeGroup').addEventListener('change',e=>{homeView.group=e.target.value;paintHome();});
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeExport();closePick();palClose();return;}
+    if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();return;}
     // Cmd/Ctrl+K opens the global search palette from anywhere in the app.
     if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();palToggle();return;}
     // Cmd/Ctrl+S saves rather than letting the browser offer to save the page.

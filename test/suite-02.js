@@ -342,49 +342,56 @@ const BASE = 'http://127.0.0.1:8100';
   ok('the editor toolbar has no Versions button',
      (await p.locator('#page-analysis .page-title button', { hasText: 'Versions' }).count()) === 0);
 
-  // ---- themes: corner dock + account-menu picker, persisted, print-safe
-  ok('theme dock offers Light, Dark and Evergreen',
-     await p.evaluate(() => [...document.querySelectorAll('#themeDock [data-theme-pick]')]
-       .map(b => b.dataset.themePick).join(',')) === 'light,dark,evergreen');
-  ok('account menu lists the same three above Sign Out',
+  // ---- Settings (profile menu → Settings): the Light/Dark theme switch
+  await p.click('#profileBtn'); await p.waitForTimeout(250);
+  ok('account menu offers Settings before Sign Out',
      await p.evaluate(() => {
-       const items = [...document.querySelectorAll('#profileMenu .pm-theme [data-theme-pick]')]
-         .map(b => b.dataset.themePick);
-       const block = document.querySelector('#profileMenu .pm-theme');
-       const signOut = [...document.querySelectorAll('#profileMenu .rowmenu-item')]
-         .find(b => /Sign Out/.test(b.textContent));
-       return items.join(',') === 'light,dark,evergreen'
-         && !!(block.compareDocumentPosition(signOut) & Node.DOCUMENT_POSITION_FOLLOWING);
+       const items = [...document.querySelectorAll('#profileMenu .rowmenu-item')].map(b => b.textContent.trim());
+       return items.indexOf('Settings') >= 0 && items.indexOf('Settings') < items.indexOf('Sign Out');
      }));
+  await p.click('#profileMenu button:has-text("Settings")'); await p.waitForTimeout(250);
+  ok('Settings opens as a modal and closes the menu',
+     await p.locator('#settingsModal').isVisible() && !(await p.locator('#profileMenu').isVisible()));
+  ok('theme is the only setting, offering exactly Light and Dark',
+     await p.evaluate(() => [...document.querySelectorAll('#settingsModal [data-theme-pick]')]
+       .map(b => b.dataset.themePick).join(',')) === 'light,dark');
   const lightBg = await p.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  await p.evaluate(() => setTheme('dark'));
-  await p.waitForTimeout(150);
+  await p.click('#settingsModal [data-theme-pick=dark]'); await p.waitForTimeout(150);
   ok('dark theme applies and persists',
      await p.evaluate(() => document.documentElement.getAttribute('data-theme') === 'dark'
        && localStorage.getItem('fsTheme') === 'dark'));
   ok('dark theme actually remaps the surfaces',
      (await p.evaluate(() => getComputedStyle(document.body).backgroundColor)) !== lightBg);
-  ok('the dock marks the active theme',
-     await p.evaluate(() => document.querySelector('#themeDock [data-theme-pick=dark]').classList.contains('on')
-       && !document.querySelector('#themeDock [data-theme-pick=light]').classList.contains('on')));
+  ok('Settings marks the active theme',
+     await p.evaluate(() => document.querySelector('#settingsModal [data-theme-pick=dark]').classList.contains('on')
+       && !document.querySelector('#settingsModal [data-theme-pick=light]').classList.contains('on')));
   await p.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
   ok('printing forces the light palette',
      (await p.evaluate(() => document.documentElement.getAttribute('data-theme'))) === null);
   await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
   ok('the chosen theme returns after printing',
      (await p.evaluate(() => document.documentElement.getAttribute('data-theme'))) === 'dark');
-  await p.evaluate(() => setTheme('evergreen'));
-  ok('evergreen theme applies',
-     (await p.evaluate(() => document.documentElement.getAttribute('data-theme'))) === 'evergreen');
-  await p.evaluate(() => setTheme('light'));
-  ok('light restores the default',
-     (await p.evaluate(() => document.documentElement.getAttribute('data-theme'))) === null
-     && (await p.evaluate(() => localStorage.getItem('fsTheme'))) === 'light');
+  ok('a retired stored theme falls back to light',
+     await p.evaluate(() => { setTheme('evergreen'); return document.documentElement.getAttribute('data-theme') === null
+       && localStorage.getItem('fsTheme') === 'light'; }));
+  await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+  ok('Escape closes Settings', !(await p.locator('#settingsModal').isVisible()));
+  ok('no corner theme dock remains', (await p.locator('#themeDock').count()) === 0);
 
   // ---- Cmd/Ctrl+K: the global search palette
   const MODK = process.platform === 'darwin' ? 'Meta' : 'Control';
   await p.keyboard.press(MODK + '+k');
   ok('Cmd/Ctrl+K opens the search palette', (await p.locator('#palette.open').count()) === 1);
+  ok('palette input is inset and rounded so its focus ring is never clipped',
+     await p.evaluate(() => {
+       const card = document.querySelector('#palette .pal-card').getBoundingClientRect();
+       const inp = document.getElementById('palInput');
+       const i = inp.getBoundingClientRect();
+       // the focus box-shadow spreads 3px — the input must sit further than
+       // that inside the card on every side that has a rounded corner
+       return parseFloat(getComputedStyle(inp).borderRadius) >= 6
+         && i.left - card.left >= 4 && i.top - card.top >= 4 && card.right - i.right >= 4;
+     }));
   await p.waitForFunction(() => document.querySelectorAll('#palList .pal-row').length > 0, { timeout: 8000 });
   ok('palette lists budgets first, then analyses',
      await p.evaluate(() => {

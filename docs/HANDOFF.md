@@ -314,15 +314,16 @@ pre-engine print pipeline (`printGuide()`) is the guide's `local` fallback.
 **App-shell conveniences.** Every displayed timestamp is the viewer's LOCAL time as
 `MM-DD-YYYY h:mm AM/PM` (`fmtWhen`) or `MM-DD-YYYY` (`fmtDay`) — helpers exist in
 app/index.html, the investment module, and the producers (`fmtStamp` inside
-export-render.js / to-fsdoc.js; meta.generatedAt stays raw ISO). Three themes —
-light (default), dark, evergreen — are CSS-token remaps on `html[data-theme]`,
-persisted in `localStorage.fsTheme`, switchable from the bottom-right dock or the
-account menu; `--chrome`/`--solid` are the surfaces that stay dark in every theme,
+export-render.js / to-fsdoc.js; meta.generatedAt stays raw ISO). Two themes —
+light (default) and dark — are CSS-token remaps on `html[data-theme]`, persisted
+in `localStorage.fsTheme` (unknown stored values fall back to light), switched
+ONLY from the Settings modal (account menu → Settings; theme is its sole setting
+today); `--chrome`/`--solid` are the surfaces that stay dark in every theme,
 and a beforeprint/afterprint hook forces light for printing. Cmd/Ctrl+K opens the
 global search palette (budgets + analyses, fetched fresh per open). The analyses
 lists carry the same search/status/grouping controls as the budget list.
 
-Fourteen Playwright suites, 549 assertions, plus 80 `node:test` assertions for the
+Fourteen Playwright suites, 552 assertions, plus 80 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus
