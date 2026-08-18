@@ -92,8 +92,8 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' �
   ok('D4 unsafe name renders literally', sub.includes('Preview <Test> & Co'), sub);
 
   // D5 — status
-  await p.selectOption('#bStatus', 'Finalized');
-  ok('D5 status settable', await p.locator('#bStatus').inputValue() === 'Finalized');
+  await p.selectOption('#bStatus', 'Completed');
+  ok('D5 status settable', await p.locator('#bStatus').inputValue() === 'Completed');
 
   // U1 — collapse
   const before = await p.locator('#budBody tr').count();

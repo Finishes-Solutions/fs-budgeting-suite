@@ -346,11 +346,21 @@ combo blocks, OR a #rrggbb custom accent whose light/dark scales the client
 derives in accentScale() and applies as inline tokens), avatarColor (preset
 swatches or any custom hex → the header icon's `--avatar-bg`), tableDensity
 (comfortable/compact via `html[data-density]` — compact meaningfully compresses
-rows, badges and row menus), homeView (list/cards — Home page only;
-`.home-cards`/`.hcard`), rememberExport (a switch) + exportOptions (per-product
-export-modal defaults). Density and Home View are also flippable from the Home
-toolbar's `.mini-seg` icon toggles, which share the Settings buttons' data
-attributes so one paint marks both. The validation contract lives
+rows, badges and row menus), budgetView + analysisView (each
+'comfortable' | 'compact' | 'cards' — per-SECTION views; the density attribute
+sits on each section's card, cards use `.home-cards`/`.hcard`; legacy
+homeView/tableDensity documents map forward in the contract), rememberExport
+(a switch) + exportOptions (per-product export-modal defaults). Each list's
+toolbar carries the same three-way `.mini-seg` toggle, sharing the Settings
+buttons' data attributes so one paint marks both.
+
+**Statuses.** One shared model for budgets AND analyses: Draft · In Review ·
+Completed · Cancelled (STATUS_LIST/normStatus/statusChip in app/index.html;
+legacy 'Finalized' displays as Completed and rewrites on next edit). The chip
+is editable everywhere — list rows, cards, the budget editor's Status select,
+the analysis editor's chip — via a status-only PUT on both endpoints
+(`{status}` with no doc/input) that updates the row WITHOUT recording a
+version; full saves version exactly as before. The validation contract lives
 dependency-free in api/shared/user-settings-contract.js and is required by BOTH
 api/shared/users.js and test/mock-api.js, so it cannot drift. localStorage keeps
 pre-paint caches (fsTheme/fsAccent/fsDensity/fsAvatar/fsTimeFormat) that the
@@ -362,7 +372,7 @@ the client through `POST /api/user-activity` (whitelisted events only);
 beforeprint/afterprint hook still forces the light palette for printing;
 `--chrome`/`--solid` remain the surfaces that stay dark in every theme and accent.
 
-Fifteen Playwright suites, 610 assertions, plus 80 `node:test` assertions for the
+Fifteen Playwright suites, 617 assertions, plus 80 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus

@@ -11,8 +11,11 @@ const TIME_FORMATS = ['12h', '24h'];
 // Named accents ship curated light+dark scales; a #rrggbb value is a custom
 // accent whose scale the client derives from the picked color.
 const ACCENTS = ['green', 'blue', 'violet', 'graphite', 'red', 'orange'];
-const DENSITIES = ['comfortable', 'compact'];
-const HOME_VIEWS = ['list', 'cards'];
+// View settings: three options each — comfortable and compact are the list
+// view at two densities; cards is the card view — and each SECTION keeps its
+// own choice, so budgets can be a list while analyses are cards. (This
+// replaced the earlier homeView + tableDensity pair — sanitize maps them.)
+const LIST_VIEWS = ['comfortable', 'compact', 'cards'];
 const HEX_RX = /^#[0-9a-fA-F]{6}$/;
 
 const DEFAULT_SETTINGS = {
@@ -20,13 +23,20 @@ const DEFAULT_SETTINGS = {
   timeFormat: '12h',
   accentColor: 'green',
   avatarColor: null,          // null = the app default (accent-colored)
-  tableDensity: 'comfortable',
-  homeView: 'list',           // Home page only, for now
+  budgetView: 'comfortable',
+  analysisView: 'comfortable',
   rememberExport: false,
   exportOptions: {}           // { budget: {..bools}, analysis: {..bools} }
 };
 
 function pickEnum(v, allowed, dflt) { return allowed.includes(v) ? v : dflt; }
+
+// Legacy documents stored one homeView ('list'|'cards') + tableDensity pair.
+function legacyView(s) {
+  if (LIST_VIEWS.includes(s.listView)) return s.listView;   // brief intermediate shape
+  if (s.homeView === 'cards') return 'cards';
+  return s.tableDensity === 'compact' ? 'compact' : 'comfortable';
+}
 
 function cleanBoolMap(v) {
   const out = {};
@@ -49,8 +59,8 @@ function sanitizeSettings(input) {
       ? s.accentColor.toLowerCase()
       : pickEnum(s.accentColor, ACCENTS, DEFAULT_SETTINGS.accentColor),
     avatarColor: typeof s.avatarColor === 'string' && HEX_RX.test(s.avatarColor) ? s.avatarColor : null,
-    tableDensity: pickEnum(s.tableDensity, DENSITIES, DEFAULT_SETTINGS.tableDensity),
-    homeView: pickEnum(s.homeView, HOME_VIEWS, DEFAULT_SETTINGS.homeView),
+    budgetView: LIST_VIEWS.includes(s.budgetView) ? s.budgetView : legacyView(s),
+    analysisView: LIST_VIEWS.includes(s.analysisView) ? s.analysisView : legacyView(s),
     rememberExport: s.rememberExport === true,
     exportOptions: { budget: cleanBoolMap(ex.budget), analysis: cleanBoolMap(ex.analysis) }
   };

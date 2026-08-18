@@ -73,7 +73,8 @@
   function lvFiltered() {
     const q = lv.q.trim().toLowerCase();
     return lvRows.filter(r => {
-      if (lv.status !== 'all' && (r.status || 'Draft') !== lv.status) return false;
+      const ns = window.normStatus ? normStatus(r.status) : (r.status || 'Draft');
+      if (lv.status !== 'all' && ns !== lv.status) return false;
       if (!q) return true;
       return (r.name || '').toLowerCase().includes(q)
         || (r.projectId || '').toLowerCase().includes(q);
@@ -81,7 +82,7 @@
   }
   const LV_GROUPS = {
     project: { of: r => r.projectId || 'Standalone' },
-    status: { of: r => (r.status || 'Draft') }
+    status: { of: r => window.normStatus ? normStatus(r.status) : (r.status || 'Draft') }
   };
 
   async function renderListInto(host, opts) {
@@ -109,7 +110,8 @@
             <option value="all">All Statuses</option>
             <option value="Draft">Draft</option>
             <option value="In Review">In Review</option>
-            <option value="Finalized">Finalized</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
           </select>
           <select data-inv-group class="lt-group" title="Group the list" aria-label="Group By">
             <option value="">No Grouping</option>
@@ -118,17 +120,13 @@
           </select>
         </div>
         <div style="display:flex;gap:12px;align-items:center">
-          <div class="mini-seg" role="group" aria-label="View" title="View — also in Settings">
-            <button data-homeview-pick="list" aria-label="List View" title="List View" onclick="chooseSetting('homeView','list')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></button>
-            <button data-homeview-pick="cards" aria-label="Card View" title="Card View" onclick="chooseSetting('homeView','cards')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
-          </div>
-          <div class="mini-seg" role="group" aria-label="Table Density" title="Table Density — also in Settings">
-            <button data-density-pick="comfortable" aria-label="Comfortable Density" title="Comfortable Density" onclick="chooseSetting('tableDensity','comfortable')">
+          <div class="mini-seg" role="group" aria-label="Analyses View" title="Analyses View — also in Settings">
+            <button data-analysisview-pick="comfortable" aria-label="Comfortable List" title="Comfortable List" onclick="chooseSetting('analysisView','comfortable')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg></button>
-            <button data-density-pick="compact" aria-label="Compact Density" title="Compact Density" onclick="chooseSetting('tableDensity','compact')">
+            <button data-analysisview-pick="compact" aria-label="Compact List" title="Compact List" onclick="chooseSetting('analysisView','compact')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+            <button data-analysisview-pick="cards" aria-label="Card View" title="Card View" onclick="chooseSetting('analysisView','cards')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
           </div>
           <span class="eyebrow" data-inv-count>—</span>
         </div>
@@ -163,9 +161,13 @@
     const count = host.querySelector('[data-inv-count]');
     if (count) count.textContent = lvRows.length
       ? rows.length + ' of ' + lvRows.length + (lvRows.length === 1 ? ' analysis' : ' analyses') : '—';
-    // Card view (Settings → View, or the toolbar toggles) — Home AND the tab.
+    // Per-section view (Settings → Views, or the toolbar): cards or a list
+    // at either density — Home and the tab alike.
+    const view = A.analysisView ? A.analysisView() : 'comfortable';
+    const wrap = host.querySelector('table.inv-list').parentElement;
+    wrap.setAttribute('data-density', view === 'compact' ? 'compact' : 'comfortable');
     const cards = host.querySelector('[data-inv-cards]');
-    const cardsMode = !!(A.homeView && A.homeView() === 'cards');
+    const cardsMode = view === 'cards';
     host.querySelector('table.inv-list').style.display = cardsMode ? 'none' : '';
     if (cards) {
       cards.classList.toggle('on', cardsMode && rows.length > 0);
@@ -220,7 +222,7 @@
       <div class="hc-name">${esc(r.name)}</div>
       <div class="hc-row"><span>Purchase Price</span><span class="v">${usd(r.purchasePrice)}</span></div>
       <div class="hc-row"><span>Equity IRR</span><span class="v">${pctf(r.finalYearEquityIRR)}</span></div>
-      <div class="hc-ft"><span class="badge ${r.status === 'Finalized' ? 'ok' : ''}">${esc(r.status)}</span>
+      <div class="hc-ft">${window.statusChip ? statusChip(r.status, 'analysis', r.analysisId) : esc(r.status)}
         <span>${esc(fmtDay(r.updatedAt))}</span></div>
       <button class="rowmenu-btn hc-menu" data-inv-menu data-aid="${esc(r.analysisId)}"
         aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(r.name)}">⋮</button></div>`;
@@ -233,7 +235,7 @@
     tr.innerHTML = `
       <td${pad}>${esc(r.name)}</td>
       <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-vsub" title="Created from that exact saved budget version — not the analysis version">Budget v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
-      <td><span class="badge ${r.status === 'Finalized' ? 'ok' : ''}">${esc(r.status)}</span></td>
+      <td>${window.statusChip ? statusChip(r.status, 'analysis', r.analysisId) : esc(r.status)}</td>
       <td class="calc r">${usd(r.purchasePrice)}</td>
       <td class="calc r">${usd(r.year1NOI)}</td>
       <td class="calc r">${pctf(r.finalYearEquityIRR)}</td>
@@ -353,7 +355,7 @@
     catch (e) { A.toast('Could not load the project list — ' + e.message); return; }
     const rows = budgets.map((b, i) => `<tr class="clickable" data-pick="${i}">
         <td class="mono" style="color:var(--green-700);font-weight:600">${esc(b.projectId)}</td><td>${esc(b.name || '—')}</td>
-        <td><span class="badge ${b.status === 'Finalized' ? 'ok' : ''}">${esc(b.status || 'Draft')}</span></td>
+        <td>${stChipStatic(b.status)}</td>
         <td>${esc(fmtDay(b.updated))}</td></tr>`).join('');
     openInvModal(`<h2 style="margin-top:0">New Investment Analysis</h2>
       <div class="set-lab">From Existing Budget</div>
@@ -409,6 +411,7 @@
     try {
       const r = await A.api('investment-analysis/' + id);
       st.id = r.analysisId; st.input = r.input; st.result = r.result;
+      st.status = r.status || 'Draft';
       st.source = r.source; st.loadedVersion = r.currentVersionNumber;
       st.dirty = false; st.stale = false; st.busy = ''; st.step = r.result ? 6 : 1;
       st.viewingVersion = null; st.conflict = null; st.errors = {};
@@ -484,6 +487,19 @@
     });
   }
 
+  // Read-only status chip (used where a click already means something else,
+  // like the project picker rows). The shared classes come from index.html.
+  function stChipStatic(status) {
+    const n = window.normStatus ? normStatus(status) : (status || 'Draft');
+    const cls = { 'Draft': 'st-draft', 'In Review': 'st-review',
+      'Completed': 'st-done', 'Cancelled': 'st-cancel' }[n] || 'st-draft';
+    return `<span class="st-chip ${cls}" style="pointer-events:none">${esc(n)}</span>`;
+  }
+  function paintStatusChip() {
+    const h = el('invStatusHost');
+    if (h) h.innerHTML = st.id && window.statusChip ? statusChip(st.status, 'analysis', st.id) : '';
+  }
+
   function originBadge(path) {
     const src = st.input && st.input.source;
     const o = src && src.fieldOrigins && src.fieldOrigins[path];
@@ -530,6 +546,7 @@
             ? 'From budget <span class="mono">' + esc(st.source.projectId) + '</span> version ' + esc(st.source.budgetVersionNumber)
             : 'Standalone Analysis'}</div></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
+          <span id="invStatusHost"></span>
           <span class="inv-statebar" id="invState"></span>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
@@ -677,6 +694,7 @@
     // Badges compare against the server-stored originals, so a field edited
     // and SAVED must render with its badge already hidden on reload.
     refreshOriginBadges();
+    paintStatusChip();
   }
 
   function bindEditor(host) {
@@ -1515,6 +1533,9 @@
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep, undo, redo,
     openExport, emailSoon, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,
     _other, _otherRemove, _capex, _capexRemove,
+    _statusApplied(id, status) {
+      if (st.id === id) { st.status = status; paintStatusChip(); }
+    },
     currentId: () => st.id,
     isDirty: () => st.dirty,
     confirmLeave() {

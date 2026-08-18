@@ -91,27 +91,27 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the Remember Export Settings toggle flips the setting',
     await p.evaluate(()=>usSettings().rememberExport===true
       &&document.getElementById('setRememberExport').checked));
- await p.click('#settingsModal [data-density-pick=compact]'); await p.waitForTimeout(300);
- ok('compact density tightens the tables',
-    await p.evaluate(()=>document.documentElement.getAttribute('data-density')==='compact'));
-
- // ---- home cards view (Home page only)
- await p.click('#settingsModal [data-homeview-pick=cards]'); await p.waitForTimeout(1000);
+ // ---- per-section views: three options each, budgets and analyses separate
+ await p.click('#settingsModal [data-budgetview-pick=compact]'); await p.waitForTimeout(400);
+ ok('compact view tightens the budgets card only',
+    await p.evaluate(()=>document.getElementById('homeBudgetsCard').getAttribute('data-density')==='compact'
+      &&usSettings().analysisView==='comfortable'));
+ await p.click('#settingsModal [data-budgetview-pick=cards]'); await p.waitForTimeout(800);
  await p.keyboard.press('Escape'); await p.waitForTimeout(300);
 
- // ---- the Home toolbar quick toggles mirror Settings
- await p.click('#page-home .mini-seg [data-homeview-pick=list]'); await p.waitForTimeout(400);
- ok('the toolbar flips Home back to the list view',
+ // ---- the Home toolbar three-way toggle drives the budgets view
+ await p.click('#page-home .mini-seg [data-budgetview-pick=comfortable]'); await p.waitForTimeout(400);
+ ok('the toolbar flips budgets back to the comfortable list',
     !(await p.evaluate(()=>document.getElementById('homeCards').classList.contains('on'))));
- const hCompact=await p.evaluate(()=>document.querySelector('#homeBody td').getBoundingClientRect().height);
- await p.click('#page-home .mini-seg [data-density-pick=comfortable]'); await p.waitForTimeout(400);
  const hComfy=await p.evaluate(()=>document.querySelector('#homeBody td').getBoundingClientRect().height);
- ok('comfortable rows are clearly taller than compact rows', hComfy-hCompact>=4,
+ await p.click('#page-home .mini-seg [data-budgetview-pick=compact]'); await p.waitForTimeout(400);
+ const hCompact=await p.evaluate(()=>document.querySelector('#homeBody td').getBoundingClientRect().height);
+ ok('comfortable rows are dramatically taller than compact rows', hComfy-hCompact>=10,
     JSON.stringify({hComfy,hCompact}));
- ok('the toolbar marks the active choices',
-    await p.evaluate(()=>document.querySelector('#page-home .mini-seg [data-density-pick=comfortable]').classList.contains('on')));
- await p.click('#page-home .mini-seg [data-density-pick=compact]'); await p.waitForTimeout(200);
- await p.click('#page-home .mini-seg [data-homeview-pick=cards]'); await p.waitForTimeout(600);
+ ok('the toolbar marks the active choice',
+    await p.evaluate(()=>document.querySelector('#page-home .mini-seg [data-budgetview-pick=compact]').classList.contains('on')));
+ await p.click('#page-home .mini-seg [data-budgetview-pick=cards]'); await p.waitForTimeout(500);
+ await p.evaluate(()=>chooseSetting('analysisView','cards')); await p.waitForTimeout(900);
  ok('card view replaces the budget table on Home',
     await p.evaluate(()=>document.getElementById('homeCards').classList.contains('on')
       &&document.querySelector('#page-home .tbl').style.display==='none'
@@ -141,7 +141,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(800);
  ok('account settings survive a cleared browser',
     await p.evaluate(()=>document.documentElement.getAttribute('data-accent')==='blue'
-      &&document.documentElement.getAttribute('data-density')==='compact'
+      &&usSettings().budgetView==='cards'&&usSettings().analysisView==='cards'
       &&(window.__fsTimeFormat||'')==='24h'));
  ok('a quick return visit is not another login',
     (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json()).loginCount))===1);
@@ -151,6 +151,35 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('remembered export options seed the modal after reload',
     !(await p.locator('#ex-csi').isChecked()));
  await p.click('#exportModal .btn-x');
+
+ // ---- the shared status system: editable chips everywhere
+ await p.click('#nav-home'); await p.waitForTimeout(500);
+ await p.click('#page-home .mini-seg [data-budgetview-pick=comfortable]'); await p.waitForTimeout(400);
+ ok('budget rows carry editable status chips',
+    (await p.locator('#homeBody .st-chip').count())>=1);
+ await p.locator('#homeBody .st-chip').first().click(); await p.waitForTimeout(200);
+ ok('clicking a chip opens the status menu with all four statuses',
+    await p.evaluate(()=>['Draft','In Review','Completed','Cancelled'].every(x=>
+      document.getElementById('stMenu').textContent.includes(x))));
+ await p.click('#stMenu [data-st="In Review"]'); await p.waitForTimeout(600);
+ ok('the budget status saves and repaints without a refresh',
+    /In Review/.test(await p.locator('#homeBody .st-chip').first().textContent())
+    &&(await p.evaluate(async()=>(await (await fetch('/api/budgets')).json())[0].status))==='In Review');
+ ok('the analyses list chips are the same component',
+    (await p.locator('#homeAnalyses .st-chip').count())>=1);
+ await p.locator('#homeAnalyses .st-chip').first().click(); await p.waitForTimeout(200);
+ await p.click('#stMenu [data-st="Completed"]'); await p.waitForTimeout(600);
+ ok('the analysis status saves through the status-only PUT',
+    (await p.evaluate(async()=>(await (await fetch('/api/investment-analyses')).json())[0].status))==='Completed');
+ // the editors expose the same status controls (analyses are in card view here)
+ await p.locator('#homeAnalyses [data-inv-cards] .hcard').first().click(); await p.waitForTimeout(700);
+ ok('the analysis editor shows the editable status chip',
+    /Completed/.test(await p.locator('#invStatusHost').textContent()));
+ await p.locator('#invStatusHost .st-chip').click(); await p.waitForTimeout(200);
+ await p.click('#stMenu [data-st="Cancelled"]'); await p.waitForTimeout(600);
+ ok('changing status from the editor saves immediately',
+    /Cancelled/.test(await p.locator('#invStatusHost').textContent())
+    &&(await p.evaluate(async()=>(await (await fetch('/api/investment-analyses')).json())[0].status))==='Cancelled');
 
  // ---- activity log carries the whole story
  const evs=await p.evaluate(async()=>(await (await fetch('/api/user-activity')).json()).events.map(e=>e.eventType));

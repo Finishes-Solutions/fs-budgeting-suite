@@ -328,7 +328,17 @@ http.createServer((req, res) => {
     }
     let b = ''; req.on('data', c => b += c);
     return req.on('end', () => {
-      const { meta, doc } = JSON.parse(b);
+      const body = JSON.parse(b);
+      // status-only PUT: quick status change, no version recorded
+      if (!body.doc && typeof body.status === 'string') {
+        if (!['Draft', 'In Review', 'Completed', 'Cancelled'].includes(body.status))
+          { res.writeHead(400); return res.end('bad status'); }
+        if (!live) { res.writeHead(404); return res.end('Not found'); }
+        live.meta.status = body.status; live.doc.status = body.status;
+        live.meta.updated = live.doc.updated = new Date().toISOString();
+        return json(res, 200, { ok: true, status: body.status });
+      }
+      const { meta, doc } = body;
       if ((doc.projectId || '').toUpperCase() !== id) { res.writeHead(400); return res.end('id mismatch'); }
       const calc = parts(doc);
       meta.contractSum = Math.round(calc.contract * 100) / 100;
@@ -598,6 +608,13 @@ http.createServer((req, res) => {
     return req.on('end', () => {
       if (!a) return json(res, 404, { error: 'not_found', message: 'Not found' });
       const body = JSON.parse(b || '{}');
+      // status-only PUT: quick status change; no calculation, no version
+      if (body.input === undefined && typeof body.status === 'string') {
+        if (!['Draft', 'In Review', 'Completed', 'Cancelled'].includes(body.status))
+          return json(res, 400, { error: 'bad_request', message: 'bad status' });
+        a.status = body.status; a.updatedAt = new Date().toISOString();
+        return json(res, 200, { ok: true, status: body.status });
+      }
       const input = body.input;
       if (!input || typeof input !== 'object')
         return json(res, 400, { error: 'bad_request', message: 'Body must be { input, expectedVersionNumber }.' });

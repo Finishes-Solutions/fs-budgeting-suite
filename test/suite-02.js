@@ -139,7 +139,7 @@ const BASE = 'http://127.0.0.1:8100';
   ok('U2 sort arrow rendered',
      (await p.locator('#homeHead th[data-sort="name"]').getAttribute('data-arrow')) === '▴');
 
-  await p.selectOption('#homeStatus', 'Finalized');
+  await p.selectOption('#homeStatus', 'Completed');   // legacy Finalized maps to Completed
   ok('U2 status filter narrows to 1', (await p.locator('#homeBody tr').count()) === 1);
   await p.selectOption('#homeStatus', 'all');
   await p.fill('#homeSearch', 'zeph');

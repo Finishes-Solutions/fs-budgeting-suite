@@ -11,7 +11,6 @@
 try{
   var t=localStorage.getItem('fsTheme');if(t==='dark')document.documentElement.setAttribute('data-theme',t);
   var a=localStorage.getItem('fsAccent');if(a&&a!=='green'&&a.charAt(0)!=='#')document.documentElement.setAttribute('data-accent',a);
-  var d=localStorage.getItem('fsDensity');if(d==='compact')document.documentElement.setAttribute('data-density','compact');
   var av=localStorage.getItem('fsAvatar');if(av)document.documentElement.style.setProperty('--avatar-bg',av);
   window.__fsTimeFormat=localStorage.getItem('fsTimeFormat')==='24h'?'24h':'12h';
 }catch(_){}
@@ -125,22 +124,44 @@ html[data-theme=dark][data-accent=red]{--green-900:#3a0f0c;--green-800:#7f1d16;-
 html[data-theme=dark][data-accent=orange]{--green-900:#38200a;--green-800:#8a4c10;--green-700:#c76d15;
   --green-600:#d67f26;--green-500:#de9247;--green-200:#6e4520;--green-100:#4a2f16;--green-50:#392512;
   --focus:0 0 0 3px rgba(222,146,71,.35)}
-/* ---- Table density (Settings → Table Density, or the list toolbars) ----
-   Comfortable (the default) gives the LIST tables genuinely roomy rows;
-   compact strips them to zero vertical padding with smaller badges and row
-   menus. The budget editing grid keeps its own tighter rhythm in both. */
+/* ---- Views (Settings → Views, or the toolbars above each list) ----
+   Three options per SECTION — Comfortable, Compact, Cards — so budgets can
+   be a roomy list while analyses are cards. Comfortable (the default) gives
+   the list tables roomy rows; compact strips them to zero vertical padding
+   with smaller chips and row menus. The density attribute sits on each
+   section's own card, never globally. */
 #page-home .tbl td,.inv-list td{padding-top:9px;padding-bottom:9px}
-html[data-density=compact] .tbl td{padding-top:0;padding-bottom:0}
-html[data-density=compact] #page-home .tbl td,
-html[data-density=compact] .inv-list td{padding-top:0;padding-bottom:0}
-html[data-density=compact] .inv-table td{padding-top:2px;padding-bottom:2px}
-html[data-density=compact] .inv-list td{padding-top:0;padding-bottom:0}
-html[data-density=compact] .tbl .badge,html[data-density=compact] .inv-table .badge{
-  padding:1px 6px;font-size:9px}
-html[data-density=compact] #homeBody .rowmenu-btn,
-html[data-density=compact] .inv-list .rowmenu-btn{width:22px;height:22px;line-height:20px}
-html[data-density=compact] .tbl th,html[data-density=compact] .inv-list th{padding-top:5px;padding-bottom:5px}
-html[data-density=compact] .grp-hd td,html[data-density=compact] .inv-grp td{padding-top:3px;padding-bottom:3px}
+#page-home [data-density=compact] .tbl td,
+[data-density=compact] .inv-list td{padding-top:0;padding-bottom:0}
+[data-density=compact] .inv-table td{padding-top:2px;padding-bottom:2px}
+[data-density=compact] .tbl .badge,[data-density=compact] .inv-table .badge,
+[data-density=compact] .st-chip{padding:1px 6px;font-size:9px}
+[data-density=compact] .rowmenu-btn{width:22px;height:22px;line-height:20px}
+[data-density=compact] .tbl th,[data-density=compact] .inv-list th{padding-top:5px;padding-bottom:5px}
+[data-density=compact] .grp-hd td,[data-density=compact] .inv-grp td{padding-top:3px;padding-bottom:3px}
+/* identity cells never stack their inline pieces (TEST tag, Budget vN) */
+#homeBody td:first-child,.inv-list td:nth-child(2){white-space:nowrap}
+/* ---- Status chips: one shared, editable status system ----
+   Draft (gray) · In Review (amber) · Completed (green, accent-aware) ·
+   Cancelled (red). Restrained tints, a small dot, clickable everywhere —
+   clicking opens the status menu and saves through the status-only PUT. */
+.st-chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;
+  border:1px solid var(--ink-200);background:var(--white);cursor:pointer;white-space:nowrap;
+  font-family:var(--fm);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.st-chip::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.st-chip:hover{filter:brightness(.96)}
+.st-draft{color:var(--ink-600);border-color:var(--ink-200);background:var(--ink-50)}
+.st-review{color:#8A6116;border-color:#EAD9B0;background:#FBF3E4}
+.st-done{color:var(--green-700);border-color:var(--green-200);background:var(--green-50)}
+.st-cancel{color:#B42318;border-color:#F0C6C2;background:#FDF3F2}
+html[data-theme=dark] .st-review{color:#D9A441;border-color:#5C4715;background:#332A12}
+html[data-theme=dark] .st-cancel{color:#E0685E;border-color:#6E2D28;background:#391714}
+.st-menu{position:fixed;display:none;z-index:75;background:var(--white);border:1px solid var(--ink-200);
+  border-radius:10px;box-shadow:0 8px 28px rgba(22,25,26,.16);padding:6px;min-width:150px}
+.st-menu button{display:flex;width:100%;border:none;background:transparent;cursor:pointer;
+  padding:6px 8px;border-radius:6px;text-align:left}
+.st-menu button:hover{background:var(--ink-50)}
+.st-menu .st-chip{pointer-events:none}
 /* ---- Home card view (Settings → Home View; Home page only) ---- */
 .home-cards{display:none;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;padding:20px 22px}
 .home-cards.on{display:grid}
@@ -150,11 +171,15 @@ html[data-density=compact] .grp-hd td,html[data-density=compact] .inv-grp td{pad
 .hcard{position:relative;border:1px solid var(--ink-150);border-radius:10px;background:var(--white);
   box-shadow:var(--sh);padding:14px 16px;cursor:pointer}
 .hcard:hover{border-color:var(--green-200)}
-.hcard .hc-id{font-family:var(--fm);font-size:12px;font-weight:600;color:var(--green-700);padding-right:30px}
-.hcard .hc-name{font-size:14px;font-weight:600;color:var(--ink-950);margin:2px 0 8px;
+/* card hierarchy: quiet eyebrow ID, prominent name, labeled figures */
+.hcard .hc-id{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.06em;
+  color:var(--green-700);padding-right:30px;white-space:nowrap}
+.hcard .hc-name{font-size:15px;font-weight:600;color:var(--ink-950);margin:3px 0 10px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hcard .hc-row{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--ink-500);margin-top:4px}
-.hcard .hc-row .v{font-family:var(--fm);color:var(--ink-700);white-space:nowrap}
+.hcard .hc-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:5px}
+.hcard .hc-row span:first-child{font-family:var(--fm);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-400)}
+.hcard .hc-row .v{font-family:var(--fm);font-size:13px;font-weight:600;color:var(--ink-900);white-space:nowrap}
 .hcard .hc-ft{display:flex;justify-content:space-between;align-items:center;margin-top:10px;
   padding-top:8px;border-top:1px solid var(--ink-100);font-size:11.5px;color:var(--ink-400)}
 .hcard .hc-menu{position:absolute;top:10px;right:10px}
@@ -756,7 +781,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <button class="btn btn-primary" id="newBudgetBtn" onclick="openNewBudget()">+ New Budget</button>
     </div>
   </div>
-  <div class="card">
+  <div class="card" id="homeBudgetsCard">
     <div class="card-hd no-print">
       <div class="list-toolbar">
         <input type="text" id="homeSearch" placeholder="Search ID or name…">
@@ -764,7 +789,8 @@ th.sortable.sorted{color:var(--ink-900)}
           <option value="all">All Statuses</option>
           <option value="Draft">Draft</option>
           <option value="In Review">In Review</option>
-          <option value="Finalized">Finalized</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
         </select>
         <select id="homeGroup" class="lt-group" title="Group the list" aria-label="Group By">
           <option value="">No Grouping</option>
@@ -775,19 +801,15 @@ th.sortable.sorted{color:var(--ink-900)}
         </select>
       </div>
       <div style="display:flex;gap:12px;align-items:center">
-        <!-- Quick versions of two Settings choices, right where they act. The
-             shared data attributes keep them marked in step with the modal. -->
-        <div class="mini-seg" role="group" aria-label="Home View" title="Home View — also in Settings">
-          <button data-homeview-pick="list" aria-label="List View" title="List View" onclick="chooseSetting('homeView','list')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></button>
-          <button data-homeview-pick="cards" aria-label="Card View" title="Card View" onclick="chooseSetting('homeView','cards')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
-        </div>
-        <div class="mini-seg" role="group" aria-label="Table Density" title="Table Density — also in Settings">
-          <button data-density-pick="comfortable" aria-label="Comfortable Density" title="Comfortable Density" onclick="chooseSetting('tableDensity','comfortable')">
+        <!-- The budgets view — Comfortable · Compact · Cards — right where it
+             acts; the shared data attribute keeps it in step with Settings. -->
+        <div class="mini-seg" role="group" aria-label="Budgets View" title="Budgets View — also in Settings">
+          <button data-budgetview-pick="comfortable" aria-label="Comfortable List" title="Comfortable List" onclick="chooseSetting('budgetView','comfortable')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg></button>
-          <button data-density-pick="compact" aria-label="Compact Density" title="Compact Density" onclick="chooseSetting('tableDensity','compact')">
+          <button data-budgetview-pick="compact" aria-label="Compact List" title="Compact List" onclick="chooseSetting('budgetView','compact')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+          <button data-budgetview-pick="cards" aria-label="Card View" title="Card View" onclick="chooseSetting('budgetView','cards')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
         </div>
         <span class="eyebrow" id="homeCount">—</span>
       </div>
@@ -982,7 +1004,8 @@ th.sortable.sorted{color:var(--ink-900)}
         <select id="bStatus" style="width:130px;font-size:12px;padding:6px 8px" onchange="setStatus(this.value)">
           <option value="Draft">Draft</option>
           <option value="In Review">In Review</option>
-          <option value="Finalized">Finalized</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
         </select>
       </label>
       <button class="btn btn-ghost" onclick="go('input')">← Inputs</button>
@@ -1239,6 +1262,13 @@ th.sortable.sorted{color:var(--ink-900)}
           ten-year before-tax investment model — operating cash flows, financing, hypothetical sales, and
           investor returns — described in its own section below.</p>
 
+        <h4>Statuses</h4>
+        <p>Budgets and investment analyses share one status workflow: <b>Draft</b> (gray),
+          <b>In Review</b> (amber), <b>Completed</b> (green), and <b>Cancelled</b> (red). The status
+          chip is clickable wherever it appears — list rows, cards, the budget editor's Status field,
+          and the analysis editor's chip — and picking a new status saves immediately without creating
+          a budget version. Older budgets marked Finalized display as Completed.</p>
+
         <h4>Search Everywhere (Cmd/Ctrl+K)</h4>
         <p><b>Cmd+K</b> (or <b>Ctrl+K</b>) opens a search popup from any page. Type any part of a project ID,
           budget name, or analysis name; results list budgets first, then investment analyses. Arrow keys
@@ -1259,10 +1289,9 @@ th.sortable.sorted{color:var(--ink-900)}
           <li><b>Profile Icon Background</b> — six preset colors behind your header initials, or the
             rainbow swatch for any custom color.</li>
           <li><b>Time Format</b> — 12-hour (8:52 PM) or 24-hour (20:52) for every timestamp.</li>
-          <li><b>Table Density</b> — Comfortable or Compact rows in the lists and the budget grid.
-            Also switchable right from the Home toolbar's small icon toggles.</li>
-          <li><b>View</b> — the Home page and Investment Analysis lists as tables or as cards, also
-            switchable from the small icon toggles above each list.</li>
+          <li><b>Views</b> — three options per section: a Comfortable list, a Compact list, or Cards —
+            chosen separately for Project Budgets and Investment Analyses (a roomy budget list next to
+            analysis cards is fine). The same three-way icon toggle sits above each list.</li>
           <li><b>Exports</b> — the <b>Remember Export Settings</b> toggle: on, the sections and options
             you pick in the export popups (budget and analysis separately) become your defaults
             everywhere you sign in; off, every export starts from the standard defaults.</li>
@@ -1908,26 +1937,34 @@ th.sortable.sorted{color:var(--ink-900)}
           24-Hour<span class="set-sub">20:52</span><span class="tick">✓</span></button>
       </div>
 
-      <div class="set-lab">Table Density</div>
-      <div class="set-choice" role="group" aria-label="Table Density">
-        <button data-density-pick="comfortable" onclick="chooseSetting('tableDensity','comfortable')">
+      <div class="set-lab">Views</div>
+      <div class="set-note" style="margin:0 0 8px">Three options per section — a comfortable list, a
+        compact list, or cards — chosen separately for budgets and analyses. The same toggles sit above
+        each list.</div>
+      <div class="set-note" style="margin:0 0 4px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase">Project Budgets</div>
+      <div class="set-choice" role="group" aria-label="Project Budgets View">
+        <button data-budgetview-pick="comfortable" onclick="chooseSetting('budgetView','comfortable')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
           Comfortable<span class="tick">✓</span></button>
-        <button data-density-pick="compact" onclick="chooseSetting('tableDensity','compact')">
+        <button data-budgetview-pick="compact" onclick="chooseSetting('budgetView','compact')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
           Compact<span class="tick">✓</span></button>
-      </div>
-
-      <div class="set-lab">View</div>
-      <div class="set-choice" role="group" aria-label="Home View">
-        <button data-homeview-pick="list" onclick="chooseSetting('homeView','list')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>
-          List<span class="tick">✓</span></button>
-        <button data-homeview-pick="cards" onclick="chooseSetting('homeView','cards')">
+        <button data-budgetview-pick="cards" onclick="chooseSetting('budgetView','cards')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
           Cards<span class="tick">✓</span></button>
       </div>
-      <div class="set-note">Applies to the Home page lists and the Investment Analysis list.</div>
+      <div class="set-note" style="margin:10px 0 4px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase">Investment Analyses</div>
+      <div class="set-choice" role="group" aria-label="Investment Analyses View">
+        <button data-analysisview-pick="comfortable" onclick="chooseSetting('analysisView','comfortable')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+          Comfortable<span class="tick">✓</span></button>
+        <button data-analysisview-pick="compact" onclick="chooseSetting('analysisView','compact')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          Compact<span class="tick">✓</span></button>
+        <button data-analysisview-pick="cards" onclick="chooseSetting('analysisView','cards')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+          Cards<span class="tick">✓</span></button>
+      </div>
 
       <div class="set-lab">Exports</div>
       <label class="switch-row">
@@ -2049,11 +2086,13 @@ function applyUserSettings(){
   setTheme(s.theme||'light');
   applyAccent(s.accentColor||'green');
   applyAvatar(s.avatarColor||null);
-  applyDensity(s.tableDensity||'comfortable');
   window.__fsTimeFormat=s.timeFormat==='24h'?'24h':'12h';
   try{localStorage.setItem('fsTimeFormat',window.__fsTimeFormat);}catch(_){}
   paintSettingsUI();
 }
+/* Per-section views: 'comfortable' | 'compact' | 'cards'. */
+function budgetView(){const v=usSettings().budgetView;return ['compact','cards'].includes(v)?v:'comfortable';}
+function analysisView(){const v=usSettings().analysisView;return ['compact','cards'].includes(v)?v:'comfortable';}
 /* Named accents use the curated CSS scales; a #rrggbb custom accent derives
    its scale from the picked color (HSL ramps, light and dark variants) and
    applies it as inline tokens. Theme changes re-run this, so a custom accent
@@ -2104,18 +2143,15 @@ function applyAvatar(hex){
   else document.documentElement.style.removeProperty('--avatar-bg');
   try{hex?localStorage.setItem('fsAvatar',hex):localStorage.removeItem('fsAvatar');}catch(_){}
 }
-function applyDensity(name){
-  if(name==='compact')document.documentElement.setAttribute('data-density','compact');
-  else document.documentElement.removeAttribute('data-density');
-  try{localStorage.setItem('fsDensity',name);}catch(_){}
-}
 function chooseSetting(key,value){
   const prev=usSettings();
   US.settings=Object.assign({},prev,{[key]:value});
   applyUserSettings();
   // the affected lists re-render only when their view actually changed
-  if(key==='homeView'){
-    if(currentPage==='home')renderHome();
+  if(key==='budgetView'&&currentPage==='home')renderHome();
+  if(key==='analysisView'){
+    if(currentPage==='home'&&window.FSInvestmentUI)
+      FSInvestmentUI.renderListInto(document.getElementById('homeAnalyses'),{embedded:true});
     else if(currentPage==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
   }
   if(key==='timeFormat'&&currentPage==='home')paintHome();
@@ -2168,8 +2204,8 @@ function paintSettingsUI(){
   const vp=document.getElementById('avatarPicker');
   if(vp&&av&&!AVATAR_PRESETS.includes(av))vp.value=av.toLowerCase();
   mark('[data-timefmt-pick]',s.timeFormat||'12h');
-  mark('[data-density-pick]',s.tableDensity||'comfortable');
-  mark('[data-homeview-pick]',s.homeView||'list');
+  mark('[data-budgetview-pick]',budgetView());
+  mark('[data-analysisview-pick]',analysisView());
   const re=document.getElementById('setRememberExport');
   if(re)re.checked=!!s.rememberExport;
 }
@@ -2877,7 +2913,7 @@ async function renderHome(){
 function homeRows(){
   const q=homeView.q.trim().toLowerCase();
   const rows=index.filter(x=>{
-    if(homeView.status!=='all'&&(x.status||'Draft')!==homeView.status)return false;
+    if(homeView.status!=='all'&&normStatus(x.status)!==homeView.status)return false;
     if(!q)return true;
     return (x.projectId||'').toLowerCase().includes(q)||(x.name||'').toLowerCase().includes(q);
   });
@@ -2897,7 +2933,7 @@ const HOME_GROUPS={
             return m?({BD:'BD — Business Development',OP:'OP — Operations',
                        AS:'AS — Assessment',TST:'TST — Test'}[m[1]]||m[1]):'Other';}},
   type:   {label:'Type', of:x=>(x.type||'').trim()||'No Type'},
-  status: {label:'Status', of:x=>(x.status||'').trim()||'Draft'}
+  status: {label:'Status', of:x=>normStatus(x.status)}
 };
 // "No Address" / "No Type" are placeholders for missing data, not real groups, so
 // they are pinned last rather than landing wherever the alphabet puts them.
@@ -2917,11 +2953,84 @@ function groupedRows(rows){
               contract:map.get(k).reduce((s,x)=>s+(+x.contractSum||0),0),
               project:map.get(k).reduce((s,x)=>s+(+x.projectCost||0),0)}));
 }
-function homeMode(){return usSettings().homeView==='cards'?'cards':'list';}
+/* ============ STATUS SYSTEM ============
+   One shared, editable status model for budgets AND analyses:
+   Draft · In Review · Completed · Cancelled. Legacy 'Finalized' displays as
+   Completed and is rewritten on its next edit. The chip is clickable
+   everywhere it appears (lists, cards, editors) and saves through the
+   status-only PUT — no version is recorded for a status flip. */
+const STATUS_LIST=['Draft','In Review','Completed','Cancelled'];
+const STATUS_CLS={'Draft':'st-draft','In Review':'st-review','Completed':'st-done','Cancelled':'st-cancel'};
+function normStatus(s){
+  if(s==='Finalized')return 'Completed';
+  return STATUS_LIST.includes(s)?s:'Draft';
+}
+function statusChip(status,kind,id){
+  const s=normStatus(status);
+  return `<button class="st-chip ${STATUS_CLS[s]}" data-st-kind="${kind}" data-st-id="${esc(id)}"
+    title="Change status" aria-haspopup="menu"
+    onclick="event.stopPropagation();openStatusMenu(this)">${esc(s)}</button>`;
+}
+let stMenuBtn=null;
+function stMenuEl(){
+  let m=document.getElementById('stMenu');
+  if(!m){
+    m=document.createElement('div');
+    m.id='stMenu';m.className='st-menu';m.setAttribute('role','menu');
+    document.body.appendChild(m);
+    document.addEventListener('click',e=>{if(!m.contains(e.target)&&e.target!==stMenuBtn)closeStatusMenu();});
+  }
+  return m;
+}
+function openStatusMenu(btn){
+  const was=stMenuBtn===btn;
+  closeStatusMenu();
+  if(was)return;
+  const m=stMenuEl();
+  m.innerHTML=STATUS_LIST.map(s=>`<button role="menuitem" data-st="${s}">
+    <span class="st-chip ${STATUS_CLS[s]}">${s}</span></button>`).join('');
+  m.querySelectorAll('[data-st]').forEach(x=>x.onclick=()=>{
+    const s=x.dataset.st;closeStatusMenu();
+    setEntityStatus(btn.dataset.stKind,btn.dataset.stId,s);
+  });
+  const r=btn.getBoundingClientRect();
+  m.style.display='block';
+  m.style.top=Math.min(r.bottom+4,window.innerHeight-170)+'px';
+  m.style.left=Math.max(8,Math.min(r.left,window.innerWidth-m.offsetWidth-8))+'px';
+  stMenuBtn=btn;
+}
+function closeStatusMenu(){
+  const m=document.getElementById('stMenu');
+  if(m)m.style.display='none';
+  stMenuBtn=null;
+}
+async function setEntityStatus(kind,id,status){
+  try{
+    await api(kind==='budget'?'budget/'+encodeURIComponent(id):'investment-analysis/'+id,
+      {method:'PUT',body:JSON.stringify({status})});
+    if(kind==='budget'){
+      if(doc&&doc.projectId===id){
+        doc.status=status;
+        const sel=document.getElementById('bStatus');if(sel)sel.value=status;
+      }
+      const row=index.find(x=>x.projectId===id);if(row)row.status=status;
+      if(currentPage==='home')paintHome();
+    }else{
+      if(window.FSInvestmentUI)FSInvestmentUI._statusApplied(id,status);
+      if(currentPage==='home'&&window.FSInvestmentUI)
+        FSInvestmentUI.renderListInto(document.getElementById('homeAnalyses'),{embedded:true});
+      else if(currentPage==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
+    }
+    toast('Status updated to '+status+'.');
+  }catch(e){toast('Could not update the status — '+e.message);}
+}
+
 function paintHome(){
   const rows=homeRows(),b=document.getElementById('homeBody');b.innerHTML='';
   const cards=document.getElementById('homeCards');
-  const cardsMode=homeMode()==='cards';
+  const cardsMode=budgetView()==='cards';
+  document.getElementById('homeBudgetsCard').setAttribute('data-density',
+    budgetView()==='compact'?'compact':'comfortable');
   document.querySelector('#page-home .tbl').style.display=cardsMode?'none':'';
   cards.classList.toggle('on',cardsMode&&rows.length>0);
   cards.innerHTML='';
@@ -2961,7 +3070,7 @@ function homeCard(x){
     <div class="hc-name">${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</div>
     <div class="hc-row"><span>Contract Sum</span><span class="v">${usd(x.contractSum||0)}</span></div>
     <div class="hc-row"><span>Total Project</span><span class="v">${usd(x.projectCost||0)}</span></div>
-    <div class="hc-ft"><span class="badge ${x.status==='Finalized'?'ok':''}">${esc(x.status)}</span>
+    <div class="hc-ft">${statusChip(x.status,'budget',x.projectId)}
       <span>${esc(fmtDay(x.updated))}</span></div>
     <button class="rowmenu-btn hc-menu" data-pid="${esc(x.projectId)}" aria-haspopup="menu" aria-expanded="false"
       aria-label="Actions for ${esc(x.projectId)}" onclick="event.stopPropagation();openRowMenu(this)">⋮</button></div>`;
@@ -2971,7 +3080,7 @@ function homeRow(x){
     `<tr class="clickable" onclick="openBudget('${x.projectId}')">
       <td class="mono" style="padding-left:22px;font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
       <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
-      <td><span class="badge ${x.status==='Finalized'?'ok':''}">${esc(x.status)}</span></td>
+      <td>${statusChip(x.status,'budget',x.projectId)}</td>
       <td class="calc r">${usd(x.contractSum||0)}</td>
       <td class="calc r">${usd(x.projectCost||0)}</td>
       <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${esc(fmtDay(x.updated))}</td>
@@ -3979,7 +4088,8 @@ function renderSummary(){
   document.getElementById('mYield').textContent='Yield (net inc) '+(p.project?(100*g.netYr/p.project).toFixed(1)+'%':'—');
   document.getElementById('mPricing').textContent='Pricing '+doc.pricingVersion+(pricingFromApi?'':' · built-in fallback');
   document.getElementById('mPricing').className='badge'+(pricingFromApi?'':' warn');
-  const st=document.getElementById('bStatus');if(st&&st.value!==doc.status)st.value=doc.status;
+  const st=document.getElementById('bStatus');
+  if(st&&st.value!==normStatus(doc.status))st.value=normStatus(doc.status);
   document.getElementById('testBanner').style.display=isTest(doc.projectId)?'flex':'none';
   document.getElementById('sUnits').textContent=num(tu);
   document.getElementById('sRev').textContent=usd(g.netYr);
@@ -5141,7 +5251,7 @@ function wireDelegates(){
   document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
   document.getElementById('homeGroup').addEventListener('change',e=>{homeView.group=e.target.value;paintHome();});
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();closeNewBudget();return;}
+    if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();closeNewBudget();closeStatusMenu();return;}
     // Cmd/Ctrl+K opens the global search palette from anywhere in the app.
     if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();palToggle();return;}
     // Cmd/Ctrl+S saves rather than letting the browser offer to save the page.
@@ -5312,7 +5422,9 @@ function endBoot(){
       },
       // Per-account settings surface for the module: Home view mode,
       // remembered export options, and client-reported activity events.
-      homeView:homeMode,
+      analysisView:analysisView,
+      statusChip:statusChip,
+      normStatus:normStatus,
       exportDefaults:exportDefaultsFor,
       rememberExport:rememberExportOptions,
       activity:postActivity,

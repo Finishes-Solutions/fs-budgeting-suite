@@ -211,14 +211,14 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('grouping shows every analysis exactly once',
     (await p.locator('#page-analyses [data-inv-list] tr:not(.inv-grp)').count())===3);
  await p.selectOption('#page-analyses [data-inv-group]',''); await p.waitForTimeout(200);
- ok('the analyses toolbar carries view and density toggles',
-    await p.evaluate(()=>!!document.querySelector('#page-analyses .mini-seg [data-homeview-pick=cards]')
-      &&!!document.querySelector('#page-analyses .mini-seg [data-density-pick=compact]')));
- await p.click('#page-analyses .mini-seg [data-homeview-pick=cards]'); await p.waitForTimeout(700);
+ ok('the analyses toolbar carries the three-option view toggle',
+    await p.evaluate(()=>['comfortable','compact','cards'].every(v=>
+      !!document.querySelector('#page-analyses .mini-seg [data-analysisview-pick='+v+']'))));
+ await p.click('#page-analyses .mini-seg [data-analysisview-pick=cards]'); await p.waitForTimeout(700);
  ok('card view works on the analyses tab too',
     (await p.locator('#page-analyses [data-inv-cards] .hcard').count())>=3
     && await p.evaluate(()=>document.querySelector('#page-analyses table.inv-list').style.display==='none'));
- await p.click('#page-analyses .mini-seg [data-homeview-pick=list]'); await p.waitForTimeout(700);
+ await p.click('#page-analyses .mini-seg [data-analysisview-pick=comfortable]'); await p.waitForTimeout(700);
  await p.click('#nav-home'); await p.waitForTimeout(600);
  ok('the embedded Home list carries the same controls',
     await p.evaluate(()=>!!document.querySelector('#homeAnalyses [data-inv-q]')
@@ -247,8 +247,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       const row=document.querySelector('#homeAnalyses [data-inv-list] tr');
       return getComputedStyle(row.children[8]).textAlign==='right';
     }));
- ok('analysis statuses render as badges like the budget list',
-    (await p.locator('#homeAnalyses [data-inv-list] .badge').count())>=1);
+ ok('analysis statuses render as the shared status chips',
+    (await p.locator('#homeAnalyses [data-inv-list] .st-chip').count())>=1);
  ok('Status, Updated and the action column line up across both Home cards',
     await p.evaluate(()=>{
       const b=[...document.querySelectorAll('#homeHead th')];
