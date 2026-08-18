@@ -129,15 +129,15 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' �
 
   // D2 — the unsaved guard must fire when leaving a dirty budget
   const before2 = dialogs;
-  await p.click('#nav-home');
+  await p.click('#nav-budgets');
   ok('D2 leaving a dirty budget prompts', dialogs === before2 + 1, `dialogs=${dialogs}`);
 
-  // U2 — home search / sort (no data, but controls must wire without error)
-  await p.fill('#homeSearch', 'BD');
-  await p.selectOption('#homeStatus', 'Draft');
-  await p.click('#homeHead th[data-sort="name"]');
-  ok('U2 home controls operate without error', true);
-  ok('U2 empty state message switches', /No budgets yet/.test(await p.locator('#homeEmptyBig').textContent()));
+  // U2 — the budgets list controls (no data, but they must wire without error)
+  await p.fill('#budgetsSearch', 'BD');
+  await p.selectOption('#budgetsStatus', 'Draft');
+  await p.click('#budgetsHead th[data-sort="name"]');
+  ok('U2 budgets list controls operate without error', true);
+  ok('U2 empty state message switches', /No budgets yet/.test(await p.locator('#budgetsEmptyBig').textContent()));
 
   // U4 — deep link on cold load
   await p.goto('http://127.0.0.1:8099/index.html#/pricing', { waitUntil: 'networkidle' });

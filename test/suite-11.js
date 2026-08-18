@@ -221,38 +221,38 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#page-analyses .mini-seg [data-analysisview-pick=comfortable]'); await p.waitForTimeout(700);
  await p.click('#nav-home'); await p.waitForTimeout(600);
  ok('the embedded Home list carries the same controls',
-    await p.evaluate(()=>!!document.querySelector('#homeAnalyses [data-inv-q]')
-      &&!!document.querySelector('#homeAnalyses [data-inv-group]')));
+    await p.evaluate(()=>!!document.querySelector('#page-analyses [data-inv-q]')
+      &&!!document.querySelector('#page-analyses [data-inv-group]')));
  ok('analyses list mirrors the budget list styling: mono headers, compact rows',
     await p.evaluate(()=>{
-      const bTh=getComputedStyle(document.querySelector('#homeHead th'));
-      const aTh=getComputedStyle(document.querySelector('#homeAnalyses .inv-list th'));
-      const bTd=getComputedStyle(document.querySelector('#homeBody tr.clickable td'));
-      const aTd=getComputedStyle(document.querySelector('#homeAnalyses [data-inv-list] tr td'));
+      const bTh=getComputedStyle(document.querySelector('#budgetsHead th'));
+      const aTh=getComputedStyle(document.querySelector('#page-analyses .inv-list th'));
+      const bTd=getComputedStyle(document.querySelector('#budgetsBody tr.clickable td'));
+      const aTd=getComputedStyle(document.querySelector('#page-analyses [data-inv-list] tr td'));
       return bTh.fontFamily===aTh.fontFamily&&bTh.fontSize===aTh.fontSize
         &&bTh.letterSpacing===aTh.letterSpacing&&bTd.paddingTop===aTd.paddingTop;
     }),
     await p.evaluate(()=>JSON.stringify({
-      b:getComputedStyle(document.querySelector('#homeHead th')).fontFamily,
-      a:getComputedStyle(document.querySelector('#homeAnalyses .inv-list th')).fontFamily})));
+      b:getComputedStyle(document.querySelector('#budgetsHead th')).fontFamily,
+      a:getComputedStyle(document.querySelector('#page-analyses .inv-list th')).fontFamily})));
  ok('analyses numbers use the budget list\'s mono calc styling',
     await p.evaluate(()=>{
-      const cell=document.querySelector('#homeAnalyses [data-inv-list] tr td.calc');
-      const ref=getComputedStyle(document.querySelector('#homeBody tr.clickable td.calc'));
+      const cell=document.querySelector('#page-analyses [data-inv-list] tr td.calc');
+      const ref=getComputedStyle(document.querySelector('#budgetsBody tr.clickable td.calc'));
       return !!cell&&getComputedStyle(cell).fontFamily===ref.fontFamily
         &&getComputedStyle(cell).fontSize===ref.fontSize;
     }));
  ok('analyses Updated column right-aligns beside the row menu',
     await p.evaluate(()=>{
-      const row=document.querySelector('#homeAnalyses [data-inv-list] tr');
+      const row=document.querySelector('#page-analyses [data-inv-list] tr');
       return getComputedStyle(row.children[9]).textAlign==='right';
     }));
  ok('analysis statuses render as the shared status chips',
-    (await p.locator('#homeAnalyses [data-inv-list] .st-chip').count())>=1);
+    (await p.locator('#page-analyses [data-inv-list] .st-chip').count())>=1);
  ok('Status, Updated and the action column line up across both Home cards',
     await p.evaluate(()=>{
-      const b=[...document.querySelectorAll('#homeHead th')];
-      const a=[...document.querySelectorAll('#homeAnalyses .inv-list thead th')];
+      const b=[...document.querySelectorAll('#budgetsHead th')];
+      const a=[...document.querySelectorAll('#page-analyses .inv-list thead th')];
       const r=e=>e.getBoundingClientRect();
       const close=(x,y)=>Math.abs(x-y)<14;
       // Both tables lead with the User column, so every index below is one
@@ -262,8 +262,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
         && close(r(b[7]).left,r(a[10]).left);         // action columns
     }),
     await p.evaluate(()=>{
-      const b=[...document.querySelectorAll('#homeHead th')];
-      const a=[...document.querySelectorAll('#homeAnalyses .inv-list thead th')];
+      const b=[...document.querySelectorAll('#budgetsHead th')];
+      const a=[...document.querySelectorAll('#page-analyses .inv-list thead th')];
       const r=e=>Math.round(e.getBoundingClientRect().left);
       return JSON.stringify({bStatus:r(b[3]),aStatus:r(a[3]),bAct:r(b[7]),aAct:r(a[10])});
     }));

@@ -93,7 +93,7 @@ const BASE='http://127.0.0.1:8100';
       return vis; })());
  ok('Home and the Budgets page show the same budgets',
     await p.evaluate(()=>{
-      const a=[...document.querySelectorAll('#homeBody tr')].length;
+      const a=[...document.querySelectorAll('#budgetsBody tr')].length;
       const c=[...document.querySelectorAll('#budgetsBody tr')].length;
       return a===c&&a>0;
     }));
@@ -296,9 +296,9 @@ const BASE='http://127.0.0.1:8100';
 
  // ---------- 8. Home is untouched ----------
  await p.goto(BASE+'/index.html#/home',{waitUntil:'networkidle'}); await p.waitForTimeout(900);
- ok('Home still lists budgets', (await p.locator('#homeBody tr').count())>=2);
+ ok('Home still lists budgets', (await p.locator('#budgetsBody tr').count())>=2);
  ok('Home still opens a budget',
-    await (async()=>{ await p.click('#homeBody tr:has-text("BD-8102") td:nth-child(2)'); await p.waitForTimeout(900);
+    await (async()=>{ await p.click('#budgetsBody tr:has-text("BD-8102") td:nth-child(2)'); await p.waitForTimeout(900);
       return p.evaluate(()=>document.getElementById('page-budget').classList.contains('on')); })());
  ok('Home and Budgets open the same underlying budget',
     (await p.locator('#bTitle').textContent()).includes('Maple Court'),

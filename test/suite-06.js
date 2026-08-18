@@ -161,10 +161,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  });
  await m.waitForTimeout(400);
  ok('The budgets table pans inside its card instead of crushing', await m.evaluate(() => {
-   const bd = document.querySelector('#homeBudgetsCard .card-bd');
+   const bd = document.querySelector('#budgetsBudgetsCard .card-bd');
    return bd.scrollWidth > bd.clientWidth;
  }));
- await m.click('#homeBody tr .rowmenu-btn'); await m.waitForTimeout(300);
+ await m.click('#budgetsBody tr .rowmenu-btn'); await m.waitForTimeout(300);
  ok('The row menu offers the full action set on a phone',
     (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|')
       === 'Edit|Update Pricing|Versions|Delete',

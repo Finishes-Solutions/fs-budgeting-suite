@@ -283,8 +283,12 @@
     if (wasOpen) return;
     const m = invMenuEl();
     m.dataset.aid = analysisId;          // never interpolated into markup
+    // The pin label reads as the action it performs, so it flips per row.
+    const pinned = window.FSHome && FSHome.isPinned('analysis', analysisId);
     const items = [
-      ['open', 'Open Analysis'], ['versions', 'Versions'], ['duplicate', 'Duplicate'],
+      ['open', 'Open Analysis'],
+      ['pin', pinned ? 'Unpin From Home' : 'Pin to Home'],
+      ['versions', 'Versions'], ['duplicate', 'Duplicate'],
       ['sep'], ['delete', 'Delete Analysis', 'danger']
     ];
     m.innerHTML = items.map(([act, label, danger]) => act === 'sep'
@@ -309,6 +313,11 @@
   function invRowMenuAction(act) {
     const aid = el('invRowMenu').dataset.aid;
     closeInvRowMenu(act === 'delete');
+    if (act === 'pin') {
+      const on = window.FSHome && FSHome.togglePin('analysis', aid);
+      A.toast(on ? 'Pinned this analysis to Home.' : 'Unpinned this analysis from Home.');
+      return;
+    }
     if (act === 'open') location.hash = '#/analysis/' + aid;
     else if (act === 'versions') showVersions(aid);
     else if (act === 'duplicate') duplicate(aid);

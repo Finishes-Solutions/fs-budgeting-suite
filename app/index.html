@@ -49,7 +49,9 @@ try{
 <link rel="stylesheet" href="investment-analysis.css">
 <script src="investment-analysis.js"></script>
 <link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet" href="home.css">
 <script src="dashboard.js"></script>
+<script src="home.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 :root{
@@ -142,7 +144,7 @@ html[data-theme=dark][data-accent=orange]{--green-900:#38200a;--green-800:#8a4c1
 [data-density=compact] .tbl th,[data-density=compact] .inv-list th{padding-top:5px;padding-bottom:5px}
 [data-density=compact] .grp-hd td,[data-density=compact] .inv-grp td{padding-top:3px;padding-bottom:3px}
 /* identity cells never stack their inline pieces (TEST tag, vN) */
-#homeBody td:first-child,.inv-list td:nth-child(2){white-space:nowrap}
+#budgetsBody td:first-child,.inv-list td:nth-child(2){white-space:nowrap}
 /* ---- Status chips: one shared, editable status system ----
    Draft (gray) · In Review (amber) · Completed (green, accent-aware) ·
    Cancelled (red). Restrained tints, a small dot, clickable everywhere —
@@ -915,32 +917,11 @@ th.sortable.sorted{color:var(--ink-900)}
 </div>
 
 <!-- ================= HOME ================= -->
+<!-- ================= HOME =================
+     Not a third copy of the indexes: a personal "what should I do next"
+     screen, rendered by app/home.js from endpoints that already exist. -->
 <div class="page on" id="page-home">
-  <div class="page-title">
-    <div><h1>Project Budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-primary" id="newBudgetBtn" onclick="openNewBudget()">+ New Budget</button>
-    </div>
-  </div>
-  <!-- The budgets list is mounted here from budgetsListShell('home'), the
-       same template the dedicated Budgets page uses, so the two cannot drift. -->
-  <div id="homeBudgetsHost"></div>
-
-  <!-- Investment analyses: their own list below the budgets, rendered by the
-       investment module. Row actions (Versions, Duplicate, Delete) live in
-       each row's three-dot menu, exactly like the budget rows above. -->
-  <!-- Same layout as Project Budgets above: title row (heading left, creation
-       buttons right) sitting ABOVE the list card, not inside its header. -->
-  <div class="page-title" style="margin-top:34px">
-    <div><h1>Investment Analyses</h1>
-      <div class="sub">Before-tax underwriting, linked to exact saved budget versions.</div></div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-primary" onclick="FSInvestmentUI.openProjectPicker()">+ New Investment Analysis</button>
-    </div>
-  </div>
-  <section class="card">
-    <div class="card-bd" style="padding:0;overflow-x:auto" id="homeAnalyses"></div>
-  </section>
+  <div id="homeContent"></div>
 </div>
 
 <!-- ================= INPUTS ================= -->
@@ -2442,10 +2423,10 @@ function chooseSetting(key,value){
   US.settings=Object.assign({},prev,{[key]:value});
   applyUserSettings();
   // the affected lists re-render only when their view actually changed
-  if(key==='budgetView'&&currentPage==='home')renderHome();
+  if(key==='budgetView')paintBudgets();
   if(key==='analysisView'){
     if(currentPage==='home'&&window.FSInvestmentUI)
-      FSInvestmentUI.renderListInto(document.getElementById('homeAnalyses'),{embedded:true});
+      if(window.FSHome)FSHome.invalidate();
     else if(currentPage==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
   }
   if(key==='timeFormat'&&currentPage==='home')paintHome();
@@ -2722,6 +2703,17 @@ async function initAuth(){
         }});
     }
   }
+  if(window.FSHome)FSHome.init({
+    esc:esc, usd:usd, fmtDay:fmtDay,
+    api:api,
+    openBudget:openBudget,
+    currentPage:()=>currentPage,
+    userId:()=>(principal&&principal.userId)||'anon',
+    // Same precedence the avatar uses: the Settings display name wins,
+    // otherwise the platform name claim, otherwise a humanised sign-in local part.
+    displayName:()=>(typeof US!=='undefined'&&US.profile&&US.profile.displayName)
+      ||(principal?principalName(principal):'')
+  });
   renderProfile();
 }
 
@@ -3346,7 +3338,7 @@ function mountBudgetsList(p,hostId){
   if(gr)gr.value=homeView.group;
 }
 // Every mounted list, so a repaint keeps them in step.
-const BUDGET_LIST_PREFIXES=['home','budgets'];
+const BUDGET_LIST_PREFIXES=['budgets'];
 
 /* The dedicated Budgets page: same data load as Home, same list card. */
 async function renderBudgetsPage(){
@@ -3378,16 +3370,21 @@ function paintWorkflowPills(active){
   });
 }
 
+/* Home is the personal dashboard now (app/home.js), not a copy of the two
+   indexes. It keeps `index` fresh because the row menus and status writes
+   still read it. */
 async function renderHome(){
-  // Mount defensively: renderHome can run from a hash route before init's
-  // mount call, and an unmounted list would paint into nothing.
-  mountBudgetsList('home','homeBudgetsHost');
   index=(await sGet('budgets-index'))||[];
-  paintHome();
-  // The investment analyses render as their own list below the budgets; a
-  // failure there must never blank the budget list, so it renders separately.
-  if(window.FSInvestmentUI)
-    FSInvestmentUI.renderListInto(document.getElementById('homeAnalyses'),{embedded:true});
+  if(window.FSHome)FSHome.show();
+}
+
+/* A budget was created, deleted or repriced: refresh both surfaces that show
+   budgets. Callers used to get this for free from renderHome(), because Home
+   WAS the list; it is not any more, so the refresh has to be explicit. */
+async function refreshBudgetSurfaces(){
+  index=(await sGet('budgets-index'))||[];
+  paintBudgets();
+  if(window.FSHome){FSHome.invalidate();if(currentPage==='home')FSHome.show();}
 }
 function homeRows(){
   const q=homeView.q.trim().toLowerCase();
@@ -3505,7 +3502,7 @@ async function setEntityStatus(kind,id,status){
     }else{
       if(window.FSInvestmentUI)FSInvestmentUI._statusApplied(id,status);
       if(currentPage==='home'&&window.FSInvestmentUI)
-        FSInvestmentUI.renderListInto(document.getElementById('homeAnalyses'),{embedded:true});
+        if(window.FSHome)FSHome.invalidate();
       else if(currentPage==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
     }
     toast('Status updated to '+status+'.');
@@ -3845,10 +3842,16 @@ async function openBudget(pid,page){
    shared element positioned from the trigger, which keeps "only one open" true
    by construction and survives paintHome() rebuilding every row. */
 let rowMenuTrigger=null,versionsReturn=null,versionsPid=null;
-const ROW_ACTIONS=[{act:'edit',label:'Edit'},
-                   {act:'reprice',label:'Update Pricing'},
-                   {act:'versions',label:'Versions'},
-                   {act:'sep'},{act:'delete',label:'Delete',danger:true}];
+/* The pin label reads as the action it performs, so it flips per row — hence
+   a function rather than a constant list. */
+function rowActions(pid){
+  const pinned=window.FSHome&&FSHome.isPinned('budget',pid);
+  return [{act:'edit',label:'Edit'},
+          {act:'pin',label:pinned?'Unpin From Home':'Pin to Home'},
+          {act:'reprice',label:'Update Pricing'},
+          {act:'versions',label:'Versions'},
+          {act:'sep'},{act:'delete',label:'Delete',danger:true}];
+}
 function rowMenuItems(){return [...document.querySelectorAll('#rowMenu .rowmenu-item')];}
 function openRowMenu(btn){
   const wasOpen=rowMenuTrigger===btn;
@@ -3856,7 +3859,7 @@ function openRowMenu(btn){
   if(wasOpen)return;                       // the trigger toggles its own menu
   const m=document.getElementById('rowMenu');
   m.dataset.pid=btn.dataset.pid;           // never interpolated into markup
-  m.innerHTML=ROW_ACTIONS
+  m.innerHTML=rowActions(btn.dataset.pid)
     .map(a=>a.act==='sep'?'<div class="rowmenu-sep"></div>'
     :`<button class="rowmenu-item${a.danger?' danger':''}" role="menuitem" tabindex="-1" data-act="${a.act}">${a.label}</button>`).join('');
   rowMenuItems().forEach(el=>{el.onclick=()=>rowMenuAction(el.dataset.act);});
@@ -3879,6 +3882,11 @@ function rowMenuAction(act){
   const pid=document.getElementById('rowMenu').dataset.pid,t=rowMenuTrigger;
   versionsReturn=t;
   closeRowMenu(act==='delete');            // the other two navigate away from the row
+  if(act==='pin'){
+    const on=window.FSHome&&FSHome.togglePin('budget',pid);
+    toast(on?('Pinned '+pid+' to Home.'):('Unpinned '+pid+' from Home.'));
+    return;
+  }
   if(act==='edit')openBudget(pid);
   else if(act==='reprice')repriceFromHome(pid);
   else if(act==='versions')openVersions(pid);
@@ -3972,7 +3980,7 @@ async function deleteBudget(pid){
   if(!confirm('Delete '+pid+'?\n\nIt will be removed from your budgets list. Its saved version history is kept, and an administrator can restore it.'))return;
   try{await sDel('budget-'+pid);}catch(e){toast('Delete failed: '+e.message);return;}
   if(doc&&doc.projectId===pid){doc=null;dirty=false;disableDocNav();}
-  renderHome();toast('Deleted '+pid);
+  refreshBudgetSurfaces();toast('Deleted '+pid);
 }
 
 /* ============ FORMS ============ */
@@ -5759,7 +5767,6 @@ function wireDelegates(){
   // the account default when Settings → Exports says to remember.
   document.querySelectorAll('#exportModal input[type=checkbox]').forEach(c=>
     c.addEventListener('change',()=>rememberExportOptions('budget',sel())));
-  mountBudgetsList('home','homeBudgetsHost');
   mountBudgetsList('budgets','budgetsHost');
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();closeNewBudget();closeStatusMenu();return;}

@@ -290,22 +290,22 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.evaluate(()=>go('home'));
  await p.waitForTimeout(900);
  ok('the budget table has a User column header',
-    await p.evaluate(()=>{const th=document.querySelector('#homeHead th');
+    await p.evaluate(()=>{const th=document.querySelector('#budgetsHead th');
       return th&&th.textContent.trim()==='User';}),
-    await p.evaluate(()=>document.querySelector('#homeHead th').textContent.trim()));
+    await p.evaluate(()=>document.querySelector('#budgetsHead th').textContent.trim()));
  ok('budget header and body cell counts match',
     await p.evaluate(()=>{
-      const heads=document.querySelectorAll('#homeHead th').length;
-      const row=document.querySelector('#homeBody tr:not(.grp-hd)');
+      const heads=document.querySelectorAll('#budgetsHead th').length;
+      const row=document.querySelector('#budgetsBody tr:not(.grp-hd)');
       return !row || row.children.length===heads;
     }),
     await p.evaluate(()=>{
-      const row=document.querySelector('#homeBody tr:not(.grp-hd)');
-      return 'th='+document.querySelectorAll('#homeHead th').length+' td='+(row?row.children.length:'no rows');
+      const row=document.querySelector('#budgetsBody tr:not(.grp-hd)');
+      return 'th='+document.querySelectorAll('#budgetsHead th').length+' td='+(row?row.children.length:'no rows');
     }));
  ok('the avatar sits in the first cell, on its own',
     await p.evaluate(()=>{
-      const row=document.querySelector('#homeBody tr:not(.grp-hd)');
+      const row=document.querySelector('#budgetsBody tr:not(.grp-hd)');
       if(!row) return true;
       const first=row.children[0];
       // the User cell holds the avatar and nothing else
@@ -316,22 +316,22 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // same component the analyses list uses — not a generic placeholder.
  ok('the budget avatar shows the creator initials',
     await p.evaluate(()=>{
-      const av=document.querySelector('#homeBody tr:not(.grp-hd) .creator-av');
+      const av=document.querySelector('#budgetsBody tr:not(.grp-hd) .creator-av');
       return !!av && /^[A-Z]{1,2}$/.test(av.textContent.trim());
     }),
     await p.evaluate(()=>{
-      const av=document.querySelector('#homeBody tr:not(.grp-hd) .creator-av');
+      const av=document.querySelector('#budgetsBody tr:not(.grp-hd) .creator-av');
       return av?av.textContent.trim():'no avatar';
     }));
  ok('the budget avatar names the creator on hover',
     await p.evaluate(()=>{
-      const av=document.querySelector('#homeBody tr:not(.grp-hd) .creator-av');
+      const av=document.querySelector('#budgetsBody tr:not(.grp-hd) .creator-av');
       return !!av && (av.getAttribute('title')||'').length>0;
     }));
  ok('budget and analysis avatars are the same component',
     await p.evaluate(()=>{
-      const b=document.querySelector('#homeBody tr:not(.grp-hd) .creator-av');
-      const a=document.querySelector('#homeAnalyses .creator-av');
+      const b=document.querySelector('#budgetsBody tr:not(.grp-hd) .creator-av');
+      const a=document.querySelector('#page-analyses .creator-av');
       if(!b||!a) return false;
       const cb=getComputedStyle(b), ca=getComputedStyle(a);
       return cb.width===ca.width&&cb.height===ca.height&&cb.borderRadius===ca.borderRadius;
@@ -341,13 +341,13 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.evaluate(()=>chooseSetting('budgetView','cards'));
  await p.waitForTimeout(600);
  ok('budget cards carry the creator avatar',
-    await p.evaluate(()=>!!document.querySelector('#homeCards .hcard .hc-id .creator-av')));
+    await p.evaluate(()=>!!document.querySelector('#budgetsCards .hcard .hc-id .creator-av')));
  ok('the budget card avatar sits with the project ID',
     await p.evaluate(()=>{
-      const id=document.querySelector('#homeCards .hcard .hc-id');
+      const id=document.querySelector('#budgetsCards .hcard .hc-id');
       return !!id && !!id.querySelector('.creator-av') && /BD-|TST-|AS-|OP-/.test(id.textContent);
     }),
-    await p.evaluate(()=>{const id=document.querySelector('#homeCards .hcard .hc-id');return id?id.textContent.trim():'none';}));
+    await p.evaluate(()=>{const id=document.querySelector('#budgetsCards .hcard .hc-id');return id?id.textContent.trim():'none';}));
  await p.evaluate(()=>chooseSetting('budgetView','comfortable'));
  await p.waitForTimeout(500);
 
