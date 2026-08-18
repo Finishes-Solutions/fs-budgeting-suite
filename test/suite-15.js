@@ -99,31 +99,35 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#settingsModal [data-budgetview-pick=cards]'); await p.waitForTimeout(800);
  await p.keyboard.press('Escape'); await p.waitForTimeout(300);
 
- // ---- the Home toolbar three-way toggle drives the budgets view
- await p.click('#page-home .mini-seg [data-budgetview-pick=comfortable]'); await p.waitForTimeout(400);
+ // ---- the Budgets toolbar three-way toggle drives the budgets view
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
+ await p.click('#page-budgets .mini-seg [data-budgetview-pick=comfortable]'); await p.waitForTimeout(400);
  ok('the toolbar flips budgets back to the comfortable list',
     !(await p.evaluate(()=>document.getElementById('budgetsCards').classList.contains('on'))));
  const hComfy=await p.evaluate(()=>document.querySelector('#budgetsBody td').getBoundingClientRect().height);
- await p.click('#page-home .mini-seg [data-budgetview-pick=compact]'); await p.waitForTimeout(400);
+ await p.click('#page-budgets .mini-seg [data-budgetview-pick=compact]'); await p.waitForTimeout(400);
  const hCompact=await p.evaluate(()=>document.querySelector('#budgetsBody td').getBoundingClientRect().height);
  ok('comfortable rows are dramatically taller than compact rows', hComfy-hCompact>=10,
     JSON.stringify({hComfy,hCompact}));
  ok('the toolbar marks the active choice',
-    await p.evaluate(()=>document.querySelector('#page-home .mini-seg [data-budgetview-pick=compact]').classList.contains('on')));
- await p.click('#page-home .mini-seg [data-budgetview-pick=cards]'); await p.waitForTimeout(500);
+    await p.evaluate(()=>document.querySelector('#page-budgets .mini-seg [data-budgetview-pick=compact]').classList.contains('on')));
+ await p.click('#page-budgets .mini-seg [data-budgetview-pick=cards]'); await p.waitForTimeout(500);
  await p.evaluate(()=>chooseSetting('analysisView','cards')); await p.waitForTimeout(900);
- ok('card view replaces the budget table on Home',
+ ok('card view replaces the budget table on the Budgets page',
     await p.evaluate(()=>document.getElementById('budgetsCards').classList.contains('on')
-      &&document.querySelector('#page-home .tbl').style.display==='none'
+      &&document.querySelector('#page-budgets .tbl').style.display==='none'
       &&document.querySelectorAll('#budgetsCards .hcard').length>=1));
+ await p.evaluate(()=>go('analyses')); await p.waitForTimeout(800);
  ok('analyses render as cards too',
     (await p.locator('#page-analyses [data-inv-cards] .hcard').count())>=1);
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
  ok('a budget card carries the money and status',
     /Contract Sum/.test(await p.locator('#budgetsCards .hcard').first().textContent())
     &&/\$2,000,000|\$/.test(await p.locator('#budgetsCards .hcard').first().textContent()));
+ await p.evaluate(()=>go('analyses')); await p.waitForTimeout(800);
  await p.locator('#page-analyses [data-inv-cards] .hcard').first().click(); await p.waitForTimeout(700);
  ok('clicking an analysis card opens the editor', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
- await p.click('#nav-home'); await p.waitForTimeout(500);
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
  await p.locator('#budgetsCards .hcard').first().click(); await p.waitForTimeout(700);
  ok('clicking a budget card opens the budget',
     await p.evaluate(()=>doc&&doc.projectId==='TST-9955'));
@@ -145,16 +149,16 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       &&(window.__fsTimeFormat||'')==='24h'));
  ok('a quick return visit is not another login',
     (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json()).loginCount))===1);
- await p.click('#nav-home'); await p.waitForTimeout(500);
- await p.click('#page-home .hcard'); await p.waitForTimeout(700);
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
+ await p.click('#page-budgets .hcard'); await p.waitForTimeout(700);
  await p.click('#page-budget button:has-text("Export")'); await p.waitForTimeout(300);
  ok('remembered export options seed the modal after reload',
     !(await p.locator('#ex-csi').isChecked()));
  await p.click('#exportModal .btn-x');
 
  // ---- the shared status system: editable chips everywhere
- await p.click('#nav-home'); await p.waitForTimeout(500);
- await p.click('#page-home .mini-seg [data-budgetview-pick=comfortable]'); await p.waitForTimeout(400);
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
+ await p.click('#page-budgets .mini-seg [data-budgetview-pick=comfortable]'); await p.waitForTimeout(400);
  ok('budget rows carry editable status chips',
     (await p.locator('#budgetsBody .st-chip').count())>=1);
  await p.locator('#budgetsBody .st-chip').first().click(); await p.waitForTimeout(200);
@@ -165,6 +169,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the budget status saves and repaints without a refresh',
     /In Review/.test(await p.locator('#budgetsBody .st-chip').first().textContent())
     &&(await p.evaluate(async()=>(await (await fetch('/api/budgets')).json())[0].status))==='In Review');
+ await p.evaluate(()=>go('analyses')); await p.waitForTimeout(800);
  ok('the analyses list chips are the same component',
     (await p.locator('#page-analyses .st-chip').count())>=1);
  await p.locator('#page-analyses .st-chip').first().click(); await p.waitForTimeout(200);

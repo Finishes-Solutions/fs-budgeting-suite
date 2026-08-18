@@ -128,7 +128,11 @@ function timeBucket(h) {
 }
 
 function pickGreeting() {
-  if (greeting) return greeting;
+  var isEmpty = !budgets.length && !analyses.length;
+  // Held for the page load so a repaint does not reshuffle it — but re-picked
+  // when the account crosses from empty to having work, or the first budget
+  // someone creates would leave "Let's get started" on screen all session.
+  if (greeting && greeting.empty === isEmpty) return greeting;
   // The adapter hands over an already-humanised name ("Matthew Sinitiere"),
   // so the first word is the first name.
   var who = (A.displayName && A.displayName()) || '';
@@ -136,7 +140,7 @@ function pickGreeting() {
   if (firstName.length > 20) firstName = '';        // not a name, do not use it
 
   var pool;
-  if (!budgets.length && !analyses.length) {
+  if (isEmpty) {
     pool = GREET.empty;
     firstName = '';                                  // a first run should not feel over-familiar
   } else {
@@ -146,7 +150,7 @@ function pickGreeting() {
     pool = Math.random() < 0.5 ? tod : GREET.returning;
   }
   var pick = pool[Math.floor(Math.random() * pool.length)];
-  greeting = { title: pick[0] + (firstName ? ', ' + firstName : ''), sub: pick[1] };
+  greeting = { title: pick[0] + (firstName ? ', ' + firstName : ''), sub: pick[1], empty: isEmpty };
   return greeting;
 }
 
@@ -438,15 +442,22 @@ function render() {
   host.innerHTML = html;
 }
 
+/* Home refetches every time it is opened, and paints what it already has
+   first so the page is never blank while that happens.
+
+   Caching for the page's lifetime was wrong: hash routes are same-document
+   navigations, so returning to Home after creating a budget would keep showing
+   the state from before it existed — the empty "no budgets yet" screen next to
+   a Budgets page listing them. A dashboard has to be current. */
 async function show() {
-  if (!loaded && !loading) {
-    render();                 // paint the loading state first
-    await load();
-  }
+  render();                   // instant: whatever is cached, or the loading state
+  if (loading) return;        // a load is already in flight and will render itself
+  await load();
   render();
 }
-// A save or delete elsewhere should be reflected next time Home is opened.
-function invalidate() { loaded = false; }
+// Content is known to be wrong (a delete): drop it so the next paint shows the
+// loading state rather than a record that is gone.
+function invalidate() { loaded = false; budgets = []; analyses = []; }
 
 window.FSHome = {
   init: function (a) { A = a || {}; },

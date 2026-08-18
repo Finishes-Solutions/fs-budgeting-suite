@@ -147,19 +147,31 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('Home offers a single New Investment Analysis button',
     (await p.locator('#page-home button:has-text("+ New Investment Analysis")').count())===1
     && (await p.locator('#page-home button:has-text("+ Blank Investment Analysis")').count())===0);
- // title row above the card, exactly like Project Budgets
- ok('Investment Analyses heading and buttons sit above the list card',
+ // Home is a dashboard now: one hero carrying both create actions, rather
+ // than two titled list sections stacked down the page.
+ ok('both create actions sit together in the Home hero',
     await p.evaluate(()=>{
-      const hs=[...document.querySelectorAll('#page-home .page-title h1')].map(x=>x.textContent.trim());
-      if(JSON.stringify(hs)!==JSON.stringify(['Project Budgets','Investment Analyses']))return false;
-      const t=[...document.querySelectorAll('#page-home .page-title')][1];
-      return !t.closest('.card')&&!!t.nextElementSibling&&t.nextElementSibling.classList.contains('card');
-    }));
+      const hero=document.querySelector('#page-home .hm-actions');
+      if(!hero)return false;
+      const t=[...hero.querySelectorAll('button')].map(b=>b.textContent.trim());
+      return t.some(x=>/\+ New Budget/.test(x))&&t.some(x=>/\+ New Investment Analysis/.test(x));
+    }),
+    await p.evaluate(()=>{const h=document.querySelector('#page-home .hm-actions');
+      return h?[...h.querySelectorAll('button')].map(b=>b.textContent.trim()).join('|'):'no hero';}));
  const bBtn=await p.locator('#page-home button:has-text("+ New Budget")').boundingBox();
  const iBtn=await p.locator('#page-home button:has-text("+ New Investment Analysis")').boundingBox();
- ok('creation buttons right-align across both sections',
-    Math.abs((bBtn.x+bBtn.width)-(iBtn.x+iBtn.width))<2,
-    JSON.stringify({budget:bBtn.x+bBtn.width,analysis:iBtn.x+iBtn.width}));
+ ok('the two create buttons share one row',
+    Math.abs(bBtn.y-iBtn.y)<4,
+    JSON.stringify({budgetY:Math.round(bBtn.y),analysisY:Math.round(iBtn.y)}));
+ // The titled-heading-above-a-card layout now belongs to the Analyses page.
+ await p.evaluate(()=>go('analyses')); await p.waitForTimeout(700);
+ ok('Investment Analyses heading and buttons sit above its list card',
+    await p.evaluate(()=>{
+      const t=document.querySelector('#page-analyses .page-title');
+      if(!t||!/Investment Analyses/.test(t.textContent))return false;
+      return !t.closest('.card')&&!!t.nextElementSibling&&t.nextElementSibling.classList.contains('card');
+    }));
+ await p.evaluate(()=>go('home')); await p.waitForTimeout(600);
  await p.click('#page-home button:has-text("+ New Investment Analysis")');
  await p.waitForTimeout(400);
  ok('the modal offers linked creation AND standalone in one place',
@@ -217,10 +229,16 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#page-analyses .mini-seg [data-analysisview-pick=cards]'); await p.waitForTimeout(700);
  ok('card view works on the analyses tab too',
     (await p.locator('#page-analyses [data-inv-cards] .hcard').count())>=3
-    && await p.evaluate(()=>document.querySelector('#page-analyses table.inv-list').style.display==='none'));
+    && await p.evaluate(()=>document.querySelector('#page-analyses table.inv-list').style.display==='none'),
+    await p.evaluate(()=>({
+      cards:document.querySelectorAll('#page-analyses [data-inv-cards] .hcard').length,
+      tableDisplay:document.querySelector('#page-analyses table.inv-list')?.style.display,
+      view:(window.US&&US.settings&&US.settings.analysisView)||'?'
+    })).then(JSON.stringify));
  await p.click('#page-analyses .mini-seg [data-analysisview-pick=comfortable]'); await p.waitForTimeout(700);
- await p.click('#nav-home'); await p.waitForTimeout(600);
- ok('the embedded Home list carries the same controls',
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
+ await p.evaluate(()=>go('analyses')); await p.waitForTimeout(700);
+ ok('the analyses list carries the same controls',
     await p.evaluate(()=>!!document.querySelector('#page-analyses [data-inv-q]')
       &&!!document.querySelector('#page-analyses [data-inv-group]')));
  ok('analyses list mirrors the budget list styling: mono headers, compact rows',
@@ -249,24 +267,34 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     }));
  ok('analysis statuses render as the shared status chips',
     (await p.locator('#page-analyses [data-inv-list] .st-chip').count())>=1);
- ok('Status, Updated and the action column line up across both Home cards',
-    await p.evaluate(()=>{
-      const b=[...document.querySelectorAll('#budgetsHead th')];
-      const a=[...document.querySelectorAll('#page-analyses .inv-list thead th')];
-      const r=e=>e.getBoundingClientRect();
-      const close=(x,y)=>Math.abs(x-y)<14;
-      // Both tables lead with the User column, so every index below is one
-      // further along than the column's position in the visible layout.
-      return close(r(b[3]).left,r(a[3]).left)         // Status columns
-        && close(r(b[6]).right,r(a[9]).right)         // Updated columns
-        && close(r(b[7]).left,r(a[10]).left);         // action columns
-    }),
-    await p.evaluate(()=>{
-      const b=[...document.querySelectorAll('#budgetsHead th')];
-      const a=[...document.querySelectorAll('#page-analyses .inv-list thead th')];
-      const r=e=>Math.round(e.getBoundingClientRect().left);
-      return JSON.stringify({bStatus:r(b[3]),aStatus:r(a[3]),bAct:r(b[7]),aAct:r(a[10])});
-    }));
+ // The two lists are separate pages now, so absolute positions cannot be
+ // compared in one shot. Measure each while it is the visible page and compare
+ // offsets from its own table's left edge — that is what "line up" means.
+ const colOffsets=async(pageId,headSel)=>p.evaluate(([pid,hs])=>{
+   const head=document.querySelector(hs);
+   const tbl=head.closest('table');
+   const base=tbl.getBoundingClientRect();
+   const ths=[...head.querySelectorAll('th')];
+   return {width:Math.round(base.width),
+           left:ths.map(t=>Math.round(t.getBoundingClientRect().left-base.left)),
+           right:ths.map(t=>Math.round(base.right-t.getBoundingClientRect().right))};
+ },[pageId,headSel]);
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
+ const bCols=await colOffsets('page-budgets','#budgetsHead');
+ await p.evaluate(()=>go('analyses')); await p.waitForTimeout(700);
+ const aCols=await colOffsets('page-analyses','#page-analyses .inv-list thead tr');
+ const near=(x,y)=>Math.abs(x-y)<14;
+ ok('the two lists are the same width',
+    near(bCols.width,aCols.width), JSON.stringify({b:bCols.width,a:aCols.width}));
+ ok('Status starts at the same offset in both lists',
+    near(bCols.left[3],aCols.left[3]),
+    JSON.stringify({budget:bCols.left[3],analysis:aCols.left[3]}));
+ ok('Updated ends at the same offset in both lists',
+    near(bCols.right[6],aCols.right[9]),
+    JSON.stringify({budget:bCols.right[6],analysis:aCols.right[9]}));
+ ok('the action column starts at the same offset in both lists',
+    near(bCols.right[7],aCols.right[10]),
+    JSON.stringify({budget:bCols.right[7],analysis:aCols.right[10]}));
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

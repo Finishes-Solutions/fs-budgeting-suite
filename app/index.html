@@ -134,8 +134,8 @@ html[data-theme=dark][data-accent=orange]{--green-900:#38200a;--green-800:#8a4c1
    the list tables roomy rows; compact strips them to zero vertical padding
    with smaller chips and row menus. The density attribute sits on each
    section's own card, never globally. */
-#page-home .tbl td,.inv-list td{padding-top:9px;padding-bottom:9px}
-#page-home [data-density=compact] .tbl td,
+#page-budgets .tbl td,.inv-list td{padding-top:9px;padding-bottom:9px}
+#page-budgets [data-density=compact] .tbl td,
 [data-density=compact] .inv-list td{padding-top:0;padding-bottom:0}
 [data-density=compact] .inv-table td{padding-top:2px;padding-bottom:2px}
 [data-density=compact] .tbl .badge,[data-density=compact] .inv-table .badge,
@@ -267,15 +267,15 @@ input.set-locked{background:var(--ink-50);color:var(--ink-500);cursor:not-allowe
    metrics → Updated → actions), so the anchors align across both cards.
    Fixed layout makes the percentage widths exact — auto layout re-weights
    by content and the anchors drift apart. */
-#page-home .tbl,#page-home .inv-table.inv-list,#page-analyses .inv-table.inv-list{table-layout:fixed}
-#page-home .tbl th[data-sort=projectId]{width:11%}
-#page-home .tbl th[data-sort=name]{width:31%}
-#page-home .tbl th[data-sort=status]{width:var(--lt-status)}
-#page-home .tbl th[data-sort=contractSum],#page-home .tbl th[data-sort=projectCost]{width:19%}
-#page-home .tbl th[data-sort=updated]{width:var(--lt-updated)}
-#page-home .tbl th.no-print{width:var(--lt-actions)}
+#page-budgets .tbl,#page-analyses .inv-table.inv-list{table-layout:fixed}
+#page-budgets .tbl th[data-sort=projectId]{width:11%}
+#page-budgets .tbl th[data-sort=name]{width:31%}
+#page-budgets .tbl th[data-sort=status]{width:var(--lt-status)}
+#page-budgets .tbl th[data-sort=contractSum],#page-budgets .tbl th[data-sort=projectCost]{width:19%}
+#page-budgets .tbl th[data-sort=updated]{width:var(--lt-updated)}
+#page-budgets .tbl th.no-print{width:var(--lt-actions)}
 /* The User column carries .no-print too, so it reclaims its own width here. */
-#page-home .tbl th.lt-user-col{width:var(--lt-user)}
+#page-budgets .tbl th.lt-user-col{width:var(--lt-user)}
 /* ---- shared list toolbar: both Home cards use the identical control row */
 .list-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .list-toolbar input[type=text]{width:240px}
@@ -515,7 +515,7 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
   .card-bd{padding:14px;overflow-x:auto}
   /* Data tables keep their desktop column widths and pan horizontally; letting
      them shrink instead stacks text on top of itself. */
-  #page-home .tbl,.inv-table.inv-list{min-width:720px}
+  #page-budgets .tbl,.inv-table.inv-list{min-width:720px}
   #page-budget .tbl,#page-csi .tbl{min-width:760px}
   #page-input .tbl{min-width:640px}
   #page-pricing .tbl{min-width:640px}
@@ -2424,12 +2424,14 @@ function chooseSetting(key,value){
   applyUserSettings();
   // the affected lists re-render only when their view actually changed
   if(key==='budgetView')paintBudgets();
-  if(key==='analysisView'){
-    if(currentPage==='home'&&window.FSInvestmentUI)
-      if(window.FSHome)FSHome.invalidate();
-    else if(currentPage==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
+  if(key==='analysisView'&&currentPage==='analyses'&&window.FSInvestmentUI){
+    FSInvestmentUI.renderList();
   }
-  if(key==='timeFormat'&&currentPage==='home')paintHome();
+  // Home shows relative times and status chips, so a format change repaints it.
+  if((key==='timeFormat'||key==='analysisView'||key==='budgetView')
+     &&currentPage==='home'&&window.FSHome){
+    FSHome.invalidate();FSHome.show();
+  }
   queueSettingsSave();
 }
 function queueSettingsSave(){

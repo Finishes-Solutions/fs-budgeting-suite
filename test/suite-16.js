@@ -287,7 +287,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // ---- the creator avatar lives in its own labelled User column, not crammed
  // against the name. Column counts must match headers or cells overlap.
- await p.evaluate(()=>go('home'));
+ await p.evaluate(()=>go('budgets'));
  await p.waitForTimeout(900);
  ok('the budget table has a User column header',
     await p.evaluate(()=>{const th=document.querySelector('#budgetsHead th');
@@ -328,14 +328,6 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       const av=document.querySelector('#budgetsBody tr:not(.grp-hd) .creator-av');
       return !!av && (av.getAttribute('title')||'').length>0;
     }));
- ok('budget and analysis avatars are the same component',
-    await p.evaluate(()=>{
-      const b=document.querySelector('#budgetsBody tr:not(.grp-hd) .creator-av');
-      const a=document.querySelector('#page-analyses .creator-av');
-      if(!b||!a) return false;
-      const cb=getComputedStyle(b), ca=getComputedStyle(a);
-      return cb.width===ca.width&&cb.height===ca.height&&cb.borderRadius===ca.borderRadius;
-    }));
 
  // card view carries the avatar too, on budgets as well as analyses
  await p.evaluate(()=>chooseSetting('budgetView','cards'));
@@ -353,12 +345,27 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // the analyses list: same contract, and the off-by-one that overlapped the
  // name and project cells shows up as a header/cell count mismatch
+ await p.evaluate(()=>go('analyses'));
+ await p.waitForTimeout(900);
  await p.evaluate(()=>{const s=document.querySelector('[data-inv-view="comfortable"],[data-invview-pick="comfortable"]');if(s)s.click();});
  await p.waitForTimeout(400);
  ok('the analyses table has a User column header',
     await p.evaluate(()=>{const th=document.querySelector('table.inv-list thead th');
       return th&&th.textContent.trim()==='User';}),
     await p.evaluate(()=>{const th=document.querySelector('table.inv-list thead th');return th?th.textContent.trim():'none';}));
+ ok('budget and analysis avatars are the same component',
+    await p.evaluate(()=>{
+      const b=document.querySelector('#budgetsBody tr:not(.grp-hd) .creator-av');
+      const a=document.querySelector('#page-analyses .creator-av');
+      if(!b||!a) return false;
+      const cb=getComputedStyle(b), ca=getComputedStyle(a);
+      return cb.width===ca.width&&cb.height===ca.height&&cb.borderRadius===ca.borderRadius;
+    }),
+    await p.evaluate(()=>{
+      const b=document.querySelector('#budgetsBody tr:not(.grp-hd) .creator-av');
+      const a=document.querySelector('#page-analyses .creator-av');
+      return 'budget='+(b?getComputedStyle(b).width:'none')+' analysis='+(a?getComputedStyle(a).width:'none');
+    }));
  ok('analyses header and body cell counts match',
     await p.evaluate(()=>{
       const heads=document.querySelectorAll('table.inv-list thead th').length;

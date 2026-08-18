@@ -159,7 +159,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
    });
    await renderHome();
  });
- await m.waitForTimeout(400);
+ await m.evaluate(() => go('budgets'));
+ await m.waitForTimeout(700);
  ok('The budgets table pans inside its card instead of crushing', await m.evaluate(() => {
    const bd = document.querySelector('#budgetsBudgetsCard .card-bd');
    return bd.scrollWidth > bd.clientWidth;
@@ -167,7 +168,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await m.click('#budgetsBody tr .rowmenu-btn'); await m.waitForTimeout(300);
  ok('The row menu offers the full action set on a phone',
     (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|')
-      === 'Edit|Update Pricing|Versions|Delete',
+      === 'Edit|Pin to Home|Update Pricing|Versions|Delete',
     (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|'));
  await m.keyboard.press('Escape'); await m.waitForTimeout(150);
 

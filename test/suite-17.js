@@ -294,13 +294,26 @@ const BASE='http://127.0.0.1:8100';
  ok('Budgets stays lit on a nested budget route after a direct load',
     await p.evaluate(()=>document.getElementById('nav-budgets').classList.contains('on')));
 
- // ---------- 8. Home is untouched ----------
- await p.goto(BASE+'/index.html#/home',{waitUntil:'networkidle'}); await p.waitForTimeout(900);
- ok('Home still lists budgets', (await p.locator('#budgetsBody tr').count())>=2);
- ok('Home still opens a budget',
+ // ---------- 8. Home is a dashboard, and reaches the same records ----------
+ // Home stopped carrying the lists when it became the personal dashboard
+ // (suite 18 covers it); what matters here is that it still reaches a budget
+ // and lands on the same record the Budgets page opens.
+ await p.goto(BASE+'/index.html#/home',{waitUntil:'networkidle'}); await p.waitForTimeout(1100);
+ ok('Home reaches budgets without duplicating the list',
+    await p.evaluate(()=>!document.querySelector('#page-home .tbl'))
+    && (await p.locator('#page-home .hm-card').count())>0,
+    await p.evaluate(()=>JSON.stringify({
+      cards:document.querySelectorAll('#page-home .hm-card').length,
+      atts:document.querySelectorAll('#page-home .hm-att').length,
+      secs:[...document.querySelectorAll('#page-home .hm-sec .eyebrow')].map(e=>e.textContent.trim()),
+      loading:!!document.querySelector('#page-home .hm-loading'),
+      err:!!document.querySelector('#page-home .hm-empty')
+    })));
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(800);
+ ok('the Budgets page still opens a budget',
     await (async()=>{ await p.click('#budgetsBody tr:has-text("BD-8102") td:nth-child(2)'); await p.waitForTimeout(900);
       return p.evaluate(()=>document.getElementById('page-budget').classList.contains('on')); })());
- ok('Home and Budgets open the same underlying budget',
+ ok('it opens the record that was clicked',
     (await p.locator('#bTitle').textContent()).includes('Maple Court'),
     await p.locator('#bTitle').textContent());
 
