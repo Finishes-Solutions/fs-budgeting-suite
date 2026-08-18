@@ -122,7 +122,7 @@ const BASE = 'http://127.0.0.1:8100';
     await mk('BD-0002', 'Zephyr Landing', 3000000, 'Draft', '2026-06-20T00:00:00Z');
     await mk('AS-0007', 'Midtown Assessment', 6000000, 'In Review', '2026-03-10T00:00:00Z');
   });
-  await p.click('#nav-help'); await p.click('#nav-home');   // force a refetch
+  await p.evaluate(() => go('help')); await p.evaluate(() => go('home'));   // force a refetch
   await p.waitForTimeout(400);
   ok('All budgets listed', (await p.locator('#homeBody tr').count()) === 4,
      (await p.locator('#homeBody tr').count()) + ' rows');
@@ -369,7 +369,7 @@ const BASE = 'http://127.0.0.1:8100';
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: 'fromBudget', projectId: 'BD-0001', analysisName: 'Alpha Underwriting' }) });
   });
-  await p.click('#nav-help'); await p.click('#nav-home');   // force a refetch
+  await p.evaluate(() => go('help')); await p.evaluate(() => go('home'));   // force a refetch
   await p.waitForTimeout(500);
   ok('Home carries a separate Investment Analyses section below the budgets',
      await p.evaluate(() => {

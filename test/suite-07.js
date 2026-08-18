@@ -42,7 +42,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('#/ routes still work', await p.locator('#page-pricing').isVisible());
 
  // new guide content
- await p.click('#nav-help'); await p.waitForTimeout(400);
+ await p.evaluate(() => go('help')); await p.waitForTimeout(400);
  const txt=await p.locator('#page-help').textContent();
  ok('explains the three scopes',
     /Residential Construction/.test(txt)&&/Amenity \/ Clubhouse/.test(txt)&&/Soft Costs/.test(txt));

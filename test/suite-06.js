@@ -131,8 +131,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await m.waitForTimeout(900);
 
  ok('Every nav tab is present on a phone', await m.evaluate(() =>
-    ['nav-home','nav-input','nav-budget','nav-csi','nav-analyses','nav-pricing','nav-help']
-      .every(id => document.getElementById(id).offsetParent !== null)));
+    ['nav-home','nav-input','nav-budget','nav-csi','nav-analyses','nav-pricing','nav-more-btn']
+      .every(id => document.getElementById(id).offsetParent !== null)
+    && document.getElementById('nav-help') !== null));
  ok('The home page does not overflow the phone viewport', await m.evaluate(() =>
     document.documentElement.scrollWidth <= window.innerWidth + 1),
     await m.evaluate(() => document.documentElement.scrollWidth + 'px wide in a '

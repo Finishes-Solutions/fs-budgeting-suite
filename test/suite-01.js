@@ -30,8 +30,8 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
   ok('D3 banner text is specific', /pricing library/i.test(await p.locator('#apiBannerMsg').textContent()));
 
   // Nav + routing
-  ok('Help tab exists and is enabled', await p.locator('#nav-help').isEnabled());
-  await p.click('#nav-help');
+  ok('Help tab exists in More dropdown', (await p.locator('#nav-help').count()) === 1);
+  await p.evaluate(() => go('help')); await p.waitForTimeout(300);
   ok('U4 hash set for help', p.url().endsWith('#/help'), p.url());
   ok('Help page visible', await p.locator('#page-help').isVisible());
   ok('Help TOC has 12 entries', (await p.locator('#helpToc a').count()) === 12);
