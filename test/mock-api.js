@@ -16,6 +16,10 @@ const { calculateInvestmentAnalysis } = require('../api/shared/investment/calcul
 const INV_C = require('../api/shared/investment/constants');
 const INV_D = require('../api/shared/investment/defaults');
 const crypto = require('crypto');
+// Per-user settings validation: the REAL contract module (dependency-free).
+const usc = require('../api/shared/user-settings-contract');
+const mockUsers = new Map();   // userId -> profile + settings row
+const mockActivity = [];       // newest first, like the timeline index
 const GUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // id -> {projectId, name, status, sourceBudgetVersionNumber, input, result,
 //        currentVersionNumber, deleted, versions:[...]}  (mirrors the SQL rows)
@@ -220,6 +224,64 @@ http.createServer((req, res) => {
     return json(res, 200, { renderer: v === 'local' ? 'local' : 'engine' });
   }
 
+  // ---- per-user settings + activity (dbo.Users / dbo.UserActivity stand-in).
+  // Validation is the REAL contract module, so drift is impossible.
+  if (p === '/api/user-settings') {
+    const uid = principal.clientPrincipal.userId;
+    if (!mockUsers.has(uid)) mockUsers.set(uid, {
+      userDetails: principal.clientPrincipal.userDetails, displayName: null, email: null, phone: null,
+      settings: {}, firstSeenAt: new Date().toISOString(),
+      lastSeenAt: new Date(0).toISOString(), loginCount: 0 });
+    const u = mockUsers.get(uid);
+    const resp = () => json(res, 200, {
+      userDetails: u.userDetails, displayName: u.displayName, email: u.email, phone: u.phone,
+      settings: usc.sanitizeSettings(u.settings),
+      firstSeenAt: u.firstSeenAt, lastSeenAt: u.lastSeenAt, loginCount: u.loginCount });
+    if (req.method === 'GET') {
+      const q = new URL(req.url, 'http://x').searchParams;
+      if (/^(1|true)$/i.test(String(q.get('boot') || ''))) {
+        // a quiet gap of 30+ minutes counts as a login, like the real API
+        if ((Date.now() - new Date(u.lastSeenAt).getTime()) / 60000 >= 30) {
+          u.loginCount += 1;
+          mockActivity.unshift({ eventType: 'login', entityType: null, entityId: null,
+            detail: null, createdAt: new Date().toISOString() });
+        }
+        u.lastSeenAt = new Date().toISOString();
+      }
+      return resp();
+    }
+    if (req.method === 'PUT') {
+      let b = ''; req.on('data', c => b += c);
+      return req.on('end', () => {
+        const body = b ? JSON.parse(b) : {};
+        const prof = usc.sanitizeProfile(body);
+        for (const k of ['displayName', 'email', 'phone']) if (prof[k] !== undefined) u[k] = prof[k] || null;
+        if (body.settings !== undefined)
+          u.settings = usc.sanitizeSettings(Object.assign({}, usc.sanitizeSettings(u.settings), body.settings));
+        mockActivity.unshift({ eventType: 'settings_update', entityType: null, entityId: null,
+          detail: { changed: Object.keys(body.settings || {}) }, createdAt: new Date().toISOString() });
+        return resp();
+      });
+    }
+    res.writeHead(405); return res.end('method');
+  }
+
+  if (p === '/api/user-activity') {
+    if (req.method === 'GET') return json(res, 200, { events: mockActivity.slice(0, 50) });
+    if (req.method === 'POST') {
+      let b = ''; req.on('data', c => b += c);
+      return req.on('end', () => {
+        const body = b ? JSON.parse(b) : {};
+        if (!usc.CLIENT_EVENTS.has(String(body.eventType || '')))
+          return json(res, 400, { error: 'bad_request', message: 'eventType not allowed' });
+        mockActivity.unshift({ eventType: body.eventType, entityType: body.entityType || null,
+          entityId: body.entityId || null, detail: body.detail || null, createdAt: new Date().toISOString() });
+        res.writeHead(204); return res.end();
+      });
+    }
+    res.writeHead(405); return res.end('method');
+  }
+
   if (p === '/api/budgets') {
     // Address comes off the document, mirroring the JSON_VALUE the real API uses.
     return json(res, 200, [...budgets.values()].filter(x => !x.deleted)
@@ -284,6 +346,8 @@ http.createServer((req, res) => {
         versionCreated = true;
       }
       budgets.set(id, entry);
+      if (versionCreated) mockActivity.unshift({ eventType: 'budget_save', entityType: 'budget',
+        entityId: id, detail: { versionNumber: entry.versions.length }, createdAt: new Date().toISOString() });
       json(res, 200, { ok: true, versionNumber: entry.versions.length, versionCreated });
     });
   }
@@ -566,6 +630,8 @@ http.createServer((req, res) => {
       a.input = input; a.result = result; a.contentHash = hash;
       a.deleted = false; a.deletedAt = null;
       a.updatedAt = new Date().toISOString();
+      if (!unchanged) mockActivity.unshift({ eventType: 'analysis_save', entityType: 'analysis',
+        entityId: id, detail: { versionNumber: a.currentVersionNumber }, createdAt: new Date().toISOString() });
       return json(res, 200, { ok: true, versionNumber: a.currentVersionNumber,
         versionCreated: !unchanged, result });
     });

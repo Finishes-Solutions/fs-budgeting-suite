@@ -352,7 +352,7 @@ const BASE = 'http://127.0.0.1:8100';
   await p.click('#profileMenu button:has-text("Settings")'); await p.waitForTimeout(250);
   ok('Settings opens as a modal and closes the menu',
      await p.locator('#settingsModal').isVisible() && !(await p.locator('#profileMenu').isVisible()));
-  ok('theme is the only setting, offering exactly Light and Dark',
+  ok('the theme picker offers exactly Light and Dark',
      await p.evaluate(() => [...document.querySelectorAll('#settingsModal [data-theme-pick]')]
        .map(b => b.dataset.themePick).join(',')) === 'light,dark');
   const lightBg = await p.evaluate(() => getComputedStyle(document.body).backgroundColor);

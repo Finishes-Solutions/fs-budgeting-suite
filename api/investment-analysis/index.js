@@ -91,6 +91,10 @@ module.exports = async function (context, req) {
     }
   }
   context.res = jsonRes(200, out);
+  // Best-effort audit trail — recordActivity never throws.
+  if (out.versionCreated)
+    await require('../shared/users').recordActivity(pool, principal, 'analysis_save', 'analysis', id,
+      { versionNumber: out.versionNumber });
 
   async function save() {
     const tx = new sql.Transaction(pool);

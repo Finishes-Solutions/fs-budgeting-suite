@@ -39,8 +39,12 @@
     const d = iso instanceof Date ? iso : new Date(iso);
     if (isNaN(d.getTime())) return '—';
     const p = n => String(n).padStart(2, '0');
+    const day = p(d.getMonth() + 1) + '-' + p(d.getDate()) + '-' + d.getFullYear();
+    // Settings → Time Format (per account; the shell keeps the flag current)
+    if ((window.__fsTimeFormat || '12h') === '24h')
+      return day + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
     let h = d.getHours(); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
-    return p(d.getMonth() + 1) + '-' + p(d.getDate()) + '-' + d.getFullYear() + ' ' + h + ':' + p(d.getMinutes()) + ' ' + ap;
+    return day + ' ' + h + ':' + p(d.getMinutes()) + ' ' + ap;
   }
   function fmtDay(iso) {
     if (!iso) return '—';
@@ -120,6 +124,7 @@
         <th class="r">Year-1 NOI</th><th class="r">Equity IRR</th><th class="r">Optimal Hold</th>
         <th class="r">Version</th><th class="r" style="padding-right:22px">Updated</th><th class="no-print"></th>
       </tr></thead><tbody data-inv-list></tbody></table>
+      <div class="home-cards" data-inv-cards></div>
       <div class="empty" data-inv-empty style="display:none">No investment analyses yet.</div>`;
     host.querySelector('[data-inv-status]').value = lv.status;
     host.querySelector('[data-inv-group]').value = lv.group;
@@ -140,6 +145,37 @@
     const count = host.querySelector('[data-inv-count]');
     if (count) count.textContent = lvRows.length
       ? rows.length + ' of ' + lvRows.length + (lvRows.length === 1 ? ' analysis' : ' analyses') : '—';
+    // Card view (Settings → Home View) applies to the embedded Home list only.
+    const cards = host.querySelector('[data-inv-cards]');
+    const cardsMode = !!(opts.embedded && A.homeView && A.homeView() === 'cards');
+    host.querySelector('table.inv-list').style.display = cardsMode ? 'none' : '';
+    if (cards) {
+      cards.classList.toggle('on', cardsMode && rows.length > 0);
+      cards.innerHTML = '';
+    }
+    if (cardsMode) {
+      const g2 = LV_GROUPS[lv.group];
+      const add = r => cards.insertAdjacentHTML('beforeend', invCard(r));
+      if (g2) {
+        const map = new Map();
+        rows.forEach(r => { const k = g2.of(r); if (!map.has(k)) map.set(k, []); map.get(k).push(r); });
+        [...map.keys()].sort((a, z) => {
+          const pa = a === 'Standalone', pz = z === 'Standalone';
+          return pa !== pz ? (pa ? 1 : -1) : a.localeCompare(z, undefined, { numeric: true });
+        }).forEach(k => {
+          cards.insertAdjacentHTML('beforeend', `<div class="grp-lab">${esc(k)}
+            <span class="shut">${map.get(k).length} ${map.get(k).length === 1 ? 'analysis' : 'analyses'}</span></div>`);
+          map.get(k).forEach(add);
+        });
+      } else rows.forEach(add);
+      cards.querySelectorAll('[data-inv-card]').forEach(c =>
+        c.addEventListener('click', () => { location.hash = '#/analysis/' + c.dataset.invCard; }));
+      cards.querySelectorAll('[data-inv-menu]').forEach(b =>
+        b.addEventListener('click', ev => {
+          ev.stopPropagation(); openInvRowMenu(ev.currentTarget, b.dataset.aid);
+        }));
+      return;
+    }
     const pad = opts.embedded ? ' style="padding-left:22px"' : '';
     const g = LV_GROUPS[lv.group];
     if (g) {
@@ -157,6 +193,19 @@
         map.get(k).forEach(r => tb.appendChild(invListRow(r, pad)));
       });
     } else rows.forEach(r => tb.appendChild(invListRow(r, pad)));
+  }
+
+  function invCard(r) {
+    return `<div class="hcard" data-inv-card="${esc(r.analysisId)}">
+      <div class="hc-id">${esc(r.projectId || 'Standalone')}${r.sourceBudgetVersionNumber
+        ? ' <span class="inv-origin">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</div>
+      <div class="hc-name">${esc(r.name)}</div>
+      <div class="hc-row"><span>Purchase Price</span><span class="v">${usd(r.purchasePrice)}</span></div>
+      <div class="hc-row"><span>Equity IRR</span><span class="v">${pctf(r.finalYearEquityIRR)}</span></div>
+      <div class="hc-ft"><span class="badge ${r.status === 'Finalized' ? 'ok' : ''}">${esc(r.status)}</span>
+        <span>${esc(fmtDay(r.updatedAt))}</span></div>
+      <button class="rowmenu-btn hc-menu" data-inv-menu data-aid="${esc(r.analysisId)}"
+        aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(r.name)}">⋮</button></div>`;
   }
 
   function invListRow(r, pad) {
@@ -1107,6 +1156,9 @@
 
   function openExport() {
     if (!st.result || st.stale) { A.toast('Calculate first so the exports match the inputs.'); return; }
+    // Remembered export options (Settings → Exports) seed the checkboxes.
+    const saved = A.exportDefaults && A.exportDefaults('analysis');
+    if (saved) for (const k in EX_IDS) if (typeof saved[k] === 'boolean') exOpts[k] = saved[k];
     const chk = (k, label, title) => `<label class="chk"${title ? ' title="' + title + '"' : ''}>
       <input type="checkbox" id="${EX_IDS[k]}" ${exOpts[k] ? 'checked' : ''}> ${label}</label>`;
     // The button row matches the budget export modal exactly — one order
@@ -1140,6 +1192,12 @@
         <button class="btn btn-ghost" title="Download the branded Excel workbook"
           onclick="FSInvestmentUI.exportWorkbook()">Excel (.xlsx)</button>
       </div>`, 580);
+    // Any change becomes the account default when Settings says to remember.
+    el('invModal').querySelectorAll('input[type=checkbox]').forEach(c =>
+      c.addEventListener('change', () => {
+        readExportOpts();
+        if (A.rememberExport) A.rememberExport('analysis', Object.assign({}, exOpts));
+      }));
   }
   function emailSoon() { A.toast('Emailing exports is coming soon.'); }
 
@@ -1201,7 +1259,10 @@
       FSExportRender.stampRenderProvenance(dd, 'engine');
       FSExportRender.appendApprovalPage(dd, doc.signature);
     }
-    pdfMake.createPdf(dd).getBlob(blob => downloadBlob(blob, exportBaseName() + '.pdf'));
+    pdfMake.createPdf(dd).getBlob(blob => {
+      downloadBlob(blob, exportBaseName() + '.pdf');
+      if (A.activity) A.activity('export_pdf', 'analysis', st.id);
+    });
   }
 
   /* ---- Print: the original #printDoc pipeline via the adapter — the same
@@ -1210,6 +1271,7 @@
     if (!st.result || st.stale) { A.toast('Calculate first so the print matches the inputs.'); return; }
     readExportOpts(); closeInvModal();
     A.print(printReportHTML(st.result, exOpts));
+    if (A.activity) A.activity('export_print', 'analysis', st.id);
   }
 
   function printReportHTML(R, opts) {
@@ -1400,6 +1462,7 @@
     downloadBlob(new Blob([buf],
       { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
       exportBaseName() + '.xlsx');
+    if (A.activity) A.activity('export_xlsx', 'analysis', st.id);
   }
 
   /* ================= public surface ================= */

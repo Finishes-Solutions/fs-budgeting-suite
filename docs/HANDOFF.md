@@ -312,18 +312,36 @@ through the engine (`guideFsdoc()` adapts the live help DOM to fsdoc/1); its
 pre-engine print pipeline (`printGuide()`) is the guide's `local` fallback.
 
 **App-shell conveniences.** Every displayed timestamp is the viewer's LOCAL time as
-`MM-DD-YYYY h:mm AM/PM` (`fmtWhen`) or `MM-DD-YYYY` (`fmtDay`) — helpers exist in
-app/index.html, the investment module, and the producers (`fmtStamp` inside
-export-render.js / to-fsdoc.js; meta.generatedAt stays raw ISO). Two themes —
-light (default) and dark — are CSS-token remaps on `html[data-theme]`, persisted
-in `localStorage.fsTheme` (unknown stored values fall back to light), switched
-ONLY from the Settings modal (account menu → Settings; theme is its sole setting
-today); `--chrome`/`--solid` are the surfaces that stay dark in every theme,
-and a beforeprint/afterprint hook forces light for printing. Cmd/Ctrl+K opens the
-global search palette (budgets + analyses, fetched fresh per open). The analyses
-lists carry the same search/status/grouping controls as the budget list.
+`MM-DD-YYYY h:mm AM/PM` (`fmtWhen`; 24-hour when the account says so) or
+`MM-DD-YYYY` (`fmtDay`) — helpers exist in app/index.html, the investment module,
+and the producers (`fmtStamp` inside export-render.js / to-fsdoc.js;
+meta.generatedAt stays raw ISO). Cmd/Ctrl+K opens the global search palette
+(budgets + analyses, fetched fresh per open). The analyses lists carry the same
+search/status/grouping controls and styling as the budget list.
 
-Fourteen Playwright suites, 556 assertions, plus 80 `node:test` assertions for the
+**Per-account settings (`dbo.Users` / `dbo.UserActivity` — sql/migrate_users.sql).**
+Settings belong to the ACCOUNT, not the browser: `GET /api/user-settings?boot=1`
+bootstraps at app start (upserts the row, refreshes LastSeenAt, counts a login
+after a 30-minute quiet gap) and `PUT` saves profile fields (display name — shown
+in the header and menus over the platform name — contact email, phone) plus one
+validated JSON settings document: theme (light/dark), timeFormat (12h/24h),
+accentColor (green/blue/violet/graphite — remaps of the green token scale on
+`html[data-accent]`, with dark+accent combo blocks), avatarColor (the header
+icon's `--avatar-bg`), tableDensity (comfortable/compact via `html[data-density]`),
+homeView (list/cards — Home page only; `.home-cards`/`.hcard`), rememberExport +
+exportOptions (per-product export-modal defaults). The validation contract lives
+dependency-free in api/shared/user-settings-contract.js and is required by BOTH
+api/shared/users.js and test/mock-api.js, so it cannot drift. localStorage keeps
+pre-paint caches (fsTheme/fsAccent/fsDensity/fsAvatar/fsTimeFormat) that the
+server copy overwrites at boot. Activity is append-only and best-effort
+(recordActivity never throws): logins and settings changes from the settings
+endpoints, budget_save/analysis_save from the save endpoints, export_* posted by
+the client through `POST /api/user-activity` (whitelisted events only);
+`GET /api/user-activity` returns the account's recent timeline. A
+beforeprint/afterprint hook still forces the light palette for printing;
+`--chrome`/`--solid` remain the surfaces that stay dark in every theme and accent.
+
+Fifteen Playwright suites, 578 assertions, plus 80 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus

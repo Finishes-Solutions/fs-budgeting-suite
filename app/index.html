@@ -5,8 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Finishes Solutions Budgeting Suite</title>
 <script>
-/* Apply the saved theme before first paint so switching never flashes. */
-try{var t=localStorage.getItem('fsTheme');if(t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(_){}
+/* Apply the cached appearance before first paint so nothing flashes. These
+   caches mirror the account's server-stored settings (loaded at boot); the
+   server copy wins the moment it arrives. */
+try{
+  var t=localStorage.getItem('fsTheme');if(t==='dark')document.documentElement.setAttribute('data-theme',t);
+  var a=localStorage.getItem('fsAccent');if(a&&a!=='green')document.documentElement.setAttribute('data-accent',a);
+  var d=localStorage.getItem('fsDensity');if(d==='compact')document.documentElement.setAttribute('data-density','compact');
+  var av=localStorage.getItem('fsAvatar');if(av)document.documentElement.style.setProperty('--avatar-bg',av);
+  window.__fsTimeFormat=localStorage.getItem('fsTimeFormat')==='24h'?'24h':'12h';
+}catch(_){}
 </script>
 <!-- The FS monogram is black ink on transparency and would vanish against a dark tab
      strip, so the icon is the mark in white on the app's own ink-900 tile. Contrast is
@@ -76,20 +84,73 @@ html[data-theme=dark]{
   --sh:0 1px 2px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);
   --focus:0 0 0 3px rgba(63,174,102,.35);
 }
-/* Settings modal (profile menu → Settings). Theme is the only setting today;
-   the modal is the home for whatever arrives next. */
+/* ---- Accent colors ----
+   The green scale doubles as the app's accent scale, so an accent is a remap
+   of the green tokens (chrome and always-dark surfaces stay put). Each accent
+   needs a light block AND a dark combo block covering the SAME tokens — the
+   two-attribute combo outranks both single-attribute blocks. */
+html[data-accent=blue]{--green-900:#0b2a56;--green-800:#123c7d;--green-700:#1a4fa3;--green-600:#2563c9;
+  --green-500:#3b78d8;--green-200:#c3d7f3;--green-100:#dde9f9;--green-50:#eff5fd;
+  --focus:0 0 0 3px rgba(37,99,201,.32)}
+html[data-accent=violet]{--green-900:#371a6e;--green-800:#472093;--green-700:#5a2bb8;--green-600:#6d3ad1;
+  --green-500:#8153dd;--green-200:#ddd2f4;--green-100:#eae2fa;--green-50:#f5f1fd;
+  --focus:0 0 0 3px rgba(109,58,209,.32)}
+html[data-accent=graphite]{--green-900:#14181d;--green-800:#21262e;--green-700:#333a45;--green-600:#47505c;
+  --green-500:#5d6774;--green-200:#d3d8de;--green-100:#e4e7eb;--green-50:#f2f4f6;
+  --focus:0 0 0 3px rgba(71,80,92,.32)}
+html[data-theme=dark][data-accent=blue]{--green-900:#0d1e36;--green-800:#1c4586;--green-700:#2a5aa8;
+  --green-600:#3a6ec2;--green-500:#5585d1;--green-200:#2b4d7c;--green-100:#1c3355;--green-50:#172741;
+  --focus:0 0 0 3px rgba(85,133,209,.35)}
+html[data-theme=dark][data-accent=violet]{--green-900:#241145;--green-800:#45248c;--green-700:#5730ad;
+  --green-600:#6a41c6;--green-500:#7f5cd4;--green-200:#4a3579;--green-100:#322353;--green-50:#281c42;
+  --focus:0 0 0 3px rgba(127,92,212,.35)}
+html[data-theme=dark][data-accent=graphite]{--green-900:#0d1013;--green-800:#2a323b;--green-700:#5f6c7a;
+  --green-600:#4f5c6a;--green-500:#6a7887;--green-200:#3c4650;--green-100:#2a3138;--green-50:#1d2226;
+  --focus:0 0 0 3px rgba(106,120,135,.35)}
+/* ---- Table density (Settings → Table Density) ---- */
+html[data-density=compact] .tbl td{padding-top:1px;padding-bottom:1px}
+html[data-density=compact] .inv-table td{padding-top:5px;padding-bottom:5px}
+html[data-density=compact] .inv-list td{padding-top:1px;padding-bottom:1px}
+/* ---- Home card view (Settings → Home View; Home page only) ---- */
+.home-cards{display:none;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;padding:20px 22px}
+.home-cards.on{display:grid}
+.home-cards .grp-lab{grid-column:1/-1;font-family:var(--fm);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-700);font-weight:600;padding:6px 2px 0}
+.home-cards .grp-lab .shut{color:var(--ink-400);margin-left:8px;letter-spacing:0;text-transform:none;font-weight:400}
+.hcard{position:relative;border:1px solid var(--ink-150);border-radius:10px;background:var(--white);
+  box-shadow:var(--sh);padding:14px 16px;cursor:pointer}
+.hcard:hover{border-color:var(--green-200)}
+.hcard .hc-id{font-family:var(--fm);font-size:12px;font-weight:600;color:var(--green-700);padding-right:30px}
+.hcard .hc-name{font-size:14px;font-weight:600;color:var(--ink-950);margin:2px 0 8px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hcard .hc-row{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--ink-500);margin-top:4px}
+.hcard .hc-row .v{font-family:var(--fm);color:var(--ink-700);white-space:nowrap}
+.hcard .hc-ft{display:flex;justify-content:space-between;align-items:center;margin-top:10px;
+  padding-top:8px;border-top:1px solid var(--ink-100);font-size:11.5px;color:var(--ink-400)}
+.hcard .hc-menu{position:absolute;top:10px;right:10px}
+/* ---- Settings modal (profile menu → Settings) ---- */
 .set-lab{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ink-500);font-weight:500;margin-bottom:8px}
-.set-theme{display:flex;gap:10px}
-.set-theme button{flex:1;display:flex;align-items:center;gap:9px;border:1px solid var(--ink-200);
+  color:var(--ink-500);font-weight:500;margin:20px 0 8px}
+.set-lab:first-child{margin-top:0}
+.set-choice{display:flex;gap:10px;flex-wrap:wrap}
+.set-choice button{flex:1;min-width:120px;display:flex;align-items:center;gap:9px;border:1px solid var(--ink-200);
   background:var(--white);border-radius:8px;padding:11px 14px;cursor:pointer;
   font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-700)}
-.set-theme button:hover{border-color:var(--ink-300)}
-.set-theme button.on{border-color:var(--green-600);box-shadow:var(--focus)}
-.set-theme svg{width:15px;height:15px;flex:none;color:var(--ink-500)}
-.set-theme button.on svg{color:var(--green-700)}
-.set-theme .tick{margin-left:auto;color:var(--green-700);font-weight:700;visibility:hidden}
-.set-theme button.on .tick{visibility:visible}
+.set-choice button:hover{border-color:var(--ink-300)}
+.set-choice button.on{border-color:var(--green-600);box-shadow:var(--focus)}
+.set-choice svg{width:15px;height:15px;flex:none;color:var(--ink-500)}
+.set-choice button.on svg{color:var(--green-700)}
+.set-choice .tick{margin-left:auto;color:var(--green-700);font-weight:700;visibility:hidden}
+.set-choice button.on .tick{visibility:visible}
+.set-choice .set-dot{width:12px;height:12px;border-radius:50%;flex:none}
+.set-choice .set-sub{font-family:var(--fm);font-size:10.5px;color:var(--ink-400);font-weight:400}
+.set-swatches{display:flex;gap:10px;flex-wrap:wrap}
+.set-swatch{width:30px;height:30px;border-radius:50%;border:2px solid var(--ink-200);cursor:pointer;padding:0}
+.set-swatch:hover{border-color:var(--ink-400)}
+.set-swatch.on{border-color:var(--ink-950);box-shadow:0 0 0 3px var(--green-100)}
+.set-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.set-grid .wide{grid-column:1/-1}
+.set-note{font-size:12px;color:var(--ink-500);margin-top:8px}
 /* ---- Cmd/Ctrl+K global search palette ---- */
 #palette{position:fixed;inset:0;z-index:80;display:none;background:rgba(11,13,12,.45);
   align-items:flex-start;justify-content:center;padding:11vh 16px 16px}
@@ -143,10 +204,10 @@ body>header{background:var(--chrome);color:#fff}   /* app chrome only — the pr
    at narrow widths. Identity now lives behind a round avatar; the name, email and
    Sign Out are in its menu. */
 #profileBtn{width:32px;height:32px;flex:none;border-radius:50%;cursor:pointer;
-  background:var(--green-600);border:1px solid rgba(255,255,255,.35);color:#fff;
+  background:var(--avatar-bg,var(--green-600));border:1px solid rgba(255,255,255,.35);color:#fff;
   font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.04em;
   display:flex;align-items:center;justify-content:center;padding:0}
-#profileBtn:hover{background:var(--green-500);border-color:rgba(255,255,255,.6)}
+#profileBtn:hover{filter:brightness(1.12);border-color:rgba(255,255,255,.6)}
 #profileBtn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(255,255,255,.35)}
 #profileMenu{position:fixed;z-index:60;min-width:236px;max-width:300px;background:var(--white);
   border:1px solid var(--ink-200);border-radius:var(--rm);box-shadow:0 8px 24px rgba(11,13,12,.18);padding:4px}
@@ -659,6 +720,7 @@ th.sortable.sorted{color:var(--ink-900)}
         <th class="no-print"></th></tr></thead>
       <tbody id="homeBody"></tbody>
     </table>
+    <div class="home-cards" id="homeCards"></div>
     <div class="empty" id="homeEmpty" style="display:none">
       <div class="big" id="homeEmptyBig">No budgets yet</div>
       <div id="homeEmptyMsg">Create one to get started. Budgets snapshot the pricing library at creation.</div>
@@ -1095,11 +1157,24 @@ th.sortable.sorted{color:var(--ink-900)}
           move the selection, <b>Enter</b> opens it, <b>Esc</b> closes. Both Home lists also have their own
           search box, status filter, and grouping — budgets and analyses alike.</p>
 
-        <h4>Settings &amp; Themes</h4>
-        <p>Click your avatar in the header and choose <b>Settings</b>. Theme is the only setting today —
-          <b>Light</b> (the default) or <b>Dark</b> — with more settings arriving there over time. The
-          choice applies immediately and is remembered per browser. Printed reports and PDF exports always
-          render in light, whatever theme the screen uses.</p>
+        <h4>Settings</h4>
+        <p>Click your avatar in the header and choose <b>Settings</b>. Everything there is saved to your
+          account, so your choices follow you to any browser you sign into:</p>
+        <ul>
+          <li><b>Profile</b> — a display name (used in version history and "created by" lines instead of
+            your sign-in name), plus a contact email and phone number.</li>
+          <li><b>Theme</b> — Light (the default) or Dark.</li>
+          <li><b>Accent Color</b> — Green (the default), Blue, Violet, or Graphite, recoloring the
+            buttons, links, and highlights.</li>
+          <li><b>Profile Icon Background</b> — the color behind your initials in the header.</li>
+          <li><b>Time Format</b> — 12-hour (8:52 PM) or 24-hour (20:52) for every timestamp.</li>
+          <li><b>Table Density</b> — Comfortable or Compact rows in the lists and the budget grid.</li>
+          <li><b>Home View</b> — the Home page lists as a table or as cards. Home only, for now.</li>
+          <li><b>Exports</b> — remember the sections and options you pick in the export popups (budget
+            and analysis separately) as your defaults, or start fresh each time.</li>
+        </ul>
+        <p>Preference choices apply immediately and save quietly; profile fields save with their button.
+          Printed reports and PDF exports always render in light, whatever theme the screen uses.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -1624,26 +1699,104 @@ th.sortable.sorted{color:var(--ink-900)}
 </div>
 
 <!-- ================= SETTINGS MODAL =================
-     Reached from the account menu. Theme is the only setting today; this
-     modal is where future settings land. -->
-<div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:60;align-items:center;justify-content:center"
+     Reached from the account menu. Everything here is saved to the ACCOUNT
+     (dbo.Users), so it follows the user to any signed-in browser. Preference
+     choices apply instantly and save quietly; profile fields save on the
+     button. -->
+<div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:60;align-items:center;justify-content:center;padding:20px 14px"
   onclick="if(event.target===this)closeSettings()">
-  <div class="card" style="width:460px;max-width:94vw;margin:0" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="card" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <div class="card-hd"><h2 id="settingsTitle">Settings</h2>
       <button class="btn-x" onclick="closeSettings()" aria-label="Close settings">×</button></div>
-    <div class="card-bd">
+    <div class="card-bd" style="overflow:auto">
+
+      <div class="set-lab">Profile</div>
+      <div class="set-grid">
+        <label class="fld wide"><span class="lab">Display Name</span>
+          <input type="text" id="setDisplayName" placeholder="How your name appears in version history"></label>
+        <label class="fld"><span class="lab">Email</span>
+          <input type="text" id="setEmail" placeholder="Contact email"></label>
+        <label class="fld"><span class="lab">Phone</span>
+          <input type="text" id="setPhone" placeholder="Phone number"></label>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:12px">
+        <span class="set-note" id="setSignedInAs"></span>
+        <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save Profile</button>
+      </div>
+
       <div class="set-lab">Theme</div>
-      <div class="set-theme" role="group" aria-label="Theme">
-        <button data-theme-pick="light" onclick="setTheme('light')">
+      <div class="set-choice" role="group" aria-label="Theme">
+        <button data-theme-pick="light" onclick="chooseSetting('theme','light')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9l-2.2 2.2M7.1 16.9l-2.2 2.2"/></svg>
           Light<span class="tick">✓</span></button>
-        <button data-theme-pick="dark" onclick="setTheme('dark')">
+        <button data-theme-pick="dark" onclick="chooseSetting('theme','dark')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
           Dark<span class="tick">✓</span></button>
       </div>
-      <p style="font-size:12.5px;color:var(--ink-500);margin-top:14px">Applies immediately and is remembered
-        on this browser. Printed reports and PDF exports always use the light look. More settings will
-        arrive here over time.</p>
+
+      <div class="set-lab">Accent Color</div>
+      <div class="set-choice" role="group" aria-label="Accent Color">
+        <button data-accent-pick="green" onclick="chooseSetting('accentColor','green')">
+          <span class="set-dot" style="background:#0A7A36"></span>Green<span class="tick">✓</span></button>
+        <button data-accent-pick="blue" onclick="chooseSetting('accentColor','blue')">
+          <span class="set-dot" style="background:#2563C9"></span>Blue<span class="tick">✓</span></button>
+        <button data-accent-pick="violet" onclick="chooseSetting('accentColor','violet')">
+          <span class="set-dot" style="background:#6D3AD1"></span>Violet<span class="tick">✓</span></button>
+        <button data-accent-pick="graphite" onclick="chooseSetting('accentColor','graphite')">
+          <span class="set-dot" style="background:#47505C"></span>Graphite<span class="tick">✓</span></button>
+      </div>
+
+      <div class="set-lab">Profile Icon Background</div>
+      <div class="set-swatches" role="group" aria-label="Profile Icon Background">
+        <button class="set-swatch" data-avatar-pick="" style="background:#0A7A36" title="Default Green" aria-label="Default Green" onclick="chooseSetting('avatarColor',null)"></button>
+        <button class="set-swatch" data-avatar-pick="#14418A" style="background:#14418A" title="Navy" aria-label="Navy" onclick="chooseSetting('avatarColor','#14418A')"></button>
+        <button class="set-swatch" data-avatar-pick="#6D28D9" style="background:#6D28D9" title="Violet" aria-label="Violet" onclick="chooseSetting('avatarColor','#6D28D9')"></button>
+        <button class="set-swatch" data-avatar-pick="#B42318" style="background:#B42318" title="Crimson" aria-label="Crimson" onclick="chooseSetting('avatarColor','#B42318')"></button>
+        <button class="set-swatch" data-avatar-pick="#B7791F" style="background:#B7791F" title="Amber" aria-label="Amber" onclick="chooseSetting('avatarColor','#B7791F')"></button>
+        <button class="set-swatch" data-avatar-pick="#23282A" style="background:#23282A" title="Ink" aria-label="Ink" onclick="chooseSetting('avatarColor','#23282A')"></button>
+      </div>
+
+      <div class="set-lab">Time Format</div>
+      <div class="set-choice" role="group" aria-label="Time Format">
+        <button data-timefmt-pick="12h" onclick="chooseSetting('timeFormat','12h')">
+          12-Hour<span class="set-sub">8:52 PM</span><span class="tick">✓</span></button>
+        <button data-timefmt-pick="24h" onclick="chooseSetting('timeFormat','24h')">
+          24-Hour<span class="set-sub">20:52</span><span class="tick">✓</span></button>
+      </div>
+
+      <div class="set-lab">Table Density</div>
+      <div class="set-choice" role="group" aria-label="Table Density">
+        <button data-density-pick="comfortable" onclick="chooseSetting('tableDensity','comfortable')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+          Comfortable<span class="tick">✓</span></button>
+        <button data-density-pick="compact" onclick="chooseSetting('tableDensity','compact')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          Compact<span class="tick">✓</span></button>
+      </div>
+
+      <div class="set-lab">Home View</div>
+      <div class="set-choice" role="group" aria-label="Home View">
+        <button data-homeview-pick="list" onclick="chooseSetting('homeView','list')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>
+          List<span class="tick">✓</span></button>
+        <button data-homeview-pick="cards" onclick="chooseSetting('homeView','cards')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+          Cards<span class="tick">✓</span></button>
+      </div>
+      <div class="set-note">Card view applies to the Home page lists only, for now.</div>
+
+      <div class="set-lab">Exports</div>
+      <div class="set-choice" role="group" aria-label="Remember Export Options">
+        <button data-rememberexport-pick="on" onclick="chooseSetting('rememberExport',true)">
+          Remember My Export Options<span class="tick">✓</span></button>
+        <button data-rememberexport-pick="off" onclick="chooseSetting('rememberExport',false)">
+          Start Fresh Each Time<span class="tick">✓</span></button>
+      </div>
+      <div class="set-note">When remembering, the sections and options you pick in the export popups
+        (budget and analysis separately) become your defaults everywhere you sign in.</div>
+
+      <p class="set-note" style="margin-top:18px">Everything here is saved to your account and follows you
+        to any signed-in browser. Printed reports and PDF exports always use the light look.</p>
     </div>
   </div>
 </div>
@@ -1695,8 +1848,7 @@ function fmtWhen(iso){
   const d=iso instanceof Date?iso:new Date(iso);
   if(isNaN(d.getTime()))return '—';
   const p=n=>String(n).padStart(2,'0');
-  let h=d.getHours();const ap=h>=12?'PM':'AM';h=h%12||12;
-  return p(d.getMonth()+1)+'-'+p(d.getDate())+'-'+d.getFullYear()+' '+h+':'+p(d.getMinutes())+' '+ap;
+  return p(d.getMonth()+1)+'-'+p(d.getDate())+'-'+d.getFullYear()+' '+fmtClock(d);
 }
 function fmtDay(iso){
   if(!iso)return '—';
@@ -1706,8 +1858,10 @@ function fmtDay(iso){
   return p(d.getMonth()+1)+'-'+p(d.getDate())+'-'+d.getFullYear();
 }
 function fmtClock(d){
+  const m=String(d.getMinutes()).padStart(2,'0');
+  if((window.__fsTimeFormat||'12h')==='24h')return String(d.getHours()).padStart(2,'0')+':'+m;
   let h=d.getHours();const ap=h>=12?'PM':'AM';h=h%12||12;
-  return h+':'+String(d.getMinutes()).padStart(2,'0')+' '+ap;
+  return h+':'+m+' '+ap;
 }
 /* ---- themes ----
    Light is the default; Dark remaps the CSS tokens on <html>. Switched from
@@ -1728,11 +1882,127 @@ function setTheme(name){
     b.setAttribute('aria-pressed',on?'true':'false');
   });
 }
+/* ---- per-account settings (dbo.Users via /api/user-settings) ----
+   The server is the source of truth: settings load at boot and follow the
+   account to any signed-in browser. localStorage keeps a small cache purely
+   so the appearance applies before the first network round trip. Preference
+   choices apply instantly and save quietly (debounced); profile fields save
+   on their button. */
+let US={settings:null,profile:{displayName:'',email:'',phone:''},userDetails:''};
+let usSaveTimer=null;
+function usSettings(){return US.settings||{};}
+async function loadUserSettings(){
+  try{
+    const r=await api('user-settings?boot=1');
+    US={settings:r.settings,profile:{displayName:r.displayName||'',email:r.email||'',phone:r.phone||''},
+        userDetails:r.userDetails||'',loginCount:r.loginCount};
+    applyUserSettings();
+    renderProfile();          // the display name may override the platform name
+  }catch(e){/* signed out or offline: the pre-paint caches already applied */}
+}
+function applyUserSettings(){
+  const s=usSettings();
+  setTheme(s.theme||'light');
+  applyAccent(s.accentColor||'green');
+  applyAvatar(s.avatarColor||null);
+  applyDensity(s.tableDensity||'comfortable');
+  window.__fsTimeFormat=s.timeFormat==='24h'?'24h':'12h';
+  try{localStorage.setItem('fsTimeFormat',window.__fsTimeFormat);}catch(_){}
+  paintSettingsUI();
+}
+function applyAccent(name){
+  if(name==='green')document.documentElement.removeAttribute('data-accent');
+  else document.documentElement.setAttribute('data-accent',name);
+  try{localStorage.setItem('fsAccent',name);}catch(_){}
+}
+function applyAvatar(hex){
+  if(hex)document.documentElement.style.setProperty('--avatar-bg',hex);
+  else document.documentElement.style.removeProperty('--avatar-bg');
+  try{hex?localStorage.setItem('fsAvatar',hex):localStorage.removeItem('fsAvatar');}catch(_){}
+}
+function applyDensity(name){
+  if(name==='compact')document.documentElement.setAttribute('data-density','compact');
+  else document.documentElement.removeAttribute('data-density');
+  try{localStorage.setItem('fsDensity',name);}catch(_){}
+}
+function chooseSetting(key,value){
+  const prev=usSettings();
+  US.settings=Object.assign({},prev,{[key]:value});
+  applyUserSettings();
+  // the Home lists re-render only when their view actually changed
+  if(key==='homeView'&&currentPage==='home')renderHome();
+  if(key==='timeFormat'&&currentPage==='home')paintHome();
+  queueSettingsSave();
+}
+function queueSettingsSave(){
+  clearTimeout(usSaveTimer);
+  usSaveTimer=setTimeout(saveUserSettings,700);
+}
+async function saveUserSettings(){
+  if(!US.settings)return;
+  try{
+    const r=await api('user-settings',{method:'PUT',body:JSON.stringify({settings:US.settings})});
+    US.settings=r.settings;
+    paintSettingsUI();
+  }catch(e){toast('Could not save settings to your account — '+e.message);}
+}
+async function saveProfile(){
+  const v=id=>document.getElementById(id).value.trim();
+  try{
+    const r=await api('user-settings',{method:'PUT',body:JSON.stringify({
+      displayName:v('setDisplayName'),email:v('setEmail'),phone:v('setPhone')})});
+    US.profile={displayName:r.displayName||'',email:r.email||'',phone:r.phone||''};
+    US.settings=r.settings;
+    renderProfile();
+    toast('Profile saved to your account.');
+  }catch(e){toast('Could not save your profile — '+e.message);}
+}
+function paintSettingsUI(){
+  const s=usSettings();
+  const mark=(sel,val)=>document.querySelectorAll(sel).forEach(b=>{
+    const key=Object.keys(b.dataset)[0];
+    const on=b.dataset[key]===String(val===null||val===undefined?'':val);
+    b.classList.toggle('on',on);
+    b.setAttribute('aria-pressed',on?'true':'false');
+  });
+  mark('[data-theme-pick]',s.theme||'light');
+  mark('[data-accent-pick]',s.accentColor||'green');
+  mark('[data-avatar-pick]',s.avatarColor||'');
+  mark('[data-timefmt-pick]',s.timeFormat||'12h');
+  mark('[data-density-pick]',s.tableDensity||'comfortable');
+  mark('[data-homeview-pick]',s.homeView||'list');
+  mark('[data-rememberexport-pick]',s.rememberExport?'on':'off');
+}
 function openSettings(){
   closeProfile(false);
+  document.getElementById('setDisplayName').value=US.profile.displayName||'';
+  document.getElementById('setEmail').value=US.profile.email||'';
+  document.getElementById('setPhone').value=US.profile.phone||'';
+  const who=document.getElementById('setSignedInAs');
+  if(who)who.textContent=US.userDetails?'Signed in as '+US.userDetails:'';
+  paintSettingsUI();
   document.getElementById('settingsModal').style.display='flex';
 }
 function closeSettings(){document.getElementById('settingsModal').style.display='none';}
+/* ---- export-option memory + client-reported activity ---- */
+function exportDefaultsFor(product){
+  const s=usSettings();
+  if(!s.rememberExport)return null;
+  const o=s.exportOptions&&s.exportOptions[product];
+  return o&&Object.keys(o).length?o:null;
+}
+function rememberExportOptions(product,opts){
+  const s=usSettings();
+  if(!s.rememberExport)return;
+  US.settings=Object.assign({},s,{exportOptions:Object.assign({},s.exportOptions,{[product]:opts})});
+  queueSettingsSave();
+}
+/* Browser-side exports never touch the API, so the client reports them.
+   Fire-and-forget: a lost beacon must never disturb the export. */
+function postActivity(eventType,entityType,entityId,detail){
+  api('user-activity',{method:'POST',body:JSON.stringify({eventType,entityType,entityId,detail})})
+    .catch(()=>{});
+}
 let printThemeStash=null;
 window.addEventListener('beforeprint',()=>{
   printThemeStash=currentTheme();
@@ -1833,7 +2103,9 @@ function renderProfile(){
   const btn=document.getElementById('profileBtn');
   if(btn)btn.style.display=principal?'flex':'none';
   if(!principal)return;
-  const name=principalName(principal),email=principal.userDetails||'';
+  // The Settings display name, when set, overrides the platform name.
+  const name=(typeof US!=='undefined'&&US.profile&&US.profile.displayName)||principalName(principal);
+  const email=principal.userDetails||'';
   const ini=document.getElementById('profileInitials');
   if(ini)ini.textContent=initialsOf(name);
   if(btn)btn.title=name+(email?' · '+email:'');
@@ -2424,8 +2696,14 @@ function groupedRows(rows){
               contract:map.get(k).reduce((s,x)=>s+(+x.contractSum||0),0),
               project:map.get(k).reduce((s,x)=>s+(+x.projectCost||0),0)}));
 }
+function homeMode(){return usSettings().homeView==='cards'?'cards':'list';}
 function paintHome(){
   const rows=homeRows(),b=document.getElementById('homeBody');b.innerHTML='';
+  const cards=document.getElementById('homeCards');
+  const cardsMode=homeMode()==='cards';
+  document.querySelector('#page-home .tbl').style.display=cardsMode?'none':'';
+  cards.classList.toggle('on',cardsMode&&rows.length>0);
+  cards.innerHTML='';
   document.getElementById('homeEmpty').style.display=rows.length?'none':'block';
   document.getElementById('homeEmptyBig').textContent=index.length?'Nothing matches':'No budgets yet';
   document.getElementById('homeEmptyMsg').textContent=index.length
@@ -2434,6 +2712,15 @@ function paintHome(){
   document.getElementById('homeCount').textContent=index.length
     ?rows.length+' of '+index.length+(index.length===1?' budget':' budgets'):'—';
   const groups=groupedRows(rows);
+  if(cardsMode){
+    if(groups)groups.forEach(gr=>{
+      cards.insertAdjacentHTML('beforeend',`<div class="grp-lab">${esc(gr.key)}
+        <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'} · ${usd(gr.contract)} contract</span></div>`);
+      gr.rows.forEach(x=>cards.insertAdjacentHTML('beforeend',homeCard(x)));
+    });
+    else rows.forEach(x=>cards.insertAdjacentHTML('beforeend',homeCard(x)));
+    return;
+  }
   if(groups){
     groups.forEach(gr=>{
       // Totals sit in the Contract Sum and Total Project columns, matching the
@@ -2446,6 +2733,17 @@ function paintHome(){
     });
   } else rows.forEach(homeRow);
   paintHomeSortArrows();
+}
+function homeCard(x){
+  return `<div class="hcard" onclick="openBudget('${x.projectId}')">
+    <div class="hc-id">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</div>
+    <div class="hc-name">${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</div>
+    <div class="hc-row"><span>Contract Sum</span><span class="v">${usd(x.contractSum||0)}</span></div>
+    <div class="hc-row"><span>Total Project</span><span class="v">${usd(x.projectCost||0)}</span></div>
+    <div class="hc-ft"><span class="badge ${x.status==='Finalized'?'ok':''}">${esc(x.status)}</span>
+      <span>${esc(fmtDay(x.updated))}</span></div>
+    <button class="rowmenu-btn hc-menu" data-pid="${esc(x.projectId)}" aria-haspopup="menu" aria-expanded="false"
+      aria-label="Actions for ${esc(x.projectId)}" onclick="event.stopPropagation();openRowMenu(this)">⋮</button></div>`;
 }
 function homeRow(x){
   document.getElementById('homeBody').insertAdjacentHTML('beforeend',
@@ -3636,7 +3934,15 @@ const MONEY='"$"#,##0';const MONEY2='"$"#,##0.00';const QTY='#,##0';const PCT='0
 /* Placeholder for controls that are visible but not built yet, so a click says why
    instead of appearing broken. */
 function comingSoon(what){toast((what||'That')+' is coming soon.');}
-function openExport(){document.getElementById('exportModal').style.display='flex';}
+function openExport(){
+  // Remembered export options (Settings → Exports) seed the checkboxes.
+  const saved=exportDefaultsFor('budget');
+  if(saved)for(const k in saved){
+    const e=document.getElementById('ex-'+k);
+    if(e)e.checked=saved[k];
+  }
+  document.getElementById('exportModal').style.display='flex';
+}
 function closeExport(){document.getElementById('exportModal').style.display='none';}
 function sel(){const c=id=>{const e=document.getElementById(id);return e?e.checked:false;};
   return {stats:c('ex-stats'),units:c('ex-units'),other:c('ex-other'),
@@ -3653,6 +3959,7 @@ function exportPDF(){
   document.body.classList.add('printing');
   closeExport();
   window.print();
+  postActivity('export_print','budget',doc&&doc.projectId);
   setTimeout(()=>{document.body.classList.remove('printing');
     document.getElementById('printDoc').innerHTML='';},600);
 }
@@ -4202,6 +4509,7 @@ function exportBudgetPdf(){
     a.href=URL.createObjectURL(b);a.download=exportBaseName()+'.pdf';a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href),4000);
     toast('PDF exported');
+    postActivity('export_pdf','budget',doc&&doc.projectId);
   });
 }
 
@@ -4557,6 +4865,7 @@ async function exportExcel(){
     document.body.appendChild(a);a.click();
     setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
     closeExport();toast('Excel exported');
+    postActivity('export_xlsx','budget',doc&&doc.projectId);
   }catch(e){toast('Excel export failed: '+e.message);}
 }
 
@@ -4581,6 +4890,10 @@ function wireDelegates(){
   document.getElementById('homeHead').addEventListener('click',e=>{
     const th=e.target.closest('th[data-sort]');if(!th)return;homeSort(th.dataset.sort);
   });
+  // Remembered export options: any change in the budget export modal becomes
+  // the account default when Settings → Exports says to remember.
+  document.querySelectorAll('#exportModal input[type=checkbox]').forEach(c=>
+    c.addEventListener('change',()=>rememberExportOptions('budget',sel())));
   document.getElementById('homeSearch').addEventListener('input',e=>{homeView.q=e.target.value;paintHome();});
   document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
   document.getElementById('homeGroup').addEventListener('change',e=>{homeView.group=e.target.value;paintHome();});
@@ -4753,9 +5066,17 @@ function endBoot(){
         window.print();
         setTimeout(()=>{document.body.classList.remove('printing');
           document.getElementById('printDoc').innerHTML='';},600);
-      }
+      },
+      // Per-account settings surface for the module: Home view mode,
+      // remembered export options, and client-reported activity events.
+      homeView:homeMode,
+      exportDefaults:exportDefaultsFor,
+      rememberExport:rememberExportOptions,
+      activity:postActivity,
+      timeFormat:()=>window.__fsTimeFormat||'12h'
     });
     await initAuth();
+    await loadUserSettings();   // account settings apply before anything paints
     const published=await sGet('pricing-multifamily');   // API-first; built-in seed as fallback
     pricingFromApi=!!published;
     pricing=published||DEFAULT_PRICING;
