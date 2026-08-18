@@ -177,7 +177,7 @@ function linePath(pts){
 
 function lineChartHTML(series){
   var days=fillDays(series, 30);
-  var W=760,H=190,padL=40,padR=12,padT=12,padB=26;
+  var W=440,H=190,padL=34,padR=8,padT=10,padB=24;
   var iw=W-padL-padR, ih=H-padT-padB;
   var max=Math.max(1, days.reduce(function(m,d){return Math.max(m,d.total);},0));
   // Round the axis up to something readable rather than the raw maximum.
@@ -194,7 +194,7 @@ function lineChartHTML(series){
   // Date ticks only every 5th day, or they collide.
   var ticks='';
   days.forEach(function(d,i){
-    if(i%5!==0 && i!==days.length-1) return;
+    if(i%10!==0 && i!==days.length-1) return;
     ticks+='<text x="'+x(i).toFixed(1)+'" y="'+(H-10)+'" text-anchor="middle" class="dash-ax">'
       +d.day.slice(5).replace('-','/')+'</text>';
   });
@@ -222,14 +222,14 @@ function lineChartHTML(series){
     +series2+dots
     +'</svg></div>'
     +'<div class="dash-legend dash-legend-h">'
-    +'<div class="dash-lg-row"><span class="dash-lg-dot" style="background:#006527"></span><span class="dash-lg-name">All Events</span></div>'
+    +'<div class="dash-lg-row"><span class="dash-lg-dot" style="background:#006527"></span><span class="dash-lg-name">All</span></div>'
     +'<div class="dash-lg-row"><span class="dash-lg-dot" style="background:#0a7a36"></span><span class="dash-lg-name">Saves</span></div>'
     +'<div class="dash-lg-row"><span class="dash-lg-dot" style="background:#2B579A"></span><span class="dash-lg-name">Logins</span></div>'
     +'</div>';
 }
 
 function budgetValueChartHTML(rows){
-  rows=(rows||[]).filter(function(r){return (r.projectCost||0)>0||(r.contractSum||0)>0;}).slice(0,6);
+  rows=(rows||[]).filter(function(r){return (r.projectCost||0)>0||(r.contractSum||0)>0;}).slice(0,5);
   if(!rows.length) return '<div style="color:var(--ink-500);font-size:13px;padding:8px 0">No budgets yet</div>';
   var max=rows.reduce(function(m,r){return Math.max(m,r.projectCost||0,r.contractSum||0);},0)||1;
   var html='<div class="dash-vbars">';

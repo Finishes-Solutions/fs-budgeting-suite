@@ -138,6 +138,32 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       return JSON.stringify({trendTop:Math.round(t.top),breakdownTop:Math.round(b.top),
                              trendLeft:Math.round(t.left),breakdownLeft:Math.round(b.left)});
     }));
+ // "Concise" is the actual requirement, so measure it: the KPI strip plus the
+ // whole chart row must fit one 1000px viewport, leaving the Activity Log to
+ // start near the fold rather than three screens down.
+ ok('the KPIs and every chart fit above the fold',
+    await p.evaluate(()=>{
+      const top=document.getElementById('dashKpis').getBoundingClientRect().top;
+      const cols=document.querySelector('#page-dashboard .dash-cols');
+      const bottom=cols.getBoundingClientRect().bottom;
+      return (bottom-top)<=700;
+    }),
+    await p.evaluate(()=>{
+      const top=document.getElementById('dashKpis').getBoundingClientRect().top;
+      const cols=document.querySelector('#page-dashboard .dash-cols');
+      return Math.round(cols.getBoundingClientRect().bottom-top)+'px tall';
+    }));
+ ok('all three charts share one row',
+    await p.evaluate(()=>{
+      const cards=[...document.querySelectorAll('#page-dashboard .dash-cols > .card')];
+      if(cards.length!==3) return false;
+      const tops=cards.map(c=>c.getBoundingClientRect().top);
+      return Math.max(...tops)-Math.min(...tops)<40;
+    }),
+    await p.evaluate(()=>{
+      const cards=[...document.querySelectorAll('#page-dashboard .dash-cols > .card')];
+      return 'cards='+cards.length+' tops='+cards.map(c=>Math.round(c.getBoundingClientRect().top)).join(',');
+    }));
  ok('status breakdown renders donut charts',
     (await p.evaluate(()=>document.querySelectorAll('#dashBreakdowns svg.dash-donut').length))===2);
  ok('the donut centre shows the total and its slices sum to it',

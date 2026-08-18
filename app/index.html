@@ -1924,8 +1924,8 @@ th.sortable.sorted{color:var(--ink-900)}
       <button class="btn btn-dark" onclick="FSDashboard.refresh()">Refresh</button></div>
   </div>
   <div class="dash-kpis" id="dashKpis"></div>
-  <!-- Two columns rather than a stack: the trend is wide, the status donuts
-       are square, and side by side they cost one screen instead of three. -->
+  <!-- Every chart on one row. Stacked, these three cost three screens; in
+       three columns they cost one, which is the whole point of a dashboard. -->
   <div class="dash-cols">
     <section class="card"><div class="card-hd"><span class="eyebrow">Activity — Last 30 Days</span></div>
       <div class="card-bd"><div id="dashTrend"></div></div>
@@ -1933,10 +1933,10 @@ th.sortable.sorted{color:var(--ink-900)}
     <section class="card"><div class="card-hd"><span class="eyebrow">Status Breakdown</span></div>
       <div class="card-bd"><div class="dash-grid" id="dashBreakdowns"></div></div>
     </section>
+    <section class="card"><div class="card-hd"><span class="eyebrow">Budgets By Value</span></div>
+      <div class="card-bd"><div id="dashValue"></div></div>
+    </section>
   </div>
-  <section class="card"><div class="card-hd"><span class="eyebrow">Budgets By Value</span></div>
-    <div class="card-bd"><div id="dashValue"></div></div>
-  </section>
   <section class="card">
     <div class="card-hd">
       <span class="eyebrow">Activity Log</span>
