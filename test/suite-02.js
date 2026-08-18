@@ -222,10 +222,14 @@ const BASE = 'http://127.0.0.1:8100';
   await p.waitForTimeout(400);
   ok('Reopened budget restores name', (await p.locator('#bTitle').textContent()).includes('Waller Preview Test'));
   ok('Reopened contract sum matches', (await p.locator('#rContract').textContent()) === contract);
-  ok('D5 status persisted as Draft', await p.locator('#bStatus').inputValue() === 'Draft');
+  // Status is the shared chip now, the same component the lists and the
+  // analysis editor use — not a select.
+  ok('D5 status persisted as Draft',
+     (await p.locator('#bStatusHost .st-chip').textContent()).trim() === 'Draft');
 
-  // --- status change persists
-  await p.selectOption('#bStatus', 'In Review');
+  // --- status change persists, through the chip's menu
+  await p.click('#bStatusHost .st-chip'); await p.waitForTimeout(200);
+  await p.click('#stMenu [data-st="In Review"]'); await p.waitForTimeout(500);
   await p.click('#page-budget button[data-save-btn]');
   await p.waitForTimeout(500);
   await p.click('#nav-home'); await p.waitForTimeout(400);
@@ -233,7 +237,7 @@ const BASE = 'http://127.0.0.1:8100';
      (await p.locator('#homeBody tr:has-text("TST-9999")').textContent()).includes('In Review'));
 
   // --- stale pricing banner after publishing a new version
-  await p.click('#nav-pricing'); await p.waitForTimeout(300);
+  await p.click('#nav-more-btn').then(()=>p.click('#nav-pricing')); await p.waitForTimeout(300);
   ok('pricing_admin unlocks the editor', await p.locator('#unlockedBanner').isVisible());
   await p.click('button:has-text("Publish New Version")');
   await p.waitForTimeout(500);

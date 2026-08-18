@@ -112,7 +112,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
 
  // ================= BUDGET TEMPLATES =================
- await p.click('#nav-pricing'); await p.waitForTimeout(500);
+ await p.click('#nav-more-btn').then(()=>p.click('#nav-pricing')); await p.waitForTimeout(500);
  ok('Budget Templates section is present', await p.locator('#tplCard').isVisible());
  ok('Template selector lists the seeded multifamily template',
     (await p.locator('#tplSelect option').allTextContents()).some(t => /Multifamily/.test(t)));

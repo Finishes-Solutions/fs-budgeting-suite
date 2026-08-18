@@ -496,6 +496,27 @@
       'Completed': 'st-done', 'Cancelled': 'st-cancel' }[n] || 'st-draft';
     return `<span class="st-chip ${cls}" style="pointer-events:none">${esc(n)}</span>`;
   }
+  /* The source budget, as a real link to its Inputs page rather than plain
+     text. The id comes from the analysis's own source record, never a
+     constant, so it always points at the budget this analysis was cut from. */
+  function sourceBudgetLink(projectId) {
+    const pid = String(projectId || '');
+    if (!pid) return '';
+    return `<a class="inv-srclink" href="#/inputs/${esc(pid)}"
+      aria-label="Open linked budget ${esc(pid)}" title="Open linked budget ${esc(pid)}"
+      onclick="event.preventDefault();FSInvestmentUI.openSourceBudget('${esc(pid)}')"
+      ><span class="mono">${esc(pid)}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+        ><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg></a>`;
+  }
+  // Leaving the editor goes through the same unsaved-changes guard as any
+  // other navigation — openBudget()/go() own that check.
+  function openSourceBudget(projectId) {
+    if (typeof window.openBudget === 'function') window.openBudget(projectId);
+    else A.navigate('#/inputs/' + projectId);
+  }
+  function backToList() { A.navigate('#/analyses'); }
+
   function paintStatusChip() {
     const h = el('invStatusHost');
     if (h) h.innerHTML = st.id && window.statusChip ? statusChip(st.status, 'analysis', st.id) : '';
@@ -544,10 +565,13 @@
       <div class="page-title">
         <div><h1 id="invTitle">${esc(inp.analysisName)}</h1>
           <div class="sub">${st.source
-            ? 'From Budget <span class="mono">' + esc(st.source.projectId) + '</span> <span class="inv-vsub">v' + esc(st.source.budgetVersionNumber) + '</span>'
+            ? 'From Budget ' + sourceBudgetLink(st.source.projectId)
+              + ' <span class="inv-vsub">v' + esc(st.source.budgetVersionNumber) + '</span>'
             : 'Standalone Analysis'}</div></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
           <span id="invStatusHost"></span>
+          <button class="btn btn-ghost" onclick="FSInvestmentUI.backToList()"
+            aria-label="Back to Investment Analyses" title="Back to Investment Analyses">&larr; Analyses</button>
           <span class="inv-statebar" id="invState"></span>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
@@ -555,7 +579,7 @@
         </div>
       </div>
       <div id="invConflict"></div>
-      <div class="inv-steps no-print" id="invSteps">${STEPS.map((s, i) =>
+      <div class="wf-steps no-print" id="invSteps">${STEPS.map((s, i) =>
         `<button data-step="${i + 1}" class="${st.step === i + 1 ? 'on' : ''}" onclick="FSInvestmentUI.goStep(${i + 1})"><span class="n">${i + 1}</span>${s}</button>`).join('')}</div>
       <div id="invErrSummary"></div>
 
@@ -1532,6 +1556,7 @@
   window.FSInvestmentUI = {
     init(adapter) { A = adapter; },
     renderList, renderListInto, open, createFromBudget, createStandalone,
+    openSourceBudget, backToList,
     createStandaloneFromModal, createBlank, openProjectPicker, softDelete,
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep, undo, redo,
     openExport, emailSoon, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,

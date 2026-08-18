@@ -352,6 +352,34 @@ main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 .card-hd{padding:14px 22px;border-bottom:1px solid var(--ink-150);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .card-hd h2{font-size:15px;font-weight:700;color:var(--ink-950)}
 .card-bd{padding:22px}
+/* ---- Shared workflow pills (.wf-steps) ----
+   One component for both multi-page workflows: the Investment Analysis steps
+   and the Budget's Inputs / Budget / CSI Schedule. It lived in
+   investment-analysis.css as .inv-steps; it is here now so the budget pages
+   use the same pills rather than a copy that drifts.
+   A pill is a <button> (analysis steps) or an <a> (budget sections, which are
+   real routes and so should be linkable) — both are styled identically. */
+.wf-steps{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 18px}
+.wf-steps button,.wf-steps a{display:inline-flex;align-items:center;border:1px solid var(--ink-200);
+  background:var(--white);border-radius:999px;padding:6px 14px;font-size:12.5px;cursor:pointer;
+  color:var(--ink-700);font-family:var(--fb);text-decoration:none;line-height:1.4;
+  transition:background .12s,border-color .12s,color .12s}
+.wf-steps button:hover,.wf-steps a:hover{background:var(--ink-50);border-color:var(--ink-300);color:var(--ink-900)}
+.wf-steps button.on,.wf-steps a.on{background:var(--solid,#16191a);border-color:var(--solid,#16191a);color:#fff}
+.wf-steps button.on:hover,.wf-steps a.on:hover{background:var(--solid,#16191a);border-color:var(--solid,#16191a);color:#fff}
+.wf-steps button:focus-visible,.wf-steps a:focus-visible{outline:none;box-shadow:var(--focus)}
+.wf-steps button[disabled]{opacity:.45;cursor:not-allowed}
+.wf-steps button[disabled]:hover{background:var(--white);border-color:var(--ink-200);color:var(--ink-700)}
+.wf-steps .n{font-family:var(--fm);font-size:11px;opacity:.65;margin-right:6px}
+/* completed steps carry a green dot (owner preference: dot, not a check mark) */
+.wf-steps button.done::after,.wf-steps a.done::after{content:'';display:inline-block;width:7px;height:7px;
+  border-radius:50%;background:var(--green-700);margin-left:7px;vertical-align:middle}
+.wf-steps button.on.done::after,.wf-steps a.on.done::after{background:#9FE0B8}
+@media(max-width:640px){
+  .wf-steps{gap:5px}
+  .wf-steps button,.wf-steps a{padding:6px 11px;font-size:12px}
+}
+
 /* ---- Shared dialog look ----
    Every popup — New Budget, New Investment Analysis, exports, version history
    — is one sheet: the card system's corner radius, and a title at the larger
@@ -838,19 +866,19 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <header>
   <div class="hd">
-    <a class="brand" href="#/budgets" title="Finishes Solutions Budgeting Suite">
+    <a class="brand" href="#/home" title="Finishes Solutions Budgeting Suite">
       <img src="assets/finishes-logo-white.svg" alt="Finishes Solutions">
     </a>
     <nav class="no-print">
+      <!-- Four top-level destinations. Inputs / Budget / CSI Schedule are
+           reached through the workflow pills on a budget, not from here. -->
       <button id="nav-home" class="on" onclick="go('home')">Home</button>
-      <button id="nav-input" onclick="go('input')" disabled>Inputs</button>
-      <button id="nav-budget" onclick="go('budget')" disabled>Budget</button>
-      <button id="nav-csi" onclick="go('csi')" disabled>CSI Schedule</button>
+      <button id="nav-budgets" onclick="go('budgets')">Budgets</button>
       <button id="nav-analyses" onclick="go('analyses')">Investment Analysis</button>
-      <button id="nav-pricing" onclick="go('pricing')">Pricing Library</button>
       <div class="nav-more" id="navMore">
         <button id="nav-more-btn" onclick="toggleNavMore()" aria-expanded="false" aria-haspopup="menu">More <span class="nav-caret">&#9662;</span></button>
         <div class="nav-drop" id="navDrop" role="menu">
+          <button id="nav-pricing" role="menuitem" onclick="go('pricing');closeNavMore()">Pricing Library</button>
           <button id="nav-help" role="menuitem" onclick="go('help');closeNavMore()">How to Use</button>
           <button id="nav-dashboard" role="menuitem" onclick="go('dashboard');closeNavMore()" style="display:none">Analytics</button>
           <button id="nav-admin" role="menuitem" onclick="go('admin');closeNavMore()" style="display:none">Admin</button>
@@ -881,58 +909,9 @@ th.sortable.sorted{color:var(--ink-900)}
       <button class="btn btn-primary" id="newBudgetBtn" onclick="openNewBudget()">+ New Budget</button>
     </div>
   </div>
-  <div class="card" id="homeBudgetsCard">
-    <div class="card-hd no-print">
-      <div class="list-toolbar">
-        <input type="text" id="homeSearch" placeholder="Search ID or name…">
-        <select id="homeStatus" class="lt-status">
-          <option value="all">All Statuses</option>
-          <option value="Draft">Draft</option>
-          <option value="In Review">In Review</option>
-          <option value="Completed">Completed</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
-        <select id="homeGroup" class="lt-group" title="Group the list" aria-label="Group By">
-          <option value="">No Grouping</option>
-          <option value="address">Group by Address</option>
-          <option value="id">Group by Project ID</option>
-          <option value="type">Group by Type</option>
-          <option value="status">Group by Status</option>
-        </select>
-      </div>
-      <div style="display:flex;gap:12px;align-items:center">
-        <!-- The budgets view — Comfortable · Compact · Cards — right where it
-             acts; the shared data attribute keeps it in step with Settings. -->
-        <div class="mini-seg" role="group" aria-label="Budgets View" title="Budgets View — also in Settings">
-          <button data-budgetview-pick="comfortable" aria-label="Comfortable List" title="Comfortable List" onclick="chooseSetting('budgetView','comfortable')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg></button>
-          <button data-budgetview-pick="compact" aria-label="Compact List" title="Compact List" onclick="chooseSetting('budgetView','compact')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
-          <button data-budgetview-pick="cards" aria-label="Card View" title="Card View" onclick="chooseSetting('budgetView','cards')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
-        </div>
-        <span class="eyebrow" id="homeCount">—</span>
-      </div>
-    </div>
-    <div class="card-bd" style="padding:0;overflow-x:auto">
-    <table class="tbl">
-      <thead id="homeHead"><tr>
-        <th style="padding-left:22px" class="no-print lt-user-col">User</th>
-        <th class="sortable" data-sort="projectId">Project ID</th>
-        <th class="sortable" data-sort="name">Name</th>
-        <th class="sortable" data-sort="status">Status</th>
-        <th class="r sortable" data-sort="contractSum">Contract Sum</th>
-        <th class="r sortable" data-sort="projectCost">Total Project Cost</th>
-        <th class="r sortable" data-sort="updated" style="padding-right:22px">Updated</th>
-        <th class="no-print"></th></tr></thead>
-      <tbody id="homeBody"></tbody>
-    </table>
-    <div class="home-cards" id="homeCards"></div>
-    <div class="empty" id="homeEmpty" style="display:none">
-      <div class="big" id="homeEmptyBig">No budgets yet</div>
-      <div id="homeEmptyMsg">Create one to get started. Budgets snapshot the pricing library at creation.</div>
-    </div>
-  </div></div>
+  <!-- The budgets list is mounted here from budgetsListShell('home'), the
+       same template the dedicated Budgets page uses, so the two cannot drift. -->
+  <div id="homeBudgetsHost"></div>
 
   <!-- Investment analyses: their own list below the budgets, rendered by the
        investment module. Row actions (Versions, Duplicate, Delete) live in
@@ -955,11 +934,14 @@ th.sortable.sorted{color:var(--ink-900)}
 <div class="page" id="page-input">
   <div class="page-title">
     <div><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
-    <div style="display:flex;gap:10px" class="no-print">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
+      <span id="iStatusHost"></span>
+      <button class="btn btn-ghost" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Budgets</button>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save Draft</button>
       <button class="btn btn-primary" onclick="toBudget()">Continue to Budget →</button>
     </div>
   </div>
+  <div class="wf-steps no-print" data-wf-pills></div>
 
   <section class="card">
     <div class="card-hd"><h2>Project</h2><span class="eyebrow">ID formats: OP-0001 · BD-0001 · AS-0001 · TST-9999 (test)</span></div>
@@ -1103,20 +1085,13 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title">
     <div><h1 id="bTitle">Budget</h1><div class="sub" id="bSub"></div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
-      <label class="fld" style="display:flex;align-items:center;gap:8px">
-        <span class="lab" style="margin:0">Status</span>
-        <select id="bStatus" style="width:130px;font-size:12px;padding:6px 8px" onchange="setStatus(this.value)">
-          <option value="Draft">Draft</option>
-          <option value="In Review">In Review</option>
-          <option value="Completed">Completed</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
-      </label>
-      <button class="btn btn-ghost" onclick="go('input')">← Inputs</button>
+      <span id="bStatusHost"></span>
+      <button class="btn btn-ghost" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Budgets</button>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
       <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
   </div>
+  <div class="wf-steps no-print" data-wf-pills></div>
 
   <div class="banner test no-print" id="testBanner" style="display:none">
     <span><b>Test budget.</b> TST-#### budgets are throwaway records for checking a preview build. They are written to the
@@ -1212,11 +1187,13 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title">
     <div><h1>CSI Schedule of Values</h1>
       <div class="sub" id="csiSub">The same budget, ordered as MasterFormat divisions — the form a lender, architect or GC expects.</div></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap" class="no-print">
-      <button class="btn btn-ghost" onclick="go('budget')">← Budget</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
+      <span id="cStatusHost"></span>
+      <button class="btn btn-ghost" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Budgets</button>
       <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
   </div>
+  <div class="wf-steps no-print" data-wf-pills></div>
 
   <section class="card" id="sec-csi">
     <div class="card-hd"><h2>Construction Contract</h2>
@@ -1323,6 +1300,21 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <!-- ================= HOW TO USE ================= -->
 <!-- ================= INVESTMENT ANALYSIS (rendered by investment-analysis.js) -->
+<!-- ================= BUDGETS (dedicated list) =================
+     The Budget counterpart of the Investment Analyses page: same page shell,
+     same list card. Its contents are mounted from budgetsListShell('budgets')
+     — the identical template Home uses — so the two lists cannot drift. -->
+<div class="page" id="page-budgets">
+  <div class="page-title">
+    <div><h1>Project Budgets</h1>
+      <div class="sub">Every budget you can see, newest first. Open one to work through Inputs, Budget and the CSI Schedule.</div></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="openNewBudget()">+ New Budget</button>
+    </div>
+  </div>
+  <div id="budgetsHost"></div>
+</div>
+
 <div class="page" id="page-analyses"></div>
 <div class="page" id="page-analysis"></div>
 
@@ -3182,12 +3174,12 @@ function editReason(it){
 /* ============ NAV + HASH ROUTING ============
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
-const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
-const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+const PAGE_SLUG={home:'home',budgets:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+const SLUG_PAGE={home:'home',budgets:'budgets',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
 const DOC_PAGES=['input','budget','csi'];
 
 function hashFor(p){
-  const s=PAGE_SLUG[p]||'budgets';
+  const s=PAGE_SLUG[p]||'home';
   if(DOC_PAGES.includes(p)&&doc&&doc.projectId)return '#/'+s+'/'+doc.projectId;
   // Analysis IDs are GUIDs, not project IDs — they stay lowercase and are
   // resolved by the investment module, never by openBudget().
@@ -3210,15 +3202,18 @@ function go(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   document.getElementById('page-'+p).classList.add('on');
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
-  // The analysis editor has no nav button of its own — it lights the
-  // Investment Analysis tab, the way budget pages light their own tabs.
-  const nb=document.getElementById('nav-'+(p==='analysis'?'analyses':p));
+  // Nested pages light their parent tab: the whole budget workflow keeps
+  // Budgets lit, and the analysis editor keeps Investment Analysis lit.
+  var NAV_PARENT={analysis:'analyses',input:'budgets',budget:'budgets',csi:'budgets'};
+  const nb=document.getElementById('nav-'+(NAV_PARENT[p]||p));
   if(nb)nb.classList.add('on');
-  var MORE_PAGES=['help','dashboard','admin','version'];
+  var MORE_PAGES=['help','dashboard','admin','version','pricing'];
   if(MORE_PAGES.includes(p))document.getElementById('nav-more-btn').classList.add('on');
   syncHash(p);
   renderSaveState();
   if(p==='home')renderHome();
+  if(p==='budgets')renderBudgetsPage();
+  if(DOC_PAGES.includes(p))paintWorkflowPills(p);
   if(p==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
   if(p==='pricing'){renderPricing();renderCatalog();}
   if(p==='dashboard'&&window.FSDashboard)FSDashboard.render();
@@ -3255,7 +3250,124 @@ async function routeFromHash(){
 window.addEventListener('hashchange',routeFromHash);
 
 /* ============ HOME ============ */
+/* ---- the budgets list card, one template, two mount points ----
+   Home embeds it under the page title; the dedicated Budgets page is the same
+   card with its own heading. Element ids are prefixed so both can sit in the
+   DOM at once (pages are hidden, not removed) — with prefix 'home' the ids are
+   exactly the ones Home has always used, so nothing that reads them changes. */
+function budgetsListShell(p){
+  return `<div class="card" id="${p}BudgetsCard">
+    <div class="card-hd no-print">
+      <div class="list-toolbar">
+        <input type="text" id="${p}Search" placeholder="Search ID or name…" aria-label="Search Budgets">
+        <select id="${p}Status" class="lt-status" aria-label="Filter by Status">
+          <option value="all">All Statuses</option>
+          <option value="Draft">Draft</option>
+          <option value="In Review">In Review</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+        <select id="${p}Group" class="lt-group" title="Group the list" aria-label="Group By">
+          <option value="">No Grouping</option>
+          <option value="address">Group by Address</option>
+          <option value="id">Group by Project ID</option>
+          <option value="type">Group by Type</option>
+          <option value="status">Group by Status</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div class="mini-seg" role="group" aria-label="Budgets View" title="Budgets View — also in Settings">
+          <button data-budgetview-pick="comfortable" aria-label="Comfortable List" title="Comfortable List" onclick="chooseSetting('budgetView','comfortable')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg></button>
+          <button data-budgetview-pick="compact" aria-label="Compact List" title="Compact List" onclick="chooseSetting('budgetView','compact')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+          <button data-budgetview-pick="cards" aria-label="Card View" title="Card View" onclick="chooseSetting('budgetView','cards')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
+        </div>
+        <span class="eyebrow" id="${p}Count">—</span>
+      </div>
+    </div>
+    <div class="card-bd" style="padding:0;overflow-x:auto">
+    <table class="tbl">
+      <thead id="${p}Head"><tr>
+        <th style="padding-left:22px" class="no-print lt-user-col">User</th>
+        <th class="sortable" data-sort="projectId">Project ID</th>
+        <th class="sortable" data-sort="name">Name</th>
+        <th class="sortable" data-sort="status">Status</th>
+        <th class="r sortable" data-sort="contractSum">Contract Sum</th>
+        <th class="r sortable" data-sort="projectCost">Total Project Cost</th>
+        <th class="r sortable" data-sort="updated" style="padding-right:22px">Updated</th>
+        <th class="no-print"></th></tr></thead>
+      <tbody id="${p}Body"></tbody>
+    </table>
+    <div class="home-cards" id="${p}Cards"></div>
+    <div class="empty" id="${p}Empty" style="display:none">
+      <div class="big" id="${p}EmptyBig">No budgets yet</div>
+      <div id="${p}EmptyMsg">Create one to get started. Budgets snapshot the pricing library at creation.</div>
+    </div>
+  </div></div>`;
+}
+
+/* Mount a list into its host and wire its toolbar. Both lists read and write
+   the one homeView state, so a search typed on either is the same search. */
+function mountBudgetsList(p,hostId){
+  const host=document.getElementById(hostId);
+  if(!host||host.dataset.mounted==='1')return;
+  host.innerHTML=budgetsListShell(p);
+  host.dataset.mounted='1';
+  const q=document.getElementById(p+'Search');
+  const st=document.getElementById(p+'Status');
+  const gr=document.getElementById(p+'Group');
+  if(q)q.addEventListener('input',e=>{homeView.q=e.target.value;paintBudgets();});
+  if(st)st.addEventListener('change',e=>{homeView.status=e.target.value;paintBudgets();});
+  if(gr)gr.addEventListener('change',e=>{homeView.group=e.target.value;paintBudgets();});
+  const head=document.getElementById(p+'Head');
+  if(head)head.addEventListener('click',e=>{
+    const th=e.target.closest('th[data-sort]');
+    if(th)homeSort(th.dataset.sort);
+  });
+  // Reflect whatever filter state is already in effect.
+  if(q)q.value=homeView.q;
+  if(st)st.value=homeView.status;
+  if(gr)gr.value=homeView.group;
+}
+// Every mounted list, so a repaint keeps them in step.
+const BUDGET_LIST_PREFIXES=['home','budgets'];
+
+/* The dedicated Budgets page: same data load as Home, same list card. */
+async function renderBudgetsPage(){
+  const host=document.getElementById('budgetsHost');
+  if(host&&host.dataset.mounted!=='1')mountBudgetsList('budgets','budgetsHost');
+  try{
+    index=(await sGet('budgets-index'))||[];
+    paintBudgets();
+  }catch(e){
+    const card=document.getElementById('budgetsBudgetsCard');
+    if(card)card.innerHTML='<div class="empty"><div class="big">Could not load budgets</div><div>'
+      +esc(e.message)+'</div></div>';
+  }
+}
+
+/* The budget workflow pills — the same .wf-steps component the analysis steps
+   use. Each pill is a real route, so the current page is both marked `on` and
+   given aria-current for assistive tech. */
+const WORKFLOW_STEPS=[{page:'input',label:'Inputs'},{page:'budget',label:'Budget'},{page:'csi',label:'CSI Schedule'}];
+function workflowPillsHTML(active){
+  return WORKFLOW_STEPS.map((s,i)=>
+    `<a href="${hashFor(s.page)}" class="${s.page===active?'on':''}"
+       ${s.page===active?'aria-current="page"':''}
+       onclick="event.preventDefault();go('${s.page}')"><span class="n">${i+1}</span>${s.label}</a>`).join('');
+}
+function paintWorkflowPills(active){
+  document.querySelectorAll('[data-wf-pills]').forEach(host=>{
+    host.innerHTML=workflowPillsHTML(active);
+  });
+}
+
 async function renderHome(){
+  // Mount defensively: renderHome can run from a hash route before init's
+  // mount call, and an unmounted list would paint into nothing.
+  mountBudgetsList('home','homeBudgetsHost');
   index=(await sGet('budgets-index'))||[];
   paintHome();
   // The investment analyses render as their own list below the budgets; a
@@ -3358,16 +3470,24 @@ function closeStatusMenu(){
   stMenuBtn=null;
 }
 async function setEntityStatus(kind,id,status){
+  // The open budget: local edit + dirty flag, persisted by Save. Never a PUT,
+  // which would also be wrong for a budget that has no ID yet.
+  if(kind==='budget-doc'){
+    if(!doc)return;
+    setStatus(status);
+    paintBudgetStatusChips();
+    return;
+  }
   try{
     await api(kind==='budget'?'budget/'+encodeURIComponent(id):'investment-analysis/'+id,
       {method:'PUT',body:JSON.stringify({status})});
     if(kind==='budget'){
       if(doc&&doc.projectId===id){
         doc.status=status;
-        const sel=document.getElementById('bStatus');if(sel)sel.value=status;
+        paintBudgetStatusChips();
       }
       const row=index.find(x=>x.projectId===id);if(row)row.status=status;
-      if(currentPage==='home')paintHome();
+      if(currentPage==='home'||currentPage==='budgets')paintBudgets();
     }else{
       if(window.FSInvestmentUI)FSInvestmentUI._statusApplied(id,status);
       if(currentPage==='home'&&window.FSInvestmentUI)
@@ -3378,43 +3498,51 @@ async function setEntityStatus(kind,id,status){
   }catch(e){toast('Could not update the status — '+e.message);}
 }
 
-function paintHome(){
-  const rows=homeRows(),b=document.getElementById('homeBody');b.innerHTML='';
-  const cards=document.getElementById('homeCards');
-  const cardsMode=budgetView()==='cards';
-  document.getElementById('homeBudgetsCard').setAttribute('data-density',
-    budgetView()==='compact'?'compact':'comfortable');
-  document.querySelector('#page-home .tbl').style.display=cardsMode?'none':'';
-  cards.classList.toggle('on',cardsMode&&rows.length>0);
-  cards.innerHTML='';
-  document.getElementById('homeEmpty').style.display=rows.length?'none':'block';
-  document.getElementById('homeEmptyBig').textContent=index.length?'Nothing matches':'No budgets yet';
-  document.getElementById('homeEmptyMsg').textContent=index.length
-    ?'No budgets match this search or filter.'
-    :'Create one to get started. Budgets snapshot the pricing library at creation.';
-  document.getElementById('homeCount').textContent=index.length
-    ?rows.length+' of '+index.length+(index.length===1?' budget':' budgets'):'—';
+function paintHome(){ paintBudgets(); }
+
+/* Paints every mounted budgets list from the one filtered/sorted row set, so
+   Home and the Budgets page always agree. `p` is the id prefix of a list. */
+function paintBudgets(){
+  const rows=homeRows();
   const groups=groupedRows(rows);
-  if(cardsMode){
-    if(groups)groups.forEach(gr=>{
-      cards.insertAdjacentHTML('beforeend',`<div class="grp-lab">${esc(gr.key)}
-        <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'} · ${usd(gr.contract)} contract</span></div>`);
-      gr.rows.forEach(x=>cards.insertAdjacentHTML('beforeend',homeCard(x)));
-    });
-    else rows.forEach(x=>cards.insertAdjacentHTML('beforeend',homeCard(x)));
-    return;
-  }
-  if(groups){
-    groups.forEach(gr=>{
-      // Totals sit in the Contract Sum and Total Project Cost columns,
-      // matching the division headers on the budget grid.
-      b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4" style="padding-left:22px">${esc(gr.key)}
-        <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'}</span></td>
-        <td class="calc r strong">${usd(gr.contract)}</td><td class="calc r strong">${usd(gr.project)}</td>
-        <td></td><td class="no-print"></td></tr>`);
-      gr.rows.forEach(homeRow);
-    });
-  } else rows.forEach(homeRow);
+  const cardsMode=budgetView()==='cards';
+  BUDGET_LIST_PREFIXES.forEach(p=>{
+    const card=document.getElementById(p+'BudgetsCard');
+    if(!card)return;                       // that list is not mounted
+    const b=document.getElementById(p+'Body');
+    const cards=document.getElementById(p+'Cards');
+    b.innerHTML='';cards.innerHTML='';
+    card.setAttribute('data-density',budgetView()==='compact'?'compact':'comfortable');
+    card.querySelector('.tbl').style.display=cardsMode?'none':'';
+    cards.classList.toggle('on',cardsMode&&rows.length>0);
+    document.getElementById(p+'Empty').style.display=rows.length?'none':'block';
+    document.getElementById(p+'EmptyBig').textContent=index.length?'Nothing matches':'No budgets yet';
+    document.getElementById(p+'EmptyMsg').textContent=index.length
+      ?'No budgets match this search or filter.'
+      :'Create one to get started. Budgets snapshot the pricing library at creation.';
+    document.getElementById(p+'Count').textContent=index.length
+      ?rows.length+' of '+index.length+(index.length===1?' budget':' budgets'):'—';
+    if(cardsMode){
+      if(groups)groups.forEach(gr=>{
+        cards.insertAdjacentHTML('beforeend',`<div class="grp-lab">${esc(gr.key)}
+          <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'} · ${usd(gr.contract)} contract</span></div>`);
+        gr.rows.forEach(x=>cards.insertAdjacentHTML('beforeend',homeCard(x)));
+      });
+      else rows.forEach(x=>cards.insertAdjacentHTML('beforeend',homeCard(x)));
+      return;
+    }
+    if(groups){
+      groups.forEach(gr=>{
+        // Totals sit in the Contract Sum and Total Project Cost columns,
+        // matching the division headers on the budget grid.
+        b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4" style="padding-left:22px">${esc(gr.key)}
+          <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'}</span></td>
+          <td class="calc r strong">${usd(gr.contract)}</td><td class="calc r strong">${usd(gr.project)}</td>
+          <td></td><td class="no-print"></td></tr>`);
+        gr.rows.forEach(x=>b.insertAdjacentHTML('beforeend',homeRowHTML(x)));
+      });
+    } else rows.forEach(x=>b.insertAdjacentHTML('beforeend',homeRowHTML(x)));
+  });
   paintHomeSortArrows();
 }
 function homeCard(x){
@@ -3428,8 +3556,10 @@ function homeCard(x){
     <button class="rowmenu-btn hc-menu" data-pid="${esc(x.projectId)}" aria-haspopup="menu" aria-expanded="false"
       aria-label="Actions for ${esc(x.projectId)}" onclick="event.stopPropagation();openRowMenu(this)">⋮</button></div>`;
 }
-function homeRow(x){
-  document.getElementById('homeBody').insertAdjacentHTML('beforeend',
+// Returns the row rather than writing it, so every mounted list can paint the
+// same markup into its own tbody.
+function homeRowHTML(x){
+  return (
     `<tr class="clickable" onclick="openBudget('${x.projectId}')">
       <td class="no-print" style="padding-left:22px">${creatorAvatar(x.createdByName,x.createdByAvatar)}</td>
       <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
@@ -3442,11 +3572,29 @@ function homeRow(x){
         aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(x.projectId)}"
         onclick="event.stopPropagation();openRowMenu(this)">⋮</button></td></tr>`);
 }
+/* The budget's status, as the same chip the analysis editor and both lists use.
+   Clicking it opens the shared status menu, so editing still works exactly as
+   the old select did — setStatus() remains the single write path. */
+function paintBudgetStatusChips(){
+  // 'budget-doc' marks the editor's own chip: it edits the open document and
+  // marks it dirty, exactly as the old select did, so an unsaved status change
+  // still goes through Save and still raises the unsaved-changes warning. The
+  // list chips keep kind 'budget' and write straight through the API.
+  const html=doc?statusChip(doc.status,'budget-doc',doc.projectId||''):'';
+  ['iStatusHost','bStatusHost','cStatusHost'].forEach(id=>{
+    const h=document.getElementById(id);
+    if(h)h.innerHTML=html;
+  });
+}
 function paintHomeSortArrows(){
-  document.querySelectorAll('#homeHead th[data-sort]').forEach(th=>{
-    const on=th.dataset.sort===homeView.sort;
-    th.classList.toggle('sorted',on);
-    th.setAttribute('data-arrow',on?(homeView.dir<0?'▾':'▴'):'');
+  BUDGET_LIST_PREFIXES.forEach(p=>{
+    const head=document.getElementById(p+'Head');
+    if(!head)return;
+    head.querySelectorAll('th[data-sort]').forEach(th=>{
+      const on=th.dataset.sort===homeView.sort;
+      th.classList.toggle('sorted',on);
+      th.setAttribute('data-arrow',on?(homeView.dir<0?'▾':'▴'):'');
+    });
   });
 }
 function homeSort(k){
@@ -3454,9 +3602,12 @@ function homeSort(k){
   else{homeView.sort=k;homeView.dir=(k==='updated'||k==='contractSum'||k==='projectCost')?-1:1;}
   paintHome();
 }
-function enableDocNav(){
-  ['nav-input','nav-budget','nav-csi'].forEach(id=>{document.getElementById(id).disabled=false;});
-}
+/* Inputs / Budget / CSI Schedule left the global nav — they are reached only
+   through the workflow pills, which render only while a budget is open. There
+   is nothing left to enable, so this is kept as the single place that used to
+   own that state rather than scattering the removal across its callers. */
+function enableDocNav(){ /* no global workflow tabs to enable any more */ }
+function disableDocNav(){ /* likewise */ }
 /* ============ BUDGET TEMPLATES ============
    The template system is the authoritative source of new-budget defaults
    (docs/DATA_CONTRACT.md). A template is edited by loading its document into the
@@ -3587,7 +3738,7 @@ function exitTemplateEdit(){
   if(!confirmDiscard())return;
   templateEdit=null;doc=null;dirty=false;selected.clear();
   renderTemplateBanner();
-  ['nav-input','nav-budget','nav-csi'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
+  disableDocNav();
   go('pricing');
 }
 async function publishTemplate(){
@@ -3806,8 +3957,7 @@ async function deleteBudget(pid){
   // version history, and restores it if the same project ID is saved again.
   if(!confirm('Delete '+pid+'?\n\nIt will be removed from your budgets list. Its saved version history is kept, and an administrator can restore it.'))return;
   try{await sDel('budget-'+pid);}catch(e){toast('Delete failed: '+e.message);return;}
-  if(doc&&doc.projectId===pid){doc=null;dirty=false;
-    ['nav-input','nav-budget','nav-csi'].forEach(id=>{document.getElementById(id).disabled=true;});}
+  if(doc&&doc.projectId===pid){doc=null;dirty=false;disableDocNav();}
   renderHome();toast('Deleted '+pid);
 }
 
@@ -4436,8 +4586,7 @@ function renderSummary(){
   document.getElementById('mYield').textContent='Yield (net inc) '+(p.project?(100*g.netYr/p.project).toFixed(1)+'%':'—');
   document.getElementById('mPricing').textContent='Pricing '+doc.pricingVersion+(pricingFromApi?'':' · built-in fallback');
   document.getElementById('mPricing').className='badge'+(pricingFromApi?'':' warn');
-  const st=document.getElementById('bStatus');
-  if(st&&st.value!==normStatus(doc.status))st.value=normStatus(doc.status);
+  paintBudgetStatusChips();
   document.getElementById('testBanner').style.display=isTest(doc.projectId)?'flex':'none';
   document.getElementById('sUnits').textContent=num(tu);
   document.getElementById('sRev').textContent=usd(g.netYr);
@@ -5592,16 +5741,12 @@ function wireDelegates(){
     const btn=e.target.closest('[data-cat-add]');if(!btn)return;
     catAdd(btn.dataset.code,btn.dataset.title);
   });
-  document.getElementById('homeHead').addEventListener('click',e=>{
-    const th=e.target.closest('th[data-sort]');if(!th)return;homeSort(th.dataset.sort);
-  });
   // Remembered export options: any change in the budget export modal becomes
   // the account default when Settings → Exports says to remember.
   document.querySelectorAll('#exportModal input[type=checkbox]').forEach(c=>
     c.addEventListener('change',()=>rememberExportOptions('budget',sel())));
-  document.getElementById('homeSearch').addEventListener('input',e=>{homeView.q=e.target.value;paintHome();});
-  document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
-  document.getElementById('homeGroup').addEventListener('change',e=>{homeView.group=e.target.value;paintHome();});
+  mountBudgetsList('home','homeBudgetsHost');
+  mountBudgetsList('budgets','budgetsHost');
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();closeNewBudget();closeStatusMenu();return;}
     // Cmd/Ctrl+K opens the global search palette from anywhere in the app.

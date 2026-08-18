@@ -92,8 +92,11 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' �
   ok('D4 unsafe name renders literally', sub.includes('Preview <Test> & Co'), sub);
 
   // D5 — status
-  await p.selectOption('#bStatus', 'Completed');
-  ok('D5 status settable', await p.locator('#bStatus').inputValue() === 'Completed');
+  // Status is the shared chip, opened from the budget header.
+  await p.click('#bStatusHost .st-chip'); await p.waitForTimeout(200);
+  await p.click('#stMenu [data-st="Completed"]'); await p.waitForTimeout(300);
+  ok('D5 status settable',
+     (await p.locator('#bStatusHost .st-chip').textContent()).trim() === 'Completed');
 
   // U1 — collapse
   const before = await p.locator('#budBody tr').count();

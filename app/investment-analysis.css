@@ -11,17 +11,8 @@
 .inv-table tbody tr:hover{background:var(--ink-50)}
 .inv-table .mono{font-family:var(--fm)}
 
-/* step navigation */
-.inv-steps{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 18px}
-.inv-steps button{border:1px solid var(--ink-200);background:var(--white);border-radius:999px;
-  padding:6px 14px;font-size:12.5px;cursor:pointer;color:var(--ink-700)}
-.inv-steps button.on{background:var(--solid,#16191a);border-color:var(--solid,#16191a);color:#fff}
-.inv-steps button .n{font-family:var(--fm);font-size:11px;opacity:.65;margin-right:6px}
-/* a completed step earns a checkmark on its pill */
-/* completed steps carry a green dot (owner preference: dot, not a check mark) */
-.inv-steps button.done::after{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;
-  background:var(--green-700);margin-left:7px;vertical-align:middle}
-.inv-steps button.on.done::after{background:#9FE0B8}
+/* Step navigation is now the shared .wf-steps component in index.html, so the
+   budget workflow and this one are literally the same pills. Nothing here. */
 
 /* guided per-step footer: the Next button lights up when the step's required
    fields are filled */
@@ -45,6 +36,16 @@
 .inv-grid .fld{display:flex;flex-direction:column;justify-content:flex-end}
 .inv-grid .fld input,.inv-grid .fld select{width:100%}
 .inv-grid .wide{grid-column:span 2}
+
+/* The source budget link in the editor subtitle. Compact and secondary to the
+   title: it inherits the subtitle's size and only picks up colour on hover. */
+.inv-srclink{display:inline-flex;align-items:center;gap:4px;color:inherit;text-decoration:none;
+  border-radius:4px;padding:0 2px;transition:color .12s,background .12s}
+.inv-srclink .mono{font-family:var(--fm)}
+.inv-srclink svg{width:11px;height:11px;flex:none;opacity:.7}
+.inv-srclink:hover{color:var(--green-700);background:var(--green-50)}
+.inv-srclink:hover svg{opacity:1}
+.inv-srclink:focus-visible{outline:none;box-shadow:var(--focus);color:var(--green-700)}
 
 /* the linked budget version, visually secondary to the Project ID */
 .inv-vsub{font-family:var(--fm);font-size:10.5px;color:var(--ink-500);font-weight:500;margin-left:6px;
