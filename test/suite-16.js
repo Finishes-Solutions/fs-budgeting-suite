@@ -22,6 +22,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
      pricingVersion:'2026.08-v2',updated:new Date().toISOString()};
    await fetch('/api/budget/TST-9960',{method:'PUT',headers:{'Content-Type':'application/json'},
      body:JSON.stringify({meta:{projectId:'TST-9960',name:'Dashboard Test',status:'Draft'},doc})});
+   // one analysis too, so the budget and analysis avatars can be compared
+   await fetch('/api/investment-analyses',{method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({mode:'fromBudget',projectId:'TST-9960',analysisName:'Dashboard Deal'})});
    for(let i=0;i<35;i++){
      await fetch('/api/user-activity',{method:'POST',headers:{'Content-Type':'application/json'},
        body:JSON.stringify({eventType:'export_pdf',entityType:'budget',entityId:'TST-9960'})});
@@ -121,6 +124,45 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       // the User cell holds the avatar and nothing else
       return !!first.querySelector('.creator-av') && first.textContent.trim().length<=3;
     }));
+
+ // The budget avatar must carry the creator's own colour and initials, the
+ // same component the analyses list uses — not a generic placeholder.
+ ok('the budget avatar shows the creator initials',
+    await p.evaluate(()=>{
+      const av=document.querySelector('#homeBody tr:not(.grp-hd) .creator-av');
+      return !!av && /^[A-Z]{1,2}$/.test(av.textContent.trim());
+    }),
+    await p.evaluate(()=>{
+      const av=document.querySelector('#homeBody tr:not(.grp-hd) .creator-av');
+      return av?av.textContent.trim():'no avatar';
+    }));
+ ok('the budget avatar names the creator on hover',
+    await p.evaluate(()=>{
+      const av=document.querySelector('#homeBody tr:not(.grp-hd) .creator-av');
+      return !!av && (av.getAttribute('title')||'').length>0;
+    }));
+ ok('budget and analysis avatars are the same component',
+    await p.evaluate(()=>{
+      const b=document.querySelector('#homeBody tr:not(.grp-hd) .creator-av');
+      const a=document.querySelector('#homeAnalyses .creator-av');
+      if(!b||!a) return false;
+      const cb=getComputedStyle(b), ca=getComputedStyle(a);
+      return cb.width===ca.width&&cb.height===ca.height&&cb.borderRadius===ca.borderRadius;
+    }));
+
+ // card view carries the avatar too, on budgets as well as analyses
+ await p.evaluate(()=>chooseSetting('budgetView','cards'));
+ await p.waitForTimeout(600);
+ ok('budget cards carry the creator avatar',
+    await p.evaluate(()=>!!document.querySelector('#homeCards .hcard .hc-id .creator-av')));
+ ok('the budget card avatar sits with the project ID',
+    await p.evaluate(()=>{
+      const id=document.querySelector('#homeCards .hcard .hc-id');
+      return !!id && !!id.querySelector('.creator-av') && /BD-|TST-|AS-|OP-/.test(id.textContent);
+    }),
+    await p.evaluate(()=>{const id=document.querySelector('#homeCards .hcard .hc-id');return id?id.textContent.trim():'none';}));
+ await p.evaluate(()=>chooseSetting('budgetView','comfortable'));
+ await p.waitForTimeout(500);
 
  // the analyses list: same contract, and the off-by-one that overlapped the
  // name and project cells shows up as a header/cell count mismatch

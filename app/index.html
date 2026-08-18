@@ -3342,7 +3342,7 @@ function paintHome(){
 }
 function homeCard(x){
   return `<div class="hcard" onclick="openBudget('${x.projectId}')">
-    <div class="hc-id">${creatorAvatar(x.createdByName,x.createdByAvatar)} ${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</div>
+    <div class="hc-id">${x.createdByName?creatorAvatar(x.createdByName,x.createdByAvatar)+' ':''}${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</div>
     <div class="hc-name">${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</div>
     <div class="hc-row"><span>Contract Sum</span><span class="v">${usd(x.contractSum||0)}</span></div>
     <div class="hc-row"><span>Total Project</span><span class="v">${usd(x.projectCost||0)}</span></div>
