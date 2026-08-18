@@ -48,6 +48,8 @@ try{
      the nav button, page containers, routes, and the adapter passed to init. -->
 <link rel="stylesheet" href="investment-analysis.css">
 <script src="investment-analysis.js"></script>
+<link rel="stylesheet" href="dashboard.css">
+<script src="dashboard.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 :root{
@@ -139,7 +141,7 @@ html[data-theme=dark][data-accent=orange]{--green-900:#38200a;--green-800:#8a4c1
 [data-density=compact] .rowmenu-btn{width:22px;height:22px;line-height:20px}
 [data-density=compact] .tbl th,[data-density=compact] .inv-list th{padding-top:5px;padding-bottom:5px}
 [data-density=compact] .grp-hd td,[data-density=compact] .inv-grp td{padding-top:3px;padding-bottom:3px}
-/* identity cells never stack their inline pieces (TEST tag, Budget vN) */
+/* identity cells never stack their inline pieces (TEST tag, vN) */
 #homeBody td:first-child,.inv-list td:nth-child(2){white-space:nowrap}
 /* ---- Status chips: one shared, editable status system ----
    Draft (gray) · In Review (amber) · Completed (green, accent-aware) ·
@@ -319,6 +321,18 @@ nav button{background:transparent;border:none;color:rgba(255,255,255,.6);font-fa
 nav button:hover{color:#fff;background:rgba(255,255,255,.08)}
 nav button.on{color:#fff;background:var(--green-700)}
 nav button[disabled]{opacity:.35;cursor:not-allowed}
+.nav-more{position:relative}
+.nav-more #nav-more-btn{display:flex;align-items:center;gap:4px}
+.nav-caret{font-size:9px;transition:transform .15s}
+.nav-more.open .nav-caret{transform:rotate(180deg)}
+.nav-drop{display:none;position:absolute;top:calc(100% + 4px);right:0;min-width:170px;
+  background:var(--ink-900);border:1px solid rgba(255,255,255,.12);border-radius:10px;
+  padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:40}
+.nav-more.open .nav-drop{display:flex;flex-direction:column}
+.nav-drop button{text-align:left;padding:9px 14px;border-radius:6px;font-size:11px;
+  letter-spacing:.12em;text-transform:uppercase}
+.nav-drop button:hover{background:rgba(255,255,255,.08)}
+.nav-drop button.on{background:var(--green-700);color:#fff}
 
 main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 .page{display:none}.page.on{display:block}
@@ -451,7 +465,7 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
   .list-toolbar input[type=text]{width:auto;flex:1 1 150px;min-width:0}
   .list-toolbar select.lt-status,.list-toolbar select.lt-group{width:auto;flex:0 1 auto;min-width:0}
   .home-cards{padding:14px}
-  #exportModal .card,#pickModal .card,#versionsModal .card{max-height:90vh;overflow:auto}
+  #exportModal .card,#pickModal .card,#versionsModal .card,#guideExportModal .card{max-height:90vh;overflow:auto}
 }
 
 /* Template administration */
@@ -533,7 +547,7 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .seg{display:inline-flex;border:1px solid var(--ink-200);border-radius:var(--r);overflow:hidden}
 .seg button{border:none;background:var(--white);padding:7px 12px;font-family:var(--fm);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-500);cursor:pointer}
 .seg button.on{background:var(--solid);color:#fff}
-.chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-700);cursor:pointer;user-select:none}
+.chk{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-700);cursor:pointer;user-select:none}
 .chk input{width:15px;height:15px;accent-color:var(--green-700)}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--solid);color:#fff;padding:12px 20px;border-radius:var(--rm);
   font-size:13px;box-shadow:0 8px 24px rgba(11,13,12,.25);opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:99}
@@ -635,6 +649,9 @@ th.sortable.sorted{color:var(--ink-900)}
 @media print{
   @page{size:letter portrait;margin:13mm 12mm 14mm}
   body{background:#fff}
+  :root{--green-900:#00351a!important;--green-800:#004d1e!important;--green-700:#006527!important;
+    --green-600:#0a7a36!important;--green-500:#1f9249!important;--green-200:#c2e3d0!important;
+    --green-100:#e2f1e8!important;--green-50:#f1f8f4!important}
   .no-print,.banner,.toast,#exportModal,#pickModal,#versionsModal,#rowMenu,#bootScreen,
   #profileMenu{display:none!important}
   /* direct children only — the report has its own <header> and must not be hidden */
@@ -763,7 +780,14 @@ th.sortable.sorted{color:var(--ink-900)}
       <button id="nav-csi" onclick="go('csi')" disabled>CSI Schedule</button>
       <button id="nav-analyses" onclick="go('analyses')">Investment Analysis</button>
       <button id="nav-pricing" onclick="go('pricing')">Pricing Library</button>
-      <button id="nav-help" onclick="go('help')">How to Use</button>
+      <div class="nav-more" id="navMore">
+        <button id="nav-more-btn" onclick="toggleNavMore()" aria-expanded="false" aria-haspopup="menu">More <span class="nav-caret">&#9662;</span></button>
+        <div class="nav-drop" id="navDrop" role="menu">
+          <button id="nav-help" role="menuitem" onclick="go('help');closeNavMore()">How to Use</button>
+          <button id="nav-dashboard" role="menuitem" onclick="go('dashboard');closeNavMore()" style="display:none">Analytics</button>
+          <button id="nav-version" role="menuitem" onclick="go('version');closeNavMore()">Version</button>
+        </div>
+      </div>
     </nav>
     <div class="hd-r">
       <span class="savepill" id="saveState" style="display:none"></span>
@@ -1160,7 +1184,7 @@ th.sortable.sorted{color:var(--ink-900)}
     <div><h1>Pricing Library</h1><div class="sub">Multifamily cost assumptions — seeded from the Finishes budget model export.</div></div>
   </div>
   <div class="banner" id="lockBanner">
-    <span id="lockMsg"><b>Locked.</b> Pricing is editable only by accounts holding the <b>pricing_admin</b> role (assigned in the Static Web App's role management).</span>
+    <span id="lockMsg">No Permissions to Edit This Page</span>
     <span style="display:flex;gap:8px;align-items:center" class="no-print" id="lockCtl">
       <input type="password" id="adminPass" placeholder="Admin passcode" style="width:180px">
       <button class="btn btn-sm btn-dark" onclick="unlock()">Unlock</button>
@@ -1236,13 +1260,14 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title">
     <div><h1>How to Use the Budgeting Suite</h1>
       <div class="sub">Build a multifamily project budget from the shared pricing library, underwrite it as an investment analysis, and export both.</div></div>
-    <div class="no-print"><button class="btn btn-dark" onclick="downloadGuide()">Download Guide</button></div>
+    <div class="no-print"><button class="btn btn-dark" onclick="openGuideExport()">Download Guide</button></div>
   </div>
 
   <div class="help-wrap">
     <nav id="helpToc" class="no-print">
       <a href="#help-overview" class="on">What This Is</a>
       <a href="#help-quickstart">Quick Start</a>
+      <a href="#help-firstproject">Your First Project</a>
       <a href="#help-ids">Project IDs</a>
       <a href="#help-inputs">Inputs Reference</a>
       <a href="#help-budget">The Budget Page</a>
@@ -1338,6 +1363,74 @@ th.sortable.sorted{color:var(--ink-900)}
         <div class="callout">The header pill shows <b>Unsaved changes</b> until a save succeeds. Nothing is stored
           automatically — if you close the tab with that pill showing, the browser will warn you.
           <b>Cmd+S</b> (or <b>Ctrl+S</b>) saves from anywhere in a budget or an analysis.</div>
+      </div></section>
+
+      <section class="card" data-sample-project><div class="card-bd">
+        <h3 id="help-firstproject">Your First Project</h3>
+        <p>This walkthrough creates a real budget and investment analysis from scratch, using a
+          fictional 120-unit garden-style apartment project called <b>Cypress Ridge</b>. Follow
+          along in the tool — every number below is something you type in.</p>
+
+        <h4>Create the Budget</h4>
+        <div class="step"><div class="n">1</div><div class="t">From Home, click <span class="kbd">+ New Budget</span>
+          and choose the <b>Multifamily</b> template. The tool creates a budget pre-loaded with the
+          current pricing library.</div></div>
+        <div class="step"><div class="n">2</div><div class="t">On the <b>Inputs</b> page, fill in the project header:
+          <br>Project ID: <code>BD-0100</code><br>Name: <code>Cypress Ridge Apartments</code><br>
+          Residential Buildable SF: <code>108000</code><br>Amenity / Clubhouse SF: <code>3200</code></div></div>
+        <div class="step"><div class="n">3</div><div class="t">Set up the unit mix — three unit types:
+          <table class="tbl" style="margin:8px 0">
+            <thead><tr><th>Type</th><th>BD</th><th>BTH</th><th>SF</th><th>Count</th><th>Rent</th></tr></thead>
+            <tbody>
+              <tr><td>A1</td><td>1</td><td>1</td><td>750</td><td>48</td><td>$1,350</td></tr>
+              <tr><td>B1</td><td>2</td><td>2</td><td>1,050</td><td>54</td><td>$1,650</td></tr>
+              <tr><td>C1</td><td>3</td><td>2</td><td>1,250</td><td>18</td><td>$1,950</td></tr>
+            </tbody></table>
+          The tool calculates total unit SF (120,600), building efficiency (111.7% — unit area exceeds buildable,
+          which the amber badge flags for you), and gross monthly rent ($185,700).</div></div>
+        <div class="step"><div class="n">4</div><div class="t">Under <b>Other Income</b>, add two rows:
+          <br>Parking — $50/mo, 60 spaces (type over the auto-count)
+          <br>Pet Rent — $35/mo, 40 units (manual count)
+          <br>Under <b>Operating Expenses</b>, keep the template defaults (Trash, Pest Control, etc.).
+          These feed the investment analysis later.</div></div>
+        <div class="step"><div class="n">5</div><div class="t">Fill in the land and project costs:
+          <br>Land: <code>$2,400,000</code><br>Developer Fee: <code>$850,000</code><br>
+          Marketing: <code>$120,000</code><br>Closing Costs: <code>$75,000</code></div></div>
+
+        <h4>Review and Save the Budget</h4>
+        <div class="step"><div class="n">6</div><div class="t">Switch to the <b>Budget</b> page. Every line is already
+          priced from the library — scroll through the Residential, Amenity, and Soft Cost scopes to see how
+          the template rates drive the totals. The summary at the bottom shows the contract sum and total
+          project cost.</div></div>
+        <div class="step"><div class="n">7</div><div class="t">Press <span class="kbd">Save</span> (or
+          <b>Cmd/Ctrl+S</b>). The header pill changes to <b>Saved</b> and the budget now has version 1.
+          This is important: the investment analysis creates from a specific saved version.</div></div>
+
+        <h4>Underwrite It</h4>
+        <div class="step"><div class="n">8</div><div class="t">Click <span class="kbd">+ New Investment Analysis</span>
+          and choose <b>From Existing Budget</b>. Select <b>BD-0100 Cypress Ridge Apartments</b> from the
+          dropdown. The analysis imports the property name, unit count, gross scheduled rent (unit rents times
+          12), and total project cost as a suggested purchase price — each imported value shows a green
+          <b>From Budget</b> badge.</div></div>
+        <div class="step"><div class="n">9</div><div class="t">Walk the six steps:
+          <br><b>Step 1 — Source &amp; Property:</b> Set Purchase Month to the target closing date. The
+          address, unit count, and square footage carry over from the budget.
+          <br><b>Step 2 — Income:</b> Gross Scheduled Rent is pre-filled from the unit mix. Add any
+          additional income lines.
+          <br><b>Step 3 — Vacancy &amp; Expenses:</b> Set a vacancy rate (e.g. 5%) and enter the full
+          operating expenses — insurance, taxes, management, maintenance, and the service expenses the
+          budget suggested.
+          <br><b>Step 4 — Mortgage:</b> Choose <b>Amortizing Mortgage</b> and enter the loan amount,
+          interest rate (e.g. 6.5%), and 30-year term. Or choose <b>All Cash</b> for an unleveraged view.
+          <br><b>Step 5 — Disposition:</b> Set the Exit Cap Rate (e.g. 5.75%) and selling costs (e.g. 2%).
+          <br><b>Step 6 — Review &amp; Report:</b> Click <span class="kbd">Calculate</span> to run the
+          model. The report shows five years of cash flows, returns, and the sensitivity table.</div></div>
+        <div class="step"><div class="n">10</div><div class="t">Press <span class="kbd">Save</span> to store
+          the analysis. You can now export both the budget and the analysis from their respective Export
+          buttons — PDF, Excel, or Print.</div></div>
+        <div class="callout">This example covers the full cycle: template to budget, budget to investment
+          analysis, and both exportable. Everything you entered is editable — change the assumptions and
+          recalculate as often as you like.</div>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -1595,7 +1688,7 @@ th.sortable.sorted{color:var(--ink-900)}
           editable — editing a value away from the import hides its badge, and restoring the exact
           imported value brings it back, even after saving and reloading. In the lists, the
           <b>Project / Budget</b> column shows which budget version a linked analysis came from
-          (for example, BD-4821 Budget v14) — distinct from <b>Analysis Ver.</b>, which counts the
+          (for example, BD-4821 v14) — distinct from <b>Analysis Ver.</b>, which counts the
           analysis's own saved versions.</p>
 
         <div class="callout"><b>The import is a snapshot, not a live link.</b> Each analysis records the
@@ -1693,6 +1786,9 @@ th.sortable.sorted{color:var(--ink-900)}
             and export budgets and investment analyses, and can read the pricing library.</td></tr>
           <tr><td>pricing_admin</td><td>Additionally can edit and publish the pricing library. This is deliberately
             a very short list, because a rate change affects every budget created afterwards.</td></tr>
+          <tr><td>super_admin</td><td>Everything pricing_admin can do, plus access to the Analytics dashboard
+            (platform-wide KPIs, status breakdowns, and user activity). The Analytics tab appears only for
+            accounts holding this role.</td></tr>
         </tbody></table>
         <p>The pricing page shows whether your account holds the role. If you need it, ask the tool owner for a
           role invitation.</p>
@@ -1729,6 +1825,31 @@ th.sortable.sorted{color:var(--ink-900)}
 
     </div>
   </div>
+</div>
+
+<!-- ================= ANALYTICS DASHBOARD (super_admin only) ================= -->
+<div class="page" id="page-dashboard">
+  <div class="page-title">
+    <div><h1>Analytics Dashboard</h1>
+      <div class="sub">Platform usage, budget and investment KPIs, and recent activity across all users.</div></div>
+    <div><button class="btn btn-dark" onclick="FSDashboard.refresh()">Refresh</button></div>
+  </div>
+  <div class="dash-kpis" id="dashKpis"></div>
+  <div class="dash-section"><h2>Status Breakdown</h2>
+    <div class="dash-grid" id="dashBreakdowns"></div>
+  </div>
+  <div class="dash-section"><h2>Recent Activity</h2>
+    <div id="dashActivity"></div>
+  </div>
+</div>
+
+<!-- ================= VERSION (internal diagnostics) ================= -->
+<div class="page" id="page-version">
+  <div class="page-title">
+    <div><h1>Version</h1>
+      <div class="sub">System versions, providers, and environment diagnostics.</div></div>
+  </div>
+  <div id="versionContent"></div>
 </div>
 
 </main>
@@ -1770,6 +1891,22 @@ th.sortable.sorted{color:var(--ink-900)}
         <button class="btn btn-primary" title="Download the branded PDF report"
           onclick="exportBudgetPdf()">PDF</button>
         <button class="btn btn-ghost" onclick="exportExcel()">Excel (.xlsx)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= GUIDE EXPORT MODAL ================= -->
+<div id="guideExportModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
+  <div class="card" style="width:460px;max-width:92vw;margin:0">
+    <div class="card-hd"><h2>Download Guide</h2><button class="btn-x" onclick="closeGuideExport()">×</button></div>
+    <div class="card-bd" style="padding:22px 26px">
+      <div class="eyebrow" style="margin-bottom:12px">Options</div>
+      <div style="display:grid;gap:12px;margin-bottom:24px">
+        <label class="chk"><input type="checkbox" id="gx-sample" checked> Include Sample Project Walkthrough</label>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="downloadGuide(document.getElementById('gx-sample').checked);closeGuideExport()">PDF</button>
       </div>
     </div>
   </div>
@@ -1922,7 +2059,15 @@ th.sortable.sorted{color:var(--ink-900)}
           <span class="set-dot rainbow" id="accentCustomDot"
             style="background:conic-gradient(#e03131,#f59f00,#94d82d,#20c997,#339af0,#845ef7,#e03131)"></span>Custom<span class="tick">✓</span></button>
         <input type="color" id="accentPicker" value="#0a7a36" style="position:absolute;width:0;height:0;opacity:0;border:0;padding:0"
-          onchange="chooseSetting('accentColor',this.value.toLowerCase())" aria-label="Custom Accent Color">
+          onchange="chooseSetting('accentColor',this.value.toLowerCase());document.getElementById('accentHex').value=this.value.toLowerCase()" aria-label="Custom Accent Color">
+      </div>
+      <div id="accentHexRow" style="display:none;margin-top:6px;align-items:center;gap:8px">
+        <span style="font-size:12px;color:var(--ink-500)">Hex</span>
+        <input id="accentHex" type="text" maxlength="7" spellcheck="false" autocomplete="off"
+          style="width:90px;font-family:var(--fm);font-size:13px;padding:5px 8px;border:1px solid var(--ink-200);border-radius:6px;background:var(--white);color:var(--ink-800)"
+          onchange="var v=this.value.trim().toLowerCase();if(/^#[0-9a-f]{6}$/.test(v)){chooseSetting('accentColor',v);document.getElementById('accentPicker').value=v}"
+          placeholder="#006527">
+        <span class="set-dot" id="accentHexPreview" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--ink-200);flex-shrink:0"></span>
       </div>
 
       <div class="set-lab">Profile Icon Background</div>
@@ -2132,6 +2277,7 @@ function hexHsl(x){
   const s=d?d/(1-Math.abs(2*l-1)):0;
   return [h,Math.round(s*100)];
 }
+function hexHslFull(x){var r=hexHsl(x);var [rr,gg,bb]=hexRgb(x).map(v=>v/255);return [r[0],r[1],Math.round((Math.max(rr,gg,bb)+Math.min(rr,gg,bb))/2*100)];}
 function hslHex(h,s,l){
   s/=100;l/=100;
   const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;
@@ -2140,13 +2286,15 @@ function hslHex(h,s,l){
 }
 function accentScale(hex,dark){
   const [h,s]=hexHsl(hex);
+  const [,,inputL]=hexHslFull(hex);
+  var mid=dark?Math.max(inputL,44):Math.max(Math.min(inputL,42),28);
   const L=dark
-    ?{900:14,800:30,700:48,600:54,500:62,200:30,100:22,50:16}
-    :{900:22,800:30,700:38,600:46,500:56,200:84,100:90,50:95};
+    ?{900:Math.max(mid-34,8),800:Math.max(mid-18,16),700:mid,600:mid+6,500:mid+14,200:Math.max(mid-18,16),100:Math.max(mid-26,12),50:Math.max(mid-32,10)}
+    :{900:Math.max(mid-16,12),800:Math.max(mid-8,18),700:mid,600:mid+8,500:mid+18,200:Math.min(mid+46,88),100:Math.min(mid+52,92),50:Math.min(mid+57,96)};
   const S=k=>(k==='200'||k==='100'||k==='50')?Math.min(s,dark?32:55):s;
   const tokens={};
   for(const k of ['900','800','700','600','500','200','100','50'])tokens[k]=hslHex(h,S(k),L[k]);
-  return {tokens,focus:'rgba('+hexRgb(hslHex(h,s,dark?60:46)).join(',')+',.33)'};
+  return {tokens,focus:'rgba('+hexRgb(hslHex(h,s,dark?Math.min(mid+16,70):Math.min(mid+8,50))).join(',')+',.33)'};
 }
 function applyAvatar(hex){
   if(hex)document.documentElement.style.setProperty('--avatar-bg',hex);
@@ -2209,6 +2357,12 @@ function paintSettingsUI(){
   if(cd)cd.style.background=accCustom?acc:RAINBOW;
   const ap=document.getElementById('accentPicker');
   if(ap&&accCustom)ap.value=acc;
+  var hexRow=document.getElementById('accentHexRow');
+  if(hexRow)hexRow.style.display=accCustom?'flex':'none';
+  var hexIn=document.getElementById('accentHex');
+  if(hexIn&&accCustom)hexIn.value=acc;
+  var hexPrv=document.getElementById('accentHexPreview');
+  if(hexPrv)hexPrv.style.background=accCustom?acc:'transparent';
   const av=s.avatarColor||'';
   mark('[data-avatar-pick]',AVATAR_PRESETS.includes(av)?av:'custom');
   const vp=document.getElementById('avatarPicker');
@@ -2271,14 +2425,24 @@ function postActivity(eventType,entityType,entityId,detail){
     .catch(()=>{});
 }
 let printThemeStash=null;
+let printAccentStash=null;
 window.addEventListener('beforeprint',()=>{
   printThemeStash=currentTheme();
   document.documentElement.removeAttribute('data-theme');
+  var s=usSettings();printAccentStash=s.accentColor||'green';
+  if(printAccentStash!=='green'){
+    var root=document.documentElement;
+    root.removeAttribute('data-accent');
+    ['900','800','700','600','500','200','100','50'].forEach(k=>root.style.removeProperty('--green-'+k));
+    root.style.removeProperty('--focus');
+  }
 });
 window.addEventListener('afterprint',()=>{
   if(printThemeStash&&printThemeStash!=='light')
     document.documentElement.setAttribute('data-theme',printThemeStash);
   printThemeStash=null;
+  if(printAccentStash&&printAccentStash!=='green'){applyAccent(printAccentStash);}
+  printAccentStash=null;
 });
 const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>ESC_MAP[c]);
@@ -2343,7 +2507,15 @@ async function sDel(k){if(k.startsWith('budget-'))await api('budget/'+encodeURIC
 let principal=null;
 async function initAuth(){
   try{const r=await fetch('/.auth/me');const j=await r.json();principal=j.clientPrincipal||null;}catch(e){principal=null;}
-  if(principal)adminUnlocked=(principal.userRoles||[]).includes('pricing_admin');
+  if(principal){
+    var roles=principal.userRoles||[];
+    var isSuperAdmin=roles.includes('super_admin');
+    adminUnlocked=roles.includes('pricing_admin')||isSuperAdmin;
+    if(isSuperAdmin){
+      document.getElementById('nav-dashboard').style.display='';
+      FSDashboard.init({esc:esc});
+    }
+  }
   renderProfile();
 }
 
@@ -2380,6 +2552,21 @@ function renderProfile(){
   if(n)n.textContent=name;                 // textContent, so a name is never markup
   if(e)e.textContent=email;
 }
+function toggleNavMore(){
+  var el=document.getElementById('navMore');
+  if(el.classList.contains('open'))closeNavMore();
+  else{closeProfile(true);el.classList.add('open');document.getElementById('nav-more-btn').setAttribute('aria-expanded','true');
+    setTimeout(()=>document.addEventListener('click',navMoreOutside,{once:true}),0);}
+}
+function closeNavMore(){
+  var el=document.getElementById('navMore');if(!el)return;
+  el.classList.remove('open');document.getElementById('nav-more-btn').setAttribute('aria-expanded','false');
+}
+function navMoreOutside(e){
+  if(!document.getElementById('navMore').contains(e.target))closeNavMore();
+  else setTimeout(()=>document.addEventListener('click',navMoreOutside,{once:true}),0);
+}
+
 let profileOpen=false;
 function toggleProfile(){profileOpen?closeProfile(true):openProfile();}
 function openProfile(){
@@ -2795,8 +2982,8 @@ function editReason(it){
 /* ============ NAV + HASH ROUTING ============
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
-const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help'};
-const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help'};
+const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',version:'version'};
+const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',version:'version'};
 const DOC_PAGES=['input','budget','csi'];
 
 function hashFor(p){
@@ -2827,11 +3014,15 @@ function go(p){
   // Investment Analysis tab, the way budget pages light their own tabs.
   const nb=document.getElementById('nav-'+(p==='analysis'?'analyses':p));
   if(nb)nb.classList.add('on');
+  var MORE_PAGES=['help','dashboard','version'];
+  if(MORE_PAGES.includes(p))document.getElementById('nav-more-btn').classList.add('on');
   syncHash(p);
   renderSaveState();
   if(p==='home')renderHome();
   if(p==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
   if(p==='pricing'){renderPricing();renderCatalog();}
+  if(p==='dashboard'&&window.FSDashboard)FSDashboard.render();
+  if(p==='version')renderVersionPage();
   if(p==='budget'||p==='input'||p==='csi')recalc();
   window.scrollTo(0,0);
 }
@@ -4153,7 +4344,7 @@ function renderPricing(){
   document.getElementById('pricingMeta').textContent='Version '+pricing.version+' · effective '+pricing.effective;
   const ctl=document.getElementById('lockCtl');
   if(ctl&&principal){ctl.style.display='none';
-    if(!adminUnlocked)document.getElementById('lockMsg').innerHTML='<b>Locked.</b> Signed in as '+esc(principal.userDetails)+' — this account does not hold the <b>pricing_admin</b> role.';}
+    if(!adminUnlocked)document.getElementById('lockMsg').textContent='No Permissions to Edit This Page';}
   document.getElementById('lockBanner').style.display=adminUnlocked?'none':'flex';
   document.getElementById('unlockedBanner').style.display=adminUnlocked?'flex':'none';
   document.getElementById('priceAdd').hidden=!adminUnlocked;
@@ -4825,13 +5016,12 @@ function exportBudgetPdf(){
    Built from the live help markup rather than a second copy of the text, so the printed
    guide cannot drift out of step with the page. Card chrome and the contents rail are
    dropped; each card becomes a section. */
-function downloadGuide(){
-  // The guide now downloads through the fs-render engine like every other
-  // PDF export. The print pipeline below remains as the 'local' renderer
-  // fallback (FS_EXPORT_RENDERER / localStorage override) — the guide's
-  // pre-engine path, frozen the same way legacy-render.js is.
+function openGuideExport(){document.getElementById('guideExportModal').style.display='flex';}
+function closeGuideExport(){document.getElementById('guideExportModal').style.display='none';}
+function downloadGuide(includeSample){
+  if(includeSample===undefined)includeSample=true;
   if(exportRenderer()!=='local'&&typeof fsRender!=='undefined'&&typeof pdfMake!=='undefined'){
-    const fsdoc=guideFsdoc();
+    const fsdoc=guideFsdoc(includeSample);
     if(fsRender.validate(fsdoc).ok){
       const dd=fsRender.buildPdfDocDefinition(fsdoc,fsRender.themes['finishes-solutions'],'portrait');
       FSExportRender.stampRenderProvenance(dd,'engine');
@@ -4844,16 +5034,18 @@ function downloadGuide(){
       return;
     }
   }
-  printGuide();
+  printGuide(includeSample);
 }
 /* Adapt the live help markup to fsdoc/1: headings become group labels,
    paragraphs and list items become notes, and the help tables become kv
    rows (two columns) or matrix tables (wider). Built from the same DOM the
    user reads, so the downloaded guide can never drift from the page. */
-function guideFsdoc(){
+function guideFsdoc(includeSample){
+  if(includeSample===undefined)includeSample=true;
   const clean=t=>String(t||'').replace(/\s+/g,' ').trim();
   const blocks=[];
   document.querySelectorAll('#page-help .help > section .card-bd').forEach((sec,si)=>{
+    if(!includeSample&&sec.closest('[data-sample-project]'))return;
     if(si>0)blocks.push({kind:'spacer',height:10});
     [...sec.children].forEach(node=>{
       const tag=node.tagName;
@@ -4899,12 +5091,15 @@ function guideFsdoc(){
 }
 /* The pre-engine guide path: the print pipeline, kept as the 'local'
    renderer fallback. */
-function printGuide(){
+function printGuide(includeSample){
+  if(includeSample===undefined)includeSample=true;
   const stamp=fmtWhen(new Date());
-  const secs=[...document.querySelectorAll('#page-help .help > section .card-bd')]
-    .map(e=>'<section class="rpt-sec">'+e.innerHTML+'</section>').join('');
-  const toc=[...document.querySelectorAll('#helpToc a')]
-    .map((a,i)=>'<li><span class="n">'+String(i+1).padStart(2,'0')+'</span>'+esc(a.textContent.trim())+'</li>').join('');
+  const allSecs=[...document.querySelectorAll('#page-help .help > section')];
+  const secs=allSecs.filter(s=>includeSample||!s.hasAttribute('data-sample-project'))
+    .map(s=>'<section class="rpt-sec">'+s.querySelector('.card-bd').innerHTML+'</section>').join('');
+  const allTocLinks=[...document.querySelectorAll('#helpToc a')];
+  const tocLinks=includeSample?allTocLinks:allTocLinks.filter(a=>a.getAttribute('href')!=='#help-firstproject');
+  const toc=tocLinks.map((a,i)=>'<li><span class="n">'+String(i+1).padStart(2,'0')+'</span>'+esc(a.textContent.trim())+'</li>').join('');
   document.getElementById('printDoc').innerHTML=
      '<div class="rpt-guide">'
     +'<header class="rpt-hd"><img src="assets/finishes-logo-black.png" alt="Finishes Solutions">'
@@ -5347,6 +5542,43 @@ const BOOT_STAGES=[
   [120000,'Taking longer than usual. Hang on — the app will load whatever it can, and the red banner will say if the server is actually unreachable.']
 ];
 let bootTimers=[];
+function renderVersionPage(){
+  var el=document.getElementById('versionContent');if(!el)return;
+  var renderer=window.__exportRenderer||'engine';
+  var invConst=window.FSInvestmentUI?'before-tax-1.1.0':'--';
+  var pv=pricing?pricing.version:'--';
+  var apiOk=pricingFromApi;
+  var ua=navigator.userAgent;
+  var host=location.hostname;
+  var proto=location.protocol;
+  var rows=[
+    ['Application','Finishes Solutions Budgeting Suite'],
+    ['Environment',host.includes('staging')?'Staging':host.includes('localhost')||host.includes('127.')?'Local Development':'Production'],
+    ['Host',esc(host)],
+    ['Protocol',esc(proto)],
+    ['Export Renderer',renderer==='local'?'Local (legacy-render)':'Engine (fs-render)'],
+    ['Investment Engine',esc(invConst)],
+    ['Input Schema','v1'],
+    ['Pricing Library Version',esc(pv)],
+    ['Pricing Source',apiOk?'API (Published)':'Built-in Fallback'],
+    ['Authentication Provider','Azure Active Directory (Entra ID)'],
+    ['API Runtime','Node 22 (SWA Managed Functions)'],
+    ['Database','Azure SQL Serverless'],
+    ['Signed In',principal?esc(principal.userDetails):'Not signed in'],
+    ['Roles',principal&&principal.userRoles?esc(principal.userRoles.filter(function(r){return r!=='anonymous';}).join(', ')):'--'],
+    ['User Agent',esc(ua)],
+    ['Page Loaded',new Date().toLocaleString()]
+  ];
+  var html='<div style="background:var(--white);border:1px solid var(--ink-200);border-radius:10px;padding:18px 20px;margin-top:18px">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:13px">';
+  rows.forEach(function(r){
+    html+='<tr><td style="padding:8px 10px;border-bottom:1px solid var(--ink-100);color:var(--ink-500);white-space:nowrap;width:200px;vertical-align:top">'+r[0]+'</td>'
+      +'<td style="padding:8px 10px;border-bottom:1px solid var(--ink-100);font-family:var(--fm);font-size:12px;color:var(--ink-800);word-break:break-all">'+r[1]+'</td></tr>';
+  });
+  html+='</table></div>';
+  el.innerHTML=html;
+}
+
 function startBoot(){
   bootTimers=BOOT_STAGES.map(([ms,msg])=>setTimeout(()=>{
     const el=document.getElementById('bootMsg');if(el)el.textContent=msg;

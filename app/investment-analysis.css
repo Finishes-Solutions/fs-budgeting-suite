@@ -110,14 +110,14 @@
    :root --lt-* tokens): the two identity columns total 42% — the same as
    the budget table's — so Status, Updated, and the action column line up
    vertically across both Home cards. The financial columns differ freely. */
-.inv-list th:nth-child(1){width:32%}
-.inv-list th:nth-child(2){width:10%}
+.inv-list th:nth-child(1){width:28%}
+.inv-list th:nth-child(2){width:14%}
 .inv-list th:nth-child(3){width:var(--lt-status,9%)}
 .inv-list th:nth-child(4){width:9%}
 .inv-list th:nth-child(5){width:8%}
 .inv-list th:nth-child(6){width:7%}
 .inv-list th:nth-child(7){width:8%}
-.inv-list th:nth-child(8){width:7%}
+.inv-list th:nth-child(8){width:6%}
 .inv-list th:nth-child(9){width:var(--lt-updated,10%)}
 .inv-list th.no-print{width:var(--lt-actions,44px)}
 .inv-list td:first-child{line-height:1.35}   /* long names may wrap to two lines */

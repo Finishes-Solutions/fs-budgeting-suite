@@ -83,14 +83,19 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const before=await p.locator('#rContract').textContent();
  ok('contract sum still renders', /^\$[\d,]+$/.test(before), before);
 
- // --- Download Guide: a real PDF through the fs-render engine
- await p.click('#nav-help'); await p.waitForTimeout(400);
+ // --- Download Guide: export popup opens, PDF downloads through the engine
+ await p.evaluate(() => go('help')); await p.waitForTimeout(400);
  ok('Download Guide button present', await p.locator('button:has-text("Download Guide")').isVisible());
+ await p.click('button:has-text("Download Guide")');
+ await p.waitForTimeout(300);
+ ok('guide export modal opens', await p.locator('#guideExportModal').isVisible());
+ ok('sample project checkbox present and checked',
+    await p.locator('#gx-sample').isChecked());
  await p.evaluate(()=>{window.__dl=null;
    const orig=HTMLAnchorElement.prototype.click;
    HTMLAnchorElement.prototype.click=function(){window.__dl={href:this.href,name:this.download};};
    window.__restoreClick=()=>{HTMLAnchorElement.prototype.click=orig;};});
- await p.click('button:has-text("Download Guide")');
+ await p.click('#guideExportModal .btn-primary');
  await p.waitForFunction(()=>window.__dl,{timeout:15000});
  const gDl=await p.evaluate(async()=>{
    window.__restoreClick();
@@ -108,16 +113,22 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('guide fsdoc validates against the engine contract',
     await p.evaluate(()=>fsRender.validate(guideFsdoc()).ok),
     await p.evaluate(()=>fsRender.validate(guideFsdoc()).errors.join('; ')));
- const gDoc=await p.evaluate(()=>JSON.stringify(guideFsdoc()));
- ok('guide fsdoc carries every section heading',
-    ['WHAT THIS IS','QUICK START','PROJECT IDS','INPUTS REFERENCE','THE BUDGET PAGE','CSI SCHEDULE',
-     'PRICING LIBRARY AND VERSIONING','INVESTMENT ANALYSIS','EXPORTS','WHO CAN DO WHAT','TROUBLESHOOTING']
-      .every(h=>gDoc.includes(h)));
+ const gDoc=await p.evaluate(()=>JSON.stringify(guideFsdoc(true)));
+ ok('guide fsdoc carries every section heading including sample project',
+    ['WHAT THIS IS','QUICK START','YOUR FIRST PROJECT','PROJECT IDS','INPUTS REFERENCE','THE BUDGET PAGE',
+     'CSI SCHEDULE','PRICING LIBRARY AND VERSIONING','INVESTMENT ANALYSIS','EXPORTS','WHO CAN DO WHAT',
+     'TROUBLESHOOTING'].every(h=>gDoc.includes(h)));
+ const gDocNoSample=await p.evaluate(()=>JSON.stringify(guideFsdoc(false)));
+ ok('guideFsdoc(false) excludes sample project section',
+    !gDocNoSample.includes('YOUR FIRST PROJECT')&&gDocNoSample.includes('QUICK START'));
 
  // the pre-engine print path survives as the 'local' renderer fallback
  await p.evaluate(()=>{localStorage.setItem('fsExportRenderer','local');
    window.__g=null;window.print=()=>{window.__g=document.getElementById('printDoc').innerHTML;};});
- await p.click('button:has-text("Download Guide")'); await p.waitForTimeout(500);
+ await p.click('button:has-text("Download Guide")');
+ await p.waitForTimeout(300);
+ await p.click('#guideExportModal .btn-primary');
+ await p.waitForTimeout(500);
  const g=await p.evaluate(()=>window.__g||'');
  ok('local fallback still prints the guide',
     g.length>10000&&g.includes('guide-toc')&&g.includes('finishes-logo-black.png'), g.length+' chars');

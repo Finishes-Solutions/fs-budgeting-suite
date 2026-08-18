@@ -372,7 +372,7 @@ the client through `POST /api/user-activity` (whitelisted events only);
 beforeprint/afterprint hook still forces the light palette for printing;
 `--chrome`/`--solid` remain the surfaces that stay dark in every theme and accent.
 
-Fifteen Playwright suites, 614 assertions, plus 80 `node:test` assertions for the
+Fifteen Playwright suites, 617 assertions, plus 80 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus

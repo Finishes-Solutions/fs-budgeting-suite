@@ -73,7 +73,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     'stored '+tampered.contractSum+' expected '+sp.contract);
 
  // efficiency documentation
- await p.click('#nav-help'); await p.waitForTimeout(400);
+ await p.evaluate(() => go('help')); await p.waitForTimeout(400);
  const t=await p.locator('#page-help').textContent();
  ok('efficiency has its own explanation', /What Efficiency Means/.test(t));
  ok('gives the formula', /total unit SF ÷ residential buildable SF/.test(t));

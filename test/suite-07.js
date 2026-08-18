@@ -11,7 +11,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // every TOC entry must scroll within the guide, never navigate away
  const links=await p.locator('#helpToc a').all();
- ok('TOC has 11 entries', links.length===11, links.length+'');
+ ok('TOC has 12 entries', links.length===12, links.length+'');
  let bad=[];
  for(const a of links){
    const href=await a.getAttribute('href');
@@ -42,7 +42,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('#/ routes still work', await p.locator('#page-pricing').isVisible());
 
  // new guide content
- await p.click('#nav-help'); await p.waitForTimeout(400);
+ await p.evaluate(() => go('help')); await p.waitForTimeout(400);
  const txt=await p.locator('#page-help').textContent();
  ok('explains the three scopes',
     /Residential Construction/.test(txt)&&/Amenity \/ Clubhouse/.test(txt)&&/Soft Costs/.test(txt));

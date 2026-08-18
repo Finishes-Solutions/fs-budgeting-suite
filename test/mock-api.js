@@ -63,7 +63,7 @@ const principal = {
   clientPrincipal: {
     identityProvider: 'aad', userId: 'abc123',
     userDetails: 'svc_automation@finishessolutions.com',
-    userRoles: ['anonymous', 'authenticated', 'pricing_admin']
+    userRoles: ['anonymous', 'authenticated', 'pricing_admin', 'super_admin']
   }
 };
 
@@ -222,6 +222,43 @@ http.createServer((req, res) => {
   if (p === '/api/export-config') {
     const v = String(process.env.FS_EXPORT_RENDERER || '').toLowerCase();
     return json(res, 200, { renderer: v === 'local' ? 'local' : 'engine' });
+  }
+
+  // ---- analytics (super_admin aggregated KPIs) ----
+  if (p === '/api/analytics') {
+    if (!principal.clientPrincipal.userRoles.includes('super_admin')) {
+      res.writeHead(403); return res.end('super_admin required');
+    }
+    const budgetList = [...budgets.values()].filter(b => !b.deleted && !b.meta.projectId.startsWith('TST-'));
+    const analysisList = [...invAnalyses.values()].filter(a => !a.deleted && !a.id.startsWith('TST-'));
+    const bStatus = {};
+    budgetList.forEach(b => { const s = b.meta.status || 'Draft'; bStatus[s] = (bStatus[s] || 0) + 1; });
+    const aStatus = {};
+    analysisList.forEach(a => { const s = a.status || 'Draft'; aStatus[s] = (aStatus[s] || 0) + 1; });
+    const prices = analysisList.map(a => a.result && a.result.summary ? a.result.summary.purchasePrice : null).filter(x => x != null);
+    const nois = analysisList.map(a => a.result && a.result.summary ? a.result.summary.year1NOI : null).filter(x => x != null);
+    const irrs = analysisList.map(a => a.result && a.result.summary ? a.result.summary.finalYearEquityIRR : null).filter(x => x != null);
+    const avg = arr => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null;
+    return json(res, 200, {
+      budgets: {
+        total: budgets.size, active: budgetList.length,
+        deleted: [...budgets.values()].filter(b => b.deleted).length,
+        totalContractSum: budgetList.reduce((s, b) => s + (b.meta.contractSum || 0), 0),
+        totalProjectCost: budgetList.reduce((s, b) => s + (b.meta.projectCost || 0), 0),
+        earliest: null, lastUpdated: null,
+        statusBreakdown: Object.entries(bStatus).map(([status, count]) => ({ status, count }))
+      },
+      analyses: {
+        total: invAnalyses.size, active: analysisList.length,
+        avgPurchasePrice: avg(prices), avgYear1NOI: avg(nois), avgIRR: avg(irrs),
+        statusBreakdown: Object.entries(aStatus).map(([status, count]) => ({ status, count }))
+      },
+      users: { total: mockUsers.size || 1, totalLogins: 1, lastActive: new Date().toISOString() },
+      recentActivity: mockActivity.slice(0, 50).map(r => ({
+        eventType: r.eventType, entityType: r.entityType, entityId: r.entityId,
+        createdAt: r.createdAt, userName: principal.clientPrincipal.userDetails
+      }))
+    });
   }
 
   // ---- per-user settings + activity (dbo.Users / dbo.UserActivity stand-in).
