@@ -127,7 +127,8 @@ const BASE = 'http://127.0.0.1:8100';
   ok('All budgets listed', (await p.locator('#homeBody tr').count()) === 4,
      (await p.locator('#homeBody tr').count()) + ' rows');
 
-  const ids = async () => (await p.locator('#homeBody tr td:first-child').allTextContents()).map(s => s.trim().split(' ')[0]);
+  // Column 1 is the User column (creator avatar); Project ID is column 2.
+  const ids = async () => (await p.locator('#homeBody tr td:nth-child(2)').allTextContents()).map(s => s.trim().split(' ')[0]);
 
   await p.click('#homeHead th[data-sort="contractSum"]');           // desc first
   ok('U2 sort by contract sum desc', (await ids())[0] === 'BD-0001', (await ids()).join(','));
@@ -151,7 +152,7 @@ const BASE = 'http://127.0.0.1:8100';
 
   // --- house timestamp format: local time, MM-DD-YYYY (h:mm AM/PM with time)
   const updCell = await p.locator('#homeBody tr', { hasText: 'Alpha Ridge' })
-    .locator('td:nth-child(6)').textContent();
+    .locator('td:nth-child(7)').textContent();
   ok('Updated column shows MM-DD-YYYY', updCell.trim() === '01-05-2026', updCell);
   ok('fmtWhen renders MM-DD-YYYY h:mm AM/PM in local time',
      await p.evaluate(() => fmtWhen('2026-08-17T20:52:00') === '08-17-2026 8:52 PM'
@@ -190,9 +191,11 @@ const BASE = 'http://127.0.0.1:8100';
   const byStatus = await grouped('status');
   ok('Grouping by status splits the list', byStatus.groups >= 2, byStatus.groups + ' groups');
   ok('Grouping shows every budget exactly once', byStatus.rows === 4, byStatus.rows + ' rows');
-  ok('Group headers span the full table', byStatus.headerSpan === 7, 'span ' + byStatus.headerSpan);
+  // 8 columns since the User column joined: User, Project ID, Name, Status,
+  // Contract Sum, Total Project Cost, Updated, actions.
+  ok('Group headers span the full table', byStatus.headerSpan === 8, 'span ' + byStatus.headerSpan);
   ok('Group totals sit under Contract Sum and Total Project Cost',
-     JSON.stringify(byStatus.moneyCols) === '[3,4]', JSON.stringify(byStatus.moneyCols));
+     JSON.stringify(byStatus.moneyCols) === '[4,5]', JSON.stringify(byStatus.moneyCols));
   const byType = await grouped('type');
   ok('Grouping by type works', byType.groups >= 1 && byType.rows === 4);
   const byId = await grouped('id');

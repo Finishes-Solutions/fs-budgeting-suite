@@ -12,6 +12,7 @@
 const { getPool } = require('../shared/db');
 const { getPrincipal } = require('../shared/auth');
 const U = require('../shared/users');
+const { features } = require('../shared/schema');
 
 const jsonRes = (status, body) => ({
   status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
@@ -57,9 +58,12 @@ module.exports = async function (context, req) {
   const sets = ['SettingsDoc=@settings', 'SettingsUpdatedAt=SYSUTCDATETIME()', 'UpdatedAt=SYSUTCDATETIME()'];
   if (profile.displayName !== undefined) { rq.input('dn', sql.NVarChar(200), profile.displayName || null); sets.push('DisplayName=@dn'); }
   if (profile.phone !== undefined) { rq.input('ph', sql.NVarChar(40), profile.phone || null); sets.push('Phone=@ph'); }
+  // AppRole is optional until sql/migrate_roles_and_ownership.sql has run.
+  const f = await features(pool);
+  const appRoleOut = f.usersAppRole ? 'INSERTED.AppRole,' : '';
   const r = await rq.query(`UPDATE dbo.Users SET ${sets.join(', ')}
     OUTPUT INSERTED.UserId, INSERTED.UserDetails, INSERTED.DisplayName, INSERTED.Email,
-           INSERTED.Phone, INSERTED.SettingsDoc, INSERTED.AppRole, INSERTED.FirstSeenAt,
+           INSERTED.Phone, INSERTED.SettingsDoc, ${appRoleOut} INSERTED.FirstSeenAt,
            INSERTED.LastSeenAt, INSERTED.LoginCount
     WHERE UserId=@uid;`);
 

@@ -3,6 +3,7 @@ const { getPrincipal } = require('../shared/auth');
 const { contentHash, contentEquals, parseDoc } = require('../shared/canonical');
 const { sovRows, writeSovLines, insertVersion } = require('../shared/versioning');
 const { parts } = require('../shared/budget-calc');
+const { features } = require('../shared/schema');
 
 // TST-#### are throwaway test budgets used to exercise preview environments against
 // this same database. They are real rows; sql/cleanup_test_budgets.sql purges them and
@@ -71,6 +72,12 @@ module.exports = async function (context, req) {
   // Both are nullable so local development without a principal still saves.
   const userId = principal ? (principal.userId || null) : null;
   const userName = principal ? (principal.userDetails || null) : null;
+
+  // Ownership columns arrive with sql/migrate_roles_and_ownership.sql; naming
+  // them before it runs would fail every save (see shared/schema.js).
+  const schemaFeatures = await features(pool);
+  const ownerInsertCols = schemaFeatures.budgetsCreatedBy ? ', CreatedById, CreatedByName' : '';
+  const ownerInsertVals = schemaFeatures.budgetsCreatedBy ? ', @cuid, @cuname' : '';
 
   // Version numbers are serialized by the locks below and enforced by
   // UQ_BudgetVersions_Version. A duplicate can still surface if two saves race
@@ -163,10 +170,10 @@ module.exports = async function (context, req) {
                   TemplateKey=@tk, TemplateVersionId=@tv,
                   IsDeleted=0, DeletedAt=NULL, UpdatedAt=SYSUTCDATETIME()
                 WHEN NOT MATCHED THEN INSERT (ProjectId, Name, Type, Status, ContractSum,
-                  ProjectCost, PricingVersion, Doc, TemplateKey, TemplateVersionId,
-                  CreatedById, CreatedByName)
-                  VALUES (@id, @name, @type, @status, @cs, @pc, @pv, @doc, @tk, @tv,
-                  @cuid, @cuname);`);
+                  ProjectCost, PricingVersion, Doc, TemplateKey, TemplateVersionId
+                  ${ownerInsertCols})
+                  VALUES (@id, @name, @type, @status, @cs, @pc, @pv, @doc, @tk, @tv
+                  ${ownerInsertVals});`);
 
       await writeSovLines(tx, id, sovRows(doc));
 

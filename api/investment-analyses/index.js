@@ -13,6 +13,7 @@ const { getPrincipal } = require('../shared/auth');
 const { parts, grossIncome, totUnits, nz } = require('../shared/budget-calc');
 const { GUID_RX, jsonRes } = require('../shared/investment-persistence');
 const { ensureUser } = require('../shared/users');
+const { features } = require('../shared/schema');
 const D = require('../shared/investment/defaults');
 
 const ID_RX = /^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
@@ -24,6 +25,10 @@ module.exports = async function (context, req) {
   const userId = principal ? (principal.userId || null) : null;
 
   if (req.method === 'GET') {
+    // Roles only exist once sql/migrate_roles_and_ownership.sql has run. Before
+    // that every account reads as the default 'user', so applying the filter
+    // would hide analyses that used to be visible — leave it off entirely.
+    const f = await features(pool);
     let appRole = 'user';
     if (userId) {
       try {
@@ -32,7 +37,7 @@ module.exports = async function (context, req) {
       } catch (e) { /* default to user */ }
     }
     const swaSuper = principal && Array.isArray(principal.userRoles) && principal.userRoles.includes('super_admin');
-    const canSeeAll = swaSuper || FULL_VISIBILITY_ROLES.has(appRole);
+    const canSeeAll = !f.usersAppRole || swaSuper || FULL_VISIBILITY_ROLES.has(appRole);
 
     const projectId = (req.query.projectId || '').toUpperCase();
     if (projectId && !ID_RX.test(projectId)) { context.res = jsonRes(400, { error: 'bad_request', message: 'Invalid project ID filter.' }); return; }

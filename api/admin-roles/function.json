@@ -6,7 +6,7 @@
       "direction": "in",
       "name": "req",
       "methods": ["get", "put"],
-      "route": "admin-roles/{userId?}"
+      "route": "admin-roles"
     },
     { "type": "http", "direction": "out", "name": "res" }
   ]

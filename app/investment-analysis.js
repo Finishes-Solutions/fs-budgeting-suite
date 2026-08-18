@@ -132,7 +132,7 @@
         </div>
       </div>
       <table class="inv-table inv-list"><thead><tr>
-        <th style="padding-left:22px;width:32px" class="no-print"></th><th>Analysis</th><th>Project / Budget</th><th>Status</th><th class="r">Purchase Price</th>
+        <th style="padding-left:22px" class="no-print lt-user-col">User</th><th>Analysis</th><th>Project / Budget</th><th>Status</th><th class="r">Purchase Price</th>
         <th class="r">Year 1 NOI</th><th class="r">Equity IRR</th><th class="r">Optimal Hold</th>
         <th class="r">Analysis Ver.</th><th class="r" style="padding-right:22px">Updated</th><th class="no-print"></th>
       </tr></thead><tbody data-inv-list></tbody></table>
@@ -233,7 +233,7 @@
     tr.className = 'clickable';
     tr.addEventListener('click', () => { location.hash = '#/analysis/' + r.analysisId; });
     tr.innerHTML = `
-      <td class="no-print" style="padding-left:22px;width:32px">${window.creatorAvatar ? creatorAvatar(r.createdByName, r.createdByAvatar) : ''}</td>
+      <td class="no-print" style="padding-left:22px">${window.creatorAvatar ? creatorAvatar(r.createdByName, r.createdByAvatar) : ''}</td>
       <td${pad}>${esc(r.name)}</td>
       <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-vsub" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
       <td>${window.statusChip ? statusChip(r.status, 'analysis', r.analysisId) : esc(r.status)}</td>

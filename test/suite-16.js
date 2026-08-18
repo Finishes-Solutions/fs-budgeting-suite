@@ -95,6 +95,52 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       file.suggestedFilename());
  }
 
+ // ---- the creator avatar lives in its own labelled User column, not crammed
+ // against the name. Column counts must match headers or cells overlap.
+ await p.evaluate(()=>go('home'));
+ await p.waitForTimeout(900);
+ ok('the budget table has a User column header',
+    await p.evaluate(()=>{const th=document.querySelector('#homeHead th');
+      return th&&th.textContent.trim()==='User';}),
+    await p.evaluate(()=>document.querySelector('#homeHead th').textContent.trim()));
+ ok('budget header and body cell counts match',
+    await p.evaluate(()=>{
+      const heads=document.querySelectorAll('#homeHead th').length;
+      const row=document.querySelector('#homeBody tr:not(.grp-hd)');
+      return !row || row.children.length===heads;
+    }),
+    await p.evaluate(()=>{
+      const row=document.querySelector('#homeBody tr:not(.grp-hd)');
+      return 'th='+document.querySelectorAll('#homeHead th').length+' td='+(row?row.children.length:'no rows');
+    }));
+ ok('the avatar sits in the first cell, on its own',
+    await p.evaluate(()=>{
+      const row=document.querySelector('#homeBody tr:not(.grp-hd)');
+      if(!row) return true;
+      const first=row.children[0];
+      // the User cell holds the avatar and nothing else
+      return !!first.querySelector('.creator-av') && first.textContent.trim().length<=3;
+    }));
+
+ // the analyses list: same contract, and the off-by-one that overlapped the
+ // name and project cells shows up as a header/cell count mismatch
+ await p.evaluate(()=>{const s=document.querySelector('[data-inv-view="comfortable"],[data-invview-pick="comfortable"]');if(s)s.click();});
+ await p.waitForTimeout(400);
+ ok('the analyses table has a User column header',
+    await p.evaluate(()=>{const th=document.querySelector('table.inv-list thead th');
+      return th&&th.textContent.trim()==='User';}),
+    await p.evaluate(()=>{const th=document.querySelector('table.inv-list thead th');return th?th.textContent.trim():'none';}));
+ ok('analyses header and body cell counts match',
+    await p.evaluate(()=>{
+      const heads=document.querySelectorAll('table.inv-list thead th').length;
+      const row=document.querySelector('table.inv-list tbody tr:not(.inv-grp)');
+      return !row || row.children.length===heads;
+    }),
+    await p.evaluate(()=>{
+      const row=document.querySelector('table.inv-list tbody tr:not(.inv-grp)');
+      return 'th='+document.querySelectorAll('table.inv-list thead th').length+' td='+(row?row.children.length:'no rows');
+    }));
+
  // ---- Version page: the copy control sits inside the rounded box, and copies
  await p.evaluate(()=>go('version'));
  await p.waitForTimeout(500);

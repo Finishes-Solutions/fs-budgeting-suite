@@ -365,9 +365,10 @@ http.createServer((req, res) => {
     res.writeHead(405); return res.end('method');
   }
 
-  // ---- admin-roles (super_admin only in production; mock is permissive)
-  if (p === '/api/admin-roles' || p.startsWith('/api/admin-roles/')) {
-    if (p === '/api/admin-roles' && req.method === 'GET') {
+  // ---- admin-roles (super_admin only in production; mock is permissive).
+  // Flat route, target account in the PUT body — mirrors the real function.
+  if (p === '/api/admin-roles') {
+    if (req.method === 'GET') {
       const users = [...mockUsers.entries()].map(([uid, u]) => ({
         userId: uid, userDetails: u.userDetails || null,
         displayName: u.displayName || null, email: u.email || null,
@@ -375,10 +376,11 @@ http.createServer((req, res) => {
       return json(res, 200, users);
     }
     if (req.method === 'PUT') {
-      const targetId = decodeURIComponent(p.slice('/api/admin-roles/'.length));
       let b = ''; req.on('data', c => b += c);
       return req.on('end', () => {
         const body = b ? JSON.parse(b) : {};
+        const targetId = typeof body.userId === 'string' ? body.userId : '';
+        if (!targetId) return json(res, 400, { error: 'bad_request', message: 'userId is required.' });
         const validRoles = ['user', 'manager', 'director', 'super_admin'];
         if (!validRoles.includes(body.appRole))
           return json(res, 400, { error: 'appRole must be one of: ' + validRoles.join(', ') });

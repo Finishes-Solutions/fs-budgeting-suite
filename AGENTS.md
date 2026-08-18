@@ -110,6 +110,17 @@ custom provider for sign-in.
 - **Keep `sql/schema.sql` in parity with the migrations**, including constraint
   names. `schema.sql` is what a from-scratch provision runs; the migration is what
   the live database ran. They must describe the same end state.
+- **A deploy lands before its migration, so never name a new column
+  unconditionally.** A migration is run by a human in the portal, minutes or days
+  after the code that needs it ships. SQL referencing a column that is not there
+  yet fails the whole request — that is how a pending migration turns into a blank
+  Home page and a red banner instead of a feature that is merely not on yet.
+  Columns added by a migration are optional until it runs: ask
+  `api/shared/schema.js` what exists and build SQL that names only real columns,
+  falling back to the pre-migration behaviour. Guard the *behaviour* too — a role
+  column that is absent makes every account read as the default role, so applying
+  a role filter then would hide records that used to be visible. Cover the
+  not-yet-migrated shape in tests (`test/schema-probe.test.js`).
 
 ## Frontend invariants (the ones that bite)
 

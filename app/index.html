@@ -73,7 +73,7 @@ try{
      identity columns the same combined width (42%), so those anchors line up
      vertically across the two cards. The financial columns between Status and
      Updated are free to differ. */
-  --lt-pad:22px;--lt-status:9%;--lt-updated:10%;--lt-actions:44px;
+  --lt-pad:22px;--lt-user:56px;--lt-status:9%;--lt-updated:10%;--lt-actions:44px;
 }
 /* ---- Themes ----
    The palette lives entirely in the custom properties above, so a theme is a
@@ -272,6 +272,8 @@ input.set-locked{background:var(--ink-50);color:var(--ink-500);cursor:not-allowe
 #page-home .tbl th[data-sort=contractSum],#page-home .tbl th[data-sort=projectCost]{width:19%}
 #page-home .tbl th[data-sort=updated]{width:var(--lt-updated)}
 #page-home .tbl th.no-print{width:var(--lt-actions)}
+/* The User column carries .no-print too, so it reclaims its own width here. */
+#page-home .tbl th.lt-user-col{width:var(--lt-user)}
 /* ---- shared list toolbar: both Home cards use the identical control row */
 .list-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .list-toolbar input[type=text]{width:240px}
@@ -855,7 +857,7 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="card-bd" style="padding:0;overflow-x:auto">
     <table class="tbl">
       <thead id="homeHead"><tr>
-        <th style="padding-left:22px;width:32px" class="no-print"></th>
+        <th style="padding-left:22px" class="no-print lt-user-col">User</th>
         <th class="sortable" data-sort="projectId">Project ID</th>
         <th class="sortable" data-sort="name">Name</th>
         <th class="sortable" data-sort="status">Status</th>
@@ -2409,7 +2411,16 @@ async function loadAdminUsers(){
   try{
     adminUsers=await api('admin-roles');
     paintAdminTable();
-  }catch(e){tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--danger)">'+esc(e.message)+'</td></tr>';}
+  }catch(e){
+    // 503 means the roles migration has not been run against this database.
+    // Say what to do about it rather than showing a bare status code.
+    const pending=/migration_pending|migrate_roles_and_ownership/.test(e.message);
+    const msg=pending
+      ? 'Role management is not available yet — this database still needs '
+        +'sql/migrate_roles_and_ownership.sql to be run. Everything else in the app works meanwhile.'
+      : e.message;
+    tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--danger)">'+esc(msg)+'</td></tr>';
+  }
 }
 function paintAdminTable(){
   const tb=document.getElementById('adminBody');if(!tb)return;
@@ -2434,7 +2445,7 @@ async function changeAdminRole(sel){
   const uid=sel.dataset.adminUid;
   const role=sel.value;
   try{
-    await api('admin-roles/'+encodeURIComponent(uid),{method:'PUT',body:JSON.stringify({appRole:role})});
+    await api('admin-roles',{method:'PUT',body:JSON.stringify({userId:uid,appRole:role})});
     const u=adminUsers.find(x=>x.userId===uid);
     if(u)u.appRole=role;
     toast('Role updated to '+ROLE_LABELS[role]+'.');
@@ -3343,7 +3354,7 @@ function homeCard(x){
 function homeRow(x){
   document.getElementById('homeBody').insertAdjacentHTML('beforeend',
     `<tr class="clickable" onclick="openBudget('${x.projectId}')">
-      <td class="no-print" style="padding-left:22px;width:32px">${creatorAvatar(x.createdByName,x.createdByAvatar)}</td>
+      <td class="no-print" style="padding-left:22px">${creatorAvatar(x.createdByName,x.createdByAvatar)}</td>
       <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
       <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
       <td>${statusChip(x.status,'budget',x.projectId)}</td>

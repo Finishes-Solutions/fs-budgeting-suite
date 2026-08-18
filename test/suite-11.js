@@ -245,7 +245,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('analyses Updated column right-aligns beside the row menu',
     await p.evaluate(()=>{
       const row=document.querySelector('#homeAnalyses [data-inv-list] tr');
-      return getComputedStyle(row.children[8]).textAlign==='right';
+      return getComputedStyle(row.children[9]).textAlign==='right';
     }));
  ok('analysis statuses render as the shared status chips',
     (await p.locator('#homeAnalyses [data-inv-list] .st-chip').count())>=1);
@@ -255,15 +255,17 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       const a=[...document.querySelectorAll('#homeAnalyses .inv-list thead th')];
       const r=e=>e.getBoundingClientRect();
       const close=(x,y)=>Math.abs(x-y)<14;
-      return close(r(b[2]).left,r(a[2]).left)        // Status columns
-        && close(r(b[5]).right,r(a[8]).right)        // Updated columns
-        && close(r(b[6]).left,r(a[9]).left);         // action columns
+      // Both tables lead with the User column, so every index below is one
+      // further along than the column's position in the visible layout.
+      return close(r(b[3]).left,r(a[3]).left)         // Status columns
+        && close(r(b[6]).right,r(a[9]).right)         // Updated columns
+        && close(r(b[7]).left,r(a[10]).left);         // action columns
     }),
     await p.evaluate(()=>{
       const b=[...document.querySelectorAll('#homeHead th')];
       const a=[...document.querySelectorAll('#homeAnalyses .inv-list thead th')];
       const r=e=>Math.round(e.getBoundingClientRect().left);
-      return JSON.stringify({bStatus:r(b[2]),aStatus:r(a[2]),bAct:r(b[6]),aAct:r(a[9])});
+      return JSON.stringify({bStatus:r(b[3]),aStatus:r(a[3]),bAct:r(b[7]),aAct:r(a[10])});
     }));
 
  ok('no JS errors', errs.length===0, errs.join(' | '));

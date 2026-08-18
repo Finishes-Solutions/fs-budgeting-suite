@@ -10,6 +10,7 @@
 // Activity is best-effort by design: recordActivity swallows its own errors,
 // because a failed audit row must never fail the save or export it describes.
 const { sql } = require('./db');
+const { features } = require('./schema');
 // The validation contract lives in its own dependency-free module so
 // test/mock-api.js can require the identical logic without touching SQL.
 const { DEFAULT_SETTINGS, CLIENT_EVENTS, sanitizeSettings, sanitizeProfile } =
@@ -26,6 +27,10 @@ async function ensureUser(pool, principal, opts) {
   const userId = principal && principal.userId;
   if (!userId) return null;
   const boot = !!(opts && opts.boot);
+  // AppRole arrives with sql/migrate_roles_and_ownership.sql; until that runs,
+  // naming it here would fail the whole request (see shared/schema.js).
+  const f = await features(pool);
+  const appRoleOut = f.usersAppRole ? 'INSERTED.AppRole,' : '';
   const r = await pool.request()
     .input('uid', sql.NVarChar(128), userId)
     .input('details', sql.NVarChar(200), principal.userDetails || null)
@@ -42,7 +47,7 @@ async function ensureUser(pool, principal, opts) {
             WHEN NOT MATCHED THEN INSERT (UserId, UserDetails, Email, LoginCount)
               VALUES (@uid, @details, @details, IIF(@boot = 1, 1, 0))
             OUTPUT INSERTED.UserId, INSERTED.UserDetails, INSERTED.DisplayName, INSERTED.Email,
-                   INSERTED.Phone, INSERTED.SettingsDoc, INSERTED.AppRole, INSERTED.FirstSeenAt,
+                   INSERTED.Phone, INSERTED.SettingsDoc, ${appRoleOut} INSERTED.FirstSeenAt,
                    INSERTED.LastSeenAt, INSERTED.LoginCount,
                    DELETED.LastSeenAt AS PrevSeenAt, DELETED.LoginCount AS PrevLogins;`);
   return r.recordset[0] || null;
