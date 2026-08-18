@@ -139,7 +139,7 @@ html[data-theme=dark][data-accent=orange]{--green-900:#38200a;--green-800:#8a4c1
 [data-density=compact] .rowmenu-btn{width:22px;height:22px;line-height:20px}
 [data-density=compact] .tbl th,[data-density=compact] .inv-list th{padding-top:5px;padding-bottom:5px}
 [data-density=compact] .grp-hd td,[data-density=compact] .inv-grp td{padding-top:3px;padding-bottom:3px}
-/* identity cells never stack their inline pieces (TEST tag, Budget vN) */
+/* identity cells never stack their inline pieces (TEST tag, vN) */
 #homeBody td:first-child,.inv-list td:nth-child(2){white-space:nowrap}
 /* ---- Status chips: one shared, editable status system ----
    Draft (gray) · In Review (amber) · Completed (green, accent-aware) ·
@@ -451,7 +451,7 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
   .list-toolbar input[type=text]{width:auto;flex:1 1 150px;min-width:0}
   .list-toolbar select.lt-status,.list-toolbar select.lt-group{width:auto;flex:0 1 auto;min-width:0}
   .home-cards{padding:14px}
-  #exportModal .card,#pickModal .card,#versionsModal .card{max-height:90vh;overflow:auto}
+  #exportModal .card,#pickModal .card,#versionsModal .card,#guideExportModal .card{max-height:90vh;overflow:auto}
 }
 
 /* Template administration */
@@ -1236,13 +1236,14 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title">
     <div><h1>How to Use the Budgeting Suite</h1>
       <div class="sub">Build a multifamily project budget from the shared pricing library, underwrite it as an investment analysis, and export both.</div></div>
-    <div class="no-print"><button class="btn btn-dark" onclick="downloadGuide()">Download Guide</button></div>
+    <div class="no-print"><button class="btn btn-dark" onclick="openGuideExport()">Download Guide</button></div>
   </div>
 
   <div class="help-wrap">
     <nav id="helpToc" class="no-print">
       <a href="#help-overview" class="on">What This Is</a>
       <a href="#help-quickstart">Quick Start</a>
+      <a href="#help-firstproject">Your First Project</a>
       <a href="#help-ids">Project IDs</a>
       <a href="#help-inputs">Inputs Reference</a>
       <a href="#help-budget">The Budget Page</a>
@@ -1338,6 +1339,74 @@ th.sortable.sorted{color:var(--ink-900)}
         <div class="callout">The header pill shows <b>Unsaved changes</b> until a save succeeds. Nothing is stored
           automatically — if you close the tab with that pill showing, the browser will warn you.
           <b>Cmd+S</b> (or <b>Ctrl+S</b>) saves from anywhere in a budget or an analysis.</div>
+      </div></section>
+
+      <section class="card" data-sample-project><div class="card-bd">
+        <h3 id="help-firstproject">Your First Project</h3>
+        <p>This walkthrough creates a real budget and investment analysis from scratch, using a
+          fictional 120-unit garden-style apartment project called <b>Cypress Ridge</b>. Follow
+          along in the tool — every number below is something you type in.</p>
+
+        <h4>Create the Budget</h4>
+        <div class="step"><div class="n">1</div><div class="t">From Home, click <span class="kbd">+ New Budget</span>
+          and choose the <b>Multifamily</b> template. The tool creates a budget pre-loaded with the
+          current pricing library.</div></div>
+        <div class="step"><div class="n">2</div><div class="t">On the <b>Inputs</b> page, fill in the project header:
+          <br>Project ID: <code>BD-0100</code><br>Name: <code>Cypress Ridge Apartments</code><br>
+          Residential Buildable SF: <code>108000</code><br>Amenity / Clubhouse SF: <code>3200</code></div></div>
+        <div class="step"><div class="n">3</div><div class="t">Set up the unit mix — three unit types:
+          <table class="tbl" style="margin:8px 0">
+            <thead><tr><th>Type</th><th>BD</th><th>BTH</th><th>SF</th><th>Count</th><th>Rent</th></tr></thead>
+            <tbody>
+              <tr><td>A1</td><td>1</td><td>1</td><td>750</td><td>48</td><td>$1,350</td></tr>
+              <tr><td>B1</td><td>2</td><td>2</td><td>1,050</td><td>54</td><td>$1,650</td></tr>
+              <tr><td>C1</td><td>3</td><td>2</td><td>1,250</td><td>18</td><td>$1,950</td></tr>
+            </tbody></table>
+          The tool calculates total unit SF (120,600), building efficiency (111.7% — unit area exceeds buildable,
+          which the amber badge flags for you), and gross monthly rent ($185,700).</div></div>
+        <div class="step"><div class="n">4</div><div class="t">Under <b>Other Income</b>, add two rows:
+          <br>Parking — $50/mo, 60 spaces (type over the auto-count)
+          <br>Pet Rent — $35/mo, 40 units (manual count)
+          <br>Under <b>Operating Expenses</b>, keep the template defaults (Trash, Pest Control, etc.).
+          These feed the investment analysis later.</div></div>
+        <div class="step"><div class="n">5</div><div class="t">Fill in the land and project costs:
+          <br>Land: <code>$2,400,000</code><br>Developer Fee: <code>$850,000</code><br>
+          Marketing: <code>$120,000</code><br>Closing Costs: <code>$75,000</code></div></div>
+
+        <h4>Review and Save the Budget</h4>
+        <div class="step"><div class="n">6</div><div class="t">Switch to the <b>Budget</b> page. Every line is already
+          priced from the library — scroll through the Residential, Amenity, and Soft Cost scopes to see how
+          the template rates drive the totals. The summary at the bottom shows the contract sum and total
+          project cost.</div></div>
+        <div class="step"><div class="n">7</div><div class="t">Press <span class="kbd">Save</span> (or
+          <b>Cmd/Ctrl+S</b>). The header pill changes to <b>Saved</b> and the budget now has version 1.
+          This is important: the investment analysis creates from a specific saved version.</div></div>
+
+        <h4>Underwrite It</h4>
+        <div class="step"><div class="n">8</div><div class="t">Click <span class="kbd">+ New Investment Analysis</span>
+          and choose <b>From Existing Budget</b>. Select <b>BD-0100 Cypress Ridge Apartments</b> from the
+          dropdown. The analysis imports the property name, unit count, gross scheduled rent (unit rents times
+          12), and total project cost as a suggested purchase price — each imported value shows a green
+          <b>From Budget</b> badge.</div></div>
+        <div class="step"><div class="n">9</div><div class="t">Walk the six steps:
+          <br><b>Step 1 — Source &amp; Property:</b> Set Purchase Month to the target closing date. The
+          address, unit count, and square footage carry over from the budget.
+          <br><b>Step 2 — Income:</b> Gross Scheduled Rent is pre-filled from the unit mix. Add any
+          additional income lines.
+          <br><b>Step 3 — Vacancy &amp; Expenses:</b> Set a vacancy rate (e.g. 5%) and enter the full
+          operating expenses — insurance, taxes, management, maintenance, and the service expenses the
+          budget suggested.
+          <br><b>Step 4 — Mortgage:</b> Choose <b>Amortizing Mortgage</b> and enter the loan amount,
+          interest rate (e.g. 6.5%), and 30-year term. Or choose <b>All Cash</b> for an unleveraged view.
+          <br><b>Step 5 — Disposition:</b> Set the Exit Cap Rate (e.g. 5.75%) and selling costs (e.g. 2%).
+          <br><b>Step 6 — Review &amp; Report:</b> Click <span class="kbd">Calculate</span> to run the
+          model. The report shows five years of cash flows, returns, and the sensitivity table.</div></div>
+        <div class="step"><div class="n">10</div><div class="t">Press <span class="kbd">Save</span> to store
+          the analysis. You can now export both the budget and the analysis from their respective Export
+          buttons — PDF, Excel, or Print.</div></div>
+        <div class="callout">This example covers the full cycle: template to budget, budget to investment
+          analysis, and both exportable. Everything you entered is editable — change the assumptions and
+          recalculate as often as you like.</div>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -1595,7 +1664,7 @@ th.sortable.sorted{color:var(--ink-900)}
           editable — editing a value away from the import hides its badge, and restoring the exact
           imported value brings it back, even after saving and reloading. In the lists, the
           <b>Project / Budget</b> column shows which budget version a linked analysis came from
-          (for example, BD-4821 Budget v14) — distinct from <b>Analysis Ver.</b>, which counts the
+          (for example, BD-4821 v14) — distinct from <b>Analysis Ver.</b>, which counts the
           analysis's own saved versions.</p>
 
         <div class="callout"><b>The import is a snapshot, not a live link.</b> Each analysis records the
@@ -1770,6 +1839,22 @@ th.sortable.sorted{color:var(--ink-900)}
         <button class="btn btn-primary" title="Download the branded PDF report"
           onclick="exportBudgetPdf()">PDF</button>
         <button class="btn btn-ghost" onclick="exportExcel()">Excel (.xlsx)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= GUIDE EXPORT MODAL ================= -->
+<div id="guideExportModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
+  <div class="card" style="width:460px;max-width:92vw;margin:0">
+    <div class="card-hd"><h2>Download Guide</h2><button class="btn-x" onclick="closeGuideExport()">×</button></div>
+    <div class="card-bd" style="padding:22px 26px">
+      <div class="eyebrow" style="margin-bottom:12px">Options</div>
+      <div style="display:grid;gap:12px;margin-bottom:24px">
+        <label class="chk"><input type="checkbox" id="gx-sample" checked> Include Sample Project Walkthrough</label>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="downloadGuide(document.getElementById('gx-sample').checked);closeGuideExport()">PDF</button>
       </div>
     </div>
   </div>
@@ -4825,13 +4910,12 @@ function exportBudgetPdf(){
    Built from the live help markup rather than a second copy of the text, so the printed
    guide cannot drift out of step with the page. Card chrome and the contents rail are
    dropped; each card becomes a section. */
-function downloadGuide(){
-  // The guide now downloads through the fs-render engine like every other
-  // PDF export. The print pipeline below remains as the 'local' renderer
-  // fallback (FS_EXPORT_RENDERER / localStorage override) — the guide's
-  // pre-engine path, frozen the same way legacy-render.js is.
+function openGuideExport(){document.getElementById('guideExportModal').style.display='flex';}
+function closeGuideExport(){document.getElementById('guideExportModal').style.display='none';}
+function downloadGuide(includeSample){
+  if(includeSample===undefined)includeSample=true;
   if(exportRenderer()!=='local'&&typeof fsRender!=='undefined'&&typeof pdfMake!=='undefined'){
-    const fsdoc=guideFsdoc();
+    const fsdoc=guideFsdoc(includeSample);
     if(fsRender.validate(fsdoc).ok){
       const dd=fsRender.buildPdfDocDefinition(fsdoc,fsRender.themes['finishes-solutions'],'portrait');
       FSExportRender.stampRenderProvenance(dd,'engine');
@@ -4844,16 +4928,18 @@ function downloadGuide(){
       return;
     }
   }
-  printGuide();
+  printGuide(includeSample);
 }
 /* Adapt the live help markup to fsdoc/1: headings become group labels,
    paragraphs and list items become notes, and the help tables become kv
    rows (two columns) or matrix tables (wider). Built from the same DOM the
    user reads, so the downloaded guide can never drift from the page. */
-function guideFsdoc(){
+function guideFsdoc(includeSample){
+  if(includeSample===undefined)includeSample=true;
   const clean=t=>String(t||'').replace(/\s+/g,' ').trim();
   const blocks=[];
   document.querySelectorAll('#page-help .help > section .card-bd').forEach((sec,si)=>{
+    if(!includeSample&&sec.closest('[data-sample-project]'))return;
     if(si>0)blocks.push({kind:'spacer',height:10});
     [...sec.children].forEach(node=>{
       const tag=node.tagName;
@@ -4899,12 +4985,15 @@ function guideFsdoc(){
 }
 /* The pre-engine guide path: the print pipeline, kept as the 'local'
    renderer fallback. */
-function printGuide(){
+function printGuide(includeSample){
+  if(includeSample===undefined)includeSample=true;
   const stamp=fmtWhen(new Date());
-  const secs=[...document.querySelectorAll('#page-help .help > section .card-bd')]
-    .map(e=>'<section class="rpt-sec">'+e.innerHTML+'</section>').join('');
-  const toc=[...document.querySelectorAll('#helpToc a')]
-    .map((a,i)=>'<li><span class="n">'+String(i+1).padStart(2,'0')+'</span>'+esc(a.textContent.trim())+'</li>').join('');
+  const allSecs=[...document.querySelectorAll('#page-help .help > section')];
+  const secs=allSecs.filter(s=>includeSample||!s.hasAttribute('data-sample-project'))
+    .map(s=>'<section class="rpt-sec">'+s.querySelector('.card-bd').innerHTML+'</section>').join('');
+  const allTocLinks=[...document.querySelectorAll('#helpToc a')];
+  const tocLinks=includeSample?allTocLinks:allTocLinks.filter(a=>a.getAttribute('href')!=='#help-firstproject');
+  const toc=tocLinks.map((a,i)=>'<li><span class="n">'+String(i+1).padStart(2,'0')+'</span>'+esc(a.textContent.trim())+'</li>').join('');
   document.getElementById('printDoc').innerHTML=
      '<div class="rpt-guide">'
     +'<header class="rpt-hd"><img src="assets/finishes-logo-black.png" alt="Finishes Solutions">'

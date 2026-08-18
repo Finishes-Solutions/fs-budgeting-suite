@@ -218,7 +218,7 @@
   function invCard(r) {
     return `<div class="hcard" data-inv-card="${esc(r.analysisId)}">
       <div class="hc-id">${esc(r.projectId || 'Standalone')}${r.sourceBudgetVersionNumber
-        ? ' <span class="inv-vsub">Budget v' + r.sourceBudgetVersionNumber + '</span>' : ''}</div>
+        ? ' <span class="inv-vsub">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</div>
       <div class="hc-name">${esc(r.name)}</div>
       <div class="hc-row"><span>Purchase Price</span><span class="v">${usd(r.purchasePrice)}</span></div>
       <div class="hc-row"><span>Equity IRR</span><span class="v">${pctf(r.finalYearEquityIRR)}</span></div>
@@ -234,7 +234,7 @@
     tr.addEventListener('click', () => { location.hash = '#/analysis/' + r.analysisId; });
     tr.innerHTML = `
       <td${pad}>${esc(r.name)}</td>
-      <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-vsub" title="Created from that exact saved budget version — not the analysis version">Budget v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
+      <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-vsub" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
       <td>${window.statusChip ? statusChip(r.status, 'analysis', r.analysisId) : esc(r.status)}</td>
       <td class="calc r">${usd(r.purchasePrice)}</td>
       <td class="calc r">${usd(r.year1NOI)}</td>
