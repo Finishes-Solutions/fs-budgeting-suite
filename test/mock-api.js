@@ -267,6 +267,44 @@ http.createServer((req, res) => {
     });
   }
 
+  // ---- analytics-activity (filtered activity log for super_admin) ----
+  if (p === '/api/analytics-activity') {
+    if (!principal.clientPrincipal.userRoles.includes('super_admin')) {
+      res.writeHead(403); return res.end('super_admin required');
+    }
+    const aq = new URL(req.url, 'http://x').searchParams;
+    let filtered = mockActivity.slice();
+    if (aq.get('from')) {
+      const from = new Date(aq.get('from')).getTime();
+      filtered = filtered.filter(r => new Date(r.createdAt).getTime() >= from);
+    }
+    if (aq.get('to')) {
+      const to = new Date(aq.get('to')).getTime();
+      filtered = filtered.filter(r => new Date(r.createdAt).getTime() <= to);
+    }
+    if (aq.get('userId')) {
+      const uid = aq.get('userId');
+      filtered = filtered.filter(r => r.userId === uid);
+    }
+    const total = filtered.length;
+    const limit = Math.min(Math.max(parseInt(aq.get('limit'), 10) || 500, 1), 5000);
+    const offset = Math.max(parseInt(aq.get('offset'), 10) || 0, 0);
+    const page = filtered.slice(offset, offset + limit);
+    const users = [...mockUsers.entries()].map(([id, u]) => ({
+      userId: id, name: u.displayName || u.email || 'Unknown'
+    }));
+    return json(res, 200, {
+      events: page.map(r => ({
+        eventType: r.eventType, entityType: r.entityType, entityId: r.entityId,
+        createdAt: r.createdAt,
+        userName: principal.clientPrincipal.userDetails,
+        userId: r.userId || principal.clientPrincipal.userId
+      })),
+      total: total,
+      users: users
+    });
+  }
+
   // ---- per-user settings + activity (dbo.Users / dbo.UserActivity stand-in).
   // Validation is the REAL contract module, so drift is impossible.
   if (p === '/api/user-settings') {
@@ -289,7 +327,7 @@ http.createServer((req, res) => {
         if ((Date.now() - new Date(u.lastSeenAt).getTime()) / 60000 >= 30) {
           u.loginCount += 1;
           mockActivity.unshift({ eventType: 'login', entityType: null, entityId: null,
-            detail: null, createdAt: new Date().toISOString() });
+            detail: null, userId: uid, createdAt: new Date().toISOString() });
         }
         u.lastSeenAt = new Date().toISOString();
       }
@@ -304,7 +342,7 @@ http.createServer((req, res) => {
         if (body.settings !== undefined)
           u.settings = usc.sanitizeSettings(Object.assign({}, usc.sanitizeSettings(u.settings), body.settings));
         mockActivity.unshift({ eventType: 'settings_update', entityType: null, entityId: null,
-          detail: { changed: Object.keys(body.settings || {}) }, createdAt: new Date().toISOString() });
+          detail: { changed: Object.keys(body.settings || {}) }, userId: uid, createdAt: new Date().toISOString() });
         return resp();
       });
     }
@@ -320,7 +358,7 @@ http.createServer((req, res) => {
         if (!usc.CLIENT_EVENTS.has(String(body.eventType || '')))
           return json(res, 400, { error: 'bad_request', message: 'eventType not allowed' });
         mockActivity.unshift({ eventType: body.eventType, entityType: body.entityType || null,
-          entityId: body.entityId || null, detail: body.detail || null, createdAt: new Date().toISOString() });
+          entityId: body.entityId || null, detail: body.detail || null, userId: principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
         res.writeHead(204); return res.end();
       });
     }
@@ -435,7 +473,8 @@ http.createServer((req, res) => {
       }
       budgets.set(id, entry);
       if (versionCreated) mockActivity.unshift({ eventType: 'budget_save', entityType: 'budget',
-        entityId: id, detail: { versionNumber: entry.versions.length }, createdAt: new Date().toISOString() });
+        entityId: id, detail: { versionNumber: entry.versions.length },
+        userId: principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
       json(res, 200, { ok: true, versionNumber: entry.versions.length, versionCreated });
     });
   }
@@ -728,7 +767,8 @@ http.createServer((req, res) => {
       a.deleted = false; a.deletedAt = null;
       a.updatedAt = new Date().toISOString();
       if (!unchanged) mockActivity.unshift({ eventType: 'analysis_save', entityType: 'analysis',
-        entityId: id, detail: { versionNumber: a.currentVersionNumber }, createdAt: new Date().toISOString() });
+        entityId: id, detail: { versionNumber: a.currentVersionNumber },
+        userId: principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
       return json(res, 200, { ok: true, versionNumber: a.currentVersionNumber,
         versionCreated: !unchanged, result });
     });

@@ -1,40 +1,38 @@
 /* Analytics Dashboard — super_admin only. Scoped to #page-dashboard so rules
-   cannot collide with the main stylesheet or investment-analysis.css. */
+   cannot collide with the main stylesheet or investment-analysis.css.
+   Uses the app's card/tbl system for consistency. */
 
 #page-dashboard .dash-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin:18px 0}
 #page-dashboard .dash-kpi{background:var(--white);border:1px solid var(--ink-200);border-radius:10px;padding:16px 18px}
-#page-dashboard .dash-kpi .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-500);margin-bottom:4px}
+#page-dashboard .dash-kpi .k{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-500);font-weight:500;margin-bottom:4px}
 #page-dashboard .dash-kpi .v{font-family:var(--fm);font-size:22px;font-weight:600;color:var(--ink-900)}
 #page-dashboard .dash-kpi .sub{font-size:12px;color:var(--ink-500);margin-top:2px}
 
-#page-dashboard .dash-section{margin:28px 0 0}
-#page-dashboard .dash-section h2{font-size:15px;margin:0 0 12px;color:var(--ink-800)}
-
 #page-dashboard .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 
-#page-dashboard .dash-card{background:var(--white);border:1px solid var(--ink-200);border-radius:10px;padding:18px 20px}
-#page-dashboard .dash-card h3{font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-500);margin:0 0 12px}
+#page-dashboard .dash-card{padding:4px 0}
+#page-dashboard .dash-card h3{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-500);font-weight:500;margin:0 0 12px}
 
 /* status breakdown bars */
 #page-dashboard .dash-bar-group{display:flex;flex-direction:column;gap:8px}
 #page-dashboard .dash-bar-row{display:flex;align-items:center;gap:10px;font-size:13px}
-#page-dashboard .dash-bar-label{width:100px;text-align:right;color:var(--ink-700);white-space:nowrap}
+#page-dashboard .dash-bar-label{width:120px;text-align:right;color:var(--ink-700);white-space:nowrap;font-size:12.5px}
 #page-dashboard .dash-bar-track{flex:1;height:22px;background:var(--ink-100);border-radius:6px;overflow:hidden;position:relative}
 #page-dashboard .dash-bar-fill{height:100%;border-radius:6px;transition:width .3s ease}
 #page-dashboard .dash-bar-count{font-family:var(--fm);font-size:12px;color:var(--ink-600);min-width:28px}
-
-/* activity table */
-#page-dashboard .dash-activity{width:100%;border-collapse:collapse;font-size:13px}
-#page-dashboard .dash-activity th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--ink-500);padding:6px 10px;border-bottom:1px solid var(--ink-200)}
-#page-dashboard .dash-activity td{padding:8px 10px;border-bottom:1px solid var(--ink-100);vertical-align:middle}
-#page-dashboard .dash-activity td.mono{font-family:var(--fm);font-size:12px;color:var(--ink-600);white-space:nowrap}
-#page-dashboard .dash-activity tbody tr:hover{background:var(--ink-50)}
 
 /* loading + empty */
 #page-dashboard .dash-loading{text-align:center;padding:40px;color:var(--ink-500);font-size:14px}
 #page-dashboard .dash-error{background:#FDF3F3;border:1px solid #E8C4C4;border-radius:8px;padding:12px 16px;
   color:#C43C3C;font-size:13px;margin:18px 0}
+
+/* Activity Log filter bar. The inputs inherit the app's global field styling
+   (input[type=date] and select are in the shared selector list); these rules
+   only size them down to toolbar scale, matching .list-toolbar elsewhere. */
+#page-dashboard .dash-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#page-dashboard .dash-filters select{width:150px;padding:6px 10px;font-size:13px}
+#page-dashboard .dash-filters input[type=date]{width:145px;padding:6px 10px;font-size:13px}
+#page-dashboard .dash-filter-sep{font-size:12.5px;color:var(--ink-500)}
 
 @media(max-width:760px){
   #page-dashboard .dash-grid{grid-template-columns:1fr}

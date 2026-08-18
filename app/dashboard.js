@@ -7,6 +7,11 @@ var adapter = {};
 var data = null;
 var loading = false;
 var error = null;
+var activityData = null;
+var activityPage = 'summary';  // 'summary' = first 30, 'all' = paginated
+var activityOffset = 0;
+var SUMMARY_LIMIT = 30;
+var PAGE_SIZE = 100;
 
 function esc(s){ return adapter.esc ? adapter.esc(String(s)) : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -32,6 +37,10 @@ function relTime(iso){
   if(diff<86400000) return Math.floor(diff/3600000)+'h ago';
   if(diff<2592000000) return Math.floor(diff/86400000)+'d ago';
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function fmtDate(iso){
+  if(!iso) return '--';
+  return new Date(iso).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
 }
 
 function eventLabel(ev){
@@ -94,32 +103,71 @@ function renderBreakdowns(el){
     +'<div class="dash-card"><h3>Analysis Status</h3>'+barHTML(a.statusBreakdown, a.active)+'</div>';
 }
 
-function renderActivity(el){
-  if(!data||!data.recentActivity||!data.recentActivity.length){
-    el.innerHTML='<div style="color:var(--ink-500);font-size:13px;padding:12px 0">No recent activity</div>';
+function renderActivity(){
+  var body=document.getElementById('dashActivityBody');
+  var empty=document.getElementById('dashActivityEmpty');
+  var viewBtn=document.getElementById('dashViewAllBtn');
+  if(!body)return;
+
+  var events=[];
+  var total=0;
+  if(activityPage==='summary' && data && data.recentActivity){
+    events=data.recentActivity.slice(0, SUMMARY_LIMIT);
+    total=data.recentActivity.length;
+  } else if(activityPage==='all' && activityData){
+    events=activityData.events||[];
+    total=activityData.total||0;
+  }
+
+  if(!events.length){
+    body.innerHTML='';
+    if(empty) empty.style.display='block';
+    if(viewBtn) viewBtn.style.display='none';
     return;
   }
-  var html='<div style="overflow-x:auto"><table class="dash-activity"><thead><tr>'
-    +'<th>User</th><th>Event</th><th>Entity</th><th class="r">When</th></tr></thead><tbody>';
-  data.recentActivity.forEach(function(r){
-    html+='<tr><td>'+esc(r.userName)+'</td>'
+  if(empty) empty.style.display='none';
+
+  var html='';
+  events.forEach(function(r){
+    html+='<tr><td style="padding-left:22px">'+esc(r.userName)+'</td>'
       +'<td>'+esc(eventLabel(r.eventType))+'</td>'
-      +'<td class="mono">'+(r.entityId?esc(r.entityType+' '+r.entityId):'--')+'</td>'
-      +'<td class="mono" style="text-align:right">'+esc(relTime(r.createdAt))+'</td></tr>';
+      +'<td class="mono">'+(r.entityId?esc((r.entityType||'')+' '+r.entityId):'<span style="color:var(--ink-400)">--</span>')+'</td>'
+      +'<td class="mono r" style="padding-right:22px">'+esc(activityPage==='all'?fmtDate(r.createdAt):relTime(r.createdAt))+'</td></tr>';
   });
-  html+='</tbody></table></div>';
-  el.innerHTML=html;
+  body.innerHTML=html;
+
+  if(activityPage==='summary'){
+    viewBtn.style.display = total > SUMMARY_LIMIT ? '' : 'none';
+    viewBtn.textContent = 'View All';
+  } else {
+    var hasMore = activityOffset + events.length < total;
+    if(hasMore){
+      viewBtn.style.display='';
+      viewBtn.textContent='Load More (' + (total - activityOffset - events.length) + ' remaining)';
+    } else {
+      viewBtn.style.display='none';
+    }
+  }
+}
+
+function populateUserFilter(users){
+  var sel=document.getElementById('dashUserFilter');
+  if(!sel||!users)return;
+  var current=sel.value;
+  sel.innerHTML='<option value="">All Users</option>';
+  users.forEach(function(u){
+    sel.innerHTML+='<option value="'+esc(u.userId)+'">'+esc(u.name)+'</option>';
+  });
+  if(current) sel.value=current;
 }
 
 function renderDashboard(){
   var kpis=document.getElementById('dashKpis');
   var breakdown=document.getElementById('dashBreakdowns');
-  var activity=document.getElementById('dashActivity');
   if(!kpis)return;
   if(error){
     kpis.innerHTML='<div class="dash-error">'+esc(error)+'</div>';
-    breakdown.innerHTML='';
-    activity.innerHTML='';
+    if(breakdown) breakdown.innerHTML='';
     return;
   }
   if(loading&&!data){
@@ -128,7 +176,7 @@ function renderDashboard(){
   }
   renderKPIs(kpis);
   renderBreakdowns(breakdown);
-  renderActivity(activity);
+  renderActivity();
 }
 
 async function loadData(){
@@ -143,16 +191,106 @@ async function loadData(){
     error='Cannot reach the analytics API. The server may be offline.';
   }
   loading=false;
+  activityPage='summary';
+  activityOffset=0;
   renderDashboard();
 }
 
+function buildActivityURL(limit, offset){
+  var parts=['/api/analytics-activity?limit='+limit+'&offset='+offset];
+  var from=document.getElementById('dashDateFrom');
+  var to=document.getElementById('dashDateTo');
+  var user=document.getElementById('dashUserFilter');
+  if(from&&from.value) parts.push('from='+encodeURIComponent(from.value+'T00:00:00Z'));
+  if(to&&to.value) parts.push('to='+encodeURIComponent(to.value+'T23:59:59Z'));
+  if(user&&user.value) parts.push('userId='+encodeURIComponent(user.value));
+  return parts.join('&');
+}
+
+async function loadActivityPage(offset){
+  try{
+    var url=buildActivityURL(PAGE_SIZE, offset);
+    var r=await fetch(url);
+    if(!r.ok) return;
+    var d=await r.json();
+    if(offset===0){
+      activityData=d;
+      populateUserFilter(d.users);
+    } else {
+      activityData.events=activityData.events.concat(d.events);
+      activityData.total=d.total;
+    }
+    activityOffset=offset;
+    renderActivity();
+  }catch(e){/* silently fail */}
+}
+
+function viewAll(){
+  if(activityPage==='summary'){
+    activityPage='all';
+    loadActivityPage(0);
+  } else if(activityData){
+    var nextOffset=activityOffset+activityData.events.length;
+    if(nextOffset<activityData.total) loadActivityPage(nextOffset);
+  }
+}
+
+function applyFilter(){
+  activityPage='all';
+  activityOffset=0;
+  activityData=null;
+  loadActivityPage(0);
+}
+
+async function exportCSV(){
+  var from=document.getElementById('dashDateFrom');
+  var to=document.getElementById('dashDateTo');
+  var user=document.getElementById('dashUserFilter');
+  try{
+    var all=[];
+    var offset=0;
+    var batch=1000;
+    while(true){
+      var parts=['/api/analytics-activity?limit='+batch+'&offset='+offset];
+      if(from&&from.value) parts.push('from='+encodeURIComponent(from.value+'T00:00:00Z'));
+      if(to&&to.value) parts.push('to='+encodeURIComponent(to.value+'T23:59:59Z'));
+      if(user&&user.value) parts.push('userId='+encodeURIComponent(user.value));
+      var r=await fetch(parts.join('&'));
+      if(!r.ok) break;
+      var d=await r.json();
+      all=all.concat(d.events);
+      if(all.length>=d.total) break;
+      offset+=batch;
+    }
+    var csv='User,Event,Entity Type,Entity ID,Timestamp\r\n';
+    all.forEach(function(e){
+      csv+='"'+csvSafe(e.userName)+'","'+csvSafe(eventLabel(e.eventType))+'","'+csvSafe(e.entityType||'')+'","'+csvSafe(e.entityId||'')+'","'+csvSafe(e.createdAt||'')+'"\r\n';
+    });
+    var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;
+    a.download='activity-log-'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }catch(e){
+    alert('Export failed. Please try again.');
+  }
+}
+
+function csvSafe(s){return String(s||'').replace(/"/g,'""');}
+
 function refresh(){
-  data=null; loadData();
+  data=null; activityData=null; activityPage='summary'; activityOffset=0; loadData();
 }
 
 window.FSDashboard={
   init:function(a){ adapter=a||{}; },
   render:function(){ if(!data&&!loading)loadData(); else renderDashboard(); },
-  refresh:refresh
+  refresh:refresh,
+  viewAll:viewAll,
+  applyFilter:applyFilter,
+  exportCSV:exportCSV
 };
 })();

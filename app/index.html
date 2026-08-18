@@ -355,7 +355,7 @@ main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 
 label.fld{display:block}
 label.fld .lab{display:block;margin-bottom:6px;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
-input[type=text],input[type=number],input[type=password],input[type=month],select{
+input[type=text],input[type=number],input[type=password],input[type=month],input[type=date],select{
   width:100%;padding:9px 12px;border:1px solid var(--ink-200);border-radius:var(--r);
   font-family:var(--fb);font-size:14px;color:var(--ink-900);background:var(--white);outline:none;
   transition:border-color .12s,box-shadow .12s}
@@ -1854,16 +1854,36 @@ th.sortable.sorted{color:var(--ink-900)}
 <div class="page" id="page-dashboard">
   <div class="page-title">
     <div><h1>Analytics Dashboard</h1>
-      <div class="sub">Platform usage, budget and investment KPIs, and recent activity across all users.</div></div>
+      <div class="sub">Platform usage, budget and investment KPIs, and activity across all users.</div></div>
     <div><button class="btn btn-dark" onclick="FSDashboard.refresh()">Refresh</button></div>
   </div>
   <div class="dash-kpis" id="dashKpis"></div>
-  <div class="dash-section"><h2>Status Breakdown</h2>
-    <div class="dash-grid" id="dashBreakdowns"></div>
-  </div>
-  <div class="dash-section"><h2>Recent Activity</h2>
-    <div id="dashActivity"></div>
-  </div>
+  <section class="card" style="margin-top:24px"><div class="card-hd"><span class="eyebrow">Status Breakdown</span></div>
+    <div class="card-bd"><div class="dash-grid" id="dashBreakdowns"></div></div>
+  </section>
+  <section class="card" style="margin-top:24px">
+    <div class="card-hd">
+      <span class="eyebrow">Activity Log</span>
+      <div class="dash-filters no-print">
+        <select id="dashUserFilter" onchange="FSDashboard.applyFilter()" aria-label="Filter by User">
+          <option value="">All Users</option>
+        </select>
+        <input type="date" id="dashDateFrom" onchange="FSDashboard.applyFilter()" aria-label="From Date">
+        <span class="dash-filter-sep">to</span>
+        <input type="date" id="dashDateTo" onchange="FSDashboard.applyFilter()" aria-label="To Date">
+        <button class="btn btn-ghost btn-sm" onclick="FSDashboard.exportCSV()" title="Export Activity Log to CSV">Export CSV</button>
+      </div>
+    </div>
+    <div class="card-bd" style="padding:0;overflow-x:auto">
+      <table class="tbl" id="dashActivityTable"><thead><tr>
+        <th style="padding-left:22px">User</th><th>Event</th><th>Entity</th><th class="r" style="padding-right:22px">When</th>
+      </tr></thead><tbody id="dashActivityBody"></tbody></table>
+      <div id="dashActivityEmpty" style="display:none;text-align:center;padding:28px;color:var(--ink-500);font-size:13px">No activity found</div>
+    </div>
+    <div style="text-align:center;padding:14px 0" id="dashViewAllWrap">
+      <button class="btn btn-ghost" id="dashViewAllBtn" onclick="FSDashboard.viewAll()" style="display:none">View All</button>
+    </div>
+  </section>
 </div>
 
 <!-- ================= ADMIN (super_admin only) ================= -->
@@ -1886,7 +1906,7 @@ th.sortable.sorted{color:var(--ink-900)}
     <div><h1>Version</h1>
       <div class="sub">System versions, providers, and environment diagnostics.</div></div>
   </div>
-  <div id="versionContent"></div>
+  <div id="versionContent" style="position:relative"></div>
 </div>
 
 </main>
@@ -5663,14 +5683,30 @@ function renderVersionPage(){
     ['User Agent',esc(ua)],
     ['Page Loaded',new Date().toLocaleString()]
   ];
-  var html='<div style="background:var(--white);border:1px solid var(--ink-200);border-radius:10px;padding:18px 20px;margin-top:18px">'
-    +'<table style="width:100%;border-collapse:collapse;font-size:13px">';
+  var html='<div style="background:var(--white);border:1px solid var(--ink-200);border-radius:10px;padding:18px 20px;margin-top:18px;position:relative">'
+    +'<button onclick="copyVersionInfo()" title="Copy to Clipboard" style="position:absolute;top:14px;right:14px;background:none;border:1px solid var(--ink-200);border-radius:6px;padding:6px 8px;cursor:pointer;color:var(--ink-500);display:flex;align-items:center;gap:5px;font-size:11px;transition:background .15s,color .15s" onmouseover="this.style.background=\'var(--ink-50)\';this.style.color=\'var(--ink-800)\'" onmouseout="this.style.background=\'none\';this.style.color=\'var(--ink-500)\'">'
+    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>'
+    +'Copy</button>'
+    +'<table id="versionTable" style="width:100%;border-collapse:collapse;font-size:13px">';
   rows.forEach(function(r){
     html+='<tr><td style="padding:8px 10px;border-bottom:1px solid var(--ink-100);color:var(--ink-500);white-space:nowrap;width:200px;vertical-align:top">'+r[0]+'</td>'
       +'<td style="padding:8px 10px;border-bottom:1px solid var(--ink-100);font-family:var(--fm);font-size:12px;color:var(--ink-800);word-break:break-all">'+r[1]+'</td></tr>';
   });
   html+='</table></div>';
   el.innerHTML=html;
+}
+function copyVersionInfo(){
+  var tbl=document.getElementById('versionTable');if(!tbl)return;
+  var lines=[];
+  tbl.querySelectorAll('tr').forEach(function(tr){
+    var cells=tr.querySelectorAll('td');
+    if(cells.length>=2) lines.push(cells[0].textContent.trim()+': '+cells[1].textContent.trim());
+  });
+  var text=lines.join('\n');
+  navigator.clipboard.writeText(text).then(function(){
+    var btn=tbl.parentElement.querySelector('button');
+    if(btn){var orig=btn.innerHTML;btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Copied';setTimeout(function(){btn.innerHTML=orig;},1500);}
+  });
 }
 
 function startBoot(){
