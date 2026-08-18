@@ -83,27 +83,55 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const before=await p.locator('#rContract').textContent();
  ok('contract sum still renders', /^\$[\d,]+$/.test(before), before);
 
- // --- Download Guide
+ // --- Download Guide: a real PDF through the fs-render engine
  await p.click('#nav-help'); await p.waitForTimeout(400);
  ok('Download Guide button present', await p.locator('button:has-text("Download Guide")').isVisible());
- await p.evaluate(()=>{window.__g=null;window.print=()=>{window.__g=document.getElementById('printDoc').innerHTML;};});
+ await p.evaluate(()=>{window.__dl=null;
+   const orig=HTMLAnchorElement.prototype.click;
+   HTMLAnchorElement.prototype.click=function(){window.__dl={href:this.href,name:this.download};};
+   window.__restoreClick=()=>{HTMLAnchorElement.prototype.click=orig;};});
+ await p.click('button:has-text("Download Guide")');
+ await p.waitForFunction(()=>window.__dl,{timeout:15000});
+ const gDl=await p.evaluate(async()=>{
+   window.__restoreClick();
+   const buf=await (await fetch(window.__dl.href)).arrayBuffer();
+   const txt=new TextDecoder('latin1').decode(buf);
+   return {name:window.__dl.name,len:buf.byteLength,head:txt.slice(0,5),
+     portrait:/MediaBox\s*\[\s*0\s+0\s+612\s+792/.test(txt),
+     engine:txt.includes('fs-render engine, fs-courier')};
+ });
+ ok('guide downloads a real PDF', gDl.head==='%PDF-'&&gDl.len>20000,
+    JSON.stringify({name:gDl.name,len:gDl.len}));
+ ok('guide PDF is portrait letter', gDl.portrait);
+ ok('guide PDF is rendered by the engine', gDl.engine);
+ ok('guide filename is stable', gDl.name==='Finishes_Budgeting_Suite_User_Guide.pdf', gDl.name);
+ ok('guide fsdoc validates against the engine contract',
+    await p.evaluate(()=>fsRender.validate(guideFsdoc()).ok),
+    await p.evaluate(()=>fsRender.validate(guideFsdoc()).errors.join('; ')));
+ const gDoc=await p.evaluate(()=>JSON.stringify(guideFsdoc()));
+ ok('guide fsdoc carries every section heading',
+    ['WHAT THIS IS','QUICK START','PROJECT IDS','INPUTS REFERENCE','THE BUDGET PAGE','CSI SCHEDULE',
+     'PRICING LIBRARY AND VERSIONING','INVESTMENT ANALYSIS','EXPORTS','WHO CAN DO WHAT','TROUBLESHOOTING']
+      .every(h=>gDoc.includes(h)));
+
+ // the pre-engine print path survives as the 'local' renderer fallback
+ await p.evaluate(()=>{localStorage.setItem('fsExportRenderer','local');
+   window.__g=null;window.print=()=>{window.__g=document.getElementById('printDoc').innerHTML;};});
  await p.click('button:has-text("Download Guide")'); await p.waitForTimeout(500);
  const g=await p.evaluate(()=>window.__g||'');
- ok('guide PDF is built', g.length>10000, g.length+' chars');
- ok('has the logo header', g.includes('finishes-logo-black.png'));
- ok('has a contents list', g.includes('guide-toc'));
- ok('carries every section heading',
-    ['What This Is','Quick Start','Project IDs','Inputs Reference','The Budget Page','CSI Schedule',
-     'Pricing Library and Versioning','Exports','Who Can Do What','Troubleshooting'].every(h=>g.includes(h)));
+ ok('local fallback still prints the guide',
+    g.length>10000&&g.includes('guide-toc')&&g.includes('finishes-logo-black.png'), g.length+' chars');
  ok('drops the contents rail from the body', !g.includes('id="helpToc"'));
  ok('has the tagline footer', g.includes('Building a Future Together'));
- await p.waitForTimeout(900);                    // let downloadGuide's cleanup timer finish
+ await p.evaluate(()=>localStorage.removeItem('fsExportRenderer'));
+ await p.waitForTimeout(900);                    // let printGuide's cleanup timer finish
  await p.emulateMedia({media:'print'});
  await p.evaluate(()=>{document.getElementById('printDoc').innerHTML=window.__g;document.body.classList.add('printing');});
  await p.waitForTimeout(500);
  ok('guide renders in print media', await p.locator('.rpt-guide').isVisible());
  await p.screenshot({path:OUT+'/shot-guide.png',clip:{x:0,y:0,width:1000,height:900}});
  await p.emulateMedia({media:'screen'});
+ await p.evaluate(()=>{document.getElementById('printDoc').innerHTML='';document.body.classList.remove('printing');});
 
  // ---- editable CSI codes move a line to the matching division
  await p.click('#nav-budget'); await p.waitForTimeout(400);

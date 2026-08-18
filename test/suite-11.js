@@ -174,6 +174,38 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     !blank.source && blank.input.analysisName==='Untitled Analysis',
     JSON.stringify({source:blank.source,name:blank.input&&blank.input.analysisName}));
 
+ // ---- analyses list search, status filter and grouping — like the budgets
+ await p.click('#nav-analyses'); await p.waitForTimeout(700);
+ ok('analyses list carries search, status and grouping controls',
+    await p.evaluate(()=>!!document.querySelector('#page-analyses [data-inv-q]')
+      &&!!document.querySelector('#page-analyses [data-inv-status]')
+      &&!!document.querySelector('#page-analyses [data-inv-group]')));
+ ok('count reads N of M analyses',
+    /3 of 3 analyses/.test(await p.locator('#page-analyses [data-inv-count]').textContent()),
+    await p.locator('#page-analyses [data-inv-count]').textContent());
+ await p.fill('#page-analyses [data-inv-q]','untitled'); await p.waitForTimeout(200);
+ ok('search narrows by analysis name',
+    (await p.locator('#page-analyses [data-inv-list] tr').count())===1
+    && /1 of 3/.test(await p.locator('#page-analyses [data-inv-count]').textContent()));
+ await p.fill('#page-analyses [data-inv-q]','tst-9911'); await p.waitForTimeout(200);
+ ok('search matches project IDs case-insensitively',
+    (await p.locator('#page-analyses [data-inv-list] tr').count())===2);
+ await p.fill('#page-analyses [data-inv-q]',''); await p.waitForTimeout(200);
+ await p.selectOption('#page-analyses [data-inv-group]','project'); await p.waitForTimeout(250);
+ ok('grouping by project splits linked from standalone, standalone last',
+    await p.evaluate(()=>{
+      const heads=[...document.querySelectorAll('#page-analyses tr.inv-grp')].map(t=>t.textContent.trim());
+      return heads.length===2&&/^TST-9911/.test(heads[0])&&/^Standalone/.test(heads[1]);
+    }),
+    await p.evaluate(()=>[...document.querySelectorAll('#page-analyses tr.inv-grp')].map(t=>t.textContent.trim()).join('|')));
+ ok('grouping shows every analysis exactly once',
+    (await p.locator('#page-analyses [data-inv-list] tr:not(.inv-grp)').count())===3);
+ await p.selectOption('#page-analyses [data-inv-group]',''); await p.waitForTimeout(200);
+ await p.click('#nav-home'); await p.waitForTimeout(600);
+ ok('the embedded Home list carries the same controls',
+    await p.evaluate(()=>!!document.querySelector('#homeAnalyses [data-inv-q]')
+      &&!!document.querySelector('#homeAnalyses [data-inv-group]')));
+
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();

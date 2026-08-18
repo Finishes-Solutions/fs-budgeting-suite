@@ -69,6 +69,12 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('save shows the Saved pill', /Saved/.test(await p.locator('#invState').textContent()),
     await p.locator('#invState').textContent());
  ok('save recorded version 1', (await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];return (await (await fetch('/api/investment-analysis/'+id)).json()).currentVersionNumber;}))===1);
+ await p.evaluate(()=>FSInvestmentUI.showVersions(FSInvestmentUI.currentId()));
+ await p.waitForTimeout(500);
+ ok('version history stamps are local MM-DD-YYYY h:mm AM/PM',
+    /\d{2}-\d{2}-\d{4} \d{1,2}:\d{2} [AP]M/.test(await p.locator('#invModal').textContent()),
+    (await p.locator('#invModal').textContent()).replace(/\s+/g,' ').slice(0,140));
+ await p.click('#invModal .btn-x'); await p.waitForTimeout(200);
  const aid=p.url().match(/analysis\/([0-9a-f-]{36})/)[1];
  const saved=await p.evaluate(async id=>await (await fetch('/api/investment-analysis/'+id)).json(),aid);
  const a1=saved.result.annual[0];

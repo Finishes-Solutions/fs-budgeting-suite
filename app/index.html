@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Finishes Solutions Budgeting Suite</title>
+<script>
+/* Apply the saved theme before first paint so switching never flashes. */
+try{var t=localStorage.getItem('fsTheme');if(t==='dark'||t==='evergreen')document.documentElement.setAttribute('data-theme',t);}catch(_){}
+</script>
 <!-- The FS monogram is black ink on transparency and would vanish against a dark tab
      strip, so the icon is the mark in white on the app's own ink-900 tile. Contrast is
      then glyph-against-tile, which is fixed, rather than glyph-against-browser-chrome,
@@ -51,13 +55,82 @@
   --r:4px;--rm:6px;
   --sh:0 1px 2px rgba(11,13,12,.06),0 1px 3px rgba(11,13,12,.08);
   --focus:0 0 0 3px rgba(10,122,54,.32);
+  /* Surfaces that stay dark in EVERY theme (header chrome, division headers,
+     dark buttons, toasts). Never remap these to the ink scale — in the dark
+     theme the ink scale inverts, and these must not. */
+  --chrome:#16191a;--solid:#16191a;--solid-2:#23282a;
 }
+/* ---- Themes ----
+   The palette lives entirely in the custom properties above, so a theme is a
+   remap of those tokens on <html data-theme>. Light is the :root default.
+   Print always uses light: a beforeprint hook flips the attribute back. */
+html[data-theme=dark]{
+  --ink-950:#f2f5f3;--ink-900:#e6eae8;--ink-800:#cfd6d3;--ink-700:#aeb7b3;--ink-600:#909a95;
+  --ink-500:#7e8884;--ink-400:#68736e;--ink-300:#49534e;--ink-200:#3a433f;--ink-150:#2e3633;
+  --ink-100:#262d2a;--ink-50:#161b19;--white:#1d2320;
+  --green-900:#0c2b1b;--green-800:#17693a;--green-700:#1e8a48;--green-600:#2a9c55;--green-500:#3fae66;
+  --green-200:#2d6a45;--green-100:#1c3a29;--green-50:#182b20;
+  --warn:#d9a441;--danger:#e06056;
+  --edit:#7fb0ea;--edit-100:#1c3049;--edit-50:#17263a;
+  --chrome:#0d1110;--solid:#101513;--solid-2:#1d2521;
+  --sh:0 1px 2px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);
+  --focus:0 0 0 3px rgba(63,174,102,.35);
+}
+html[data-theme=evergreen]{
+  --ink-50:#eef4f0;--ink-100:#e3ece6;--ink-150:#d9e5de;--ink-200:#c9d9d0;
+  --white:#fcfdfc;
+  --chrome:#00351a;
+  --sh:0 1px 2px rgba(0,53,26,.07),0 1px 3px rgba(0,53,26,.09);
+}
+/* Theme dock: always-available switcher pinned to the bottom-right corner.
+   The same three choices also live in the account menu, above Sign Out. */
+#themeDock{position:fixed;right:18px;bottom:18px;z-index:45;display:flex;gap:4px;
+  background:var(--white);border:1px solid var(--ink-200);border-radius:999px;
+  padding:4px;box-shadow:0 4px 14px rgba(11,13,12,.16)}
+#themeDock button{width:30px;height:30px;border:none;border-radius:50%;cursor:pointer;
+  background:transparent;color:var(--ink-500);display:flex;align-items:center;justify-content:center;padding:0}
+#themeDock button:hover{background:var(--ink-100);color:var(--ink-800)}
+#themeDock button.on{background:var(--green-700);color:#fff}
+#themeDock svg{width:15px;height:15px;display:block}
+.pm-theme-lab{padding:8px 12px 2px;font-family:var(--fm);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-400)}
+.pm-theme .rowmenu-item{display:flex;align-items:center;gap:9px}
+.pm-theme .rowmenu-item svg{width:14px;height:14px;flex:none;color:var(--ink-500)}
+.pm-theme .rowmenu-item .tick{margin-left:auto;color:var(--green-700);font-weight:700;visibility:hidden}
+.pm-theme .rowmenu-item.on .tick{visibility:visible}
+/* ---- Cmd/Ctrl+K global search palette ---- */
+#palette{position:fixed;inset:0;z-index:80;display:none;background:rgba(11,13,12,.45);
+  align-items:flex-start;justify-content:center;padding:11vh 16px 16px}
+#palette.open{display:flex}
+.pal-card{width:600px;max-width:96vw;background:var(--white);border:1px solid var(--ink-200);
+  border-radius:12px;box-shadow:0 18px 50px rgba(11,13,12,.35);overflow:hidden}
+.pal-card input{width:100%;border:none;outline:none;background:transparent;color:var(--ink-900);
+  font-family:var(--fb);font-size:15px;padding:15px 18px;border-bottom:1px solid var(--ink-150)}
+.pal-list{max-height:46vh;overflow:auto;padding:6px}
+.pal-sec{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-400);padding:8px 12px 4px}
+.pal-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer}
+.pal-row:hover,.pal-row.sel{background:var(--green-50)}
+.pal-row.sel{box-shadow:inset 0 0 0 1px var(--green-200)}
+.pal-row .pal-id{font-family:var(--fm);font-size:12px;color:var(--green-700);font-weight:600;flex:none;min-width:74px}
+.pal-row .pal-name{font-size:13.5px;color:var(--ink-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pal-row .pal-kind{margin-left:auto;flex:none;font-size:10.5px;color:var(--ink-500);
+  background:var(--ink-100);border-radius:999px;padding:2px 9px}
+.pal-empty{padding:18px 14px;font-size:13px;color:var(--ink-500)}
+.pal-ft{display:flex;gap:16px;padding:8px 14px;border-top:1px solid var(--ink-150);
+  font-family:var(--fm);font-size:10.5px;color:var(--ink-400)}
+/* ---- home tables: distribute the columns evenly instead of packing right */
+#page-home .tbl th[data-sort=projectId]{width:12%}
+#page-home .tbl th[data-sort=contractSum],#page-home .tbl th[data-sort=projectCost]{width:13%}
+#page-home .tbl th[data-sort=status]{width:11%}
+#page-home .tbl th[data-sort=updated]{width:14%}
+#page-home .tbl th.no-print{width:44px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--fb);color:var(--ink-800);background:var(--ink-50);font-size:14px;line-height:1.5}
 .mono{font-family:var(--fm)}
 .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
 
-body>header{background:var(--ink-900);color:var(--white)}   /* app chrome only — the printed report has its own <header> */
+body>header{background:var(--chrome);color:#fff}   /* app chrome only — the printed report has its own <header> */
 .hd{max-width:1440px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
   height:60px;padding:0 32px;gap:20px;flex-wrap:nowrap;white-space:nowrap}
 .brand{flex:0 0 auto;display:flex;align-items:center;height:60px}
@@ -119,7 +192,7 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .btn-primary{background:var(--green-700);color:#fff}.btn-primary:hover{background:var(--green-800)}
 .btn-ghost{background:transparent;border-color:var(--ink-200);color:var(--ink-700)}
 .btn-ghost:hover{border-color:var(--ink-400);background:var(--ink-50)}
-.btn-dark{background:var(--ink-900);color:#fff}.btn-dark:hover{background:var(--ink-800)}
+.btn-dark{background:var(--solid);color:#fff}.btn-dark:hover{background:var(--solid-2)}
 .btn-sm{padding:5px 10px;font-size:12px}
 .btn-x{background:none;border:none;color:var(--ink-400);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:var(--r)}
 .btn-x:hover{color:var(--danger);background:var(--ink-100)}
@@ -166,10 +239,10 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .tbl td.calc.strong{color:var(--ink-950);font-weight:600}
 .tbl tr.total td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;color:var(--ink-950);padding-top:10px}
 .tbl input,.tbl select{border:1px solid transparent;background:transparent;padding:4px 8px}
-.tbl input:hover,.tbl select:hover{border-color:var(--ink-200);background:#fff}
-.tbl input:focus,.tbl select:focus{border-color:var(--green-600);background:#fff}
+.tbl input:hover,.tbl select:hover{border-color:var(--ink-200);background:var(--white)}
+.tbl input:focus,.tbl select:focus{border-color:var(--green-600);background:var(--white)}
 .tbl input[type=number]{font-family:var(--fm);font-size:13px;text-align:right}
-.scope-hd td{background:var(--ink-900);color:#fff;font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+.scope-hd td{background:var(--solid);color:#fff;font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
   font-weight:600;padding:9px 12px}
 .scope-hd .div-sum{float:right;color:#fff}   /* white, not green — this sits on ink-900 */
 .grp-hd td{background:var(--ink-50);font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
@@ -249,9 +322,9 @@ body.mobile-ro [data-edit-only]{display:none!important}
 /* Checkboxes are drawn rather than native so they can be rounded and pick up the
    brand green. Native padding from `.tbl input` is reset explicitly. */
 .tbl input[type=checkbox]{appearance:none;-webkit-appearance:none;width:15px;height:15px;padding:0;margin:0;
-  border:1.5px solid var(--ink-300);border-radius:5px;background:#fff;cursor:pointer;flex:none;
+  border:1.5px solid var(--ink-300);border-radius:5px;background:var(--white);cursor:pointer;flex:none;
   position:relative;vertical-align:middle;transition:background .12s,border-color .12s}
-.tbl input[type=checkbox]:hover{border-color:var(--ink-500);background:#fff}
+.tbl input[type=checkbox]:hover{border-color:var(--ink-500);background:var(--white)}
 .tbl input[type=checkbox]:checked,.tbl input[type=checkbox]:indeterminate{
   background:var(--green-600);border-color:var(--green-600)}
 /* The glyphs are centered geometrically (50%/50% + translate) rather than nudged
@@ -266,7 +339,7 @@ body.mobile-ro [data-edit-only]{display:none!important}
 .grp-hd td.calc,.grp-hd td.calc.strong{color:var(--ink-950)}
 tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 
-.stats{display:grid;grid-template-columns:repeat(5,1fr);background:var(--ink-900);border-radius:var(--rm);overflow:hidden;margin-bottom:20px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);background:var(--solid);border-radius:var(--rm);overflow:hidden;margin-bottom:20px}
 @media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
 .stat{padding:18px 22px;border-left:3px solid var(--green-700)}
 .stat .k{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:6px}
@@ -291,11 +364,11 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .banner.green{border-color:var(--green-200);background:var(--green-50);color:var(--green-800)}
 
 .seg{display:inline-flex;border:1px solid var(--ink-200);border-radius:var(--r);overflow:hidden}
-.seg button{border:none;background:#fff;padding:7px 12px;font-family:var(--fm);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-500);cursor:pointer}
-.seg button.on{background:var(--ink-900);color:#fff}
+.seg button{border:none;background:var(--white);padding:7px 12px;font-family:var(--fm);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-500);cursor:pointer}
+.seg button.on{background:var(--solid);color:#fff}
 .chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-700);cursor:pointer;user-select:none}
 .chk input{width:15px;height:15px;accent-color:var(--green-700)}
-.toast{position:fixed;bottom:24px;right:24px;background:var(--ink-900);color:#fff;padding:12px 20px;border-radius:var(--rm);
+.toast{position:fixed;bottom:64px;right:24px;background:var(--solid);color:#fff;padding:12px 20px;border-radius:var(--rm);   /* sits above the theme dock */
   font-size:13px;box-shadow:0 8px 24px rgba(11,13,12,.25);opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:99}
 .toast.show{opacity:1;transform:none}
 .empty{padding:48px;text-align:center;color:var(--ink-400)}
@@ -343,7 +416,7 @@ tr.edited:hover td{background:var(--edit-50)}
 /* ---- collapsible budget grid ---- */
 .caret{display:inline-block;width:14px;font-size:10px;opacity:.75}
 .scope-hd,.grp-hd{cursor:pointer;user-select:none}
-.scope-hd:hover td{background:var(--ink-800)}
+.scope-hd:hover td{background:var(--solid-2)}
 .grp-hd:hover td{background:var(--ink-100)}
 .shut{font-weight:400;opacity:.6;letter-spacing:.06em;margin-left:8px;text-transform:none}
 .budget-scroll{max-height:72vh}
@@ -1016,6 +1089,19 @@ th.sortable.sorted{color:var(--ink-900)}
         <p>A saved budget can also be underwritten: the <b>Investment Analysis</b> tab turns it into a five- or
           ten-year before-tax investment model — operating cash flows, financing, hypothetical sales, and
           investor returns — described in its own section below.</p>
+
+        <h4>Search Everywhere (Cmd/Ctrl+K)</h4>
+        <p><b>Cmd+K</b> (or <b>Ctrl+K</b>) opens a search popup from any page. Type any part of a project ID,
+          budget name, or analysis name; results list budgets first, then investment analyses. Arrow keys
+          move the selection, <b>Enter</b> opens it, <b>Esc</b> closes. Both Home lists also have their own
+          search box, status filter, and grouping — budgets and analyses alike.</p>
+
+        <h4>Themes</h4>
+        <p>The suite has three themes: <b>Light</b> (the default), <b>Dark</b>, and <b>Evergreen</b> — a
+          light look with the Finishes green worked into the chrome. Switch from either place: the icon dock
+          in the bottom-right corner of every page (sun, moon, and tree), or your profile menu — click your
+          avatar in the header and pick under <b>Theme</b>, above Sign Out. The choice is remembered per
+          browser. Printed reports and PDF exports always render in light, whatever theme the screen uses.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -1379,8 +1465,15 @@ th.sortable.sorted{color:var(--ink-900)}
         <div class="callout">Every export reads the same numbers the screen shows, so exports cannot drift
           from the saved document. The budget workbook also carries the <b>Manually edited</b> flag and each
           line's original library rate.</div>
-        <p><b>Download Guide</b>, at the top of this page, produces a formatted PDF of this guide. It is generated
-          from this page rather than a separate copy, so it cannot fall out of date with what you are reading.</p>
+        <p><b>Download Guide</b>, at the top of this page, downloads a formatted PDF of this guide through the
+          same rendering engine as every other export. It is generated from this page rather than a separate
+          copy, so it cannot fall out of date with what you are reading.</p>
+
+        <h4>Timestamps</h4>
+        <p>Every date and time the app shows — the Updated columns, version history, save stamps, and the
+          Generated stamps on exports — is your local time, formatted <b>MM-DD-YYYY h:mm AM/PM</b>
+          (for example, 08-17-2026 8:52 PM). Times a document was saved on another machine display in
+          YOUR timezone when you view them.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -1528,7 +1621,40 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="pm-email" id="pmEmail"></div>
   </div>
   <div class="rowmenu-sep"></div>
+  <div class="pm-theme">
+    <div class="pm-theme-lab">Theme</div>
+    <button class="rowmenu-item" role="menuitem" data-theme-pick="light" onclick="setTheme('light')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9l-2.2 2.2M7.1 16.9l-2.2 2.2"/></svg>
+      Light<span class="tick">✓</span></button>
+    <button class="rowmenu-item" role="menuitem" data-theme-pick="dark" onclick="setTheme('dark')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      Dark<span class="tick">✓</span></button>
+    <button class="rowmenu-item" role="menuitem" data-theme-pick="evergreen" onclick="setTheme('evergreen')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 5 12h4l-4 8h14l-4-8h4L12 2z"/><path d="M12 20v2"/></svg>
+      Evergreen<span class="tick">✓</span></button>
+  </div>
+  <div class="rowmenu-sep"></div>
   <button class="rowmenu-item" role="menuitem" onclick="logout()">Sign Out</button>
+</div>
+
+<!-- Theme dock: the same three choices as the account menu, always on screen. -->
+<div id="themeDock" class="no-print" role="group" aria-label="Theme">
+  <button data-theme-pick="light" title="Light Theme" aria-label="Light Theme" onclick="setTheme('light')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9l-2.2 2.2M7.1 16.9l-2.2 2.2"/></svg></button>
+  <button data-theme-pick="dark" title="Dark Theme" aria-label="Dark Theme" onclick="setTheme('dark')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+  <button data-theme-pick="evergreen" title="Evergreen Theme" aria-label="Evergreen Theme" onclick="setTheme('evergreen')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 5 12h4l-4 8h14l-4-8h4L12 2z"/><path d="M12 20v2"/></svg></button>
+</div>
+
+<!-- Cmd/Ctrl+K: search every budget and analysis from anywhere. -->
+<div id="palette" aria-hidden="true">
+  <div class="pal-card" role="dialog" aria-modal="true" aria-label="Search Budgets And Analyses">
+    <input type="text" id="palInput" placeholder="Search budgets and analyses — ID, name, or project…"
+      autocomplete="off" spellcheck="false">
+    <div class="pal-list" id="palList"></div>
+    <div class="pal-ft"><span>↑↓ Navigate</span><span>Enter Open</span><span>Esc Close</span></div>
+  </div>
 </div>
 
 <!-- ================= BUDGET ROW ACTIONS MENU ================= -->
@@ -1558,6 +1684,57 @@ const nz=v=>Number.isFinite(+v)?+v:0;
 const usd=n=>'$'+Math.round(nz(n)).toLocaleString('en-US');
 const usd2=n=>'$'+nz(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const num=n=>Math.round(nz(n)).toLocaleString('en-US');
+/* ---- house timestamp format ----
+   Every timestamp the app SHOWS is the viewer's local time as
+   MM-DD-YYYY h:mm AM/PM (fmtWhen), or MM-DD-YYYY where only the day matters
+   (fmtDay). The API stores and returns UTC ISO strings; slicing those for
+   display was showing UTC — an evening save looked like tomorrow. */
+function fmtWhen(iso){
+  if(!iso)return '—';
+  const d=iso instanceof Date?iso:new Date(iso);
+  if(isNaN(d.getTime()))return '—';
+  const p=n=>String(n).padStart(2,'0');
+  let h=d.getHours();const ap=h>=12?'PM':'AM';h=h%12||12;
+  return p(d.getMonth()+1)+'-'+p(d.getDate())+'-'+d.getFullYear()+' '+h+':'+p(d.getMinutes())+' '+ap;
+}
+function fmtDay(iso){
+  if(!iso)return '—';
+  const d=iso instanceof Date?iso:new Date(iso);
+  if(isNaN(d.getTime()))return '—';
+  const p=n=>String(n).padStart(2,'0');
+  return p(d.getMonth()+1)+'-'+p(d.getDate())+'-'+d.getFullYear();
+}
+function fmtClock(d){
+  let h=d.getHours();const ap=h>=12?'PM':'AM';h=h%12||12;
+  return h+':'+String(d.getMinutes()).padStart(2,'0')+' '+ap;
+}
+/* ---- themes ----
+   Light is the default; Dark and Evergreen remap the CSS tokens on <html>.
+   The choice persists per browser and applies before first paint (head
+   script). Print always renders light: beforeprint strips the attribute and
+   afterprint restores it, so exports and the guide never print dark. */
+function currentTheme(){return document.documentElement.getAttribute('data-theme')||'light';}
+function setTheme(name){
+  if(!['light','dark','evergreen'].includes(name))name='light';
+  if(name==='light')document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme',name);
+  try{localStorage.setItem('fsTheme',name);}catch(_){}
+  document.querySelectorAll('[data-theme-pick]').forEach(b=>{
+    const on=b.dataset.themePick===name;
+    b.classList.toggle('on',on);
+    b.setAttribute('aria-pressed',on?'true':'false');
+  });
+}
+let printThemeStash=null;
+window.addEventListener('beforeprint',()=>{
+  printThemeStash=currentTheme();
+  document.documentElement.removeAttribute('data-theme');
+});
+window.addEventListener('afterprint',()=>{
+  if(printThemeStash&&printThemeStash!=='light')
+    document.documentElement.setAttribute('data-theme',printThemeStash);
+  printThemeStash=null;
+});
 const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>ESC_MAP[c]);
 const ID_RX=/^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
@@ -1957,7 +2134,7 @@ function renderSaveState(){
   el.style.display='inline-flex';
   el.className='savepill'+(saving?' saving':dirty?' dirty':' saved');
   el.textContent=saving?'Saving…':dirty?'Unsaved changes'
-    :lastSaved?'Saved '+lastSaved.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})
+    :lastSaved?'Saved '+fmtClock(lastSaved)
     :'No changes yet';
   document.querySelectorAll('[data-save-btn]').forEach(b=>{b.disabled=saving;});
 }
@@ -2270,7 +2447,7 @@ function homeRow(x){
       <td class="calc r">${usd(x.contractSum||0)}</td>
       <td class="calc r">${usd(x.projectCost||0)}</td>
       <td><span class="badge ${x.status==='Finalized'?'ok':''}">${esc(x.status)}</span></td>
-      <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${esc((x.updated||'').slice(0,10))}</td>
+      <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${esc(fmtDay(x.updated))}</td>
       <td class="no-print" style="text-align:right"><button class="rowmenu-btn" data-pid="${esc(x.projectId)}"
         aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(x.projectId)}"
         onclick="event.stopPropagation();openRowMenu(this)">⋮</button></td></tr>`);
@@ -2577,12 +2754,8 @@ document.addEventListener('keydown',e=>{
    never assigned to the global `doc`, so opening history cannot disturb
    unsaved work in the budget you have open. */
 const vBody=()=>document.getElementById('versionsBody');
-function fmtWhen(iso){
-  if(!iso)return 'Unknown date';
-  const d=new Date(iso);
-  return isNaN(d.getTime())?'Unknown date'
-    :d.toLocaleString('en-US',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-}
+/* Version stamps use the shared house format (fmtWhen, helpers above):
+   MM-DD-YYYY h:mm AM/PM in the viewer's local time. */
 async function openVersions(pid){
   versionsPid=pid;
   document.getElementById('versionsTitle').textContent='Budget Versions — '+pid;
@@ -3478,7 +3651,7 @@ function exportPDF(){
 function rptRow(k,v,cls){return '<div class="rr '+(cls||'')+'"><span>'+k+'</span><span class="v">'+v+'</span></div>';}
 function buildReport(s){
   const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF,sm=siteMetrics();
-  const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const stamp=fmtWhen(new Date());
   let h='';
 
   h+='<header class="rpt-hd">'
@@ -3632,7 +3805,7 @@ function buildReport(s){
       +sigRow('Contract Sum',usd(p.contract))
       +sigRow('Total Project Cost',usd(p.project))
       +sigRow('Total Units · SF',num(tu)+' units · '+num(tsf)+' SF')
-      +sigRow('Last Saved',esc((doc.updated||'').slice(0,10)||'—'))
+      +sigRow('Last Saved',esc(fmtWhen(doc.updated)))
       +sigRow('Exported',esc(stamp))
       +'</div></div>'
       +'<div class="sig-row"><div class="s1"><div class="sig-line"></div><div class="sig-cap">Signature</div></div>'
@@ -3656,7 +3829,7 @@ function sigRow(k,v){return '<div class="rr"><span>'+k+'</span><span class="v">'
    Content mirrors buildReport() — same numbers, never the DOM. */
 function buildBudgetFsdoc(s){
   const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF,sm=siteMetrics();
-  const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const stamp=fmtWhen(new Date());
   const sheets=[];
   const kv=(k,v,fmt,total)=>({k,v,fmt,total:!!total});
   // 1-decimal shares are preformatted strings — fsdoc's pct is 2-decimal,
@@ -3821,7 +3994,7 @@ function buildBudgetFsdoc(s){
       ['Pricing Library',doc.pricingVersion||'—'],
       ['Contract Sum',usd(p.contract)],['Total Project Cost',usd(p.project)],
       ['Total Units · SF',num(tu)+' units · '+num(tsf)+' SF'],
-      ['Last Saved',(doc.updated||'').slice(0,10)||'—'],['Exported',stamp]
+      ['Last Saved',fmtWhen(doc.updated)],['Exported',stamp]
     ]}:null;
   return {fsdoc,signature};
 }
@@ -3831,7 +4004,7 @@ function buildBudgetFsdoc(s){
    as the repair fallback; new export work happens in buildBudgetFsdoc. */
 function legacyBudgetPdfDoc(s){
   const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF,sm=siteMetrics();
-  const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const stamp=fmtWhen(new Date());
   const sheets=[];
   const kv=(k,v,fmt,total)=>({k,v,fmt,total:!!total});
   const tRow=(label,values,fmt,total)=>({label,values,fmt,total:!!total});
@@ -3965,7 +4138,7 @@ function legacyBudgetPdfDoc(s){
       ['Pricing Library',doc.pricingVersion||'—'],
       ['Contract Sum',usd(p.contract)],['Total Project Cost',usd(p.project)],
       ['Total Units · SF',num(tu)+' units · '+num(tsf)+' SF'],
-      ['Last Saved',(doc.updated||'').slice(0,10)||'—'],['Exported',stamp]
+      ['Last Saved',fmtWhen(doc.updated)],['Exported',stamp]
     ]}:null;
 
   return {
@@ -4029,7 +4202,81 @@ function exportBudgetPdf(){
    guide cannot drift out of step with the page. Card chrome and the contents rail are
    dropped; each card becomes a section. */
 function downloadGuide(){
-  const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  // The guide now downloads through the fs-render engine like every other
+  // PDF export. The print pipeline below remains as the 'local' renderer
+  // fallback (FS_EXPORT_RENDERER / localStorage override) — the guide's
+  // pre-engine path, frozen the same way legacy-render.js is.
+  if(exportRenderer()!=='local'&&typeof fsRender!=='undefined'&&typeof pdfMake!=='undefined'){
+    const fsdoc=guideFsdoc();
+    if(fsRender.validate(fsdoc).ok){
+      const dd=fsRender.buildPdfDocDefinition(fsdoc,fsRender.themes['finishes-solutions'],'portrait');
+      FSExportRender.stampRenderProvenance(dd,'engine');
+      pdfMake.createPdf(dd).getBlob(b=>{
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(b);a.download='Finishes_Budgeting_Suite_User_Guide.pdf';a.click();
+        setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+        toast('Guide downloaded');
+      });
+      return;
+    }
+  }
+  printGuide();
+}
+/* Adapt the live help markup to fsdoc/1: headings become group labels,
+   paragraphs and list items become notes, and the help tables become kv
+   rows (two columns) or matrix tables (wider). Built from the same DOM the
+   user reads, so the downloaded guide can never drift from the page. */
+function guideFsdoc(){
+  const clean=t=>String(t||'').replace(/\s+/g,' ').trim();
+  const blocks=[];
+  document.querySelectorAll('#page-help .help > section .card-bd').forEach((sec,si)=>{
+    if(si>0)blocks.push({kind:'spacer',height:10});
+    [...sec.children].forEach(node=>{
+      const tag=node.tagName;
+      if(tag==='H3'||tag==='H4'){
+        const label=clean(node.textContent).toUpperCase();
+        if(label)blocks.push({kind:'group',label});
+      }else if(tag==='UL'||tag==='OL'){
+        [...node.querySelectorAll(':scope > li')].forEach((li,i)=>{
+          const t=clean(li.textContent);
+          if(t)blocks.push({kind:'note',text:(tag==='OL'?(i+1)+'. ':'· ')+t});
+        });
+      }else if(tag==='TABLE'){
+        const rows=[...node.querySelectorAll('tbody tr')]
+          .map(tr=>[...tr.children].map(td=>clean(td.textContent)))
+          .filter(r=>r.length&&r[0]);
+        if(!rows.length)return;
+        if(rows.every(r=>r.length===2)){
+          blocks.push({kind:'kv',rows:rows.map(r=>({k:r[0],v:r[1]}))});
+        }else{
+          const width=Math.max(...rows.map(r=>r.length));
+          let heads=[...node.querySelectorAll('thead th')].map(th=>clean(th.textContent)).slice(1);
+          while(heads.length<width-1)heads.push('');
+          blocks.push({kind:'matrixTable',headers:heads,
+            rows:rows.map(r=>{const v=r.slice(1);while(v.length<width-1)v.push('');
+              return {label:r[0],values:v};})});
+        }
+      }else{
+        const t=clean(node.textContent);
+        if(t)blocks.push({kind:'note',text:t});
+      }
+    });
+  });
+  return {fsdoc:'1',meta:{
+    title:'How to Use the Budgeting Suite',
+    eyebrow:'FINISHES SOLUTIONS · USER GUIDE',
+    subline:'Build a multifamily project budget from the shared pricing library, underwrite it as an investment analysis, and export both.',
+    rightLines:[fmtWhen(new Date())],
+    bandLine:'User Guide',
+    footnote:'Finishes Solutions Budgeting Suite user guide, generated from the live How To Use page.',
+    footerRight:'User Guide',
+    generatedAt:new Date().toISOString()
+  },sheets:[{key:'guide',name:'User Guide',title:'How to Use the Budgeting Suite',blocks}]};
+}
+/* The pre-engine guide path: the print pipeline, kept as the 'local'
+   renderer fallback. */
+function printGuide(){
+  const stamp=fmtWhen(new Date());
   const secs=[...document.querySelectorAll('#page-help .help > section .card-bd')]
     .map(e=>'<section class="rpt-sec">'+e.innerHTML+'</section>').join('');
   const toc=[...document.querySelectorAll('#helpToc a')]
@@ -4330,7 +4577,9 @@ function wireDelegates(){
   document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
   document.getElementById('homeGroup').addEventListener('change',e=>{homeView.group=e.target.value;paintHome();});
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeExport();closePick();return;}
+    if(e.key==='Escape'){closeExport();closePick();palClose();return;}
+    // Cmd/Ctrl+K opens the global search palette from anywhere in the app.
+    if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();palToggle();return;}
     // Cmd/Ctrl+S saves rather than letting the browser offer to save the page.
     if((e.metaKey||e.ctrlKey)&&(e.key==='s'||e.key==='S')){
       e.preventDefault();
@@ -4372,6 +4621,91 @@ function wireDelegates(){
   }));
 }
 
+/* ============ GLOBAL SEARCH (Cmd/Ctrl+K) ============
+   One palette over everything: budgets and investment analyses together,
+   fetched fresh each time it opens so the results are never stale. Arrow keys
+   move, Enter opens, Escape closes. Results keep their section order —
+   budgets first, then analyses. */
+let palItems=[],palHits=[],palSel=0,palWired=false;
+function palToggle(){
+  const p=document.getElementById('palette');
+  if(p.classList.contains('open'))palClose();else palOpenFn();
+}
+async function palOpenFn(){
+  const p=document.getElementById('palette');
+  if(!palWired){
+    palWired=true;
+    p.addEventListener('click',e=>{if(e.target===p)palClose();});
+    const inp=document.getElementById('palInput');
+    inp.addEventListener('input',()=>{palSel=0;palRender();});
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='ArrowDown'){e.preventDefault();if(palHits.length){palSel=(palSel+1)%palHits.length;palRender();}}
+      else if(e.key==='ArrowUp'){e.preventDefault();if(palHits.length){palSel=(palSel-1+palHits.length)%palHits.length;palRender();}}
+      else if(e.key==='Enter'){e.preventDefault();palGo(palHits[palSel]);}
+      else if(e.key==='Escape'){palClose();}
+    });
+  }
+  p.classList.add('open');p.setAttribute('aria-hidden','false');
+  const inp=document.getElementById('palInput');
+  inp.value='';palSel=0;palItems=[];palHits=[];
+  document.getElementById('palList').innerHTML='<div class="pal-empty">Loading budgets and analyses…</div>';
+  inp.focus();
+  const [buds,anas]=await Promise.all([
+    api('budgets').catch(()=>[]),
+    api('investment-analyses').catch(()=>[])
+  ]);
+  if(!p.classList.contains('open'))return;   // closed while loading
+  palItems=[
+    ...(buds||[]).map(b=>({kind:'budget',id:b.projectId,name:b.name||'Untitled',
+      text:((b.projectId||'')+' '+(b.name||'')).toLowerCase()})),
+    ...(anas||[]).map(a=>({kind:'analysis',id:a.analysisId,name:a.name||'Untitled',pid:a.projectId||'',
+      text:((a.projectId||'')+' '+(a.name||'')).toLowerCase()}))
+  ];
+  palRender();
+}
+function palClose(){
+  const p=document.getElementById('palette');if(!p)return;
+  p.classList.remove('open');p.setAttribute('aria-hidden','true');
+}
+function palRender(){
+  const list=document.getElementById('palList');
+  const q=document.getElementById('palInput').value.trim().toLowerCase();
+  palHits=palItems.filter(it=>!q||it.text.includes(q)).slice(0,14);
+  if(palSel>=palHits.length)palSel=Math.max(0,palHits.length-1);
+  if(!palHits.length){
+    list.innerHTML='<div class="pal-empty">'+(palItems.length
+      ?'Nothing matches. Search by project ID, budget name, or analysis name.'
+      :'No budgets or analyses yet.')+'</div>';
+    return;
+  }
+  let html='',lastKind='';
+  palHits.forEach((it,i)=>{
+    if(it.kind!==lastKind){
+      html+='<div class="pal-sec">'+(it.kind==='budget'?'Budgets':'Investment Analyses')+'</div>';
+      lastKind=it.kind;
+    }
+    html+='<div class="pal-row'+(i===palSel?' sel':'')+'" data-pi="'+i+'">'
+      +'<span class="pal-id">'+esc(it.kind==='budget'?it.id:(it.pid||'—'))+'</span>'
+      +'<span class="pal-name">'+esc(it.name)+'</span>'
+      +'<span class="pal-kind">'+(it.kind==='budget'?'Budget':'Analysis')+'</span></div>';
+  });
+  list.innerHTML=html;
+  list.querySelectorAll('.pal-row').forEach(el=>{
+    el.addEventListener('click',()=>palGo(palHits[+el.dataset.pi]));
+    el.addEventListener('mousemove',()=>{
+      if(palSel!==+el.dataset.pi){palSel=+el.dataset.pi;
+        list.querySelectorAll('.pal-row').forEach(x=>x.classList.toggle('sel',+x.dataset.pi===palSel));}
+    });
+  });
+  const s=list.querySelector('.pal-row.sel');if(s)s.scrollIntoView({block:'nearest'});
+}
+function palGo(it){
+  if(!it)return;
+  palClose();
+  if(it.kind==='budget')openBudget(it.id);
+  else location.hash='#/analysis/'+it.id;
+}
+
 /* ============ INIT ============ */
 /* ---- cold-start screen ----
    A paused serverless database takes tens of seconds to resume, and the API layer
@@ -4398,6 +4732,7 @@ function endBoot(){
 }
 (async function init(){
   startBoot();
+  setTheme(currentTheme());   // marks the active choice in the dock and menu
   try{
     if(window.FSInvestmentUI)FSInvestmentUI.init({
       api:invApi,toast,esc,

@@ -16,9 +16,9 @@
 
 /* step navigation */
 .inv-steps{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 18px}
-.inv-steps button{border:1px solid var(--ink-200);background:#fff;border-radius:999px;
+.inv-steps button{border:1px solid var(--ink-200);background:var(--white);border-radius:999px;
   padding:6px 14px;font-size:12.5px;cursor:pointer;color:var(--ink-700)}
-.inv-steps button.on{background:var(--ink-900);border-color:var(--ink-900);color:#fff}
+.inv-steps button.on{background:var(--solid,#16191a);border-color:var(--solid,#16191a);color:#fff}
 .inv-steps button .n{font-family:var(--fm);font-size:11px;opacity:.65;margin-right:6px}
 /* a completed step earns a checkmark on its pill */
 /* completed steps carry a green dot (owner preference: dot, not a check mark) */
@@ -38,7 +38,7 @@
   cursor:pointer;box-shadow:0 0 0 3px var(--green-50)}
 .inv-next.ready:hover{filter:brightness(1.08)}
 
-.inv-step{display:none;background:#fff;border:1px solid var(--ink-200);border-radius:10px;
+.inv-step{display:none;background:var(--white);border:1px solid var(--ink-200);border-radius:10px;
   padding:18px 20px;margin-bottom:16px}
 .inv-step.on{display:block}
 .inv-step h2{font-size:15px;margin:0 0 4px}
@@ -89,6 +89,24 @@
 
 /* versions modal reuses the app modal look */
 .inv-verlist td{cursor:pointer}
+
+/* grouped list header rows (Group by Project / Status) — informational, not
+   collapsible like the budget grid's, so no pointer cursor */
+.inv-grp td{background:var(--ink-50);font-family:var(--fm);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-700);padding:7px 10px;border-bottom:1px solid var(--ink-150)}
+.inv-grp .shut{color:var(--ink-400);margin-left:8px;letter-spacing:0;text-transform:none}
+
+/* the list tables (Home + tab): give every column real room so the data does
+   not pack against the right edge */
+.inv-list th:nth-child(2){width:9%}
+.inv-list th:nth-child(3){width:8%}
+.inv-list th:nth-child(4){width:11%}
+.inv-list th:nth-child(5){width:10%}
+.inv-list th:nth-child(6){width:9%}
+.inv-list th:nth-child(7){width:10%}
+.inv-list th:nth-child(8){width:7%}
+.inv-list th:nth-child(9){width:12%}
+.inv-list th.no-print{width:44px}
 
 /* mobile read-only: hide editing affordances, keep the report viewable */
 body.mobile-ro #page-analysis .inv-step input,

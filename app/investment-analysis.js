@@ -32,6 +32,24 @@
   const fromPct = s => s === '' || s === null || s === undefined ? null : nz(s) / 100;
   const numOrNull = s => s === '' || s === null || s === undefined ? null : nz(s);
 
+  // House timestamp format, matching the budget app: the viewer's LOCAL time
+  // as MM-DD-YYYY h:mm AM/PM, or MM-DD-YYYY where only the day matters.
+  function fmtWhen(iso) {
+    if (!iso) return '—';
+    const d = iso instanceof Date ? iso : new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    const p = n => String(n).padStart(2, '0');
+    let h = d.getHours(); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+    return p(d.getMonth() + 1) + '-' + p(d.getDate()) + '-' + d.getFullYear() + ' ' + h + ':' + p(d.getMinutes()) + ' ' + ap;
+  }
+  function fmtDay(iso) {
+    if (!iso) return '—';
+    const d = iso instanceof Date ? iso : new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getMonth() + 1) + '-' + p(d.getDate()) + '-' + d.getFullYear();
+  }
+
   /* ---------- tiny DOM helpers ---------- */
   const el = id => document.getElementById(id);
   const esc = s => A.esc(String(s === null || s === undefined ? '' : s));
@@ -43,12 +61,30 @@
      Versions is reachable only from there, never from the editor toolbar. */
   const listHosts = new Set();   // every host currently showing a list, for refresh
 
+  /* Search / status / grouping over the analyses list — the same controls the
+     budget list has, one shared view state for both hosts. */
+  const lv = { q: '', status: 'all', group: '' };
+  let lvRows = [];
+
+  function lvFiltered() {
+    const q = lv.q.trim().toLowerCase();
+    return lvRows.filter(r => {
+      if (lv.status !== 'all' && (r.status || 'Draft') !== lv.status) return false;
+      if (!q) return true;
+      return (r.name || '').toLowerCase().includes(q)
+        || (r.projectId || '').toLowerCase().includes(q);
+    });
+  }
+  const LV_GROUPS = {
+    project: { of: r => r.projectId || 'Standalone' },
+    status: { of: r => (r.status || 'Draft') }
+  };
+
   async function renderListInto(host, opts) {
     if (!host) return;
     opts = opts || {};
     listHosts.add(host);
-    let rows = [];
-    try { rows = await A.api('investment-analyses'); }
+    try { lvRows = await A.api('investment-analyses'); }
     catch (e) { host.innerHTML = '<div class="empty">Could not load analyses — ' + esc(e.message) + '</div>'; return; }
     const head = opts.embedded ? '' : `
       <div class="page-title">
@@ -61,35 +97,88 @@
         <span style="font-size:12px;color:var(--ink-500)">or open a budget and use Create Investment Analysis</span>
       </div>`;
     host.innerHTML = head + `
-      <table class="inv-table"><thead><tr>
+      <div class="card-hd no-print">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input type="text" data-inv-q placeholder="Search name or project…" style="width:240px" value="${esc(lv.q)}">
+          <select data-inv-status style="width:140px;font-size:12px;padding:6px 8px" aria-label="Filter by Status">
+            <option value="all">All Statuses</option>
+            <option value="Draft">Draft</option>
+            <option value="In Review">In Review</option>
+            <option value="Finalized">Finalized</option>
+          </select>
+          <select data-inv-group style="width:168px;font-size:12px;padding:6px 8px"
+            title="Group the list" aria-label="Group By">
+            <option value="">No Grouping</option>
+            <option value="project">Group by Project</option>
+            <option value="status">Group by Status</option>
+          </select>
+        </div>
+        <span class="eyebrow" data-inv-count>—</span>
+      </div>
+      <table class="inv-table inv-list"><thead><tr>
         <th${opts.embedded ? ' style="padding-left:22px"' : ''}>Analysis</th><th>Project</th><th>Status</th><th class="r">Purchase Price</th>
         <th class="r">Year-1 NOI</th><th class="r">Equity IRR</th><th class="r">Optimal Hold</th>
         <th class="r">Version</th><th>Updated</th><th class="no-print"></th>
       </tr></thead><tbody data-inv-list></tbody></table>
       <div class="empty" data-inv-empty style="display:none">No investment analyses yet.</div>`;
+    host.querySelector('[data-inv-status]').value = lv.status;
+    host.querySelector('[data-inv-group]').value = lv.group;
+    host.querySelector('[data-inv-q]').addEventListener('input', e => { lv.q = e.target.value; paintInvList(host, opts); });
+    host.querySelector('[data-inv-status]').addEventListener('change', e => { lv.status = e.target.value; paintInvList(host, opts); });
+    host.querySelector('[data-inv-group]').addEventListener('change', e => { lv.group = e.target.value; paintInvList(host, opts); });
+    paintInvList(host, opts);
+  }
+
+  function paintInvList(host, opts) {
     const tb = host.querySelector('[data-inv-list]');
-    if (!rows.length) { host.querySelector('[data-inv-empty]').style.display = 'block'; return; }
-    rows.forEach(r => {
-      const tr = document.createElement('tr');
-      tr.className = 'clickable';
-      tr.addEventListener('click', () => { location.hash = '#/analysis/' + r.analysisId; });
-      tr.innerHTML = `
-        <td${opts.embedded ? ' style="padding-left:22px"' : ''}><b>${esc(r.name)}</b></td>
-        <td class="mono">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-origin" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
-        <td>${esc(r.status)}</td>
-        <td class="r mono">${usd(r.purchasePrice)}</td>
-        <td class="r mono">${usd(r.year1NOI)}</td>
-        <td class="r mono">${pctf(r.finalYearEquityIRR)}</td>
-        <td class="r mono">${r.optimalHoldingYear ? 'Year ' + r.optimalHoldingYear : '—'}</td>
-        <td class="r mono">${r.currentVersionNumber || '—'}</td>
-        <td>${esc((r.updatedAt || '').slice(0, 10))}</td>
-        <td class="no-print" style="text-align:right"><button class="rowmenu-btn" data-inv-menu
-          aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(r.name)}">⋮</button></td>`;
-      tr.querySelector('[data-inv-menu]').addEventListener('click', ev => {
-        ev.stopPropagation(); openInvRowMenu(ev.currentTarget, r.analysisId);
+    if (!tb) return;
+    tb.innerHTML = '';
+    const rows = lvFiltered();
+    const empty = host.querySelector('[data-inv-empty]');
+    empty.style.display = rows.length ? 'none' : 'block';
+    empty.textContent = lvRows.length ? 'No analyses match this search or filter.' : 'No investment analyses yet.';
+    const count = host.querySelector('[data-inv-count]');
+    if (count) count.textContent = lvRows.length
+      ? rows.length + ' of ' + lvRows.length + (lvRows.length === 1 ? ' analysis' : ' analyses') : '—';
+    const pad = opts.embedded ? ' style="padding-left:22px"' : '';
+    const g = LV_GROUPS[lv.group];
+    if (g) {
+      const map = new Map();
+      rows.forEach(r => { const k = g.of(r); if (!map.has(k)) map.set(k, []); map.get(k).push(r); });
+      [...map.keys()].sort((a, z) => {
+        const pa = a === 'Standalone', pz = z === 'Standalone';   // placeholder group pinned last
+        return pa !== pz ? (pa ? 1 : -1) : a.localeCompare(z, undefined, { numeric: true });
+      }).forEach(k => {
+        const tr = document.createElement('tr');
+        tr.className = 'inv-grp';
+        tr.innerHTML = `<td colspan="10"${pad}>${esc(k)}
+          <span class="shut">${map.get(k).length} ${map.get(k).length === 1 ? 'analysis' : 'analyses'}</span></td>`;
+        tb.appendChild(tr);
+        map.get(k).forEach(r => tb.appendChild(invListRow(r, pad)));
       });
-      tb.appendChild(tr);
+    } else rows.forEach(r => tb.appendChild(invListRow(r, pad)));
+  }
+
+  function invListRow(r, pad) {
+    const tr = document.createElement('tr');
+    tr.className = 'clickable';
+    tr.addEventListener('click', () => { location.hash = '#/analysis/' + r.analysisId; });
+    tr.innerHTML = `
+      <td${pad}><b>${esc(r.name)}</b></td>
+      <td class="mono">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-origin" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
+      <td>${esc(r.status)}</td>
+      <td class="r mono">${usd(r.purchasePrice)}</td>
+      <td class="r mono">${usd(r.year1NOI)}</td>
+      <td class="r mono">${pctf(r.finalYearEquityIRR)}</td>
+      <td class="r mono">${r.optimalHoldingYear ? 'Year ' + r.optimalHoldingYear : '—'}</td>
+      <td class="r mono">${r.currentVersionNumber || '—'}</td>
+      <td>${esc(fmtDay(r.updatedAt))}</td>
+      <td class="no-print" style="text-align:right"><button class="rowmenu-btn" data-inv-menu
+        aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(r.name)}">⋮</button></td>`;
+    tr.querySelector('[data-inv-menu]').addEventListener('click', ev => {
+      ev.stopPropagation(); openInvRowMenu(ev.currentTarget, r.analysisId);
     });
+    return tr;
   }
 
   function renderList() { return renderListInto(el('page-analyses'), {}); }
@@ -194,7 +283,7 @@
     catch (e) { A.toast('Could not load the project list — ' + e.message); return; }
     const rows = budgets.map((b, i) => `<tr class="clickable" data-pick="${i}">
         <td class="mono">${esc(b.projectId)}</td><td><b>${esc(b.name || '—')}</b></td>
-        <td>${esc(b.status || '—')}</td><td>${esc((b.updated || '').slice(0, 10))}</td></tr>`).join('');
+        <td>${esc(b.status || '—')}</td><td>${esc(fmtDay(b.updated))}</td></tr>`).join('');
     openInvModal(`<h2 style="margin-top:0">New Investment Analysis</h2>
       <p style="font-size:12.5px;color:var(--ink-500)">Select the project this analysis is for. It is created
       from that project's latest saved budget version — an exact snapshot, so the budget changing later
@@ -838,7 +927,7 @@
       const r = await A.api('investment-analysis/' + versionsCtx + '/versions');
       const rows = r.versions.map(v => `<tr onclick="FSInvestmentUI.viewVersion(${v.versionNumber})">
         <td class="mono">v${v.versionNumber}${v.isCurrent ? ' ·current' : ''}</td>
-        <td>${esc((v.createdAt || '').slice(0, 16).replace('T', ' '))}</td>
+        <td>${esc(fmtWhen(v.createdAt))}</td>
         <td>${esc(v.createdByName || '—')}</td>
         <td class="r mono">${usd(v.purchasePrice)}</td>
         <td class="r mono">${pctf(v.finalYearEquityIRR)}</td></tr>`).join('');
@@ -855,7 +944,7 @@
     try {
       const r = await A.api('investment-analysis/' + (versionsCtx || st.id) + '/versions/' + n);
       openInvModal(`<h2 style="margin-top:0">Version ${n} — Read-Only</h2>
-        <div class="inv-provenance">Saved ${esc((r.version.createdAt || '').slice(0, 16).replace('T', ' '))}
+        <div class="inv-provenance">Saved ${esc(fmtWhen(r.version.createdAt))}
         by ${esc(r.version.createdByName || '—')}</div>
         <div class="inv-report">${reportHTML(r.result)}</div>`);
     } catch (e) { A.toast('Could not load the version — ' + e.message); }
@@ -995,7 +1084,7 @@
     h += `<h3>Assumptions &amp; Provenance</h3>
       <div class="inv-provenance">
       ${src ? 'Created from budget <span class="mono">' + esc(src.projectId) + '</span> version ' + esc(src.budgetVersionNumber)
-            + (src.importedAt ? ' (imported ' + esc(String(src.importedAt).slice(0, 10)) + ')' : '') + '.' : 'Standalone Analysis.'}
+            + (src.importedAt ? ' (imported ' + esc(fmtDay(src.importedAt)) + ')' : '') + '.' : 'Standalone Analysis.'}
       Vacancy ${pctf(R.normalizedInput.vacancy.value)} · expenses ${R.normalizedInput.expenses.mode === 'percentOfGOI'
         ? pctf(R.normalizedInput.expenses.value) + ' of GOI'
         : usd(R.normalizedInput.expenses.value) + '/yr growing ' + pctf(R.normalizedInput.expenses.growth.value)}
@@ -1127,7 +1216,7 @@
     const o = opts || exOpts;
     const s = R.summary, loan = R.loans[0] || null, years = R.annual, N = R.normalizedInput;
     const src = N.source;
-    const stamp = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const stamp = fmtWhen(new Date());
     const rr = (k, v, cls) => '<div class="rr ' + (cls || '') + '"><span>' + k + '</span><span class="v">' + v + '</span></div>';
     const tbl = (headers, rows) => '<table class="rpt-tbl full"><thead><tr>'
       + headers.map((h, i) => '<th' + (i ? ' class="r"' : '') + '>' + h + '</th>').join('')

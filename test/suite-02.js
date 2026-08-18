@@ -100,6 +100,15 @@ const BASE = 'http://127.0.0.1:8100';
   ok('U2 no-match empty state', /Nothing matches/.test(await p.locator('#homeEmptyBig').textContent()));
   await p.fill('#homeSearch', '');
 
+  // --- house timestamp format: local time, MM-DD-YYYY (h:mm AM/PM with time)
+  const updCell = await p.locator('#homeBody tr', { hasText: 'Alpha Ridge' })
+    .locator('td:nth-child(6)').textContent();
+  ok('Updated column shows MM-DD-YYYY', updCell.trim() === '01-05-2026', updCell);
+  ok('fmtWhen renders MM-DD-YYYY h:mm AM/PM in local time',
+     await p.evaluate(() => fmtWhen('2026-08-17T20:52:00') === '08-17-2026 8:52 PM'
+       && fmtWhen('2026-08-17T08:05:00') === '08-17-2026 8:05 AM'
+       && fmtDay('2026-01-05T00:00:00') === '01-05-2026'));
+
   // --- Group By
   ok('Group By offers no-grouping, address, ID, type and status',
      (await p.locator('#homeGroup option').allTextContents()).join('|')
@@ -332,6 +341,80 @@ const BASE = 'http://127.0.0.1:8100';
      p.url());
   ok('the editor toolbar has no Versions button',
      (await p.locator('#page-analysis .page-title button', { hasText: 'Versions' }).count()) === 0);
+
+  // ---- themes: corner dock + account-menu picker, persisted, print-safe
+  ok('theme dock offers Light, Dark and Evergreen',
+     await p.evaluate(() => [...document.querySelectorAll('#themeDock [data-theme-pick]')]
+       .map(b => b.dataset.themePick).join(',')) === 'light,dark,evergreen');
+  ok('account menu lists the same three above Sign Out',
+     await p.evaluate(() => {
+       const items = [...document.querySelectorAll('#profileMenu .pm-theme [data-theme-pick]')]
+         .map(b => b.dataset.themePick);
+       const block = document.querySelector('#profileMenu .pm-theme');
+       const signOut = [...document.querySelectorAll('#profileMenu .rowmenu-item')]
+         .find(b => /Sign Out/.test(b.textContent));
+       return items.join(',') === 'light,dark,evergreen'
+         && !!(block.compareDocumentPosition(signOut) & Node.DOCUMENT_POSITION_FOLLOWING);
+     }));
+  const lightBg = await p.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await p.evaluate(() => setTheme('dark'));
+  await p.waitForTimeout(150);
+  ok('dark theme applies and persists',
+     await p.evaluate(() => document.documentElement.getAttribute('data-theme') === 'dark'
+       && localStorage.getItem('fsTheme') === 'dark'));
+  ok('dark theme actually remaps the surfaces',
+     (await p.evaluate(() => getComputedStyle(document.body).backgroundColor)) !== lightBg);
+  ok('the dock marks the active theme',
+     await p.evaluate(() => document.querySelector('#themeDock [data-theme-pick=dark]').classList.contains('on')
+       && !document.querySelector('#themeDock [data-theme-pick=light]').classList.contains('on')));
+  await p.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
+  ok('printing forces the light palette',
+     (await p.evaluate(() => document.documentElement.getAttribute('data-theme'))) === null);
+  await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  ok('the chosen theme returns after printing',
+     (await p.evaluate(() => document.documentElement.getAttribute('data-theme'))) === 'dark');
+  await p.evaluate(() => setTheme('evergreen'));
+  ok('evergreen theme applies',
+     (await p.evaluate(() => document.documentElement.getAttribute('data-theme'))) === 'evergreen');
+  await p.evaluate(() => setTheme('light'));
+  ok('light restores the default',
+     (await p.evaluate(() => document.documentElement.getAttribute('data-theme'))) === null
+     && (await p.evaluate(() => localStorage.getItem('fsTheme'))) === 'light');
+
+  // ---- Cmd/Ctrl+K: the global search palette
+  const MODK = process.platform === 'darwin' ? 'Meta' : 'Control';
+  await p.keyboard.press(MODK + '+k');
+  ok('Cmd/Ctrl+K opens the search palette', (await p.locator('#palette.open').count()) === 1);
+  await p.waitForFunction(() => document.querySelectorAll('#palList .pal-row').length > 0, { timeout: 8000 });
+  ok('palette lists budgets first, then analyses',
+     await p.evaluate(() => {
+       const secs = [...document.querySelectorAll('#palList .pal-sec')].map(s => s.textContent.trim());
+       return secs[0] === 'Budgets' && secs.includes('Investment Analyses');
+     }));
+  await p.fill('#palInput', 'alpha');
+  await p.waitForTimeout(250);
+  ok('typing filters across budgets AND analyses',
+     await p.evaluate(() => {
+       const names = [...document.querySelectorAll('#palList .pal-row .pal-name')].map(e => e.textContent);
+       return names.includes('Alpha Ridge') && names.includes('Alpha Underwriting')
+         && !names.includes('Zephyr Landing');
+     }));
+  await p.keyboard.press('ArrowDown');            // Alpha Ridge -> Alpha Underwriting
+  await p.keyboard.press('Enter');
+  await p.waitForTimeout(700);
+  ok('Enter opens the selected analysis', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url())
+     && (await p.locator('#palette.open').count()) === 0, p.url());
+  await p.keyboard.press(MODK + '+k');
+  await p.waitForFunction(() => document.querySelectorAll('#palList .pal-row').length > 0, { timeout: 8000 });
+  await p.fill('#palInput', 'zephyr');
+  await p.waitForTimeout(250);
+  await p.keyboard.press('Enter');
+  await p.waitForTimeout(700);
+  ok('Enter opens the selected budget', await p.evaluate(() => doc && doc.projectId === 'BD-0002'),
+     await p.evaluate(() => doc && doc.projectId));
+  await p.keyboard.press(MODK + '+k');
+  await p.keyboard.press('Escape');
+  ok('Escape closes the palette', (await p.locator('#palette.open').count()) === 0);
 
  ok('No uncaught JS errors', errs.length === 0, errs.join(' | '));
   console.log(R.join('\n'));

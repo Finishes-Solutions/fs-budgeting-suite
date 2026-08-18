@@ -22,6 +22,19 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
+  // House stamp: MM-DD-YYYY h:mm AM/PM in this runtime's local time (matches
+  // the producer's displayed stamps; meta.generatedAt keeps the raw ISO).
+  function fmtStamp(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso);
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    var h = d.getHours(), ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return p(d.getMonth() + 1) + '-' + p(d.getDate()) + '-' + d.getFullYear()
+      + ' ' + h + ':' + p(d.getMinutes()) + ' ' + ap;
+  }
+
   function toFsdoc(doc, extra) {
     var M = doc.meta;
     var e = extra || {};
@@ -32,7 +45,7 @@
       eyebrow: M.product + ' · INVESTMENT ANALYSIS · ' + M.years + '-YEAR BEFORE-TAX',
       subline: subline,
       rightLines: [
-        M.generatedAt ? String(M.generatedAt).slice(0, 10) : '',
+        M.generatedAt ? fmtStamp(M.generatedAt) : '',
         M.sourceLine,
         M.savedVersion ? 'Analysis v' + M.savedVersion : ''
       ].filter(Boolean),

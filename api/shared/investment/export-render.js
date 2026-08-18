@@ -58,6 +58,20 @@
 
   function pcts(v) { return (v * 100).toFixed(2) + '%'; }
 
+  // House timestamp display: MM-DD-YYYY h:mm AM/PM in this runtime's local
+  // time (the browser when exporting client-side). ISO strings stay in
+  // meta.generatedAt untouched — only the DISPLAYED stamps use this.
+  function fmtStamp(iso) {
+    if (!iso) return '';
+    var d = iso instanceof Date ? iso : new Date(iso);
+    if (isNaN(d.getTime())) return String(iso);
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    var h = d.getHours(), ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return p(d.getMonth() + 1) + '-' + p(d.getDate()) + '-' + d.getFullYear()
+      + ' ' + h + ':' + p(d.getMinutes()) + ' ' + ap;
+  }
+
   /* =============== the document model ===============
      buildExportDoc(result, opts, meta) -> doc
        result : canonical engine result (result.normalizedInput included)
@@ -260,7 +274,7 @@
         kvRow('Calculation Version', R.calculationVersion),
         kvRow('Saved Analysis Version', meta.savedVersion || '(unsaved)'),
         kvRow('Source', src ? 'Budget ' + src.projectId + ' version ' + src.budgetVersionNumber : 'Standalone'),
-        kvRow('Generated', meta.generatedAt || '')
+        kvRow('Generated', fmtStamp(meta.generatedAt))
       ] }
     ];
     if (R.warnings && R.warnings.length) {
@@ -291,7 +305,7 @@
           ['Initial Equity Investment', fmtValue(s.initialEquity, 'money')],
           ['Final-Year Equity IRR', fmtValue(s.finalYearEquityIRR, 'pct')],
           ['Calculation Engine', R.calculationVersion + ' · input schema v' + R.inputSchemaVersion],
-          ['Generated', meta.generatedAt || '']
+          ['Generated', fmtStamp(meta.generatedAt)]
         ]
       };
     }
@@ -314,7 +328,7 @@
         title: propName,
         subtitle: N.analysisName + (N.property.address ? ' · ' + N.property.address : ''),
         rightLines: [
-          meta.generatedAt ? String(meta.generatedAt).slice(0, 10) : '',
+          meta.generatedAt ? fmtStamp(meta.generatedAt) : '',
           src ? 'From budget ' + src.projectId + ' v' + src.budgetVersionNumber : 'Standalone Analysis',
           meta.savedVersion ? 'Analysis v' + meta.savedVersion : ''
         ].filter(Boolean),
