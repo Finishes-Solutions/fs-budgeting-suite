@@ -6,13 +6,28 @@
 //   keys are dropped, bad values fall back, so the stored JSON is always safe
 //   to apply blindly. Records a 'settings_update' activity event.
 //
+// GET /api/user-settings?scope=roles — every account with its application
+//   role (super_admin only). Powers the Admin page.
+// PUT /api/user-settings?scope=roles — set one account's role, as
+//   { userId, appRole } (super_admin only).
+//
+// Role management lives here rather than in a function of its own because a
+// dedicated api/admin-roles function did not register on the deployed host —
+// it answered 404 while every established endpoint kept working, through both
+// a parameterised and a flat route. Hanging it off an endpoint that is known
+// to deploy is what actually reaches users. The SWA route rule cannot gate a
+// query parameter, so the super_admin check in requireSuperAdmin below is the
+// real gate, not a second line of defence.
+//
 // Settings are PER ACCOUNT, keyed by the SWA principal userId, so they follow
 // the user to any signed-in browser. The client keeps a localStorage cache
 // purely so the theme applies before the first network round trip.
-const { getPool } = require('../shared/db');
-const { getPrincipal } = require('../shared/auth');
+const { getPool, sql } = require('../shared/db');
+const { getPrincipal, isSuperAdmin } = require('../shared/auth');
 const U = require('../shared/users');
 const { features } = require('../shared/schema');
+
+const VALID_ROLES = ['user', 'manager', 'director', 'super_admin'];
 
 const jsonRes = (status, body) => ({
   status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
@@ -26,6 +41,67 @@ module.exports = async function (context, req) {
     return;
   }
   const pool = await getPool();
+
+  // ---- role management (super_admin only)
+  if (String((req.query && req.query.scope) || '') === 'roles') {
+    if (!isSuperAdmin(req)) {
+      context.res = jsonRes(403, { error: 'forbidden', message: 'Requires super_admin role.' });
+      return;
+    }
+    const f = await features(pool);
+    if (!f.usersAppRole) {
+      context.res = jsonRes(503, { error: 'migration_pending',
+        message: 'Role management needs sql/migrate_roles_and_ownership.sql to be run against this database.' });
+      return;
+    }
+
+    if (req.method === 'GET') {
+      const r = await pool.request().query(
+        `SELECT UserId, UserDetails, DisplayName, Email, AppRole, LastSeenAt, LoginCount
+         FROM dbo.Users ORDER BY LastSeenAt DESC`);
+      context.res = jsonRes(200, r.recordset.map(x => ({
+        userId: x.UserId,
+        userDetails: x.UserDetails || null,
+        displayName: x.DisplayName || null,
+        email: x.Email || null,
+        appRole: x.AppRole || 'user',
+        lastSeenAt: x.LastSeenAt,
+        loginCount: x.LoginCount
+      })));
+      return;
+    }
+
+    if (req.method === 'PUT') {
+      const b = req.body || {};
+      const targetId = typeof b.userId === 'string' ? b.userId : '';
+      if (!targetId) {
+        context.res = jsonRes(400, { error: 'bad_request', message: 'userId is required.' });
+        return;
+      }
+      if (!VALID_ROLES.includes(b.appRole)) {
+        context.res = jsonRes(400, { error: 'bad_request',
+          message: 'appRole must be one of: ' + VALID_ROLES.join(', ') });
+        return;
+      }
+      const r = await pool.request()
+        .input('uid', sql.NVarChar(128), targetId)
+        .input('role', sql.NVarChar(50), b.appRole)
+        .query(`UPDATE dbo.Users SET AppRole = @role, UpdatedAt = SYSUTCDATETIME()
+                WHERE UserId = @uid;
+                SELECT @@ROWCOUNT AS N;`);
+      if (!r.recordset[0].N) {
+        context.res = jsonRes(404, { error: 'not_found', message: 'User not found.' });
+        return;
+      }
+      await U.recordActivity(pool, principal, 'settings_update', 'user', targetId,
+        { roleChangedTo: b.appRole });
+      context.res = jsonRes(200, { ok: true, userId: targetId, appRole: b.appRole });
+      return;
+    }
+
+    context.res = jsonRes(405, { error: 'method_not_allowed' });
+    return;
+  }
 
   if (req.method === 'GET') {
     const boot = /^(1|true)$/i.test(String((req.query && req.query.boot) || ''));

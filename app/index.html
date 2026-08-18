@@ -352,6 +352,19 @@ main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 .card-hd{padding:14px 22px;border-bottom:1px solid var(--ink-150);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .card-hd h2{font-size:15px;font-weight:700;color:var(--ink-950)}
 .card-bd{padding:22px}
+/* ---- Shared dialog look ----
+   Every popup — New Budget, New Investment Analysis, exports, version history
+   — is one sheet: the card system's corner radius, and a title at the larger
+   dialog scale so the heading reads as a heading rather than a section label.
+   openInvModal() in investment-analysis.js builds its sheet with these same
+   classes, so the two stay identical without duplicating the values. */
+.mod-sheet{background:var(--white);border:1px solid var(--ink-150);border-radius:var(--rm);
+  box-shadow:var(--sh);width:100%;position:relative;margin:auto}
+.mod-title{font-size:19px;font-weight:800;letter-spacing:-.015em;color:var(--ink-950);margin:0 0 14px}
+/* In a card header the row itself provides the spacing. The size is restated
+   because `.card-hd h2` (0,1,1) out-specifies a bare `.mod-title` (0,1,0) and
+   would otherwise hold every dialog title at the 15px section-header scale. */
+.card-hd .mod-title{margin:0;font-size:19px;font-weight:800;letter-spacing:-.015em}
 .grid{display:grid;gap:14px}.g5{grid-template-columns:repeat(5,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
 @media(max-width:900px){.g4,.g5{grid-template-columns:1fr 1fr}}
 
@@ -688,6 +701,53 @@ th.sortable.sorted{color:var(--ink-900)}
   .rpt-title{margin-bottom:14px}
   .rpt-title h1{font-size:21pt;font-weight:800;letter-spacing:-.02em;color:var(--ink-950);margin:2px 0 4px}
   .rpt-meta{font-size:8.5pt;color:var(--ink-600)}
+
+  /* ---- Analytics snapshot (Export Dashboard) ----
+     The charts are the same inline SVG the dashboard renders, so they print as
+     vector. The page's #page-dashboard-scoped rules do not reach into
+     #printDoc, so the chart internals are restated here at print scale. */
+  #printDoc .dpdf-h{font-size:11pt;font-weight:700;color:var(--ink-950);
+    margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--ink-300);break-after:avoid}
+  #printDoc .dpdf-h3{font-size:8pt;font-family:var(--fm);letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-600);margin:0 0 6px;font-weight:500}
+  #printDoc .dpdf-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;break-inside:avoid}
+  #printDoc .dpdf-kpi{border:1px solid var(--ink-200);border-left:3px solid var(--green-700);
+    border-radius:3px;padding:7px 9px}
+  #printDoc .dpdf-k{font-family:var(--fm);font-size:6.5pt;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-600)}
+  #printDoc .dpdf-v{font-family:var(--fm);font-size:12pt;font-weight:600;color:var(--ink-950);margin-top:1px}
+  #printDoc .dpdf-s{font-size:7pt;color:var(--ink-500);margin-top:1px}
+  #printDoc .dpdf-chart{break-inside:avoid;margin-bottom:6px}
+  #printDoc .dpdf-two{display:grid;grid-template-columns:1fr 1fr;gap:18px;break-inside:avoid}
+  #printDoc .dpdf-note{font-size:7.5pt;color:var(--ink-500);margin-top:5px}
+  #printDoc .dpdf-tbl{width:100%;border-collapse:collapse;font-size:8pt}
+  #printDoc .dpdf-tbl th{text-align:left;font-family:var(--fm);font-size:6.5pt;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-600);border-bottom:1px solid var(--ink-300);padding:4px 6px}
+  #printDoc .dpdf-tbl td{padding:3px 6px;border-bottom:1px solid var(--ink-150)}
+  #printDoc .dpdf-tbl .r{text-align:right}
+  /* chart internals at print scale */
+  #printDoc .dash-line{width:100%;height:auto;display:block}
+  #printDoc .dash-ax{font-family:var(--fm);font-size:9px;fill:var(--ink-600)}
+  #printDoc .dash-donut-wrap{display:flex;align-items:center;gap:12px}
+  #printDoc .dash-donut{width:112px;height:112px;flex:none}
+  #printDoc .dash-donut-n{font-family:var(--fm);font-size:26px;font-weight:600;fill:var(--ink-900)}
+  #printDoc .dash-donut-l{font-family:var(--fm);font-size:9px;letter-spacing:.14em;fill:var(--ink-600)}
+  #printDoc .dash-legend{display:flex;flex-direction:column;gap:3px;flex:1}
+  #printDoc .dash-legend-h{flex-direction:row;gap:14px;justify-content:center;margin-top:4px}
+  #printDoc .dash-lg-row{display:flex;align-items:center;gap:5px;font-size:7.5pt;color:var(--ink-700)}
+  #printDoc .dash-lg-dot{width:8px;height:8px;border-radius:2px;flex:none}
+  #printDoc .dash-lg-name{flex:1;white-space:nowrap}
+  #printDoc .dash-lg-val{font-family:var(--fm);font-size:7.5pt}
+  #printDoc .dash-lg-pct{font-family:var(--fm);font-size:7pt;color:var(--ink-500);min-width:26px;text-align:right}
+  #printDoc .dash-vbars{display:flex;flex-direction:column;gap:9px}
+  #printDoc .dash-vbar{break-inside:avoid}
+  #printDoc .dash-vbar-hd{display:flex;gap:8px;align-items:baseline;margin-bottom:2px}
+  #printDoc .dash-vbar-hd .mono{font-family:var(--fm);font-size:8pt;color:var(--green-700);font-weight:600}
+  #printDoc .dash-vbar-nm{font-size:8pt;color:var(--ink-700)}
+  #printDoc .dash-vbar-row{display:flex;align-items:center;gap:7px;margin-top:2px}
+  #printDoc .dash-vbar-k{width:46px;font-size:7pt;color:var(--ink-500);text-align:right;flex:none}
+  #printDoc .dash-vbar-track{flex:1;height:9px;background:var(--ink-150);border-radius:2px;overflow:hidden}
+  #printDoc .dash-vbar-fill{height:100%;border-radius:2px}
+  #printDoc .dash-vbar-v{width:82px;text-align:right;font-size:7.5pt;color:var(--ink-700);flex:none}
 
   .rpt-stats{display:grid;grid-template-columns:repeat(5,1fr);background:var(--ink-900);
     border-radius:4px;overflow:hidden;margin-bottom:18px;break-inside:avoid}
@@ -1857,11 +1917,19 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title">
     <div><h1>Analytics Dashboard</h1>
       <div class="sub">Platform usage, budget and investment KPIs, and activity across all users.</div></div>
-    <div><button class="btn btn-dark" onclick="FSDashboard.refresh()">Refresh</button></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="FSDashboard.exportPDF()" title="Branded PDF snapshot of this dashboard">Export Dashboard</button>
+      <button class="btn btn-dark" onclick="FSDashboard.refresh()">Refresh</button></div>
   </div>
   <div class="dash-kpis" id="dashKpis"></div>
+  <section class="card" style="margin-top:24px"><div class="card-hd"><span class="eyebrow">Activity — Last 30 Days</span></div>
+    <div class="card-bd"><div id="dashTrend"></div></div>
+  </section>
   <section class="card" style="margin-top:24px"><div class="card-hd"><span class="eyebrow">Status Breakdown</span></div>
     <div class="card-bd"><div class="dash-grid" id="dashBreakdowns"></div></div>
+  </section>
+  <section class="card" style="margin-top:24px"><div class="card-hd"><span class="eyebrow">Budgets By Value</span></div>
+    <div class="card-bd"><div id="dashValue"></div></div>
   </section>
   <section class="card" style="margin-top:24px">
     <div class="card-hd">
@@ -1915,8 +1983,8 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <!-- ================= EXPORT MODAL ================= -->
 <div id="exportModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
-  <div class="card" style="width:580px;max-width:92vw;margin:0">
-    <div class="card-hd"><h2>Export Budget</h2><button class="btn-x" onclick="closeExport()">×</button></div>
+  <div class="card mod-sheet" style="width:580px;max-width:92vw;margin:0">
+    <div class="card-hd"><h2 class="mod-title">Export Budget</h2><button class="btn-x" onclick="closeExport()">×</button></div>
     <div class="card-bd" style="padding:22px 26px">
       <div class="eyebrow" style="margin-bottom:12px">Include Sections</div>
       <div style="display:grid;gap:12px;margin-bottom:24px">
@@ -1957,8 +2025,8 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <!-- ================= GUIDE EXPORT MODAL ================= -->
 <div id="guideExportModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
-  <div class="card" style="width:460px;max-width:92vw;margin:0">
-    <div class="card-hd"><h2>Download Guide</h2><button class="btn-x" onclick="closeGuideExport()">×</button></div>
+  <div class="card mod-sheet" style="width:460px;max-width:92vw;margin:0">
+    <div class="card-hd"><h2 class="mod-title">Download Guide</h2><button class="btn-x" onclick="closeGuideExport()">×</button></div>
     <div class="card-bd" style="padding:22px 26px">
       <div class="eyebrow" style="margin-bottom:12px">Options</div>
       <div style="display:grid;gap:12px;margin-bottom:24px">
@@ -1973,8 +2041,8 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <!-- ================= CSI PICKER MODAL ================= -->
 <div id="pickModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
-  <div class="card" style="width:640px;max-width:94vw;margin:0">
-    <div class="card-hd"><h2>Add Line From CSI Catalog</h2>
+  <div class="card mod-sheet" style="width:640px;max-width:94vw;margin:0">
+    <div class="card-hd"><h2 class="mod-title">Add Line From CSI Catalog</h2>
       <button class="btn-x" onclick="closePick()" aria-label="Close"
         style="font-size:20px;padding:2px 8px">×</button></div>
     <div class="card-bd" style="padding-top:12px">
@@ -2038,8 +2106,8 @@ th.sortable.sorted{color:var(--ink-900)}
      structured for them. Custom templates come from the template system. -->
 <div id="newBudgetModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:60;align-items:center;justify-content:center;padding:20px 14px"
   onclick="if(event.target===this)closeNewBudget()">
-  <div class="card" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="newBudgetTitle">
-    <div class="card-hd"><h2 id="newBudgetTitle">New Budget</h2>
+  <div class="card mod-sheet" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="newBudgetTitle">
+    <div class="card-hd"><h2 class="mod-title" id="newBudgetTitle">New Budget</h2>
       <button class="btn-x" onclick="closeNewBudget()" aria-label="Close new budget">×</button></div>
     <div class="card-bd" style="overflow:auto">
       <div class="set-lab">Budget Templates</div>
@@ -2070,8 +2138,8 @@ th.sortable.sorted{color:var(--ink-900)}
      button. -->
 <div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:60;align-items:center;justify-content:center;padding:20px 14px"
   onclick="if(event.target===this)closeSettings()">
-  <div class="card" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="card-hd"><h2 id="settingsTitle">Settings</h2>
+  <div class="card mod-sheet" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="card-hd"><h2 class="mod-title" id="settingsTitle">Settings</h2>
       <button class="btn-x" onclick="closeSettings()" aria-label="Close settings">×</button></div>
     <div class="card-bd" style="overflow:auto">
 
@@ -2211,8 +2279,8 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <!-- ================= BUDGET VERSIONS MODAL ================= -->
 <div id="versionsModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
-  <div class="card" style="width:820px;max-width:94vw;margin:0" role="dialog" aria-modal="true" aria-labelledby="versionsTitle">
-    <div class="card-hd"><h2 id="versionsTitle">Budget Versions</h2>
+  <div class="card mod-sheet" style="width:820px;max-width:94vw;margin:0" role="dialog" aria-modal="true" aria-labelledby="versionsTitle">
+    <div class="card-hd"><h2 class="mod-title" id="versionsTitle">Budget Versions</h2>
       <button class="btn-x" onclick="closeVersions()" aria-label="Close version history">×</button></div>
     <div class="card-bd" style="max-height:70vh;overflow:auto"><div id="versionsBody"></div></div>
   </div>
@@ -2409,7 +2477,7 @@ async function loadAdminUsers(){
   const tb=document.getElementById('adminBody');if(!tb)return;
   tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--ink-400)">Loading...</td></tr>';
   try{
-    adminUsers=await api('admin-roles');
+    adminUsers=await api('user-settings?scope=roles');
     paintAdminTable();
   }catch(e){
     // 503 means the roles migration has not been run against this database.
@@ -2445,7 +2513,7 @@ async function changeAdminRole(sel){
   const uid=sel.dataset.adminUid;
   const role=sel.value;
   try{
-    await api('admin-roles',{method:'PUT',body:JSON.stringify({userId:uid,appRole:role})});
+    await api('user-settings?scope=roles',{method:'PUT',body:JSON.stringify({userId:uid,appRole:role})});
     const u=adminUsers.find(x=>x.userId===uid);
     if(u)u.appRole=role;
     toast('Role updated to '+ROLE_LABELS[role]+'.');
@@ -2636,7 +2704,16 @@ async function initAuth(){
     if(isSuperAdmin){
       document.getElementById('nav-dashboard').style.display='';
       document.getElementById('nav-admin').style.display='';
-      FSDashboard.init({esc:esc});
+      // Same print pipeline the budget and analysis PDFs use: a purpose-made
+      // document in #printDoc, never a picture of the app UI.
+      FSDashboard.init({esc:esc, stamp:()=>fmtWhen(new Date()),
+        print:html=>{
+          document.getElementById('printDoc').innerHTML=html;
+          document.body.classList.add('printing');
+          window.print();
+          setTimeout(()=>{document.body.classList.remove('printing');
+            document.getElementById('printDoc').innerHTML='';},600);
+        }});
     }
   }
   renderProfile();

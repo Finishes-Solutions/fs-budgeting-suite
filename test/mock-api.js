@@ -235,6 +235,35 @@ http.createServer((req, res) => {
     if (!principal.clientPrincipal.userRoles.includes('super_admin')) {
       res.writeHead(403); return res.end('super_admin required');
     }
+    // ?scope=activity is the filtered, paged activity log — folded into this
+    // endpoint because a separate function did not register on the host.
+    const aq = new URL(req.url, 'http://x').searchParams;
+    if ((aq.get('scope') || '') === 'activity') {
+      let filtered = mockActivity.slice();
+      if (aq.get('from')) {
+        const from = new Date(aq.get('from')).getTime();
+        filtered = filtered.filter(r => new Date(r.createdAt).getTime() >= from);
+      }
+      if (aq.get('to')) {
+        const to = new Date(aq.get('to')).getTime();
+        filtered = filtered.filter(r => new Date(r.createdAt).getTime() <= to);
+      }
+      if (aq.get('userId')) filtered = filtered.filter(r => r.userId === aq.get('userId'));
+      const total = filtered.length;
+      const limit = Math.min(Math.max(parseInt(aq.get('limit'), 10) || 500, 1), 5000);
+      const offset = Math.max(parseInt(aq.get('offset'), 10) || 0, 0);
+      return json(res, 200, {
+        events: filtered.slice(offset, offset + limit).map(r => ({
+          eventType: r.eventType, entityType: r.entityType, entityId: r.entityId,
+          createdAt: r.createdAt,
+          userName: principal.clientPrincipal.userDetails,
+          userId: r.userId || principal.clientPrincipal.userId
+        })),
+        total,
+        users: [...mockUsers.entries()].map(([id, u]) => ({
+          userId: id, name: u.displayName || u.email || 'Unknown' }))
+      });
+    }
     const budgetList = [...budgets.values()].filter(b => !b.deleted && !b.meta.projectId.startsWith('TST-'));
     const analysisList = [...invAnalyses.values()].filter(a => !a.deleted && !a.id.startsWith('TST-'));
     const bStatus = {};
@@ -263,45 +292,23 @@ http.createServer((req, res) => {
       recentActivity: mockActivity.slice(0, 50).map(r => ({
         eventType: r.eventType, entityType: r.entityType, entityId: r.entityId,
         createdAt: r.createdAt, userName: principal.clientPrincipal.userDetails
-      }))
-    });
-  }
-
-  // ---- analytics-activity (filtered activity log for super_admin) ----
-  if (p === '/api/analytics-activity') {
-    if (!principal.clientPrincipal.userRoles.includes('super_admin')) {
-      res.writeHead(403); return res.end('super_admin required');
-    }
-    const aq = new URL(req.url, 'http://x').searchParams;
-    let filtered = mockActivity.slice();
-    if (aq.get('from')) {
-      const from = new Date(aq.get('from')).getTime();
-      filtered = filtered.filter(r => new Date(r.createdAt).getTime() >= from);
-    }
-    if (aq.get('to')) {
-      const to = new Date(aq.get('to')).getTime();
-      filtered = filtered.filter(r => new Date(r.createdAt).getTime() <= to);
-    }
-    if (aq.get('userId')) {
-      const uid = aq.get('userId');
-      filtered = filtered.filter(r => r.userId === uid);
-    }
-    const total = filtered.length;
-    const limit = Math.min(Math.max(parseInt(aq.get('limit'), 10) || 500, 1), 5000);
-    const offset = Math.max(parseInt(aq.get('offset'), 10) || 0, 0);
-    const page = filtered.slice(offset, offset + limit);
-    const users = [...mockUsers.entries()].map(([id, u]) => ({
-      userId: id, name: u.displayName || u.email || 'Unknown'
-    }));
-    return json(res, 200, {
-      events: page.map(r => ({
-        eventType: r.eventType, entityType: r.entityType, entityId: r.entityId,
-        createdAt: r.createdAt,
-        userName: principal.clientPrincipal.userDetails,
-        userId: r.userId || principal.clientPrincipal.userId
       })),
-      total: total,
-      users: users
+      activityByDay: (() => {
+        const byDay = {};
+        mockActivity.forEach(r => {
+          const d = String(r.createdAt).slice(0, 10);
+          const e = byDay[d] || (byDay[d] = { day: d, total: 0, logins: 0, saves: 0, exports: 0 });
+          e.total++;
+          if (r.eventType === 'login') e.logins++;
+          if (r.eventType === 'budget_save' || r.eventType === 'analysis_save') e.saves++;
+          if (/^export_/.test(r.eventType)) e.exports++;
+        });
+        return Object.values(byDay).sort((x, y) => x.day < y.day ? -1 : 1);
+      })(),
+      topBudgets: budgetList
+        .slice().sort((x, y) => (y.meta.projectCost || 0) - (x.meta.projectCost || 0)).slice(0, 8)
+        .map(x => ({ projectId: x.meta.projectId, name: x.meta.name,
+          contractSum: x.meta.contractSum || 0, projectCost: x.meta.projectCost || 0 }))
     });
   }
 
@@ -309,6 +316,35 @@ http.createServer((req, res) => {
   // Validation is the REAL contract module, so drift is impossible.
   if (p === '/api/user-settings') {
     const uid = principal.clientPrincipal.userId;
+    // ?scope=roles is the Admin page's role management, served from this
+    // endpoint because a dedicated function did not register on the host.
+    const scope = new URL(req.url, 'http://x').searchParams.get('scope') || '';
+    if (scope === 'roles') {
+      if (!principal.clientPrincipal.userRoles.includes('super_admin'))
+        return json(res, 403, { error: 'forbidden', message: 'Requires super_admin role.' });
+      if (req.method === 'GET') {
+        return json(res, 200, [...mockUsers.entries()].map(([id, u]) => ({
+          userId: id, userDetails: u.userDetails || null,
+          displayName: u.displayName || null, email: u.email || null,
+          appRole: u.appRole || 'user', lastSeenAt: u.lastSeenAt, loginCount: u.loginCount })));
+      }
+      if (req.method === 'PUT') {
+        let rb = ''; req.on('data', c => rb += c);
+        return req.on('end', () => {
+          const body = rb ? JSON.parse(rb) : {};
+          const targetId = typeof body.userId === 'string' ? body.userId : '';
+          if (!targetId) return json(res, 400, { error: 'bad_request', message: 'userId is required.' });
+          const valid = ['user', 'manager', 'director', 'super_admin'];
+          if (!valid.includes(body.appRole))
+            return json(res, 400, { error: 'bad_request', message: 'appRole must be one of: ' + valid.join(', ') });
+          const target = mockUsers.get(targetId);
+          if (!target) return json(res, 404, { error: 'not_found', message: 'User not found.' });
+          target.appRole = body.appRole;
+          return json(res, 200, { ok: true, userId: targetId, appRole: body.appRole });
+        });
+      }
+      return json(res, 405, { error: 'method_not_allowed' });
+    }
     if (!mockUsers.has(uid)) mockUsers.set(uid, {
       userDetails: principal.clientPrincipal.userDetails, displayName: null,
       email: principal.clientPrincipal.userDetails,   // locked to the sign-in account
@@ -360,34 +396,6 @@ http.createServer((req, res) => {
         mockActivity.unshift({ eventType: body.eventType, entityType: body.entityType || null,
           entityId: body.entityId || null, detail: body.detail || null, userId: principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
         res.writeHead(204); return res.end();
-      });
-    }
-    res.writeHead(405); return res.end('method');
-  }
-
-  // ---- admin-roles (super_admin only in production; mock is permissive).
-  // Flat route, target account in the PUT body — mirrors the real function.
-  if (p === '/api/admin-roles') {
-    if (req.method === 'GET') {
-      const users = [...mockUsers.entries()].map(([uid, u]) => ({
-        userId: uid, userDetails: u.userDetails || null,
-        displayName: u.displayName || null, email: u.email || null,
-        appRole: u.appRole || 'user', lastSeenAt: u.lastSeenAt, loginCount: u.loginCount }));
-      return json(res, 200, users);
-    }
-    if (req.method === 'PUT') {
-      let b = ''; req.on('data', c => b += c);
-      return req.on('end', () => {
-        const body = b ? JSON.parse(b) : {};
-        const targetId = typeof body.userId === 'string' ? body.userId : '';
-        if (!targetId) return json(res, 400, { error: 'bad_request', message: 'userId is required.' });
-        const validRoles = ['user', 'manager', 'director', 'super_admin'];
-        if (!validRoles.includes(body.appRole))
-          return json(res, 400, { error: 'appRole must be one of: ' + validRoles.join(', ') });
-        const u = mockUsers.get(targetId);
-        if (!u) return json(res, 404, { error: 'User not found' });
-        u.appRole = body.appRole;
-        return json(res, 200, { ok: true, userId: targetId, appRole: body.appRole });
       });
     }
     res.writeHead(405); return res.end('method');

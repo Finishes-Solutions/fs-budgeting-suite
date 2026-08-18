@@ -358,7 +358,7 @@
         <td class="mono" style="color:var(--green-700);font-weight:600">${esc(b.projectId)}</td><td>${esc(b.name || '—')}</td>
         <td>${stChipStatic(b.status)}</td>
         <td>${esc(fmtDay(b.updated))}</td></tr>`).join('');
-    openInvModal(`<h2 style="margin-top:0">New Investment Analysis</h2>
+    openInvModal(`<h2 class="mod-title">New Investment Analysis</h2>
       <div class="set-lab">From Existing Budget</div>
       <p style="font-size:12.5px;color:var(--ink-500);margin:0 0 10px">Select the project this analysis is
       for. It is created from that project's latest saved budget version — an exact snapshot, so the budget
@@ -1041,7 +1041,7 @@
         <td>${esc(v.createdByName || '—')}</td>
         <td class="r mono">${usd(v.purchasePrice)}</td>
         <td class="r mono">${pctf(v.finalYearEquityIRR)}</td></tr>`).join('');
-      openInvModal(`<h2 style="margin-top:0">Version History</h2>
+      openInvModal(`<h2 class="mod-title">Version History</h2>
         <p style="font-size:12.5px;color:var(--ink-500)">Versions are immutable — they are shown exactly as calculated
         when saved and are never recalculated.</p>
         <table class="inv-table inv-verlist"><thead><tr><th>Version</th><th>Saved</th><th>By</th>
@@ -1053,7 +1053,7 @@
   async function viewVersion(n) {
     try {
       const r = await A.api('investment-analysis/' + (versionsCtx || st.id) + '/versions/' + n);
-      openInvModal(`<h2 style="margin-top:0">Version ${n} — Read-Only</h2>
+      openInvModal(`<h2 class="mod-title">Version ${n} — Read-Only</h2>
         <div class="inv-provenance">Saved ${esc(fmtWhen(r.version.createdAt))}
         by ${esc(r.version.createdByName || '—')}</div>
         <div class="inv-report">${reportHTML(r.result)}</div>`);
@@ -1072,7 +1072,9 @@
       m.addEventListener('click', e => { if (e.target === m) m.remove(); });
       document.body.appendChild(m);
     }
-    m.innerHTML = `<div style="background:#fff;border-radius:12px;max-width:${maxWidth || 960}px;width:100%;padding:22px 26px;position:relative;margin:auto">
+    // .mod-sheet carries the shared dialog look (index.html): the card
+    // system's corner radius, so this matches the New Budget popup exactly.
+    m.innerHTML = `<div class="mod-sheet" style="max-width:${maxWidth || 960}px;padding:22px 26px">
       <button class="btn-x" style="position:absolute;top:14px;right:14px" title="Close" onclick="document.getElementById('invModal').remove()">×</button>
       ${html}</div>`;
   }
@@ -1224,7 +1226,7 @@
       <input type="checkbox" id="${EX_IDS[k]}" ${exOpts[k] ? 'checked' : ''}> ${label}</label>`;
     // The button row matches the budget export modal exactly — one order
     // everywhere: Email (Soon) · Print · PDF · Excel (.xlsx).
-    openInvModal(`<h2 style="margin-top:0">Export Analysis</h2>
+    openInvModal(`<h2 class="mod-title">Export Analysis</h2>
       <div class="eyebrow" style="margin-bottom:12px">Include Sections</div>
       <div style="display:grid;gap:12px;margin-bottom:24px">
         ${chk('kpis', 'Summary &amp; Key Metrics')}

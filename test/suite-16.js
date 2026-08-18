@@ -22,6 +22,15 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
      pricingVersion:'2026.08-v2',updated:new Date().toISOString()};
    await fetch('/api/budget/TST-9960',{method:'PUT',headers:{'Content-Type':'application/json'},
      body:JSON.stringify({meta:{projectId:'TST-9960',name:'Dashboard Test',status:'Draft'},doc})});
+   // The analytics aggregates deliberately exclude TST-% ids, so the status
+   // and value charts need at least one real budget to have anything to plot.
+   for(const [pid,nm,st,rate] of [['BD-7001','Northgate Flats','Draft',2400000],
+                                  ['BD-7002','Harbor Row','Completed',1750000]]){
+     const d=Object.assign({},doc,{projectId:pid,name:nm,status:st,
+       lines:[{lineId:'s1',scope:'res',grp:'General',code:'',desc:'Shell',basis:'ls',auto:true,qty:0,unit:rate}]});
+     await fetch('/api/budget/'+pid,{method:'PUT',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({meta:{projectId:pid,name:nm,status:st},doc:d})});
+   }
    // one analysis too, so the budget and analysis avatars can be compared
    await fetch('/api/investment-analyses',{method:'POST',headers:{'Content-Type':'application/json'},
      body:JSON.stringify({mode:'fromBudget',projectId:'TST-9960',analysisName:'Dashboard Deal'})});
@@ -65,7 +74,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // ---- filters reach the API
  const filterReq=[];
- p.on('request',r=>{ if(r.url().includes('/api/analytics-activity')) filterReq.push(r.url()); });
+ p.on('request',r=>{ if(r.url().includes('scope=activity')) filterReq.push(r.url()); });
  await p.selectOption('#dashUserFilter',{index:1}).catch(()=>{});
  await p.waitForTimeout(600);
  await p.fill('#dashDateFrom','2020-01-01'); await p.waitForTimeout(600);
@@ -78,8 +87,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // ---- the activity API honours filtering and paging directly
  const api=await p.evaluate(async()=>{
-   const wide=await (await fetch('/api/analytics-activity?limit=5&offset=0')).json();
-   const none=await (await fetch('/api/analytics-activity?from=2099-01-01T00:00:00Z')).json();
+   const wide=await (await fetch('/api/analytics?scope=activity&limit=5&offset=0')).json();
+   const none=await (await fetch('/api/analytics?scope=activity&from=2099-01-01T00:00:00Z')).json();
    return {pageLen:wide.events.length,total:wide.total,users:wide.users.length,futureLen:none.events.length};
  });
  ok('the activity API pages with limit', api.pageLen<=5&&api.total>5,
@@ -97,6 +106,141 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
    ok('the CSV is named for the activity log', /^activity-log-\d{4}-\d{2}-\d{2}\.csv$/.test(file.suggestedFilename()),
       file.suggestedFilename());
  }
+
+ // ---- charts: real geometry from the payload, not placeholders
+ ok('the activity trend renders a line chart',
+    await p.evaluate(()=>{
+      const svg=document.querySelector('#dashTrend svg.dash-line');
+      if(!svg) return false;
+      // the primary series path must have real coordinates, not an empty d
+      const paths=[...svg.querySelectorAll('path')].map(x=>x.getAttribute('d')||'');
+      return paths.some(d=>/M[\d.]+ [\d.]+ L/.test(d));
+    }));
+ ok('the trend plots one point per day for 30 days',
+    (await p.evaluate(()=>document.querySelectorAll('#dashTrend svg circle').length))===30,
+    'points='+await p.evaluate(()=>document.querySelectorAll('#dashTrend svg circle').length));
+ ok('the trend carries a legend',
+    (await p.evaluate(()=>document.querySelectorAll('#dashTrend .dash-lg-row').length))>=3);
+ ok('status breakdown renders donut charts',
+    (await p.evaluate(()=>document.querySelectorAll('#dashBreakdowns svg.dash-donut').length))===2);
+ ok('the donut centre shows the total and its slices sum to it',
+    await p.evaluate(()=>{
+      const svg=document.querySelector('#dashBreakdowns svg.dash-donut');
+      if(!svg) return false;
+      const n=+svg.querySelector('.dash-donut-n').textContent.trim();
+      const legend=[...svg.parentElement.querySelectorAll('.dash-lg-val')].map(x=>+x.textContent.trim());
+      return n>0 && legend.length>0 && legend.reduce((s,v)=>s+v,0)===n;
+    }),
+    await p.evaluate(()=>{
+      const svg=document.querySelector('#dashBreakdowns svg.dash-donut');
+      return svg?svg.querySelector('.dash-donut-n').textContent.trim():'none';
+    }));
+ ok('budgets-by-value renders paired bars',
+    await p.evaluate(()=>{
+      const bars=document.querySelectorAll('#dashValue .dash-vbar');
+      if(!bars.length) return false;
+      return [...bars[0].querySelectorAll('.dash-vbar-fill')].length===2;
+    }));
+
+ // ---- Export Dashboard builds a branded print document
+ ok('Export Dashboard composes a branded snapshot into #printDoc',
+    await p.evaluate(()=>{
+      // stub print so the dialog never opens, then inspect what was built
+      const realPrint=window.print; let built='';
+      window.print=()=>{ built=document.getElementById('printDoc').innerHTML; };
+      FSDashboard.exportPDF();
+      window.print=realPrint;
+      document.body.classList.remove('printing');
+      window.__dashPdf=built;
+      return built.length>0;
+    }));
+ ok('the snapshot carries the Finishes logo lockup and eyebrow',
+    await p.evaluate(()=>/finishes-logo-black\.png/.test(window.__dashPdf)
+      && /Analytics snapshot/.test(window.__dashPdf)));
+ ok('the snapshot includes the KPIs, both donuts and the trend line',
+    await p.evaluate(()=>{
+      const d=document.createElement('div'); d.innerHTML=window.__dashPdf;
+      return d.querySelectorAll('.dpdf-kpi').length===8
+        && d.querySelectorAll('svg.dash-donut').length===2
+        && d.querySelectorAll('svg.dash-line').length===1;
+    }),
+    await p.evaluate(()=>{
+      const d=document.createElement('div'); d.innerHTML=window.__dashPdf;
+      return 'kpi='+d.querySelectorAll('.dpdf-kpi').length
+        +' donut='+d.querySelectorAll('svg.dash-donut').length
+        +' line='+d.querySelectorAll('svg.dash-line').length;
+    }));
+ ok('the snapshot includes an activity table',
+    await p.evaluate(()=>{
+      const d=document.createElement('div'); d.innerHTML=window.__dashPdf;
+      return d.querySelectorAll('.dpdf-tbl tbody tr').length>0;
+    }));
+ ok('the print document is cleared again after exporting',
+    await p.evaluate(()=>document.getElementById('printDoc').innerHTML===''
+      || !document.body.classList.contains('printing')));
+
+ // ---- Admin: role management served from the proven user-settings endpoint
+ await p.evaluate(()=>go('admin'));
+ await p.waitForTimeout(700);
+ ok('the Admin page lists accounts with a role selector',
+    (await p.locator('#adminBody .admin-role-sel').count())>=1,
+    'rows='+await p.locator('#adminBody tr').count());
+ ok('role management is served from user-settings?scope=roles',
+    await p.evaluate(async()=>{
+      const r=await fetch('/api/user-settings?scope=roles');
+      if(!r.ok) return false;
+      const j=await r.json();
+      return Array.isArray(j)&&j.length>0&&'appRole' in j[0];
+    }));
+ ok('changing a role persists',
+    await p.evaluate(async()=>{
+      const list=await (await fetch('/api/user-settings?scope=roles')).json();
+      const uid=list[0].userId;
+      const put=await fetch('/api/user-settings?scope=roles',{method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({userId:uid,appRole:'director'})});
+      if(!put.ok) return false;
+      const after=await (await fetch('/api/user-settings?scope=roles')).json();
+      return after.find(u=>u.userId===uid).appRole==='director';
+    }));
+ ok('an unknown role is rejected',
+    await p.evaluate(async()=>{
+      const list=await (await fetch('/api/user-settings?scope=roles')).json();
+      const r=await fetch('/api/user-settings?scope=roles',{method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({userId:list[0].userId,appRole:'root'})});
+      return r.status===400;
+    }));
+
+ // ---- every dialog shares one look: card radius, larger title
+ await p.evaluate(()=>go('home'));
+ await p.waitForTimeout(600);
+ await p.click('#newBudgetBtn'); await p.waitForTimeout(350);
+ const budgetModal=await p.evaluate(()=>{
+   const sheet=document.querySelector('#newBudgetModal .mod-sheet');
+   const title=document.querySelector('#newBudgetModal .mod-title');
+   const cs=getComputedStyle(sheet), ts=getComputedStyle(title);
+   return {radius:cs.borderRadius,size:ts.fontSize,weight:ts.fontWeight};
+ });
+ await p.evaluate(()=>closeNewBudget()); await p.waitForTimeout(250);
+ await p.evaluate(()=>FSInvestmentUI.openProjectPicker()); await p.waitForTimeout(800);
+ const invModal=await p.evaluate(()=>{
+   const sheet=document.querySelector('#invModal .mod-sheet');
+   const title=document.querySelector('#invModal .mod-title');
+   if(!sheet||!title) return null;
+   const cs=getComputedStyle(sheet), ts=getComputedStyle(title);
+   return {radius:cs.borderRadius,size:ts.fontSize,weight:ts.fontWeight};
+ });
+ ok('both dialogs use the same corner radius',
+    !!invModal&&invModal.radius===budgetModal.radius,
+    JSON.stringify({budget:budgetModal.radius,inv:invModal&&invModal.radius}));
+ ok('both dialogs use the same larger title',
+    !!invModal&&invModal.size===budgetModal.size&&invModal.weight===budgetModal.weight,
+    JSON.stringify({budget:budgetModal.size,inv:invModal&&invModal.size}));
+ ok('the dialog title is larger than a section header',
+    parseFloat(budgetModal.size)>15, budgetModal.size);
+ await p.evaluate(()=>{const m=document.getElementById('invModal');if(m)m.remove();});
+ await p.waitForTimeout(250);
 
  // ---- the creator avatar lives in its own labelled User column, not crammed
  // against the name. Column counts must match headers or cells overlap.
