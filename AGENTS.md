@@ -84,6 +84,20 @@ custom provider for sign-in.
   accepted failure — do **not** "fix" it by adding a deployment token (see ground
   rule 3). Consequence: per-PR preview environments linger and are cleaned up
   manually in Azure. Details in `docs/HANDOFF.md`.
+- **A NEW `api/<name>/` folder is not reliably picked up by the deployed host.**
+  `api/admin-roles/` answered 404 on staging across two deploys — through a
+  parameterised route and then a flat one — while every established endpoint kept
+  working, its files were present in the deployed tree, no route collided, and the
+  deploy logs showed the API building cleanly. The cause was never reproducible
+  from this repo. So: **prefer extending an endpoint that already deploys over
+  adding a function folder.** Role management is `GET/PUT
+  /api/user-settings?scope=roles` and the activity log is
+  `GET /api/analytics?scope=activity` for exactly this reason. If a new folder is
+  genuinely warranted, deploy it on its own first and confirm it answers before
+  building a feature on top of it. Note the security consequence: a
+  `staticwebapp.config.json` route rule matches paths, not query strings, so a
+  query-parameter scope is gated **only** by the in-function role check — that
+  check becomes the real gate and must not be treated as defence in depth.
 
 ## Database rules
 
