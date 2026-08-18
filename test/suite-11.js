@@ -87,6 +87,31 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.waitForTimeout(150);
  ok('restoring the imported value brings the badge back', await nameBadge.isVisible());
 
+ // ---- the baseline survives persistence: the server stores the original
+ // import in source.originalValues, so a field edited AND SAVED still knows
+ // what the budget said after a full reload
+ await p.fill('[data-f="property.purchaseMonth"]','2026-07');
+ await p.locator('[data-f="property.purchaseMonth"]').dispatchEvent('change');
+ await p.click('#invSteps button[data-step="3"]');
+ await p.fill('[data-f="expenses.value"]','33');
+ await p.locator('[data-f="expenses.value"]').dispatchEvent('change');
+ await p.click('#invSteps button[data-step="5"]');
+ await p.fill('[data-f="disposition.exitCapRate.value"]','7');
+ await p.locator('[data-f="disposition.exitCapRate.value"]').dispatchEvent('change');
+ await p.click('#invSteps button[data-step="1"]');
+ await p.fill('[data-f="property.name"]','Changed Name');
+ await p.locator('[data-f="property.name"]').dispatchEvent('change');
+ await p.click('#invSaveBtn'); await p.waitForTimeout(900);
+ await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(800);
+ await p.click('#invSteps button[data-step="1"]'); await p.waitForTimeout(200);
+ ok('after save + reload the edited field still shows no badge',
+    !(await p.locator('[data-origin="property.name"]').isVisible()));
+ await p.fill('[data-f="property.name"]',origName);
+ await p.locator('[data-f="property.name"]').dispatchEvent('change');
+ await p.waitForTimeout(150);
+ ok('after reload, retyping the original import restores the badge',
+    await p.locator('[data-origin="property.name"]').isVisible());
+
  // ---- inputs align across a grid row even when a label carries the badge
  await p.click('#invSteps button[data-step="2"]');
  const aBox=await p.locator('[data-f="income.year1PotentialIncome"]').boundingBox();

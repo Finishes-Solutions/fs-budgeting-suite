@@ -1161,7 +1161,9 @@ th.sortable.sorted{color:var(--ink-900)}
           undo clears the redo path, like any desktop application. One step is one change, not one
           keystroke. The history is deliberately small and in memory only: it clears when you open
           another budget or reload the page, and it never touches saved versions. If you are typing in a
-          field when you press it, the field commits first and that edit is what gets undone.</p>
+          field when you press it, the field commits first and that edit is what gets undone.
+          The same shortcuts work in the investment analysis editor: with an analysis open they act on
+          the analysis inputs instead of the budget, with the same ten-step history.</p>
 
         <h4>Manually Edited Lines</h4>
         <p>A <span class="editdot on" style="margin:0 2px"></span> blue dot to the left of a line means you changed it
@@ -1296,7 +1298,9 @@ th.sortable.sorted{color:var(--ink-900)}
           name and address, the size, the unit mix, gross scheduled rent (unit rents × 12, never the
           budget's net income figure), other-income rows, and the total project cost as a suggested
           purchase price. Every imported value shows a green <b>From Budget</b> badge and stays fully
-          editable. Standalone analyses can also be started by name from the Investment Analysis tab.</p>
+          editable — editing a value away from the import hides its badge, and restoring the exact
+          imported value brings it back, even after saving and reloading. Standalone analyses can also
+          be started by name from the Investment Analysis tab.</p>
 
         <div class="callout"><b>The import is a snapshot, not a live link.</b> Each analysis records the
           exact budget version it came from. Changing the budget later never changes the analysis.</div>
@@ -4341,12 +4345,19 @@ function wireDelegates(){
       if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
       saveBudget(true);
     }
-    // Cmd/Ctrl+Z undo · Cmd/Ctrl+Shift+Z or Ctrl+Y redo, on the budget
-    // document pages. A focused field is blurred first, so an in-progress
-    // edit commits and becomes the change that gets undone — the way
-    // desktop applications behave.
+    // Cmd/Ctrl+Z undo · Cmd/Ctrl+Shift+Z or Ctrl+Y redo, for the ACTIVE
+    // document — an open analysis on its page, the budget on the budget
+    // document pages, native undo everywhere else. A focused field is
+    // blurred first, so an in-progress edit commits and becomes the change
+    // that gets undone — the way desktop applications behave.
     const zKey=e.key==='z'||e.key==='Z', yKey=e.key==='y'||e.key==='Y';
     if((e.metaKey||e.ctrlKey)&&(zKey||yKey)){
+      if(currentPage==='analysis'&&window.FSInvestmentUI&&FSInvestmentUI.currentId()){
+        e.preventDefault();
+        if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+        if(yKey||(zKey&&e.shiftKey))FSInvestmentUI.redo();else FSInvestmentUI.undo();
+        return;
+      }
       if(!doc||!DOC_PAGES.includes(currentPage))return;   // native undo elsewhere
       e.preventDefault();
       if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();

@@ -120,6 +120,33 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     await p.locator('#invState').textContent());
  ok('keyboard save recorded version 2', (await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];return (await (await fetch('/api/investment-analysis/'+id)).json()).currentVersionNumber;}))===2);
 
+ // ---- undo / redo: the budget's shortcuts act on the analysis inputs here
+ await p.click('#invSteps button[data-step="3"]');
+ const vac0=await p.locator('[data-f="vacancy.value"]').inputValue();
+ await p.fill('[data-f="vacancy.value"]','22');
+ await p.locator('[data-f="vacancy.value"]').dispatchEvent('change');
+ await p.waitForTimeout(150);
+ await p.keyboard.press(MOD+'+z'); await p.waitForTimeout(300);
+ ok('Cmd/Ctrl+Z reverts the vacancy edit',
+    (await p.locator('[data-f="vacancy.value"]').inputValue())===vac0,
+    await p.locator('[data-f="vacancy.value"]').inputValue());
+ await p.keyboard.press(MOD+'+Shift+z'); await p.waitForTimeout(300);
+ ok('Cmd/Ctrl+Shift+Z redoes it',
+    (await p.locator('[data-f="vacancy.value"]').inputValue())==='22');
+ await p.keyboard.press(MOD+'+z'); await p.waitForTimeout(300);
+ await p.keyboard.press(MOD+'+y'); await p.waitForTimeout(300);
+ ok('Ctrl+Y also redoes',
+    (await p.locator('[data-f="vacancy.value"]').inputValue())==='22');
+ await p.fill('[data-f="vacancy.value"]','25');
+ await p.locator('[data-f="vacancy.value"]').dispatchEvent('change');
+ await p.waitForTimeout(150);
+ await p.keyboard.press(MOD+'+y'); await p.waitForTimeout(300);
+ ok('a new change clears the redo path',
+    (await p.locator('[data-f="vacancy.value"]').inputValue())==='25');
+ await p.keyboard.press(MOD+'+z'); await p.waitForTimeout(300);
+ ok('undo still steps back after the fork',
+    (await p.locator('[data-f="vacancy.value"]').inputValue())==='22');
+
  // navigation guard: dirty analysis prompts before leaving
  // (calculate jumped the editor to the Review step, so surface step 4 again)
  await p.click('#invSteps button[data-step="4"]');

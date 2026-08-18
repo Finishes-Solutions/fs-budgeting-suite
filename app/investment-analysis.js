@@ -232,9 +232,12 @@
       st.source = r.source; st.loadedVersion = r.currentVersionNumber;
       st.dirty = false; st.stale = false; st.busy = ''; st.step = r.result ? 6 : 1;
       st.viewingVersion = null; st.conflict = null; st.errors = {};
-      // Badge baseline: values as loaded. Editing a field away from this
-      // hides its From Budget badge; putting it back restores it.
+      // Badge baseline: the server-stored original import (or values as
+      // loaded, for analyses created before originals were stored). Editing
+      // a field away from it hides its From Budget badge; putting the exact
+      // value back restores it — even across a save and reload.
       snapshotOrigins();
+      resetInvUndo();
       renderEditor();
     } catch (e) {
       A.toast('Could not open the analysis — ' + e.message);
@@ -309,7 +312,9 @@
 
   /* The badge means "this value IS the budget's" — so editing a field away
      from its imported value removes it, and putting the value back restores
-     it. Originals are snapshotted when the analysis loads. */
+     it. The server stores the true import in source.originalValues, so the
+     comparison survives saving and reloading an edited field; analyses
+     created before that existed fall back to values-as-loaded. */
   function getPath(obj, path) {
     return path.split('.').reduce((v, k) => (v === null || v === undefined ? v : v[k]), obj);
   }
@@ -317,8 +322,11 @@
     st.originVals = {};
     const src = st.input && st.input.source;
     if (!src || !src.fieldOrigins) return;
+    const orig = src.originalValues;
     for (const path of Object.keys(src.fieldOrigins)) {
-      st.originVals[path] = JSON.stringify(getPath(st.input, path));
+      st.originVals[path] = orig && path in orig
+        ? JSON.stringify(orig[path])
+        : JSON.stringify(getPath(st.input, path));
     }
   }
   function refreshOriginBadges() {
@@ -486,6 +494,9 @@
     renderStateBar();
     updateStepUI();
     bindEditor(host);
+    // Badges compare against the server-stored originals, so a field edited
+    // and SAVED must render with its badge already hidden on reload.
+    refreshOriginBadges();
   }
 
   function bindEditor(host) {
@@ -578,9 +589,54 @@
   const host_input = f => document.querySelector('#page-analysis [data-f="' + f + '"]');
 
   function markDirty() {
+    recordInvUndo();
     if (!st.dirty || !st.stale) { st.dirty = true; st.stale = !!st.result; renderStateBar(); }
     updateStepUI();          // keep the Next buttons and step dots live as fields fill in
     refreshOriginBadges();   // From Budget disappears when a value is edited away
+  }
+
+  /* ---- undo / redo (Cmd/Ctrl+Z · Cmd/Ctrl+Shift+Z or Ctrl+Y) ----
+     The same snapshot ring the budget editor uses: the current input plus up
+     to ten back, and a redo stack the same depth. Snapshots record in
+     markDirty() — after every committed mutation — and the identical-snapshot
+     guard means keystroke previews (which fire markDirty without mutating
+     the input) never create a step. A new change after an undo clears the
+     redo path. In-memory only: opening another analysis resets both stacks,
+     and saved versions are never touched. */
+  const INV_UNDO_MAX = 10;
+  let invUndoStack = [], invRedoStack = [];
+  function resetInvUndo() {
+    invUndoStack = st.input ? [JSON.stringify(st.input)] : [];
+    invRedoStack = [];
+  }
+  function recordInvUndo() {
+    if (!st.input) return;
+    const snap = JSON.stringify(st.input);
+    if (invUndoStack[invUndoStack.length - 1] === snap) return;   // no-op mutation → no step
+    invUndoStack.push(snap);
+    if (invUndoStack.length > INV_UNDO_MAX + 1) invUndoStack.shift(); // current + ten back
+    invRedoStack = [];                                            // a new change forks history
+  }
+  function restoreInvSnap(snap, msg) {
+    st.input = JSON.parse(snap);
+    st.dirty = true; st.stale = !!st.result; st.errors = {};
+    renderEditor();
+    A.toast(msg);
+  }
+  function undo() {
+    if (!st.id || !st.input) return;
+    if (invUndoStack.length < 2) { A.toast('Nothing to undo.'); return; }
+    invRedoStack.push(invUndoStack.pop());
+    if (invRedoStack.length > INV_UNDO_MAX) invRedoStack.shift();
+    restoreInvSnap(invUndoStack[invUndoStack.length - 1], 'Undid the last change.');
+  }
+  function redo() {
+    if (!st.id || !st.input) return;
+    if (!invRedoStack.length) { A.toast('Nothing to redo.'); return; }
+    const snap = invRedoStack.pop();
+    invUndoStack.push(snap);
+    if (invUndoStack.length > INV_UNDO_MAX + 1) invUndoStack.shift();
+    restoreInvSnap(snap, 'Redid the change.');
   }
 
   function renderStateBar() {
@@ -1262,7 +1318,7 @@
     init(adapter) { A = adapter; },
     renderList, renderListInto, open, createFromBudget, createStandalone,
     createBlank, openProjectPicker, softDelete,
-    calculate, save, reload, duplicate, showVersions, viewVersion, goStep,
+    calculate, save, reload, duplicate, showVersions, viewVersion, goStep, undo, redo,
     openExport, emailSoon, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,
     _other, _otherRemove, _capex, _capexRemove,
     currentId: () => st.id,

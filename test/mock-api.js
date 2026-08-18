@@ -362,6 +362,13 @@ http.createServer((req, res) => {
           disposition: { exitCapRate: { mode: 'constant', value: null }, sellingCostPercent: INV_D.sellingCostPercent },
           reportOptions: { includeSensitivity: true }
         };
+        // Mirror the real API: the original imported values live in the
+        // server-owned provenance block so badges compare against them forever.
+        input.source.originalValues = {};
+        for (const op of Object.keys(input.source.fieldOrigins)) {
+          const val = op.split('.').reduce((v2, k) => (v2 === null || v2 === undefined ? v2 : v2[k]), input);
+          input.source.originalValues[op] = val === undefined ? null : JSON.parse(JSON.stringify(val));
+        }
       } else if (body.mode === 'standalone') {
         const name = (body.analysisName || (body.input && body.input.analysisName) || '').trim();
         if (!name) return json(res, 400, { error: 'bad_request', message: 'analysisName is required.' });
