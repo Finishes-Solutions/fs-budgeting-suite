@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  let A = null;   // adapter: { api, toast, esc, confirmLeave, navigate, isMobile }
+  let A = null;   // adapter: { api, toast, esc, confirmLeave, navigate, ... } — see init()
   const st = {
     id: null, input: null, result: null, source: null,
     loadedVersion: 0, dirty: false, stale: false, busy: '',

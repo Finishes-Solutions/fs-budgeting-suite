@@ -171,9 +171,10 @@ button. Six steps (Source & Property, Income, Vacancy & Expenses, Mortgage,
 Disposition, Review & Report), source-origin badges, dirty/stale/
 calculating/saving/conflict states, read-only version viewing, duplicate and
 soft-delete actions. All rendered inputs carry `data-k` keys; all
-interpolated text goes through `esc()`; labels are Title Case; mobile
-read-only restriction applies (viewing allowed, editing hidden). Cmd/Ctrl+S
-saves the active document type only.
+interpolated text goes through `esc()`; labels are Title Case. (The mobile
+read-only restriction this plan originally required was later removed — small
+screens are now fully capable; see ROADMAP.) Cmd/Ctrl+S saves the active
+document type only.
 
 **9 · Report + Excel** — the Review step renders every table from the
 canonical server result only (acquisition/initial investment, mortgage,

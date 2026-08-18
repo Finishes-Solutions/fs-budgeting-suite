@@ -142,13 +142,13 @@ custom provider for sign-in.
 - **CSS scoping:** the page is one stylesheet; qualify selectors
   (e.g. `.tbl input.codein`) because broad rules like `.tbl input` win on
   specificity and have caused real clipping bugs.
-- **Media queries for mobile use `screen and (max-width: 720px)`.** The
-  `screen and` prefix is load-bearing: print emulation (`page.pdf()`, exports)
-  makes a bare width query true and would flip the app into mobile mode
-  mid-export.
-- **Mobile restrictions are UX, not security.** `mobileRestricted()` hides
-  editing affordances on small screens; the API enforces nothing extra. Never
-  present it as a security boundary — the real gates are server-side roles.
+- **Mobile is fully capable.** There is no read-only mode: small screens get
+  every page, editor, and action. The `@media(max-width:760px)` blocks (in
+  `index.html` and `investment-analysis.css`) only reflow the layout — wide
+  tables keep their column widths and pan inside their card (`.card-bd`
+  gains `overflow-x:auto` plus per-table `min-width`s), dense grids collapse
+  to one column, and the tab bar scrolls horizontally. Never reintroduce a
+  width-based feature gate; suite-06 pins the fully-capable behavior.
 
 ## Auth & security
 

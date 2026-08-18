@@ -117,11 +117,12 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  });
  ok('The favicon actually serves', favOk === 'ok', favOk);
 
- // ================= MOBILE READ-ONLY RESTRICTIONS =================
- // Driven by viewport width, not user agent, so a narrow window is the same case.
- ok('No mobile bar on a desktop viewport', !(await p.locator('#mobileBar').isVisible()));
- ok('Editing tabs are present on a desktop viewport',
-    (await p.locator('#nav-input').isVisible()) && (await p.locator('#nav-pricing').isVisible()));
+ // ================= MOBILE — FULLY CAPABLE =================
+ // Small screens get the whole app: every tab, editor, and action works. The
+ // layout reflows — tables pan inside their cards, grids collapse to one
+ // column — instead of restricting what the user can do.
+ ok('The read-only mobile bar is gone', await p.evaluate(() =>
+    !document.getElementById('mobileBar')));
 
  const m = await b.newPage({viewport:{width:390,height:844}});
  const merrs = []; m.on('pageerror', e => merrs.push(e.message));
@@ -129,29 +130,17 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await m.goto('http://127.0.0.1:8100/index.html',{waitUntil:'networkidle'});
  await m.waitForTimeout(900);
 
- ok('The read-only bar is shown on a small screen', await m.locator('#mobileBar').isVisible());
- ok('The bar says the screen is read-only and where to edit',
-    /read-only/i.test(await m.locator('#mobileBar').textContent())
-    && /desktop/i.test(await m.locator('#mobileBar').textContent()));
- ok('Editing tabs are omitted, not merely disabled', await m.evaluate(() =>
-    ['nav-input','nav-budget','nav-csi','nav-pricing']
-      .every(id => document.getElementById(id).offsetParent === null)));
- ok('Home and How to Use remain', await m.evaluate(() =>
-    document.getElementById('nav-home').offsetParent !== null
-    && document.getElementById('nav-help').offsetParent !== null));
- ok('New-budget actions are hidden', await m.evaluate(() =>
-    document.querySelector('[data-edit-only] button').offsetParent === null));
+ ok('Every nav tab is present on a phone', await m.evaluate(() =>
+    ['nav-home','nav-input','nav-budget','nav-csi','nav-analyses','nav-pricing','nav-help']
+      .every(id => document.getElementById(id).offsetParent !== null)));
+ ok('The home page does not overflow the phone viewport', await m.evaluate(() =>
+    document.documentElement.scrollWidth <= window.innerWidth + 1),
+    await m.evaluate(() => document.documentElement.scrollWidth + 'px wide in a '
+      + window.innerWidth + 'px viewport'));
+ ok('The + New Budget action is available on a phone', await m.evaluate(() =>
+    document.getElementById('newBudgetBtn').offsetParent !== null));
 
- // A deep link into an editing page must land somewhere usable, not a dead page.
- await m.goto('http://127.0.0.1:8100/index.html#/inputs/BD-4821',{waitUntil:'networkidle'});
- await m.waitForTimeout(900);
- ok('A deep link to an editing page is redirected home',
-    (await m.evaluate(() => currentPage)) === 'home', await m.evaluate(() => currentPage));
- ok('Editing pages cannot be reached programmatically either', await m.evaluate(() => {
-    go('budget'); go('pricing'); return currentPage === 'home';
- }));
-
- // Seed a budget so the row menu has something to act on.
+ // Seed a budget so deep links and the row menu have something to act on.
  await m.evaluate(async () => {
    const meta = {projectId:'BD-4821', name:'Mobile Row', type:'Multifamily', status:'Draft',
                  contractSum:100, projectCost:130, updated:new Date().toISOString()};
@@ -167,30 +156,48 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
    await renderHome();
  });
  await m.waitForTimeout(400);
+ ok('The budgets table pans inside its card instead of crushing', await m.evaluate(() => {
+   const bd = document.querySelector('#homeBudgetsCard .card-bd');
+   return bd.scrollWidth > bd.clientWidth;
+ }));
  await m.click('#homeBody tr .rowmenu-btn'); await m.waitForTimeout(300);
- ok('The row menu offers only the read-only action',
-    (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|') === 'Versions',
+ ok('The row menu offers the full action set on a phone',
+    (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|')
+      === 'Edit|Update Pricing|Versions|Delete',
     (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|'));
  await m.keyboard.press('Escape'); await m.waitForTimeout(150);
 
- // The escape hatch is deliberate and session-scoped.
- await m.click('#mobileBar button:has-text("Use Full Version")'); await m.waitForTimeout(400);
- ok('Use Full Version lifts the restriction', !(await m.locator('#mobileBar').isVisible()));
- ok('Editing tabs return after opting in', await m.evaluate(() =>
-    document.getElementById('nav-pricing').offsetParent !== null));
+ // Editing pages open and accept input on a phone.
+ await m.goto('http://127.0.0.1:8100/index.html#/inputs/BD-4821',{waitUntil:'networkidle'});
+ await m.waitForTimeout(900);
+ ok('A deep link opens the Inputs editor on a phone',
+    (await m.evaluate(() => currentPage)) === 'input', await m.evaluate(() => currentPage));
+ ok('The Inputs editor does not overflow the phone viewport', await m.evaluate(() =>
+    document.documentElement.scrollWidth <= window.innerWidth + 1),
+    await m.evaluate(() => document.documentElement.scrollWidth + 'px wide in a '
+      + window.innerWidth + 'px viewport'));
+ ok('An input accepts an edit on a phone', await m.evaluate(() => {
+   const f = document.getElementById('pName');
+   f.value = 'Edited On Phone'; f.dispatchEvent(new Event('input', {bubbles:true}));
+   return dirty === true;
+ }));
+ ok('Every editing page is reachable on a phone', await m.evaluate(() => {
+   go('budget'); const bOk = currentPage === 'budget';
+   go('csi');    const cOk = currentPage === 'csi';
+   go('pricing');const pOk = currentPage === 'pricing';
+   return bOk && cOk && pOk;
+ }));
  ok('No JS errors on mobile', merrs.length === 0, merrs.join(' | '));
  await m.close();
 
- // Printing switches the browser to print media. A bare width query flips to true
- // there and used to bounce a desktop user off the page mid-export — caught by
- // suite-05's Excel step failing. The query is scoped to `screen` for this reason.
+ // Printing switches the browser to print media; exports must stay on the page
+ // being exported. (The old width-query mobile mode is gone, but the invariant
+ // it once broke is still worth pinning.)
  await p.click('#nav-csi').catch(() => {});
  await p.waitForTimeout(300);
  const pageBefore = await p.evaluate(() => currentPage);
  await p.emulateMedia({media:'print'});
  await p.waitForTimeout(300);
- ok('Print media does not trigger the mobile restriction', await p.evaluate(() =>
-    !document.body.classList.contains('mobile-ro')));
  ok('Printing does not navigate away from the page being exported',
     (await p.evaluate(() => currentPage)) === pageBefore,
     pageBefore + ' → ' + (await p.evaluate(() => currentPage)));
