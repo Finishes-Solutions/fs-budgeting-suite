@@ -337,13 +337,20 @@ the Home row menu's Update Pricing, which confirms when already current.
 Settings belong to the ACCOUNT, not the browser: `GET /api/user-settings?boot=1`
 bootstraps at app start (upserts the row, refreshes LastSeenAt, counts a login
 after a 30-minute quiet gap) and `PUT` saves profile fields (display name — shown
-in the header and menus over the platform name — contact email, phone) plus one
-validated JSON settings document: theme (light/dark), timeFormat (12h/24h),
-accentColor (green/blue/violet/graphite — remaps of the green token scale on
-`html[data-accent]`, with dark+accent combo blocks), avatarColor (the header
-icon's `--avatar-bg`), tableDensity (comfortable/compact via `html[data-density]`),
-homeView (list/cards — Home page only; `.home-cards`/`.hcard`), rememberExport +
-exportOptions (per-product export-modal defaults). The validation contract lives
+in the header and menus over the platform name, defaulting from the sign-in
+identity — and phone; EMAIL IS LOCKED to the signed-in account and maintained
+server-side by ensureUser, never client-set) plus one validated JSON settings
+document: theme (light/dark), timeFormat (12h/24h), accentColor (named
+green/blue/violet/graphite/red/orange via `html[data-accent]` with dark+accent
+combo blocks, OR a #rrggbb custom accent whose light/dark scales the client
+derives in accentScale() and applies as inline tokens), avatarColor (preset
+swatches or any custom hex → the header icon's `--avatar-bg`), tableDensity
+(comfortable/compact via `html[data-density]` — compact meaningfully compresses
+rows, badges and row menus), homeView (list/cards — Home page only;
+`.home-cards`/`.hcard`), rememberExport (a switch) + exportOptions (per-product
+export-modal defaults). Density and Home View are also flippable from the Home
+toolbar's `.mini-seg` icon toggles, which share the Settings buttons' data
+attributes so one paint marks both. The validation contract lives
 dependency-free in api/shared/user-settings-contract.js and is required by BOTH
 api/shared/users.js and test/mock-api.js, so it cannot drift. localStorage keeps
 pre-paint caches (fsTheme/fsAccent/fsDensity/fsAvatar/fsTimeFormat) that the
@@ -355,7 +362,7 @@ the client through `POST /api/user-activity` (whitelisted events only);
 beforeprint/afterprint hook still forces the light palette for printing;
 `--chrome`/`--solid` remain the surfaces that stay dark in every theme and accent.
 
-Fifteen Playwright suites, 589 assertions, plus 80 `node:test` assertions for the
+Fifteen Playwright suites, 600 assertions, plus 80 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus

@@ -34,24 +34,41 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     (await p.evaluate(async()=>(await (await fetch('/api/user-activity')).json()).events))
       .some(e=>e.eventType==='budget_save'&&e.entityId==='TST-9955'));
 
- // ---- profile: display name, email, phone save to the account
+ // ---- profile: locked email, defaulted display name, editable phone
  await p.click('#profileBtn'); await p.waitForTimeout(200);
  await p.click('#profileMenu button:has-text("Settings")'); await p.waitForTimeout(300);
- ok('Settings shows the signed-in identity',
-    /Signed in as .+@/.test(await p.locator('#setSignedInAs').textContent()));
+ ok('email is locked to the sign-in account',
+    await p.evaluate(()=>{const e=document.getElementById('setEmail');
+      return e.disabled&&e.value.includes('@');}),
+    await p.evaluate(()=>document.getElementById('setEmail').value));
+ ok('display name defaults from the sign-in identity',
+    (await p.evaluate(()=>document.getElementById('setDisplayName').value)).trim().length>0,
+    await p.evaluate(()=>document.getElementById('setDisplayName').value));
  await p.fill('#setDisplayName','Matt Tester');
- await p.fill('#setEmail','matt@example.com');
  await p.fill('#setPhone','555-0100');
  await p.click('#settingsModal button:has-text("Save Profile")'); await p.waitForTimeout(500);
  const u1=await p.evaluate(async()=>await (await fetch('/api/user-settings')).json());
- ok('profile fields persist to the account',
-    u1.displayName==='Matt Tester'&&u1.email==='matt@example.com'&&u1.phone==='555-0100',
-    JSON.stringify({d:u1.displayName,e:u1.email,p:u1.phone}));
+ ok('profile persists; email stays locked to the account',
+    u1.displayName==='Matt Tester'&&u1.phone==='555-0100'&&u1.email===u1.userDetails,
+    JSON.stringify({d:u1.displayName,e:u1.email,p:u1.phone,s:u1.userDetails}));
  ok('the header identity adopts the display name',
     await p.evaluate(()=>document.getElementById('profileInitials').textContent)==='MT'
     &&await p.evaluate(()=>document.getElementById('pmName').textContent)==='Matt Tester');
 
- // ---- appearance: accent, avatar, time format, density
+ // ---- appearance: named accents, red/orange, custom picker, avatar, time format
+ await p.click('#settingsModal [data-accent-pick=red]'); await p.waitForTimeout(200);
+ ok('red accent applies',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-accent')==='red'));
+ await p.click('#settingsModal [data-accent-pick=orange]'); await p.waitForTimeout(200);
+ ok('orange accent applies',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-accent')==='orange'));
+ await p.evaluate(()=>chooseSetting('accentColor','#ff6600')); await p.waitForTimeout(1000);
+ ok('a custom accent derives a full scale from the picked color',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-accent')===null
+      &&document.documentElement.style.getPropertyValue('--green-700').trim()!==''
+      &&document.querySelector('[data-accent-pick=custom]').classList.contains('on')));
+ ok('the custom accent persists to the account',
+    (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json()).settings.accentColor))==='#ff6600');
  await p.click('#settingsModal [data-accent-pick=blue]'); await p.waitForTimeout(1000);
  ok('accent applies to the tokens',
     await p.evaluate(()=>document.documentElement.getAttribute('data-accent')==='blue'
@@ -61,9 +78,19 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#settingsModal [data-avatar-pick="#14418A"]'); await p.waitForTimeout(300);
  ok('avatar background applies to the header icon',
     await p.evaluate(()=>getComputedStyle(document.getElementById('profileBtn')).backgroundColor)==='rgb(20, 65, 138)');
+ await p.evaluate(()=>chooseSetting('avatarColor','#336699')); await p.waitForTimeout(300);
+ ok('a custom profile-icon color applies',
+    await p.evaluate(()=>getComputedStyle(document.getElementById('profileBtn')).backgroundColor)==='rgb(51, 102, 153)');
+ ok('the rainbow swatch marks custom as active',
+    await p.evaluate(()=>document.querySelector('[data-avatar-pick=custom]').classList.contains('on')));
  await p.click('#settingsModal [data-timefmt-pick="24h"]'); await p.waitForTimeout(300);
  ok('24-hour format flips every timestamp helper',
     await p.evaluate(()=>fmtWhen('2026-08-17T20:52:00')==='08-17-2026 20:52'));
+ await p.evaluate(()=>{const c=document.getElementById('setRememberExport');
+   c.checked=true;c.dispatchEvent(new Event('change'));});
+ ok('the Remember Export Settings toggle flips the setting',
+    await p.evaluate(()=>usSettings().rememberExport===true
+      &&document.getElementById('setRememberExport').checked));
  await p.click('#settingsModal [data-density-pick=compact]'); await p.waitForTimeout(300);
  ok('compact density tightens the tables',
     await p.evaluate(()=>document.documentElement.getAttribute('data-density')==='compact'));
@@ -71,6 +98,20 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // ---- home cards view (Home page only)
  await p.click('#settingsModal [data-homeview-pick=cards]'); await p.waitForTimeout(1000);
  await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+
+ // ---- the Home toolbar quick toggles mirror Settings
+ await p.click('#page-home .mini-seg [data-homeview-pick=list]'); await p.waitForTimeout(400);
+ ok('the toolbar flips Home back to the list view',
+    !(await p.evaluate(()=>document.getElementById('homeCards').classList.contains('on'))));
+ const hCompact=await p.evaluate(()=>document.querySelector('#homeBody td').getBoundingClientRect().height);
+ await p.click('#page-home .mini-seg [data-density-pick=comfortable]'); await p.waitForTimeout(400);
+ const hComfy=await p.evaluate(()=>document.querySelector('#homeBody td').getBoundingClientRect().height);
+ ok('comfortable rows are clearly taller than compact rows', hComfy-hCompact>=4,
+    JSON.stringify({hComfy,hCompact}));
+ ok('the toolbar marks the active choices',
+    await p.evaluate(()=>document.querySelector('#page-home .mini-seg [data-density-pick=comfortable]').classList.contains('on')));
+ await p.click('#page-home .mini-seg [data-density-pick=compact]'); await p.waitForTimeout(200);
+ await p.click('#page-home .mini-seg [data-homeview-pick=cards]'); await p.waitForTimeout(600);
  ok('card view replaces the budget table on Home',
     await p.evaluate(()=>document.getElementById('homeCards').classList.contains('on')
       &&document.querySelector('#page-home .tbl').style.display==='none'

@@ -52,9 +52,10 @@ module.exports = async function (context, req) {
   const rq = pool.request()
     .input('uid', sql.NVarChar(128), principal.userId)
     .input('settings', sql.NVarChar(sql.MAX), settingsJson);
+  // Email is never client-set: it is locked to the signed-in account and
+  // maintained by ensureUser from the platform principal.
   const sets = ['SettingsDoc=@settings', 'SettingsUpdatedAt=SYSUTCDATETIME()', 'UpdatedAt=SYSUTCDATETIME()'];
   if (profile.displayName !== undefined) { rq.input('dn', sql.NVarChar(200), profile.displayName || null); sets.push('DisplayName=@dn'); }
-  if (profile.email !== undefined) { rq.input('em', sql.NVarChar(320), profile.email || null); sets.push('Email=@em'); }
   if (profile.phone !== undefined) { rq.input('ph', sql.NVarChar(40), profile.phone || null); sets.push('Phone=@ph'); }
   const r = await rq.query(`UPDATE dbo.Users SET ${sets.join(', ')}
     OUTPUT INSERTED.UserId, INSERTED.UserDetails, INSERTED.DisplayName, INSERTED.Email,
@@ -64,7 +65,7 @@ module.exports = async function (context, req) {
 
   await U.recordActivity(pool, principal, 'settings_update', null, null, {
     changed: Object.keys(body.settings || {}).concat(
-      ['displayName', 'email', 'phone'].filter(k => profile[k] !== undefined))
+      ['displayName', 'phone'].filter(k => profile[k] !== undefined))
   });
   context.res = jsonRes(200, U.userResponse(r.recordset[0]));
 };

@@ -35,11 +35,12 @@ async function ensureUser(pool, principal, opts) {
             USING (SELECT @uid AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET
               UserDetails = COALESCE(@details, t.UserDetails),
+              Email       = COALESCE(@details, t.Email),   -- locked to the sign-in account
               LoginCount  = t.LoginCount + IIF(@boot = 1 AND DATEDIFF(MINUTE, t.LastSeenAt, SYSUTCDATETIME()) >= @gap, 1, 0),
               LastSeenAt  = IIF(@boot = 1, SYSUTCDATETIME(), t.LastSeenAt),
               UpdatedAt   = SYSUTCDATETIME()
-            WHEN NOT MATCHED THEN INSERT (UserId, UserDetails, LoginCount)
-              VALUES (@uid, @details, IIF(@boot = 1, 1, 0))
+            WHEN NOT MATCHED THEN INSERT (UserId, UserDetails, Email, LoginCount)
+              VALUES (@uid, @details, @details, IIF(@boot = 1, 1, 0))
             OUTPUT INSERTED.UserId, INSERTED.UserDetails, INSERTED.DisplayName, INSERTED.Email,
                    INSERTED.Phone, INSERTED.SettingsDoc, INSERTED.FirstSeenAt, INSERTED.LastSeenAt,
                    INSERTED.LoginCount,

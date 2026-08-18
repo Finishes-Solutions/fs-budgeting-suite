@@ -229,7 +229,9 @@ http.createServer((req, res) => {
   if (p === '/api/user-settings') {
     const uid = principal.clientPrincipal.userId;
     if (!mockUsers.has(uid)) mockUsers.set(uid, {
-      userDetails: principal.clientPrincipal.userDetails, displayName: null, email: null, phone: null,
+      userDetails: principal.clientPrincipal.userDetails, displayName: null,
+      email: principal.clientPrincipal.userDetails,   // locked to the sign-in account
+      phone: null,
       settings: {}, firstSeenAt: new Date().toISOString(),
       lastSeenAt: new Date(0).toISOString(), loginCount: 0 });
     const u = mockUsers.get(uid);
@@ -255,7 +257,7 @@ http.createServer((req, res) => {
       return req.on('end', () => {
         const body = b ? JSON.parse(b) : {};
         const prof = usc.sanitizeProfile(body);
-        for (const k of ['displayName', 'email', 'phone']) if (prof[k] !== undefined) u[k] = prof[k] || null;
+        for (const k of ['displayName', 'phone']) if (prof[k] !== undefined) u[k] = prof[k] || null;
         if (body.settings !== undefined)
           u.settings = usc.sanitizeSettings(Object.assign({}, usc.sanitizeSettings(u.settings), body.settings));
         mockActivity.unshift({ eventType: 'settings_update', entityType: null, entityId: null,

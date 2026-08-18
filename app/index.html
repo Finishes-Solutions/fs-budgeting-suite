@@ -10,7 +10,7 @@
    server copy wins the moment it arrives. */
 try{
   var t=localStorage.getItem('fsTheme');if(t==='dark')document.documentElement.setAttribute('data-theme',t);
-  var a=localStorage.getItem('fsAccent');if(a&&a!=='green')document.documentElement.setAttribute('data-accent',a);
+  var a=localStorage.getItem('fsAccent');if(a&&a!=='green'&&a.charAt(0)!=='#')document.documentElement.setAttribute('data-accent',a);
   var d=localStorage.getItem('fsDensity');if(d==='compact')document.documentElement.setAttribute('data-density','compact');
   var av=localStorage.getItem('fsAvatar');if(av)document.documentElement.style.setProperty('--avatar-bg',av);
   window.__fsTimeFormat=localStorage.getItem('fsTimeFormat')==='24h'?'24h':'12h';
@@ -113,10 +113,31 @@ html[data-theme=dark][data-accent=violet]{--green-900:#241145;--green-800:#45248
 html[data-theme=dark][data-accent=graphite]{--green-900:#0d1013;--green-800:#2a323b;--green-700:#5f6c7a;
   --green-600:#4f5c6a;--green-500:#6a7887;--green-200:#3c4650;--green-100:#2a3138;--green-50:#1d2226;
   --focus:0 0 0 3px rgba(106,120,135,.35)}
-/* ---- Table density (Settings → Table Density) ---- */
-html[data-density=compact] .tbl td{padding-top:1px;padding-bottom:1px}
-html[data-density=compact] .inv-table td{padding-top:5px;padding-bottom:5px}
-html[data-density=compact] .inv-list td{padding-top:1px;padding-bottom:1px}
+html[data-accent=red]{--green-900:#6a1410;--green-800:#8a1a15;--green-700:#b42318;--green-600:#c9372c;
+  --green-500:#d64f45;--green-200:#f3cfcc;--green-100:#f9e3e1;--green-50:#fcf1f0;
+  --focus:0 0 0 3px rgba(201,55,44,.32)}
+html[data-accent=orange]{--green-900:#6b3606;--green-800:#8a4708;--green-700:#b35c0a;--green-600:#cc6f12;
+  --green-500:#d98230;--green-200:#f4dcc3;--green-100:#f9ead9;--green-50:#fcf4ec;
+  --focus:0 0 0 3px rgba(204,111,18,.32)}
+html[data-theme=dark][data-accent=red]{--green-900:#3a0f0c;--green-800:#7f1d16;--green-700:#c3392d;
+  --green-600:#d14b40;--green-500:#dd685f;--green-200:#6e2d28;--green-100:#4a1e1a;--green-50:#391714;
+  --focus:0 0 0 3px rgba(221,104,95,.35)}
+html[data-theme=dark][data-accent=orange]{--green-900:#38200a;--green-800:#8a4c10;--green-700:#c76d15;
+  --green-600:#d67f26;--green-500:#de9247;--green-200:#6e4520;--green-100:#4a2f16;--green-50:#392512;
+  --focus:0 0 0 3px rgba(222,146,71,.35)}
+/* ---- Table density (Settings → Table Density, or the Home toolbar) ----
+   Comfortable is the default look; compact meaningfully compresses the list
+   tables — zero vertical cell padding, smaller badges and row menus — so the
+   two modes read as genuinely different densities. */
+html[data-density=compact] .tbl td{padding-top:0;padding-bottom:0}
+html[data-density=compact] .inv-table td{padding-top:2px;padding-bottom:2px}
+html[data-density=compact] .inv-list td{padding-top:0;padding-bottom:0}
+html[data-density=compact] .tbl .badge,html[data-density=compact] .inv-table .badge{
+  padding:1px 6px;font-size:9px}
+html[data-density=compact] #homeBody .rowmenu-btn,
+html[data-density=compact] .inv-list .rowmenu-btn{width:22px;height:22px;line-height:20px}
+html[data-density=compact] .tbl th,html[data-density=compact] .inv-list th{padding-top:5px;padding-bottom:5px}
+html[data-density=compact] .grp-hd td,html[data-density=compact] .inv-grp td{padding-top:3px;padding-bottom:3px}
 /* ---- Home card view (Settings → Home View; Home page only) ---- */
 .home-cards{display:none;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;padding:20px 22px}
 .home-cards.on{display:grid}
@@ -150,13 +171,35 @@ html[data-density=compact] .inv-list td{padding-top:1px;padding-bottom:1px}
 .set-choice button.on .tick{visibility:visible}
 .set-choice .set-dot{width:12px;height:12px;border-radius:50%;flex:none}
 .set-choice .set-sub{font-family:var(--fm);font-size:10.5px;color:var(--ink-400);font-weight:400}
-.set-swatches{display:flex;gap:10px;flex-wrap:wrap}
+.set-swatches{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .set-swatch{width:30px;height:30px;border-radius:50%;border:2px solid var(--ink-200);cursor:pointer;padding:0}
 .set-swatch:hover{border-color:var(--ink-400)}
 .set-swatch.on{border-color:var(--ink-950);box-shadow:0 0 0 3px var(--green-100)}
+/* the custom-color swatch: a rainbow ring that opens the color picker */
+.set-swatch.rainbow{background:conic-gradient(#e03131,#f59f00,#94d82d,#20c997,#339af0,#845ef7,#e03131)}
 .set-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .set-grid .wide{grid-column:1/-1}
 .set-note{font-size:12px;color:var(--ink-500);margin-top:8px}
+input.set-locked{background:var(--ink-50);color:var(--ink-500);cursor:not-allowed}
+/* ---- toggle switch (Settings → Exports) ---- */
+.switch-row{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.switch{position:relative;flex:none;width:40px;height:22px;margin-top:1px;display:inline-block}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.switch .knob{position:absolute;inset:0;background:var(--ink-300);border-radius:999px;transition:background .15s}
+.switch .knob::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 2px rgba(11,13,12,.3);transition:left .15s}
+.switch input:checked+.knob{background:var(--green-600)}
+.switch input:checked+.knob::after{left:20px}
+.switch input:focus-visible+.knob{box-shadow:var(--focus)}
+/* ---- mini segmented toggles (the Home toolbar's density / view controls,
+   mirroring the Settings choices via the same data attributes) ---- */
+.mini-seg{display:inline-flex;border:1px solid var(--ink-200);border-radius:var(--r);overflow:hidden}
+.mini-seg button{width:30px;height:28px;border:none;background:var(--white);color:var(--ink-500);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.mini-seg button+button{border-left:1px solid var(--ink-200)}
+.mini-seg button:hover{color:var(--ink-800);background:var(--ink-100)}
+.mini-seg button.on{background:var(--green-700);color:#fff}
+.mini-seg svg{width:14px;height:14px;display:block}
 /* ---- Cmd/Ctrl+K global search palette ---- */
 #palette{position:fixed;inset:0;z-index:80;display:none;background:rgba(11,13,12,.45);
   align-items:flex-start;justify-content:center;padding:11vh 16px 16px}
@@ -725,7 +768,23 @@ th.sortable.sorted{color:var(--ink-900)}
           <option value="status">Group by Status</option>
         </select>
       </div>
-      <span class="eyebrow" id="homeCount">—</span>
+      <div style="display:flex;gap:12px;align-items:center">
+        <!-- Quick versions of two Settings choices, right where they act. The
+             shared data attributes keep them marked in step with the modal. -->
+        <div class="mini-seg" role="group" aria-label="Home View" title="Home View — also in Settings">
+          <button data-homeview-pick="list" aria-label="List View" title="List View" onclick="chooseSetting('homeView','list')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></button>
+          <button data-homeview-pick="cards" aria-label="Card View" title="Card View" onclick="chooseSetting('homeView','cards')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
+        </div>
+        <div class="mini-seg" role="group" aria-label="Table Density" title="Table Density — also in Settings">
+          <button data-density-pick="comfortable" aria-label="Comfortable Density" title="Comfortable Density" onclick="chooseSetting('tableDensity','comfortable')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg></button>
+          <button data-density-pick="compact" aria-label="Compact Density" title="Compact Density" onclick="chooseSetting('tableDensity','compact')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+        </div>
+        <span class="eyebrow" id="homeCount">—</span>
+      </div>
     </div>
     <div class="card-bd" style="padding:0;overflow-x:auto">
     <table class="tbl">
@@ -1181,17 +1240,23 @@ th.sortable.sorted{color:var(--ink-900)}
         <p>Click your avatar in the header and choose <b>Settings</b>. Everything there is saved to your
           account, so your choices follow you to any browser you sign into:</p>
         <ul>
-          <li><b>Profile</b> — a display name (used in version history and "created by" lines instead of
-            your sign-in name), plus a contact email and phone number.</li>
+          <li><b>Profile</b> — a display name (used in version history and "created by" lines; it
+            defaults from your sign-in identity) and a phone number. Email is shown but locked to
+            the account you are signed in with.</li>
           <li><b>Theme</b> — Light (the default) or Dark.</li>
-          <li><b>Accent Color</b> — Green (the default), Blue, Violet, or Graphite, recoloring the
-            buttons, links, and highlights.</li>
-          <li><b>Profile Icon Background</b> — the color behind your initials in the header.</li>
+          <li><b>Accent Color</b> — Green (the default), Blue, Violet, Graphite, Red, Orange, or
+            <b>Custom</b>: the rainbow button opens a color picker and the app derives a full light
+            and dark palette from whatever color you choose.</li>
+          <li><b>Profile Icon Background</b> — six preset colors behind your header initials, or the
+            rainbow swatch for any custom color.</li>
           <li><b>Time Format</b> — 12-hour (8:52 PM) or 24-hour (20:52) for every timestamp.</li>
-          <li><b>Table Density</b> — Comfortable or Compact rows in the lists and the budget grid.</li>
-          <li><b>Home View</b> — the Home page lists as a table or as cards. Home only, for now.</li>
-          <li><b>Exports</b> — remember the sections and options you pick in the export popups (budget
-            and analysis separately) as your defaults, or start fresh each time.</li>
+          <li><b>Table Density</b> — Comfortable or Compact rows in the lists and the budget grid.
+            Also switchable right from the Home toolbar's small icon toggles.</li>
+          <li><b>Home View</b> — the Home page lists as a table or as cards, also switchable from the
+            Home toolbar. Home only, for now.</li>
+          <li><b>Exports</b> — the <b>Remember Export Settings</b> toggle: on, the sections and options
+            you pick in the export popups (budget and analysis separately) become your defaults
+            everywhere you sign in; off, every export starts from the standard defaults.</li>
         </ul>
         <p>Preference choices apply immediately and save quietly; profile fields save with their button.
           Printed reports and PDF exports always render in light, whatever theme the screen uses.</p>
@@ -1770,12 +1835,13 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="fld wide"><span class="lab">Display Name</span>
           <input type="text" id="setDisplayName" placeholder="How your name appears in version history"></label>
         <label class="fld"><span class="lab">Email</span>
-          <input type="text" id="setEmail" placeholder="Contact email"></label>
+          <input type="text" id="setEmail" class="set-locked" disabled
+            title="Locked to the account you are signed in with"></label>
         <label class="fld"><span class="lab">Phone</span>
           <input type="text" id="setPhone" placeholder="Phone number"></label>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:12px">
-        <span class="set-note" id="setSignedInAs"></span>
+        <span class="set-note">Email is locked to your sign-in account.</span>
         <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save Profile</button>
       </div>
 
@@ -1790,7 +1856,7 @@ th.sortable.sorted{color:var(--ink-900)}
       </div>
 
       <div class="set-lab">Accent Color</div>
-      <div class="set-choice" role="group" aria-label="Accent Color">
+      <div class="set-choice" role="group" aria-label="Accent Color" style="flex-wrap:wrap">
         <button data-accent-pick="green" onclick="chooseSetting('accentColor','green')">
           <span class="set-dot" style="background:#0A7A36"></span>Green<span class="tick">✓</span></button>
         <button data-accent-pick="blue" onclick="chooseSetting('accentColor','blue')">
@@ -1799,6 +1865,15 @@ th.sortable.sorted{color:var(--ink-900)}
           <span class="set-dot" style="background:#6D3AD1"></span>Violet<span class="tick">✓</span></button>
         <button data-accent-pick="graphite" onclick="chooseSetting('accentColor','graphite')">
           <span class="set-dot" style="background:#47505C"></span>Graphite<span class="tick">✓</span></button>
+        <button data-accent-pick="red" onclick="chooseSetting('accentColor','red')">
+          <span class="set-dot" style="background:#B42318"></span>Red<span class="tick">✓</span></button>
+        <button data-accent-pick="orange" onclick="chooseSetting('accentColor','orange')">
+          <span class="set-dot" style="background:#CC6F12"></span>Orange<span class="tick">✓</span></button>
+        <button data-accent-pick="custom" onclick="document.getElementById('accentPicker').click()">
+          <span class="set-dot rainbow" id="accentCustomDot"
+            style="background:conic-gradient(#e03131,#f59f00,#94d82d,#20c997,#339af0,#845ef7,#e03131)"></span>Custom<span class="tick">✓</span></button>
+        <input type="color" id="accentPicker" value="#0a7a36" style="position:absolute;width:0;height:0;opacity:0;border:0;padding:0"
+          onchange="chooseSetting('accentColor',this.value.toLowerCase())" aria-label="Custom Accent Color">
       </div>
 
       <div class="set-lab">Profile Icon Background</div>
@@ -1809,6 +1884,10 @@ th.sortable.sorted{color:var(--ink-900)}
         <button class="set-swatch" data-avatar-pick="#B42318" style="background:#B42318" title="Crimson" aria-label="Crimson" onclick="chooseSetting('avatarColor','#B42318')"></button>
         <button class="set-swatch" data-avatar-pick="#B7791F" style="background:#B7791F" title="Amber" aria-label="Amber" onclick="chooseSetting('avatarColor','#B7791F')"></button>
         <button class="set-swatch" data-avatar-pick="#23282A" style="background:#23282A" title="Ink" aria-label="Ink" onclick="chooseSetting('avatarColor','#23282A')"></button>
+        <button class="set-swatch rainbow" data-avatar-pick="custom" title="Custom Color" aria-label="Custom Color"
+          onclick="document.getElementById('avatarPicker').click()"></button>
+        <input type="color" id="avatarPicker" value="#0a7a36" style="position:absolute;width:0;height:0;opacity:0;border:0;padding:0"
+          onchange="chooseSetting('avatarColor',this.value.toUpperCase())" aria-label="Custom Profile Icon Color">
       </div>
 
       <div class="set-lab">Time Format</div>
@@ -1841,14 +1920,14 @@ th.sortable.sorted{color:var(--ink-900)}
       <div class="set-note">Card view applies to the Home page lists only, for now.</div>
 
       <div class="set-lab">Exports</div>
-      <div class="set-choice" role="group" aria-label="Remember Export Options">
-        <button data-rememberexport-pick="on" onclick="chooseSetting('rememberExport',true)">
-          Remember My Export Options<span class="tick">✓</span></button>
-        <button data-rememberexport-pick="off" onclick="chooseSetting('rememberExport',false)">
-          Start Fresh Each Time<span class="tick">✓</span></button>
-      </div>
-      <div class="set-note">When remembering, the sections and options you pick in the export popups
-        (budget and analysis separately) become your defaults everywhere you sign in.</div>
+      <label class="switch-row">
+        <span class="switch"><input type="checkbox" id="setRememberExport"
+          onchange="chooseSetting('rememberExport',this.checked)"><span class="knob"></span></span>
+        <span><b style="font-size:13px">Remember Export Settings</b><br>
+          <span class="set-note" style="margin-top:2px;display:inline-block">The sections and options you
+          pick in the export popups (budget and analysis separately) become your defaults everywhere you
+          sign in. Off means every export starts from the standard defaults.</span></span>
+      </label>
 
       <p class="set-note" style="margin-top:18px">Everything here is saved to your account and follows you
         to any signed-in browser. Printed reports and PDF exports always use the light look.</p>
@@ -1965,10 +2044,50 @@ function applyUserSettings(){
   try{localStorage.setItem('fsTimeFormat',window.__fsTimeFormat);}catch(_){}
   paintSettingsUI();
 }
+/* Named accents use the curated CSS scales; a #rrggbb custom accent derives
+   its scale from the picked color (HSL ramps, light and dark variants) and
+   applies it as inline tokens. Theme changes re-run this, so a custom accent
+   recomputes for dark mode automatically. */
+const NAMED_ACCENTS=['green','blue','violet','graphite','red','orange'];
 function applyAccent(name){
-  if(name==='green')document.documentElement.removeAttribute('data-accent');
-  else document.documentElement.setAttribute('data-accent',name);
+  const root=document.documentElement;
+  ['900','800','700','600','500','200','100','50'].forEach(k=>root.style.removeProperty('--green-'+k));
+  root.style.removeProperty('--focus');
+  if(/^#[0-9a-f]{6}$/i.test(name)){
+    root.removeAttribute('data-accent');
+    const sc=accentScale(name,currentTheme()==='dark');
+    for(const k in sc.tokens)root.style.setProperty('--green-'+k,sc.tokens[k]);
+    root.style.setProperty('--focus','0 0 0 3px '+sc.focus);
+  }else if(name==='green'||!NAMED_ACCENTS.includes(name)){
+    root.removeAttribute('data-accent');
+  }else root.setAttribute('data-accent',name);
   try{localStorage.setItem('fsAccent',name);}catch(_){}
+}
+function hexRgb(x){return [parseInt(x.slice(1,3),16),parseInt(x.slice(3,5),16),parseInt(x.slice(5,7),16)];}
+function hexHsl(x){
+  const [r,g,b]=hexRgb(x).map(v=>v/255);
+  const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;
+  let h=0;
+  if(d){h=max===r?((g-b)/d)%6:max===g?(b-r)/d+2:(r-g)/d+4;h=Math.round(h*60);if(h<0)h+=360;}
+  const l=(max+min)/2;
+  const s=d?d/(1-Math.abs(2*l-1)):0;
+  return [h,Math.round(s*100)];
+}
+function hslHex(h,s,l){
+  s/=100;l/=100;
+  const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;
+  const [r,g,b]=h<60?[c,x,0]:h<120?[x,c,0]:h<180?[0,c,x]:h<240?[0,x,c]:h<300?[x,0,c]:[c,0,x];
+  return '#'+[r,g,b].map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join('');
+}
+function accentScale(hex,dark){
+  const [h,s]=hexHsl(hex);
+  const L=dark
+    ?{900:14,800:30,700:48,600:54,500:62,200:30,100:22,50:16}
+    :{900:22,800:30,700:38,600:46,500:56,200:84,100:90,50:95};
+  const S=k=>(k==='200'||k==='100'||k==='50')?Math.min(s,dark?32:55):s;
+  const tokens={};
+  for(const k of ['900','800','700','600','500','200','100','50'])tokens[k]=hslHex(h,S(k),L[k]);
+  return {tokens,focus:'rgba('+hexRgb(hslHex(h,s,dark?60:46)).join(',')+',.33)'};
 }
 function applyAvatar(hex){
   if(hex)document.documentElement.style.setProperty('--avatar-bg',hex);
@@ -2004,14 +2123,17 @@ async function saveUserSettings(){
 async function saveProfile(){
   const v=id=>document.getElementById(id).value.trim();
   try{
+    // Email is locked to the sign-in account — only name and phone travel.
     const r=await api('user-settings',{method:'PUT',body:JSON.stringify({
-      displayName:v('setDisplayName'),email:v('setEmail'),phone:v('setPhone')})});
+      displayName:v('setDisplayName'),phone:v('setPhone')})});
     US.profile={displayName:r.displayName||'',email:r.email||'',phone:r.phone||''};
     US.settings=r.settings;
     renderProfile();
     toast('Profile saved to your account.');
   }catch(e){toast('Could not save your profile — '+e.message);}
 }
+const AVATAR_PRESETS=['','#14418A','#6D28D9','#B42318','#B7791F','#23282A'];
+const RAINBOW='conic-gradient(#e03131,#f59f00,#94d82d,#20c997,#339af0,#845ef7,#e03131)';
 function paintSettingsUI(){
   const s=usSettings();
   const mark=(sel,val)=>document.querySelectorAll(sel).forEach(b=>{
@@ -2021,20 +2143,32 @@ function paintSettingsUI(){
     b.setAttribute('aria-pressed',on?'true':'false');
   });
   mark('[data-theme-pick]',s.theme||'light');
-  mark('[data-accent-pick]',s.accentColor||'green');
-  mark('[data-avatar-pick]',s.avatarColor||'');
+  const acc=s.accentColor||'green';
+  const accCustom=/^#/.test(acc);
+  mark('[data-accent-pick]',accCustom?'custom':acc);
+  const cd=document.getElementById('accentCustomDot');
+  if(cd)cd.style.background=accCustom?acc:RAINBOW;
+  const ap=document.getElementById('accentPicker');
+  if(ap&&accCustom)ap.value=acc;
+  const av=s.avatarColor||'';
+  mark('[data-avatar-pick]',AVATAR_PRESETS.includes(av)?av:'custom');
+  const vp=document.getElementById('avatarPicker');
+  if(vp&&av&&!AVATAR_PRESETS.includes(av))vp.value=av.toLowerCase();
   mark('[data-timefmt-pick]',s.timeFormat||'12h');
   mark('[data-density-pick]',s.tableDensity||'comfortable');
   mark('[data-homeview-pick]',s.homeView||'list');
-  mark('[data-rememberexport-pick]',s.rememberExport?'on':'off');
+  const re=document.getElementById('setRememberExport');
+  if(re)re.checked=!!s.rememberExport;
 }
 function openSettings(){
   closeProfile(false);
-  document.getElementById('setDisplayName').value=US.profile.displayName||'';
-  document.getElementById('setEmail').value=US.profile.email||'';
+  // Display name defaults from the sign-in identity (the same derivation the
+  // header uses); email is read-only, locked to the signed-in account.
+  document.getElementById('setDisplayName').value=US.profile.displayName
+    ||(principal?principalName(principal):'');
+  document.getElementById('setEmail').value=US.profile.email||US.userDetails
+    ||(principal&&principal.userDetails)||'';
   document.getElementById('setPhone').value=US.profile.phone||'';
-  const who=document.getElementById('setSignedInAs');
-  if(who)who.textContent=US.userDetails?'Signed in as '+US.userDetails:'';
   paintSettingsUI();
   document.getElementById('settingsModal').style.display='flex';
 }

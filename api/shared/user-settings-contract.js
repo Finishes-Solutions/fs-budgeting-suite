@@ -8,7 +8,9 @@
 // additive keys here — never a schema migration.
 const THEMES = ['light', 'dark'];
 const TIME_FORMATS = ['12h', '24h'];
-const ACCENTS = ['green', 'blue', 'violet', 'graphite'];
+// Named accents ship curated light+dark scales; a #rrggbb value is a custom
+// accent whose scale the client derives from the picked color.
+const ACCENTS = ['green', 'blue', 'violet', 'graphite', 'red', 'orange'];
 const DENSITIES = ['comfortable', 'compact'];
 const HOME_VIEWS = ['list', 'cards'];
 const HEX_RX = /^#[0-9a-fA-F]{6}$/;
@@ -43,7 +45,9 @@ function sanitizeSettings(input) {
   return {
     theme: pickEnum(s.theme, THEMES, DEFAULT_SETTINGS.theme),
     timeFormat: pickEnum(s.timeFormat, TIME_FORMATS, DEFAULT_SETTINGS.timeFormat),
-    accentColor: pickEnum(s.accentColor, ACCENTS, DEFAULT_SETTINGS.accentColor),
+    accentColor: (typeof s.accentColor === 'string' && HEX_RX.test(s.accentColor))
+      ? s.accentColor.toLowerCase()
+      : pickEnum(s.accentColor, ACCENTS, DEFAULT_SETTINGS.accentColor),
     avatarColor: typeof s.avatarColor === 'string' && HEX_RX.test(s.avatarColor) ? s.avatarColor : null,
     tableDensity: pickEnum(s.tableDensity, DENSITIES, DEFAULT_SETTINGS.tableDensity),
     homeView: pickEnum(s.homeView, HOME_VIEWS, DEFAULT_SETTINGS.homeView),
@@ -52,12 +56,13 @@ function sanitizeSettings(input) {
   };
 }
 
+// Email is deliberately NOT here: it is locked to the signed-in account
+// (the platform's userDetails) and maintained server-side, never client-set.
 function sanitizeProfile(body) {
   const b = body && typeof body === 'object' ? body : {};
   const str = (v, max) => typeof v === 'string' ? v.trim().slice(0, max) : undefined;
   return {
     displayName: str(b.displayName, 200),
-    email: str(b.email, 320),
     phone: str(b.phone, 40)
   };
 }
