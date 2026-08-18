@@ -24,7 +24,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.setViewportSize({width:1400,height:1000});
 
  // --- OP id now four digits
- await p.click('button:has-text("+ New Multifamily Budget")'); await p.waitForTimeout(300);
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(300);
  const bad=async v=>{await p.fill('#pId',v);await p.locator('#pName').click();
    return await p.locator('#pId').evaluate(e=>e.classList.contains('err'));};
  ok('OP-001 (3 digits) now rejected', await bad('OP-001'));

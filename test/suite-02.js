@@ -24,8 +24,27 @@ const BASE = 'http://127.0.0.1:8100';
   ok('Avatar shows initials', /^[A-Z?]{1,2}$/.test((await p.locator('#profileInitials').textContent()).trim()),
      await p.locator('#profileInitials').textContent());
 
+  // --- one + New Budget button opens the template chooser
+  ok('a single + New Budget button replaces the old pair',
+     (await p.locator('#page-home button:has-text("+ New Budget")').count()) === 1
+     && (await p.locator('#page-home button:has-text("Multifamily")').count()) === 0
+     && (await p.locator('#page-home button:has-text("+ Blank Budget")').count()) === 0);
+  await p.click('button:has-text("+ New Budget")'); await p.waitForTimeout(200);
+  ok('the modal offers Multifamily and Blank, with future types disabled',
+     await p.evaluate(() => {
+       const rows = [...document.querySelectorAll('#newBudgetModal .tpl-row')];
+       const by = n => rows.find(r => r.textContent.includes(n));
+       return !!by('Multifamily') && !by('Multifamily').disabled
+         && !!by('Blank Budget') && !by('Blank Budget').disabled
+         && by('Industrial').disabled && by('Retail').disabled && by('Mixed-Use').disabled;
+     }));
+  ok('custom templates show an empty state when none exist',
+     /No custom templates yet/.test(await p.locator('#customTplList').textContent()));
+  await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+  ok('Escape closes the New Budget modal', !(await p.locator('#newBudgetModal').isVisible()));
+
   // --- create + save a real budget
-  await p.click('button:has-text("+ New Multifamily Budget")');
+  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
   await p.fill('#pId', 'TST-9999');
   await p.fill('#pName', 'Waller Preview Test');
   await p.click('button:has-text("Continue to Budget")');
@@ -142,8 +161,8 @@ const BASE = 'http://127.0.0.1:8100';
   ok('Grouping by status splits the list', byStatus.groups >= 2, byStatus.groups + ' groups');
   ok('Grouping shows every budget exactly once', byStatus.rows === 4, byStatus.rows + ' rows');
   ok('Group headers span the full table', byStatus.headerSpan === 7, 'span ' + byStatus.headerSpan);
-  ok('Group totals sit under Contract Sum and Total Project',
-     JSON.stringify(byStatus.moneyCols) === '[2,3]', JSON.stringify(byStatus.moneyCols));
+  ok('Group totals sit under Contract Sum and Total Project Cost',
+     JSON.stringify(byStatus.moneyCols) === '[3,4]', JSON.stringify(byStatus.moneyCols));
   const byType = await grouped('type');
   ok('Grouping by type works', byType.groups >= 1 && byType.rows === 4);
   const byId = await grouped('id');
@@ -188,8 +207,19 @@ const BASE = 'http://127.0.0.1:8100';
   await p.goto(BASE + '/index.html#/budget/TST-9999', { waitUntil: 'networkidle' });
   await p.waitForTimeout(700);
   ok('Stale-pricing banner appears after a publish', await p.locator('#staleBanner').isVisible());
-  await p.click('button:has-text("Update to Current Pricing")');
-  await p.waitForTimeout(300);
+  ok('the banner carries a dismiss X', await p.locator('#staleBanner .btn-x').isVisible());
+  await p.click('#staleBanner .btn-x'); await p.waitForTimeout(200);
+  ok('X hides the banner for this budget', !(await p.locator('#staleBanner').isVisible()));
+  // the persistent path after dismissing: Home row menu → Update Pricing
+  await p.click('#nav-home'); await p.waitForTimeout(400);
+  await p.locator('#homeBody tr', { hasText: 'TST-9999' }).locator('.rowmenu-btn').click();
+  await p.waitForTimeout(200);
+  ok('row menu offers Update Pricing',
+     (await p.locator('#rowMenu .rowmenu-item').allTextContents()).includes('Update Pricing'));
+  await p.click('#rowMenu .rowmenu-item:has-text("Update Pricing")');
+  await p.waitForTimeout(700);
+  ok('Update Pricing from the row menu repriced the budget',
+     await p.evaluate(() => doc && doc.pricingVersion === pricing.version));
   ok('Reprice clears the stale banner', !(await p.locator('#staleBanner').isVisible()));
   ok('Reprice marks the budget dirty', /unsaved/i.test(await p.locator('#saveState').textContent()));
 
@@ -239,7 +269,7 @@ const BASE = 'http://127.0.0.1:8100';
   await p.waitForTimeout(200);
   ok('Row menu opens', await p.locator('#rowMenu').isVisible());
   ok('Row menu offers Edit, Versions and Delete',
-     (await p.locator('#rowMenu .rowmenu-item').allTextContents()).join('|') === 'Edit|Versions|Delete');
+     (await p.locator('#rowMenu .rowmenu-item').allTextContents()).join('|') === 'Edit|Update Pricing|Versions|Delete');
   ok('Trigger reports expanded state',
      await p.locator('#homeBody tr:has-text("TST-9999") .rowmenu-btn').getAttribute('aria-expanded') === 'true');
   ok('Trigger carries an accessible label',

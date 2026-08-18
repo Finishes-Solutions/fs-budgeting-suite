@@ -67,6 +67,12 @@ try{
      dark buttons, toasts). Never remap these to the ink scale — in the dark
      theme the ink scale inverts, and these must not. */
   --chrome:#16191a;--solid:#16191a;--solid-2:#23282a;
+  /* Shared list-table column system: both Home tables anchor Status, Updated,
+     and the row-action column to the SAME widths, and both give their two
+     identity columns the same combined width (42%), so those anchors line up
+     vertically across the two cards. The financial columns between Status and
+     Updated are free to differ. */
+  --lt-pad:22px;--lt-status:9%;--lt-updated:10%;--lt-actions:44px;
 }
 /* ---- Themes ----
    The palette lives entirely in the custom properties above, so a theme is a
@@ -176,15 +182,32 @@ html[data-density=compact] .inv-list td{padding-top:1px;padding-bottom:1px}
 .pal-empty{padding:18px 14px;font-size:13px;color:var(--ink-500)}
 .pal-ft{display:flex;gap:16px;padding:8px 14px;border-top:1px solid var(--ink-150);
   font-family:var(--fm);font-size:10.5px;color:var(--ink-400)}
-/* ---- home tables: distribute the columns evenly instead of packing right */
-#page-home .tbl th[data-sort=projectId]{width:12%}
-#page-home .tbl th[data-sort=contractSum],#page-home .tbl th[data-sort=projectCost]{width:13%}
-#page-home .tbl th[data-sort=status]{width:11%}
-#page-home .tbl th[data-sort=updated]{width:12%}
-#page-home .tbl th.no-print{width:44px}
-/* the right-aligned Total Project figure sits directly against the
-   left-aligned Status badge; the extra padding restores the gutter */
-#page-home .tbl th[data-sort=status],#page-home #homeBody tr.clickable td:nth-child(5){padding-left:22px}
+/* ---- home tables: the shared column system (identity 42% → Status →
+   metrics → Updated → actions), so the anchors align across both cards.
+   Fixed layout makes the percentage widths exact — auto layout re-weights
+   by content and the anchors drift apart. */
+#page-home .tbl,#page-home .inv-table.inv-list,#page-analyses .inv-table.inv-list{table-layout:fixed}
+#page-home .tbl th[data-sort=projectId]{width:11%}
+#page-home .tbl th[data-sort=name]{width:31%}
+#page-home .tbl th[data-sort=status]{width:var(--lt-status)}
+#page-home .tbl th[data-sort=contractSum],#page-home .tbl th[data-sort=projectCost]{width:19%}
+#page-home .tbl th[data-sort=updated]{width:var(--lt-updated)}
+#page-home .tbl th.no-print{width:var(--lt-actions)}
+/* ---- shared list toolbar: both Home cards use the identical control row */
+.list-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.list-toolbar input[type=text]{width:240px}
+.list-toolbar select{font-size:12px;padding:6px 8px}
+.list-toolbar select.lt-status{width:140px}
+.list-toolbar select.lt-group{width:168px}
+/* ---- New Budget modal: template rows ---- */
+.tpl-list{display:grid;gap:8px}
+.tpl-row{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;
+  border:1px solid var(--ink-200);background:var(--white);border-radius:8px;
+  padding:11px 14px;cursor:pointer;font-family:var(--fb);width:100%}
+.tpl-row:hover:not(:disabled){border-color:var(--green-600)}
+.tpl-row:disabled{opacity:.45;cursor:not-allowed}
+.tpl-row .tpl-name{font-size:13.5px;font-weight:600;color:var(--ink-950)}
+.tpl-row .tpl-sub{font-size:12px;color:var(--ink-500)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--fb);color:var(--ink-800);background:var(--ink-50);font-size:14px;line-height:1.5}
 .mono{font-family:var(--fm)}
@@ -681,24 +704,20 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title">
     <div><h1>Project Budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
     <div style="display:flex;gap:10px" data-edit-only>
-      <select id="newFromTpl" style="width:210px;display:none" onchange="newBudgetFromTemplate(this.value);this.selectedIndex=0"
-        aria-label="New Budget From Template"></select>
-      <button class="btn btn-ghost" onclick="newBudget('blank')">+ Blank Budget</button>
-      <button class="btn btn-primary" id="newMfBtn" onclick="newBudgetFromTemplate('multifamily')">+ New Multifamily Budget</button>
+      <button class="btn btn-primary" id="newBudgetBtn" onclick="openNewBudget()">+ New Budget</button>
     </div>
   </div>
   <div class="card">
     <div class="card-hd no-print">
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <input type="text" id="homeSearch" placeholder="Search ID or name…" style="width:240px">
-        <select id="homeStatus" style="width:140px;font-size:12px;padding:6px 8px">
+      <div class="list-toolbar">
+        <input type="text" id="homeSearch" placeholder="Search ID or name…">
+        <select id="homeStatus" class="lt-status">
           <option value="all">All Statuses</option>
           <option value="Draft">Draft</option>
           <option value="In Review">In Review</option>
           <option value="Finalized">Finalized</option>
         </select>
-        <select id="homeGroup" style="width:168px;font-size:12px;padding:6px 8px"
-          title="Group the list" aria-label="Group By">
+        <select id="homeGroup" class="lt-group" title="Group the list" aria-label="Group By">
           <option value="">No Grouping</option>
           <option value="address">Group by Address</option>
           <option value="id">Group by Project ID</option>
@@ -708,14 +727,14 @@ th.sortable.sorted{color:var(--ink-900)}
       </div>
       <span class="eyebrow" id="homeCount">—</span>
     </div>
-    <div class="card-bd" style="padding:0">
+    <div class="card-bd" style="padding:0;overflow-x:auto">
     <table class="tbl">
       <thead id="homeHead"><tr>
         <th style="padding-left:22px" class="sortable" data-sort="projectId">Project ID</th>
         <th class="sortable" data-sort="name">Name</th>
-        <th class="r sortable" data-sort="contractSum">Contract Sum</th>
-        <th class="r sortable" data-sort="projectCost">Total Project</th>
         <th class="sortable" data-sort="status">Status</th>
+        <th class="r sortable" data-sort="contractSum">Contract Sum</th>
+        <th class="r sortable" data-sort="projectCost">Total Project Cost</th>
         <th class="r sortable" data-sort="updated" style="padding-right:22px">Updated</th>
         <th class="no-print"></th></tr></thead>
       <tbody id="homeBody"></tbody>
@@ -736,12 +755,11 @@ th.sortable.sorted{color:var(--ink-900)}
     <div><h1>Investment Analyses</h1>
       <div class="sub">Before-tax underwriting, linked to exact saved budget versions.</div></div>
     <div style="display:flex;gap:10px" data-edit-only>
-      <button class="btn btn-ghost" onclick="FSInvestmentUI.createBlank()">+ Blank Investment Analysis</button>
       <button class="btn btn-primary" onclick="FSInvestmentUI.openProjectPicker()">+ New Investment Analysis</button>
     </div>
   </div>
   <section class="card">
-    <div class="card-bd" style="padding:0" id="homeAnalyses"></div>
+    <div class="card-bd" style="padding:0;overflow-x:auto" id="homeAnalyses"></div>
   </section>
 </div>
 
@@ -899,8 +917,6 @@ th.sortable.sorted{color:var(--ink-900)}
       </label>
       <button class="btn btn-ghost" onclick="go('input')">← Inputs</button>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
-      <button class="btn btn-ghost" onclick="createAnalysisFromBudget()"
-        title="Save this budget and start a five-year investment analysis from the saved version">Create Investment Analysis</button>
       <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
   </div>
@@ -912,7 +928,11 @@ th.sortable.sorted{color:var(--ink-900)}
 
   <div class="banner" id="staleBanner" style="display:none">
     <span>This budget uses pricing library <b id="staleFrom"></b>; current is <b id="staleTo"></b>. Values are frozen until you update.</span>
-    <button class="btn btn-sm btn-dark no-print" onclick="repriceBudget()">Update to Current Pricing</button>
+    <span class="no-print" style="display:flex;gap:8px;align-items:center;flex:none">
+      <button class="btn btn-sm btn-dark" onclick="repriceBudget()">Update to Current Pricing</button>
+      <button class="btn-x" onclick="dismissStaleBanner()" aria-label="Dismiss pricing banner"
+        title="Hide this banner for this budget — Update Pricing stays available in the Home list's row menu">×</button>
+    </span>
   </div>
 
   <div class="stats" id="sec-stats">
@@ -1179,11 +1199,12 @@ th.sortable.sorted{color:var(--ink-900)}
 
       <section class="card"><div class="card-bd">
         <h3 id="help-quickstart">Quick Start</h3>
-        <div class="step"><div class="n">1</div><div class="t"><b>Home → pick a starting point.</b>
-          <b>+ New Multifamily Budget</b> copies the current pricing library and the standard template — unit mix,
-          income, expenses and every priced line. <b>+ Blank Budget</b> starts genuinely empty: no units, no income,
-          no scope, no square footage. Use blank when the project is not multifamily or looks nothing like the
-          template, and build the scope yourself from the CSI catalog.</div></div>
+        <div class="step"><div class="n">1</div><div class="t"><b>Home → + New Budget → pick a template.</b>
+          <b>Multifamily</b> copies the current pricing library and the standard template — unit mix, income,
+          expenses and every priced line. <b>Blank Budget</b> starts genuinely empty: no units, no income,
+          no scope, no square footage — use it when the project looks nothing like the template and build
+          the scope yourself from the CSI catalog. Custom templates you have published appear in the same
+          popup; Industrial, Retail, and Mixed-Use are on the way.</div></div>
         <div class="step"><div class="n">2</div><div class="t"><b>Fill in the Inputs page.</b>
           Project ID and name first — the ID is required before anything can be saved. Then residential and
           amenity square footage, the unit mix, income and expenses, and the land and project costs that sit
@@ -1198,9 +1219,9 @@ th.sortable.sorted{color:var(--ink-900)}
           export popup — the same button row everywhere in the suite: Email (Soon), Print, PDF,
           Excel (.xlsx).</div></div>
         <div class="step"><div class="n">6</div><div class="t"><b>Underwrite it, if the deal calls for it.</b>
-          <span class="kbd">Create Investment Analysis</span> on the budget page — or the buttons on the
-          Home page — turns the saved budget into a before-tax investment model. See the
-          <a href="#help-investment">Investment Analysis</a> section.</div></div>
+          <span class="kbd">+ New Investment Analysis</span> — on the Home page or the Investment Analysis
+          tab — turns a saved budget into a before-tax investment model, or starts a standalone one. See
+          the <a href="#help-investment">Investment Analysis</a> section.</div></div>
         <div class="callout">The header pill shows <b>Unsaved changes</b> until a save succeeds. Nothing is stored
           automatically — if you close the tab with that pill showing, the browser will warn you.
           <b>Cmd+S</b> (or <b>Ctrl+S</b>) saves from anywhere in a budget or an analysis.</div>
@@ -1435,7 +1456,9 @@ th.sortable.sorted{color:var(--ink-900)}
         <p>When a budget is running on an older library, a banner appears on the budget page naming both versions.
           <span class="kbd">Update to current pricing</span> pulls the new rates in — it matches on scope, code and
           description, so standard template lines are repriced and any custom line you added keeps the rate you
-          gave it. Quantities and overrides are untouched.</p>
+          gave it. Quantities and overrides are untouched. The banner's <b>×</b> hides it for that budget while
+          you work; the reprice stays one click away in the Home list's three-dot menu as
+          <span class="kbd">Update Pricing</span> (which simply confirms when a budget is already current).</p>
         <p>Publishing is the other direction: an admin edits the library and publishes, which stamps a new version
           number and effective date. Only budgets created after that point pick it up.</p>
       </div></section>
@@ -1447,19 +1470,19 @@ th.sortable.sorted{color:var(--ink-900)}
           investor would look at — cash-on-cash, DSCR, equity multiple, IRRs, leverage, and an
           acquisition-price sensitivity table.</p>
 
-        <p><b>Starting one.</b> Three ways, all equivalent once the editor opens. On the Home page,
-          <span class="kbd">+ New Investment Analysis</span> asks which project the analysis is for and
-          creates it from that project's latest saved budget version, while
-          <span class="kbd">+ Blank Investment Analysis</span> creates one unlinked to any project (named
-          Untitled Analysis until you rename it on the first step). Or open a budget and press
-          <span class="kbd">Create Investment Analysis</span> — the budget is saved first, and the
-          analysis imports from that exact saved version. A linked analysis imports the property
+        <p><b>Starting one.</b> Press <span class="kbd">+ New Investment Analysis</span> — on the Home page
+          or the Investment Analysis tab, both open the same popup. Pick <b>From Existing Budget</b> to
+          link the analysis to a project (it is created from that project's latest saved budget version),
+          or <b>Standalone Analysis</b> for one unlinked to any budget — name it there, or leave the name
+          blank and rename it on the first step. A linked analysis imports the property
           name and address, the size, the unit mix, gross scheduled rent (unit rents × 12, never the
           budget's net income figure), other-income rows, and the total project cost as a suggested
           purchase price. Every imported value shows a green <b>From Budget</b> badge and stays fully
           editable — editing a value away from the import hides its badge, and restoring the exact
-          imported value brings it back, even after saving and reloading. Standalone analyses can also
-          be started by name from the Investment Analysis tab.</p>
+          imported value brings it back, even after saving and reloading. In the lists, the
+          <b>Project / Budget</b> column shows which budget version a linked analysis came from
+          (for example, BD-4821 Budget v14) — distinct from <b>Analysis Ver.</b>, which counts the
+          analysis's own saved versions.</p>
 
         <div class="callout"><b>The import is a snapshot, not a live link.</b> Each analysis records the
           exact budget version it came from. Changing the budget later never changes the analysis.</div>
@@ -1696,6 +1719,38 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="rowmenu-sep"></div>
   <button class="rowmenu-item" role="menuitem" onclick="openSettings()">Settings</button>
   <button class="rowmenu-item" role="menuitem" onclick="logout()">Sign Out</button>
+</div>
+
+<!-- ================= NEW BUDGET MODAL =================
+     One + New Budget button opens this template chooser. Multifamily and
+     Blank are the implemented paths (the existing creation logic, untouched);
+     the other project types are visible but disabled so the UI is already
+     structured for them. Custom templates come from the template system. -->
+<div id="newBudgetModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:60;align-items:center;justify-content:center;padding:20px 14px"
+  onclick="if(event.target===this)closeNewBudget()">
+  <div class="card" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="newBudgetTitle">
+    <div class="card-hd"><h2 id="newBudgetTitle">New Budget</h2>
+      <button class="btn-x" onclick="closeNewBudget()" aria-label="Close new budget">×</button></div>
+    <div class="card-bd" style="overflow:auto">
+      <div class="set-lab">Budget Templates</div>
+      <div class="tpl-list">
+        <button class="tpl-row" onclick="pickNewBudget('multifamily')">
+          <span class="tpl-name">Multifamily</span>
+          <span class="tpl-sub">The standard template — unit mix, income, expenses, and every priced line from the current pricing library</span></button>
+        <button class="tpl-row" disabled title="Coming soon">
+          <span class="tpl-name">Industrial</span><span class="tpl-sub">Coming soon</span></button>
+        <button class="tpl-row" disabled title="Coming soon">
+          <span class="tpl-name">Retail</span><span class="tpl-sub">Coming soon</span></button>
+        <button class="tpl-row" disabled title="Coming soon">
+          <span class="tpl-name">Mixed-Use</span><span class="tpl-sub">Coming soon</span></button>
+        <button class="tpl-row" onclick="pickNewBudget('blank')">
+          <span class="tpl-name">Blank Budget</span>
+          <span class="tpl-sub">Genuinely empty — no units, no income, no scope. Build everything yourself from the CSI catalog</span></button>
+      </div>
+      <div class="set-lab">Custom Templates</div>
+      <div class="tpl-list" id="customTplList"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ================= SETTINGS MODAL =================
@@ -1984,6 +2039,25 @@ function openSettings(){
   document.getElementById('settingsModal').style.display='flex';
 }
 function closeSettings(){document.getElementById('settingsModal').style.display='none';}
+/* ---- New Budget modal: one button, all the ways to start a budget.
+   Multifamily and Blank run the EXISTING creation logic; the disabled rows
+   are future project types; custom templates come from the template system. */
+function openNewBudget(){
+  const host=document.getElementById('customTplList');
+  const customs=activeTemplates().filter(t=>t.templateKey!=='multifamily');
+  host.innerHTML=customs.length
+    ?customs.map(t=>`<button class="tpl-row" onclick="pickNewBudget('${esc(t.templateKey)}')">
+        <span class="tpl-name">${esc(t.name||t.templateKey)}</span>
+        <span class="tpl-sub">${esc(t.description||'Published custom template')}</span></button>`).join('')
+    :'<div class="set-note">No custom templates yet. Open a budget and publish it as a template to see it here.</div>';
+  document.getElementById('newBudgetModal').style.display='flex';
+}
+function closeNewBudget(){document.getElementById('newBudgetModal').style.display='none';}
+function pickNewBudget(key){
+  closeNewBudget();
+  if(key==='blank')newBudget('blank');
+  else newBudgetFromTemplate(key);
+}
 /* ---- export-option memory + client-reported activity ---- */
 function exportDefaultsFor(product){
   const s=usSettings();
@@ -2723,12 +2797,12 @@ function paintHome(){
   }
   if(groups){
     groups.forEach(gr=>{
-      // Totals sit in the Contract Sum and Total Project columns, matching the
-      // division headers on the budget grid.
-      b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="2" style="padding-left:22px">${esc(gr.key)}
+      // Totals sit in the Contract Sum and Total Project Cost columns,
+      // matching the division headers on the budget grid.
+      b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="3" style="padding-left:22px">${esc(gr.key)}
         <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'}</span></td>
         <td class="calc r strong">${usd(gr.contract)}</td><td class="calc r strong">${usd(gr.project)}</td>
-        <td></td><td></td><td class="no-print"></td></tr>`);
+        <td></td><td class="no-print"></td></tr>`);
       gr.rows.forEach(homeRow);
     });
   } else rows.forEach(homeRow);
@@ -2750,9 +2824,9 @@ function homeRow(x){
     `<tr class="clickable" onclick="openBudget('${x.projectId}')">
       <td class="mono" style="padding-left:22px;font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
       <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
+      <td><span class="badge ${x.status==='Finalized'?'ok':''}">${esc(x.status)}</span></td>
       <td class="calc r">${usd(x.contractSum||0)}</td>
       <td class="calc r">${usd(x.projectCost||0)}</td>
-      <td><span class="badge ${x.status==='Finalized'?'ok':''}">${esc(x.status)}</span></td>
       <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${esc(fmtDay(x.updated))}</td>
       <td class="no-print" style="text-align:right"><button class="rowmenu-btn" data-pid="${esc(x.projectId)}"
         aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(x.projectId)}"
@@ -3002,7 +3076,9 @@ async function openBudget(pid,page){
    shared element positioned from the trigger, which keeps "only one open" true
    by construction and survives paintHome() rebuilding every row. */
 let rowMenuTrigger=null,versionsReturn=null,versionsPid=null;
-const ROW_ACTIONS=[{act:'edit',label:'Edit',edit:true},{act:'versions',label:'Versions'},
+const ROW_ACTIONS=[{act:'edit',label:'Edit',edit:true},
+                   {act:'reprice',label:'Update Pricing',edit:true},
+                   {act:'versions',label:'Versions'},
                    {act:'sep',edit:true},{act:'delete',label:'Delete',danger:true,edit:true}];
 function rowMenuItems(){return [...document.querySelectorAll('#rowMenu .rowmenu-item')];}
 function openRowMenu(btn){
@@ -3035,6 +3111,7 @@ function rowMenuAction(act){
   versionsReturn=t;
   closeRowMenu(act==='delete');            // the other two navigate away from the row
   if(act==='edit')openBudget(pid);
+  else if(act==='reprice')repriceFromHome(pid);
   else if(act==='versions')openVersions(pid);
   else if(act==='delete')deleteBudget(pid);
 }
@@ -3763,7 +3840,7 @@ function renderSummary(){
   doc.companies.forEach(c=>{if(c.pct>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">Profit — ${esc(c.name)}</td><td class="calc r">${usd(p.hard*c.pct/100)}</td><td class="calc r" style="color:var(--ink-400)">${(100*(p.hard*c.pct/100)/p.contract).toFixed(1)}%</td></tr>`);});
   if(p.cont>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">99.03 Contingency</td><td class="calc r">${usd(p.cont)}</td><td class="calc r" style="color:var(--ink-400)">${(100*p.cont/p.contract).toFixed(1)}%</td></tr>`);
   sb.insertAdjacentHTML('beforeend',`<tr class="total"><td>Contract Sum</td><td class="calc r strong">${usd(p.contract)}</td><td class="calc r">100%</td></tr>`);
-  const stale=pricing&&doc.pricingVersion!==pricing.version;
+  const stale=pricing&&doc.pricingVersion!==pricing.version&&!staleDismissed.has(doc.projectId);
   document.getElementById('staleBanner').style.display=stale?'flex':'none';
   if(stale){document.getElementById('staleFrom').textContent=doc.pricingVersion;document.getElementById('staleTo').textContent=pricing.version;}
 }
@@ -3796,17 +3873,6 @@ async function invApi(path,opts={}){
   }
   return body;
 }
-/* Creating an analysis snapshots an exact immutable budget version, so unsaved
-   edits are saved first — the analysis must be born from what the database
-   holds, not from what the screen shows. */
-async function createAnalysisFromBudget(){
-  if(!doc){toast('Open or create a budget first');return;}
-  if(dirty||!doc.updated){await saveBudget(false);if(dirty){return;}}
-  try{
-    await FSInvestmentUI.createFromBudget(doc.projectId);
-  }catch(e){toast('Could not create the analysis — '+e.message);}
-}
-
 async function saveBudget(show){
   if(!doc||saving)return;
   // In template mode the same Save affordance publishes a template version instead
@@ -3826,6 +3892,23 @@ async function saveBudget(show){
   }catch(e){saving=false;renderSaveState();toast('Save failed: '+e.message);}
 }
 function setStatus(v){doc.status=v;markDirty();}
+/* The stale-pricing banner is dismissible per budget (in memory — it returns
+   on the next session as a reminder). The PERSISTENT path to a reprice is the
+   Home list's row menu → Update Pricing, so dismissing never strands you. */
+const staleDismissed=new Set();
+function dismissStaleBanner(){
+  if(doc)staleDismissed.add(doc.projectId);
+  document.getElementById('staleBanner').style.display='none';
+}
+async function repriceFromHome(pid){
+  await openBudget(pid);
+  if(!doc||doc.projectId!==pid)return;
+  if(doc.pricingVersion===pricing.version){
+    toast('Already on the current pricing library ('+pricing.version+').');return;
+  }
+  staleDismissed.delete(pid);   // the banner logic reflects the reprice
+  repriceBudget();
+}
 function repriceBudget(){
   const map={};pricing.lines.forEach(l=>{map[l.scope+'|'+l.code+'|'+l.desc]=l;});
   let clobbered=0;
@@ -4898,7 +4981,7 @@ function wireDelegates(){
   document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
   document.getElementById('homeGroup').addEventListener('change',e=>{homeView.group=e.target.value;paintHome();});
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();return;}
+    if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();closeNewBudget();return;}
     // Cmd/Ctrl+K opens the global search palette from anywhere in the app.
     if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();palToggle();return;}
     // Cmd/Ctrl+S saves rather than letting the browser offer to save the page.

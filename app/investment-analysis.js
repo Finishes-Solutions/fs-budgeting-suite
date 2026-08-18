@@ -90,28 +90,28 @@
     listHosts.add(host);
     try { lvRows = await A.api('investment-analyses'); }
     catch (e) { host.innerHTML = '<div class="empty">Could not load analyses — ' + esc(e.message) + '</div>'; return; }
+    // One creation flow everywhere: the tab page and Home both open the same
+    // New Investment Analysis modal. The tab page is the fuller index view,
+    // laid out exactly like Home — title row, then the list in a card.
     const head = opts.embedded ? '' : `
       <div class="page-title">
         <div><h1>Investment Analyses</h1>
           <div class="sub">Before-tax underwriting, linked to exact saved budget versions</div></div>
-      </div>
-      <div class="inv-newrow no-print" data-inv-edit>
-        <input type="text" id="invNewName" data-k="inv.newName" placeholder="New Standalone Analysis Name…">
-        <button class="btn btn-dark" onclick="FSInvestmentUI.createStandalone()">+ New Standalone Analysis</button>
-        <span style="font-size:12px;color:var(--ink-500)">or open a budget and use Create Investment Analysis</span>
+        <div style="display:flex;gap:10px" data-inv-edit>
+          <button class="btn btn-primary" onclick="FSInvestmentUI.openProjectPicker()">+ New Investment Analysis</button>
+        </div>
       </div>`;
-    host.innerHTML = head + `
+    const inner = `
       <div class="card-hd no-print">
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <input type="text" data-inv-q placeholder="Search name or project…" style="width:240px" value="${esc(lv.q)}">
-          <select data-inv-status style="width:140px;font-size:12px;padding:6px 8px" aria-label="Filter by Status">
+        <div class="list-toolbar">
+          <input type="text" data-inv-q placeholder="Search name or project…" value="${esc(lv.q)}">
+          <select data-inv-status class="lt-status" aria-label="Filter by Status">
             <option value="all">All Statuses</option>
             <option value="Draft">Draft</option>
             <option value="In Review">In Review</option>
             <option value="Finalized">Finalized</option>
           </select>
-          <select data-inv-group style="width:168px;font-size:12px;padding:6px 8px"
-            title="Group the list" aria-label="Group By">
+          <select data-inv-group class="lt-group" title="Group the list" aria-label="Group By">
             <option value="">No Grouping</option>
             <option value="project">Group by Project</option>
             <option value="status">Group by Status</option>
@@ -120,12 +120,14 @@
         <span class="eyebrow" data-inv-count>—</span>
       </div>
       <table class="inv-table inv-list"><thead><tr>
-        <th${opts.embedded ? ' style="padding-left:22px"' : ''}>Analysis</th><th>Project</th><th>Status</th><th class="r">Purchase Price</th>
-        <th class="r">Year-1 NOI</th><th class="r">Equity IRR</th><th class="r">Optimal Hold</th>
-        <th class="r">Version</th><th class="r" style="padding-right:22px">Updated</th><th class="no-print"></th>
+        <th style="padding-left:22px">Analysis</th><th>Project / Budget</th><th>Status</th><th class="r">Purchase Price</th>
+        <th class="r">Year 1 NOI</th><th class="r">Equity IRR</th><th class="r">Optimal Hold</th>
+        <th class="r">Analysis Ver.</th><th class="r" style="padding-right:22px">Updated</th><th class="no-print"></th>
       </tr></thead><tbody data-inv-list></tbody></table>
       <div class="home-cards" data-inv-cards></div>
       <div class="empty" data-inv-empty style="display:none">No investment analyses yet.</div>`;
+    host.innerHTML = opts.embedded ? inner
+      : head + `<section class="card"><div class="card-bd" style="padding:0;overflow-x:auto">${inner}</div></section>`;
     host.querySelector('[data-inv-status]').value = lv.status;
     host.querySelector('[data-inv-group]').value = lv.group;
     host.querySelector('[data-inv-q]').addEventListener('input', e => { lv.q = e.target.value; paintInvList(host, opts); });
@@ -176,7 +178,7 @@
         }));
       return;
     }
-    const pad = opts.embedded ? ' style="padding-left:22px"' : '';
+    const pad = ' style="padding-left:22px"';   // both hosts are cards now
     const g = LV_GROUPS[lv.group];
     if (g) {
       const map = new Map();
@@ -198,7 +200,7 @@
   function invCard(r) {
     return `<div class="hcard" data-inv-card="${esc(r.analysisId)}">
       <div class="hc-id">${esc(r.projectId || 'Standalone')}${r.sourceBudgetVersionNumber
-        ? ' <span class="inv-origin">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</div>
+        ? ' <span class="inv-vsub">Budget v' + r.sourceBudgetVersionNumber + '</span>' : ''}</div>
       <div class="hc-name">${esc(r.name)}</div>
       <div class="hc-row"><span>Purchase Price</span><span class="v">${usd(r.purchasePrice)}</span></div>
       <div class="hc-row"><span>Equity IRR</span><span class="v">${pctf(r.finalYearEquityIRR)}</span></div>
@@ -214,7 +216,7 @@
     tr.addEventListener('click', () => { location.hash = '#/analysis/' + r.analysisId; });
     tr.innerHTML = `
       <td${pad}>${esc(r.name)}</td>
-      <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-origin" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
+      <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-vsub" title="Created from that exact saved budget version — not the analysis version">Budget v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
       <td><span class="badge ${r.status === 'Finalized' ? 'ok' : ''}">${esc(r.status)}</span></td>
       <td class="calc r">${usd(r.purchasePrice)}</td>
       <td class="calc r">${usd(r.year1NOI)}</td>
@@ -326,27 +328,51 @@
     } catch (e) { A.toast('Could not create the analysis — ' + e.message); }
   }
 
+  /* THE creation flow — Home and the Investment Analysis tab both open this
+     one modal (same pattern as the budget's New Budget modal): link the
+     analysis to a project's latest saved budget version, or start standalone. */
   async function openProjectPicker() {
     let budgets = [];
     try { budgets = await A.api('budgets'); }
     catch (e) { A.toast('Could not load the project list — ' + e.message); return; }
     const rows = budgets.map((b, i) => `<tr class="clickable" data-pick="${i}">
-        <td class="mono">${esc(b.projectId)}</td><td><b>${esc(b.name || '—')}</b></td>
-        <td>${esc(b.status || '—')}</td><td>${esc(fmtDay(b.updated))}</td></tr>`).join('');
+        <td class="mono" style="color:var(--green-700);font-weight:600">${esc(b.projectId)}</td><td>${esc(b.name || '—')}</td>
+        <td><span class="badge ${b.status === 'Finalized' ? 'ok' : ''}">${esc(b.status || 'Draft')}</span></td>
+        <td>${esc(fmtDay(b.updated))}</td></tr>`).join('');
     openInvModal(`<h2 style="margin-top:0">New Investment Analysis</h2>
-      <p style="font-size:12.5px;color:var(--ink-500)">Select the project this analysis is for. It is created
-      from that project's latest saved budget version — an exact snapshot, so the budget changing later
-      never changes the analysis.</p>
+      <div class="set-lab">From Existing Budget</div>
+      <p style="font-size:12.5px;color:var(--ink-500);margin:0 0 10px">Select the project this analysis is
+      for. It is created from that project's latest saved budget version — an exact snapshot, so the budget
+      changing later never changes the analysis.</p>
       ${budgets.length
-        ? `<table class="inv-table" id="invProjectPick"><thead><tr><th>Project ID</th><th>Name</th>
-           <th>Status</th><th>Updated</th></tr></thead><tbody>${rows}</tbody></table>`
-        : '<div class="empty">No budgets yet. Create a budget first, or start a Blank Investment Analysis.</div>'}`, 640);
+        ? `<div style="max-height:300px;overflow:auto;border:1px solid var(--ink-150);border-radius:8px">
+           <table class="inv-table" id="invProjectPick"><thead><tr><th>Project ID</th><th>Name</th>
+           <th>Status</th><th>Updated</th></tr></thead><tbody>${rows}</tbody></table></div>`
+        : '<div class="empty">No budgets yet. Create a budget first, or start a standalone analysis below.</div>'}
+      <div class="set-lab">Standalone Analysis</div>
+      <p style="font-size:12.5px;color:var(--ink-500);margin:0 0 10px">Not linked to any budget — you enter
+      every assumption yourself.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap" data-inv-edit>
+        <input type="text" id="invNewName" placeholder="Analysis name (optional)" style="flex:1;min-width:200px">
+        <button class="btn btn-primary" onclick="FSInvestmentUI.createStandaloneFromModal()">Create Standalone Analysis</button>
+      </div>`, 560);
     el('invModal').querySelectorAll('[data-pick]').forEach(tr => tr.addEventListener('click', async () => {
       const b = budgets[+tr.dataset.pick];
       closeInvModal();
       try { await createFromBudget(b.projectId); }
       catch (e) { A.toast('Could not create the analysis — ' + e.message); }
     }));
+  }
+
+  async function createStandaloneFromModal() {
+    const name = (el('invNewName') && el('invNewName').value || '').trim() || 'Untitled Analysis';
+    closeInvModal();
+    try {
+      const r = await A.api('investment-analyses', { method: 'POST',
+        body: JSON.stringify({ mode: 'standalone', analysisName: name }) });
+      if (name === 'Untitled Analysis') A.toast('Blank analysis — name it on the Source & Property step.');
+      A.navigate('#/analysis/' + r.analysisId);
+    } catch (e) { A.toast('Could not create the analysis — ' + e.message); }
   }
 
   async function softDelete(id) {
@@ -1469,7 +1495,7 @@
   window.FSInvestmentUI = {
     init(adapter) { A = adapter; },
     renderList, renderListInto, open, createFromBudget, createStandalone,
-    createBlank, openProjectPicker, softDelete,
+    createStandaloneFromModal, createBlank, openProjectPicker, softDelete,
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep, undo, redo,
     openExport, emailSoon, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,
     _other, _otherRemove, _capex, _capexRemove,

@@ -7,7 +7,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const errs=[]; p.on('pageerror',e=>errs.push(e.message));
  await p.goto('http://127.0.0.1:8100/index.html',{waitUntil:'networkidle'});
  await p.waitForTimeout(400);
- await p.click('button:has-text("+ New Multifamily Budget")');
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
  await p.fill('#pId','TST-9997'); await p.fill('#pName','No Clubhouse');
  await p.waitForTimeout(200);
 

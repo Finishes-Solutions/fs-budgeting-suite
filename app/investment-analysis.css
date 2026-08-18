@@ -3,9 +3,6 @@
    and vice versa. Reuses the app's shared classes (btn, fld, lab, badge,
    page-title) for everything that already exists. */
 
-#page-analyses .inv-newrow{display:flex;gap:10px;align-items:center;margin:14px 0}
-#page-analyses .inv-newrow input{width:260px}
-
 .inv-table{width:100%;border-collapse:collapse;font-size:13px}
 .inv-table th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
   color:var(--ink-500);padding:8px 10px;border-bottom:1px solid var(--ink-200);white-space:nowrap}
@@ -48,6 +45,10 @@
 .inv-grid .fld{display:flex;flex-direction:column;justify-content:flex-end}
 .inv-grid .fld input,.inv-grid .fld select{width:100%}
 .inv-grid .wide{grid-column:span 2}
+
+/* the linked budget version, visually secondary to the Project ID */
+.inv-vsub{font-family:var(--fm);font-size:10.5px;color:var(--ink-400);font-weight:500;margin-left:6px;
+  white-space:nowrap}
 
 /* imported-value badge */
 .inv-origin{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--green-700);
@@ -105,17 +106,21 @@
   color:var(--ink-500);font-weight:500;padding:8px 10px;border-bottom:1px solid var(--ink-200)}
 .inv-list td{padding:3px 10px;border-bottom:1px solid var(--ink-100)}
 .inv-list td.calc{font-family:var(--fm);font-size:13px;color:var(--ink-700);white-space:nowrap}
-/* column widths: give every column real room so the data does not pack
-   against the right edge */
+/* Column widths follow the app's shared list-table system (index.html
+   :root --lt-* tokens): the two identity columns total 42% — the same as
+   the budget table's — so Status, Updated, and the action column line up
+   vertically across both Home cards. The financial columns differ freely. */
+.inv-list th:nth-child(1){width:32%}
 .inv-list th:nth-child(2){width:10%}
-.inv-list th:nth-child(3){width:9%}
-.inv-list th:nth-child(4){width:11%}
-.inv-list th:nth-child(5){width:10%}
-.inv-list th:nth-child(6){width:9%}
-.inv-list th:nth-child(7){width:9%}
-.inv-list th:nth-child(8){width:6%}
-.inv-list th:nth-child(9){width:11%}
-.inv-list th.no-print{width:44px}
+.inv-list th:nth-child(3){width:var(--lt-status,9%)}
+.inv-list th:nth-child(4){width:9%}
+.inv-list th:nth-child(5){width:8%}
+.inv-list th:nth-child(6){width:7%}
+.inv-list th:nth-child(7){width:8%}
+.inv-list th:nth-child(8){width:7%}
+.inv-list th:nth-child(9){width:var(--lt-updated,10%)}
+.inv-list th.no-print{width:var(--lt-actions,44px)}
+.inv-list td:first-child{line-height:1.35}   /* long names may wrap to two lines */
 
 /* mobile read-only: hide editing affordances, keep the report viewable */
 body.mobile-ro #page-analysis .inv-step input,

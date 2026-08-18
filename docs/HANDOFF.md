@@ -317,7 +317,21 @@ pre-engine print pipeline (`printGuide()`) is the guide's `local` fallback.
 and the producers (`fmtStamp` inside export-render.js / to-fsdoc.js;
 meta.generatedAt stays raw ISO). Cmd/Ctrl+K opens the global search palette
 (budgets + analyses, fetched fresh per open). The analyses lists carry the same
-search/status/grouping controls and styling as the budget list.
+search/status/grouping controls and styling as the budget list. The two Home
+tables share a column system (`--lt-status`/`--lt-updated`/`--lt-actions` tokens,
+`table-layout:fixed`, identity columns totalling 42% in both) so Status, Updated,
+and the action column align vertically across the cards; budget columns run
+`ID | Name | Status | Contract Sum | Total Project Cost | Updated | ⋮`, analyses
+`Analysis | Project / Budget | Status | metrics… | Analysis Ver. | Updated | ⋮`
+(the linked budget version renders subdued as "Budget vN", distinct from the
+analysis's own version count). Creation is one button per section: `+ New
+Budget` opens the template modal (Multifamily and Blank live, Industrial/Retail/
+Mixed-Use visible-but-disabled, custom templates from the template system), and
+`+ New Investment Analysis` — on Home AND the analyses tab — opens one shared
+modal (From Existing Budget picker + Standalone with optional name). The budget
+editor no longer carries a Create Investment Analysis button. The stale-pricing
+banner is dismissible per budget (in-memory ×); the persistent reprice path is
+the Home row menu's Update Pricing, which confirms when already current.
 
 **Per-account settings (`dbo.Users` / `dbo.UserActivity` — sql/migrate_users.sql).**
 Settings belong to the ACCOUNT, not the browser: `GET /api/user-settings?boot=1`
@@ -341,7 +355,7 @@ the client through `POST /api/user-activity` (whitelisted events only);
 beforeprint/afterprint hook still forces the light palette for printing;
 `--chrome`/`--solid` remain the surfaces that stay dark in every theme and accent.
 
-Fifteen Playwright suites, 578 assertions, plus 80 `node:test` assertions for the
+Fifteen Playwright suites, 589 assertions, plus 80 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus

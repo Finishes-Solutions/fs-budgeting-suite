@@ -24,9 +24,16 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
      body:JSON.stringify({meta:{projectId:'TST-9911',name:'Import Source'},doc})});
  });
 
+ // Creation happens through the shared New Investment Analysis modal — the
+ // budget editor no longer carries its own creation button.
  await p.goto('http://127.0.0.1:8100/index.html#/budget/TST-9911',{waitUntil:'networkidle'});
  await p.waitForTimeout(500);
- await p.click('button:has-text("Create Investment Analysis")');
+ ok('the budget page carries no Create Investment Analysis button',
+    (await p.locator('#page-budget button:has-text("Create Investment Analysis")').count())===0);
+ await p.click('#nav-home'); await p.waitForTimeout(500);
+ await p.click('#page-home button:has-text("+ New Investment Analysis")');
+ await p.waitForTimeout(500);
+ await p.locator('#invProjectPick tbody tr',{hasText:'TST-9911'}).first().click();
  await p.waitForTimeout(900);
  ok('editor opens on a GUID route', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
 
@@ -135,11 +142,11 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('analysis input unchanged by the budget edit',
     after.input.acquisition.basis.value===5000000);
 
- // ---- Home-page creation buttons, mirroring the budget buttons above them
+ // ---- Home-page creation: ONE button, the shared modal
  await p.click('#nav-home'); await p.waitForTimeout(600);
- ok('Home offers both analysis creation buttons',
+ ok('Home offers a single New Investment Analysis button',
     (await p.locator('#page-home button:has-text("+ New Investment Analysis")').count())===1
-    && (await p.locator('#page-home button:has-text("+ Blank Investment Analysis")').count())===1);
+    && (await p.locator('#page-home button:has-text("+ Blank Investment Analysis")').count())===0);
  // title row above the card, exactly like Project Budgets
  ok('Investment Analyses heading and buttons sit above the list card',
     await p.evaluate(()=>{
@@ -148,15 +155,16 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       const t=[...document.querySelectorAll('#page-home .page-title')][1];
       return !t.closest('.card')&&!!t.nextElementSibling&&t.nextElementSibling.classList.contains('card');
     }));
- const bBtn=await p.locator('#page-home button:has-text("+ New Multifamily Budget")').boundingBox();
+ const bBtn=await p.locator('#page-home button:has-text("+ New Budget")').boundingBox();
  const iBtn=await p.locator('#page-home button:has-text("+ New Investment Analysis")').boundingBox();
  ok('creation buttons right-align across both sections',
     Math.abs((bBtn.x+bBtn.width)-(iBtn.x+iBtn.width))<2,
     JSON.stringify({budget:bBtn.x+bBtn.width,analysis:iBtn.x+iBtn.width}));
  await p.click('#page-home button:has-text("+ New Investment Analysis")');
  await p.waitForTimeout(400);
- ok('New Investment Analysis asks which project it is for',
-    (await p.locator('#invProjectPick tbody tr',{hasText:'TST-9911'}).count())===1);
+ ok('the modal offers linked creation AND standalone in one place',
+    (await p.locator('#invProjectPick tbody tr',{hasText:'TST-9911'}).count())===1
+    && await p.locator('#invModal #invNewName').isVisible());
  await p.locator('#invProjectPick tbody tr',{hasText:'TST-9911'}).first().click();
  await p.waitForTimeout(900);
  ok('picking a project opens a linked analysis', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
@@ -165,12 +173,14 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the picked analysis is linked to the selected project',
     linked.source&&linked.source.projectId==='TST-9911', JSON.stringify(linked.source||null));
  await p.click('#nav-home'); await p.waitForTimeout(600);
- await p.click('#page-home button:has-text("+ Blank Investment Analysis")');
+ await p.click('#page-home button:has-text("+ New Investment Analysis")');
+ await p.waitForTimeout(400);
+ await p.click('#invModal button:has-text("Create Standalone Analysis")');   // name left blank
  await p.waitForTimeout(900);
- ok('Blank Investment Analysis opens a new editor directly', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
+ ok('a nameless standalone opens a new editor directly', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
  const blank=await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
    return await (await fetch('/api/investment-analysis/'+id)).json();});
- ok('the blank analysis is unlinked and carries the placeholder name',
+ ok('the standalone analysis is unlinked and carries the placeholder name',
     !blank.source && blank.input.analysisName==='Untitled Analysis',
     JSON.stringify({source:blank.source,name:blank.input&&blank.input.analysisName}));
 
@@ -231,6 +241,22 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     }));
  ok('analysis statuses render as badges like the budget list',
     (await p.locator('#homeAnalyses [data-inv-list] .badge').count())>=1);
+ ok('Status, Updated and the action column line up across both Home cards',
+    await p.evaluate(()=>{
+      const b=[...document.querySelectorAll('#homeHead th')];
+      const a=[...document.querySelectorAll('#homeAnalyses .inv-list thead th')];
+      const r=e=>e.getBoundingClientRect();
+      const close=(x,y)=>Math.abs(x-y)<14;
+      return close(r(b[2]).left,r(a[2]).left)        // Status columns
+        && close(r(b[5]).right,r(a[8]).right)        // Updated columns
+        && close(r(b[6]).left,r(a[9]).left);         // action columns
+    }),
+    await p.evaluate(()=>{
+      const b=[...document.querySelectorAll('#homeHead th')];
+      const a=[...document.querySelectorAll('#homeAnalyses .inv-list thead th')];
+      const r=e=>Math.round(e.getBoundingClientRect().left);
+      return JSON.stringify({bStatus:r(b[2]),aStatus:r(a[2]),bAct:r(b[6]),aAct:r(a[9])});
+    }));
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

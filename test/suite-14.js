@@ -12,8 +12,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.goto('http://127.0.0.1:8100/index.html#/analyses',{waitUntil:'networkidle'});
  await p.waitForTimeout(500);
 
+ await p.click('#page-analyses button:has-text("+ New Investment Analysis")'); await p.waitForTimeout(400);
  await p.fill('#invNewName','Workbook Deal');
- await p.click('button:has-text("+ New Standalone Analysis")');
+ await p.click('button:has-text("Create Standalone Analysis")');
  await p.waitForTimeout(700);
  await p.fill('[data-f="property.size.value"]','80000');
  await p.fill('[data-f="property.purchaseMonth"]','2026-05');

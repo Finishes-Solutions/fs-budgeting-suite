@@ -12,11 +12,17 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.goto('http://127.0.0.1:8100/index.html',{waitUntil:'networkidle'});
  await p.waitForTimeout(400);
 
- // standalone creation from the list page
+ // standalone creation through the shared New Investment Analysis modal
  await p.click('#nav-analyses'); await p.waitForTimeout(400);
- ok('list page renders with standalone creation', await p.locator('#invNewName').isVisible());
+ ok('list page offers the shared creation flow',
+    await p.locator('#page-analyses button:has-text("+ New Investment Analysis")').isVisible());
+ await p.click('#page-analyses button:has-text("+ New Investment Analysis")');
+ await p.waitForTimeout(400);
+ ok('the modal offers both linked and standalone creation',
+    /From Existing Budget/.test(await p.locator('#invModal').textContent())
+    && /Standalone Analysis/.test(await p.locator('#invModal').textContent()));
  await p.fill('#invNewName','Workflow Deal');
- await p.click('button:has-text("+ New Standalone Analysis")');
+ await p.click('button:has-text("Create Standalone Analysis")');
  await p.waitForTimeout(700);
  ok('standalone analysis opens in the editor', /#\/analysis\//.test(p.url()));
  ok('six steps are presented', (await p.locator('#invSteps button').count())===6);
