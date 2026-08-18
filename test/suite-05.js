@@ -21,7 +21,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('blank: no income rows', (await p.locator('#otherBody tr').count())===0);
  ok('blank: no expense rows', (await p.locator('#expBody tr').count())===0);
  ok('blank: resSF is 0', (await p.locator('#pSF').inputValue())==='0');
- ok('blank: type select reads Blank', (await p.locator('#pType').inputValue())==='Blank');
+ // Property type is chosen at creation (the New Budget modal) — the Inputs
+ // page no longer re-asks it; the document still carries it.
+ ok('blank: doc type is Blank with no type input on the page',
+    (await p.evaluate(()=>doc.type))==='Blank' && (await p.locator('#pType').count())===0);
  ok('blank: land cost 0', (await p.locator('#pcLand').inputValue())==='0');
  ok('Land & project costs now on Inputs page',
     await p.locator('#page-input #sec-project').count()===1 && await p.locator('#page-budget #sec-project').count()===0);

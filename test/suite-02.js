@@ -47,9 +47,39 @@ const BASE = 'http://127.0.0.1:8100';
   await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
   await p.fill('#pId', 'TST-9999');
   await p.fill('#pName', 'Waller Preview Test');
+
+  // ---- inputs page: no property-type input, site SF ⇄ acreage, AC units
+  ok('Property Type is no longer asked on Inputs (set at creation)',
+     (await p.locator('#pType').count()) === 0
+     && (await p.evaluate(() => doc.type)) === 'Multifamily');
+  await p.fill('#pSiteSF', '87120');
+  ok('site SF autofills acreage', (await p.locator('#pSiteAc').inputValue()) === '2',
+     await p.locator('#pSiteAc').inputValue());
+  await p.fill('#pSiteAc', '2.5');
+  ok('acreage autofills site SF', (await p.locator('#pSiteSF').inputValue()) === '108900',
+     await p.locator('#pSiteSF').inputValue());
+  ok('site metrics capitalize their units (AC, U/AC)',
+     /^[\d.]+ AC$/.test(await p.locator('#mSiteAcres').textContent())
+     && /U\/AC$/.test(await p.locator('#mDensity').textContent()),
+     JSON.stringify({a: await p.locator('#mSiteAcres').textContent(),
+                     d: await p.locator('#mDensity').textContent()}));
+  ok('unit-mix totals carry the input-column inset so they align',
+     await p.evaluate(() => getComputedStyle(document.getElementById('uCount')).paddingRight === '19px'
+       && getComputedStyle(document.getElementById('uBlendPSF')).paddingRight === '19px'));
+  ok('the scrollbar gutter is always reserved (no tab-switch layout shift)',
+     await p.evaluate(() => getComputedStyle(document.documentElement).overflowY === 'scroll'));
+
   await p.click('button:has-text("Continue to Budget")');
   const contract = await p.locator('#rContract').textContent();
   ok('Contract sum computed from published library', /^\$[\d,]+$/.test(contract), contract);
+  ok('budget subtitle formats the building SF cleanly',
+     await p.evaluate(() => {
+       const t = document.getElementById('bSub').textContent;
+       return /51,365 SF \+ 1,200 SF Amenity\/Clubhouse/.test(t) && !/SF res/.test(t);
+     }), await p.evaluate(() => document.getElementById('bSub').textContent));
+  ok('the auto-sync and amenity-hidden flags are retired',
+     !(await p.locator('#page-budget').textContent()).includes('edit to override')
+     && (await p.locator('#amenHidden').count()) === 0);
   ok('Pricing badge shows no fallback warning',
      !/built-in/.test(await p.locator('#mPricing').textContent()),
      await p.locator('#mPricing').textContent());

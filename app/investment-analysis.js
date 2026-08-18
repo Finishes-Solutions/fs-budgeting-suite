@@ -117,7 +117,21 @@
             <option value="status">Group by Status</option>
           </select>
         </div>
-        <span class="eyebrow" data-inv-count>—</span>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="mini-seg" role="group" aria-label="View" title="View — also in Settings">
+            <button data-homeview-pick="list" aria-label="List View" title="List View" onclick="chooseSetting('homeView','list')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></button>
+            <button data-homeview-pick="cards" aria-label="Card View" title="Card View" onclick="chooseSetting('homeView','cards')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
+          </div>
+          <div class="mini-seg" role="group" aria-label="Table Density" title="Table Density — also in Settings">
+            <button data-density-pick="comfortable" aria-label="Comfortable Density" title="Comfortable Density" onclick="chooseSetting('tableDensity','comfortable')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg></button>
+            <button data-density-pick="compact" aria-label="Compact Density" title="Compact Density" onclick="chooseSetting('tableDensity','compact')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+          </div>
+          <span class="eyebrow" data-inv-count>—</span>
+        </div>
       </div>
       <table class="inv-table inv-list"><thead><tr>
         <th style="padding-left:22px">Analysis</th><th>Project / Budget</th><th>Status</th><th class="r">Purchase Price</th>
@@ -134,6 +148,8 @@
     host.querySelector('[data-inv-status]').addEventListener('change', e => { lv.status = e.target.value; paintInvList(host, opts); });
     host.querySelector('[data-inv-group]').addEventListener('change', e => { lv.group = e.target.value; paintInvList(host, opts); });
     paintInvList(host, opts);
+    // the freshly rendered toolbar toggles need their active marks
+    if (window.paintSettingsUI) window.paintSettingsUI();
   }
 
   function paintInvList(host, opts) {
@@ -147,9 +163,9 @@
     const count = host.querySelector('[data-inv-count]');
     if (count) count.textContent = lvRows.length
       ? rows.length + ' of ' + lvRows.length + (lvRows.length === 1 ? ' analysis' : ' analyses') : '—';
-    // Card view (Settings → Home View) applies to the embedded Home list only.
+    // Card view (Settings → View, or the toolbar toggles) — Home AND the tab.
     const cards = host.querySelector('[data-inv-cards]');
-    const cardsMode = !!(opts.embedded && A.homeView && A.homeView() === 'cards');
+    const cardsMode = !!(A.homeView && A.homeView() === 'cards');
     host.querySelector('table.inv-list').style.display = cardsMode ? 'none' : '';
     if (cards) {
       cards.classList.toggle('on', cardsMode && rows.length > 0);

@@ -41,7 +41,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('grid has fewer rows', (await p.locator('#budBody tr').count()) < withAmenRows,
     withAmenRows+' -> '+(await p.locator('#budBody tr').count()));
  ok('amenity summary row hidden', !(await p.locator('#rAmenRow').isVisible()));
- ok('explains why amenity vanished', await p.locator('#amenHidden').isVisible());
+ ok('the amenity-hidden flag is retired from the toolbar', (await p.locator('#amenHidden').count())===0);
  ok('THE KEY ONE: hidden lump-sum amenity money is excluded from the contract sum',
     (await p.locator('#rContract').textContent())!==withLump,
     'with amenity '+withLump+' -> without '+(await p.locator('#rContract').textContent()));

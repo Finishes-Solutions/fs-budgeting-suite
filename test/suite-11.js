@@ -211,6 +211,14 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('grouping shows every analysis exactly once',
     (await p.locator('#page-analyses [data-inv-list] tr:not(.inv-grp)').count())===3);
  await p.selectOption('#page-analyses [data-inv-group]',''); await p.waitForTimeout(200);
+ ok('the analyses toolbar carries view and density toggles',
+    await p.evaluate(()=>!!document.querySelector('#page-analyses .mini-seg [data-homeview-pick=cards]')
+      &&!!document.querySelector('#page-analyses .mini-seg [data-density-pick=compact]')));
+ await p.click('#page-analyses .mini-seg [data-homeview-pick=cards]'); await p.waitForTimeout(700);
+ ok('card view works on the analyses tab too',
+    (await p.locator('#page-analyses [data-inv-cards] .hcard').count())>=3
+    && await p.evaluate(()=>document.querySelector('#page-analyses table.inv-list').style.display==='none'));
+ await p.click('#page-analyses .mini-seg [data-homeview-pick=list]'); await p.waitForTimeout(700);
  await p.click('#nav-home'); await p.waitForTimeout(600);
  ok('the embedded Home list carries the same controls',
     await p.evaluate(()=>!!document.querySelector('#homeAnalyses [data-inv-q]')

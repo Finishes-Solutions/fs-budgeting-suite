@@ -125,11 +125,14 @@ html[data-theme=dark][data-accent=red]{--green-900:#3a0f0c;--green-800:#7f1d16;-
 html[data-theme=dark][data-accent=orange]{--green-900:#38200a;--green-800:#8a4c10;--green-700:#c76d15;
   --green-600:#d67f26;--green-500:#de9247;--green-200:#6e4520;--green-100:#4a2f16;--green-50:#392512;
   --focus:0 0 0 3px rgba(222,146,71,.35)}
-/* ---- Table density (Settings → Table Density, or the Home toolbar) ----
-   Comfortable is the default look; compact meaningfully compresses the list
-   tables — zero vertical cell padding, smaller badges and row menus — so the
-   two modes read as genuinely different densities. */
+/* ---- Table density (Settings → Table Density, or the list toolbars) ----
+   Comfortable (the default) gives the LIST tables genuinely roomy rows;
+   compact strips them to zero vertical padding with smaller badges and row
+   menus. The budget editing grid keeps its own tighter rhythm in both. */
+#page-home .tbl td,.inv-list td{padding-top:9px;padding-bottom:9px}
 html[data-density=compact] .tbl td{padding-top:0;padding-bottom:0}
+html[data-density=compact] #page-home .tbl td,
+html[data-density=compact] .inv-list td{padding-top:0;padding-bottom:0}
 html[data-density=compact] .inv-table td{padding-top:2px;padding-bottom:2px}
 html[data-density=compact] .inv-list td{padding-top:0;padding-bottom:0}
 html[data-density=compact] .tbl .badge,html[data-density=compact] .inv-table .badge{
@@ -252,6 +255,9 @@ input.set-locked{background:var(--ink-50);color:var(--ink-500);cursor:not-allowe
 .tpl-row .tpl-name{font-size:13.5px;font-weight:600;color:var(--ink-950)}
 .tpl-row .tpl-sub{font-size:12px;color:var(--ink-500)}
 *{box-sizing:border-box;margin:0;padding:0}
+/* The scrollbar gutter is always reserved, so switching between tall and
+   short pages (Home vs Investment Analysis) never shifts the layout. */
+html{overflow-y:scroll}
 body{font-family:var(--fb);color:var(--ink-800);background:var(--ink-50);font-size:14px;line-height:1.5}
 .mono{font-family:var(--fm)}
 .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
@@ -841,17 +847,15 @@ th.sortable.sorted{color:var(--ink-900)}
           <div class="fld-err" id="pIdErr" style="display:none">Must match OP-####, BD-####, AS-#### or TST-#### (test)</div></label>
         <label class="fld"><span class="lab">Project Name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
-        <label class="fld"><span class="lab">Property Type</span>
-          <select id="pType" onchange="doc.type=this.value;markDirty()">
-            <option value="Multifamily">Multifamily</option>
-            <option value="Blank">Blank / Custom</option>
-            <option disabled>Commercial (coming)</option>
-            <option disabled>SFR (coming)</option></select></label>
       </div>
+      <!-- Property type is chosen when the budget is created (+ New Budget →
+           template), so it is not re-asked here. Site SF and Site Acreage are
+           one measurement in two units: fill either and the other follows. -->
       <div class="grid g4" style="margin-top:14px">
         <label class="fld"><span class="lab">Residential Buildable SF</span><input type="number" class="num" id="pSF" value="51365" min="0" step="100" oninput="touch()"></label>
         <label class="fld"><span class="lab">Amenity / Clubhouse SF</span><input type="number" class="num" id="pASF" value="1200" min="0" step="50" oninput="touch()"></label>
-        <label class="fld"><span class="lab">Total Site SF</span><input type="number" class="num" id="pSiteSF" value="0" min="0" step="1000" oninput="touch()"></label>
+        <label class="fld"><span class="lab">Total Site SF</span><input type="number" class="num" id="pSiteSF" value="0" min="0" step="1000" oninput="syncSiteFromSF()"></label>
+        <label class="fld"><span class="lab">Site Acreage</span><input type="number" class="num" id="pSiteAc" value="0" min="0" step="0.01" oninput="syncSiteFromAcres()"></label>
       </div>
       <div class="grid g4" style="margin-top:14px" id="siteMetrics">
         <div class="metric"><span class="k">Site Area</span><span class="v" id="mSiteAcres">—</span></div>
@@ -859,7 +863,7 @@ th.sortable.sorted{color:var(--ink-900)}
         <div class="metric"><span class="k">Density</span><span class="v" id="mDensity">—</span></div>
         <div class="metric" id="mBldgEffTile"><span class="k">Building Efficiency</span><span class="v" id="mBldgEff">—</span></div>
       </div>
-      <div class="note" style="margin-top:10px">Residential SF drives the per-SF construction and soft-cost lines. Amenity SF drives the clubhouse/leasing scope at its own (higher) rates — matching how the Finishes model prices the two buildings separately. Total site SF is the land itself; it prices nothing, it measures how hard the site is working. Leave it at 0 if you do not know it yet.</div>
+      <div class="note" style="margin-top:10px">Residential SF drives the per-SF construction and soft-cost lines. Amenity SF drives the clubhouse/leasing scope at its own (higher) rates — matching how the Finishes model prices the two buildings separately. Total site SF is the land itself; it prices nothing, it measures how hard the site is working. Site SF and Site Acreage are the same measurement — fill in either and the other fills itself (43,560 SF per acre). Leave both at 0 if you do not know them yet.</div>
     </div>
   </section>
 
@@ -874,9 +878,16 @@ th.sortable.sorted{color:var(--ink-900)}
         <thead><tr><th style="width:19%">Unit Type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF / Unit</th><th class="r"># Units</th>
           <th class="r">Rent / Mo</th><th class="r">$ / SF / Mo</th><th class="r">Type SF</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
         <tbody id="unitBody"></tbody>
+        <!-- The input columns above inset their text by the input's own
+             padding and border (~9px); the totals under them carry the same
+             inset so the numbers line up with the inputs, not the cell edge. -->
         <tfoot><tr class="total">
-          <td>Total / Blended</td><td></td><td></td><td class="calc r" id="uAvgSF">—</td><td class="calc r strong" id="uCount">0</td>
-          <td class="calc r" id="uAvgRent">—</td><td class="calc r" id="uBlendPSF">—</td><td class="calc r strong" id="uTotSF">0</td>
+          <td>Total / Blended</td><td></td><td></td>
+          <td class="calc r" id="uAvgSF" style="padding-right:19px">—</td>
+          <td class="calc r strong" id="uCount" style="padding-right:19px">0</td>
+          <td class="calc r" id="uAvgRent" style="padding-right:19px">—</td>
+          <td class="calc r" id="uBlendPSF" style="padding-right:19px">—</td>
+          <td class="calc r strong" id="uTotSF">0</td>
           <td class="calc r strong" id="uMoRev">$0</td><td class="calc r strong" id="uYrRev">$0</td><td class="no-print"></td>
         </tr></tfoot>
       </table>
@@ -1005,9 +1016,7 @@ th.sortable.sorted{color:var(--ink-900)}
   <section class="card" id="sec-budget">
     <div class="card-hd"><h2>Budget Detail</h2>
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-        <span class="eyebrow" style="color:var(--green-600)">● qty auto-synced · edit to override</span>
         <span class="eyebrow legend" id="editLegend" style="color:var(--edit)"><span class="editdot on"></span><span id="editCount">no manual edits</span></span>
-        <span class="eyebrow" id="amenHidden" style="display:none;color:var(--warn)">Amenity hidden — amenity SF is 0</span>
         <span class="no-print" style="display:flex;gap:8px">
           <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Collapse All</button>
           <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand All</button>
@@ -1252,8 +1261,8 @@ th.sortable.sorted{color:var(--ink-900)}
           <li><b>Time Format</b> — 12-hour (8:52 PM) or 24-hour (20:52) for every timestamp.</li>
           <li><b>Table Density</b> — Comfortable or Compact rows in the lists and the budget grid.
             Also switchable right from the Home toolbar's small icon toggles.</li>
-          <li><b>Home View</b> — the Home page lists as a table or as cards, also switchable from the
-            Home toolbar. Home only, for now.</li>
+          <li><b>View</b> — the Home page and Investment Analysis lists as tables or as cards, also
+            switchable from the small icon toggles above each list.</li>
           <li><b>Exports</b> — the <b>Remember Export Settings</b> toggle: on, the sections and options
             you pick in the export popups (budget and analysis separately) become your defaults
             everywhere you sign in; off, every export starts from the standard defaults.</li>
@@ -1351,7 +1360,8 @@ th.sortable.sorted{color:var(--ink-900)}
         <p>Building efficiency asks how much of the <i>structure</i> you can rent. Site efficiency asks how hard the
           <i>land</i> is working:</p>
         <p><code>site efficiency = (residential SF + amenity SF) ÷ total site SF</code></p>
-        <p>That is the floor area ratio, expressed as a percentage. Enter the land area in <b>Total Site SF</b> and
+        <p>That is the floor area ratio, expressed as a percentage. Enter the land area in <b>Total Site SF</b>
+          or <b>Site Acreage</b> — they are the same measurement (43,560 SF per acre) and each fills the other — and
           the Project card reports site area in acres, site efficiency, density in units per acre, and building
           efficiency side by side.</p>
         <table class="tbl"><tbody>
@@ -1908,7 +1918,7 @@ th.sortable.sorted{color:var(--ink-900)}
           Compact<span class="tick">✓</span></button>
       </div>
 
-      <div class="set-lab">Home View</div>
+      <div class="set-lab">View</div>
       <div class="set-choice" role="group" aria-label="Home View">
         <button data-homeview-pick="list" onclick="chooseSetting('homeView','list')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>
@@ -1917,7 +1927,7 @@ th.sortable.sorted{color:var(--ink-900)}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
           Cards<span class="tick">✓</span></button>
       </div>
-      <div class="set-note">Card view applies to the Home page lists only, for now.</div>
+      <div class="set-note">Applies to the Home page lists and the Investment Analysis list.</div>
 
       <div class="set-lab">Exports</div>
       <label class="switch-row">
@@ -2103,8 +2113,11 @@ function chooseSetting(key,value){
   const prev=usSettings();
   US.settings=Object.assign({},prev,{[key]:value});
   applyUserSettings();
-  // the Home lists re-render only when their view actually changed
-  if(key==='homeView'&&currentPage==='home')renderHome();
+  // the affected lists re-render only when their view actually changed
+  if(key==='homeView'){
+    if(currentPage==='home')renderHome();
+    else if(currentPage==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
+  }
   if(key==='timeFormat'&&currentPage==='home')paintHome();
   queueSettingsSave();
 }
@@ -3349,7 +3362,7 @@ function fillForms(){
   document.getElementById('pSF').value=doc.resSF;
   document.getElementById('pASF').value=doc.amenSF;
   document.getElementById('pSiteSF').value=doc.siteSF||0;
-  document.getElementById('pType').value=doc.type||'Multifamily';
+  document.getElementById('pSiteAc').value=doc.siteSF?+((doc.siteSF)/SQFT_PER_ACRE).toFixed(3):0;
   document.getElementById('cVal').value=doc.contingency.val;
   document.getElementById('pcLand').value=doc.projectCosts.land;
   document.getElementById('pcDev').value=doc.projectCosts.dev;
@@ -3364,7 +3377,8 @@ function pullForms(){
   doc.resSF=+document.getElementById('pSF').value||0;
   doc.amenSF=+document.getElementById('pASF').value||0;
   doc.siteSF=+document.getElementById('pSiteSF').value||0;
-  doc.type=document.getElementById('pType').value||doc.type||'Multifamily';
+  // Property type is set at creation (template choice); no input re-asks it.
+  doc.type=doc.type||'Multifamily';
 }
 function validateId(){
   const el=document.getElementById('pId');
@@ -3429,12 +3443,25 @@ function siteMetrics(){
     bldgEff:doc.resSF>0?unitSF/doc.resSF:null,
     density:acres?totUnits()/acres:null};
 }
+/* Site SF ⇄ Site Acreage: one measurement, two units. Editing either input
+   populates the other; only siteSF is STORED (acreage is derived on the way
+   in and out), so this needs no document or database change. */
+function syncSiteFromSF(){
+  const sf=+document.getElementById('pSiteSF').value||0;
+  document.getElementById('pSiteAc').value=sf?+(sf/SQFT_PER_ACRE).toFixed(3):0;
+  touch();
+}
+function syncSiteFromAcres(){
+  const ac=+document.getElementById('pSiteAc').value||0;
+  document.getElementById('pSiteSF').value=ac?Math.round(ac*SQFT_PER_ACRE):0;
+  touch();
+}
 function renderSiteMetrics(){
   const m=siteMetrics();
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  set('mSiteAcres',m.site?m.acres.toFixed(2)+' ac':'—');
+  set('mSiteAcres',m.site?m.acres.toFixed(2)+' AC':'—');
   set('mSiteEff',m.siteEff!==null?(100*m.siteEff).toFixed(1)+'%':'—');
-  set('mDensity',m.density!==null?m.density.toFixed(1)+' u/ac':'—');
+  set('mDensity',m.density!==null?m.density.toFixed(1)+' U/AC':'—');
   set('mBldgEff',m.bldgEff!==null?(100*m.bldgEff).toFixed(1)+'%':'—');
   const et=document.getElementById('mBldgEffTile');
   if(et)et.classList.toggle('warn',m.bldgEff!==null&&m.bldgEff>1);
@@ -3537,8 +3564,6 @@ function renderBudget(){
   const b=document.getElementById('budBody');b.innerHTML='';
   const shown=doc.lines.filter(l=>scopeActive(l.scope)).length;
   document.getElementById('budEmpty').style.display=shown?'none':'block';
-  const hid=document.getElementById('amenHidden');
-  if(hid)hid.style.display=(!scopeActive('amen')&&doc.lines.some(l=>l.scope==='amen'))?'inline':'none';
   activeScopes().forEach(sc=>{
     const scLines=doc.lines.map((l,gi)=>({l,gi})).filter(x=>x.l.scope===sc);
     if(!scLines.length)return;
@@ -3962,7 +3987,8 @@ function renderSummary(){
   document.getElementById('sPSF').textContent=tsf?usd2(p.project/tsf):'—';
   document.getElementById('sCPU').textContent=tu?usd(p.project/tu):'—';
   document.getElementById('bTitle').textContent=doc.projectId?doc.projectId+' — '+(doc.name||'Untitled'):'Budget';
-  document.getElementById('bSub').textContent=[doc.address,doc.type,num(doc.resSF)+' SF res + '+num(doc.amenSF)+' SF amenity'].filter(Boolean).join(' · ');
+  document.getElementById('bSub').textContent=[doc.address,doc.type,
+    num(doc.resSF)+' SF'+(doc.amenSF?' + '+num(doc.amenSF)+' SF Amenity/Clubhouse':'')].filter(Boolean).join(' · ');
   const sb=document.getElementById('sovBody');sb.innerHTML='';
   ['res','amen'].filter(scopeActive).forEach(sc=>{
     const grps=[...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))];
