@@ -96,16 +96,25 @@
   text-transform:uppercase;color:var(--ink-700);padding:7px 10px;border-bottom:1px solid var(--ink-150)}
 .inv-grp .shut{color:var(--ink-400);margin-left:8px;letter-spacing:0;text-transform:none}
 
-/* the list tables (Home + tab): give every column real room so the data does
-   not pack against the right edge */
-.inv-list th:nth-child(2){width:9%}
-.inv-list th:nth-child(3){width:8%}
+/* The list tables (Home + tab) mirror the Project Budgets table: the same
+   mono uppercase headers, compact rows, mono numeric cells (td.calc), status
+   badges, and a right-aligned Updated column that sits next to the row menu.
+   These rules come after the generic .inv-table rules, so they win. */
+.inv-table.inv-list{font-size:14px}
+.inv-list th{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-500);font-weight:500;padding:8px 10px;border-bottom:1px solid var(--ink-200)}
+.inv-list td{padding:3px 10px;border-bottom:1px solid var(--ink-100)}
+.inv-list td.calc{font-family:var(--fm);font-size:13px;color:var(--ink-700);white-space:nowrap}
+/* column widths: give every column real room so the data does not pack
+   against the right edge */
+.inv-list th:nth-child(2){width:10%}
+.inv-list th:nth-child(3){width:9%}
 .inv-list th:nth-child(4){width:11%}
 .inv-list th:nth-child(5){width:10%}
 .inv-list th:nth-child(6){width:9%}
-.inv-list th:nth-child(7){width:10%}
-.inv-list th:nth-child(8){width:7%}
-.inv-list th:nth-child(9){width:12%}
+.inv-list th:nth-child(7){width:9%}
+.inv-list th:nth-child(8){width:6%}
+.inv-list th:nth-child(9){width:11%}
 .inv-list th.no-print{width:44px}
 
 /* mobile read-only: hide editing affordances, keep the report viewable */

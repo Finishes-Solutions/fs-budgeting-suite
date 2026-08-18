@@ -119,8 +119,11 @@ html[data-theme=dark]{
 #page-home .tbl th[data-sort=projectId]{width:12%}
 #page-home .tbl th[data-sort=contractSum],#page-home .tbl th[data-sort=projectCost]{width:13%}
 #page-home .tbl th[data-sort=status]{width:11%}
-#page-home .tbl th[data-sort=updated]{width:14%}
+#page-home .tbl th[data-sort=updated]{width:12%}
 #page-home .tbl th.no-print{width:44px}
+/* the right-aligned Total Project figure sits directly against the
+   left-aligned Status badge; the extra padding restores the gutter */
+#page-home .tbl th[data-sort=status],#page-home #homeBody tr.clickable td:nth-child(5){padding-left:22px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--fb);color:var(--ink-800);background:var(--ink-50);font-size:14px;line-height:1.5}
 .mono{font-family:var(--fm)}

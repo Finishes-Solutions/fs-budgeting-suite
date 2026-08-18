@@ -205,6 +205,32 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the embedded Home list carries the same controls',
     await p.evaluate(()=>!!document.querySelector('#homeAnalyses [data-inv-q]')
       &&!!document.querySelector('#homeAnalyses [data-inv-group]')));
+ ok('analyses list mirrors the budget list styling: mono headers, compact rows',
+    await p.evaluate(()=>{
+      const bTh=getComputedStyle(document.querySelector('#homeHead th'));
+      const aTh=getComputedStyle(document.querySelector('#homeAnalyses .inv-list th'));
+      const bTd=getComputedStyle(document.querySelector('#homeBody tr.clickable td'));
+      const aTd=getComputedStyle(document.querySelector('#homeAnalyses [data-inv-list] tr td'));
+      return bTh.fontFamily===aTh.fontFamily&&bTh.fontSize===aTh.fontSize
+        &&bTh.letterSpacing===aTh.letterSpacing&&bTd.paddingTop===aTd.paddingTop;
+    }),
+    await p.evaluate(()=>JSON.stringify({
+      b:getComputedStyle(document.querySelector('#homeHead th')).fontFamily,
+      a:getComputedStyle(document.querySelector('#homeAnalyses .inv-list th')).fontFamily})));
+ ok('analyses numbers use the budget list\'s mono calc styling',
+    await p.evaluate(()=>{
+      const cell=document.querySelector('#homeAnalyses [data-inv-list] tr td.calc');
+      const ref=getComputedStyle(document.querySelector('#homeBody tr.clickable td.calc'));
+      return !!cell&&getComputedStyle(cell).fontFamily===ref.fontFamily
+        &&getComputedStyle(cell).fontSize===ref.fontSize;
+    }));
+ ok('analyses Updated column right-aligns beside the row menu',
+    await p.evaluate(()=>{
+      const row=document.querySelector('#homeAnalyses [data-inv-list] tr');
+      return getComputedStyle(row.children[8]).textAlign==='right';
+    }));
+ ok('analysis statuses render as badges like the budget list',
+    (await p.locator('#homeAnalyses [data-inv-list] .badge').count())>=1);
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

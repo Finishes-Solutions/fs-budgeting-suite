@@ -118,7 +118,7 @@
       <table class="inv-table inv-list"><thead><tr>
         <th${opts.embedded ? ' style="padding-left:22px"' : ''}>Analysis</th><th>Project</th><th>Status</th><th class="r">Purchase Price</th>
         <th class="r">Year-1 NOI</th><th class="r">Equity IRR</th><th class="r">Optimal Hold</th>
-        <th class="r">Version</th><th>Updated</th><th class="no-print"></th>
+        <th class="r">Version</th><th class="r" style="padding-right:22px">Updated</th><th class="no-print"></th>
       </tr></thead><tbody data-inv-list></tbody></table>
       <div class="empty" data-inv-empty style="display:none">No investment analyses yet.</div>`;
     host.querySelector('[data-inv-status]').value = lv.status;
@@ -164,15 +164,15 @@
     tr.className = 'clickable';
     tr.addEventListener('click', () => { location.hash = '#/analysis/' + r.analysisId; });
     tr.innerHTML = `
-      <td${pad}><b>${esc(r.name)}</b></td>
-      <td class="mono">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-origin" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
-      <td>${esc(r.status)}</td>
-      <td class="r mono">${usd(r.purchasePrice)}</td>
-      <td class="r mono">${usd(r.year1NOI)}</td>
-      <td class="r mono">${pctf(r.finalYearEquityIRR)}</td>
-      <td class="r mono">${r.optimalHoldingYear ? 'Year ' + r.optimalHoldingYear : '—'}</td>
-      <td class="r mono">${r.currentVersionNumber || '—'}</td>
-      <td>${esc(fmtDay(r.updatedAt))}</td>
+      <td${pad}>${esc(r.name)}</td>
+      <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-origin" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
+      <td><span class="badge ${r.status === 'Finalized' ? 'ok' : ''}">${esc(r.status)}</span></td>
+      <td class="calc r">${usd(r.purchasePrice)}</td>
+      <td class="calc r">${usd(r.year1NOI)}</td>
+      <td class="calc r">${pctf(r.finalYearEquityIRR)}</td>
+      <td class="calc r">${r.optimalHoldingYear ? 'Year ' + r.optimalHoldingYear : '—'}</td>
+      <td class="calc r">${r.currentVersionNumber || '—'}</td>
+      <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${esc(fmtDay(r.updatedAt))}</td>
       <td class="no-print" style="text-align:right"><button class="rowmenu-btn" data-inv-menu
         aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(r.name)}">⋮</button></td>`;
     tr.querySelector('[data-inv-menu]').addEventListener('click', ev => {

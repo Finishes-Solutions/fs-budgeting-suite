@@ -323,7 +323,7 @@ and a beforeprint/afterprint hook forces light for printing. Cmd/Ctrl+K opens th
 global search palette (budgets + analyses, fetched fresh per open). The analyses
 lists carry the same search/status/grouping controls as the budget list.
 
-Fourteen Playwright suites, 552 assertions, plus 80 `node:test` assertions for the
+Fourteen Playwright suites, 556 assertions, plus 80 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus
