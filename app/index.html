@@ -4005,9 +4005,11 @@ function exportBudgetPdf(){
   let dd;
   if(exportRenderer()==='local'){
     dd=FSLegacyRender.buildPdfDocDefinition(legacyBudgetPdfDoc(s));
+    FSExportRender.stampRenderProvenance(dd,'local');
   }else{
     const built=buildBudgetFsdoc(s);
     dd=fsRender.buildPdfDocDefinition(built.fsdoc,fsRender.themes['finishes-solutions'],'portrait');
+    FSExportRender.stampRenderProvenance(dd,'engine');
     FSExportRender.appendApprovalPage(dd,built.signature);
   }
   pdfMake.createPdf(dd).getBlob(b=>{

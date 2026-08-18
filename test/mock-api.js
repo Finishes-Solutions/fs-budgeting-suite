@@ -457,9 +457,11 @@ http.createServer((req, res) => {
         let dd;
         if (useLegacy) {
           dd = legacy.buildPdfDocDefinition(doc);   // renders doc.signature itself
+          producer.stampRenderProvenance(dd, 'local');
         } else {
           const preset = doc.meta.years > 5 ? 'landscape' : 'portrait';
           dd = fsRender.buildPdfDocDefinition(fsdoc, THEME, preset);
+          producer.stampRenderProvenance(dd, 'engine');
           producer.appendApprovalPage(dd, doc.signature);
         }
         const pdoc = printer.createPdfKitDocument(dd);

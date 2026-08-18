@@ -165,6 +165,19 @@ test('Signature Needed appends the identified approval page after the engine ren
   assert.ok(!JSON.stringify(clean).includes('Approval'));
 });
 
+test('render provenance stamps the identity fields and a bottom line', () => {
+  const dd = fsRender.buildPdfDocDefinition(fsdoc, THEME, 'portrait');
+  producer.stampRenderProvenance(dd, 'engine');
+  assert.strictEqual(dd.info.creator, 'fs-render engine, fs-courier');
+  assert.match(dd.info.producer, /fs-render engine, fs-courier · pdfmake/);
+  assert.match(JSON.stringify(dd.content[dd.content.length - 1]), /Rendered by fs-render/);
+  const legacyMod = require('../api/shared/investment/legacy-render');
+  const ldd = legacyMod.buildPdfDocDefinition(doc);
+  producer.stampRenderProvenance(ldd, 'local');
+  assert.strictEqual(ldd.info.creator, 'fs-budgeting-suite legacy renderer');
+  assert.match(JSON.stringify(ldd.content[ldd.content.length - 1]), /Rendered by fs-budgeting-suite legacy renderer/);
+});
+
 test('CSV carries the tables and the engine line', () => {
   const csv = fsRender.buildCsv(fsdoc);
   assert.match(csv, /Net Operating Income/);

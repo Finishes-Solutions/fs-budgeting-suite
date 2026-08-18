@@ -110,11 +110,13 @@ module.exports = async function (context, req) {
     let dd;
     if (useLegacy) {
       dd = legacy.buildPdfDocDefinition(doc);   // renders doc.signature itself
+      producer.stampRenderProvenance(dd, 'local');
     } else {
       // Ten-year projections (11 matrix columns) physically need landscape on
       // letter — the engine's stated policy; five-year docs stay portrait.
       const preset = doc.meta.years > 5 ? 'landscape' : 'portrait';
       dd = fsRender.buildPdfDocDefinition(fsdoc, THEME, preset);
+      producer.stampRenderProvenance(dd, 'engine');
       producer.appendApprovalPage(dd, doc.signature);
     }
     body = await pdfBuffer(dd);

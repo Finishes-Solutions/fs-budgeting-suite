@@ -1050,8 +1050,10 @@
     let dd;
     if (useLegacy()) {
       dd = FSLegacyRender.buildPdfDocDefinition(doc);   // renders doc.signature itself
+      FSExportRender.stampRenderProvenance(dd, 'local');
     } else {
       dd = fsRender.buildPdfDocDefinition(fsdocOf(doc), FS_THEME(), pdfPreset(doc));
+      FSExportRender.stampRenderProvenance(dd, 'engine');
       FSExportRender.appendApprovalPage(dd, doc.signature);
     }
     pdfMake.createPdf(dd).getBlob(blob => downloadBlob(blob, exportBaseName() + '.pdf'));

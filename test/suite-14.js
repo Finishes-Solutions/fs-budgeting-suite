@@ -127,11 +127,13 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
    const buf=await (await fetch(window.__dl.href)).arrayBuffer();
    const txt=new TextDecoder('latin1').decode(buf);
    return {name:window.__dl.name,len:buf.byteLength,head:txt.slice(0,5),
-     portrait:/MediaBox\s*\[\s*0\s+0\s+612\s+792/.test(txt)};
+     portrait:/MediaBox\s*\[\s*0\s+0\s+612\s+792/.test(txt),
+     engineStamp:txt.indexOf('fs-render engine, fs-courier')>=0};
  });
  ok('PDF button downloads a real PDF file', pdfDl.head==='%PDF-'&&pdfDl.len>30000,
     JSON.stringify({name:pdfDl.name,len:pdfDl.len,head:pdfDl.head}));
  ok('PDF is portrait letter with the shared layout', pdfDl.portrait);
+ ok('PDF metadata names the engine as its renderer', pdfDl.engineStamp, 'no fs-render creator stamp');
  ok('PDF filename carries the analysis name', /Workbook_Deal.*\.pdf$/.test(pdfDl.name), pdfDl.name);
  ok('export modal closes after the PDF download', (await p.locator('#invModal').count())===0);
 
@@ -191,10 +193,12 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
    const buf=await (await fetch(window.__dl.href)).arrayBuffer();
    const txt=new TextDecoder('latin1').decode(buf);
    return {head:txt.slice(0,5),len:buf.byteLength,
-     portrait:/MediaBox\s*\[\s*0\s+0\s+612\s+792/.test(txt)};
+     portrait:/MediaBox\s*\[\s*0\s+0\s+612\s+792/.test(txt),
+     legacyStamp:txt.indexOf('fs-budgeting-suite legacy renderer')>=0};
  });
  ok('localStorage override routes the PDF button through the legacy renderer',
     legDl.head==='%PDF-'&&legDl.len>30000&&legDl.portrait, JSON.stringify(legDl));
+ ok('legacy PDF metadata names the legacy renderer', legDl.legacyStamp, 'no legacy creator stamp');
 
  // ---- Print: the original #printDoc pipeline, kept as the third option.
  await p.evaluate(()=>{window.__rpt=null;window.print=()=>{window.__rpt=document.getElementById('printDoc').innerHTML;};});

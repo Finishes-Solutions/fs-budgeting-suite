@@ -368,6 +368,24 @@
     return dd;
   }
 
+  /* =============== render provenance ===============
+     Stamps WHICH renderer produced a PDF where people actually look: the
+     Creator/Producer metadata fields (the ones viewers label "Content
+     creator" / "Application", which pdfmake otherwise fills with its own
+     name) and a small muted line at the very bottom of the document. Called
+     by every PDF call site right after the docDefinition is built. */
+  function stampRenderProvenance(dd, renderer) {
+    // ASCII, no parentheses: PDF literal strings escape parens and encode
+    // non-ASCII as UTF-16, either of which would defeat byte-level checks.
+    var label = renderer === 'local'
+      ? 'fs-budgeting-suite legacy renderer'
+      : 'fs-render engine, fs-courier';
+    dd.info = Object.assign({}, dd.info, { creator: label, producer: label + ' · pdfmake' });
+    dd.content.push({ text: 'Rendered by ' + label, fontSize: 7, color: '#6B7174',
+      margin: [0, 2, 0, 0] });
+    return dd;
+  }
+
   return { buildExportDoc: buildExportDoc, appendApprovalPage: appendApprovalPage,
-    BRAND: BRAND, fmtValue: fmtValue };
+    stampRenderProvenance: stampRenderProvenance, BRAND: BRAND, fmtValue: fmtValue };
 });
