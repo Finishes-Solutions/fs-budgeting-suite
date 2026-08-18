@@ -424,24 +424,34 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .boot-msg{font-size:13px;color:var(--ink-500);line-height:1.5}
 @media (prefers-reduced-motion:reduce){.boot-spin{animation-duration:2.4s}}
 
-/* Mobile read-only mode. A persistent bar, not a toast — a message that disappears
-   leaves the user concluding the app is broken rather than restricted. */
-.mobile-bar{display:none;align-items:center;gap:10px;flex-wrap:wrap;
-  background:var(--warn);color:#fff;padding:10px 20px;font-size:13px;line-height:1.4}
-body.mobile-ro .mobile-bar{display:flex}
-.mobile-bar b{font-weight:700}
-.mobile-bar button{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.5);
-  color:#fff;font-family:var(--fm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
-  padding:5px 10px;border-radius:var(--r);cursor:pointer;white-space:nowrap}
-.mobile-bar button:hover{background:rgba(255,255,255,.3)}
-/* Editing affordances are removed rather than disabled: absence reads as "not here",
-   a greyed-out control reads as "broken". */
-body.mobile-ro [data-edit-only]{display:none!important}
-@media(max-width:720px){
-  main{padding:16px 14px 32px}
-  .hd{padding:0 14px;gap:10px}
+/* Small screens are fully capable — every page, editor, and export works.
+   These rules only reflow the layout so nothing overlaps, clips, or overruns
+   the viewport: wide tables scroll sideways inside their card, dense grids
+   collapse to one column, and the tab bar pans instead of crushing the header. */
+@media(max-width:760px){
+  main{padding:14px 12px 36px}
+  .hd{padding:0 12px;gap:10px}
+  .brand img{height:30px}
+  .hd>nav{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .hd>nav::-webkit-scrollbar{display:none}
   .page-title{flex-wrap:wrap;gap:10px}
+  .page-title h1{font-size:20px}
+  .card-hd{padding:12px 14px}
+  .card-bd{padding:14px;overflow-x:auto}
+  /* Data tables keep their desktop column widths and pan horizontally; letting
+     them shrink instead stacks text on top of itself. */
+  #page-home .tbl,.inv-table.inv-list{min-width:720px}
+  #page-budget .tbl,#page-csi .tbl{min-width:760px}
+  #page-input .tbl{min-width:640px}
+  #page-pricing .tbl{min-width:640px}
   .stats{grid-template-columns:repeat(2,1fr)}
+  .stat{padding:14px 16px}
+  .g4,.g5{grid-template-columns:1fr}
+  .set-grid{grid-template-columns:1fr}
+  .list-toolbar input[type=text]{width:auto;flex:1 1 150px;min-width:0}
+  .list-toolbar select.lt-status,.list-toolbar select.lt-group{width:auto;flex:0 1 auto;min-width:0}
+  .home-cards{padding:14px}
+  #exportModal .card,#pickModal .card,#versionsModal .card{max-height:90vh;overflow:auto}
 }
 
 /* Template administration */
@@ -587,8 +597,12 @@ th.sortable.sorted{color:var(--ink-900)}
 
 /* ---- how to use ---- */
 .help-wrap{display:grid;grid-template-columns:210px 1fr;gap:36px;align-items:start}
-@media(max-width:900px){.help-wrap{grid-template-columns:1fr}#helpToc{position:static!important}}
+/* minmax(0,1fr), not 1fr: a bare 1fr track's minimum is its content, so one wide
+   reference table would drag the whole column past the viewport. Capping the
+   minimum lets the cards' own overflow-x scrollers do their job instead. */
+@media(max-width:900px){.help-wrap{grid-template-columns:minmax(0,1fr)}#helpToc{position:static!important}}
 #helpToc{position:sticky;top:20px;display:block}   /* override the header's nav{display:flex} */
+#page-help .card-bd{overflow-x:auto}   /* reference tables pan rather than widen the page */
 #helpToc a{display:block;padding:6px 10px;border-left:2px solid var(--ink-200);color:var(--ink-600);
   text-decoration:none;font-size:12.5px}
 #helpToc a:hover{color:var(--green-700);border-left-color:var(--green-200);background:var(--green-50)}
@@ -744,11 +758,11 @@ th.sortable.sorted{color:var(--ink-900)}
     </a>
     <nav class="no-print">
       <button id="nav-home" class="on" onclick="go('home')">Home</button>
-      <button id="nav-input" onclick="go('input')" data-edit-only disabled>Inputs</button>
-      <button id="nav-budget" onclick="go('budget')" data-edit-only disabled>Budget</button>
-      <button id="nav-csi" onclick="go('csi')" data-edit-only disabled>CSI Schedule</button>
+      <button id="nav-input" onclick="go('input')" disabled>Inputs</button>
+      <button id="nav-budget" onclick="go('budget')" disabled>Budget</button>
+      <button id="nav-csi" onclick="go('csi')" disabled>CSI Schedule</button>
       <button id="nav-analyses" onclick="go('analyses')">Investment Analysis</button>
-      <button id="nav-pricing" onclick="go('pricing')" data-edit-only>Pricing Library</button>
+      <button id="nav-pricing" onclick="go('pricing')">Pricing Library</button>
       <button id="nav-help" onclick="go('help')">How to Use</button>
     </nav>
     <div class="hd-r">
@@ -758,13 +772,6 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
   </div>
 </header>
-
-<div class="mobile-bar no-print" id="mobileBar" role="status">
-  <span><b>Read-only on this screen.</b> Budgets and pricing can be viewed but not edited —
-    open the Budgeting Suite on a desktop to make changes.</span>
-  <span style="flex:1"></span>
-  <button onclick="useFullVersion()">Use Full Version</button>
-</div>
 
 <main>
 
@@ -777,7 +784,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <div class="page on" id="page-home">
   <div class="page-title">
     <div><h1>Project Budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
-    <div style="display:flex;gap:10px" data-edit-only>
+    <div style="display:flex;gap:10px">
       <button class="btn btn-primary" id="newBudgetBtn" onclick="openNewBudget()">+ New Budget</button>
     </div>
   </div>
@@ -841,7 +848,7 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title" style="margin-top:34px">
     <div><h1>Investment Analyses</h1>
       <div class="sub">Before-tax underwriting, linked to exact saved budget versions.</div></div>
-    <div style="display:flex;gap:10px" data-edit-only>
+    <div style="display:flex;gap:10px">
       <button class="btn btn-primary" onclick="FSInvestmentUI.openProjectPicker()">+ New Investment Analysis</button>
     </div>
   </div>
@@ -897,8 +904,11 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></div>
     <div class="card-bd" style="overflow-x:auto">
       <table class="tbl">
-        <thead><tr><th style="width:19%">Unit Type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF / Unit</th><th class="r"># Units</th>
-          <th class="r">Rent / Mo</th><th class="r">$ / SF / Mo</th><th class="r">Type SF</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
+        <!-- Input columns render their text ~19px from the cell's right edge
+             (10px cell pad + 8px input pad + 1px border); those headers carry
+             the same inset so header, input text, and totals share one edge. -->
+        <thead><tr><th style="width:19%">Unit Type</th><th class="r" style="padding-right:19px">BD</th><th class="r" style="padding-right:19px">BTH</th><th class="r" style="padding-right:19px">SF / Unit</th><th class="r" style="padding-right:19px"># Units</th>
+          <th class="r" style="padding-right:19px">Rent / Mo</th><th class="r" style="padding-right:19px">$ / SF / Mo</th><th class="r">Type SF</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
         <tbody id="unitBody"></tbody>
         <!-- The input columns above inset their text by the input's own
              padding and border (~9px); the totals under them carry the same
@@ -924,7 +934,7 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></div>
     <div class="card-bd" style="overflow-x:auto">
       <table class="tbl">
-        <thead><tr><th style="width:40%">Income Line</th><th class="r">Net $ / Mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th style="width:40%">Income Line</th><th class="r" style="padding-right:19px">Net $ / Mo</th><th class="r" style="padding-right:19px">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
         <tbody id="otherBody"></tbody>
         <tfoot><tr class="total"><td>Total Other Income</td><td></td><td></td>
           <td class="calc r strong" id="oMo">$0</td><td class="calc r strong" id="oYr">$0</td><td class="no-print"></td></tr></tfoot>
@@ -941,7 +951,7 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></div>
     <div class="card-bd" style="overflow-x:auto">
       <table class="tbl">
-        <thead><tr><th style="width:40%">Expense Line</th><th>Basis</th><th class="r">$ / Mo</th><th class="r">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
+        <thead><tr><th style="width:40%">Expense Line</th><th>Basis</th><th class="r" style="padding-right:19px">$ / Mo</th><th class="r" style="padding-right:19px">Count</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
         <tbody id="expBody"></tbody>
         <tfoot>
           <tr class="total"><td>Total Operating Expenses</td><td></td><td></td><td></td>
@@ -1628,8 +1638,8 @@ th.sortable.sorted{color:var(--ink-900)}
           <span class="mono">csv</span> via
           <span class="mono">/api/investment-analysis/&lt;id&gt;/export?format=…</span>. Every export is
           built from the calculated result — never the screen — and the Export button is disabled while the
-          result is stale, so an export can never disagree with the assumptions. On phones and small screens
-          analyses are view-only, like the rest of the suite.</p>
+          result is stale, so an export can never disagree with the assumptions. The full editor works on
+          phones and small screens too — wide tables scroll sideways inside their card.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -2800,56 +2810,7 @@ function hashFor(p){
 }
 function syncHash(p){const h=hashFor(p);if(location.hash!==h)location.hash=h;}
 
-/* ---- mobile read-only mode ----
-   Driven by viewport width, not the user agent: a narrow desktop window behaves the
-   same way, which is both correct and testable. This is a UX restriction that stops
-   accidental edits on a phone — it is NOT a security boundary. The API accepts a
-   write from any authenticated user regardless of device, and there is no
-   trustworthy server-side signal for "is mobile". See docs/ROADMAP.md. */
-// `screen and` matters: printing and PDF export switch the browser to print media,
-// where a bare width query can flip to true and bounce the user off the page they
-// were exporting. The restriction is about screen size, so say so.
-const MOBILE_Q=window.matchMedia('screen and (max-width: 720px)');
-const EDIT_PAGES=['input','budget','csi','pricing'];
-let mobileOverride=false;
-try{mobileOverride=sessionStorage.getItem('fsFullVersion')==='1';}catch(_){}
-function mobileRestricted(){return MOBILE_Q.matches&&!mobileOverride;}
-/* A deliberate escape hatch: someone on a tablet who genuinely needs to edit should
-   not be stranded with no way forward. It lasts for the session only. */
-function useFullVersion(){
-  mobileOverride=true;
-  try{sessionStorage.setItem('fsFullVersion','1');}catch(_){}
-  applyMobileMode();
-  toast('Full version enabled for this session — the layout is not designed for small screens.');
-}
-function applyMobileMode(){
-  const ro=mobileRestricted();
-  document.body.classList.toggle('mobile-ro',ro);
-  // A budget already open stays in memory, so rotating back resumes exactly where the
-  // user was — including unsaved edits. Navigate without confirmDiscard(): nothing is
-  // being discarded, and prompting on a rotation would be baffling.
-  if(ro&&EDIT_PAGES.includes(currentPage)){
-    currentPage='home';
-    document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
-    document.getElementById('page-home').classList.add('on');
-    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
-    document.getElementById('nav-home').classList.add('on');
-    syncHash('home');renderHome();
-    toast('Editing is not available on this screen size.');
-  }
-  if(!ro)paintTemplatePickers();     // restore the new-budget controls on the way back
-}
-MOBILE_Q.addEventListener('change',applyMobileMode);
-
 function go(p){
-  // Editing pages are unreachable on a small screen. Guard here rather than only on
-  // the nav, so a deep link or a bookmark lands somewhere sensible with an explanation
-  // instead of rendering a page the user cannot use.
-  if(mobileRestricted()&&EDIT_PAGES.includes(p)){
-    toast('Editing is not available on this screen size — open on a desktop.');
-    if(currentPage!=='home')go('home'); else syncHash('home');
-    return;
-  }
   // Leaving a budget for a non-budget page abandons unsaved edits — ask first.
   if(p!==currentPage&&DOC_PAGES.includes(currentPage)&&!DOC_PAGES.includes(p)&&!confirmDiscard()){
     syncHash(currentPage);return;
@@ -3318,12 +3279,6 @@ async function openBudget(pid,page){
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
   templateEdit=null;renderTemplateBanner();      // opening a budget leaves template mode
   enableDocNav();fillForms();resetUndo();
-  if(mobileRestricted()){
-    // The read-only summary is not built yet, so a tap on a row explains itself
-    // rather than opening a page the user cannot use. Versions remain available.
-    toast('Open on a desktop to view and edit this budget.');
-    go('home');return;
-  }
   go(page||'budget');
 }
 /* ---- Budgets list row actions ----
@@ -3332,10 +3287,10 @@ async function openBudget(pid,page){
    shared element positioned from the trigger, which keeps "only one open" true
    by construction and survives paintHome() rebuilding every row. */
 let rowMenuTrigger=null,versionsReturn=null,versionsPid=null;
-const ROW_ACTIONS=[{act:'edit',label:'Edit',edit:true},
-                   {act:'reprice',label:'Update Pricing',edit:true},
+const ROW_ACTIONS=[{act:'edit',label:'Edit'},
+                   {act:'reprice',label:'Update Pricing'},
                    {act:'versions',label:'Versions'},
-                   {act:'sep',edit:true},{act:'delete',label:'Delete',danger:true,edit:true}];
+                   {act:'sep'},{act:'delete',label:'Delete',danger:true}];
 function rowMenuItems(){return [...document.querySelectorAll('#rowMenu .rowmenu-item')];}
 function openRowMenu(btn){
   const wasOpen=rowMenuTrigger===btn;
@@ -3343,7 +3298,7 @@ function openRowMenu(btn){
   if(wasOpen)return;                       // the trigger toggles its own menu
   const m=document.getElementById('rowMenu');
   m.dataset.pid=btn.dataset.pid;           // never interpolated into markup
-  m.innerHTML=ROW_ACTIONS.filter(a=>!(a.edit&&mobileRestricted()))
+  m.innerHTML=ROW_ACTIONS
     .map(a=>a.act==='sep'?'<div class="rowmenu-sep"></div>'
     :`<button class="rowmenu-item${a.danger?' danger':''}" role="menuitem" tabindex="-1" data-act="${a.act}">${a.label}</button>`).join('');
   rowMenuItems().forEach(el=>{el.onclick=()=>rowMenuAction(el.dataset.act);});
@@ -5443,7 +5398,6 @@ function endBoot(){
     await routeFromHash();
     if(!location.hash)syncHash(currentPage);
     renderSaveState();
-    applyMobileMode();
   }finally{
     // Whatever happened — including the API being down — the app must become
     // usable rather than sitting behind the overlay forever. The offline banner

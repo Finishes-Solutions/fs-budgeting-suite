@@ -372,7 +372,7 @@ the client through `POST /api/user-activity` (whitelisted events only);
 beforeprint/afterprint hook still forces the light palette for printing;
 `--chrome`/`--solid` remain the surfaces that stay dark in every theme and accent.
 
-Fifteen Playwright suites, 617 assertions, plus 80 `node:test` assertions for the
+Fifteen Playwright suites, 614 assertions, plus 80 `node:test` assertions for the
 pure logic that needs no browser — all passing as of this commit. The browser suites drive
 the real frontend against a mock of the SWA API (`test/mock-api.js` — serves the static
 app, `/.auth/me`, the budget/versions/pricing routes from an in-memory store plus
@@ -471,7 +471,9 @@ update selectors alongside label changes.
 
 - Icon buttons other than the Budgets-list actions menu still lack `aria-label`; the
   three-dot menu and the budget line remove buttons now have them.
-- Tablet and mobile: header nav and the wide tables only overflow-scroll.
+- Tablet and mobile are fully capable: the read-only mode was removed, and the
+  `@media(max-width:760px)` blocks reflow the layout (panning tables, one-column
+  grids, scrolling tab bar). Suite-06 pins overflow-free rendering at 390px.
 - The Excel workbook specifies **Montserrat**. Machines without it substitute silently.
   Switching to a guaranteed font is a one-line change in `BRAND` if that becomes a
   problem.

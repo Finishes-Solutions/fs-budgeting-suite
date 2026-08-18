@@ -122,9 +122,11 @@
 .inv-list th.no-print{width:var(--lt-actions,44px)}
 .inv-list td:first-child{line-height:1.35}   /* long names may wrap to two lines */
 
-/* mobile read-only: hide editing affordances, keep the report viewable */
-body.mobile-ro #page-analysis .inv-step input,
-body.mobile-ro #page-analysis .inv-step select,
-body.mobile-ro #page-analysis .inv-step button,
-body.mobile-ro #page-analysis [data-inv-edit],
-body.mobile-ro #page-analyses [data-inv-edit]{display:none !important}
+/* Small screens: the editor is fully capable — these rules only reflow it.
+   Wide-span fields fall back to a single column, and the step pills / state
+   bar wrap instead of overflowing. */
+@media(max-width:760px){
+  .inv-step{padding:14px}
+  .inv-grid .wide{grid-column:auto}
+  .inv-report .inv-kpis{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+}
