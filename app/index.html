@@ -48,6 +48,8 @@ try{
      the nav button, page containers, routes, and the adapter passed to init. -->
 <link rel="stylesheet" href="investment-analysis.css">
 <script src="investment-analysis.js"></script>
+<link rel="stylesheet" href="dashboard.css">
+<script src="dashboard.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 :root{
@@ -764,6 +766,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <button id="nav-analyses" onclick="go('analyses')">Investment Analysis</button>
       <button id="nav-pricing" onclick="go('pricing')">Pricing Library</button>
       <button id="nav-help" onclick="go('help')">How to Use</button>
+      <button id="nav-dashboard" onclick="go('dashboard')" style="display:none">Analytics</button>
     </nav>
     <div class="hd-r">
       <span class="savepill" id="saveState" style="display:none"></span>
@@ -1762,6 +1765,9 @@ th.sortable.sorted{color:var(--ink-900)}
             and export budgets and investment analyses, and can read the pricing library.</td></tr>
           <tr><td>pricing_admin</td><td>Additionally can edit and publish the pricing library. This is deliberately
             a very short list, because a rate change affects every budget created afterwards.</td></tr>
+          <tr><td>super_admin</td><td>Everything pricing_admin can do, plus access to the Analytics dashboard
+            (platform-wide KPIs, status breakdowns, and user activity). The Analytics tab appears only for
+            accounts holding this role.</td></tr>
         </tbody></table>
         <p>The pricing page shows whether your account holds the role. If you need it, ask the tool owner for a
           role invitation.</p>
@@ -1797,6 +1803,22 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></section>
 
     </div>
+  </div>
+</div>
+
+<!-- ================= ANALYTICS DASHBOARD (super_admin only) ================= -->
+<div class="page" id="page-dashboard">
+  <div class="page-title">
+    <div><h1>Analytics Dashboard</h1>
+      <div class="sub">Platform usage, budget and investment KPIs, and recent activity across all users.</div></div>
+    <div><button class="btn btn-dark" onclick="FSDashboard.refresh()">Refresh</button></div>
+  </div>
+  <div class="dash-kpis" id="dashKpis"></div>
+  <div class="dash-section"><h2>Status Breakdown</h2>
+    <div class="dash-grid" id="dashBreakdowns"></div>
+  </div>
+  <div class="dash-section"><h2>Recent Activity</h2>
+    <div id="dashActivity"></div>
   </div>
 </div>
 
@@ -2428,7 +2450,15 @@ async function sDel(k){if(k.startsWith('budget-'))await api('budget/'+encodeURIC
 let principal=null;
 async function initAuth(){
   try{const r=await fetch('/.auth/me');const j=await r.json();principal=j.clientPrincipal||null;}catch(e){principal=null;}
-  if(principal)adminUnlocked=(principal.userRoles||[]).includes('pricing_admin');
+  if(principal){
+    var roles=principal.userRoles||[];
+    var isSuperAdmin=roles.includes('super_admin');
+    adminUnlocked=roles.includes('pricing_admin')||isSuperAdmin;
+    if(isSuperAdmin){
+      document.getElementById('nav-dashboard').style.display='';
+      FSDashboard.init({esc:esc});
+    }
+  }
   renderProfile();
 }
 
@@ -2881,7 +2911,7 @@ function editReason(it){
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
 const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help'};
-const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help'};
+const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard'};
 const DOC_PAGES=['input','budget','csi'];
 
 function hashFor(p){
@@ -2917,6 +2947,7 @@ function go(p){
   if(p==='home')renderHome();
   if(p==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
   if(p==='pricing'){renderPricing();renderCatalog();}
+  if(p==='dashboard'&&window.FSDashboard)FSDashboard.render();
   if(p==='budget'||p==='input'||p==='csi')recalc();
   window.scrollTo(0,0);
 }

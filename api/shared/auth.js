@@ -8,6 +8,14 @@ function getPrincipal(req) {
 }
 function hasRole(req, role) {
   const p = getPrincipal(req);
-  return !!(p && Array.isArray(p.userRoles) && p.userRoles.includes(role));
+  if (!p || !Array.isArray(p.userRoles)) return false;
+  if (p.userRoles.includes(role)) return true;
+  // super_admin subsumes pricing_admin
+  if (role === 'pricing_admin' && p.userRoles.includes('super_admin')) return true;
+  return false;
 }
-module.exports = { getPrincipal, hasRole };
+function isSuperAdmin(req) {
+  const p = getPrincipal(req);
+  return !!(p && Array.isArray(p.userRoles) && p.userRoles.includes('super_admin'));
+}
+module.exports = { getPrincipal, hasRole, isSuperAdmin };
