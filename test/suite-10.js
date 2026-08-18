@@ -145,7 +145,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.evaluate(()=>{document.getElementById('printDoc').innerHTML='';document.body.classList.remove('printing');});
 
  // ---- editable CSI codes move a line to the matching division
- await p.click('#nav-budget'); await p.waitForTimeout(400);
+ await p.click(".page.on [data-wf-pills] a:has-text('Budget')"); await p.waitForTimeout(400);
  const moved = await p.evaluate(() => {
    const l = doc.lines.find(x => x.scope === 'res' && x.grp === 'Interiors');
    const b = {id:l.lineId, qty:lineQty(l), unit:l.unit, scope:l.scope, basis:l.basis,

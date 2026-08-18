@@ -28,7 +28,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     (await p.evaluate(async()=>(await fetch('/api/budgets')).json())).some(x=>x.projectId==='TST-9996'));
 
  // it must commit the focused field first, not save a stale value
- await p.click('#nav-budget'); await p.waitForTimeout(400);
+ await p.click(".page.on [data-wf-pills] a:has-text('Budget')"); await p.waitForTimeout(400);
  const rate=p.locator('#budBody input[data-k$=".unit"]').first();
  await rate.click(); await rate.fill('12.34');
  await p.keyboard.press(MOD+'+s');                 // saving while the field still has focus

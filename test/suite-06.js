@@ -197,7 +197,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // Printing switches the browser to print media; exports must stay on the page
  // being exported. (The old width-query mobile mode is gone, but the invariant
  // it once broke is still worth pinning.)
- await p.click('#nav-csi').catch(() => {});
+ await p.click(".page.on [data-wf-pills] a:has-text('CSI Schedule')").catch(() => {});
  await p.waitForTimeout(300);
  const pageBefore = await p.evaluate(() => currentPage);
  await p.emulateMedia({media:'print'});

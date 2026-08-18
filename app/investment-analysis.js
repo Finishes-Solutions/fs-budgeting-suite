@@ -512,7 +512,9 @@
   // Leaving the editor goes through the same unsaved-changes guard as any
   // other navigation — openBudget()/go() own that check.
   function openSourceBudget(projectId) {
-    if (typeof window.openBudget === 'function') window.openBudget(projectId);
+    // The link points at #/inputs/<id>, so open that page, not the default
+    // Budget page openBudget() lands on from a list row.
+    if (typeof window.openBudget === 'function') window.openBudget(projectId, 'input');
     else A.navigate('#/inputs/' + projectId);
   }
   function backToList() { A.navigate('#/analyses'); }

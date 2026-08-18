@@ -32,9 +32,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('lump-sum amenity line counts while amenity is on', withLump!==withAmenContract, withAmenContract+' -> '+withLump);
 
  // --- switch amenity off
- await p.click('#nav-input'); await p.waitForTimeout(200);
+ await p.click(".page.on [data-wf-pills] a:has-text('Inputs')"); await p.waitForTimeout(200);
  await p.fill('#pASF','0'); await p.locator('#pSF').click(); await p.waitForTimeout(300);
- await p.click('#nav-budget'); await p.waitForTimeout(400);
+ await p.click(".page.on [data-wf-pills] a:has-text('Budget')"); await p.waitForTimeout(400);
 
  ok('amenity scope gone from the grid',
     !(await p.locator('#budBody').textContent()).includes('Amenity / Clubhouse'));
@@ -49,7 +49,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('soft costs still intact', (await p.locator('#budBody').textContent()).includes('Soft Costs'));
 
  // --- CSI view
- await p.click('#nav-csi'); await p.waitForTimeout(500);
+ await p.click(".page.on [data-wf-pills] a:has-text('CSI Schedule')"); await p.waitForTimeout(500);
  const csi=await p.locator('#csiBody').textContent();
  ok('CSI view has no Amenity tags', !csi.includes('Amenity'), 'found Amenity tag');
  ok('CSI contract sum matches budget page',
@@ -66,9 +66,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // --- turning it back on restores everything
  await p.waitForTimeout(700);
- await p.click('#nav-input'); await p.waitForTimeout(200);
+ await p.click(".page.on [data-wf-pills] a:has-text('Inputs')"); await p.waitForTimeout(200);
  await p.fill('#pASF','1200'); await p.locator('#pSF').click(); await p.waitForTimeout(300);
- await p.click('#nav-budget'); await p.waitForTimeout(400);
+ await p.click(".page.on [data-wf-pills] a:has-text('Budget')"); await p.waitForTimeout(400);
  ok('amenity returns when SF is set again',
     (await p.locator('#budBody').textContent()).includes('Amenity / Clubhouse'));
  ok('contract sum returns to its earlier value',
@@ -76,7 +76,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     (await p.locator('#rContract').textContent())+' vs '+withLump);
 
  // --- division header totals and percentages (CSI schedule)
- await p.click('#nav-csi'); await p.waitForTimeout(400);
+ await p.click(".page.on [data-wf-pills] a:has-text('CSI Schedule')"); await p.waitForTimeout(400);
  const div = await p.evaluate(() => {
    const sch = csiSchedule();
    const d = sch.divisions[0];
@@ -126,7 +126,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // The trigger is an ABSENT property, which is what an older saved document or an
  // imported one looks like — not a field the user typed into and cleared, which
  // already coerces to 0.
- await p.click('#nav-budget'); await p.waitForTimeout(400);
+ await p.click(".page.on [data-wf-pills] a:has-text('Budget')"); await p.waitForTimeout(400);
  const nanScan = async () => p.evaluate(() =>
    /NaN|Infinity/.test(document.body.innerText));
  await p.evaluate(() => { doc.lines.forEach(l => { delete l.unit; delete l.qty; }); touch(); });
@@ -141,9 +141,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  });
  await p.waitForTimeout(300);
  ok('A document stripped of every numeric does not render NaN', !(await nanScan()));
- await p.click('#nav-csi'); await p.waitForTimeout(400);
+ await p.click(".page.on [data-wf-pills] a:has-text('CSI Schedule')"); await p.waitForTimeout(400);
  ok('The CSI schedule survives it too', !(await nanScan()));
- await p.click('#nav-input'); await p.waitForTimeout(400);
+ await p.click(".page.on [data-wf-pills] a:has-text('Inputs')"); await p.waitForTimeout(400);
  ok('The inputs page survives it too', !(await nanScan()));
  const repaired = await p.evaluate(() => {
    const d = migrate({units:[{label:'x'}], other:[], expenses:[], lines:[{code:'01 01 00'}],

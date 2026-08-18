@@ -99,14 +99,17 @@ const BASE='http://127.0.0.1:8100';
     }));
 
  // opening a budget from the Budgets page
- await p.click('#budgetsBody tr:has-text("BD-8101")'); await p.waitForTimeout(800);
+ // Click the Project ID cell: the status cell swallows the click by design.
+ await p.click('#budgetsBody tr:has-text("BD-8101") td:nth-child(2)'); await p.waitForTimeout(900);
  ok('a Budgets-page row opens that budget\'s workflow',
-    await p.evaluate(()=>document.getElementById('page-input').classList.contains('on')));
+    await p.evaluate(()=>document.getElementById('page-budget').classList.contains('on')),
+    await p.evaluate(()=>{const e=document.querySelector('.page.on');return e?e.id:'none';}));
  ok('it opened the budget that was clicked',
-    (await p.locator('#pId').inputValue())==='BD-8101',
-    await p.locator('#pId').inputValue());
+    (await p.locator('#bTitle').textContent()).includes('Cedar Yard'),
+    await p.locator('#bTitle').textContent());
 
  // ---------- 3. workflow pills ----------
+ await p.click('#page-budget [data-wf-pills] a:has-text("Inputs")'); await p.waitForTimeout(600);
  ok('the Inputs page shows the workflow pills',
     (await p.locator('#page-input [data-wf-pills] a').count())===3);
  ok('the pills are Inputs, Budget and CSI Schedule',
@@ -254,11 +257,11 @@ const BASE='http://127.0.0.1:8100';
  await p.goto(BASE+'/index.html#/home',{waitUntil:'networkidle'}); await p.waitForTimeout(900);
  ok('Home still lists budgets', (await p.locator('#homeBody tr').count())>=2);
  ok('Home still opens a budget',
-    await (async()=>{ await p.click('#homeBody tr:has-text("BD-8102")'); await p.waitForTimeout(800);
-      return p.evaluate(()=>document.getElementById('page-input').classList.contains('on')); })());
+    await (async()=>{ await p.click('#homeBody tr:has-text("BD-8102") td:nth-child(2)'); await p.waitForTimeout(900);
+      return p.evaluate(()=>document.getElementById('page-budget').classList.contains('on')); })());
  ok('Home and Budgets open the same underlying budget',
-    (await p.locator('#pId').inputValue())==='BD-8102',
-    await p.locator('#pId').inputValue());
+    (await p.locator('#bTitle').textContent()).includes('Maple Court'),
+    await p.locator('#bTitle').textContent());
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
