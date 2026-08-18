@@ -16,7 +16,7 @@ const PASS='Basalt-Meridian-8538-27D5B4';
  ok('passphrase itself is not in page source', !src.includes(PASS));
  ok('only the digest is present', src.includes('52e20e96fd28257e018abac67cd8e1f4863b1cac1fdfb6cb0a96c963b9437548'));
 
- await p.click('button:has-text("+ New Multifamily Budget")');
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
  await p.fill('#pId','TST-9999'); await p.fill('#pName','Edit Flag Test');
  await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
 

@@ -7,7 +7,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const errs=[]; p.on('pageerror',e=>errs.push(e.message));
  await p.goto('http://127.0.0.1:8100/index.html',{waitUntil:'networkidle'});
  await p.waitForTimeout(400);
- await p.click('button:has-text("+ New Multifamily Budget")');
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
  await p.fill('#pId','TST-9999'); await p.fill('#pName','Print Test');
  await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
  const full = await p.locator('#budBody tr').count();
@@ -130,11 +130,29 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.keyboard.press('Control+z'); await p.waitForTimeout(350);
  ok('Ctrl+Z reverts an edited rate', (await p.evaluate(()=>doc.lines[0].unit))===rate0,
     String(await p.evaluate(()=>doc.lines[0].unit)));
- // depth cap: six deletes, but only five undos recover
- for(let i=0;i<6;i++){await p.locator('#budBody .btn-x').first().click();await p.waitForTimeout(150);}
- for(let i=0;i<8;i++){await p.keyboard.press('Control+z');await p.waitForTimeout(180);}
- ok('undo depth is capped at five changes', (await p.evaluate(()=>doc.lines.length))===rows0-1,
+ // ---- redo: Ctrl+Shift+Z / Ctrl+Y re-applies undone changes
+ await p.locator('#budBody .btn-x').first().click(); await p.waitForTimeout(200);
+ await p.keyboard.press('Control+z'); await p.waitForTimeout(300);
+ await p.keyboard.press('Control+Shift+z'); await p.waitForTimeout(300);
+ ok('Ctrl+Shift+Z redoes the undone delete', (await p.evaluate(()=>doc.lines.length))===rows0-1);
+ await p.keyboard.press('Control+z'); await p.waitForTimeout(300);
+ await p.keyboard.press('Control+y'); await p.waitForTimeout(300);
+ ok('Ctrl+Y redoes too', (await p.evaluate(()=>doc.lines.length))===rows0-1);
+ await p.keyboard.press('Control+z'); await p.waitForTimeout(300);   // back to rows0
+ // a NEW change after an undo clears the redo path
+ await p.locator('#budBody .btn-x').first().click(); await p.waitForTimeout(200);
+ await p.keyboard.press('Control+y'); await p.waitForTimeout(250);
+ ok('a new change forks history — redo is cleared', (await p.evaluate(()=>doc.lines.length))===rows0-1);
+ await p.keyboard.press('Control+z'); await p.waitForTimeout(300);   // back to rows0
+ // depth cap: twelve deletes, only ten undos recover
+ for(let i=0;i<12;i++){await p.locator('#budBody .btn-x').first().click();await p.waitForTimeout(140);}
+ for(let i=0;i<14;i++){await p.keyboard.press('Control+z');await p.waitForTimeout(170);}
+ ok('undo depth is capped at ten changes', (await p.evaluate(()=>doc.lines.length))===rows0-2,
     (await p.evaluate(()=>doc.lines.length))+' vs '+rows0);
+ // redo runs the other way, up to the same depth
+ for(let i=0;i<3;i++){await p.keyboard.press('Control+Shift+z');await p.waitForTimeout(170);}
+ ok('redo replays forward after a deep undo', (await p.evaluate(()=>doc.lines.length))===rows0-5,
+    String(await p.evaluate(()=>doc.lines.length)));
 
  ok('no JS errors', errs.length===0, errs.join('|'));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

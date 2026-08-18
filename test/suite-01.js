@@ -42,7 +42,7 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
   // Creating a budget is async now â€” it fetches the template's current published
   // version first, and offline it falls back to the built-in defaults. isVisible()
   // does not auto-wait, so give the fallback a moment to land.
-  await p.click('button:has-text("+ New Multifamily Budget")');
+  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
   await p.waitForTimeout(400);
   ok('Inputs page after new budget', await p.locator('#page-input').isVisible());
   ok('U4 hash for inputs', p.url().endsWith('#/inputs'), p.url());
@@ -92,8 +92,8 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
   ok('D4 unsafe name renders literally', sub.includes('Preview <Test> & Co'), sub);
 
   // D5 â€” status
-  await p.selectOption('#bStatus', 'Finalized');
-  ok('D5 status settable', await p.locator('#bStatus').inputValue() === 'Finalized');
+  await p.selectOption('#bStatus', 'Completed');
+  ok('D5 status settable', await p.locator('#bStatus').inputValue() === 'Completed');
 
   // U1 â€” collapse
   const before = await p.locator('#budBody tr').count();

@@ -102,6 +102,14 @@ jobs:
   # "deployment_token was not provided" on every PR close, leaving preview environments
   # behind. It now authenticates over OIDC exactly like the two deploy jobs, which needs
   # id-token: write and the token-fetch steps.
+  #
+  # Even so, the v1 action's CLOSE path does not understand github_id_token (it warns
+  # "Unexpected input" and drops it), then demands the deployment token this repo
+  # deliberately does not use — so the job failed red on every PR close anyway.
+  # skip_deploy_on_missing_secrets makes the action exit green in that situation
+  # instead. Net behavior is unchanged (the preview environment is not torn down
+  # either way; delete stale previews in the portal's Environments blade), but closed
+  # PRs no longer show a spurious red X. Do NOT "fix" this with a deployment token.
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
@@ -126,3 +134,4 @@ jobs:
         with:
           action: "close"
           github_id_token: ${{ steps.idtoken.outputs.result }}
+          skip_deploy_on_missing_secrets: true

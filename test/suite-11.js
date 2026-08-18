@@ -24,9 +24,16 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
      body:JSON.stringify({meta:{projectId:'TST-9911',name:'Import Source'},doc})});
  });
 
+ // Creation happens through the shared New Investment Analysis modal — the
+ // budget editor no longer carries its own creation button.
  await p.goto('http://127.0.0.1:8100/index.html#/budget/TST-9911',{waitUntil:'networkidle'});
  await p.waitForTimeout(500);
- await p.click('button:has-text("Create Investment Analysis")');
+ ok('the budget page carries no Create Investment Analysis button',
+    (await p.locator('#page-budget button:has-text("Create Investment Analysis")').count())===0);
+ await p.click('#nav-home'); await p.waitForTimeout(500);
+ await p.click('#page-home button:has-text("+ New Investment Analysis")');
+ await p.waitForTimeout(500);
+ await p.locator('#invProjectPick tbody tr',{hasText:'TST-9911'}).first().click();
  await p.waitForTimeout(900);
  ok('editor opens on a GUID route', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
 
@@ -74,6 +81,52 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('origin badges mark imported values', (await p.locator('.inv-origin').count())>=4,
     (await p.locator('.inv-origin').count())+' badges');
 
+ // ---- the badge follows the value: editing away hides it, reverting restores
+ const nameBadge=p.locator('[data-origin="property.name"]');
+ ok('badge visible while the value matches the import', await nameBadge.isVisible());
+ const origName=await p.locator('[data-f="property.name"]').inputValue();
+ await p.fill('[data-f="property.name"]','Changed Name');
+ await p.locator('[data-f="property.name"]').dispatchEvent('change');
+ await p.waitForTimeout(150);
+ ok('editing an imported value removes its From Budget badge', !(await nameBadge.isVisible()));
+ await p.fill('[data-f="property.name"]',origName);
+ await p.locator('[data-f="property.name"]').dispatchEvent('change');
+ await p.waitForTimeout(150);
+ ok('restoring the imported value brings the badge back', await nameBadge.isVisible());
+
+ // ---- the baseline survives persistence: the server stores the original
+ // import in source.originalValues, so a field edited AND SAVED still knows
+ // what the budget said after a full reload
+ await p.fill('[data-f="property.purchaseMonth"]','2026-07');
+ await p.locator('[data-f="property.purchaseMonth"]').dispatchEvent('change');
+ await p.click('#invSteps button[data-step="3"]');
+ await p.fill('[data-f="expenses.value"]','33');
+ await p.locator('[data-f="expenses.value"]').dispatchEvent('change');
+ await p.click('#invSteps button[data-step="5"]');
+ await p.fill('[data-f="disposition.exitCapRate.value"]','7');
+ await p.locator('[data-f="disposition.exitCapRate.value"]').dispatchEvent('change');
+ await p.click('#invSteps button[data-step="1"]');
+ await p.fill('[data-f="property.name"]','Changed Name');
+ await p.locator('[data-f="property.name"]').dispatchEvent('change');
+ await p.click('#invSaveBtn'); await p.waitForTimeout(900);
+ await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(800);
+ await p.click('#invSteps button[data-step="1"]'); await p.waitForTimeout(200);
+ ok('after save + reload the edited field still shows no badge',
+    !(await p.locator('[data-origin="property.name"]').isVisible()));
+ await p.fill('[data-f="property.name"]',origName);
+ await p.locator('[data-f="property.name"]').dispatchEvent('change');
+ await p.waitForTimeout(150);
+ ok('after reload, retyping the original import restores the badge',
+    await p.locator('[data-origin="property.name"]').isVisible());
+
+ // ---- inputs align across a grid row even when a label carries the badge
+ await p.click('#invSteps button[data-step="2"]');
+ const aBox=await p.locator('[data-f="income.year1PotentialIncome"]').boundingBox();
+ const bBox=await p.locator('[data-f="income.growth.value"]').boundingBox();
+ ok('income inputs align despite the From Budget badge', Math.abs(aBox.y-bBox.y)<2,
+    JSON.stringify({a:aBox.y,b:bBox.y}));
+ await p.click('#invSteps button[data-step="1"]');
+
  // ---- version pinning: editing + saving the budget must NOT touch the analysis
  const aid=p.url().match(/analysis\/([0-9a-f-]{36})/)[1];
  await p.evaluate(async()=>{
@@ -89,15 +142,29 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('analysis input unchanged by the budget edit',
     after.input.acquisition.basis.value===5000000);
 
- // ---- Home-page creation buttons, mirroring the budget buttons above them
+ // ---- Home-page creation: ONE button, the shared modal
  await p.click('#nav-home'); await p.waitForTimeout(600);
- ok('Home offers both analysis creation buttons',
+ ok('Home offers a single New Investment Analysis button',
     (await p.locator('#page-home button:has-text("+ New Investment Analysis")').count())===1
-    && (await p.locator('#page-home button:has-text("+ Blank Investment Analysis")').count())===1);
+    && (await p.locator('#page-home button:has-text("+ Blank Investment Analysis")').count())===0);
+ // title row above the card, exactly like Project Budgets
+ ok('Investment Analyses heading and buttons sit above the list card',
+    await p.evaluate(()=>{
+      const hs=[...document.querySelectorAll('#page-home .page-title h1')].map(x=>x.textContent.trim());
+      if(JSON.stringify(hs)!==JSON.stringify(['Project Budgets','Investment Analyses']))return false;
+      const t=[...document.querySelectorAll('#page-home .page-title')][1];
+      return !t.closest('.card')&&!!t.nextElementSibling&&t.nextElementSibling.classList.contains('card');
+    }));
+ const bBtn=await p.locator('#page-home button:has-text("+ New Budget")').boundingBox();
+ const iBtn=await p.locator('#page-home button:has-text("+ New Investment Analysis")').boundingBox();
+ ok('creation buttons right-align across both sections',
+    Math.abs((bBtn.x+bBtn.width)-(iBtn.x+iBtn.width))<2,
+    JSON.stringify({budget:bBtn.x+bBtn.width,analysis:iBtn.x+iBtn.width}));
  await p.click('#page-home button:has-text("+ New Investment Analysis")');
  await p.waitForTimeout(400);
- ok('New Investment Analysis asks which project it is for',
-    (await p.locator('#invProjectPick tbody tr',{hasText:'TST-9911'}).count())===1);
+ ok('the modal offers linked creation AND standalone in one place',
+    (await p.locator('#invProjectPick tbody tr',{hasText:'TST-9911'}).count())===1
+    && await p.locator('#invModal #invNewName').isVisible());
  await p.locator('#invProjectPick tbody tr',{hasText:'TST-9911'}).first().click();
  await p.waitForTimeout(900);
  ok('picking a project opens a linked analysis', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
@@ -106,14 +173,98 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the picked analysis is linked to the selected project',
     linked.source&&linked.source.projectId==='TST-9911', JSON.stringify(linked.source||null));
  await p.click('#nav-home'); await p.waitForTimeout(600);
- await p.click('#page-home button:has-text("+ Blank Investment Analysis")');
+ await p.click('#page-home button:has-text("+ New Investment Analysis")');
+ await p.waitForTimeout(400);
+ await p.click('#invModal button:has-text("Create Standalone Analysis")');   // name left blank
  await p.waitForTimeout(900);
- ok('Blank Investment Analysis opens a new editor directly', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
+ ok('a nameless standalone opens a new editor directly', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
  const blank=await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
    return await (await fetch('/api/investment-analysis/'+id)).json();});
- ok('the blank analysis is unlinked and carries the placeholder name',
+ ok('the standalone analysis is unlinked and carries the placeholder name',
     !blank.source && blank.input.analysisName==='Untitled Analysis',
     JSON.stringify({source:blank.source,name:blank.input&&blank.input.analysisName}));
+
+ // ---- analyses list search, status filter and grouping — like the budgets
+ await p.click('#nav-analyses'); await p.waitForTimeout(700);
+ ok('analyses list carries search, status and grouping controls',
+    await p.evaluate(()=>!!document.querySelector('#page-analyses [data-inv-q]')
+      &&!!document.querySelector('#page-analyses [data-inv-status]')
+      &&!!document.querySelector('#page-analyses [data-inv-group]')));
+ ok('count reads N of M analyses',
+    /3 of 3 analyses/.test(await p.locator('#page-analyses [data-inv-count]').textContent()),
+    await p.locator('#page-analyses [data-inv-count]').textContent());
+ await p.fill('#page-analyses [data-inv-q]','untitled'); await p.waitForTimeout(200);
+ ok('search narrows by analysis name',
+    (await p.locator('#page-analyses [data-inv-list] tr').count())===1
+    && /1 of 3/.test(await p.locator('#page-analyses [data-inv-count]').textContent()));
+ await p.fill('#page-analyses [data-inv-q]','tst-9911'); await p.waitForTimeout(200);
+ ok('search matches project IDs case-insensitively',
+    (await p.locator('#page-analyses [data-inv-list] tr').count())===2);
+ await p.fill('#page-analyses [data-inv-q]',''); await p.waitForTimeout(200);
+ await p.selectOption('#page-analyses [data-inv-group]','project'); await p.waitForTimeout(250);
+ ok('grouping by project splits linked from standalone, standalone last',
+    await p.evaluate(()=>{
+      const heads=[...document.querySelectorAll('#page-analyses tr.inv-grp')].map(t=>t.textContent.trim());
+      return heads.length===2&&/^TST-9911/.test(heads[0])&&/^Standalone/.test(heads[1]);
+    }),
+    await p.evaluate(()=>[...document.querySelectorAll('#page-analyses tr.inv-grp')].map(t=>t.textContent.trim()).join('|')));
+ ok('grouping shows every analysis exactly once',
+    (await p.locator('#page-analyses [data-inv-list] tr:not(.inv-grp)').count())===3);
+ await p.selectOption('#page-analyses [data-inv-group]',''); await p.waitForTimeout(200);
+ ok('the analyses toolbar carries the three-option view toggle',
+    await p.evaluate(()=>['comfortable','compact','cards'].every(v=>
+      !!document.querySelector('#page-analyses .mini-seg [data-analysisview-pick='+v+']'))));
+ await p.click('#page-analyses .mini-seg [data-analysisview-pick=cards]'); await p.waitForTimeout(700);
+ ok('card view works on the analyses tab too',
+    (await p.locator('#page-analyses [data-inv-cards] .hcard').count())>=3
+    && await p.evaluate(()=>document.querySelector('#page-analyses table.inv-list').style.display==='none'));
+ await p.click('#page-analyses .mini-seg [data-analysisview-pick=comfortable]'); await p.waitForTimeout(700);
+ await p.click('#nav-home'); await p.waitForTimeout(600);
+ ok('the embedded Home list carries the same controls',
+    await p.evaluate(()=>!!document.querySelector('#homeAnalyses [data-inv-q]')
+      &&!!document.querySelector('#homeAnalyses [data-inv-group]')));
+ ok('analyses list mirrors the budget list styling: mono headers, compact rows',
+    await p.evaluate(()=>{
+      const bTh=getComputedStyle(document.querySelector('#homeHead th'));
+      const aTh=getComputedStyle(document.querySelector('#homeAnalyses .inv-list th'));
+      const bTd=getComputedStyle(document.querySelector('#homeBody tr.clickable td'));
+      const aTd=getComputedStyle(document.querySelector('#homeAnalyses [data-inv-list] tr td'));
+      return bTh.fontFamily===aTh.fontFamily&&bTh.fontSize===aTh.fontSize
+        &&bTh.letterSpacing===aTh.letterSpacing&&bTd.paddingTop===aTd.paddingTop;
+    }),
+    await p.evaluate(()=>JSON.stringify({
+      b:getComputedStyle(document.querySelector('#homeHead th')).fontFamily,
+      a:getComputedStyle(document.querySelector('#homeAnalyses .inv-list th')).fontFamily})));
+ ok('analyses numbers use the budget list\'s mono calc styling',
+    await p.evaluate(()=>{
+      const cell=document.querySelector('#homeAnalyses [data-inv-list] tr td.calc');
+      const ref=getComputedStyle(document.querySelector('#homeBody tr.clickable td.calc'));
+      return !!cell&&getComputedStyle(cell).fontFamily===ref.fontFamily
+        &&getComputedStyle(cell).fontSize===ref.fontSize;
+    }));
+ ok('analyses Updated column right-aligns beside the row menu',
+    await p.evaluate(()=>{
+      const row=document.querySelector('#homeAnalyses [data-inv-list] tr');
+      return getComputedStyle(row.children[8]).textAlign==='right';
+    }));
+ ok('analysis statuses render as the shared status chips',
+    (await p.locator('#homeAnalyses [data-inv-list] .st-chip').count())>=1);
+ ok('Status, Updated and the action column line up across both Home cards',
+    await p.evaluate(()=>{
+      const b=[...document.querySelectorAll('#homeHead th')];
+      const a=[...document.querySelectorAll('#homeAnalyses .inv-list thead th')];
+      const r=e=>e.getBoundingClientRect();
+      const close=(x,y)=>Math.abs(x-y)<14;
+      return close(r(b[2]).left,r(a[2]).left)        // Status columns
+        && close(r(b[5]).right,r(a[8]).right)        // Updated columns
+        && close(r(b[6]).left,r(a[9]).left);         // action columns
+    }),
+    await p.evaluate(()=>{
+      const b=[...document.querySelectorAll('#homeHead th')];
+      const a=[...document.querySelectorAll('#homeAnalyses .inv-list thead th')];
+      const r=e=>Math.round(e.getBoundingClientRect().left);
+      return JSON.stringify({bStatus:r(b[2]),aStatus:r(a[2]),bAct:r(b[6]),aAct:r(a[9])});
+    }));
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

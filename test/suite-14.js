@@ -12,8 +12,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.goto('http://127.0.0.1:8100/index.html#/analyses',{waitUntil:'networkidle'});
  await p.waitForTimeout(500);
 
+ await p.click('#page-analyses button:has-text("+ New Investment Analysis")'); await p.waitForTimeout(400);
  await p.fill('#invNewName','Workbook Deal');
- await p.click('button:has-text("+ New Standalone Analysis")');
+ await p.click('button:has-text("Create Standalone Analysis")');
  await p.waitForTimeout(700);
  await p.fill('[data-f="property.size.value"]','80000');
  await p.fill('[data-f="property.purchaseMonth"]','2026-05');
@@ -127,11 +128,13 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
    const buf=await (await fetch(window.__dl.href)).arrayBuffer();
    const txt=new TextDecoder('latin1').decode(buf);
    return {name:window.__dl.name,len:buf.byteLength,head:txt.slice(0,5),
-     portrait:/MediaBox\s*\[\s*0\s+0\s+612\s+792/.test(txt)};
+     portrait:/MediaBox\s*\[\s*0\s+0\s+612\s+792/.test(txt),
+     engineStamp:txt.indexOf('fs-render engine, fs-courier')>=0};
  });
  ok('PDF button downloads a real PDF file', pdfDl.head==='%PDF-'&&pdfDl.len>30000,
     JSON.stringify({name:pdfDl.name,len:pdfDl.len,head:pdfDl.head}));
  ok('PDF is portrait letter with the shared layout', pdfDl.portrait);
+ ok('PDF metadata names the engine as its renderer', pdfDl.engineStamp, 'no fs-render creator stamp');
  ok('PDF filename carries the analysis name', /Workbook_Deal.*\.pdf$/.test(pdfDl.name), pdfDl.name);
  ok('export modal closes after the PDF download', (await p.locator('#invModal').count())===0);
 
@@ -158,6 +161,45 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('API renders CSV with the tables and engine line', srv.csvHasNOI);
  ok('API export downloads as an attachment', /attachment/.test(srv.csvDisp), srv.csvDisp);
  ok('API rejects unknown formats', srv.badStatus===400, String(srv.badStatus));
+
+ // ---- FS_EXPORT_RENDERER: the repair fallback. The config endpoint reports
+ // the deployment default; ?renderer=local flips one API request to the
+ // frozen legacy renderers; a localStorage override flips this browser.
+ const swtch=await p.evaluate(async()=>{
+   const cfg=await (await fetch('/api/export-config')).json();
+   const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
+   const legPdf=await (await fetch('/api/investment-analysis/'+id+'/export?format=pdf&renderer=local')).arrayBuffer();
+   const legCsv=await (await fetch('/api/investment-analysis/'+id+'/export?format=csv&renderer=local')).text();
+   const bad=await fetch('/api/investment-analysis/'+id+'/export?format=pdf&renderer=fax');
+   return {cfg:cfg.renderer,
+     legHead:String.fromCharCode.apply(null,new Uint8Array(legPdf.slice(0,5))),
+     legLen:legPdf.byteLength,legCsvOk:/Net Operating Income/.test(legCsv),badStatus:bad.status};
+ });
+ ok('config endpoint defaults to the engine renderer', swtch.cfg==='engine', swtch.cfg);
+ ok('renderer=local renders a real PDF through the legacy fallback',
+    swtch.legHead==='%PDF-'&&swtch.legLen>30000, JSON.stringify(swtch.legLen));
+ ok('renderer=local CSV carries the tables', swtch.legCsvOk);
+ ok('unknown renderer values are rejected', swtch.badStatus===400, String(swtch.badStatus));
+ await p.evaluate(()=>{localStorage.setItem('fsExportRenderer','local');
+   window.__dl=null;
+   const orig=HTMLAnchorElement.prototype.click;
+   HTMLAnchorElement.prototype.click=function(){window.__dl={href:this.href,name:this.download};};
+   window.__restoreClick=()=>{HTMLAnchorElement.prototype.click=orig;};});
+ await p.click('#invExportBtn'); await p.waitForTimeout(200);
+ await p.click('#invModal button:has-text("PDF")');
+ await p.waitForFunction(()=>window.__dl,{timeout:15000});
+ const legDl=await p.evaluate(async()=>{
+   window.__restoreClick();
+   localStorage.removeItem('fsExportRenderer');   // restore the engine default
+   const buf=await (await fetch(window.__dl.href)).arrayBuffer();
+   const txt=new TextDecoder('latin1').decode(buf);
+   return {head:txt.slice(0,5),len:buf.byteLength,
+     portrait:/MediaBox\s*\[\s*0\s+0\s+612\s+792/.test(txt),
+     legacyStamp:txt.indexOf('fs-budgeting-suite legacy renderer')>=0};
+ });
+ ok('localStorage override routes the PDF button through the legacy renderer',
+    legDl.head==='%PDF-'&&legDl.len>30000&&legDl.portrait, JSON.stringify(legDl));
+ ok('legacy PDF metadata names the legacy renderer', legDl.legacyStamp, 'no legacy creator stamp');
 
  // ---- Print: the original #printDoc pipeline, kept as the third option.
  await p.evaluate(()=>{window.__rpt=null;window.print=()=>{window.__rpt=document.getElementById('printDoc').innerHTML;};});
@@ -194,8 +236,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const ddHl=await p.evaluate(async()=>{
    const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];
    const result=(await (await fetch('/api/investment-analysis/'+id)).json()).result;
-   const dd=h=>JSON.stringify(FSExportRender.buildPdfDocDefinition(FSExportRender.buildExportDoc(
-     result, {kpis:1,cash:1,sale:1,returns:1,sens:1,assumptions:1,highlight:h}, {})));
+   const dd=h=>JSON.stringify(fsRender.buildPdfDocDefinition(
+     FSToFsdoc.toFsdoc(FSExportRender.buildExportDoc(
+       result, {kpis:1,cash:1,sale:1,returns:1,sens:1,assumptions:1,highlight:h}, {})),
+     fsRender.themes['finishes-solutions'], 'portrait'));
    return {on:/D8F3E0/.test(dd(true)),off:/D8F3E0/.test(dd(false))};
  });
  ok('downloaded PDF highlights rows only when the option is on', ddHl.on&&!ddHl.off, JSON.stringify(ddHl));

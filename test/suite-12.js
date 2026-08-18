@@ -12,11 +12,17 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.goto('http://127.0.0.1:8100/index.html',{waitUntil:'networkidle'});
  await p.waitForTimeout(400);
 
- // standalone creation from the list page
+ // standalone creation through the shared New Investment Analysis modal
  await p.click('#nav-analyses'); await p.waitForTimeout(400);
- ok('list page renders with standalone creation', await p.locator('#invNewName').isVisible());
+ ok('list page offers the shared creation flow',
+    await p.locator('#page-analyses button:has-text("+ New Investment Analysis")').isVisible());
+ await p.click('#page-analyses button:has-text("+ New Investment Analysis")');
+ await p.waitForTimeout(400);
+ ok('the modal offers both linked and standalone creation',
+    /From Existing Budget/.test(await p.locator('#invModal').textContent())
+    && /Standalone Analysis/.test(await p.locator('#invModal').textContent()));
  await p.fill('#invNewName','Workflow Deal');
- await p.click('button:has-text("+ New Standalone Analysis")');
+ await p.click('button:has-text("Create Standalone Analysis")');
  await p.waitForTimeout(700);
  ok('standalone analysis opens in the editor', /#\/analysis\//.test(p.url()));
  ok('six steps are presented', (await p.locator('#invSteps button').count())===6);
@@ -41,8 +47,13 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.waitForTimeout(150);
  ok('Next lights up when step 1 completes',
     await next1.isEnabled() && await next1.evaluate(e=>e.classList.contains('ready')));
- ok('the step pill earns its checkmark',
+ ok('the step pill earns its done mark',
     await p.locator('#invSteps button[data-step="1"]').evaluate(e=>e.classList.contains('done')));
+ ok('the done mark is a green dot, not a check mark',
+    await p.locator('#invSteps button[data-step="1"]').evaluate(e=>{
+      const s=getComputedStyle(e,'::after');
+      return s.content==='""'&&s.width==='7px'&&s.borderRadius==='50%';
+    }));
  await next1.click(); await p.waitForTimeout(200);
  ok('Next advances to Income', await p.locator('[data-steppane="2"]').evaluate(e=>e.classList.contains('on')));
  await p.fill('[data-f="income.year1PotentialIncome"]','300000');
@@ -64,6 +75,12 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('save shows the Saved pill', /Saved/.test(await p.locator('#invState').textContent()),
     await p.locator('#invState').textContent());
  ok('save recorded version 1', (await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];return (await (await fetch('/api/investment-analysis/'+id)).json()).currentVersionNumber;}))===1);
+ await p.evaluate(()=>FSInvestmentUI.showVersions(FSInvestmentUI.currentId()));
+ await p.waitForTimeout(500);
+ ok('version history stamps are local MM-DD-YYYY h:mm AM/PM',
+    /\d{2}-\d{2}-\d{4} \d{1,2}:\d{2} [AP]M/.test(await p.locator('#invModal').textContent()),
+    (await p.locator('#invModal').textContent()).replace(/\s+/g,' ').slice(0,140));
+ await p.click('#invModal .btn-x'); await p.waitForTimeout(200);
  const aid=p.url().match(/analysis\/([0-9a-f-]{36})/)[1];
  const saved=await p.evaluate(async id=>await (await fetch('/api/investment-analysis/'+id)).json(),aid);
  const a1=saved.result.annual[0];
@@ -114,6 +131,33 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('Cmd/Ctrl+S saves the analysis', /Saved/.test(await p.locator('#invState').textContent()),
     await p.locator('#invState').textContent());
  ok('keyboard save recorded version 2', (await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];return (await (await fetch('/api/investment-analysis/'+id)).json()).currentVersionNumber;}))===2);
+
+ // ---- undo / redo: the budget's shortcuts act on the analysis inputs here
+ await p.click('#invSteps button[data-step="3"]');
+ const vac0=await p.locator('[data-f="vacancy.value"]').inputValue();
+ await p.fill('[data-f="vacancy.value"]','22');
+ await p.locator('[data-f="vacancy.value"]').dispatchEvent('change');
+ await p.waitForTimeout(150);
+ await p.keyboard.press(MOD+'+z'); await p.waitForTimeout(300);
+ ok('Cmd/Ctrl+Z reverts the vacancy edit',
+    (await p.locator('[data-f="vacancy.value"]').inputValue())===vac0,
+    await p.locator('[data-f="vacancy.value"]').inputValue());
+ await p.keyboard.press(MOD+'+Shift+z'); await p.waitForTimeout(300);
+ ok('Cmd/Ctrl+Shift+Z redoes it',
+    (await p.locator('[data-f="vacancy.value"]').inputValue())==='22');
+ await p.keyboard.press(MOD+'+z'); await p.waitForTimeout(300);
+ await p.keyboard.press(MOD+'+y'); await p.waitForTimeout(300);
+ ok('Ctrl+Y also redoes',
+    (await p.locator('[data-f="vacancy.value"]').inputValue())==='22');
+ await p.fill('[data-f="vacancy.value"]','25');
+ await p.locator('[data-f="vacancy.value"]').dispatchEvent('change');
+ await p.waitForTimeout(150);
+ await p.keyboard.press(MOD+'+y'); await p.waitForTimeout(300);
+ ok('a new change clears the redo path',
+    (await p.locator('[data-f="vacancy.value"]').inputValue())==='25');
+ await p.keyboard.press(MOD+'+z'); await p.waitForTimeout(300);
+ ok('undo still steps back after the fork',
+    (await p.locator('[data-f="vacancy.value"]').inputValue())==='22');
 
  // navigation guard: dirty analysis prompts before leaving
  // (calculate jumped the editor to the Review step, so surface step 4 again)

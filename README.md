@@ -80,9 +80,15 @@ Run against Azure SQL in this order.
    preflight and verification sections with expected results.
 2. `sql/migrate_investment_analyses.sql` — idempotent, transactional, purely additive:
    the four investment-analysis tables. Safe to re-run.
-3. `sql/views.sql` — reporting views (reads columns the migrations add, so it runs after them).
-4. `sql/verify_migration.sql` — read-only; returns one row per check with PASS / FAIL / INFO.
-5. `sql/verify_investment_analyses.sql` — read-only; the same convention for the investment tables.
+3. `sql/migrate_users.sql` — idempotent, transactional, purely additive: `Users`
+   (per-account profile fields plus one JSON settings document — theme, time format,
+   accent and avatar colors, table density, home view, remembered export options —
+   and login bookkeeping) and `UserActivity` (append-only event log: logins, saves,
+   exports, settings changes). Safe to re-run; carries its own preflight and
+   verification sections.
+4. `sql/views.sql` — reporting views (reads columns the migrations add, so it runs after them).
+5. `sql/verify_migration.sql` — read-only; returns one row per check with PASS / FAIL / INFO.
+6. `sql/verify_investment_analyses.sql` — read-only; the same convention for the investment tables.
 
 **Fresh install**
 
@@ -100,7 +106,7 @@ Run against Azure SQL in this order.
 Tables: `Budgets`, `SovLines`, `BudgetVersions`, `BudgetVersionSovLines`,
 `BudgetTemplates`, `BudgetTemplateVersions`, `PricingLibrary`,
 `InvestmentAnalyses`, `InvestmentAnalysisVersions`, `InvestmentAnnualResults`,
-`InvestmentVersionAnnualResults`.
+`InvestmentVersionAnnualResults`, `Users`, `UserActivity`.
 
 ---
 

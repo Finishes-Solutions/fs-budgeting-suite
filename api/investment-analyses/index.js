@@ -144,6 +144,15 @@ module.exports = async function (context, req) {
       disposition: { exitCapRate: { mode: 'constant', value: null }, sellingCostPercent: D.sellingCostPercent },
       reportOptions: { includeSensitivity: true }
     };
+    // The true imported values, stored inside the server-owned provenance
+    // block so the From Budget badges compare against the ORIGINAL import
+    // forever — surviving edits, saves, and reloads. Rides in the JSON doc;
+    // no schema change.
+    input.source.originalValues = {};
+    for (const op of Object.keys(input.source.fieldOrigins)) {
+      const val = op.split('.').reduce((v, k) => (v === null || v === undefined ? v : v[k]), input);
+      input.source.originalValues[op] = val === undefined ? null : JSON.parse(JSON.stringify(val));
+    }
   } else if (body.mode === 'standalone') {
     const given = body.input && typeof body.input === 'object' ? body.input : {};
     const name = typeof body.analysisName === 'string' && body.analysisName.trim()

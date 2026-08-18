@@ -16,6 +16,10 @@ const { calculateInvestmentAnalysis } = require('../api/shared/investment/calcul
 const INV_C = require('../api/shared/investment/constants');
 const INV_D = require('../api/shared/investment/defaults');
 const crypto = require('crypto');
+// Per-user settings validation: the REAL contract module (dependency-free).
+const usc = require('../api/shared/user-settings-contract');
+const mockUsers = new Map();   // userId -> profile + settings row
+const mockActivity = [];       // newest first, like the timeline index
 const GUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // id -> {projectId, name, status, sourceBudgetVersionNumber, input, result,
 //        currentVersionNumber, deleted, versions:[...]}  (mirrors the SQL rows)
@@ -215,6 +219,71 @@ http.createServer((req, res) => {
     });
   }
 
+  if (p === '/api/export-config') {
+    const v = String(process.env.FS_EXPORT_RENDERER || '').toLowerCase();
+    return json(res, 200, { renderer: v === 'local' ? 'local' : 'engine' });
+  }
+
+  // ---- per-user settings + activity (dbo.Users / dbo.UserActivity stand-in).
+  // Validation is the REAL contract module, so drift is impossible.
+  if (p === '/api/user-settings') {
+    const uid = principal.clientPrincipal.userId;
+    if (!mockUsers.has(uid)) mockUsers.set(uid, {
+      userDetails: principal.clientPrincipal.userDetails, displayName: null,
+      email: principal.clientPrincipal.userDetails,   // locked to the sign-in account
+      phone: null,
+      settings: {}, firstSeenAt: new Date().toISOString(),
+      lastSeenAt: new Date(0).toISOString(), loginCount: 0 });
+    const u = mockUsers.get(uid);
+    const resp = () => json(res, 200, {
+      userDetails: u.userDetails, displayName: u.displayName, email: u.email, phone: u.phone,
+      settings: usc.sanitizeSettings(u.settings),
+      firstSeenAt: u.firstSeenAt, lastSeenAt: u.lastSeenAt, loginCount: u.loginCount });
+    if (req.method === 'GET') {
+      const q = new URL(req.url, 'http://x').searchParams;
+      if (/^(1|true)$/i.test(String(q.get('boot') || ''))) {
+        // a quiet gap of 30+ minutes counts as a login, like the real API
+        if ((Date.now() - new Date(u.lastSeenAt).getTime()) / 60000 >= 30) {
+          u.loginCount += 1;
+          mockActivity.unshift({ eventType: 'login', entityType: null, entityId: null,
+            detail: null, createdAt: new Date().toISOString() });
+        }
+        u.lastSeenAt = new Date().toISOString();
+      }
+      return resp();
+    }
+    if (req.method === 'PUT') {
+      let b = ''; req.on('data', c => b += c);
+      return req.on('end', () => {
+        const body = b ? JSON.parse(b) : {};
+        const prof = usc.sanitizeProfile(body);
+        for (const k of ['displayName', 'phone']) if (prof[k] !== undefined) u[k] = prof[k] || null;
+        if (body.settings !== undefined)
+          u.settings = usc.sanitizeSettings(Object.assign({}, usc.sanitizeSettings(u.settings), body.settings));
+        mockActivity.unshift({ eventType: 'settings_update', entityType: null, entityId: null,
+          detail: { changed: Object.keys(body.settings || {}) }, createdAt: new Date().toISOString() });
+        return resp();
+      });
+    }
+    res.writeHead(405); return res.end('method');
+  }
+
+  if (p === '/api/user-activity') {
+    if (req.method === 'GET') return json(res, 200, { events: mockActivity.slice(0, 50) });
+    if (req.method === 'POST') {
+      let b = ''; req.on('data', c => b += c);
+      return req.on('end', () => {
+        const body = b ? JSON.parse(b) : {};
+        if (!usc.CLIENT_EVENTS.has(String(body.eventType || '')))
+          return json(res, 400, { error: 'bad_request', message: 'eventType not allowed' });
+        mockActivity.unshift({ eventType: body.eventType, entityType: body.entityType || null,
+          entityId: body.entityId || null, detail: body.detail || null, createdAt: new Date().toISOString() });
+        res.writeHead(204); return res.end();
+      });
+    }
+    res.writeHead(405); return res.end('method');
+  }
+
   if (p === '/api/budgets') {
     // Address comes off the document, mirroring the JSON_VALUE the real API uses.
     return json(res, 200, [...budgets.values()].filter(x => !x.deleted)
@@ -259,7 +328,17 @@ http.createServer((req, res) => {
     }
     let b = ''; req.on('data', c => b += c);
     return req.on('end', () => {
-      const { meta, doc } = JSON.parse(b);
+      const body = JSON.parse(b);
+      // status-only PUT: quick status change, no version recorded
+      if (!body.doc && typeof body.status === 'string') {
+        if (!['Draft', 'In Review', 'Completed', 'Cancelled'].includes(body.status))
+          { res.writeHead(400); return res.end('bad status'); }
+        if (!live) { res.writeHead(404); return res.end('Not found'); }
+        live.meta.status = body.status; live.doc.status = body.status;
+        live.meta.updated = live.doc.updated = new Date().toISOString();
+        return json(res, 200, { ok: true, status: body.status });
+      }
+      const { meta, doc } = body;
       if ((doc.projectId || '').toUpperCase() !== id) { res.writeHead(400); return res.end('id mismatch'); }
       const calc = parts(doc);
       meta.contractSum = Math.round(calc.contract * 100) / 100;
@@ -279,6 +358,8 @@ http.createServer((req, res) => {
         versionCreated = true;
       }
       budgets.set(id, entry);
+      if (versionCreated) mockActivity.unshift({ eventType: 'budget_save', entityType: 'budget',
+        entityId: id, detail: { versionNumber: entry.versions.length }, createdAt: new Date().toISOString() });
       json(res, 200, { ok: true, versionNumber: entry.versions.length, versionCreated });
     });
   }
@@ -357,6 +438,13 @@ http.createServer((req, res) => {
           disposition: { exitCapRate: { mode: 'constant', value: null }, sellingCostPercent: INV_D.sellingCostPercent },
           reportOptions: { includeSensitivity: true }
         };
+        // Mirror the real API: the original imported values live in the
+        // server-owned provenance block so badges compare against them forever.
+        input.source.originalValues = {};
+        for (const op of Object.keys(input.source.fieldOrigins)) {
+          const val = op.split('.').reduce((v2, k) => (v2 === null || v2 === undefined ? v2 : v2[k]), input);
+          input.source.originalValues[op] = val === undefined ? null : JSON.parse(JSON.stringify(val));
+        }
       } else if (body.mode === 'standalone') {
         const name = (body.analysisName || (body.input && body.input.analysisName) || '').trim();
         if (!name) return json(res, 400, { error: 'bad_request', message: 'analysisName is required.' });
@@ -412,11 +500,20 @@ http.createServer((req, res) => {
       if (!result) return json(res, 409, { error: 'no_result', message: 'This analysis has no saved calculation yet — save it first.' });
       if (!['pdf', 'xlsx', 'csv'].includes(format))
         return json(res, 400, { error: 'bad_request', message: 'format must be pdf, xlsx or csv.' });
-      const render = require('../api/shared/investment/export-render');
-      const doc = render.buildExportDoc(result,
+      const producer = require('../api/shared/investment/export-render');
+      const { toFsdoc } = require('../api/shared/investment/to-fsdoc');
+      const fsRender = require('../api/shared/fs-render/src/index');
+      const legacy = require('../api/shared/investment/legacy-render');
+      const THEME = fsRender.themes['finishes-solutions'];
+      const doc = producer.buildExportDoc(result,
         { kpis: true, cash: true, sale: true, returns: true, sens: true, assumptions: true, highlight: false,
           signature: /^(1|true)$/i.test(String(q.get('signature') || '')) },
         { savedVersion, generatedAt: new Date().toISOString() });
+      const rendererParam = String(q.get('renderer') || process.env.FS_EXPORT_RENDERER || 'engine').toLowerCase();
+      if (rendererParam !== 'engine' && rendererParam !== 'local')
+        return json(res, 400, { error: 'bad_request', message: 'renderer must be engine or local.' });
+      const useLegacy = rendererParam === 'local';
+      const fsdoc = useLegacy ? null : toFsdoc(doc, { docId: id + '-v' + savedVersion });
       const base = (live.name || 'Investment_Analysis').replace(/[^\w]+/g, '_')
         + '_Investment_Analysis' + (versionParam ? '_v' + savedVersion : '');
       const send = (mime, ext, buf) => {
@@ -425,10 +522,12 @@ http.createServer((req, res) => {
         res.end(buf);
       };
       if (format === 'csv')
-        return send('text/csv; charset=utf-8', 'csv', Buffer.from(render.buildCsv(doc), 'utf8'));
+        return send('text/csv; charset=utf-8', 'csv',
+          Buffer.from(useLegacy ? legacy.buildCsv(doc) : fsRender.buildCsv(fsdoc), 'utf8'));
       if (format === 'xlsx') {
         const ExcelJS = require('exceljs');
-        return render.buildWorkbook(ExcelJS, doc).xlsx.writeBuffer()
+        return (useLegacy ? legacy.buildWorkbook(ExcelJS, doc)
+          : fsRender.buildWorkbook(ExcelJS, fsdoc, THEME)).xlsx.writeBuffer()
           .then(buf => send('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx', Buffer.from(buf)))
           .catch(e => json(res, 500, { error: 'render_failed', message: e.message }));
       }
@@ -438,7 +537,17 @@ http.createServer((req, res) => {
         const printer = new PdfPrinter({ Montserrat: {
           normal: F('Montserrat-Regular.ttf'), bold: F('Montserrat-Bold.ttf'),
           italics: F('Montserrat-Regular.ttf'), bolditalics: F('Montserrat-Bold.ttf') } });
-        const pdoc = printer.createPdfKitDocument(render.buildPdfDocDefinition(doc));
+        let dd;
+        if (useLegacy) {
+          dd = legacy.buildPdfDocDefinition(doc);   // renders doc.signature itself
+          producer.stampRenderProvenance(dd, 'local');
+        } else {
+          const preset = doc.meta.years > 5 ? 'landscape' : 'portrait';
+          dd = fsRender.buildPdfDocDefinition(fsdoc, THEME, preset);
+          producer.stampRenderProvenance(dd, 'engine');
+          producer.appendApprovalPage(dd, doc.signature);
+        }
+        const pdoc = printer.createPdfKitDocument(dd);
         const chunks = [];
         pdoc.on('data', c => chunks.push(c));
         pdoc.on('end', () => send('application/pdf', 'pdf', Buffer.concat(chunks)));
@@ -499,6 +608,13 @@ http.createServer((req, res) => {
     return req.on('end', () => {
       if (!a) return json(res, 404, { error: 'not_found', message: 'Not found' });
       const body = JSON.parse(b || '{}');
+      // status-only PUT: quick status change; no calculation, no version
+      if (body.input === undefined && typeof body.status === 'string') {
+        if (!['Draft', 'In Review', 'Completed', 'Cancelled'].includes(body.status))
+          return json(res, 400, { error: 'bad_request', message: 'bad status' });
+        a.status = body.status; a.updatedAt = new Date().toISOString();
+        return json(res, 200, { ok: true, status: body.status });
+      }
       const input = body.input;
       if (!input || typeof input !== 'object')
         return json(res, 400, { error: 'bad_request', message: 'Body must be { input, expectedVersionNumber }.' });
@@ -533,6 +649,8 @@ http.createServer((req, res) => {
       a.input = input; a.result = result; a.contentHash = hash;
       a.deleted = false; a.deletedAt = null;
       a.updatedAt = new Date().toISOString();
+      if (!unchanged) mockActivity.unshift({ eventType: 'analysis_save', entityType: 'analysis',
+        entityId: id, detail: { versionNumber: a.currentVersionNumber }, createdAt: new Date().toISOString() });
       return json(res, 200, { ok: true, versionNumber: a.currentVersionNumber,
         versionCreated: !unchanged, result });
     });

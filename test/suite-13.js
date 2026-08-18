@@ -9,8 +9,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.goto('http://127.0.0.1:8100/index.html#/analyses',{waitUntil:'networkidle'});
  await p.waitForTimeout(500);
 
+ await p.click('#page-analyses button:has-text("+ New Investment Analysis")'); await p.waitForTimeout(400);
  await p.fill('#invNewName','History Deal');
- await p.click('button:has-text("+ New Standalone Analysis")');
+ await p.click('button:has-text("Create Standalone Analysis")');
  await p.waitForTimeout(700);
  const aid=p.url().match(/analysis\/([0-9a-f-]{36})/)[1];
 

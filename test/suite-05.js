@@ -15,13 +15,16 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('no CDN script tag remains', !(await p.content()).includes('cdnjs.cloudflare.com'));
 
  // ---- BLANK budget
- await p.click('button:has-text("+ Blank Budget")');
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Blank Budget")'));
  await p.waitForTimeout(300);
  ok('blank: no unit rows', (await p.locator('#unitBody tr').count())===0);
  ok('blank: no income rows', (await p.locator('#otherBody tr').count())===0);
  ok('blank: no expense rows', (await p.locator('#expBody tr').count())===0);
  ok('blank: resSF is 0', (await p.locator('#pSF').inputValue())==='0');
- ok('blank: type select reads Blank', (await p.locator('#pType').inputValue())==='Blank');
+ // Property type is chosen at creation (the New Budget modal) — the Inputs
+ // page no longer re-asks it; the document still carries it.
+ ok('blank: doc type is Blank with no type input on the page',
+    (await p.evaluate(()=>doc.type))==='Blank' && (await p.locator('#pType').count())===0);
  ok('blank: land cost 0', (await p.locator('#pcLand').inputValue())==='0');
  ok('Land & project costs now on Inputs page',
     await p.locator('#page-input #sec-project').count()===1 && await p.locator('#page-budget #sec-project').count()===0);
@@ -52,7 +55,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // ---- CSI view on the multifamily template
  await p.click('#nav-home'); await p.waitForTimeout(200);
- await p.click('button:has-text("+ New Multifamily Budget")'); await p.waitForTimeout(300);
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(300);
  await p.fill('#pId','TST-9998'); await p.fill('#pName','CSI Format Check');
  await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
  await p.click('#nav-csi'); await p.waitForTimeout(500);
@@ -119,7 +122,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // publishing affects only future budgets — existing ones must not move
  await p.click('#nav-home'); await p.waitForTimeout(300);
- await p.click('button:has-text("+ New Multifamily Budget")'); await p.waitForTimeout(500);
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(500);
  await p.fill('#pId','TST-4242'); await p.fill('#pName','Before Publish');
  const beforeDoc = await p.evaluate(async () => {
    pullForms();
@@ -160,7 +163,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // a budget created now picks up the new version, with fresh line IDs
  await p.click('#nav-home'); await p.waitForTimeout(300);
- await p.click('button:has-text("+ New Multifamily Budget")'); await p.waitForTimeout(500);
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(500);
  const fresh = await p.evaluate(() => ({ver: doc.templateVersionId, rate: doc.lines[0].unit,
                                         ids: doc.lines.slice(0,3).map(l => l.lineId)}));
  ok('A budget created after publication uses the new version', fresh.ver === pub.version,

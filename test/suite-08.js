@@ -7,7 +7,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const errs=[]; p.on('pageerror',e=>errs.push(e.message));
  await p.goto('http://127.0.0.1:8100/index.html',{waitUntil:'networkidle'});
  await p.waitForTimeout(400);
- await p.click('button:has-text("+ New Multifamily Budget")');
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
  await p.fill('#pId','TST-9997'); await p.fill('#pName','No Clubhouse');
  await p.waitForTimeout(200);
 
@@ -41,7 +41,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('grid has fewer rows', (await p.locator('#budBody tr').count()) < withAmenRows,
     withAmenRows+' -> '+(await p.locator('#budBody tr').count()));
  ok('amenity summary row hidden', !(await p.locator('#rAmenRow').isVisible()));
- ok('explains why amenity vanished', await p.locator('#amenHidden').isVisible());
+ ok('the amenity-hidden flag is retired from the toolbar', (await p.locator('#amenHidden').count())===0);
  ok('THE KEY ONE: hidden lump-sum amenity money is excluded from the contract sum',
     (await p.locator('#rContract').textContent())!==withLump,
     'with amenity '+withLump+' -> without '+(await p.locator('#rContract').textContent()));

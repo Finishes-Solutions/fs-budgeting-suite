@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Finishes Solutions Budgeting Suite</title>
+<script>
+/* Apply the cached appearance before first paint so nothing flashes. These
+   caches mirror the account's server-stored settings (loaded at boot); the
+   server copy wins the moment it arrives. */
+try{
+  var t=localStorage.getItem('fsTheme');if(t==='dark')document.documentElement.setAttribute('data-theme',t);
+  var a=localStorage.getItem('fsAccent');if(a&&a!=='green'&&a.charAt(0)!=='#')document.documentElement.setAttribute('data-accent',a);
+  var av=localStorage.getItem('fsAvatar');if(av)document.documentElement.style.setProperty('--avatar-bg',av);
+  window.__fsTimeFormat=localStorage.getItem('fsTimeFormat')==='24h'?'24h':'12h';
+}catch(_){}
+</script>
 <!-- The FS monogram is black ink on transparency and would vanish against a dark tab
      strip, so the icon is the mark in white on the app's own ink-900 tile. Contrast is
      then glyph-against-tile, which is fixed, rather than glyph-against-browser-chrome,
@@ -18,12 +29,20 @@
      cells at all. MIT licence in vendor/exceljs-LICENSE.txt. -->
 <script src="vendor/exceljs.min.js"></script>
 <!-- pdfmake is vendored for the same reason; fs-pdf-fonts.js registers the
-     Montserrat subset the server also embeds. export-render.js is the shared
-     document model + renderers — byte-identical to the copy the API requires
-     (api/shared/investment/export-render.js), enforced by a node test. -->
+     Montserrat subset the server also embeds. fs-render.browser.js is the
+     fs-courier rendering engine (global: fsRender) — the API requires the
+     identical vendored source at api/shared/fs-render. export-render.js is
+     the investment content PRODUCER and to-fsdoc.js adapts its output to
+     fsdoc/1 — both byte-identical to the copies the API requires
+     (api/shared/investment/), enforced by a node test. -->
 <script src="vendor/pdfmake.min.js"></script>
 <script src="vendor/fs-pdf-fonts.js"></script>
+<script src="vendor/fs-render.browser.js"></script>
 <script src="export-render.js"></script>
+<script src="to-fsdoc.js"></script>
+<!-- legacy-render.js is the frozen pre-cutover renderer set, the fallback
+     behind the FS_EXPORT_RENDERER setting ('local'). -->
+<script src="legacy-render.js"></script>
 <!-- The investment-analysis workflow is an external no-build module (IIFE) so
      the inline script stays the budget application. index.html contributes only
      the nav button, page containers, routes, and the adapter passed to init. -->
@@ -43,13 +62,232 @@
   --r:4px;--rm:6px;
   --sh:0 1px 2px rgba(11,13,12,.06),0 1px 3px rgba(11,13,12,.08);
   --focus:0 0 0 3px rgba(10,122,54,.32);
+  /* Surfaces that stay dark in EVERY theme (header chrome, division headers,
+     dark buttons, toasts). Never remap these to the ink scale — in the dark
+     theme the ink scale inverts, and these must not. */
+  --chrome:#16191a;--solid:#16191a;--solid-2:#23282a;
+  /* Shared list-table column system: both Home tables anchor Status, Updated,
+     and the row-action column to the SAME widths, and both give their two
+     identity columns the same combined width (42%), so those anchors line up
+     vertically across the two cards. The financial columns between Status and
+     Updated are free to differ. */
+  --lt-pad:22px;--lt-status:9%;--lt-updated:10%;--lt-actions:44px;
 }
+/* ---- Themes ----
+   The palette lives entirely in the custom properties above, so a theme is a
+   remap of those tokens on <html data-theme>. Light is the :root default.
+   Print always uses light: a beforeprint hook flips the attribute back. */
+html[data-theme=dark]{
+  --ink-950:#f2f5f3;--ink-900:#e6eae8;--ink-800:#cfd6d3;--ink-700:#aeb7b3;--ink-600:#909a95;
+  --ink-500:#7e8884;--ink-400:#68736e;--ink-300:#49534e;--ink-200:#3a433f;--ink-150:#2e3633;
+  --ink-100:#262d2a;--ink-50:#161b19;--white:#1d2320;
+  --green-900:#0c2b1b;--green-800:#17693a;--green-700:#1e8a48;--green-600:#2a9c55;--green-500:#3fae66;
+  --green-200:#2d6a45;--green-100:#1c3a29;--green-50:#182b20;
+  --warn:#d9a441;--danger:#e06056;
+  --edit:#7fb0ea;--edit-100:#1c3049;--edit-50:#17263a;
+  --chrome:#0d1110;--solid:#101513;--solid-2:#1d2521;
+  --sh:0 1px 2px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);
+  --focus:0 0 0 3px rgba(63,174,102,.35);
+}
+/* ---- Accent colors ----
+   The green scale doubles as the app's accent scale, so an accent is a remap
+   of the green tokens (chrome and always-dark surfaces stay put). Each accent
+   needs a light block AND a dark combo block covering the SAME tokens — the
+   two-attribute combo outranks both single-attribute blocks. */
+html[data-accent=blue]{--green-900:#0b2a56;--green-800:#123c7d;--green-700:#1a4fa3;--green-600:#2563c9;
+  --green-500:#3b78d8;--green-200:#c3d7f3;--green-100:#dde9f9;--green-50:#eff5fd;
+  --focus:0 0 0 3px rgba(37,99,201,.32)}
+html[data-accent=violet]{--green-900:#371a6e;--green-800:#472093;--green-700:#5a2bb8;--green-600:#6d3ad1;
+  --green-500:#8153dd;--green-200:#ddd2f4;--green-100:#eae2fa;--green-50:#f5f1fd;
+  --focus:0 0 0 3px rgba(109,58,209,.32)}
+html[data-accent=graphite]{--green-900:#14181d;--green-800:#21262e;--green-700:#333a45;--green-600:#47505c;
+  --green-500:#5d6774;--green-200:#d3d8de;--green-100:#e4e7eb;--green-50:#f2f4f6;
+  --focus:0 0 0 3px rgba(71,80,92,.32)}
+html[data-theme=dark][data-accent=blue]{--green-900:#0d1e36;--green-800:#1c4586;--green-700:#2a5aa8;
+  --green-600:#3a6ec2;--green-500:#5585d1;--green-200:#2b4d7c;--green-100:#1c3355;--green-50:#172741;
+  --focus:0 0 0 3px rgba(85,133,209,.35)}
+html[data-theme=dark][data-accent=violet]{--green-900:#241145;--green-800:#45248c;--green-700:#5730ad;
+  --green-600:#6a41c6;--green-500:#7f5cd4;--green-200:#4a3579;--green-100:#322353;--green-50:#281c42;
+  --focus:0 0 0 3px rgba(127,92,212,.35)}
+html[data-theme=dark][data-accent=graphite]{--green-900:#0d1013;--green-800:#2a323b;--green-700:#5f6c7a;
+  --green-600:#4f5c6a;--green-500:#6a7887;--green-200:#3c4650;--green-100:#2a3138;--green-50:#1d2226;
+  --focus:0 0 0 3px rgba(106,120,135,.35)}
+html[data-accent=red]{--green-900:#6a1410;--green-800:#8a1a15;--green-700:#b42318;--green-600:#c9372c;
+  --green-500:#d64f45;--green-200:#f3cfcc;--green-100:#f9e3e1;--green-50:#fcf1f0;
+  --focus:0 0 0 3px rgba(201,55,44,.32)}
+html[data-accent=orange]{--green-900:#6b3606;--green-800:#8a4708;--green-700:#b35c0a;--green-600:#cc6f12;
+  --green-500:#d98230;--green-200:#f4dcc3;--green-100:#f9ead9;--green-50:#fcf4ec;
+  --focus:0 0 0 3px rgba(204,111,18,.32)}
+html[data-theme=dark][data-accent=red]{--green-900:#3a0f0c;--green-800:#7f1d16;--green-700:#c3392d;
+  --green-600:#d14b40;--green-500:#dd685f;--green-200:#6e2d28;--green-100:#4a1e1a;--green-50:#391714;
+  --focus:0 0 0 3px rgba(221,104,95,.35)}
+html[data-theme=dark][data-accent=orange]{--green-900:#38200a;--green-800:#8a4c10;--green-700:#c76d15;
+  --green-600:#d67f26;--green-500:#de9247;--green-200:#6e4520;--green-100:#4a2f16;--green-50:#392512;
+  --focus:0 0 0 3px rgba(222,146,71,.35)}
+/* ---- Views (Settings → Views, or the toolbars above each list) ----
+   Three options per SECTION — Comfortable, Compact, Cards — so budgets can
+   be a roomy list while analyses are cards. Comfortable (the default) gives
+   the list tables roomy rows; compact strips them to zero vertical padding
+   with smaller chips and row menus. The density attribute sits on each
+   section's own card, never globally. */
+#page-home .tbl td,.inv-list td{padding-top:9px;padding-bottom:9px}
+#page-home [data-density=compact] .tbl td,
+[data-density=compact] .inv-list td{padding-top:0;padding-bottom:0}
+[data-density=compact] .inv-table td{padding-top:2px;padding-bottom:2px}
+[data-density=compact] .tbl .badge,[data-density=compact] .inv-table .badge,
+[data-density=compact] .st-chip{padding:1px 6px;font-size:9px}
+[data-density=compact] .rowmenu-btn{width:22px;height:22px;line-height:20px}
+[data-density=compact] .tbl th,[data-density=compact] .inv-list th{padding-top:5px;padding-bottom:5px}
+[data-density=compact] .grp-hd td,[data-density=compact] .inv-grp td{padding-top:3px;padding-bottom:3px}
+/* identity cells never stack their inline pieces (TEST tag, Budget vN) */
+#homeBody td:first-child,.inv-list td:nth-child(2){white-space:nowrap}
+/* ---- Status chips: one shared, editable status system ----
+   Draft (gray) · In Review (amber) · Completed (green, accent-aware) ·
+   Cancelled (red). Restrained tints, a small dot, clickable everywhere —
+   clicking opens the status menu and saves through the status-only PUT. */
+.st-chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;
+  border:1px solid var(--ink-200);background:var(--white);cursor:pointer;white-space:nowrap;
+  font-family:var(--fm);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.st-chip::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.st-chip:hover{filter:brightness(.96)}
+.st-draft{color:var(--ink-600);border-color:var(--ink-200);background:var(--ink-50)}
+.st-review{color:#8A6116;border-color:#EAD9B0;background:#FBF3E4}
+.st-done{color:var(--green-700);border-color:var(--green-200);background:var(--green-50)}
+.st-cancel{color:#B42318;border-color:#F0C6C2;background:#FDF3F2}
+html[data-theme=dark] .st-review{color:#D9A441;border-color:#5C4715;background:#332A12}
+html[data-theme=dark] .st-cancel{color:#E0685E;border-color:#6E2D28;background:#391714}
+.st-menu{position:fixed;display:none;z-index:75;background:var(--white);border:1px solid var(--ink-200);
+  border-radius:10px;box-shadow:0 8px 28px rgba(22,25,26,.16);padding:6px;min-width:150px}
+.st-menu button{display:flex;width:100%;border:none;background:transparent;cursor:pointer;
+  padding:6px 8px;border-radius:6px;text-align:left}
+.st-menu button:hover{background:var(--ink-50)}
+.st-menu .st-chip{pointer-events:none}
+/* ---- Home card view (Settings → Home View; Home page only) ---- */
+.home-cards{display:none;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;padding:20px 22px}
+.home-cards.on{display:grid}
+.home-cards .grp-lab{grid-column:1/-1;font-family:var(--fm);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-700);font-weight:600;padding:6px 2px 0}
+.home-cards .grp-lab .shut{color:var(--ink-400);margin-left:8px;letter-spacing:0;text-transform:none;font-weight:400}
+.hcard{position:relative;border:1px solid var(--ink-150);border-radius:10px;background:var(--white);
+  box-shadow:var(--sh);padding:14px 16px;cursor:pointer}
+.hcard:hover{border-color:var(--green-200)}
+/* card hierarchy: quiet eyebrow ID, prominent name, labeled figures */
+.hcard .hc-id{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.06em;
+  color:var(--green-700);padding-right:30px;white-space:nowrap}
+.hcard .hc-name{font-size:15px;font-weight:600;color:var(--ink-950);margin:3px 0 10px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hcard .hc-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:5px}
+.hcard .hc-row span:first-child{font-family:var(--fm);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-400)}
+.hcard .hc-row .v{font-family:var(--fm);font-size:13px;font-weight:600;color:var(--ink-900);white-space:nowrap}
+.hcard .hc-ft{display:flex;justify-content:space-between;align-items:center;margin-top:10px;
+  padding-top:8px;border-top:1px solid var(--ink-100);font-size:11.5px;color:var(--ink-400)}
+.hcard .hc-menu{position:absolute;top:10px;right:10px}
+/* ---- Settings modal (profile menu → Settings) ---- */
+.set-lab{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-500);font-weight:500;margin:20px 0 8px}
+.set-lab:first-child{margin-top:0}
+.set-choice{display:flex;gap:10px;flex-wrap:wrap}
+.set-choice button{flex:1;min-width:120px;display:flex;align-items:center;gap:9px;border:1px solid var(--ink-200);
+  background:var(--white);border-radius:8px;padding:11px 14px;cursor:pointer;
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-700)}
+.set-choice button:hover{border-color:var(--ink-300)}
+.set-choice button.on{border-color:var(--green-600);box-shadow:var(--focus)}
+.set-choice svg{width:15px;height:15px;flex:none;color:var(--ink-500)}
+.set-choice button.on svg{color:var(--green-700)}
+.set-choice .tick{margin-left:auto;color:var(--green-700);font-weight:700;visibility:hidden}
+.set-choice button.on .tick{visibility:visible}
+.set-choice .set-dot{width:12px;height:12px;border-radius:50%;flex:none}
+.set-choice .set-sub{font-family:var(--fm);font-size:10.5px;color:var(--ink-400);font-weight:400}
+.set-swatches{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.set-swatch{width:30px;height:30px;border-radius:50%;border:2px solid var(--ink-200);cursor:pointer;padding:0}
+.set-swatch:hover{border-color:var(--ink-400)}
+.set-swatch.on{border-color:var(--ink-950);box-shadow:0 0 0 3px var(--green-100)}
+/* the custom-color swatch: a rainbow ring that opens the color picker */
+.set-swatch.rainbow{background:conic-gradient(#e03131,#f59f00,#94d82d,#20c997,#339af0,#845ef7,#e03131)}
+.set-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.set-grid .wide{grid-column:1/-1}
+.set-note{font-size:12px;color:var(--ink-500);margin-top:8px}
+input.set-locked{background:var(--ink-50);color:var(--ink-500);cursor:not-allowed}
+/* ---- toggle switch (Settings → Exports) ---- */
+.switch-row{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.switch{position:relative;flex:none;width:40px;height:22px;margin-top:1px;display:inline-block}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.switch .knob{position:absolute;inset:0;background:var(--ink-300);border-radius:999px;transition:background .15s}
+.switch .knob::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 2px rgba(11,13,12,.3);transition:left .15s}
+.switch input:checked+.knob{background:var(--green-600)}
+.switch input:checked+.knob::after{left:20px}
+.switch input:focus-visible+.knob{box-shadow:var(--focus)}
+/* ---- mini segmented toggles (the Home toolbar's density / view controls,
+   mirroring the Settings choices via the same data attributes) ---- */
+.mini-seg{display:inline-flex;border:1px solid var(--ink-200);border-radius:var(--r);overflow:hidden}
+.mini-seg button{width:30px;height:28px;border:none;background:var(--white);color:var(--ink-500);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.mini-seg button+button{border-left:1px solid var(--ink-200)}
+.mini-seg button:hover{color:var(--ink-800);background:var(--ink-100)}
+.mini-seg button.on{background:var(--green-700);color:#fff}
+.mini-seg svg{width:14px;height:14px;display:block}
+/* ---- Cmd/Ctrl+K global search palette ---- */
+#palette{position:fixed;inset:0;z-index:80;display:none;background:rgba(11,13,12,.45);
+  align-items:flex-start;justify-content:center;padding:11vh 16px 16px}
+#palette.open{display:flex}
+.pal-card{width:600px;max-width:96vw;background:var(--white);border:1px solid var(--ink-200);
+  border-radius:12px;box-shadow:0 18px 50px rgba(11,13,12,.35);overflow:hidden}
+/* The input is inset with its own rounded border, so the green focus ring
+   follows those corners INSIDE the card instead of being clipped by the
+   card's overflow at its rounded corners. */
+#palette .pal-card input{width:calc(100% - 24px);margin:12px 12px 10px;border:1px solid var(--ink-200);
+  border-radius:8px;outline:none;background:var(--white);color:var(--ink-900);
+  font-family:var(--fb);font-size:15px;padding:11px 14px}
+.pal-list{max-height:46vh;overflow:auto;padding:6px;border-top:1px solid var(--ink-150)}
+.pal-sec{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-400);padding:8px 12px 4px}
+.pal-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer}
+.pal-row:hover,.pal-row.sel{background:var(--green-50)}
+.pal-row.sel{box-shadow:inset 0 0 0 1px var(--green-200)}
+.pal-row .pal-id{font-family:var(--fm);font-size:12px;color:var(--green-700);font-weight:600;flex:none;min-width:74px}
+.pal-row .pal-name{font-size:13.5px;color:var(--ink-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pal-row .pal-kind{margin-left:auto;flex:none;font-size:10.5px;color:var(--ink-500);
+  background:var(--ink-100);border-radius:999px;padding:2px 9px}
+.pal-empty{padding:18px 14px;font-size:13px;color:var(--ink-500)}
+.pal-ft{display:flex;gap:16px;padding:8px 14px;border-top:1px solid var(--ink-150);
+  font-family:var(--fm);font-size:10.5px;color:var(--ink-400)}
+/* ---- home tables: the shared column system (identity 42% → Status →
+   metrics → Updated → actions), so the anchors align across both cards.
+   Fixed layout makes the percentage widths exact — auto layout re-weights
+   by content and the anchors drift apart. */
+#page-home .tbl,#page-home .inv-table.inv-list,#page-analyses .inv-table.inv-list{table-layout:fixed}
+#page-home .tbl th[data-sort=projectId]{width:11%}
+#page-home .tbl th[data-sort=name]{width:31%}
+#page-home .tbl th[data-sort=status]{width:var(--lt-status)}
+#page-home .tbl th[data-sort=contractSum],#page-home .tbl th[data-sort=projectCost]{width:19%}
+#page-home .tbl th[data-sort=updated]{width:var(--lt-updated)}
+#page-home .tbl th.no-print{width:var(--lt-actions)}
+/* ---- shared list toolbar: both Home cards use the identical control row */
+.list-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.list-toolbar input[type=text]{width:240px}
+.list-toolbar select{font-size:12px;padding:6px 8px}
+.list-toolbar select.lt-status{width:140px}
+.list-toolbar select.lt-group{width:168px}
+/* ---- New Budget modal: template rows ---- */
+.tpl-list{display:grid;gap:8px}
+.tpl-row{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;
+  border:1px solid var(--ink-200);background:var(--white);border-radius:8px;
+  padding:11px 14px;cursor:pointer;font-family:var(--fb);width:100%}
+.tpl-row:hover:not(:disabled){border-color:var(--green-600)}
+.tpl-row:disabled{opacity:.45;cursor:not-allowed}
+.tpl-row .tpl-name{font-size:13.5px;font-weight:600;color:var(--ink-950)}
+.tpl-row .tpl-sub{font-size:12px;color:var(--ink-500)}
 *{box-sizing:border-box;margin:0;padding:0}
+/* The scrollbar gutter is always reserved, so switching between tall and
+   short pages (Home vs Investment Analysis) never shifts the layout. */
+html{overflow-y:scroll}
 body{font-family:var(--fb);color:var(--ink-800);background:var(--ink-50);font-size:14px;line-height:1.5}
 .mono{font-family:var(--fm)}
 .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
 
-body>header{background:var(--ink-900);color:var(--white)}   /* app chrome only — the printed report has its own <header> */
+body>header{background:var(--chrome);color:#fff}   /* app chrome only — the printed report has its own <header> */
 .hd{max-width:1440px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
   height:60px;padding:0 32px;gap:20px;flex-wrap:nowrap;white-space:nowrap}
 .brand{flex:0 0 auto;display:flex;align-items:center;height:60px}
@@ -63,10 +301,10 @@ body>header{background:var(--ink-900);color:var(--white)}   /* app chrome only �
    at narrow widths. Identity now lives behind a round avatar; the name, email and
    Sign Out are in its menu. */
 #profileBtn{width:32px;height:32px;flex:none;border-radius:50%;cursor:pointer;
-  background:var(--green-600);border:1px solid rgba(255,255,255,.35);color:#fff;
+  background:var(--avatar-bg,var(--green-600));border:1px solid rgba(255,255,255,.35);color:#fff;
   font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.04em;
   display:flex;align-items:center;justify-content:center;padding:0}
-#profileBtn:hover{background:var(--green-500);border-color:rgba(255,255,255,.6)}
+#profileBtn:hover{filter:brightness(1.12);border-color:rgba(255,255,255,.6)}
 #profileBtn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(255,255,255,.35)}
 #profileMenu{position:fixed;z-index:60;min-width:236px;max-width:300px;background:var(--white);
   border:1px solid var(--ink-200);border-radius:var(--rm);box-shadow:0 8px 24px rgba(11,13,12,.18);padding:4px}
@@ -111,7 +349,7 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .btn-primary{background:var(--green-700);color:#fff}.btn-primary:hover{background:var(--green-800)}
 .btn-ghost{background:transparent;border-color:var(--ink-200);color:var(--ink-700)}
 .btn-ghost:hover{border-color:var(--ink-400);background:var(--ink-50)}
-.btn-dark{background:var(--ink-900);color:#fff}.btn-dark:hover{background:var(--ink-800)}
+.btn-dark{background:var(--solid);color:#fff}.btn-dark:hover{background:var(--solid-2)}
 .btn-sm{padding:5px 10px;font-size:12px}
 .btn-x{background:none;border:none;color:var(--ink-400);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:var(--r)}
 .btn-x:hover{color:var(--danger);background:var(--ink-100)}
@@ -158,10 +396,10 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .tbl td.calc.strong{color:var(--ink-950);font-weight:600}
 .tbl tr.total td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;color:var(--ink-950);padding-top:10px}
 .tbl input,.tbl select{border:1px solid transparent;background:transparent;padding:4px 8px}
-.tbl input:hover,.tbl select:hover{border-color:var(--ink-200);background:#fff}
-.tbl input:focus,.tbl select:focus{border-color:var(--green-600);background:#fff}
+.tbl input:hover,.tbl select:hover{border-color:var(--ink-200);background:var(--white)}
+.tbl input:focus,.tbl select:focus{border-color:var(--green-600);background:var(--white)}
 .tbl input[type=number]{font-family:var(--fm);font-size:13px;text-align:right}
-.scope-hd td{background:var(--ink-900);color:#fff;font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+.scope-hd td{background:var(--solid);color:#fff;font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
   font-weight:600;padding:9px 12px}
 .scope-hd .div-sum{float:right;color:#fff}   /* white, not green — this sits on ink-900 */
 .grp-hd td{background:var(--ink-50);font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
@@ -241,9 +479,9 @@ body.mobile-ro [data-edit-only]{display:none!important}
 /* Checkboxes are drawn rather than native so they can be rounded and pick up the
    brand green. Native padding from `.tbl input` is reset explicitly. */
 .tbl input[type=checkbox]{appearance:none;-webkit-appearance:none;width:15px;height:15px;padding:0;margin:0;
-  border:1.5px solid var(--ink-300);border-radius:5px;background:#fff;cursor:pointer;flex:none;
+  border:1.5px solid var(--ink-300);border-radius:5px;background:var(--white);cursor:pointer;flex:none;
   position:relative;vertical-align:middle;transition:background .12s,border-color .12s}
-.tbl input[type=checkbox]:hover{border-color:var(--ink-500);background:#fff}
+.tbl input[type=checkbox]:hover{border-color:var(--ink-500);background:var(--white)}
 .tbl input[type=checkbox]:checked,.tbl input[type=checkbox]:indeterminate{
   background:var(--green-600);border-color:var(--green-600)}
 /* The glyphs are centered geometrically (50%/50% + translate) rather than nudged
@@ -258,7 +496,7 @@ body.mobile-ro [data-edit-only]{display:none!important}
 .grp-hd td.calc,.grp-hd td.calc.strong{color:var(--ink-950)}
 tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 
-.stats{display:grid;grid-template-columns:repeat(5,1fr);background:var(--ink-900);border-radius:var(--rm);overflow:hidden;margin-bottom:20px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);background:var(--solid);border-radius:var(--rm);overflow:hidden;margin-bottom:20px}
 @media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
 .stat{padding:18px 22px;border-left:3px solid var(--green-700)}
 .stat .k{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:6px}
@@ -283,11 +521,11 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .banner.green{border-color:var(--green-200);background:var(--green-50);color:var(--green-800)}
 
 .seg{display:inline-flex;border:1px solid var(--ink-200);border-radius:var(--r);overflow:hidden}
-.seg button{border:none;background:#fff;padding:7px 12px;font-family:var(--fm);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-500);cursor:pointer}
-.seg button.on{background:var(--ink-900);color:#fff}
+.seg button{border:none;background:var(--white);padding:7px 12px;font-family:var(--fm);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-500);cursor:pointer}
+.seg button.on{background:var(--solid);color:#fff}
 .chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-700);cursor:pointer;user-select:none}
 .chk input{width:15px;height:15px;accent-color:var(--green-700)}
-.toast{position:fixed;bottom:24px;right:24px;background:var(--ink-900);color:#fff;padding:12px 20px;border-radius:var(--rm);
+.toast{position:fixed;bottom:24px;right:24px;background:var(--solid);color:#fff;padding:12px 20px;border-radius:var(--rm);
   font-size:13px;box-shadow:0 8px 24px rgba(11,13,12,.25);opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:99}
 .toast.show{opacity:1;transform:none}
 .empty{padding:48px;text-align:center;color:var(--ink-400)}
@@ -335,7 +573,7 @@ tr.edited:hover td{background:var(--edit-50)}
 /* ---- collapsible budget grid ---- */
 .caret{display:inline-block;width:14px;font-size:10px;opacity:.75}
 .scope-hd,.grp-hd{cursor:pointer;user-select:none}
-.scope-hd:hover td{background:var(--ink-800)}
+.scope-hd:hover td{background:var(--solid-2)}
 .grp-hd:hover td{background:var(--ink-100)}
 .shut{font-weight:400;opacity:.6;letter-spacing:.06em;margin-left:8px;text-transform:none}
 .budget-scroll{max-height:72vh}
@@ -540,24 +778,21 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="page-title">
     <div><h1>Project Budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
     <div style="display:flex;gap:10px" data-edit-only>
-      <select id="newFromTpl" style="width:210px;display:none" onchange="newBudgetFromTemplate(this.value);this.selectedIndex=0"
-        aria-label="New Budget From Template"></select>
-      <button class="btn btn-ghost" onclick="newBudget('blank')">+ Blank Budget</button>
-      <button class="btn btn-primary" id="newMfBtn" onclick="newBudgetFromTemplate('multifamily')">+ New Multifamily Budget</button>
+      <button class="btn btn-primary" id="newBudgetBtn" onclick="openNewBudget()">+ New Budget</button>
     </div>
   </div>
-  <div class="card">
+  <div class="card" id="homeBudgetsCard">
     <div class="card-hd no-print">
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <input type="text" id="homeSearch" placeholder="Search ID or name…" style="width:240px">
-        <select id="homeStatus" style="width:140px;font-size:12px;padding:6px 8px">
+      <div class="list-toolbar">
+        <input type="text" id="homeSearch" placeholder="Search ID or name…">
+        <select id="homeStatus" class="lt-status">
           <option value="all">All Statuses</option>
           <option value="Draft">Draft</option>
           <option value="In Review">In Review</option>
-          <option value="Finalized">Finalized</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
         </select>
-        <select id="homeGroup" style="width:168px;font-size:12px;padding:6px 8px"
-          title="Group the list" aria-label="Group By">
+        <select id="homeGroup" class="lt-group" title="Group the list" aria-label="Group By">
           <option value="">No Grouping</option>
           <option value="address">Group by Address</option>
           <option value="id">Group by Project ID</option>
@@ -565,20 +800,33 @@ th.sortable.sorted{color:var(--ink-900)}
           <option value="status">Group by Status</option>
         </select>
       </div>
-      <span class="eyebrow" id="homeCount">—</span>
+      <div style="display:flex;gap:12px;align-items:center">
+        <!-- The budgets view — Comfortable · Compact · Cards — right where it
+             acts; the shared data attribute keeps it in step with Settings. -->
+        <div class="mini-seg" role="group" aria-label="Budgets View" title="Budgets View — also in Settings">
+          <button data-budgetview-pick="comfortable" aria-label="Comfortable List" title="Comfortable List" onclick="chooseSetting('budgetView','comfortable')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg></button>
+          <button data-budgetview-pick="compact" aria-label="Compact List" title="Compact List" onclick="chooseSetting('budgetView','compact')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+          <button data-budgetview-pick="cards" aria-label="Card View" title="Card View" onclick="chooseSetting('budgetView','cards')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
+        </div>
+        <span class="eyebrow" id="homeCount">—</span>
+      </div>
     </div>
-    <div class="card-bd" style="padding:0">
+    <div class="card-bd" style="padding:0;overflow-x:auto">
     <table class="tbl">
       <thead id="homeHead"><tr>
         <th style="padding-left:22px" class="sortable" data-sort="projectId">Project ID</th>
         <th class="sortable" data-sort="name">Name</th>
-        <th class="r sortable" data-sort="contractSum">Contract Sum</th>
-        <th class="r sortable" data-sort="projectCost">Total Project</th>
         <th class="sortable" data-sort="status">Status</th>
+        <th class="r sortable" data-sort="contractSum">Contract Sum</th>
+        <th class="r sortable" data-sort="projectCost">Total Project Cost</th>
         <th class="r sortable" data-sort="updated" style="padding-right:22px">Updated</th>
         <th class="no-print"></th></tr></thead>
       <tbody id="homeBody"></tbody>
     </table>
+    <div class="home-cards" id="homeCards"></div>
     <div class="empty" id="homeEmpty" style="display:none">
       <div class="big" id="homeEmptyBig">No budgets yet</div>
       <div id="homeEmptyMsg">Create one to get started. Budgets snapshot the pricing library at creation.</div>
@@ -588,14 +836,17 @@ th.sortable.sorted{color:var(--ink-900)}
   <!-- Investment analyses: their own list below the budgets, rendered by the
        investment module. Row actions (Versions, Duplicate, Delete) live in
        each row's three-dot menu, exactly like the budget rows above. -->
-  <section class="card" style="margin-top:22px">
-    <div class="card-hd"><h2>Investment Analyses</h2>
-      <div style="display:flex;gap:10px" data-edit-only>
-        <button class="btn btn-ghost" onclick="FSInvestmentUI.createBlank()">+ Blank Investment Analysis</button>
-        <button class="btn btn-primary" onclick="FSInvestmentUI.openProjectPicker()">+ New Investment Analysis</button>
-      </div>
+  <!-- Same layout as Project Budgets above: title row (heading left, creation
+       buttons right) sitting ABOVE the list card, not inside its header. -->
+  <div class="page-title" style="margin-top:34px">
+    <div><h1>Investment Analyses</h1>
+      <div class="sub">Before-tax underwriting, linked to exact saved budget versions.</div></div>
+    <div style="display:flex;gap:10px" data-edit-only>
+      <button class="btn btn-primary" onclick="FSInvestmentUI.openProjectPicker()">+ New Investment Analysis</button>
     </div>
-    <div class="card-bd" style="padding:0" id="homeAnalyses"></div>
+  </div>
+  <section class="card">
+    <div class="card-bd" style="padding:0;overflow-x:auto" id="homeAnalyses"></div>
   </section>
 </div>
 
@@ -618,17 +869,15 @@ th.sortable.sorted{color:var(--ink-900)}
           <div class="fld-err" id="pIdErr" style="display:none">Must match OP-####, BD-####, AS-#### or TST-#### (test)</div></label>
         <label class="fld"><span class="lab">Project Name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
-        <label class="fld"><span class="lab">Property Type</span>
-          <select id="pType" onchange="doc.type=this.value;markDirty()">
-            <option value="Multifamily">Multifamily</option>
-            <option value="Blank">Blank / Custom</option>
-            <option disabled>Commercial (coming)</option>
-            <option disabled>SFR (coming)</option></select></label>
       </div>
+      <!-- Property type is chosen when the budget is created (+ New Budget →
+           template), so it is not re-asked here. Site SF and Site Acreage are
+           one measurement in two units: fill either and the other follows. -->
       <div class="grid g4" style="margin-top:14px">
         <label class="fld"><span class="lab">Residential Buildable SF</span><input type="number" class="num" id="pSF" value="51365" min="0" step="100" oninput="touch()"></label>
         <label class="fld"><span class="lab">Amenity / Clubhouse SF</span><input type="number" class="num" id="pASF" value="1200" min="0" step="50" oninput="touch()"></label>
-        <label class="fld"><span class="lab">Total Site SF</span><input type="number" class="num" id="pSiteSF" value="0" min="0" step="1000" oninput="touch()"></label>
+        <label class="fld"><span class="lab">Total Site SF</span><input type="number" class="num" id="pSiteSF" value="0" min="0" step="1000" oninput="syncSiteFromSF()"></label>
+        <label class="fld"><span class="lab">Site Acreage</span><input type="number" class="num" id="pSiteAc" value="0" min="0" step="0.01" oninput="syncSiteFromAcres()"></label>
       </div>
       <div class="grid g4" style="margin-top:14px" id="siteMetrics">
         <div class="metric"><span class="k">Site Area</span><span class="v" id="mSiteAcres">—</span></div>
@@ -636,7 +885,7 @@ th.sortable.sorted{color:var(--ink-900)}
         <div class="metric"><span class="k">Density</span><span class="v" id="mDensity">—</span></div>
         <div class="metric" id="mBldgEffTile"><span class="k">Building Efficiency</span><span class="v" id="mBldgEff">—</span></div>
       </div>
-      <div class="note" style="margin-top:10px">Residential SF drives the per-SF construction and soft-cost lines. Amenity SF drives the clubhouse/leasing scope at its own (higher) rates — matching how the Finishes model prices the two buildings separately. Total site SF is the land itself; it prices nothing, it measures how hard the site is working. Leave it at 0 if you do not know it yet.</div>
+      <div class="note" style="margin-top:10px">Residential SF drives the per-SF construction and soft-cost lines. Amenity SF drives the clubhouse/leasing scope at its own (higher) rates — matching how the Finishes model prices the two buildings separately. Total site SF is the land itself; it prices nothing, it measures how hard the site is working. Site SF and Site Acreage are the same measurement — fill in either and the other fills itself (43,560 SF per acre). Leave both at 0 if you do not know them yet.</div>
     </div>
   </section>
 
@@ -651,9 +900,16 @@ th.sortable.sorted{color:var(--ink-900)}
         <thead><tr><th style="width:19%">Unit Type</th><th class="r">BD</th><th class="r">BTH</th><th class="r">SF / Unit</th><th class="r"># Units</th>
           <th class="r">Rent / Mo</th><th class="r">$ / SF / Mo</th><th class="r">Type SF</th><th class="r">Monthly</th><th class="r">Yearly</th><th class="no-print"></th></tr></thead>
         <tbody id="unitBody"></tbody>
+        <!-- The input columns above inset their text by the input's own
+             padding and border (~9px); the totals under them carry the same
+             inset so the numbers line up with the inputs, not the cell edge. -->
         <tfoot><tr class="total">
-          <td>Total / Blended</td><td></td><td></td><td class="calc r" id="uAvgSF">—</td><td class="calc r strong" id="uCount">0</td>
-          <td class="calc r" id="uAvgRent">—</td><td class="calc r" id="uBlendPSF">—</td><td class="calc r strong" id="uTotSF">0</td>
+          <td>Total / Blended</td><td></td><td></td>
+          <td class="calc r" id="uAvgSF" style="padding-right:19px">—</td>
+          <td class="calc r strong" id="uCount" style="padding-right:19px">0</td>
+          <td class="calc r" id="uAvgRent" style="padding-right:19px">—</td>
+          <td class="calc r" id="uBlendPSF" style="padding-right:19px">—</td>
+          <td class="calc r strong" id="uTotSF">0</td>
           <td class="calc r strong" id="uMoRev">$0</td><td class="calc r strong" id="uYrRev">$0</td><td class="no-print"></td>
         </tr></tfoot>
       </table>
@@ -748,13 +1004,12 @@ th.sortable.sorted{color:var(--ink-900)}
         <select id="bStatus" style="width:130px;font-size:12px;padding:6px 8px" onchange="setStatus(this.value)">
           <option value="Draft">Draft</option>
           <option value="In Review">In Review</option>
-          <option value="Finalized">Finalized</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
         </select>
       </label>
       <button class="btn btn-ghost" onclick="go('input')">← Inputs</button>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
-      <button class="btn btn-ghost" onclick="createAnalysisFromBudget()"
-        title="Save this budget and start a five-year investment analysis from the saved version">Create Investment Analysis</button>
       <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
   </div>
@@ -766,7 +1021,11 @@ th.sortable.sorted{color:var(--ink-900)}
 
   <div class="banner" id="staleBanner" style="display:none">
     <span>This budget uses pricing library <b id="staleFrom"></b>; current is <b id="staleTo"></b>. Values are frozen until you update.</span>
-    <button class="btn btn-sm btn-dark no-print" onclick="repriceBudget()">Update to Current Pricing</button>
+    <span class="no-print" style="display:flex;gap:8px;align-items:center;flex:none">
+      <button class="btn btn-sm btn-dark" onclick="repriceBudget()">Update to Current Pricing</button>
+      <button class="btn-x" onclick="dismissStaleBanner()" aria-label="Dismiss pricing banner"
+        title="Hide this banner for this budget — Update Pricing stays available in the Home list's row menu">×</button>
+    </span>
   </div>
 
   <div class="stats" id="sec-stats">
@@ -780,9 +1039,7 @@ th.sortable.sorted{color:var(--ink-900)}
   <section class="card" id="sec-budget">
     <div class="card-hd"><h2>Budget Detail</h2>
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-        <span class="eyebrow" style="color:var(--green-600)">● qty auto-synced · edit to override</span>
         <span class="eyebrow legend" id="editLegend" style="color:var(--edit)"><span class="editdot on"></span><span id="editCount">no manual edits</span></span>
-        <span class="eyebrow" id="amenHidden" style="display:none;color:var(--warn)">Amenity hidden — amenity SF is 0</span>
         <span class="no-print" style="display:flex;gap:8px">
           <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Collapse All</button>
           <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand All</button>
@@ -1004,15 +1261,53 @@ th.sortable.sorted{color:var(--ink-900)}
         <p>A saved budget can also be underwritten: the <b>Investment Analysis</b> tab turns it into a five- or
           ten-year before-tax investment model — operating cash flows, financing, hypothetical sales, and
           investor returns — described in its own section below.</p>
+
+        <h4>Statuses</h4>
+        <p>Budgets and investment analyses share one status workflow: <b>Draft</b> (gray),
+          <b>In Review</b> (amber), <b>Completed</b> (green), and <b>Cancelled</b> (red). The status
+          chip is clickable wherever it appears — list rows, cards, the budget editor's Status field,
+          and the analysis editor's chip — and picking a new status saves immediately without creating
+          a budget version. Older budgets marked Finalized display as Completed.</p>
+
+        <h4>Search Everywhere (Cmd/Ctrl+K)</h4>
+        <p><b>Cmd+K</b> (or <b>Ctrl+K</b>) opens a search popup from any page. Type any part of a project ID,
+          budget name, or analysis name; results list budgets first, then investment analyses. Arrow keys
+          move the selection, <b>Enter</b> opens it, <b>Esc</b> closes. Both Home lists also have their own
+          search box, status filter, and grouping — budgets and analyses alike.</p>
+
+        <h4>Settings</h4>
+        <p>Click your avatar in the header and choose <b>Settings</b>. Everything there is saved to your
+          account, so your choices follow you to any browser you sign into:</p>
+        <ul>
+          <li><b>Profile</b> — a display name (used in version history and "created by" lines; it
+            defaults from your sign-in identity) and a phone number. Email is shown but locked to
+            the account you are signed in with.</li>
+          <li><b>Theme</b> — Light (the default) or Dark.</li>
+          <li><b>Accent Color</b> — Green (the default), Blue, Violet, Graphite, Red, Orange, or
+            <b>Custom</b>: the rainbow button opens a color picker and the app derives a full light
+            and dark palette from whatever color you choose.</li>
+          <li><b>Profile Icon Background</b> — six preset colors behind your header initials, or the
+            rainbow swatch for any custom color.</li>
+          <li><b>Time Format</b> — 12-hour (8:52 PM) or 24-hour (20:52) for every timestamp.</li>
+          <li><b>Views</b> — three options per section: a Comfortable list, a Compact list, or Cards —
+            chosen separately for Project Budgets and Investment Analyses (a roomy budget list next to
+            analysis cards is fine). The same three-way icon toggle sits above each list.</li>
+          <li><b>Exports</b> — the <b>Remember Export Settings</b> toggle: on, the sections and options
+            you pick in the export popups (budget and analysis separately) become your defaults
+            everywhere you sign in; off, every export starts from the standard defaults.</li>
+        </ul>
+        <p>Preference choices apply immediately and save quietly; profile fields save with their button.
+          Printed reports and PDF exports always render in light, whatever theme the screen uses.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
         <h3 id="help-quickstart">Quick Start</h3>
-        <div class="step"><div class="n">1</div><div class="t"><b>Home → pick a starting point.</b>
-          <b>+ New Multifamily Budget</b> copies the current pricing library and the standard template — unit mix,
-          income, expenses and every priced line. <b>+ Blank Budget</b> starts genuinely empty: no units, no income,
-          no scope, no square footage. Use blank when the project is not multifamily or looks nothing like the
-          template, and build the scope yourself from the CSI catalog.</div></div>
+        <div class="step"><div class="n">1</div><div class="t"><b>Home → + New Budget → pick a template.</b>
+          <b>Multifamily</b> copies the current pricing library and the standard template — unit mix, income,
+          expenses and every priced line. <b>Blank Budget</b> starts genuinely empty: no units, no income,
+          no scope, no square footage — use it when the project looks nothing like the template and build
+          the scope yourself from the CSI catalog. Custom templates you have published appear in the same
+          popup; Industrial, Retail, and Mixed-Use are on the way.</div></div>
         <div class="step"><div class="n">2</div><div class="t"><b>Fill in the Inputs page.</b>
           Project ID and name first — the ID is required before anything can be saved. Then residential and
           amenity square footage, the unit mix, income and expenses, and the land and project costs that sit
@@ -1027,9 +1322,9 @@ th.sortable.sorted{color:var(--ink-900)}
           export popup — the same button row everywhere in the suite: Email (Soon), Print, PDF,
           Excel (.xlsx).</div></div>
         <div class="step"><div class="n">6</div><div class="t"><b>Underwrite it, if the deal calls for it.</b>
-          <span class="kbd">Create Investment Analysis</span> on the budget page — or the buttons on the
-          Home page — turns the saved budget into a before-tax investment model. See the
-          <a href="#help-investment">Investment Analysis</a> section.</div></div>
+          <span class="kbd">+ New Investment Analysis</span> — on the Home page or the Investment Analysis
+          tab — turns a saved budget into a before-tax investment model, or starts a standalone one. See
+          the <a href="#help-investment">Investment Analysis</a> section.</div></div>
         <div class="callout">The header pill shows <b>Unsaved changes</b> until a save succeeds. Nothing is stored
           automatically — if you close the tab with that pill showing, the browser will warn you.
           <b>Cmd+S</b> (or <b>Ctrl+S</b>) saves from anywhere in a budget or an analysis.</div>
@@ -1094,7 +1389,8 @@ th.sortable.sorted{color:var(--ink-900)}
         <p>Building efficiency asks how much of the <i>structure</i> you can rent. Site efficiency asks how hard the
           <i>land</i> is working:</p>
         <p><code>site efficiency = (residential SF + amenity SF) ÷ total site SF</code></p>
-        <p>That is the floor area ratio, expressed as a percentage. Enter the land area in <b>Total Site SF</b> and
+        <p>That is the floor area ratio, expressed as a percentage. Enter the land area in <b>Total Site SF</b>
+          or <b>Site Acreage</b> — they are the same measurement (43,560 SF per acre) and each fills the other — and
           the Project card reports site area in acres, site efficiency, density in units per acre, and building
           efficiency side by side.</p>
         <table class="tbl"><tbody>
@@ -1142,12 +1438,16 @@ th.sortable.sorted{color:var(--ink-900)}
         </tbody></table>
         <p>Typing over a quantity breaks the link for that line only, and it will no longer follow the inputs.</p>
 
-        <h4>Undo</h4>
+        <h4>Undo &amp; Redo</h4>
         <p><b>Cmd+Z</b> (or <b>Ctrl+Z</b>) undoes your last committed change — a deleted line item comes
-          back, an edited rate or quantity reverts — up to <b>five steps</b>. One step is one change, not
-          one keystroke. The history is deliberately small and in memory only: it clears when you open
+          back, an edited rate or quantity reverts — up to <b>ten steps</b>. <b>Cmd+Shift+Z</b> (or
+          <b>Ctrl+Y</b>) redoes what you just undid, also up to ten steps; making a new change after an
+          undo clears the redo path, like any desktop application. One step is one change, not one
+          keystroke. The history is deliberately small and in memory only: it clears when you open
           another budget or reload the page, and it never touches saved versions. If you are typing in a
-          field when you press it, the field commits first and that edit is what gets undone.</p>
+          field when you press it, the field commits first and that edit is what gets undone.
+          The same shortcuts work in the investment analysis editor: with an analysis open they act on
+          the analysis inputs instead of the budget, with the same ten-step history.</p>
 
         <h4>Manually Edited Lines</h4>
         <p>A <span class="editdot on" style="margin:0 2px"></span> blue dot to the left of a line means you changed it
@@ -1260,7 +1560,9 @@ th.sortable.sorted{color:var(--ink-900)}
         <p>When a budget is running on an older library, a banner appears on the budget page naming both versions.
           <span class="kbd">Update to current pricing</span> pulls the new rates in — it matches on scope, code and
           description, so standard template lines are repriced and any custom line you added keeps the rate you
-          gave it. Quantities and overrides are untouched.</p>
+          gave it. Quantities and overrides are untouched. The banner's <b>×</b> hides it for that budget while
+          you work; the reprice stays one click away in the Home list's three-dot menu as
+          <span class="kbd">Update Pricing</span> (which simply confirms when a budget is already current).</p>
         <p>Publishing is the other direction: an admin edits the library and publishes, which stamps a new version
           number and effective date. Only budgets created after that point pick it up.</p>
       </div></section>
@@ -1272,17 +1574,19 @@ th.sortable.sorted{color:var(--ink-900)}
           investor would look at — cash-on-cash, DSCR, equity multiple, IRRs, leverage, and an
           acquisition-price sensitivity table.</p>
 
-        <p><b>Starting one.</b> Three ways, all equivalent once the editor opens. On the Home page,
-          <span class="kbd">+ New Investment Analysis</span> asks which project the analysis is for and
-          creates it from that project's latest saved budget version, while
-          <span class="kbd">+ Blank Investment Analysis</span> creates one unlinked to any project (named
-          Untitled Analysis until you rename it on the first step). Or open a budget and press
-          <span class="kbd">Create Investment Analysis</span> — the budget is saved first, and the
-          analysis imports from that exact saved version. A linked analysis imports the property
+        <p><b>Starting one.</b> Press <span class="kbd">+ New Investment Analysis</span> — on the Home page
+          or the Investment Analysis tab, both open the same popup. Pick <b>From Existing Budget</b> to
+          link the analysis to a project (it is created from that project's latest saved budget version),
+          or <b>Standalone Analysis</b> for one unlinked to any budget — name it there, or leave the name
+          blank and rename it on the first step. A linked analysis imports the property
           name and address, the size, the unit mix, gross scheduled rent (unit rents × 12, never the
           budget's net income figure), other-income rows, and the total project cost as a suggested
           purchase price. Every imported value shows a green <b>From Budget</b> badge and stays fully
-          editable. Standalone analyses can also be started by name from the Investment Analysis tab.</p>
+          editable — editing a value away from the import hides its badge, and restoring the exact
+          imported value brings it back, even after saving and reloading. In the lists, the
+          <b>Project / Budget</b> column shows which budget version a linked analysis came from
+          (for example, BD-4821 Budget v14) — distinct from <b>Analysis Ver.</b>, which counts the
+          analysis's own saved versions.</p>
 
         <div class="callout"><b>The import is a snapshot, not a live link.</b> Each analysis records the
           exact budget version it came from. Changing the budget later never changes the analysis.</div>
@@ -1361,8 +1665,15 @@ th.sortable.sorted{color:var(--ink-900)}
         <div class="callout">Every export reads the same numbers the screen shows, so exports cannot drift
           from the saved document. The budget workbook also carries the <b>Manually edited</b> flag and each
           line's original library rate.</div>
-        <p><b>Download Guide</b>, at the top of this page, produces a formatted PDF of this guide. It is generated
-          from this page rather than a separate copy, so it cannot fall out of date with what you are reading.</p>
+        <p><b>Download Guide</b>, at the top of this page, downloads a formatted PDF of this guide through the
+          same rendering engine as every other export. It is generated from this page rather than a separate
+          copy, so it cannot fall out of date with what you are reading.</p>
+
+        <h4>Timestamps</h4>
+        <p>Every date and time the app shows — the Updated columns, version history, save stamps, and the
+          Generated stamps on exports — is your local time, formatted <b>MM-DD-YYYY h:mm AM/PM</b>
+          (for example, 08-17-2026 8:52 PM). Times a document was saved on another machine display in
+          YOUR timezone when you view them.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -1385,7 +1696,8 @@ th.sortable.sorted{color:var(--ink-900)}
               Reload. If it persists, the API or database is down — report it before doing more work, and copy
               anything unsaved out first.</td></tr>
           <tr><td>The first request of the day hangs</td>
-            <td>The database pauses when idle and takes a few seconds to wake. Retry once.</td></tr>
+            <td>The database pauses when idle and can take a couple minutes to resume — the loading screen
+              keeps you posted while it wakes. If a request still hangs after that, retry once.</td></tr>
           <tr><td>Publishing pricing returns "not authorized"</td>
             <td>Your account does not hold <code>pricing_admin</code> in this browser profile. Check
               <code>/.auth/me</code>; if the role is missing, the role invitation needs to be accepted in the
@@ -1396,11 +1708,12 @@ th.sortable.sorted{color:var(--ink-900)}
           <tr><td>A budget shows $0 totals</td>
             <td>Almost always residential SF is 0, or every line was switched to lump sum with no rate set.</td></tr>
           <tr><td>I deleted a line by accident</td>
-            <td><b>Cmd/Ctrl+Z</b> restores it — up to five changes back, while the budget stays open.</td></tr>
+            <td><b>Cmd/Ctrl+Z</b> restores it — up to ten changes back, while the budget stays open.
+              <b>Cmd/Ctrl+Shift+Z</b> (or <b>Ctrl+Y</b>) redoes an undo.</td></tr>
           <tr><td>I lost my edits</td>
             <td>Nothing autosaves. The header pill shows unsaved state and the browser warns before closing —
               if that warning was dismissed, the work is gone. While the budget is still open,
-              <b>Cmd/Ctrl+Z</b> steps back up to five changes.</td></tr>
+              <b>Cmd/Ctrl+Z</b> steps back up to ten changes.</td></tr>
         </tbody></table>
       </div></section>
 
@@ -1508,7 +1821,175 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="pm-email" id="pmEmail"></div>
   </div>
   <div class="rowmenu-sep"></div>
+  <button class="rowmenu-item" role="menuitem" onclick="openSettings()">Settings</button>
   <button class="rowmenu-item" role="menuitem" onclick="logout()">Sign Out</button>
+</div>
+
+<!-- ================= NEW BUDGET MODAL =================
+     One + New Budget button opens this template chooser. Multifamily and
+     Blank are the implemented paths (the existing creation logic, untouched);
+     the other project types are visible but disabled so the UI is already
+     structured for them. Custom templates come from the template system. -->
+<div id="newBudgetModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:60;align-items:center;justify-content:center;padding:20px 14px"
+  onclick="if(event.target===this)closeNewBudget()">
+  <div class="card" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="newBudgetTitle">
+    <div class="card-hd"><h2 id="newBudgetTitle">New Budget</h2>
+      <button class="btn-x" onclick="closeNewBudget()" aria-label="Close new budget">×</button></div>
+    <div class="card-bd" style="overflow:auto">
+      <div class="set-lab">Budget Templates</div>
+      <div class="tpl-list">
+        <button class="tpl-row" onclick="pickNewBudget('multifamily')">
+          <span class="tpl-name">Multifamily</span>
+          <span class="tpl-sub">The standard template — unit mix, income, expenses, and every priced line from the current pricing library</span></button>
+        <button class="tpl-row" disabled title="Coming soon">
+          <span class="tpl-name">Industrial</span><span class="tpl-sub">Coming soon</span></button>
+        <button class="tpl-row" disabled title="Coming soon">
+          <span class="tpl-name">Retail</span><span class="tpl-sub">Coming soon</span></button>
+        <button class="tpl-row" disabled title="Coming soon">
+          <span class="tpl-name">Mixed-Use</span><span class="tpl-sub">Coming soon</span></button>
+        <button class="tpl-row" onclick="pickNewBudget('blank')">
+          <span class="tpl-name">Blank Budget</span>
+          <span class="tpl-sub">Genuinely empty — no units, no income, no scope. Build everything yourself from the CSI catalog</span></button>
+      </div>
+      <div class="set-lab">Custom Templates</div>
+      <div class="tpl-list" id="customTplList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SETTINGS MODAL =================
+     Reached from the account menu. Everything here is saved to the ACCOUNT
+     (dbo.Users), so it follows the user to any signed-in browser. Preference
+     choices apply instantly and save quietly; profile fields save on the
+     button. -->
+<div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:60;align-items:center;justify-content:center;padding:20px 14px"
+  onclick="if(event.target===this)closeSettings()">
+  <div class="card" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="card-hd"><h2 id="settingsTitle">Settings</h2>
+      <button class="btn-x" onclick="closeSettings()" aria-label="Close settings">×</button></div>
+    <div class="card-bd" style="overflow:auto">
+
+      <div class="set-lab">Profile</div>
+      <div class="set-grid">
+        <label class="fld wide"><span class="lab">Display Name</span>
+          <input type="text" id="setDisplayName" placeholder="How your name appears in version history"></label>
+        <label class="fld"><span class="lab">Email</span>
+          <input type="text" id="setEmail" class="set-locked" disabled
+            title="Locked to the account you are signed in with"></label>
+        <label class="fld"><span class="lab">Phone</span>
+          <input type="text" id="setPhone" placeholder="Phone number"></label>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:12px">
+        <span class="set-note">Email is locked to your sign-in account.</span>
+        <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save Profile</button>
+      </div>
+
+      <div class="set-lab">Theme</div>
+      <div class="set-choice" role="group" aria-label="Theme">
+        <button data-theme-pick="light" onclick="chooseSetting('theme','light')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9l-2.2 2.2M7.1 16.9l-2.2 2.2"/></svg>
+          Light<span class="tick">✓</span></button>
+        <button data-theme-pick="dark" onclick="chooseSetting('theme','dark')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+          Dark<span class="tick">✓</span></button>
+      </div>
+
+      <div class="set-lab">Accent Color</div>
+      <div class="set-choice" role="group" aria-label="Accent Color" style="flex-wrap:wrap">
+        <button data-accent-pick="green" onclick="chooseSetting('accentColor','green')">
+          <span class="set-dot" style="background:#0A7A36"></span>Green<span class="tick">✓</span></button>
+        <button data-accent-pick="blue" onclick="chooseSetting('accentColor','blue')">
+          <span class="set-dot" style="background:#2563C9"></span>Blue<span class="tick">✓</span></button>
+        <button data-accent-pick="violet" onclick="chooseSetting('accentColor','violet')">
+          <span class="set-dot" style="background:#6D3AD1"></span>Violet<span class="tick">✓</span></button>
+        <button data-accent-pick="graphite" onclick="chooseSetting('accentColor','graphite')">
+          <span class="set-dot" style="background:#47505C"></span>Graphite<span class="tick">✓</span></button>
+        <button data-accent-pick="red" onclick="chooseSetting('accentColor','red')">
+          <span class="set-dot" style="background:#B42318"></span>Red<span class="tick">✓</span></button>
+        <button data-accent-pick="orange" onclick="chooseSetting('accentColor','orange')">
+          <span class="set-dot" style="background:#CC6F12"></span>Orange<span class="tick">✓</span></button>
+        <button data-accent-pick="custom" onclick="document.getElementById('accentPicker').click()">
+          <span class="set-dot rainbow" id="accentCustomDot"
+            style="background:conic-gradient(#e03131,#f59f00,#94d82d,#20c997,#339af0,#845ef7,#e03131)"></span>Custom<span class="tick">✓</span></button>
+        <input type="color" id="accentPicker" value="#0a7a36" style="position:absolute;width:0;height:0;opacity:0;border:0;padding:0"
+          onchange="chooseSetting('accentColor',this.value.toLowerCase())" aria-label="Custom Accent Color">
+      </div>
+
+      <div class="set-lab">Profile Icon Background</div>
+      <div class="set-swatches" role="group" aria-label="Profile Icon Background">
+        <button class="set-swatch" data-avatar-pick="" style="background:#0A7A36" title="Default Green" aria-label="Default Green" onclick="chooseSetting('avatarColor',null)"></button>
+        <button class="set-swatch" data-avatar-pick="#14418A" style="background:#14418A" title="Navy" aria-label="Navy" onclick="chooseSetting('avatarColor','#14418A')"></button>
+        <button class="set-swatch" data-avatar-pick="#6D28D9" style="background:#6D28D9" title="Violet" aria-label="Violet" onclick="chooseSetting('avatarColor','#6D28D9')"></button>
+        <button class="set-swatch" data-avatar-pick="#B42318" style="background:#B42318" title="Crimson" aria-label="Crimson" onclick="chooseSetting('avatarColor','#B42318')"></button>
+        <button class="set-swatch" data-avatar-pick="#B7791F" style="background:#B7791F" title="Amber" aria-label="Amber" onclick="chooseSetting('avatarColor','#B7791F')"></button>
+        <button class="set-swatch" data-avatar-pick="#23282A" style="background:#23282A" title="Ink" aria-label="Ink" onclick="chooseSetting('avatarColor','#23282A')"></button>
+        <button class="set-swatch rainbow" data-avatar-pick="custom" title="Custom Color" aria-label="Custom Color"
+          onclick="document.getElementById('avatarPicker').click()"></button>
+        <input type="color" id="avatarPicker" value="#0a7a36" style="position:absolute;width:0;height:0;opacity:0;border:0;padding:0"
+          onchange="chooseSetting('avatarColor',this.value.toUpperCase())" aria-label="Custom Profile Icon Color">
+      </div>
+
+      <div class="set-lab">Time Format</div>
+      <div class="set-choice" role="group" aria-label="Time Format">
+        <button data-timefmt-pick="12h" onclick="chooseSetting('timeFormat','12h')">
+          12-Hour<span class="set-sub">8:52 PM</span><span class="tick">✓</span></button>
+        <button data-timefmt-pick="24h" onclick="chooseSetting('timeFormat','24h')">
+          24-Hour<span class="set-sub">20:52</span><span class="tick">✓</span></button>
+      </div>
+
+      <div class="set-lab">Views</div>
+      <div class="set-note" style="margin:0 0 8px">Three options per section — a comfortable list, a
+        compact list, or cards — chosen separately for budgets and analyses. The same toggles sit above
+        each list.</div>
+      <div class="set-note" style="margin:0 0 4px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase">Project Budgets</div>
+      <div class="set-choice" role="group" aria-label="Project Budgets View">
+        <button data-budgetview-pick="comfortable" onclick="chooseSetting('budgetView','comfortable')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+          Comfortable<span class="tick">✓</span></button>
+        <button data-budgetview-pick="compact" onclick="chooseSetting('budgetView','compact')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          Compact<span class="tick">✓</span></button>
+        <button data-budgetview-pick="cards" onclick="chooseSetting('budgetView','cards')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+          Cards<span class="tick">✓</span></button>
+      </div>
+      <div class="set-note" style="margin:10px 0 4px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase">Investment Analyses</div>
+      <div class="set-choice" role="group" aria-label="Investment Analyses View">
+        <button data-analysisview-pick="comfortable" onclick="chooseSetting('analysisView','comfortable')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+          Comfortable<span class="tick">✓</span></button>
+        <button data-analysisview-pick="compact" onclick="chooseSetting('analysisView','compact')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          Compact<span class="tick">✓</span></button>
+        <button data-analysisview-pick="cards" onclick="chooseSetting('analysisView','cards')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+          Cards<span class="tick">✓</span></button>
+      </div>
+
+      <div class="set-lab">Exports</div>
+      <label class="switch-row">
+        <span class="switch"><input type="checkbox" id="setRememberExport"
+          onchange="chooseSetting('rememberExport',this.checked)"><span class="knob"></span></span>
+        <span><b style="font-size:13px">Remember Export Settings</b><br>
+          <span class="set-note" style="margin-top:2px;display:inline-block">The sections and options you
+          pick in the export popups (budget and analysis separately) become your defaults everywhere you
+          sign in. Off means every export starts from the standard defaults.</span></span>
+      </label>
+
+      <p class="set-note" style="margin-top:18px">Everything here is saved to your account and follows you
+        to any signed-in browser. Printed reports and PDF exports always use the light look.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Cmd/Ctrl+K: search every budget and analysis from anywhere. -->
+<div id="palette" aria-hidden="true">
+  <div class="pal-card" role="dialog" aria-modal="true" aria-label="Search Budgets And Analyses">
+    <input type="text" id="palInput" placeholder="Search budgets and analyses — ID, name, or project…"
+      autocomplete="off" spellcheck="false">
+    <div class="pal-list" id="palList"></div>
+    <div class="pal-ft"><span>↑↓ Navigate</span><span>Enter Open</span><span>Esc Close</span></div>
+  </div>
 </div>
 
 <!-- ================= BUDGET ROW ACTIONS MENU ================= -->
@@ -1538,6 +2019,257 @@ const nz=v=>Number.isFinite(+v)?+v:0;
 const usd=n=>'$'+Math.round(nz(n)).toLocaleString('en-US');
 const usd2=n=>'$'+nz(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const num=n=>Math.round(nz(n)).toLocaleString('en-US');
+/* ---- house timestamp format ----
+   Every timestamp the app SHOWS is the viewer's local time as
+   MM-DD-YYYY h:mm AM/PM (fmtWhen), or MM-DD-YYYY where only the day matters
+   (fmtDay). The API stores and returns UTC ISO strings; slicing those for
+   display was showing UTC — an evening save looked like tomorrow. */
+function fmtWhen(iso){
+  if(!iso)return '—';
+  const d=iso instanceof Date?iso:new Date(iso);
+  if(isNaN(d.getTime()))return '—';
+  const p=n=>String(n).padStart(2,'0');
+  return p(d.getMonth()+1)+'-'+p(d.getDate())+'-'+d.getFullYear()+' '+fmtClock(d);
+}
+function fmtDay(iso){
+  if(!iso)return '—';
+  const d=iso instanceof Date?iso:new Date(iso);
+  if(isNaN(d.getTime()))return '—';
+  const p=n=>String(n).padStart(2,'0');
+  return p(d.getMonth()+1)+'-'+p(d.getDate())+'-'+d.getFullYear();
+}
+function fmtClock(d){
+  const m=String(d.getMinutes()).padStart(2,'0');
+  if((window.__fsTimeFormat||'12h')==='24h')return String(d.getHours()).padStart(2,'0')+':'+m;
+  let h=d.getHours();const ap=h>=12?'PM':'AM';h=h%12||12;
+  return h+':'+m+' '+ap;
+}
+/* ---- themes ----
+   Light is the default; Dark remaps the CSS tokens on <html>. Switched from
+   Settings (profile menu → Settings), persists per browser, and applies
+   before first paint (head script). Print always renders light: beforeprint
+   strips the attribute and afterprint restores it, so exports and the guide
+   never print dark. An unknown stored value (e.g. the retired evergreen)
+   falls back to light. */
+function currentTheme(){return document.documentElement.getAttribute('data-theme')||'light';}
+function setTheme(name){
+  if(!['light','dark'].includes(name))name='light';
+  if(name==='light')document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme',name);
+  try{localStorage.setItem('fsTheme',name);}catch(_){}
+  document.querySelectorAll('[data-theme-pick]').forEach(b=>{
+    const on=b.dataset.themePick===name;
+    b.classList.toggle('on',on);
+    b.setAttribute('aria-pressed',on?'true':'false');
+  });
+}
+/* ---- per-account settings (dbo.Users via /api/user-settings) ----
+   The server is the source of truth: settings load at boot and follow the
+   account to any signed-in browser. localStorage keeps a small cache purely
+   so the appearance applies before the first network round trip. Preference
+   choices apply instantly and save quietly (debounced); profile fields save
+   on their button. */
+let US={settings:null,profile:{displayName:'',email:'',phone:''},userDetails:''};
+let usSaveTimer=null;
+function usSettings(){return US.settings||{};}
+async function loadUserSettings(){
+  try{
+    const r=await api('user-settings?boot=1');
+    US={settings:r.settings,profile:{displayName:r.displayName||'',email:r.email||'',phone:r.phone||''},
+        userDetails:r.userDetails||'',loginCount:r.loginCount};
+    applyUserSettings();
+    renderProfile();          // the display name may override the platform name
+  }catch(e){/* signed out or offline: the pre-paint caches already applied */}
+}
+function applyUserSettings(){
+  const s=usSettings();
+  setTheme(s.theme||'light');
+  applyAccent(s.accentColor||'green');
+  applyAvatar(s.avatarColor||null);
+  window.__fsTimeFormat=s.timeFormat==='24h'?'24h':'12h';
+  try{localStorage.setItem('fsTimeFormat',window.__fsTimeFormat);}catch(_){}
+  paintSettingsUI();
+}
+/* Per-section views: 'comfortable' | 'compact' | 'cards'. */
+function budgetView(){const v=usSettings().budgetView;return ['compact','cards'].includes(v)?v:'comfortable';}
+function analysisView(){const v=usSettings().analysisView;return ['compact','cards'].includes(v)?v:'comfortable';}
+/* Named accents use the curated CSS scales; a #rrggbb custom accent derives
+   its scale from the picked color (HSL ramps, light and dark variants) and
+   applies it as inline tokens. Theme changes re-run this, so a custom accent
+   recomputes for dark mode automatically. */
+const NAMED_ACCENTS=['green','blue','violet','graphite','red','orange'];
+function applyAccent(name){
+  const root=document.documentElement;
+  ['900','800','700','600','500','200','100','50'].forEach(k=>root.style.removeProperty('--green-'+k));
+  root.style.removeProperty('--focus');
+  if(/^#[0-9a-f]{6}$/i.test(name)){
+    root.removeAttribute('data-accent');
+    const sc=accentScale(name,currentTheme()==='dark');
+    for(const k in sc.tokens)root.style.setProperty('--green-'+k,sc.tokens[k]);
+    root.style.setProperty('--focus','0 0 0 3px '+sc.focus);
+  }else if(name==='green'||!NAMED_ACCENTS.includes(name)){
+    root.removeAttribute('data-accent');
+  }else root.setAttribute('data-accent',name);
+  try{localStorage.setItem('fsAccent',name);}catch(_){}
+}
+function hexRgb(x){return [parseInt(x.slice(1,3),16),parseInt(x.slice(3,5),16),parseInt(x.slice(5,7),16)];}
+function hexHsl(x){
+  const [r,g,b]=hexRgb(x).map(v=>v/255);
+  const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;
+  let h=0;
+  if(d){h=max===r?((g-b)/d)%6:max===g?(b-r)/d+2:(r-g)/d+4;h=Math.round(h*60);if(h<0)h+=360;}
+  const l=(max+min)/2;
+  const s=d?d/(1-Math.abs(2*l-1)):0;
+  return [h,Math.round(s*100)];
+}
+function hslHex(h,s,l){
+  s/=100;l/=100;
+  const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;
+  const [r,g,b]=h<60?[c,x,0]:h<120?[x,c,0]:h<180?[0,c,x]:h<240?[0,x,c]:h<300?[x,0,c]:[c,0,x];
+  return '#'+[r,g,b].map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join('');
+}
+function accentScale(hex,dark){
+  const [h,s]=hexHsl(hex);
+  const L=dark
+    ?{900:14,800:30,700:48,600:54,500:62,200:30,100:22,50:16}
+    :{900:22,800:30,700:38,600:46,500:56,200:84,100:90,50:95};
+  const S=k=>(k==='200'||k==='100'||k==='50')?Math.min(s,dark?32:55):s;
+  const tokens={};
+  for(const k of ['900','800','700','600','500','200','100','50'])tokens[k]=hslHex(h,S(k),L[k]);
+  return {tokens,focus:'rgba('+hexRgb(hslHex(h,s,dark?60:46)).join(',')+',.33)'};
+}
+function applyAvatar(hex){
+  if(hex)document.documentElement.style.setProperty('--avatar-bg',hex);
+  else document.documentElement.style.removeProperty('--avatar-bg');
+  try{hex?localStorage.setItem('fsAvatar',hex):localStorage.removeItem('fsAvatar');}catch(_){}
+}
+function chooseSetting(key,value){
+  const prev=usSettings();
+  US.settings=Object.assign({},prev,{[key]:value});
+  applyUserSettings();
+  // the affected lists re-render only when their view actually changed
+  if(key==='budgetView'&&currentPage==='home')renderHome();
+  if(key==='analysisView'){
+    if(currentPage==='home'&&window.FSInvestmentUI)
+      FSInvestmentUI.renderListInto(document.getElementById('homeAnalyses'),{embedded:true});
+    else if(currentPage==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
+  }
+  if(key==='timeFormat'&&currentPage==='home')paintHome();
+  queueSettingsSave();
+}
+function queueSettingsSave(){
+  clearTimeout(usSaveTimer);
+  usSaveTimer=setTimeout(saveUserSettings,700);
+}
+async function saveUserSettings(){
+  if(!US.settings)return;
+  try{
+    const r=await api('user-settings',{method:'PUT',body:JSON.stringify({settings:US.settings})});
+    US.settings=r.settings;
+    paintSettingsUI();
+  }catch(e){toast('Could not save settings to your account — '+e.message);}
+}
+async function saveProfile(){
+  const v=id=>document.getElementById(id).value.trim();
+  try{
+    // Email is locked to the sign-in account — only name and phone travel.
+    const r=await api('user-settings',{method:'PUT',body:JSON.stringify({
+      displayName:v('setDisplayName'),phone:v('setPhone')})});
+    US.profile={displayName:r.displayName||'',email:r.email||'',phone:r.phone||''};
+    US.settings=r.settings;
+    renderProfile();
+    toast('Profile saved to your account.');
+  }catch(e){toast('Could not save your profile — '+e.message);}
+}
+const AVATAR_PRESETS=['','#14418A','#6D28D9','#B42318','#B7791F','#23282A'];
+const RAINBOW='conic-gradient(#e03131,#f59f00,#94d82d,#20c997,#339af0,#845ef7,#e03131)';
+function paintSettingsUI(){
+  const s=usSettings();
+  const mark=(sel,val)=>document.querySelectorAll(sel).forEach(b=>{
+    const key=Object.keys(b.dataset)[0];
+    const on=b.dataset[key]===String(val===null||val===undefined?'':val);
+    b.classList.toggle('on',on);
+    b.setAttribute('aria-pressed',on?'true':'false');
+  });
+  mark('[data-theme-pick]',s.theme||'light');
+  const acc=s.accentColor||'green';
+  const accCustom=/^#/.test(acc);
+  mark('[data-accent-pick]',accCustom?'custom':acc);
+  const cd=document.getElementById('accentCustomDot');
+  if(cd)cd.style.background=accCustom?acc:RAINBOW;
+  const ap=document.getElementById('accentPicker');
+  if(ap&&accCustom)ap.value=acc;
+  const av=s.avatarColor||'';
+  mark('[data-avatar-pick]',AVATAR_PRESETS.includes(av)?av:'custom');
+  const vp=document.getElementById('avatarPicker');
+  if(vp&&av&&!AVATAR_PRESETS.includes(av))vp.value=av.toLowerCase();
+  mark('[data-timefmt-pick]',s.timeFormat||'12h');
+  mark('[data-budgetview-pick]',budgetView());
+  mark('[data-analysisview-pick]',analysisView());
+  const re=document.getElementById('setRememberExport');
+  if(re)re.checked=!!s.rememberExport;
+}
+function openSettings(){
+  closeProfile(false);
+  // Display name defaults from the sign-in identity (the same derivation the
+  // header uses); email is read-only, locked to the signed-in account.
+  document.getElementById('setDisplayName').value=US.profile.displayName
+    ||(principal?principalName(principal):'');
+  document.getElementById('setEmail').value=US.profile.email||US.userDetails
+    ||(principal&&principal.userDetails)||'';
+  document.getElementById('setPhone').value=US.profile.phone||'';
+  paintSettingsUI();
+  document.getElementById('settingsModal').style.display='flex';
+}
+function closeSettings(){document.getElementById('settingsModal').style.display='none';}
+/* ---- New Budget modal: one button, all the ways to start a budget.
+   Multifamily and Blank run the EXISTING creation logic; the disabled rows
+   are future project types; custom templates come from the template system. */
+function openNewBudget(){
+  const host=document.getElementById('customTplList');
+  const customs=activeTemplates().filter(t=>t.templateKey!=='multifamily');
+  host.innerHTML=customs.length
+    ?customs.map(t=>`<button class="tpl-row" onclick="pickNewBudget('${esc(t.templateKey)}')">
+        <span class="tpl-name">${esc(t.name||t.templateKey)}</span>
+        <span class="tpl-sub">${esc(t.description||'Published custom template')}</span></button>`).join('')
+    :'<div class="set-note">No custom templates yet. Open a budget and publish it as a template to see it here.</div>';
+  document.getElementById('newBudgetModal').style.display='flex';
+}
+function closeNewBudget(){document.getElementById('newBudgetModal').style.display='none';}
+function pickNewBudget(key){
+  closeNewBudget();
+  if(key==='blank')newBudget('blank');
+  else newBudgetFromTemplate(key);
+}
+/* ---- export-option memory + client-reported activity ---- */
+function exportDefaultsFor(product){
+  const s=usSettings();
+  if(!s.rememberExport)return null;
+  const o=s.exportOptions&&s.exportOptions[product];
+  return o&&Object.keys(o).length?o:null;
+}
+function rememberExportOptions(product,opts){
+  const s=usSettings();
+  if(!s.rememberExport)return;
+  US.settings=Object.assign({},s,{exportOptions:Object.assign({},s.exportOptions,{[product]:opts})});
+  queueSettingsSave();
+}
+/* Browser-side exports never touch the API, so the client reports them.
+   Fire-and-forget: a lost beacon must never disturb the export. */
+function postActivity(eventType,entityType,entityId,detail){
+  api('user-activity',{method:'POST',body:JSON.stringify({eventType,entityType,entityId,detail})})
+    .catch(()=>{});
+}
+let printThemeStash=null;
+window.addEventListener('beforeprint',()=>{
+  printThemeStash=currentTheme();
+  document.documentElement.removeAttribute('data-theme');
+});
+window.addEventListener('afterprint',()=>{
+  if(printThemeStash&&printThemeStash!=='light')
+    document.documentElement.setAttribute('data-theme',printThemeStash);
+  printThemeStash=null;
+});
 const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>ESC_MAP[c]);
 const ID_RX=/^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
@@ -1628,7 +2360,9 @@ function renderProfile(){
   const btn=document.getElementById('profileBtn');
   if(btn)btn.style.display=principal?'flex':'none';
   if(!principal)return;
-  const name=principalName(principal),email=principal.userDetails||'';
+  // The Settings display name, when set, overrides the platform name.
+  const name=(typeof US!=='undefined'&&US.profile&&US.profile.displayName)||principalName(principal);
+  const email=principal.userDetails||'';
   const ini=document.getElementById('profileInitials');
   if(ini)ini.textContent=initialsOf(name);
   if(btn)btn.title=name+(email?' · '+email:'');
@@ -1891,30 +2625,44 @@ const BASIS_LABEL={sf:'Per Res SF',asf:'Per Amen SF',unit:'Per Unit',ls:'Lump Su
 function markDirty(){recordUndo();if(!dirty){dirty=true;renderSaveState();}}   // edits that need no recalc
 function touch(){recordUndo();dirty=true;renderSaveState();recalc();}
 
-/* ---- undo (Cmd/Ctrl+Z) ----
-   A small ring of document snapshots: the current state plus up to five back.
-   Snapshots record in touch()/markDirty() — i.e. after every COMMITTED
-   mutation — so one undo step equals one user-visible change (a deleted
-   line, an edited rate), never one keystroke. Deliberately tiny and
-   in-memory only: opening another budget or reloading clears it, and saved
+/* ---- undo / redo (Cmd/Ctrl+Z · Cmd/Ctrl+Shift+Z or Ctrl+Y) ----
+   A small ring of document snapshots: the current state plus up to ten
+   back, and a redo stack the same depth. Snapshots record in
+   touch()/markDirty() — i.e. after every COMMITTED mutation — so one step
+   equals one user-visible change (a deleted line, an edited rate), never
+   one keystroke. A NEW change after an undo clears the redo path, the way
+   desktop applications behave. Deliberately small and in-memory only:
+   opening another budget or reloading clears both stacks, and saved
    versions are never touched. */
-const UNDO_MAX=5;
-let undoStack=[];
-function resetUndo(){undoStack=doc?[JSON.stringify(doc)]:[];}
+const UNDO_MAX=10;
+let undoStack=[],redoStack=[];
+function resetUndo(){undoStack=doc?[JSON.stringify(doc)]:[];redoStack=[];}
 function recordUndo(){
   if(!doc)return;
   const snap=JSON.stringify(doc);
   if(undoStack[undoStack.length-1]===snap)return;   // no-op mutation → no step
   undoStack.push(snap);
-  if(undoStack.length>UNDO_MAX+1)undoStack.shift(); // current + five back
+  if(undoStack.length>UNDO_MAX+1)undoStack.shift(); // current + ten back
+  redoStack=[];                                     // a new change forks history
+}
+function restoreSnap(snap,msg){
+  doc=migrate(JSON.parse(snap));
+  dirty=true;selected.clear();
+  fillForms();recalc();renderSaveState();
+  toast(msg);
 }
 function undoBudget(){
   if(undoStack.length<2){toast('Nothing to undo.');return;}
-  undoStack.pop();
-  doc=migrate(JSON.parse(undoStack[undoStack.length-1]));
-  dirty=true;selected.clear();
-  fillForms();recalc();renderSaveState();
-  toast('Undid the last change.');
+  redoStack.push(undoStack.pop());
+  if(redoStack.length>UNDO_MAX)redoStack.shift();
+  restoreSnap(undoStack[undoStack.length-1],'Undid the last change.');
+}
+function redoBudget(){
+  if(!redoStack.length){toast('Nothing to redo.');return;}
+  const snap=redoStack.pop();
+  undoStack.push(snap);
+  if(undoStack.length>UNDO_MAX+1)undoStack.shift();
+  restoreSnap(snap,'Redid the change.');
 }
 function markSaved(){dirty=false;lastSaved=new Date();renderSaveState();}
 function renderSaveState(){
@@ -1923,7 +2671,7 @@ function renderSaveState(){
   el.style.display='inline-flex';
   el.className='savepill'+(saving?' saving':dirty?' dirty':' saved');
   el.textContent=saving?'Saving…':dirty?'Unsaved changes'
-    :lastSaved?'Saved '+lastSaved.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})
+    :lastSaved?'Saved '+fmtClock(lastSaved)
     :'No changes yet';
   document.querySelectorAll('[data-save-btn]').forEach(b=>{b.disabled=saving;});
 }
@@ -2165,7 +2913,7 @@ async function renderHome(){
 function homeRows(){
   const q=homeView.q.trim().toLowerCase();
   const rows=index.filter(x=>{
-    if(homeView.status!=='all'&&(x.status||'Draft')!==homeView.status)return false;
+    if(homeView.status!=='all'&&normStatus(x.status)!==homeView.status)return false;
     if(!q)return true;
     return (x.projectId||'').toLowerCase().includes(q)||(x.name||'').toLowerCase().includes(q);
   });
@@ -2185,7 +2933,7 @@ const HOME_GROUPS={
             return m?({BD:'BD — Business Development',OP:'OP — Operations',
                        AS:'AS — Assessment',TST:'TST — Test'}[m[1]]||m[1]):'Other';}},
   type:   {label:'Type', of:x=>(x.type||'').trim()||'No Type'},
-  status: {label:'Status', of:x=>(x.status||'').trim()||'Draft'}
+  status: {label:'Status', of:x=>normStatus(x.status)}
 };
 // "No Address" / "No Type" are placeholders for missing data, not real groups, so
 // they are pinned last rather than landing wherever the alphabet puts them.
@@ -2205,8 +2953,87 @@ function groupedRows(rows){
               contract:map.get(k).reduce((s,x)=>s+(+x.contractSum||0),0),
               project:map.get(k).reduce((s,x)=>s+(+x.projectCost||0),0)}));
 }
+/* ============ STATUS SYSTEM ============
+   One shared, editable status model for budgets AND analyses:
+   Draft · In Review · Completed · Cancelled. Legacy 'Finalized' displays as
+   Completed and is rewritten on its next edit. The chip is clickable
+   everywhere it appears (lists, cards, editors) and saves through the
+   status-only PUT — no version is recorded for a status flip. */
+const STATUS_LIST=['Draft','In Review','Completed','Cancelled'];
+const STATUS_CLS={'Draft':'st-draft','In Review':'st-review','Completed':'st-done','Cancelled':'st-cancel'};
+function normStatus(s){
+  if(s==='Finalized')return 'Completed';
+  return STATUS_LIST.includes(s)?s:'Draft';
+}
+function statusChip(status,kind,id){
+  const s=normStatus(status);
+  return `<button class="st-chip ${STATUS_CLS[s]}" data-st-kind="${kind}" data-st-id="${esc(id)}"
+    title="Change status" aria-haspopup="menu"
+    onclick="event.stopPropagation();openStatusMenu(this)">${esc(s)}</button>`;
+}
+let stMenuBtn=null;
+function stMenuEl(){
+  let m=document.getElementById('stMenu');
+  if(!m){
+    m=document.createElement('div');
+    m.id='stMenu';m.className='st-menu';m.setAttribute('role','menu');
+    document.body.appendChild(m);
+    document.addEventListener('click',e=>{if(!m.contains(e.target)&&e.target!==stMenuBtn)closeStatusMenu();});
+  }
+  return m;
+}
+function openStatusMenu(btn){
+  const was=stMenuBtn===btn;
+  closeStatusMenu();
+  if(was)return;
+  const m=stMenuEl();
+  m.innerHTML=STATUS_LIST.map(s=>`<button role="menuitem" data-st="${s}">
+    <span class="st-chip ${STATUS_CLS[s]}">${s}</span></button>`).join('');
+  m.querySelectorAll('[data-st]').forEach(x=>x.onclick=()=>{
+    const s=x.dataset.st;closeStatusMenu();
+    setEntityStatus(btn.dataset.stKind,btn.dataset.stId,s);
+  });
+  const r=btn.getBoundingClientRect();
+  m.style.display='block';
+  m.style.top=Math.min(r.bottom+4,window.innerHeight-170)+'px';
+  m.style.left=Math.max(8,Math.min(r.left,window.innerWidth-m.offsetWidth-8))+'px';
+  stMenuBtn=btn;
+}
+function closeStatusMenu(){
+  const m=document.getElementById('stMenu');
+  if(m)m.style.display='none';
+  stMenuBtn=null;
+}
+async function setEntityStatus(kind,id,status){
+  try{
+    await api(kind==='budget'?'budget/'+encodeURIComponent(id):'investment-analysis/'+id,
+      {method:'PUT',body:JSON.stringify({status})});
+    if(kind==='budget'){
+      if(doc&&doc.projectId===id){
+        doc.status=status;
+        const sel=document.getElementById('bStatus');if(sel)sel.value=status;
+      }
+      const row=index.find(x=>x.projectId===id);if(row)row.status=status;
+      if(currentPage==='home')paintHome();
+    }else{
+      if(window.FSInvestmentUI)FSInvestmentUI._statusApplied(id,status);
+      if(currentPage==='home'&&window.FSInvestmentUI)
+        FSInvestmentUI.renderListInto(document.getElementById('homeAnalyses'),{embedded:true});
+      else if(currentPage==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
+    }
+    toast('Status updated to '+status+'.');
+  }catch(e){toast('Could not update the status — '+e.message);}
+}
+
 function paintHome(){
   const rows=homeRows(),b=document.getElementById('homeBody');b.innerHTML='';
+  const cards=document.getElementById('homeCards');
+  const cardsMode=budgetView()==='cards';
+  document.getElementById('homeBudgetsCard').setAttribute('data-density',
+    budgetView()==='compact'?'compact':'comfortable');
+  document.querySelector('#page-home .tbl').style.display=cardsMode?'none':'';
+  cards.classList.toggle('on',cardsMode&&rows.length>0);
+  cards.innerHTML='';
   document.getElementById('homeEmpty').style.display=rows.length?'none':'block';
   document.getElementById('homeEmptyBig').textContent=index.length?'Nothing matches':'No budgets yet';
   document.getElementById('homeEmptyMsg').textContent=index.length
@@ -2215,28 +3042,48 @@ function paintHome(){
   document.getElementById('homeCount').textContent=index.length
     ?rows.length+' of '+index.length+(index.length===1?' budget':' budgets'):'—';
   const groups=groupedRows(rows);
+  if(cardsMode){
+    if(groups)groups.forEach(gr=>{
+      cards.insertAdjacentHTML('beforeend',`<div class="grp-lab">${esc(gr.key)}
+        <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'} · ${usd(gr.contract)} contract</span></div>`);
+      gr.rows.forEach(x=>cards.insertAdjacentHTML('beforeend',homeCard(x)));
+    });
+    else rows.forEach(x=>cards.insertAdjacentHTML('beforeend',homeCard(x)));
+    return;
+  }
   if(groups){
     groups.forEach(gr=>{
-      // Totals sit in the Contract Sum and Total Project columns, matching the
-      // division headers on the budget grid.
-      b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="2" style="padding-left:22px">${esc(gr.key)}
+      // Totals sit in the Contract Sum and Total Project Cost columns,
+      // matching the division headers on the budget grid.
+      b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="3" style="padding-left:22px">${esc(gr.key)}
         <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'}</span></td>
         <td class="calc r strong">${usd(gr.contract)}</td><td class="calc r strong">${usd(gr.project)}</td>
-        <td></td><td></td><td class="no-print"></td></tr>`);
+        <td></td><td class="no-print"></td></tr>`);
       gr.rows.forEach(homeRow);
     });
   } else rows.forEach(homeRow);
   paintHomeSortArrows();
+}
+function homeCard(x){
+  return `<div class="hcard" onclick="openBudget('${x.projectId}')">
+    <div class="hc-id">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</div>
+    <div class="hc-name">${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</div>
+    <div class="hc-row"><span>Contract Sum</span><span class="v">${usd(x.contractSum||0)}</span></div>
+    <div class="hc-row"><span>Total Project</span><span class="v">${usd(x.projectCost||0)}</span></div>
+    <div class="hc-ft">${statusChip(x.status,'budget',x.projectId)}
+      <span>${esc(fmtDay(x.updated))}</span></div>
+    <button class="rowmenu-btn hc-menu" data-pid="${esc(x.projectId)}" aria-haspopup="menu" aria-expanded="false"
+      aria-label="Actions for ${esc(x.projectId)}" onclick="event.stopPropagation();openRowMenu(this)">⋮</button></div>`;
 }
 function homeRow(x){
   document.getElementById('homeBody').insertAdjacentHTML('beforeend',
     `<tr class="clickable" onclick="openBudget('${x.projectId}')">
       <td class="mono" style="padding-left:22px;font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
       <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
+      <td>${statusChip(x.status,'budget',x.projectId)}</td>
       <td class="calc r">${usd(x.contractSum||0)}</td>
       <td class="calc r">${usd(x.projectCost||0)}</td>
-      <td><span class="badge ${x.status==='Finalized'?'ok':''}">${esc(x.status)}</span></td>
-      <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${esc((x.updated||'').slice(0,10))}</td>
+      <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${esc(fmtDay(x.updated))}</td>
       <td class="no-print" style="text-align:right"><button class="rowmenu-btn" data-pid="${esc(x.projectId)}"
         aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(x.projectId)}"
         onclick="event.stopPropagation();openRowMenu(this)">⋮</button></td></tr>`);
@@ -2485,7 +3332,9 @@ async function openBudget(pid,page){
    shared element positioned from the trigger, which keeps "only one open" true
    by construction and survives paintHome() rebuilding every row. */
 let rowMenuTrigger=null,versionsReturn=null,versionsPid=null;
-const ROW_ACTIONS=[{act:'edit',label:'Edit',edit:true},{act:'versions',label:'Versions'},
+const ROW_ACTIONS=[{act:'edit',label:'Edit',edit:true},
+                   {act:'reprice',label:'Update Pricing',edit:true},
+                   {act:'versions',label:'Versions'},
                    {act:'sep',edit:true},{act:'delete',label:'Delete',danger:true,edit:true}];
 function rowMenuItems(){return [...document.querySelectorAll('#rowMenu .rowmenu-item')];}
 function openRowMenu(btn){
@@ -2518,6 +3367,7 @@ function rowMenuAction(act){
   versionsReturn=t;
   closeRowMenu(act==='delete');            // the other two navigate away from the row
   if(act==='edit')openBudget(pid);
+  else if(act==='reprice')repriceFromHome(pid);
   else if(act==='versions')openVersions(pid);
   else if(act==='delete')deleteBudget(pid);
 }
@@ -2543,12 +3393,8 @@ document.addEventListener('keydown',e=>{
    never assigned to the global `doc`, so opening history cannot disturb
    unsaved work in the budget you have open. */
 const vBody=()=>document.getElementById('versionsBody');
-function fmtWhen(iso){
-  if(!iso)return 'Unknown date';
-  const d=new Date(iso);
-  return isNaN(d.getTime())?'Unknown date'
-    :d.toLocaleString('en-US',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-}
+/* Version stamps use the shared house format (fmtWhen, helpers above):
+   MM-DD-YYYY h:mm AM/PM in the viewer's local time. */
 async function openVersions(pid){
   versionsPid=pid;
   document.getElementById('versionsTitle').textContent='Budget Versions — '+pid;
@@ -2625,7 +3471,7 @@ function fillForms(){
   document.getElementById('pSF').value=doc.resSF;
   document.getElementById('pASF').value=doc.amenSF;
   document.getElementById('pSiteSF').value=doc.siteSF||0;
-  document.getElementById('pType').value=doc.type||'Multifamily';
+  document.getElementById('pSiteAc').value=doc.siteSF?+((doc.siteSF)/SQFT_PER_ACRE).toFixed(3):0;
   document.getElementById('cVal').value=doc.contingency.val;
   document.getElementById('pcLand').value=doc.projectCosts.land;
   document.getElementById('pcDev').value=doc.projectCosts.dev;
@@ -2640,7 +3486,8 @@ function pullForms(){
   doc.resSF=+document.getElementById('pSF').value||0;
   doc.amenSF=+document.getElementById('pASF').value||0;
   doc.siteSF=+document.getElementById('pSiteSF').value||0;
-  doc.type=document.getElementById('pType').value||doc.type||'Multifamily';
+  // Property type is set at creation (template choice); no input re-asks it.
+  doc.type=doc.type||'Multifamily';
 }
 function validateId(){
   const el=document.getElementById('pId');
@@ -2705,12 +3552,25 @@ function siteMetrics(){
     bldgEff:doc.resSF>0?unitSF/doc.resSF:null,
     density:acres?totUnits()/acres:null};
 }
+/* Site SF ⇄ Site Acreage: one measurement, two units. Editing either input
+   populates the other; only siteSF is STORED (acreage is derived on the way
+   in and out), so this needs no document or database change. */
+function syncSiteFromSF(){
+  const sf=+document.getElementById('pSiteSF').value||0;
+  document.getElementById('pSiteAc').value=sf?+(sf/SQFT_PER_ACRE).toFixed(3):0;
+  touch();
+}
+function syncSiteFromAcres(){
+  const ac=+document.getElementById('pSiteAc').value||0;
+  document.getElementById('pSiteSF').value=ac?Math.round(ac*SQFT_PER_ACRE):0;
+  touch();
+}
 function renderSiteMetrics(){
   const m=siteMetrics();
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  set('mSiteAcres',m.site?m.acres.toFixed(2)+' ac':'—');
+  set('mSiteAcres',m.site?m.acres.toFixed(2)+' AC':'—');
   set('mSiteEff',m.siteEff!==null?(100*m.siteEff).toFixed(1)+'%':'—');
-  set('mDensity',m.density!==null?m.density.toFixed(1)+' u/ac':'—');
+  set('mDensity',m.density!==null?m.density.toFixed(1)+' U/AC':'—');
   set('mBldgEff',m.bldgEff!==null?(100*m.bldgEff).toFixed(1)+'%':'—');
   const et=document.getElementById('mBldgEffTile');
   if(et)et.classList.toggle('warn',m.bldgEff!==null&&m.bldgEff>1);
@@ -2813,8 +3673,6 @@ function renderBudget(){
   const b=document.getElementById('budBody');b.innerHTML='';
   const shown=doc.lines.filter(l=>scopeActive(l.scope)).length;
   document.getElementById('budEmpty').style.display=shown?'none':'block';
-  const hid=document.getElementById('amenHidden');
-  if(hid)hid.style.display=(!scopeActive('amen')&&doc.lines.some(l=>l.scope==='amen'))?'inline':'none';
   activeScopes().forEach(sc=>{
     const scLines=doc.lines.map((l,gi)=>({l,gi})).filter(x=>x.l.scope===sc);
     if(!scLines.length)return;
@@ -3230,7 +4088,8 @@ function renderSummary(){
   document.getElementById('mYield').textContent='Yield (net inc) '+(p.project?(100*g.netYr/p.project).toFixed(1)+'%':'—');
   document.getElementById('mPricing').textContent='Pricing '+doc.pricingVersion+(pricingFromApi?'':' · built-in fallback');
   document.getElementById('mPricing').className='badge'+(pricingFromApi?'':' warn');
-  const st=document.getElementById('bStatus');if(st&&st.value!==doc.status)st.value=doc.status;
+  const st=document.getElementById('bStatus');
+  if(st&&st.value!==normStatus(doc.status))st.value=normStatus(doc.status);
   document.getElementById('testBanner').style.display=isTest(doc.projectId)?'flex':'none';
   document.getElementById('sUnits').textContent=num(tu);
   document.getElementById('sRev').textContent=usd(g.netYr);
@@ -3238,7 +4097,8 @@ function renderSummary(){
   document.getElementById('sPSF').textContent=tsf?usd2(p.project/tsf):'—';
   document.getElementById('sCPU').textContent=tu?usd(p.project/tu):'—';
   document.getElementById('bTitle').textContent=doc.projectId?doc.projectId+' — '+(doc.name||'Untitled'):'Budget';
-  document.getElementById('bSub').textContent=[doc.address,doc.type,num(doc.resSF)+' SF res + '+num(doc.amenSF)+' SF amenity'].filter(Boolean).join(' · ');
+  document.getElementById('bSub').textContent=[doc.address,doc.type,
+    num(doc.resSF)+' SF'+(doc.amenSF?' + '+num(doc.amenSF)+' SF Amenity/Clubhouse':'')].filter(Boolean).join(' · ');
   const sb=document.getElementById('sovBody');sb.innerHTML='';
   ['res','amen'].filter(scopeActive).forEach(sc=>{
     const grps=[...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))];
@@ -3250,7 +4110,7 @@ function renderSummary(){
   doc.companies.forEach(c=>{if(c.pct>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">Profit — ${esc(c.name)}</td><td class="calc r">${usd(p.hard*c.pct/100)}</td><td class="calc r" style="color:var(--ink-400)">${(100*(p.hard*c.pct/100)/p.contract).toFixed(1)}%</td></tr>`);});
   if(p.cont>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">99.03 Contingency</td><td class="calc r">${usd(p.cont)}</td><td class="calc r" style="color:var(--ink-400)">${(100*p.cont/p.contract).toFixed(1)}%</td></tr>`);
   sb.insertAdjacentHTML('beforeend',`<tr class="total"><td>Contract Sum</td><td class="calc r strong">${usd(p.contract)}</td><td class="calc r">100%</td></tr>`);
-  const stale=pricing&&doc.pricingVersion!==pricing.version;
+  const stale=pricing&&doc.pricingVersion!==pricing.version&&!staleDismissed.has(doc.projectId);
   document.getElementById('staleBanner').style.display=stale?'flex':'none';
   if(stale){document.getElementById('staleFrom').textContent=doc.pricingVersion;document.getElementById('staleTo').textContent=pricing.version;}
 }
@@ -3283,17 +4143,6 @@ async function invApi(path,opts={}){
   }
   return body;
 }
-/* Creating an analysis snapshots an exact immutable budget version, so unsaved
-   edits are saved first — the analysis must be born from what the database
-   holds, not from what the screen shows. */
-async function createAnalysisFromBudget(){
-  if(!doc){toast('Open or create a budget first');return;}
-  if(dirty||!doc.updated){await saveBudget(false);if(dirty){return;}}
-  try{
-    await FSInvestmentUI.createFromBudget(doc.projectId);
-  }catch(e){toast('Could not create the analysis — '+e.message);}
-}
-
 async function saveBudget(show){
   if(!doc||saving)return;
   // In template mode the same Save affordance publishes a template version instead
@@ -3313,6 +4162,23 @@ async function saveBudget(show){
   }catch(e){saving=false;renderSaveState();toast('Save failed: '+e.message);}
 }
 function setStatus(v){doc.status=v;markDirty();}
+/* The stale-pricing banner is dismissible per budget (in memory — it returns
+   on the next session as a reminder). The PERSISTENT path to a reprice is the
+   Home list's row menu → Update Pricing, so dismissing never strands you. */
+const staleDismissed=new Set();
+function dismissStaleBanner(){
+  if(doc)staleDismissed.add(doc.projectId);
+  document.getElementById('staleBanner').style.display='none';
+}
+async function repriceFromHome(pid){
+  await openBudget(pid);
+  if(!doc||doc.projectId!==pid)return;
+  if(doc.pricingVersion===pricing.version){
+    toast('Already on the current pricing library ('+pricing.version+').');return;
+  }
+  staleDismissed.delete(pid);   // the banner logic reflects the reprice
+  repriceBudget();
+}
 function repriceBudget(){
   const map={};pricing.lines.forEach(l=>{map[l.scope+'|'+l.code+'|'+l.desc]=l;});
   let clobbered=0;
@@ -3421,7 +4287,15 @@ const MONEY='"$"#,##0';const MONEY2='"$"#,##0.00';const QTY='#,##0';const PCT='0
 /* Placeholder for controls that are visible but not built yet, so a click says why
    instead of appearing broken. */
 function comingSoon(what){toast((what||'That')+' is coming soon.');}
-function openExport(){document.getElementById('exportModal').style.display='flex';}
+function openExport(){
+  // Remembered export options (Settings → Exports) seed the checkboxes.
+  const saved=exportDefaultsFor('budget');
+  if(saved)for(const k in saved){
+    const e=document.getElementById('ex-'+k);
+    if(e)e.checked=saved[k];
+  }
+  document.getElementById('exportModal').style.display='flex';
+}
 function closeExport(){document.getElementById('exportModal').style.display='none';}
 function sel(){const c=id=>{const e=document.getElementById(id);return e?e.checked:false;};
   return {stats:c('ex-stats'),units:c('ex-units'),other:c('ex-other'),
@@ -3438,13 +4312,14 @@ function exportPDF(){
   document.body.classList.add('printing');
   closeExport();
   window.print();
+  postActivity('export_print','budget',doc&&doc.projectId);
   setTimeout(()=>{document.body.classList.remove('printing');
     document.getElementById('printDoc').innerHTML='';},600);
 }
 function rptRow(k,v,cls){return '<div class="rr '+(cls||'')+'"><span>'+k+'</span><span class="v">'+v+'</span></div>';}
 function buildReport(s){
   const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF,sm=siteMetrics();
-  const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const stamp=fmtWhen(new Date());
   let h='';
 
   h+='<header class="rpt-hd">'
@@ -3598,7 +4473,7 @@ function buildReport(s){
       +sigRow('Contract Sum',usd(p.contract))
       +sigRow('Total Project Cost',usd(p.project))
       +sigRow('Total Units · SF',num(tu)+' units · '+num(tsf)+' SF')
-      +sigRow('Last Saved',esc((doc.updated||'').slice(0,10)||'—'))
+      +sigRow('Last Saved',esc(fmtWhen(doc.updated)))
       +sigRow('Exported',esc(stamp))
       +'</div></div>'
       +'<div class="sig-row"><div class="s1"><div class="sig-line"></div><div class="sig-cap">Signature</div></div>'
@@ -3613,13 +4488,191 @@ function buildReport(s){
 function sigRow(k,v){return '<div class="rr"><span>'+k+'</span><span class="v">'+v+'</span></div>';}
 
 /* ---------------- PDF: the real downloaded file ----------------
-   The budget builds the same generic document model the investment analysis
-   uses (meta + sheets of kv/table/note blocks) and hands it to the shared
-   renderer in export-render.js — so both PDFs are portrait letter, branded
-   the same way, and the composed content mirrors buildReport() exactly. */
-function buildBudgetPdfDoc(s){
+   The budget is the suite's second fsdoc/1 producer: buildBudgetFsdoc()
+   composes a document under the fs-courier contract (columnar 'table'
+   blocks carry per-column formats; scope/group structure becomes group
+   heads whose labels carry the subtotals) and the vendored fs-render
+   engine lays it out. Signature Needed stays a suite policy, appended
+   onto the finished docDefinition by FSExportRender.appendApprovalPage.
+   Content mirrors buildReport() — same numbers, never the DOM. */
+function buildBudgetFsdoc(s){
   const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF,sm=siteMetrics();
-  const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const stamp=fmtWhen(new Date());
+  const sheets=[];
+  const kv=(k,v,fmt,total)=>({k,v,fmt,total:!!total});
+  // 1-decimal shares are preformatted strings — fsdoc's pct is 2-decimal,
+  // and strings pass through every renderer verbatim.
+  const share1=(v,base)=>base?(100*v/base).toFixed(1)+'%':'—';
+
+  const blocks1=[];
+  if(s.stats){
+    blocks1.push({kind:'kpiBand',tiles:[
+      {k:'Units',v:num(tu)},{k:'Net Income / Yr',v:usd(g.netYr)},
+      {k:'Contract $/SF',v:tsf?usd2(p.contract/tsf):'—'},
+      {k:'Project $/SF',v:tsf?usd2(p.project/tsf):'—'},
+      {k:'Cost / Unit',v:tu?usd(p.project/tu):'—'}]});
+  }
+  if(s.summary){
+    blocks1.push({kind:'group',label:'CONTRACT & PROJECT SUMMARY'});
+    blocks1.push({kind:'kv',rows:[
+      kv('Residential Construction',p.res,'money'),
+      scopeActive('amen')?kv('Amenity / Clubhouse',p.amen,'money'):null,
+      kv('Construction Hard Cost',p.hard,'money'),
+      kv('Profit — Total',p.profit,'money'),
+      kv('Contingency (99.03)',p.cont,'money'),
+      kv('Contract Sum (Construction)',p.contract,'money',true),
+      kv('Soft Costs',p.soft,'money'),
+      kv('Land',doc.projectCosts.land,'money'),
+      kv('Developer Fee · Marketing · Closing',p.fees,'money'),
+      kv('Total Project Cost',p.project,'money',true)
+    ].filter(Boolean)});
+    blocks1.push({kind:'group',label:'SOV ROLLUP — CONSTRUCTION CONTRACT'});
+    const sovRows=[];
+    ['res','amen'].filter(scopeActive).forEach(sc=>{
+      [...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))].forEach(gp=>{
+        const v=doc.lines.filter(l=>l.scope===sc&&l.grp===gp).reduce((x,l)=>x+lineQty(l)*l.unit,0);
+        if(v>0)sovRows.push({item:(sc==='amen'?'Amenity — ':'')+gp,value:v,share:share1(v,p.contract)});
+      });
+    });
+    doc.companies.forEach(c=>{if(c.pct>0){const v=p.hard*c.pct/100;
+      sovRows.push({item:'Profit — '+c.name,value:v,share:share1(v,p.contract)});}});
+    if(p.cont>0)sovRows.push({item:'99.03 Contingency',value:p.cont,share:share1(p.cont,p.contract)});
+    blocks1.push({kind:'table',
+      columns:[{key:'item',label:'Item'},{key:'value',label:'Scheduled Value',fmt:'money'},{key:'share',label:'% Contract'}],
+      rows:sovRows,totals:{item:'Contract Sum',value:p.contract,share:p.contract?'100.0%':'—'}});
+  }
+  if(blocks1.length)sheets.push({key:'kpis',name:'Summary',title:'',blocks:blocks1});
+
+  if(s.units&&doc.units.length){
+    sheets.push({key:'units',name:'Unit Mix',title:'Unit Mix & Rent Revenue',blocks:[
+      {kind:'table',
+       columns:[{key:'type',label:'Unit Type'},{key:'bd',label:'BD'},{key:'bth',label:'BTH'},
+         {key:'sf',label:'SF',fmt:'qty'},{key:'units',label:'Units',fmt:'qty'},
+         {key:'rent',label:'Rent / Mo',fmt:'money'},{key:'psf',label:'$ / SF',fmt:'money2'},
+         {key:'monthly',label:'Monthly',fmt:'money'},{key:'yearly',label:'Yearly',fmt:'money'}],
+       rows:doc.units.map(u=>({type:u.label,bd:u.bd,bth:u.bth,sf:u.sf,units:u.count,rent:u.rent,
+         psf:u.sf?u.rent/u.sf:null,monthly:u.rent*u.count,yearly:12*u.rent*u.count})),
+       totals:{type:'Total',sf:doc.units.reduce((x,u)=>x+u.sf*u.count,0),units:tu,
+         monthly:g.rentMo,yearly:12*g.rentMo}}]});
+  }
+
+  if(s.other&&(doc.other.length||doc.expenses.length)){
+    const cols=[{key:'line',label:'Line'},{key:'basis',label:'Basis'},
+      {key:'rate',label:'$ / Mo',fmt:'money'},{key:'count',label:'Count',fmt:'qty'},
+      {key:'monthly',label:'Monthly',fmt:'money'},{key:'yearly',label:'Yearly',fmt:'money'}];
+    const blocks=[];
+    if(doc.other.length){
+      blocks.push({kind:'table',columns:cols,
+        rows:doc.other.map(o=>{const c=o.auto?tu:o.count;
+          return {line:o.label,basis:'gross income',rate:o.rate,count:c,monthly:o.rate*c,yearly:12*o.rate*c};}),
+        totals:{line:'Total Gross Other Income',monthly:g.otherMo,yearly:12*g.otherMo}});
+    }
+    if(doc.expenses.length){
+      blocks.push({kind:'table',columns:cols,
+        rows:doc.expenses.map(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
+          return {line:e.label,basis:e.per==='fixed'?'fixed / mo':'per unit',rate:e.rate,count:c,
+            monthly:-e.rate*c,yearly:-12*e.rate*c};}),
+        totals:{line:'Total Operating Expenses',monthly:-g.expMo,yearly:-12*g.expMo}});
+    }
+    blocks.push({kind:'kv',rows:[kv('Net Income (Rent + Net Other), Monthly',g.rentMo+g.netOtherMo,'money'),
+      kv('Net Income (Rent + Net Other), Yearly',g.netYr,'money',true)]});
+    sheets.push({key:'other',name:'Income',title:'Other Income & Operating Expenses',blocks});
+  }
+
+  if(s.budget){
+    const cols=[{key:'item',label:'Line Item'},{key:'basis',label:'Basis'},
+      {key:'qty',label:'Qty',fmt:'qty'},{key:'rate',label:'Rate',fmt:'money2'},{key:'total',label:'Total',fmt:'money'}];
+    const blocks=[];let anyEdited=false;
+    activeScopes().forEach(sc=>{
+      const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
+      blocks.push({kind:'group',label:SCOPES[sc].toUpperCase()+'   ·   '+usd(scopeSum(sc))});
+      [...new Set(ls.map(l=>l.grp))].forEach(gp=>{
+        const rows=ls.filter(l=>l.grp===gp).map(it=>{
+          const q=lineQty(it),ed=s.edits&&isEdited(it);if(ed)anyEdited=true;
+          return {item:it.code+'  '+it.desc+(ed?' *':''),basis:BASIS_LABEL[it.basis]||it.basis,
+            qty:q,rate:it.unit,total:q*it.unit};});
+        const gs=ls.filter(l=>l.grp===gp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
+        blocks.push({kind:'table',columns:cols,rows,
+          totals:{item:gp,total:gs}});
+      });
+    });
+    if(anyEdited)blocks.push({kind:'note',text:'* marks a line manually edited away from the pricing library.'});
+    sheets.push({key:'budget',name:'Budget Detail',title:'Budget Detail',blocks});
+  }
+
+  if(s.csi){
+    const sch=csiSchedule();
+    const cols=[{key:'item',label:'Section'},{key:'scope',label:'Scope'},
+      {key:'qty',label:'Qty',fmt:'qty'},{key:'rate',label:'Rate',fmt:'money2'},
+      {key:'value',label:'Scheduled Value',fmt:'money'},{key:'share',label:'% Contract'}];
+    const blocks=[
+      {kind:'note',text:'MasterFormat divisions. Contingency is carried explicitly as 99.03 and is never blended into a trade line. Soft costs are reported separately and are not part of the contract sum.'}];
+    sch.divisions.forEach(d=>{
+      blocks.push({kind:'group',label:d.title.toUpperCase()+'   ·   '+usd(d.total)+'   ·   '+share1(d.total,sch.contract)});
+      blocks.push({kind:'table',columns:cols,
+        rows:d.rows.map(r=>({item:r.code+'  '+r.desc,scope:r.scope==='amen'?'Amenity':'Residential',
+          qty:r.qty,rate:r.rate,value:r.total,share:share1(r.total,sch.contract)}))});
+    });
+    if(sch.markups.length){
+      blocks.push({kind:'group',label:'DIVISION 99 — MARKUPS   ·   '+usd(sch.markupsTotal)+'   ·   '+share1(sch.markupsTotal,sch.contract)});
+      blocks.push({kind:'table',columns:cols,
+        rows:sch.markups.map(m=>({item:m.code+'  '+m.desc,value:m.total,share:share1(m.total,sch.contract)}))});
+    }
+    blocks.push({kind:'kv',rows:[kv('Contract Sum',sch.contract,'money',true)]});
+    if(sch.soft.length){
+      blocks.push({kind:'group',label:'SOFT COSTS   ·   '+usd(sch.softTotal)});
+      blocks.push({kind:'note',text:'Percentages here are a share of total soft costs, which sit outside the contract sum.'});
+      const scols=[{key:'item',label:'Item'},{key:'qty',label:'Qty',fmt:'qty'},
+        {key:'rate',label:'Rate',fmt:'money2'},{key:'value',label:'Total',fmt:'money'},{key:'share',label:'% Soft'}];
+      sch.softGroups.forEach(gp=>{
+        blocks.push({kind:'table',columns:scols,
+          rows:gp.rows.map(r=>({item:r.code+'  '+r.desc,qty:r.qty,rate:r.rate,value:r.total,share:share1(r.total,sch.softTotal)})),
+          totals:{item:gp.grp,value:gp.total,share:share1(gp.total,sch.softTotal)}});
+      });
+      blocks.push({kind:'kv',rows:[kv('Total Soft Costs',sch.softTotal,'money',true)]});
+    }
+    sheets.push({key:'csi',name:'CSI Schedule',title:'CSI Schedule of Values',blocks});
+  }
+
+  const fsdoc={
+    fsdoc:'1',
+    meta:{
+      title:doc.name||'Untitled Project',
+      eyebrow:'FINISHES SOLUTIONS · PROJECT BUDGET · '+(doc.projectId||'—'),
+      subline:[doc.address,num(doc.resSF)+' SF residential',
+        doc.amenSF?num(doc.amenSF)+' SF amenity':'',
+        sm.site?sm.acres.toFixed(2)+' ac site':'',tu+' units',
+        'Pricing '+(doc.pricingVersion||'—')].filter(Boolean).join(' · '),
+      rightLines:[stamp,(doc.projectId||'—')+(doc.type?' · '+doc.type:''),'Status: '+(doc.status||'Draft')],
+      bandLine:(doc.projectId||'—')+' · '+(doc.name||'Untitled Project'),
+      footerRight:doc.projectId||'',
+      docId:doc.projectId||undefined,
+      generatedAt:new Date().toISOString()
+    },
+    sheets
+  };
+  const signature=s.sign?{
+    heading:'Approval',
+    statement:'The signature below approves the project budget identified here, exactly as presented in this '
+      +'document. The identification binds this approval page to this document alone — an approval page whose '
+      +'identification does not match the document it accompanies is void.',
+    identity:[
+      ['Project ID',doc.projectId||'—'],['Name',doc.name||'—'],['Address',doc.address||'—'],
+      ['Type · Status',(doc.type||'—')+' · '+(doc.status||'Draft')],
+      ['Pricing Library',doc.pricingVersion||'—'],
+      ['Contract Sum',usd(p.contract)],['Total Project Cost',usd(p.project)],
+      ['Total Units · SF',num(tu)+' units · '+num(tsf)+' SF'],
+      ['Last Saved',fmtWhen(doc.updated)],['Exported',stamp]
+    ]}:null;
+  return {fsdoc,signature};
+}
+/* Legacy budget PDF producer — the pre-fs-render document (generic meta +
+   row-major tables with band rows), consumed by FSLegacyRender when the
+   FS_EXPORT_RENDERER setting is 'local'. Frozen alongside legacy-render.js
+   as the repair fallback; new export work happens in buildBudgetFsdoc. */
+function legacyBudgetPdfDoc(s){
+  const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF,sm=siteMetrics();
+  const stamp=fmtWhen(new Date());
   const sheets=[];
   const kv=(k,v,fmt,total)=>({k,v,fmt,total:!!total});
   const tRow=(label,values,fmt,total)=>({label,values,fmt,total:!!total});
@@ -3753,7 +4806,7 @@ function buildBudgetPdfDoc(s){
       ['Pricing Library',doc.pricingVersion||'—'],
       ['Contract Sum',usd(p.contract)],['Total Project Cost',usd(p.project)],
       ['Total Units · SF',num(tu)+' units · '+num(tsf)+' SF'],
-      ['Last Saved',(doc.updated||'').slice(0,10)||'—'],['Exported',stamp]
+      ['Last Saved',fmtWhen(doc.updated)],['Exported',stamp]
     ]}:null;
 
   return {
@@ -3772,16 +4825,44 @@ function buildBudgetPdfDoc(s){
     signature,sheets
   };
 }
+/* ---- renderer selection ----
+   FS_EXPORT_RENDERER ('engine' | 'local') is an SWA application setting the
+   client reads once from /api/export-config at boot; a per-browser
+   localStorage override ('fsExportRenderer') wins over it, so one machine
+   can flip to the fallback while the engine is being repaired without
+   touching Azure. Default is the fs-render engine. */
+window.__exportRenderer='engine';
+function exportRenderer(){
+  const o=(localStorage.getItem('fsExportRenderer')||'').toLowerCase();
+  if(o==='local'||o==='engine')return o;
+  return window.__exportRenderer==='local'?'local':'engine';
+}
+async function loadExportConfig(){
+  try{
+    const r=await fetch('/api/export-config');
+    if(r.ok){const c=await r.json();
+      if(c&&c.renderer==='local')window.__exportRenderer='local';}
+  }catch(_){/* default stands */}
+}
 function exportBudgetPdf(){
-  if(typeof pdfMake==='undefined'||typeof FSExportRender==='undefined'){
-    toast('PDF library is unavailable — reload the page');return;}
+  if(typeof pdfMake==='undefined'){toast('PDF library is unavailable — reload the page');return;}
   const s=sel();closeExport();
-  const dd=FSExportRender.buildPdfDocDefinition(buildBudgetPdfDoc(s));
+  let dd;
+  if(exportRenderer()==='local'){
+    dd=FSLegacyRender.buildPdfDocDefinition(legacyBudgetPdfDoc(s));
+    FSExportRender.stampRenderProvenance(dd,'local');
+  }else{
+    const built=buildBudgetFsdoc(s);
+    dd=fsRender.buildPdfDocDefinition(built.fsdoc,fsRender.themes['finishes-solutions'],'portrait');
+    FSExportRender.stampRenderProvenance(dd,'engine');
+    FSExportRender.appendApprovalPage(dd,built.signature);
+  }
   pdfMake.createPdf(dd).getBlob(b=>{
     const a=document.createElement('a');
     a.href=URL.createObjectURL(b);a.download=exportBaseName()+'.pdf';a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href),4000);
     toast('PDF exported');
+    postActivity('export_pdf','budget',doc&&doc.projectId);
   });
 }
 
@@ -3790,7 +4871,81 @@ function exportBudgetPdf(){
    guide cannot drift out of step with the page. Card chrome and the contents rail are
    dropped; each card becomes a section. */
 function downloadGuide(){
-  const stamp=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  // The guide now downloads through the fs-render engine like every other
+  // PDF export. The print pipeline below remains as the 'local' renderer
+  // fallback (FS_EXPORT_RENDERER / localStorage override) — the guide's
+  // pre-engine path, frozen the same way legacy-render.js is.
+  if(exportRenderer()!=='local'&&typeof fsRender!=='undefined'&&typeof pdfMake!=='undefined'){
+    const fsdoc=guideFsdoc();
+    if(fsRender.validate(fsdoc).ok){
+      const dd=fsRender.buildPdfDocDefinition(fsdoc,fsRender.themes['finishes-solutions'],'portrait');
+      FSExportRender.stampRenderProvenance(dd,'engine');
+      pdfMake.createPdf(dd).getBlob(b=>{
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(b);a.download='Finishes_Budgeting_Suite_User_Guide.pdf';a.click();
+        setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+        toast('Guide downloaded');
+      });
+      return;
+    }
+  }
+  printGuide();
+}
+/* Adapt the live help markup to fsdoc/1: headings become group labels,
+   paragraphs and list items become notes, and the help tables become kv
+   rows (two columns) or matrix tables (wider). Built from the same DOM the
+   user reads, so the downloaded guide can never drift from the page. */
+function guideFsdoc(){
+  const clean=t=>String(t||'').replace(/\s+/g,' ').trim();
+  const blocks=[];
+  document.querySelectorAll('#page-help .help > section .card-bd').forEach((sec,si)=>{
+    if(si>0)blocks.push({kind:'spacer',height:10});
+    [...sec.children].forEach(node=>{
+      const tag=node.tagName;
+      if(tag==='H3'||tag==='H4'){
+        const label=clean(node.textContent).toUpperCase();
+        if(label)blocks.push({kind:'group',label});
+      }else if(tag==='UL'||tag==='OL'){
+        [...node.querySelectorAll(':scope > li')].forEach((li,i)=>{
+          const t=clean(li.textContent);
+          if(t)blocks.push({kind:'note',text:(tag==='OL'?(i+1)+'. ':'· ')+t});
+        });
+      }else if(tag==='TABLE'){
+        const rows=[...node.querySelectorAll('tbody tr')]
+          .map(tr=>[...tr.children].map(td=>clean(td.textContent)))
+          .filter(r=>r.length&&r[0]);
+        if(!rows.length)return;
+        if(rows.every(r=>r.length===2)){
+          blocks.push({kind:'kv',rows:rows.map(r=>({k:r[0],v:r[1]}))});
+        }else{
+          const width=Math.max(...rows.map(r=>r.length));
+          let heads=[...node.querySelectorAll('thead th')].map(th=>clean(th.textContent)).slice(1);
+          while(heads.length<width-1)heads.push('');
+          blocks.push({kind:'matrixTable',headers:heads,
+            rows:rows.map(r=>{const v=r.slice(1);while(v.length<width-1)v.push('');
+              return {label:r[0],values:v};})});
+        }
+      }else{
+        const t=clean(node.textContent);
+        if(t)blocks.push({kind:'note',text:t});
+      }
+    });
+  });
+  return {fsdoc:'1',meta:{
+    title:'How to Use the Budgeting Suite',
+    eyebrow:'FINISHES SOLUTIONS · USER GUIDE',
+    subline:'Build a multifamily project budget from the shared pricing library, underwrite it as an investment analysis, and export both.',
+    rightLines:[fmtWhen(new Date())],
+    bandLine:'User Guide',
+    footnote:'Finishes Solutions Budgeting Suite user guide, generated from the live How To Use page.',
+    footerRight:'User Guide',
+    generatedAt:new Date().toISOString()
+  },sheets:[{key:'guide',name:'User Guide',title:'How to Use the Budgeting Suite',blocks}]};
+}
+/* The pre-engine guide path: the print pipeline, kept as the 'local'
+   renderer fallback. */
+function printGuide(){
+  const stamp=fmtWhen(new Date());
   const secs=[...document.querySelectorAll('#page-help .help > section .card-bd')]
     .map(e=>'<section class="rpt-sec">'+e.innerHTML+'</section>').join('');
   const toc=[...document.querySelectorAll('#helpToc a')]
@@ -4063,6 +5218,7 @@ async function exportExcel(){
     document.body.appendChild(a);a.click();
     setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
     closeExport();toast('Excel exported');
+    postActivity('export_xlsx','budget',doc&&doc.projectId);
   }catch(e){toast('Excel export failed: '+e.message);}
 }
 
@@ -4087,11 +5243,17 @@ function wireDelegates(){
   document.getElementById('homeHead').addEventListener('click',e=>{
     const th=e.target.closest('th[data-sort]');if(!th)return;homeSort(th.dataset.sort);
   });
+  // Remembered export options: any change in the budget export modal becomes
+  // the account default when Settings → Exports says to remember.
+  document.querySelectorAll('#exportModal input[type=checkbox]').forEach(c=>
+    c.addEventListener('change',()=>rememberExportOptions('budget',sel())));
   document.getElementById('homeSearch').addEventListener('input',e=>{homeView.q=e.target.value;paintHome();});
   document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
   document.getElementById('homeGroup').addEventListener('change',e=>{homeView.group=e.target.value;paintHome();});
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeExport();closePick();return;}
+    if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();closeNewBudget();closeStatusMenu();return;}
+    // Cmd/Ctrl+K opens the global search palette from anywhere in the app.
+    if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();palToggle();return;}
     // Cmd/Ctrl+S saves rather than letting the browser offer to save the page.
     if((e.metaKey||e.ctrlKey)&&(e.key==='s'||e.key==='S')){
       e.preventDefault();
@@ -4106,14 +5268,23 @@ function wireDelegates(){
       if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
       saveBudget(true);
     }
-    // Cmd/Ctrl+Z: app-level undo on the budget document pages. A focused
-    // field is blurred first, so an in-progress edit commits and becomes the
-    // change that gets undone — the way desktop applications behave.
-    if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&(e.key==='z'||e.key==='Z')){
+    // Cmd/Ctrl+Z undo · Cmd/Ctrl+Shift+Z or Ctrl+Y redo, for the ACTIVE
+    // document — an open analysis on its page, the budget on the budget
+    // document pages, native undo everywhere else. A focused field is
+    // blurred first, so an in-progress edit commits and becomes the change
+    // that gets undone — the way desktop applications behave.
+    const zKey=e.key==='z'||e.key==='Z', yKey=e.key==='y'||e.key==='Y';
+    if((e.metaKey||e.ctrlKey)&&(zKey||yKey)){
+      if(currentPage==='analysis'&&window.FSInvestmentUI&&FSInvestmentUI.currentId()){
+        e.preventDefault();
+        if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+        if(yKey||(zKey&&e.shiftKey))FSInvestmentUI.redo();else FSInvestmentUI.undo();
+        return;
+      }
       if(!doc||!DOC_PAGES.includes(currentPage))return;   // native undo elsewhere
       e.preventDefault();
       if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
-      undoBudget();
+      if(yKey||(zKey&&e.shiftKey))redoBudget();else undoBudget();
     }
   });
   document.querySelectorAll('#helpToc a').forEach(a=>a.addEventListener('click',e=>{
@@ -4124,15 +5295,101 @@ function wireDelegates(){
   }));
 }
 
+/* ============ GLOBAL SEARCH (Cmd/Ctrl+K) ============
+   One palette over everything: budgets and investment analyses together,
+   fetched fresh each time it opens so the results are never stale. Arrow keys
+   move, Enter opens, Escape closes. Results keep their section order —
+   budgets first, then analyses. */
+let palItems=[],palHits=[],palSel=0,palWired=false;
+function palToggle(){
+  const p=document.getElementById('palette');
+  if(p.classList.contains('open'))palClose();else palOpenFn();
+}
+async function palOpenFn(){
+  const p=document.getElementById('palette');
+  if(!palWired){
+    palWired=true;
+    p.addEventListener('click',e=>{if(e.target===p)palClose();});
+    const inp=document.getElementById('palInput');
+    inp.addEventListener('input',()=>{palSel=0;palRender();});
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='ArrowDown'){e.preventDefault();if(palHits.length){palSel=(palSel+1)%palHits.length;palRender();}}
+      else if(e.key==='ArrowUp'){e.preventDefault();if(palHits.length){palSel=(palSel-1+palHits.length)%palHits.length;palRender();}}
+      else if(e.key==='Enter'){e.preventDefault();palGo(palHits[palSel]);}
+      else if(e.key==='Escape'){palClose();}
+    });
+  }
+  p.classList.add('open');p.setAttribute('aria-hidden','false');
+  const inp=document.getElementById('palInput');
+  inp.value='';palSel=0;palItems=[];palHits=[];
+  document.getElementById('palList').innerHTML='<div class="pal-empty">Loading budgets and analyses…</div>';
+  inp.focus();
+  const [buds,anas]=await Promise.all([
+    api('budgets').catch(()=>[]),
+    api('investment-analyses').catch(()=>[])
+  ]);
+  if(!p.classList.contains('open'))return;   // closed while loading
+  palItems=[
+    ...(buds||[]).map(b=>({kind:'budget',id:b.projectId,name:b.name||'Untitled',
+      text:((b.projectId||'')+' '+(b.name||'')).toLowerCase()})),
+    ...(anas||[]).map(a=>({kind:'analysis',id:a.analysisId,name:a.name||'Untitled',pid:a.projectId||'',
+      text:((a.projectId||'')+' '+(a.name||'')).toLowerCase()}))
+  ];
+  palRender();
+}
+function palClose(){
+  const p=document.getElementById('palette');if(!p)return;
+  p.classList.remove('open');p.setAttribute('aria-hidden','true');
+}
+function palRender(){
+  const list=document.getElementById('palList');
+  const q=document.getElementById('palInput').value.trim().toLowerCase();
+  palHits=palItems.filter(it=>!q||it.text.includes(q)).slice(0,14);
+  if(palSel>=palHits.length)palSel=Math.max(0,palHits.length-1);
+  if(!palHits.length){
+    list.innerHTML='<div class="pal-empty">'+(palItems.length
+      ?'Nothing matches. Search by project ID, budget name, or analysis name.'
+      :'No budgets or analyses yet.')+'</div>';
+    return;
+  }
+  let html='',lastKind='';
+  palHits.forEach((it,i)=>{
+    if(it.kind!==lastKind){
+      html+='<div class="pal-sec">'+(it.kind==='budget'?'Budgets':'Investment Analyses')+'</div>';
+      lastKind=it.kind;
+    }
+    html+='<div class="pal-row'+(i===palSel?' sel':'')+'" data-pi="'+i+'">'
+      +'<span class="pal-id">'+esc(it.kind==='budget'?it.id:(it.pid||'—'))+'</span>'
+      +'<span class="pal-name">'+esc(it.name)+'</span>'
+      +'<span class="pal-kind">'+(it.kind==='budget'?'Budget':'Analysis')+'</span></div>';
+  });
+  list.innerHTML=html;
+  list.querySelectorAll('.pal-row').forEach(el=>{
+    el.addEventListener('click',()=>palGo(palHits[+el.dataset.pi]));
+    el.addEventListener('mousemove',()=>{
+      if(palSel!==+el.dataset.pi){palSel=+el.dataset.pi;
+        list.querySelectorAll('.pal-row').forEach(x=>x.classList.toggle('sel',+x.dataset.pi===palSel));}
+    });
+  });
+  const s=list.querySelector('.pal-row.sel');if(s)s.scrollIntoView({block:'nearest'});
+}
+function palGo(it){
+  if(!it)return;
+  palClose();
+  if(it.kind==='budget')openBudget(it.id);
+  else location.hash='#/analysis/'+it.id;
+}
+
 /* ============ INIT ============ */
 /* ---- cold-start screen ----
    A paused serverless database takes tens of seconds to resume, and the API layer
    retries transient faults for about a minute (api/shared/db.js). The messages
    escalate so a long wait reads as "still working", not as a hung page. */
 const BOOT_STAGES=[
-  [2500,'Waking the database — it pauses when idle and can take up to a minute to resume.'],
-  [15000,'Still waking the database. This is normal after a quiet spell.'],
-  [45000,'Taking longer than usual. Hang on — the app will load whatever it can.']
+  [2500,'Waking the database. It pauses when idle and can take a couple minutes to resume.'],
+  [20000,'Still waking. This is normal after a quiet spell — no need to refresh, the app connects the moment the database is up.'],
+  [60000,'Almost there. Cold starts occasionally run past a minute; your saved budgets and analyses are safe and untouched.'],
+  [120000,'Taking longer than usual. Hang on — the app will load whatever it can, and the red banner will say if the server is actually unreachable.']
 ];
 let bootTimers=[];
 function startBoot(){
@@ -4149,6 +5406,7 @@ function endBoot(){
 }
 (async function init(){
   startBoot();
+  setTheme(currentTheme());   // marks the active choice in the dock and menu
   try{
     if(window.FSInvestmentUI)FSInvestmentUI.init({
       api:invApi,toast,esc,
@@ -4161,14 +5419,25 @@ function endBoot(){
         window.print();
         setTimeout(()=>{document.body.classList.remove('printing');
           document.getElementById('printDoc').innerHTML='';},600);
-      }
+      },
+      // Per-account settings surface for the module: Home view mode,
+      // remembered export options, and client-reported activity events.
+      analysisView:analysisView,
+      statusChip:statusChip,
+      normStatus:normStatus,
+      exportDefaults:exportDefaultsFor,
+      rememberExport:rememberExportOptions,
+      activity:postActivity,
+      timeFormat:()=>window.__fsTimeFormat||'12h'
     });
     await initAuth();
+    await loadUserSettings();   // account settings apply before anything paints
     const published=await sGet('pricing-multifamily');   // API-first; built-in seed as fallback
     pricingFromApi=!!published;
     pricing=published||DEFAULT_PRICING;
     renderApiBanner();
     wireDelegates();
+    loadExportConfig();   // fire-and-forget: exports default to the engine until it answers
     await loadTemplates();
     await renderHome();
     await routeFromHash();

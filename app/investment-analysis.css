@@ -3,9 +3,6 @@
    and vice versa. Reuses the app's shared classes (btn, fld, lab, badge,
    page-title) for everything that already exists. */
 
-#page-analyses .inv-newrow{display:flex;gap:10px;align-items:center;margin:14px 0}
-#page-analyses .inv-newrow input{width:260px}
-
 .inv-table{width:100%;border-collapse:collapse;font-size:13px}
 .inv-table th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
   color:var(--ink-500);padding:8px 10px;border-bottom:1px solid var(--ink-200);white-space:nowrap}
@@ -16,13 +13,15 @@
 
 /* step navigation */
 .inv-steps{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 18px}
-.inv-steps button{border:1px solid var(--ink-200);background:#fff;border-radius:999px;
+.inv-steps button{border:1px solid var(--ink-200);background:var(--white);border-radius:999px;
   padding:6px 14px;font-size:12.5px;cursor:pointer;color:var(--ink-700)}
-.inv-steps button.on{background:var(--ink-900);border-color:var(--ink-900);color:#fff}
+.inv-steps button.on{background:var(--solid,#16191a);border-color:var(--solid,#16191a);color:#fff}
 .inv-steps button .n{font-family:var(--fm);font-size:11px;opacity:.65;margin-right:6px}
 /* a completed step earns a checkmark on its pill */
-.inv-steps button.done::after{content:'✓';margin-left:7px;font-weight:700;color:var(--green-700)}
-.inv-steps button.on.done::after{color:#9FE0B8}
+/* completed steps carry a green dot (owner preference: dot, not a check mark) */
+.inv-steps button.done::after{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--green-700);margin-left:7px;vertical-align:middle}
+.inv-steps button.on.done::after{background:#9FE0B8}
 
 /* guided per-step footer: the Next button lights up when the step's required
    fields are filled */
@@ -36,14 +35,20 @@
   cursor:pointer;box-shadow:0 0 0 3px var(--green-50)}
 .inv-next.ready:hover{filter:brightness(1.08)}
 
-.inv-step{display:none;background:#fff;border:1px solid var(--ink-200);border-radius:10px;
+.inv-step{display:none;background:var(--white);border:1px solid var(--ink-200);border-radius:10px;
   padding:18px 20px;margin-bottom:16px}
 .inv-step.on{display:block}
 .inv-step h2{font-size:15px;margin:0 0 4px}
 .inv-step .hint{font-size:12.5px;color:var(--ink-500);margin:0 0 14px;max-width:70em}
 .inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px 16px}
+/* inputs align across a row even when one label wraps (From Budget badge) */
+.inv-grid .fld{display:flex;flex-direction:column;justify-content:flex-end}
 .inv-grid .fld input,.inv-grid .fld select{width:100%}
 .inv-grid .wide{grid-column:span 2}
+
+/* the linked budget version, visually secondary to the Project ID */
+.inv-vsub{font-family:var(--fm);font-size:10.5px;color:var(--ink-400);font-weight:500;margin-left:6px;
+  white-space:nowrap}
 
 /* imported-value badge */
 .inv-origin{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--green-700);
@@ -85,6 +90,37 @@
 
 /* versions modal reuses the app modal look */
 .inv-verlist td{cursor:pointer}
+
+/* grouped list header rows (Group by Project / Status) — informational, not
+   collapsible like the budget grid's, so no pointer cursor */
+.inv-grp td{background:var(--ink-50);font-family:var(--fm);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-700);padding:7px 10px;border-bottom:1px solid var(--ink-150)}
+.inv-grp .shut{color:var(--ink-400);margin-left:8px;letter-spacing:0;text-transform:none}
+
+/* The list tables (Home + tab) mirror the Project Budgets table: the same
+   mono uppercase headers, compact rows, mono numeric cells (td.calc), status
+   badges, and a right-aligned Updated column that sits next to the row menu.
+   These rules come after the generic .inv-table rules, so they win. */
+.inv-table.inv-list{font-size:14px}
+.inv-list th{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-500);font-weight:500;padding:8px 10px;border-bottom:1px solid var(--ink-200)}
+.inv-list td{padding:3px 10px;border-bottom:1px solid var(--ink-100)}
+.inv-list td.calc{font-family:var(--fm);font-size:13px;color:var(--ink-700);white-space:nowrap}
+/* Column widths follow the app's shared list-table system (index.html
+   :root --lt-* tokens): the two identity columns total 42% — the same as
+   the budget table's — so Status, Updated, and the action column line up
+   vertically across both Home cards. The financial columns differ freely. */
+.inv-list th:nth-child(1){width:32%}
+.inv-list th:nth-child(2){width:10%}
+.inv-list th:nth-child(3){width:var(--lt-status,9%)}
+.inv-list th:nth-child(4){width:9%}
+.inv-list th:nth-child(5){width:8%}
+.inv-list th:nth-child(6){width:7%}
+.inv-list th:nth-child(7){width:8%}
+.inv-list th:nth-child(8){width:7%}
+.inv-list th:nth-child(9){width:var(--lt-updated,10%)}
+.inv-list th.no-print{width:var(--lt-actions,44px)}
+.inv-list td:first-child{line-height:1.35}   /* long names may wrap to two lines */
 
 /* mobile read-only: hide editing affordances, keep the report viewable */
 body.mobile-ro #page-analysis .inv-step input,

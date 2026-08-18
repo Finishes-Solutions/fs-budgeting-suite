@@ -32,6 +32,28 @@
   const fromPct = s => s === '' || s === null || s === undefined ? null : nz(s) / 100;
   const numOrNull = s => s === '' || s === null || s === undefined ? null : nz(s);
 
+  // House timestamp format, matching the budget app: the viewer's LOCAL time
+  // as MM-DD-YYYY h:mm AM/PM, or MM-DD-YYYY where only the day matters.
+  function fmtWhen(iso) {
+    if (!iso) return '—';
+    const d = iso instanceof Date ? iso : new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    const p = n => String(n).padStart(2, '0');
+    const day = p(d.getMonth() + 1) + '-' + p(d.getDate()) + '-' + d.getFullYear();
+    // Settings → Time Format (per account; the shell keeps the flag current)
+    if ((window.__fsTimeFormat || '12h') === '24h')
+      return day + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    let h = d.getHours(); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+    return day + ' ' + h + ':' + p(d.getMinutes()) + ' ' + ap;
+  }
+  function fmtDay(iso) {
+    if (!iso) return '—';
+    const d = iso instanceof Date ? iso : new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getMonth() + 1) + '-' + p(d.getDate()) + '-' + d.getFullYear();
+  }
+
   /* ---------- tiny DOM helpers ---------- */
   const el = id => document.getElementById(id);
   const esc = s => A.esc(String(s === null || s === undefined ? '' : s));
@@ -43,53 +65,189 @@
      Versions is reachable only from there, never from the editor toolbar. */
   const listHosts = new Set();   // every host currently showing a list, for refresh
 
+  /* Search / status / grouping over the analyses list — the same controls the
+     budget list has, one shared view state for both hosts. */
+  const lv = { q: '', status: 'all', group: '' };
+  let lvRows = [];
+
+  function lvFiltered() {
+    const q = lv.q.trim().toLowerCase();
+    return lvRows.filter(r => {
+      const ns = window.normStatus ? normStatus(r.status) : (r.status || 'Draft');
+      if (lv.status !== 'all' && ns !== lv.status) return false;
+      if (!q) return true;
+      return (r.name || '').toLowerCase().includes(q)
+        || (r.projectId || '').toLowerCase().includes(q);
+    });
+  }
+  const LV_GROUPS = {
+    project: { of: r => r.projectId || 'Standalone' },
+    status: { of: r => window.normStatus ? normStatus(r.status) : (r.status || 'Draft') }
+  };
+
   async function renderListInto(host, opts) {
     if (!host) return;
     opts = opts || {};
     listHosts.add(host);
-    let rows = [];
-    try { rows = await A.api('investment-analyses'); }
+    try { lvRows = await A.api('investment-analyses'); }
     catch (e) { host.innerHTML = '<div class="empty">Could not load analyses — ' + esc(e.message) + '</div>'; return; }
+    // One creation flow everywhere: the tab page and Home both open the same
+    // New Investment Analysis modal. The tab page is the fuller index view,
+    // laid out exactly like Home — title row, then the list in a card.
     const head = opts.embedded ? '' : `
       <div class="page-title">
         <div><h1>Investment Analyses</h1>
           <div class="sub">Before-tax underwriting, linked to exact saved budget versions</div></div>
-      </div>
-      <div class="inv-newrow no-print" data-inv-edit>
-        <input type="text" id="invNewName" data-k="inv.newName" placeholder="New Standalone Analysis Name…">
-        <button class="btn btn-dark" onclick="FSInvestmentUI.createStandalone()">+ New Standalone Analysis</button>
-        <span style="font-size:12px;color:var(--ink-500)">or open a budget and use Create Investment Analysis</span>
+        <div style="display:flex;gap:10px" data-inv-edit>
+          <button class="btn btn-primary" onclick="FSInvestmentUI.openProjectPicker()">+ New Investment Analysis</button>
+        </div>
       </div>`;
-    host.innerHTML = head + `
-      <table class="inv-table"><thead><tr>
-        <th${opts.embedded ? ' style="padding-left:22px"' : ''}>Analysis</th><th>Project</th><th>Status</th><th class="r">Purchase Price</th>
-        <th class="r">Year-1 NOI</th><th class="r">Equity IRR</th><th class="r">Optimal Hold</th>
-        <th class="r">Version</th><th>Updated</th><th class="no-print"></th>
+    const inner = `
+      <div class="card-hd no-print">
+        <div class="list-toolbar">
+          <input type="text" data-inv-q placeholder="Search name or project…" value="${esc(lv.q)}">
+          <select data-inv-status class="lt-status" aria-label="Filter by Status">
+            <option value="all">All Statuses</option>
+            <option value="Draft">Draft</option>
+            <option value="In Review">In Review</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+          <select data-inv-group class="lt-group" title="Group the list" aria-label="Group By">
+            <option value="">No Grouping</option>
+            <option value="project">Group by Project</option>
+            <option value="status">Group by Status</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="mini-seg" role="group" aria-label="Analyses View" title="Analyses View — also in Settings">
+            <button data-analysisview-pick="comfortable" aria-label="Comfortable List" title="Comfortable List" onclick="chooseSetting('analysisView','comfortable')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg></button>
+            <button data-analysisview-pick="compact" aria-label="Compact List" title="Compact List" onclick="chooseSetting('analysisView','compact')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+            <button data-analysisview-pick="cards" aria-label="Card View" title="Card View" onclick="chooseSetting('analysisView','cards')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
+          </div>
+          <span class="eyebrow" data-inv-count>—</span>
+        </div>
+      </div>
+      <table class="inv-table inv-list"><thead><tr>
+        <th style="padding-left:22px">Analysis</th><th>Project / Budget</th><th>Status</th><th class="r">Purchase Price</th>
+        <th class="r">Year 1 NOI</th><th class="r">Equity IRR</th><th class="r">Optimal Hold</th>
+        <th class="r">Analysis Ver.</th><th class="r" style="padding-right:22px">Updated</th><th class="no-print"></th>
       </tr></thead><tbody data-inv-list></tbody></table>
+      <div class="home-cards" data-inv-cards></div>
       <div class="empty" data-inv-empty style="display:none">No investment analyses yet.</div>`;
+    host.innerHTML = opts.embedded ? inner
+      : head + `<section class="card"><div class="card-bd" style="padding:0;overflow-x:auto">${inner}</div></section>`;
+    host.querySelector('[data-inv-status]').value = lv.status;
+    host.querySelector('[data-inv-group]').value = lv.group;
+    host.querySelector('[data-inv-q]').addEventListener('input', e => { lv.q = e.target.value; paintInvList(host, opts); });
+    host.querySelector('[data-inv-status]').addEventListener('change', e => { lv.status = e.target.value; paintInvList(host, opts); });
+    host.querySelector('[data-inv-group]').addEventListener('change', e => { lv.group = e.target.value; paintInvList(host, opts); });
+    paintInvList(host, opts);
+    // the freshly rendered toolbar toggles need their active marks
+    if (window.paintSettingsUI) window.paintSettingsUI();
+  }
+
+  function paintInvList(host, opts) {
     const tb = host.querySelector('[data-inv-list]');
-    if (!rows.length) { host.querySelector('[data-inv-empty]').style.display = 'block'; return; }
-    rows.forEach(r => {
-      const tr = document.createElement('tr');
-      tr.className = 'clickable';
-      tr.addEventListener('click', () => { location.hash = '#/analysis/' + r.analysisId; });
-      tr.innerHTML = `
-        <td${opts.embedded ? ' style="padding-left:22px"' : ''}><b>${esc(r.name)}</b></td>
-        <td class="mono">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-origin" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
-        <td>${esc(r.status)}</td>
-        <td class="r mono">${usd(r.purchasePrice)}</td>
-        <td class="r mono">${usd(r.year1NOI)}</td>
-        <td class="r mono">${pctf(r.finalYearEquityIRR)}</td>
-        <td class="r mono">${r.optimalHoldingYear ? 'Year ' + r.optimalHoldingYear : '—'}</td>
-        <td class="r mono">${r.currentVersionNumber || '—'}</td>
-        <td>${esc((r.updatedAt || '').slice(0, 10))}</td>
-        <td class="no-print" style="text-align:right"><button class="rowmenu-btn" data-inv-menu
-          aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(r.name)}">⋮</button></td>`;
-      tr.querySelector('[data-inv-menu]').addEventListener('click', ev => {
-        ev.stopPropagation(); openInvRowMenu(ev.currentTarget, r.analysisId);
+    if (!tb) return;
+    tb.innerHTML = '';
+    const rows = lvFiltered();
+    const empty = host.querySelector('[data-inv-empty]');
+    empty.style.display = rows.length ? 'none' : 'block';
+    empty.textContent = lvRows.length ? 'No analyses match this search or filter.' : 'No investment analyses yet.';
+    const count = host.querySelector('[data-inv-count]');
+    if (count) count.textContent = lvRows.length
+      ? rows.length + ' of ' + lvRows.length + (lvRows.length === 1 ? ' analysis' : ' analyses') : '—';
+    // Per-section view (Settings → Views, or the toolbar): cards or a list
+    // at either density — Home and the tab alike.
+    const view = A.analysisView ? A.analysisView() : 'comfortable';
+    const wrap = host.querySelector('table.inv-list').parentElement;
+    wrap.setAttribute('data-density', view === 'compact' ? 'compact' : 'comfortable');
+    const cards = host.querySelector('[data-inv-cards]');
+    const cardsMode = view === 'cards';
+    host.querySelector('table.inv-list').style.display = cardsMode ? 'none' : '';
+    if (cards) {
+      cards.classList.toggle('on', cardsMode && rows.length > 0);
+      cards.innerHTML = '';
+    }
+    if (cardsMode) {
+      const g2 = LV_GROUPS[lv.group];
+      const add = r => cards.insertAdjacentHTML('beforeend', invCard(r));
+      if (g2) {
+        const map = new Map();
+        rows.forEach(r => { const k = g2.of(r); if (!map.has(k)) map.set(k, []); map.get(k).push(r); });
+        [...map.keys()].sort((a, z) => {
+          const pa = a === 'Standalone', pz = z === 'Standalone';
+          return pa !== pz ? (pa ? 1 : -1) : a.localeCompare(z, undefined, { numeric: true });
+        }).forEach(k => {
+          cards.insertAdjacentHTML('beforeend', `<div class="grp-lab">${esc(k)}
+            <span class="shut">${map.get(k).length} ${map.get(k).length === 1 ? 'analysis' : 'analyses'}</span></div>`);
+          map.get(k).forEach(add);
+        });
+      } else rows.forEach(add);
+      cards.querySelectorAll('[data-inv-card]').forEach(c =>
+        c.addEventListener('click', () => { location.hash = '#/analysis/' + c.dataset.invCard; }));
+      cards.querySelectorAll('[data-inv-menu]').forEach(b =>
+        b.addEventListener('click', ev => {
+          ev.stopPropagation(); openInvRowMenu(ev.currentTarget, b.dataset.aid);
+        }));
+      return;
+    }
+    const pad = ' style="padding-left:22px"';   // both hosts are cards now
+    const g = LV_GROUPS[lv.group];
+    if (g) {
+      const map = new Map();
+      rows.forEach(r => { const k = g.of(r); if (!map.has(k)) map.set(k, []); map.get(k).push(r); });
+      [...map.keys()].sort((a, z) => {
+        const pa = a === 'Standalone', pz = z === 'Standalone';   // placeholder group pinned last
+        return pa !== pz ? (pa ? 1 : -1) : a.localeCompare(z, undefined, { numeric: true });
+      }).forEach(k => {
+        const tr = document.createElement('tr');
+        tr.className = 'inv-grp';
+        tr.innerHTML = `<td colspan="10"${pad}>${esc(k)}
+          <span class="shut">${map.get(k).length} ${map.get(k).length === 1 ? 'analysis' : 'analyses'}</span></td>`;
+        tb.appendChild(tr);
+        map.get(k).forEach(r => tb.appendChild(invListRow(r, pad)));
       });
-      tb.appendChild(tr);
+    } else rows.forEach(r => tb.appendChild(invListRow(r, pad)));
+  }
+
+  function invCard(r) {
+    return `<div class="hcard" data-inv-card="${esc(r.analysisId)}">
+      <div class="hc-id">${esc(r.projectId || 'Standalone')}${r.sourceBudgetVersionNumber
+        ? ' <span class="inv-vsub">Budget v' + r.sourceBudgetVersionNumber + '</span>' : ''}</div>
+      <div class="hc-name">${esc(r.name)}</div>
+      <div class="hc-row"><span>Purchase Price</span><span class="v">${usd(r.purchasePrice)}</span></div>
+      <div class="hc-row"><span>Equity IRR</span><span class="v">${pctf(r.finalYearEquityIRR)}</span></div>
+      <div class="hc-ft">${window.statusChip ? statusChip(r.status, 'analysis', r.analysisId) : esc(r.status)}
+        <span>${esc(fmtDay(r.updatedAt))}</span></div>
+      <button class="rowmenu-btn hc-menu" data-inv-menu data-aid="${esc(r.analysisId)}"
+        aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(r.name)}">⋮</button></div>`;
+  }
+
+  function invListRow(r, pad) {
+    const tr = document.createElement('tr');
+    tr.className = 'clickable';
+    tr.addEventListener('click', () => { location.hash = '#/analysis/' + r.analysisId; });
+    tr.innerHTML = `
+      <td${pad}>${esc(r.name)}</td>
+      <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-vsub" title="Created from that exact saved budget version — not the analysis version">Budget v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
+      <td>${window.statusChip ? statusChip(r.status, 'analysis', r.analysisId) : esc(r.status)}</td>
+      <td class="calc r">${usd(r.purchasePrice)}</td>
+      <td class="calc r">${usd(r.year1NOI)}</td>
+      <td class="calc r">${pctf(r.finalYearEquityIRR)}</td>
+      <td class="calc r">${r.optimalHoldingYear ? 'Year ' + r.optimalHoldingYear : '—'}</td>
+      <td class="calc r">${r.currentVersionNumber || '—'}</td>
+      <td class="calc r" style="padding-right:22px;font-size:12px;color:var(--ink-400)">${esc(fmtDay(r.updatedAt))}</td>
+      <td class="no-print" style="text-align:right"><button class="rowmenu-btn" data-inv-menu
+        aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(r.name)}">⋮</button></td>`;
+    tr.querySelector('[data-inv-menu]').addEventListener('click', ev => {
+      ev.stopPropagation(); openInvRowMenu(ev.currentTarget, r.analysisId);
     });
+    return tr;
   }
 
   function renderList() { return renderListInto(el('page-analyses'), {}); }
@@ -188,27 +346,51 @@
     } catch (e) { A.toast('Could not create the analysis — ' + e.message); }
   }
 
+  /* THE creation flow — Home and the Investment Analysis tab both open this
+     one modal (same pattern as the budget's New Budget modal): link the
+     analysis to a project's latest saved budget version, or start standalone. */
   async function openProjectPicker() {
     let budgets = [];
     try { budgets = await A.api('budgets'); }
     catch (e) { A.toast('Could not load the project list — ' + e.message); return; }
     const rows = budgets.map((b, i) => `<tr class="clickable" data-pick="${i}">
-        <td class="mono">${esc(b.projectId)}</td><td><b>${esc(b.name || '—')}</b></td>
-        <td>${esc(b.status || '—')}</td><td>${esc((b.updated || '').slice(0, 10))}</td></tr>`).join('');
+        <td class="mono" style="color:var(--green-700);font-weight:600">${esc(b.projectId)}</td><td>${esc(b.name || '—')}</td>
+        <td>${stChipStatic(b.status)}</td>
+        <td>${esc(fmtDay(b.updated))}</td></tr>`).join('');
     openInvModal(`<h2 style="margin-top:0">New Investment Analysis</h2>
-      <p style="font-size:12.5px;color:var(--ink-500)">Select the project this analysis is for. It is created
-      from that project's latest saved budget version — an exact snapshot, so the budget changing later
-      never changes the analysis.</p>
+      <div class="set-lab">From Existing Budget</div>
+      <p style="font-size:12.5px;color:var(--ink-500);margin:0 0 10px">Select the project this analysis is
+      for. It is created from that project's latest saved budget version — an exact snapshot, so the budget
+      changing later never changes the analysis.</p>
       ${budgets.length
-        ? `<table class="inv-table" id="invProjectPick"><thead><tr><th>Project ID</th><th>Name</th>
-           <th>Status</th><th>Updated</th></tr></thead><tbody>${rows}</tbody></table>`
-        : '<div class="empty">No budgets yet. Create a budget first, or start a Blank Investment Analysis.</div>'}`, 640);
+        ? `<div style="max-height:300px;overflow:auto;border:1px solid var(--ink-150);border-radius:8px">
+           <table class="inv-table" id="invProjectPick"><thead><tr><th>Project ID</th><th>Name</th>
+           <th>Status</th><th>Updated</th></tr></thead><tbody>${rows}</tbody></table></div>`
+        : '<div class="empty">No budgets yet. Create a budget first, or start a standalone analysis below.</div>'}
+      <div class="set-lab">Standalone Analysis</div>
+      <p style="font-size:12.5px;color:var(--ink-500);margin:0 0 10px">Not linked to any budget — you enter
+      every assumption yourself.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap" data-inv-edit>
+        <input type="text" id="invNewName" placeholder="Analysis name (optional)" style="flex:1;min-width:200px">
+        <button class="btn btn-primary" onclick="FSInvestmentUI.createStandaloneFromModal()">Create Standalone Analysis</button>
+      </div>`, 560);
     el('invModal').querySelectorAll('[data-pick]').forEach(tr => tr.addEventListener('click', async () => {
       const b = budgets[+tr.dataset.pick];
       closeInvModal();
       try { await createFromBudget(b.projectId); }
       catch (e) { A.toast('Could not create the analysis — ' + e.message); }
     }));
+  }
+
+  async function createStandaloneFromModal() {
+    const name = (el('invNewName') && el('invNewName').value || '').trim() || 'Untitled Analysis';
+    closeInvModal();
+    try {
+      const r = await A.api('investment-analyses', { method: 'POST',
+        body: JSON.stringify({ mode: 'standalone', analysisName: name }) });
+      if (name === 'Untitled Analysis') A.toast('Blank analysis — name it on the Source & Property step.');
+      A.navigate('#/analysis/' + r.analysisId);
+    } catch (e) { A.toast('Could not create the analysis — ' + e.message); }
   }
 
   async function softDelete(id) {
@@ -229,9 +411,16 @@
     try {
       const r = await A.api('investment-analysis/' + id);
       st.id = r.analysisId; st.input = r.input; st.result = r.result;
+      st.status = r.status || 'Draft';
       st.source = r.source; st.loadedVersion = r.currentVersionNumber;
       st.dirty = false; st.stale = false; st.busy = ''; st.step = r.result ? 6 : 1;
       st.viewingVersion = null; st.conflict = null; st.errors = {};
+      // Badge baseline: the server-stored original import (or values as
+      // loaded, for analyses created before originals were stored). Editing
+      // a field away from it hides its From Budget badge; putting the exact
+      // value back restores it — even across a save and reload.
+      snapshotOrigins();
+      resetInvUndo();
       renderEditor();
     } catch (e) {
       A.toast('Could not open the analysis — ' + e.message);
@@ -298,10 +487,51 @@
     });
   }
 
+  // Read-only status chip (used where a click already means something else,
+  // like the project picker rows). The shared classes come from index.html.
+  function stChipStatic(status) {
+    const n = window.normStatus ? normStatus(status) : (status || 'Draft');
+    const cls = { 'Draft': 'st-draft', 'In Review': 'st-review',
+      'Completed': 'st-done', 'Cancelled': 'st-cancel' }[n] || 'st-draft';
+    return `<span class="st-chip ${cls}" style="pointer-events:none">${esc(n)}</span>`;
+  }
+  function paintStatusChip() {
+    const h = el('invStatusHost');
+    if (h) h.innerHTML = st.id && window.statusChip ? statusChip(st.status, 'analysis', st.id) : '';
+  }
+
   function originBadge(path) {
     const src = st.input && st.input.source;
     const o = src && src.fieldOrigins && src.fieldOrigins[path];
-    return o ? `<span class="inv-origin" title="Imported: ${esc(o)} (budget version ${esc(src.budgetVersionNumber)})">From Budget</span>` : '';
+    return o ? `<span class="inv-origin" data-origin="${esc(path)}" title="Imported: ${esc(o)} (budget version ${esc(src.budgetVersionNumber)})">From Budget</span>` : '';
+  }
+
+  /* The badge means "this value IS the budget's" — so editing a field away
+     from its imported value removes it, and putting the value back restores
+     it. The server stores the true import in source.originalValues, so the
+     comparison survives saving and reloading an edited field; analyses
+     created before that existed fall back to values-as-loaded. */
+  function getPath(obj, path) {
+    return path.split('.').reduce((v, k) => (v === null || v === undefined ? v : v[k]), obj);
+  }
+  function snapshotOrigins() {
+    st.originVals = {};
+    const src = st.input && st.input.source;
+    if (!src || !src.fieldOrigins) return;
+    const orig = src.originalValues;
+    for (const path of Object.keys(src.fieldOrigins)) {
+      st.originVals[path] = orig && path in orig
+        ? JSON.stringify(orig[path])
+        : JSON.stringify(getPath(st.input, path));
+    }
+  }
+  function refreshOriginBadges() {
+    if (!st.originVals) return;
+    document.querySelectorAll('#page-analysis [data-origin]').forEach(b => {
+      const path = b.dataset.origin;
+      b.style.display = JSON.stringify(getPath(st.input, path)) === st.originVals[path]
+        ? '' : 'none';
+    });
   }
 
   function renderEditor() {
@@ -316,6 +546,7 @@
             ? 'From budget <span class="mono">' + esc(st.source.projectId) + '</span> version ' + esc(st.source.budgetVersionNumber)
             : 'Standalone Analysis'}</div></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
+          <span id="invStatusHost"></span>
           <span class="inv-statebar" id="invState"></span>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
@@ -460,6 +691,10 @@
     renderStateBar();
     updateStepUI();
     bindEditor(host);
+    // Badges compare against the server-stored originals, so a field edited
+    // and SAVED must render with its badge already hidden on reload.
+    refreshOriginBadges();
+    paintStatusChip();
   }
 
   function bindEditor(host) {
@@ -552,8 +787,54 @@
   const host_input = f => document.querySelector('#page-analysis [data-f="' + f + '"]');
 
   function markDirty() {
+    recordInvUndo();
     if (!st.dirty || !st.stale) { st.dirty = true; st.stale = !!st.result; renderStateBar(); }
-    updateStepUI();   // keep the Next buttons and ✓ pills live as fields fill in
+    updateStepUI();          // keep the Next buttons and step dots live as fields fill in
+    refreshOriginBadges();   // From Budget disappears when a value is edited away
+  }
+
+  /* ---- undo / redo (Cmd/Ctrl+Z · Cmd/Ctrl+Shift+Z or Ctrl+Y) ----
+     The same snapshot ring the budget editor uses: the current input plus up
+     to ten back, and a redo stack the same depth. Snapshots record in
+     markDirty() — after every committed mutation — and the identical-snapshot
+     guard means keystroke previews (which fire markDirty without mutating
+     the input) never create a step. A new change after an undo clears the
+     redo path. In-memory only: opening another analysis resets both stacks,
+     and saved versions are never touched. */
+  const INV_UNDO_MAX = 10;
+  let invUndoStack = [], invRedoStack = [];
+  function resetInvUndo() {
+    invUndoStack = st.input ? [JSON.stringify(st.input)] : [];
+    invRedoStack = [];
+  }
+  function recordInvUndo() {
+    if (!st.input) return;
+    const snap = JSON.stringify(st.input);
+    if (invUndoStack[invUndoStack.length - 1] === snap) return;   // no-op mutation → no step
+    invUndoStack.push(snap);
+    if (invUndoStack.length > INV_UNDO_MAX + 1) invUndoStack.shift(); // current + ten back
+    invRedoStack = [];                                            // a new change forks history
+  }
+  function restoreInvSnap(snap, msg) {
+    st.input = JSON.parse(snap);
+    st.dirty = true; st.stale = !!st.result; st.errors = {};
+    renderEditor();
+    A.toast(msg);
+  }
+  function undo() {
+    if (!st.id || !st.input) return;
+    if (invUndoStack.length < 2) { A.toast('Nothing to undo.'); return; }
+    invRedoStack.push(invUndoStack.pop());
+    if (invRedoStack.length > INV_UNDO_MAX) invRedoStack.shift();
+    restoreInvSnap(invUndoStack[invUndoStack.length - 1], 'Undid the last change.');
+  }
+  function redo() {
+    if (!st.id || !st.input) return;
+    if (!invRedoStack.length) { A.toast('Nothing to redo.'); return; }
+    const snap = invRedoStack.pop();
+    invUndoStack.push(snap);
+    if (invUndoStack.length > INV_UNDO_MAX + 1) invUndoStack.shift();
+    restoreInvSnap(snap, 'Redid the change.');
   }
 
   function renderStateBar() {
@@ -755,7 +1036,7 @@
       const r = await A.api('investment-analysis/' + versionsCtx + '/versions');
       const rows = r.versions.map(v => `<tr onclick="FSInvestmentUI.viewVersion(${v.versionNumber})">
         <td class="mono">v${v.versionNumber}${v.isCurrent ? ' ·current' : ''}</td>
-        <td>${esc((v.createdAt || '').slice(0, 16).replace('T', ' '))}</td>
+        <td>${esc(fmtWhen(v.createdAt))}</td>
         <td>${esc(v.createdByName || '—')}</td>
         <td class="r mono">${usd(v.purchasePrice)}</td>
         <td class="r mono">${pctf(v.finalYearEquityIRR)}</td></tr>`).join('');
@@ -772,7 +1053,7 @@
     try {
       const r = await A.api('investment-analysis/' + (versionsCtx || st.id) + '/versions/' + n);
       openInvModal(`<h2 style="margin-top:0">Version ${n} — Read-Only</h2>
-        <div class="inv-provenance">Saved ${esc((r.version.createdAt || '').slice(0, 16).replace('T', ' '))}
+        <div class="inv-provenance">Saved ${esc(fmtWhen(r.version.createdAt))}
         by ${esc(r.version.createdByName || '—')}</div>
         <div class="inv-report">${reportHTML(r.result)}</div>`);
     } catch (e) { A.toast('Could not load the version — ' + e.message); }
@@ -912,7 +1193,7 @@
     h += `<h3>Assumptions &amp; Provenance</h3>
       <div class="inv-provenance">
       ${src ? 'Created from budget <span class="mono">' + esc(src.projectId) + '</span> version ' + esc(src.budgetVersionNumber)
-            + (src.importedAt ? ' (imported ' + esc(String(src.importedAt).slice(0, 10)) + ')' : '') + '.' : 'Standalone Analysis.'}
+            + (src.importedAt ? ' (imported ' + esc(fmtDay(src.importedAt)) + ')' : '') + '.' : 'Standalone Analysis.'}
       Vacancy ${pctf(R.normalizedInput.vacancy.value)} · expenses ${R.normalizedInput.expenses.mode === 'percentOfGOI'
         ? pctf(R.normalizedInput.expenses.value) + ' of GOI'
         : usd(R.normalizedInput.expenses.value) + '/yr growing ' + pctf(R.normalizedInput.expenses.growth.value)}
@@ -935,6 +1216,9 @@
 
   function openExport() {
     if (!st.result || st.stale) { A.toast('Calculate first so the exports match the inputs.'); return; }
+    // Remembered export options (Settings → Exports) seed the checkboxes.
+    const saved = A.exportDefaults && A.exportDefaults('analysis');
+    if (saved) for (const k in EX_IDS) if (typeof saved[k] === 'boolean') exOpts[k] = saved[k];
     const chk = (k, label, title) => `<label class="chk"${title ? ' title="' + title + '"' : ''}>
       <input type="checkbox" id="${EX_IDS[k]}" ${exOpts[k] ? 'checked' : ''}> ${label}</label>`;
     // The button row matches the budget export modal exactly — one order
@@ -968,6 +1252,12 @@
         <button class="btn btn-ghost" title="Download the branded Excel workbook"
           onclick="FSInvestmentUI.exportWorkbook()">Excel (.xlsx)</button>
       </div>`, 580);
+    // Any change becomes the account default when Settings says to remember.
+    el('invModal').querySelectorAll('input[type=checkbox]').forEach(c =>
+      c.addEventListener('change', () => {
+        readExportOpts();
+        if (A.rememberExport) A.rememberExport('analysis', Object.assign({}, exOpts));
+      }));
   }
   function emailSoon() { A.toast('Emailing exports is coming soon.'); }
 
@@ -995,17 +1285,44 @@
     return FSExportRender.buildExportDoc(st.result, exOpts,
       { savedVersion: st.loadedVersion, generatedAt: new Date().toISOString() });
   }
+  // The fsdoc/1 + fs-render path: content from the producer, layout from the
+  // engine. Ten-year projections carry 11 matrix columns, which physically
+  // need landscape on letter (the engine's stated policy); five-year docs
+  // keep the house-portrait preset.
+  function fsdocOf(doc) {
+    return FSToFsdoc.toFsdoc(doc,
+      { docId: st.id ? st.id + (st.loadedVersion ? '-v' + st.loadedVersion : '') : undefined });
+  }
+  function pdfPreset(doc) { return doc.meta.years > 5 ? 'landscape' : 'portrait'; }
+  const FS_THEME = () => fsRender.themes['finishes-solutions'];
+  // FS_EXPORT_RENDERER: the app shell resolves the setting (env via
+  // /api/export-config, localStorage override); 'local' falls back to the
+  // frozen pre-cutover renderers in legacy-render.js.
+  const useLegacy = () => typeof exportRenderer === 'function' && exportRenderer() === 'local';
 
-  /* ---- PDF: a real .pdf file, rendered by the shared document model through
-     the vendored pdfmake build and downloaded directly — no print dialog. */
+  /* ---- PDF: a real .pdf file — fsdoc/1 rendered by the vendored fs-render
+     engine through pdfmake and downloaded directly, no print dialog. The
+     Signature Needed approval page is a suite policy appended after. */
   function exportPDF() {
     if (!st.result || st.stale) { A.toast('Calculate first so the PDF matches the inputs.'); return; }
-    if (typeof pdfMake === 'undefined' || typeof FSExportRender === 'undefined') {
+    if (typeof pdfMake === 'undefined' || typeof fsRender === 'undefined') {
       A.toast('PDF library is unavailable — reload the page.'); return;
     }
     readExportOpts(); closeInvModal();
-    const dd = FSExportRender.buildPdfDocDefinition(exportDoc());
-    pdfMake.createPdf(dd).getBlob(blob => downloadBlob(blob, exportBaseName() + '.pdf'));
+    const doc = exportDoc();
+    let dd;
+    if (useLegacy()) {
+      dd = FSLegacyRender.buildPdfDocDefinition(doc);   // renders doc.signature itself
+      FSExportRender.stampRenderProvenance(dd, 'local');
+    } else {
+      dd = fsRender.buildPdfDocDefinition(fsdocOf(doc), FS_THEME(), pdfPreset(doc));
+      FSExportRender.stampRenderProvenance(dd, 'engine');
+      FSExportRender.appendApprovalPage(dd, doc.signature);
+    }
+    pdfMake.createPdf(dd).getBlob(blob => {
+      downloadBlob(blob, exportBaseName() + '.pdf');
+      if (A.activity) A.activity('export_pdf', 'analysis', st.id);
+    });
   }
 
   /* ---- Print: the original #printDoc pipeline via the adapter — the same
@@ -1014,13 +1331,14 @@
     if (!st.result || st.stale) { A.toast('Calculate first so the print matches the inputs.'); return; }
     readExportOpts(); closeInvModal();
     A.print(printReportHTML(st.result, exOpts));
+    if (A.activity) A.activity('export_print', 'analysis', st.id);
   }
 
   function printReportHTML(R, opts) {
     const o = opts || exOpts;
     const s = R.summary, loan = R.loans[0] || null, years = R.annual, N = R.normalizedInput;
     const src = N.source;
-    const stamp = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const stamp = fmtWhen(new Date());
     const rr = (k, v, cls) => '<div class="rr ' + (cls || '') + '"><span>' + k + '</span><span class="v">' + v + '</span></div>';
     const tbl = (headers, rows) => '<table class="rpt-tbl full"><thead><tr>'
       + headers.map((h, i) => '<th' + (i ? ' class="r"' : '') + '>' + h + '</th>').join('')
@@ -1186,31 +1504,38 @@
     return h;
   }
 
-  /* ================= EXCEL WORKBOOK ================= 
-     Built by the shared renderer (export-render.js) from the same document
-     model the PDF uses — branded bands, frozen headers, landscape printing.
-     Tables only; no charts, no media, ever. */
+  /* ================= EXCEL WORKBOOK =================
+     Built by the fs-render engine from the same fsdoc/1 the PDF uses —
+     branded bands, frozen headers, landscape fitted printing come from the
+     engine's default preset. Tables only; no charts, no media, ever. */
   async function exportWorkbook() {
     if (!st.result || st.stale) { A.toast('Calculate first so the workbook matches the inputs.'); return; }
-    if (typeof ExcelJS === 'undefined' || typeof FSExportRender === 'undefined') {
+    if (typeof ExcelJS === 'undefined' || typeof fsRender === 'undefined') {
       A.toast('Excel library is unavailable — reload the page.'); return;
     }
     readExportOpts(); closeInvModal();
-    const wb = FSExportRender.buildWorkbook(ExcelJS, exportDoc());
+    const doc = exportDoc();
+    const wb = useLegacy()
+      ? FSLegacyRender.buildWorkbook(ExcelJS, doc)
+      : fsRender.buildWorkbook(ExcelJS, fsdocOf(doc), FS_THEME());
     const buf = await wb.xlsx.writeBuffer();
     downloadBlob(new Blob([buf],
       { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
       exportBaseName() + '.xlsx');
+    if (A.activity) A.activity('export_xlsx', 'analysis', st.id);
   }
 
   /* ================= public surface ================= */
   window.FSInvestmentUI = {
     init(adapter) { A = adapter; },
     renderList, renderListInto, open, createFromBudget, createStandalone,
-    createBlank, openProjectPicker, softDelete,
-    calculate, save, reload, duplicate, showVersions, viewVersion, goStep,
+    createStandaloneFromModal, createBlank, openProjectPicker, softDelete,
+    calculate, save, reload, duplicate, showVersions, viewVersion, goStep, undo, redo,
     openExport, emailSoon, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,
     _other, _otherRemove, _capex, _capexRemove,
+    _statusApplied(id, status) {
+      if (st.id === id) { st.status = status; paintStatusChip(); }
+    },
     currentId: () => st.id,
     isDirty: () => st.dirty,
     confirmLeave() {

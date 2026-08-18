@@ -39,6 +39,26 @@ module.exports = async function (context, req) {
     return;
   }
 
+  // PUT with { status } only — the quick status change from the lists and
+  // cards. Updates the row and the stored document in place WITHOUT recording
+  // a version; the editor's full { meta, doc } save still versions as before.
+  const STATUSES = ['Draft', 'In Review', 'Completed', 'Cancelled'];
+  if (req.body && !req.body.doc && typeof req.body.status === 'string') {
+    if (!STATUSES.includes(req.body.status)) {
+      context.res = { status: 400, body: 'status must be one of: ' + STATUSES.join(', ') }; return;
+    }
+    const r = await pool.request().input('id', sql.VarChar(16), id)
+      .input('st', sql.NVarChar(30), req.body.status)
+      .query(`UPDATE dbo.Budgets SET Status=@st, Doc=JSON_MODIFY(Doc,'$.status',@st),
+                UpdatedAt=SYSUTCDATETIME()
+              WHERE ProjectId=@id AND IsDeleted=0;
+              SELECT @@ROWCOUNT AS N;`);
+    if (!r.recordset[0].N) { context.res = { status: 404, body: 'Not found' }; return; }
+    context.res = { status: 200, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ok: true, status: req.body.status }) };
+    return;
+  }
+
   // PUT — upsert the budget doc + meta, rewrite the normalized SOV rows
   // (SovLines is the read surface for the lender-package pipeline), and record an
   // immutable version when the content actually changed. All in one transaction.
@@ -64,6 +84,10 @@ module.exports = async function (context, req) {
     }
   }
   context.res = { status: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(result) };
+  // Best-effort audit trail — recordActivity never throws.
+  if (result.versionCreated)
+    await require('../shared/users').recordActivity(pool, principal, 'budget_save', 'budget', id,
+      { versionNumber: result.versionNumber });
 
   async function save() {
     const tx = new sql.Transaction(pool);

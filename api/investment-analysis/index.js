@@ -63,6 +63,23 @@ module.exports = async function (context, req) {
 
   // ---- PUT
   const body = req.body || {};
+
+  // PUT with { status } only — the quick status change from the lists, cards
+  // and editor chip. No calculation, no version, works on incomplete drafts.
+  const STATUSES = ['Draft', 'In Review', 'Completed', 'Cancelled'];
+  if (body.input === undefined && typeof body.status === 'string') {
+    if (!STATUSES.includes(body.status)) {
+      context.res = jsonRes(400, { error: 'bad_request', message: 'status must be one of: ' + STATUSES.join(', ') }); return;
+    }
+    const sr = await pool.request().input('id', sql.UniqueIdentifier, id)
+      .input('st', sql.NVarChar(30), body.status)
+      .query(`UPDATE dbo.InvestmentAnalyses SET Status=@st, UpdatedAt=SYSUTCDATETIME()
+              WHERE AnalysisId=@id AND IsDeleted=0; SELECT @@ROWCOUNT AS N;`);
+    if (!sr.recordset[0].N) { context.res = jsonRes(404, { error: 'not_found', message: 'Not found' }); return; }
+    context.res = jsonRes(200, { ok: true, status: body.status });
+    return;
+  }
+
   const input = body.input;
   if (!input || typeof input !== 'object') { context.res = jsonRes(400, { error: 'bad_request', message: 'Body must be { input, expectedVersionNumber }.' }); return; }
   if (JSON.stringify(body).length > MAX_BODY) { context.res = jsonRes(413, { error: 'too_large', message: 'The analysis input is too large.' }); return; }
@@ -91,6 +108,10 @@ module.exports = async function (context, req) {
     }
   }
   context.res = jsonRes(200, out);
+  // Best-effort audit trail — recordActivity never throws.
+  if (out.versionCreated)
+    await require('../shared/users').recordActivity(pool, principal, 'analysis_save', 'analysis', id,
+      { versionNumber: out.versionNumber });
 
   async function save() {
     const tx = new sql.Transaction(pool);

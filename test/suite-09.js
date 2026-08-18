@@ -14,7 +14,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('Ctrl+S with no budget gives guidance',
     /Open or create a budget first/.test(await p.locator('#toast').textContent()));
 
- await p.click('button:has-text("+ New Multifamily Budget")');
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
  await p.fill('#pId','TST-9996'); await p.fill('#pName','Shortcut Save');
  await p.waitForTimeout(200);
  ok('dirty before save', /unsaved/i.test(await p.locator('#saveState').textContent()));
@@ -83,7 +83,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('notes amenity is excluded', /Amenity SF is deliberately excluded/.test(t));
  ok('documents the shortcut', /Cmd\+S/.test(t));
  ok('documents the investment analysis workflow',
-    /Investment Analysis/.test(t) && /Create Investment Analysis/.test(t)
+    /Investment Analysis/.test(t) && /\+ New Investment Analysis/.test(t)
     && /snapshot, not a live link/.test(t) && /three-dot menu/.test(t)
     && /five or ten years/.test(t));
 

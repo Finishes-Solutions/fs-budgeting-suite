@@ -1,15 +1,19 @@
-// GET /api/investment-analysis/{id}/export?format=pdf|xlsx|csv[&version=N]
+// GET /api/investment-analysis/{id}/export?format=pdf|xlsx|csv[&version=N][&signature=1]
 //
-// Server-side rendering of the SAVED analysis — the same shared document
-// model and renderers the browser uses (export-render.js), so a file
-// downloaded here is identical in content to one exported from the editor.
-// Renders the current ResultDoc by default, or an exact immutable version
-// when ?version=N is given. Nothing is ever recalculated. All sections are
-// always included: a server export is the canonical, complete record.
+// Server-side rendering of the SAVED analysis through the same pipeline the
+// browser uses: the shared producer (export-render.js) builds the content
+// document, to-fsdoc adapts it to fsdoc/1, and the vendored fs-render engine
+// (api/shared/fs-render — fs-courier's renderer) lays it out. Renders the
+// current ResultDoc by default, or an exact immutable version when
+// ?version=N is given. Nothing is ever recalculated. All sections are always
+// included: a server export is the canonical, complete record.
 const path = require('path');
 const { getPool, sql } = require('../shared/db');
 const { GUID_RX, jsonRes } = require('../shared/investment-persistence');
-const render = require('../shared/investment/export-render');
+const producer = require('../shared/investment/export-render');
+const { toFsdoc } = require('../shared/investment/to-fsdoc');
+const fsRender = require('../shared/fs-render/src/index');
+const legacy = require('../shared/investment/legacy-render');
 
 const FORMATS = {
   pdf: { mime: 'application/pdf', ext: 'pdf' },
@@ -18,7 +22,11 @@ const FORMATS = {
 };
 const ALL_SECTIONS = { kpis: true, cash: true, sale: true, returns: true,
   sens: true, assumptions: true, highlight: false, signature: false };
+const THEME = fsRender.themes['finishes-solutions'];
 
+// The engine's fontDescriptors() points at its own fonts dir, which the
+// vendored copy does not carry — the suite already ships the same subset
+// TTFs in api/shared/fonts.
 const FONTS = {
   Montserrat: {
     normal: path.join(__dirname, '../shared/fonts/Montserrat-Regular.ttf'),
@@ -84,18 +92,41 @@ module.exports = async function (context, req) {
   // ?signature=1 appends the identified approval page to the PDF.
   const opts = Object.assign({}, ALL_SECTIONS,
     { signature: /^(1|true)$/i.test(String((req.query && req.query.signature) || '')) });
-  const doc = render.buildExportDoc(result, opts,
+  const doc = producer.buildExportDoc(result, opts,
     { savedVersion, generatedAt: new Date().toISOString() });
+
+  // Renderer selection: ?renderer= wins per request, then the
+  // FS_EXPORT_RENDERER application setting, then the engine.
+  const rendererParam = String((req.query && req.query.renderer)
+    || process.env.FS_EXPORT_RENDERER || 'engine').toLowerCase();
+  if (rendererParam !== 'engine' && rendererParam !== 'local') {
+    context.res = jsonRes(400, { error: 'bad_request', message: 'renderer must be engine or local.' }); return;
+  }
+  const useLegacy = rendererParam === 'local';
+  const fsdoc = useLegacy ? null : toFsdoc(doc, { docId: id + '-v' + savedVersion });
 
   let body;
   if (format === 'pdf') {
-    body = await pdfBuffer(render.buildPdfDocDefinition(doc));
+    let dd;
+    if (useLegacy) {
+      dd = legacy.buildPdfDocDefinition(doc);   // renders doc.signature itself
+      producer.stampRenderProvenance(dd, 'local');
+    } else {
+      // Ten-year projections (11 matrix columns) physically need landscape on
+      // letter — the engine's stated policy; five-year docs stay portrait.
+      const preset = doc.meta.years > 5 ? 'landscape' : 'portrait';
+      dd = fsRender.buildPdfDocDefinition(fsdoc, THEME, preset);
+      producer.stampRenderProvenance(dd, 'engine');
+      producer.appendApprovalPage(dd, doc.signature);
+    }
+    body = await pdfBuffer(dd);
   } else if (format === 'xlsx') {
     const ExcelJS = require('exceljs');
-    const wb = render.buildWorkbook(ExcelJS, doc);
+    const wb = useLegacy ? legacy.buildWorkbook(ExcelJS, doc)
+      : fsRender.buildWorkbook(ExcelJS, fsdoc, THEME);
     body = Buffer.from(await wb.xlsx.writeBuffer());
   } else {
-    body = Buffer.from(render.buildCsv(doc), 'utf8');
+    body = Buffer.from(useLegacy ? legacy.buildCsv(doc) : fsRender.buildCsv(fsdoc), 'utf8');
   }
 
   const base = (analysisName || 'Investment_Analysis').replace(/[^\w]+/g, '_') + '_Investment_Analysis'
