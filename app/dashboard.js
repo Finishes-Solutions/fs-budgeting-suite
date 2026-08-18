@@ -177,16 +177,16 @@ function linePath(pts){
 
 function lineChartHTML(series){
   var days=fillDays(series, 30);
-  var W=760,H=240,padL=42,padR=14,padT=16,padB=30;
+  var W=760,H=190,padL=40,padR=12,padT=12,padB=26;
   var iw=W-padL-padR, ih=H-padT-padB;
   var max=Math.max(1, days.reduce(function(m,d){return Math.max(m,d.total);},0));
   // Round the axis up to something readable rather than the raw maximum.
-  var step=Math.max(1,Math.ceil(max/4)), top=step*4;
+  var step=Math.max(1,Math.ceil(max/3)), top=step*3;
   var x=function(i){return padL+(days.length<2?iw/2:(i/(days.length-1))*iw);};
   var y=function(v){return padT+ih-(v/top)*ih;};
 
   var grid='',labels='';
-  for(var g=0;g<=4;g++){
+  for(var g=0;g<=3;g++){
     var gv=step*g, gy=y(gv);
     grid+='<line x1="'+padL+'" y1="'+gy.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+gy.toFixed(1)+'" stroke="'+GRID+'" stroke-width="1"/>';
     labels+='<text x="'+(padL-8)+'" y="'+(gy+4).toFixed(1)+'" text-anchor="end" class="dash-ax">'+gv+'</text>';
@@ -229,7 +229,7 @@ function lineChartHTML(series){
 }
 
 function budgetValueChartHTML(rows){
-  rows=(rows||[]).filter(function(r){return (r.projectCost||0)>0||(r.contractSum||0)>0;});
+  rows=(rows||[]).filter(function(r){return (r.projectCost||0)>0||(r.contractSum||0)>0;}).slice(0,6);
   if(!rows.length) return '<div style="color:var(--ink-500);font-size:13px;padding:8px 0">No budgets yet</div>';
   var max=rows.reduce(function(m,r){return Math.max(m,r.projectCost||0,r.contractSum||0);},0)||1;
   var html='<div class="dash-vbars">';

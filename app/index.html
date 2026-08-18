@@ -352,6 +352,16 @@ main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 .card-hd{padding:14px 22px;border-bottom:1px solid var(--ink-150);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .card-hd h2{font-size:15px;font-weight:700;color:var(--ink-950)}
 .card-bd{padding:22px}
+/* ---- Back control ----
+   Sits above the page title on the left, where a reader looks for the way out,
+   rather than among the action buttons on the right. Deliberately quiet: it is
+   navigation, not an action competing with Save or Export. */
+.btn-back{display:inline-flex;align-items:center;gap:5px;background:none;border:none;padding:0;
+  margin:0 0 6px;font-family:var(--fb);font-size:12.5px;font-weight:500;color:var(--ink-500);
+  cursor:pointer;border-radius:4px;transition:color .12s}
+.btn-back:hover{color:var(--ink-900)}
+.btn-back:focus-visible{outline:none;box-shadow:var(--focus);color:var(--ink-900)}
+
 /* ---- Shared workflow pills (.wf-steps) ----
    One component for both multi-page workflows: the Investment Analysis steps
    and the Budget's Inputs / Budget / CSI Schedule. It lived in
@@ -671,7 +681,10 @@ th.sortable.sorted{color:var(--ink-900)}
 #helpToc a:hover{color:var(--green-700);border-left-color:var(--green-200);background:var(--green-50)}
 #helpToc a.on{color:var(--green-800);border-left-color:var(--green-700);font-weight:600}
 .help h3{font-size:15px;font-weight:700;color:var(--ink-950);margin-bottom:14px;scroll-margin-top:20px}
-.help h4{font-size:13px;font-weight:700;color:var(--ink-800);margin:26px 0 8px}
+.help h4{font-size:13px;font-weight:600;color:var(--ink-800);margin:26px 0 8px}
+/* Montserrat's 700 reads as very heavy at body size, so emphasis inside the
+   guide is semibold. Applies to the role tables and every other <b> in here. */
+.help b,.help strong{font-weight:600}
 .help p{color:var(--ink-700);margin-bottom:12px;max-width:70ch}
 .help ul,.help ol{margin:0 0 14px 20px;color:var(--ink-700)}
 .help li{margin-bottom:7px;max-width:68ch}
@@ -933,10 +946,9 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= INPUTS ================= -->
 <div class="page" id="page-input">
   <div class="page-title">
-    <div><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
+    <div><button class="btn-back" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Back</button><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="iStatusHost"></span>
-      <button class="btn btn-ghost" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Budgets</button>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save Draft</button>
       <button class="btn btn-primary" onclick="toBudget()">Continue to Budget →</button>
     </div>
@@ -1083,10 +1095,9 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= BUDGET ================= -->
 <div class="page" id="page-budget">
   <div class="page-title">
-    <div><h1 id="bTitle">Budget</h1><div class="sub" id="bSub"></div></div>
+    <div><button class="btn-back" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Back</button><h1 id="bTitle">Budget</h1><div class="sub" id="bSub"></div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="bStatusHost"></span>
-      <button class="btn btn-ghost" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Budgets</button>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
       <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
@@ -1185,11 +1196,10 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= CSI SCHEDULE ================= -->
 <div class="page" id="page-csi">
   <div class="page-title">
-    <div><h1>CSI Schedule of Values</h1>
+    <div><button class="btn-back" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Back</button><h1>CSI Schedule of Values</h1>
       <div class="sub" id="csiSub">The same budget, ordered as MasterFormat divisions — the form a lender, architect or GC expects.</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="cStatusHost"></span>
-      <button class="btn btn-ghost" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Budgets</button>
       <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
   </div>
@@ -1914,16 +1924,20 @@ th.sortable.sorted{color:var(--ink-900)}
       <button class="btn btn-dark" onclick="FSDashboard.refresh()">Refresh</button></div>
   </div>
   <div class="dash-kpis" id="dashKpis"></div>
-  <section class="card" style="margin-top:24px"><div class="card-hd"><span class="eyebrow">Activity — Last 30 Days</span></div>
-    <div class="card-bd"><div id="dashTrend"></div></div>
-  </section>
-  <section class="card" style="margin-top:24px"><div class="card-hd"><span class="eyebrow">Status Breakdown</span></div>
-    <div class="card-bd"><div class="dash-grid" id="dashBreakdowns"></div></div>
-  </section>
-  <section class="card" style="margin-top:24px"><div class="card-hd"><span class="eyebrow">Budgets By Value</span></div>
+  <!-- Two columns rather than a stack: the trend is wide, the status donuts
+       are square, and side by side they cost one screen instead of three. -->
+  <div class="dash-cols">
+    <section class="card"><div class="card-hd"><span class="eyebrow">Activity — Last 30 Days</span></div>
+      <div class="card-bd"><div id="dashTrend"></div></div>
+    </section>
+    <section class="card"><div class="card-hd"><span class="eyebrow">Status Breakdown</span></div>
+      <div class="card-bd"><div class="dash-grid" id="dashBreakdowns"></div></div>
+    </section>
+  </div>
+  <section class="card"><div class="card-hd"><span class="eyebrow">Budgets By Value</span></div>
     <div class="card-bd"><div id="dashValue"></div></div>
   </section>
-  <section class="card" style="margin-top:24px">
+  <section class="card">
     <div class="card-hd">
       <span class="eyebrow">Activity Log</span>
       <div class="dash-filters no-print">

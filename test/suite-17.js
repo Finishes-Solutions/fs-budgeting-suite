@@ -192,6 +192,33 @@ const BASE='http://127.0.0.1:8100';
  ok('the Budget page has a Back to Budgets control',
     await p.evaluate(()=>{const b=[...document.querySelectorAll('#page-budget button')]
       .find(x=>(x.getAttribute('aria-label')||'')==='Back to Budgets');return !!b;}));
+ ok('the Back control reads Back',
+    (await p.evaluate(()=>{const b=document.querySelector('#page-budget button[aria-label="Back to Budgets"]');
+      return b?b.textContent.replace(/[^A-Za-z]/g,''):'';}))==='Back',
+    await p.evaluate(()=>{const b=document.querySelector('#page-budget button[aria-label="Back to Budgets"]');
+      return b?b.textContent.trim():'none';}));
+ // It belongs with the title on the left, not among Save/Export on the right.
+ ok('Back sits on the left, above the page title',
+    await p.evaluate(()=>{
+      const t=document.querySelector('#page-budget .page-title');
+      const b=t.querySelector('button[aria-label="Back to Budgets"]');
+      const h=t.querySelector('h1');
+      if(!b||!h) return false;
+      const left=t.firstElementChild;
+      return left.contains(b)                                   // in the title group
+        && (b.compareDocumentPosition(h)&Node.DOCUMENT_POSITION_FOLLOWING)!==0  // before the heading
+        && b.getBoundingClientRect().left < h.getBoundingClientRect().right;
+    }),
+    await p.evaluate(()=>{
+      const t=document.querySelector('#page-budget .page-title');
+      const b=t.querySelector('button[aria-label="Back to Budgets"]');
+      const h=t.querySelector('h1');
+      return JSON.stringify({back:Math.round(b.getBoundingClientRect().left),
+                             title:Math.round(h.getBoundingClientRect().left),
+                             top:Math.round(b.getBoundingClientRect().top),
+                             titleTop:Math.round(h.getBoundingClientRect().top)});
+    }));
+
  await p.click('#page-budget button[aria-label="Back to Budgets"]'); await p.waitForTimeout(700);
  ok('Back goes to the Budgets list, not Home',
     await p.evaluate(()=>document.getElementById('page-budgets').classList.contains('on')
@@ -216,6 +243,20 @@ const BASE='http://127.0.0.1:8100';
     await p.evaluate(()=>document.getElementById('page-analysis').classList.contains('on')));
  ok('the analysis has a Back to Analyses control',
     await p.evaluate(()=>!!document.querySelector('#page-analysis button[aria-label="Back to Investment Analyses"]')));
+ ok('the analysis Back reads Back and sits left of the title',
+    await p.evaluate(()=>{
+      const t=document.querySelector('#page-analysis .page-title');
+      const b=t.querySelector('button[aria-label="Back to Investment Analyses"]');
+      const h=t.querySelector('h1');
+      if(!b||!h) return false;
+      return b.textContent.replace(/[^A-Za-z]/g,'')==='Back'
+        && t.firstElementChild.contains(b)
+        && b.getBoundingClientRect().top < h.getBoundingClientRect().top;
+    }),
+    await p.evaluate(()=>{
+      const b=document.querySelector('#page-analysis button[aria-label="Back to Investment Analyses"]');
+      return b?b.textContent.trim():'none';
+    }));
  const link=await p.evaluate(()=>{
    const a=document.querySelector('#page-analysis .inv-srclink');
    if(!a) return null;

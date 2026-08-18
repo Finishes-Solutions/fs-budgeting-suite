@@ -565,15 +565,15 @@
     const dollarExp = inp.expenses && inp.expenses.mode === 'annualDollar';
     host.innerHTML = `
       <div class="page-title">
-        <div><h1 id="invTitle">${esc(inp.analysisName)}</h1>
+        <div><button class="btn-back" onclick="FSInvestmentUI.backToList()"
+            aria-label="Back to Investment Analyses" title="Back to Investment Analyses">&larr; Back</button>
+          <h1 id="invTitle">${esc(inp.analysisName)}</h1>
           <div class="sub">${st.source
             ? 'From Budget ' + sourceBudgetLink(st.source.projectId)
               + ' <span class="inv-vsub">v' + esc(st.source.budgetVersionNumber) + '</span>'
             : 'Standalone Analysis'}</div></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
           <span id="invStatusHost"></span>
-          <button class="btn btn-ghost" onclick="FSInvestmentUI.backToList()"
-            aria-label="Back to Investment Analyses" title="Back to Investment Analyses">&larr; Analyses</button>
           <span class="inv-statebar" id="invState"></span>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>

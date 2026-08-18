@@ -121,6 +121,23 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     'points='+await p.evaluate(()=>document.querySelectorAll('#dashTrend svg circle').length));
  ok('the trend carries a legend',
     (await p.evaluate(()=>document.querySelectorAll('#dashTrend .dash-lg-row').length))>=3);
+ // The trend and the status donuts share a row rather than stacking, which is
+ // what keeps the page from running several screens tall.
+ ok('the trend and status breakdown sit side by side',
+    await p.evaluate(()=>{
+      const cols=document.querySelector('#page-dashboard .dash-cols');
+      if(!cols) return false;
+      const t=document.getElementById('dashTrend').closest('.card');
+      const b=document.getElementById('dashBreakdowns').closest('.card');
+      const rt=t.getBoundingClientRect(), rb=b.getBoundingClientRect();
+      return Math.abs(rt.top-rb.top)<40 && rb.left>rt.left;   // same row, breakdown to the right
+    }),
+    await p.evaluate(()=>{
+      const t=document.getElementById('dashTrend').closest('.card').getBoundingClientRect();
+      const b=document.getElementById('dashBreakdowns').closest('.card').getBoundingClientRect();
+      return JSON.stringify({trendTop:Math.round(t.top),breakdownTop:Math.round(b.top),
+                             trendLeft:Math.round(t.left),breakdownLeft:Math.round(b.left)});
+    }));
  ok('status breakdown renders donut charts',
     (await p.evaluate(()=>document.querySelectorAll('#dashBreakdowns svg.dash-donut').length))===2);
  ok('the donut centre shows the total and its slices sum to it',
