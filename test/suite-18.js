@@ -63,6 +63,18 @@ const BASE='http://127.0.0.1:8100';
  ok('Home shows Recent and Your Activity once there is work',
     (await sections()).includes('Recent') && (await sections()).includes('Your Activity'),
     JSON.stringify(await sections()));
+ // What you were doing outranks what is nagging you.
+ ok('Recent sits above Needs Attention',
+    await (async()=>{ const s=await sections();
+      return s.indexOf('Recent')>=0 && s.indexOf('Needs Attention')>=0
+        && s.indexOf('Recent')<s.indexOf('Needs Attention'); })(),
+    JSON.stringify(await sections()));
+ ok('the activity list carries no View All link',
+    await p.evaluate(()=>{
+      const secs=[...document.querySelectorAll('#page-home .hm-sec')];
+      const a=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Your Activity');
+      return !!a && !a.querySelector('.hm-link');
+    }));
 
  // ---------- 3. needs attention ----------
  ok('the attention queue appears', (await sections()).includes('Needs Attention'));

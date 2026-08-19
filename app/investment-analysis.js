@@ -82,7 +82,10 @@
   }
   const LV_GROUPS = {
     project: { of: r => r.projectId || 'Standalone' },
-    status: { of: r => window.normStatus ? normStatus(r.status) : (r.status || 'Draft') }
+    status: { of: r => window.normStatus ? normStatus(r.status) : (r.status || 'Draft') },
+    // Same placeholder wording the budgets list uses, so the two group headers
+    // read alike for records with no recorded creator.
+    user: { of: r => (r.createdByName || '').trim() || 'No User' }
   };
 
   async function renderListInto(host, opts) {
@@ -117,6 +120,7 @@
             <option value="">No Grouping</option>
             <option value="project">Group by Project</option>
             <option value="status">Group by Status</option>
+            <option value="user">Group by User</option>
           </select>
         </div>
         <div style="display:flex;gap:12px;align-items:center">
@@ -202,7 +206,10 @@
       const map = new Map();
       rows.forEach(r => { const k = g.of(r); if (!map.has(k)) map.set(k, []); map.get(k).push(r); });
       [...map.keys()].sort((a, z) => {
-        const pa = a === 'Standalone', pz = z === 'Standalone';   // placeholder group pinned last
+        // Placeholder groups (no linked project, no recorded creator) sort last
+        // rather than landing wherever the alphabet puts them.
+        const ph = v => v === 'Standalone' || v === 'No User';
+        const pa = ph(a), pz = ph(z);
         return pa !== pz ? (pa ? 1 : -1) : a.localeCompare(z, undefined, { numeric: true });
       }).forEach(k => {
         const tr = document.createElement('tr');

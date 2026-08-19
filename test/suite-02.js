@@ -160,9 +160,10 @@ const BASE = 'http://127.0.0.1:8100';
        && fmtDay('2026-01-05T00:00:00') === '01-05-2026'));
 
   // --- Group By
-  ok('Group By offers no-grouping, address, ID, type and status',
+  ok('Group By offers no-grouping, address, ID, type, status and user',
      (await p.locator('#budgetsGroup option').allTextContents()).join('|')
-       === 'No Grouping|Group by Address|Group by Project ID|Group by Type|Group by Status');
+       === 'No Grouping|Group by Address|Group by Project ID|Group by Type|Group by Status|Group by User',
+     (await p.locator('#budgetsGroup option').allTextContents()).join('|'));
   ok('The list is ungrouped by default',
      (await p.locator('#budgetsBody tr.grp-hd').count()) === 0);
 

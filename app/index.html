@@ -3281,6 +3281,7 @@ function budgetsListShell(p){
           <option value="id">Group by Project ID</option>
           <option value="type">Group by Type</option>
           <option value="status">Group by Status</option>
+          <option value="user">Group by User</option>
         </select>
       </div>
       <div style="display:flex;gap:12px;align-items:center">
@@ -3411,7 +3412,10 @@ const HOME_GROUPS={
             return m?({BD:'BD — Business Development',OP:'OP — Operations',
                        AS:'AS — Assessment',TST:'TST — Test'}[m[1]]||m[1]):'Other';}},
   type:   {label:'Type', of:x=>(x.type||'').trim()||'No Type'},
-  status: {label:'Status', of:x=>normStatus(x.status)}
+  status: {label:'Status', of:x=>normStatus(x.status)},
+  // Records saved before ownership tracking have no creator; they group under
+  // a placeholder that sorts last rather than pretending to be a person.
+  user:   {label:'User', of:x=>(x.createdByName||'').trim()||'No User'}
 };
 // "No Address" / "No Type" are placeholders for missing data, not real groups, so
 // they are pinned last rather than landing wherever the alphabet puts them.

@@ -44,6 +44,7 @@ module.exports = async function (context, req) {
 
   // ---- role management (super_admin only)
   if (String((req.query && req.query.scope) || '') === 'roles') {
+   try {
     if (!isSuperAdmin(req)) {
       context.res = jsonRes(403, { error: 'forbidden', message: 'Requires super_admin role.' });
       return;
@@ -72,7 +73,10 @@ module.exports = async function (context, req) {
     }
 
     if (req.method === 'PUT') {
-      const b = req.body || {};
+      // A body can arrive already parsed or still a string depending on how the
+      // host read the request; accept either rather than 400-ing on a shape.
+      let b = req.body || {};
+      if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } }
       const targetId = typeof b.userId === 'string' ? b.userId : '';
       if (!targetId) {
         context.res = jsonRes(400, { error: 'bad_request', message: 'userId is required.' });
@@ -83,13 +87,20 @@ module.exports = async function (context, req) {
           message: 'appRole must be one of: ' + VALID_ROLES.join(', ') });
         return;
       }
+      // One statement, and the count comes from the driver's own rowsAffected.
+      // The previous version ran `UPDATE ...; SELECT @@ROWCOUNT` and then read
+      // r.recordset[0] — when the batch yields no recordset that throws, and an
+      // exception here surfaces as a bare 500 with an empty body, which is
+      // exactly what the Admin page was reporting.
       const r = await pool.request()
         .input('uid', sql.NVarChar(128), targetId)
         .input('role', sql.NVarChar(50), b.appRole)
         .query(`UPDATE dbo.Users SET AppRole = @role, UpdatedAt = SYSUTCDATETIME()
-                WHERE UserId = @uid;
-                SELECT @@ROWCOUNT AS N;`);
-      if (!r.recordset[0].N) {
+                WHERE UserId = @uid;`);
+      const changed = Array.isArray(r.rowsAffected)
+        ? r.rowsAffected.reduce((a, n) => a + n, 0)
+        : Number(r.rowsAffected) || 0;
+      if (!changed) {
         context.res = jsonRes(404, { error: 'not_found', message: 'User not found.' });
         return;
       }
@@ -101,6 +112,13 @@ module.exports = async function (context, req) {
 
     context.res = jsonRes(405, { error: 'method_not_allowed' });
     return;
+   } catch (e) {
+    // An unhandled throw here reaches the client as an empty 500, which says
+    // nothing. Name the failure so the next report is actionable.
+    context.res = jsonRes(500, { error: 'role_update_failed',
+      message: 'Role management failed: ' + (e && e.message ? e.message : String(e)) });
+    return;
+   }
   }
 
   if (req.method === 'GET') {

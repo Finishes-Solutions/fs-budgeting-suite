@@ -394,6 +394,21 @@ function render() {
       }).join('') + '</div>');
   }
 
+  // ---- recent
+  var rec = recentItems(6);
+  if (rec.length) {
+    html += section('Recent', '<div class="hm-cards">' + rec.map(function (x) {
+      return itemCard(x.kind, x.rec, x.why + ' · ' + relTime(x.when));
+    }).join('') + '</div>');
+  } else if (!budgets.length && !analyses.length) {
+    html += section('Get Started',
+      `<div class="hm-empty">
+        <div class="hm-empty-big">No budgets yet</div>
+        <div>Create a budget to price a project, then underwrite it as an investment analysis.
+        Everything you open will show up here.</div>
+      </div>`);
+  }
+
   // ---- needs attention
   var att = attentionItems();
   if (att.length) {
@@ -410,21 +425,6 @@ function render() {
       att.length > 6 ? `<span class="hm-more">${att.length - 6} more</span>` : '');
   }
 
-  // ---- recent
-  var rec = recentItems(6);
-  if (rec.length) {
-    html += section('Recent', '<div class="hm-cards">' + rec.map(function (x) {
-      return itemCard(x.kind, x.rec, x.why + ' · ' + relTime(x.when));
-    }).join('') + '</div>');
-  } else if (!budgets.length && !analyses.length) {
-    html += section('Get Started',
-      `<div class="hm-empty">
-        <div class="hm-empty-big">No budgets yet</div>
-        <div>Create a budget to price a project, then underwrite it as an investment analysis.
-        Everything you open will show up here.</div>
-      </div>`);
-  }
-
   // ---- your activity
   var acts = events.slice(0, 8);
   if (acts.length) {
@@ -435,8 +435,7 @@ function render() {
         <span class="hm-log-what mono">${what}</span>
         <span class="hm-log-when">${esc(relTime(e.createdAt))}</span>
       </div>`;
-    }).join('') + '</div>',
-    '<button class="hm-link" onclick="go(\'budgets\')">All Budgets</button>');
+    }).join('') + '</div>');
   }
 
   host.innerHTML = html;

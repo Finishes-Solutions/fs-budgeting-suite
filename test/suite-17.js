@@ -108,6 +108,40 @@ const BASE='http://127.0.0.1:8100';
     (await p.locator('#bTitle').textContent()).includes('Cedar Yard'),
     await p.locator('#bTitle').textContent());
 
+ // ---------- 2b. Group by User on both lists ----------
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
+ ok('the budgets list offers Group by User',
+    (await p.locator('#budgetsGroup option').allTextContents()).includes('Group by User'),
+    (await p.locator('#budgetsGroup option').allTextContents()).join(','));
+ await p.selectOption('#budgetsGroup','user'); await p.waitForTimeout(500);
+ ok('grouping budgets by user builds a header per creator',
+    await p.evaluate(()=>{
+      const heads=[...document.querySelectorAll('#budgetsBody tr.grp-hd')].map(t=>t.textContent.trim());
+      return heads.length>=1;
+    }),
+    await p.evaluate(()=>[...document.querySelectorAll('#budgetsBody tr.grp-hd')]
+      .map(t=>t.textContent.replace(/\s+/g,' ').trim()).join('|')));
+ ok('grouping by user still shows every budget exactly once',
+    (await p.locator('#budgetsBody tr:not(.grp-hd)').count())>=2,
+    'rows='+await p.locator('#budgetsBody tr:not(.grp-hd)').count());
+ await p.selectOption('#budgetsGroup',''); await p.waitForTimeout(400);
+
+ await p.evaluate(()=>go('analyses')); await p.waitForTimeout(800);
+ ok('the analyses list offers Group by User',
+    await p.evaluate(()=>[...document.querySelectorAll('#page-analyses [data-inv-group] option')]
+      .map(o=>o.textContent.trim()).includes('Group by User')),
+    await p.evaluate(()=>[...document.querySelectorAll('#page-analyses [data-inv-group] option')]
+      .map(o=>o.textContent.trim()).join(',')));
+ await p.selectOption('#page-analyses [data-inv-group]','user'); await p.waitForTimeout(500);
+ ok('grouping analyses by user builds a header per creator',
+    (await p.locator('#page-analyses tr.inv-grp').count())>=1,
+    await p.evaluate(()=>[...document.querySelectorAll('#page-analyses tr.inv-grp')]
+      .map(t=>t.textContent.replace(/\s+/g,' ').trim()).join('|')));
+ await p.selectOption('#page-analyses [data-inv-group]',''); await p.waitForTimeout(400);
+ // Re-open the budget the pill checks below expect to be loaded.
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
+ await p.click('#budgetsBody tr:has-text("BD-8101") td:nth-child(2)'); await p.waitForTimeout(900);
+
  // ---------- 3. workflow pills ----------
  await p.click('#page-budget [data-wf-pills] a:has-text("Inputs")'); await p.waitForTimeout(600);
  ok('the Inputs page shows the workflow pills',
