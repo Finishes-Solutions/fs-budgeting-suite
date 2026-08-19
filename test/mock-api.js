@@ -18,7 +18,14 @@ const INV_D = require('../api/shared/investment/defaults');
 const crypto = require('crypto');
 // Per-user settings validation: the REAL contract module (dependency-free).
 const usc = require('../api/shared/user-settings-contract');
+// Same for feedback: the mock validates and words things through the module
+// the deployed endpoint uses, so a suite cannot pass against friendlier rules.
+const fbc = require('../api/shared/feedback');
 const mockUsers = new Map();   // userId -> profile + settings row
+const mockFeedback = [];       // dbo.Feedback stand-in, newest first
+let nextFeedbackId = 1;
+// Set by a suite to make the mailer look unconfigured or broken.
+let mockMailMode = 'sent';     // 'sent' | 'failed' | 'disabled'
 const mockActivity = [];       // newest first, like the timeline index
 const GUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // id -> {projectId, name, status, sourceBudgetVersionNumber, input, result,
@@ -312,6 +319,17 @@ http.createServer((req, res) => {
     });
   }
 
+  // Mock-only: lets a suite make mail look unconfigured or broken, which is
+  // the state the board must render honestly. No counterpart in the real API.
+  if (p === '/api/_mock/mail-mode') {
+    let b = ''; req.on('data', c => b += c);
+    return req.on('end', () => {
+      const m = (b || '').trim();
+      if (['sent', 'failed', 'disabled'].includes(m)) mockMailMode = m;
+      return json(res, 200, { mode: mockMailMode });
+    });
+  }
+
   // ---- per-user settings + activity (dbo.Users / dbo.UserActivity stand-in).
   // Validation is the REAL contract module, so drift is impossible.
   if (p === '/api/user-settings') {
@@ -341,6 +359,55 @@ http.createServer((req, res) => {
           if (!target) return json(res, 404, { error: 'not_found', message: 'User not found.' });
           target.appRole = body.appRole;
           return json(res, 200, { ok: true, userId: targetId, appRole: body.appRole });
+        });
+      }
+      return json(res, 405, { error: 'method_not_allowed' });
+    }
+    if (scope === 'feedback') {
+      const isAdmin = principal.clientPrincipal.userRoles.includes('super_admin');
+      if (req.method === 'POST') {
+        let rb = ''; req.on('data', c => rb += c);
+        return req.on('end', () => {
+          const parsed = fbc.sanitizeSubmission(rb);
+          if (!parsed.ok) return json(res, 400, { error: 'bad_request', message: parsed.message });
+          const mine = mockFeedback.filter(x => x.userId === uid
+            && (Date.now() - new Date(x.createdAt).getTime()) < 3600000);
+          if (mine.length >= 12)
+            return json(res, 429, { error: 'rate_limited', message: 'That is a lot of reports in one hour.' });
+          const u = mockUsers.get(uid) || {};
+          const row = Object.assign({}, parsed.report, {
+            feedbackId: nextFeedbackId++, userId: uid,
+            userName: u.displayName || u.userDetails || principal.clientPrincipal.userDetails,
+            userEmail: u.email || principal.clientPrincipal.userDetails,
+            status: 'New', adminNotes: null,
+            emailStatus: mockMailMode,
+            emailError: mockMailMode === 'sent' ? null : 'mock mail is ' + mockMailMode,
+            emailedAt: mockMailMode === 'sent' ? new Date().toISOString() : null,
+            createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+          });
+          // Built here so a suite can assert on exactly what would be sent.
+          row.emailSubject = fbc.subjectFor(row);
+          row.emailHtml = fbc.htmlFor(row);
+          mockFeedback.unshift(row);
+          mockActivity.unshift({ eventType: 'feedback_submit', entityType: 'feedback',
+            entityId: String(row.feedbackId), detail: { kind: row.kind, title: row.title },
+            userId: uid, createdAt: new Date().toISOString() });
+          return json(res, 201, { ok: true, feedbackId: row.feedbackId, emailStatus: row.emailStatus });
+        });
+      }
+      if (!isAdmin) return json(res, 403, { error: 'forbidden', message: 'Requires super_admin role.' });
+      if (req.method === 'GET') return json(res, 200, mockFeedback);
+      if (req.method === 'PUT') {
+        let rb = ''; req.on('data', c => rb += c);
+        return req.on('end', () => {
+          const parsed = fbc.sanitizeStatusUpdate(rb);
+          if (!parsed.ok) return json(res, 400, { error: 'bad_request', message: parsed.message });
+          const row = mockFeedback.find(x => x.feedbackId === parsed.update.feedbackId);
+          if (!row) return json(res, 404, { error: 'not_found', message: 'Report not found.' });
+          row.status = parsed.update.status;
+          if (parsed.update.notes !== undefined) row.adminNotes = parsed.update.notes || null;
+          row.updatedAt = new Date().toISOString();
+          return json(res, 200, { ok: true, feedbackId: row.feedbackId, status: row.status });
         });
       }
       return json(res, 405, { error: 'method_not_allowed' });

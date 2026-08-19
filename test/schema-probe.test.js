@@ -20,7 +20,8 @@ const col = (TableName, ColumnName) => ({ TableName, ColumnName });
 const MIGRATED = [
   col('Users', 'AppRole'), col('Users', 'SettingsDoc'),
   col('Budgets', 'CreatedById'), col('Budgets', 'CreatedByName'),
-  col('InvestmentAnalyses', 'CreatedById')
+  col('InvestmentAnalyses', 'CreatedById'),
+  col('Feedback', 'FeedbackId')
 ];
 
 // Every case starts from a clean cache, or one test's answer leaks into the next.
@@ -33,6 +34,16 @@ test('a migrated database reports every optional column present', async () => {
   assert.strictEqual(f.usersSettingsDoc, true);
   assert.strictEqual(f.budgetsCreatedBy, true);
   assert.strictEqual(f.analysesCreatedBy, true);
+  assert.strictEqual(f.feedbackTable, true);
+});
+
+test('a database without the feedback table reports it absent', async () => {
+  fresh();
+  // A whole table rather than a column, but the consequence is the same: the
+  // endpoint must say which script to run instead of failing the request.
+  const f = await schema.features(poolReturning(MIGRATED.filter(c => c.TableName !== 'Feedback')));
+  assert.strictEqual(f.feedbackTable, false);
+  assert.strictEqual(f.usersAppRole, true, 'the other features are unaffected');
 });
 
 test('a database without the roles migration reports those columns absent', async () => {
@@ -61,7 +72,7 @@ test('a failing probe degrades to all-absent rather than throwing', async () => 
   const f = await schema.features(poolThrowing(new Error('permission denied on sys.columns')));
   assert.deepStrictEqual(f, {
     usersAppRole: false, usersSettingsDoc: false,
-    budgetsCreatedBy: false, analysesCreatedBy: false
+    budgetsCreatedBy: false, analysesCreatedBy: false, feedbackTable: false
   });
 });
 

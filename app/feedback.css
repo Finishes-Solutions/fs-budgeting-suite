@@ -1,0 +1,76 @@
+/* Feedback: the bottom-left launcher, its dialog, and the Admin board.
+   Everything is prefixed fb- so it cannot reach into another surface. */
+
+/* ---- launcher ----
+   Bottom left, below every dialog (they sit at 50–80) and above the page.
+   Hidden while printing and while a dialog is open, so it never lands on top
+   of an export preview or a modal backdrop. */
+#fbFab{position:fixed;left:18px;bottom:18px;z-index:40;display:flex;align-items:center;gap:8px;
+  height:38px;padding:0 14px 0 11px;border-radius:19px;cursor:pointer;
+  background:var(--white);color:var(--ink-700);border:1px solid var(--ink-200);
+  box-shadow:0 2px 10px rgba(11,13,12,.10);font-family:var(--fb);font-size:12.5px;font-weight:600;
+  transition:border-color .12s,box-shadow .12s,transform .12s,color .12s}
+#fbFab:hover{color:var(--ink-950);border-color:var(--ink-300);transform:translateY(-1px);
+  box-shadow:0 4px 14px rgba(11,13,12,.14)}
+#fbFab:active{transform:translateY(0)}
+#fbFab:focus-visible{outline:none;box-shadow:var(--focus)}
+#fbFab svg{color:var(--green-700);flex:none}
+@media print{#fbFab{display:none!important}}
+/* On a phone the label costs more than it earns; the icon alone is clear. */
+@media (max-width:640px){
+  #fbFab{left:12px;bottom:12px;padding:0;width:38px;justify-content:center}
+  #fbFab .fb-fab-lab{display:none}
+}
+
+/* ---- dialog ---- */
+#fbModal .fb-kinds{display:flex;gap:8px;margin-bottom:14px}
+#fbModal .fb-kind-btn{flex:1;padding:9px 12px;border-radius:8px;cursor:pointer;
+  background:var(--white);border:1px solid var(--ink-200);color:var(--ink-600);
+  font-family:var(--fb);font-size:13px;font-weight:600;text-align:left;
+  transition:border-color .12s,background .12s,color .12s}
+#fbModal .fb-kind-btn .fb-kind-sub{display:block;font-weight:400;font-size:11.5px;color:var(--ink-400);margin-top:2px}
+#fbModal .fb-kind-btn:hover{border-color:var(--ink-300)}
+#fbModal .fb-kind-btn.on{border-color:var(--green-700);background:var(--green-50);color:var(--green-800)}
+#fbModal .fb-kind-btn:focus-visible{outline:none;box-shadow:var(--focus)}
+#fbModal textarea#fbBody{width:100%;min-height:118px;resize:vertical}
+#fbModal .fb-ctx{border:1px solid var(--ink-150);border-radius:8px;background:var(--ink-50);
+  padding:9px 12px;margin-top:4px}
+#fbModal .fb-ctx-row{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;
+  color:var(--ink-500);padding:2px 0}
+#fbModal .fb-ctx-row span:last-child{font-family:var(--fm);font-size:11px;color:var(--ink-700);
+  text-align:right;word-break:break-all}
+#fbModal .fb-note{font-size:11.5px;color:var(--ink-400);margin-top:6px}
+#fbModal .fb-error{display:none;margin-top:12px;padding:9px 12px;border-radius:8px;
+  background:#FDF2F2;border:1px solid #F3C9C9;color:#9B1C1C;font-size:12.5px}
+#fbModal .fb-fallback{display:none;margin-top:8px;font-size:12px;color:var(--ink-500)}
+#fbModal .fb-fallback button{background:none;border:none;padding:0;cursor:pointer;
+  font-family:var(--fb);font-size:12px;color:var(--green-700);text-decoration:underline}
+
+/* ---- admin board ---- */
+#page-admin .fb-tabs{display:flex;gap:6px;align-items:center}
+#page-admin .fb-tab{padding:6px 12px;border-radius:999px;cursor:pointer;background:none;
+  border:1px solid transparent;color:var(--ink-500);font-family:var(--fb);font-size:12.5px;font-weight:600}
+#page-admin .fb-tab:hover{color:var(--ink-900)}
+#page-admin .fb-tab.on{background:var(--ink-100);color:var(--ink-950)}
+#page-admin .fb-tab:focus-visible{outline:none;box-shadow:var(--focus)}
+#page-admin .fb-counts{font-size:12px;color:var(--ink-400);margin-left:8px}
+#page-admin .fb-kind{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:3px;padding:2px 6px;font-weight:500}
+#page-admin .fb-kind-bug{background:#FDECEC;color:#9B1C1C}
+#page-admin .fb-kind-feature{background:#EAF1FB;color:#2B579A}
+#page-admin .fb-open{background:none;border:none;padding:0;cursor:pointer;font-family:var(--fb);
+  font-size:13px;font-weight:600;color:var(--ink-900);text-align:left}
+#page-admin .fb-open:hover{text-decoration:underline}
+#page-admin .fb-sev{font-size:11px;color:var(--ink-500);border:1px solid var(--ink-200);
+  border-radius:999px;padding:1px 7px;margin-left:4px}
+#page-admin .fb-sev-blocking{color:#9B1C1C;border-color:#F3C9C9}
+#page-admin .fb-mail{font-size:11px;border-radius:999px;padding:1px 7px;margin-left:4px;
+  background:#FFF7E6;color:#8A6100;border:1px solid #F0DDB0}
+#page-admin .fb-det{padding:12px 22px 16px}
+#page-admin .fb-det-body{white-space:pre-wrap;font-size:13px;line-height:1.5;color:var(--ink-800);
+  margin-bottom:10px}
+#page-admin .fb-det-meta{width:100%;border-collapse:collapse;font-size:11.5px}
+#page-admin .fb-det-meta td{padding:4px 8px;border-bottom:1px solid var(--ink-100);vertical-align:top}
+#page-admin .fb-det-meta td:first-child{color:var(--ink-400);width:170px;white-space:nowrap}
+#page-admin .fb-det-meta td:last-child{font-family:var(--fm);color:var(--ink-700);word-break:break-all}
+#page-admin .fb-detail>td{background:var(--ink-50);padding:0}

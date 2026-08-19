@@ -34,7 +34,7 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
   await p.evaluate(() => go('help')); await p.waitForTimeout(300);
   ok('U4 hash set for help', p.url().endsWith('#/help'), p.url());
   ok('Help page visible', await p.locator('#page-help').isVisible());
-  ok('Help TOC has 12 entries', (await p.locator('#helpToc a').count()) === 12);
+  ok('Help TOC has 13 entries', (await p.locator('#helpToc a').count()) === 13);
   await p.screenshot({ path: OUT + '/help.png', fullPage: false });
 
   // New budget

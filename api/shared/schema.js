@@ -25,13 +25,15 @@ async function probe(pool) {
     `SELECT o.name AS TableName, c.name AS ColumnName
      FROM sys.columns AS c
      JOIN sys.objects AS o ON o.object_id = c.object_id
-     WHERE o.name IN ('Users', 'Budgets', 'InvestmentAnalyses')`);
+     WHERE o.name IN ('Users', 'Budgets', 'InvestmentAnalyses', 'Feedback')`);
   const has = new Set(r.recordset.map(x => x.TableName + '.' + x.ColumnName));
   return {
     usersAppRole:      has.has('Users.AppRole'),
     usersSettingsDoc:  has.has('Users.SettingsDoc'),
     budgetsCreatedBy:  has.has('Budgets.CreatedById') && has.has('Budgets.CreatedByName'),
-    analysesCreatedBy: has.has('InvestmentAnalyses.CreatedById')
+    analysesCreatedBy: has.has('InvestmentAnalyses.CreatedById'),
+    // A whole table rather than a column: any column of it proves it exists.
+    feedbackTable:     has.has('Feedback.FeedbackId')
   };
 }
 
@@ -46,7 +48,7 @@ async function features(pool) {
     .then(f => { cache = f; cachedAt = Date.now(); return f; })
     .catch(() => ({
       usersAppRole: false, usersSettingsDoc: false,
-      budgetsCreatedBy: false, analysesCreatedBy: false
+      budgetsCreatedBy: false, analysesCreatedBy: false, feedbackTable: false
     }))
     .finally(() => { inflight = null; });
   return inflight;

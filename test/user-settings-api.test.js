@@ -34,9 +34,14 @@ const stub = (rel, exports) => {
 };
 stub('../api/shared/db', { getPool: async () => poolStub, sql: sqlStub,
                            isTransient: () => false });
-stub('../api/shared/schema', { features: async () => ({
-  usersAppRole: true, usersSettingsDoc: true,
-  budgetsCreatedBy: true, analysesCreatedBy: true }) });
+let FEATURES = { usersAppRole: true, usersSettingsDoc: true,
+                 budgetsCreatedBy: true, analysesCreatedBy: true, feedbackTable: true };
+stub('../api/shared/schema', { features: async () => FEATURES });
+// The mailer is stubbed rather than exercised — test/feedback.test.js drives
+// the real one. Here it only has to report an outcome the handler must record.
+let MAIL = { ok: true };
+stub('../api/shared/mailer', { send: async (m) => { MAIL.last = m; return MAIL; },
+                               isConfigured: () => true });
 
 const handler = require('../api/user-settings');
 
@@ -111,4 +116,119 @@ test('an unauthenticated request is rejected before any query runs', async () =>
   const r = await call({ method: 'GET', query: { scope: 'roles' }, headers: {} });
   assert.strictEqual(r.status, 401);
   assert.strictEqual(queries.length, 0);
+});
+
+
+// ---------- feedback ----------
+
+const fbReq = (method, roles, body, uid) => ({
+  method, query: { scope: 'feedback' },
+  headers: { 'x-ms-client-principal': principalHeader(roles, uid) },
+  body
+});
+const goodReport = () => ({ kind: 'bug', title: 'Export does nothing',
+  body: 'I clicked Export and no PDF came.', severity: 'major',
+  context: { route: '#/budgets', environment: 'Staging', rows: [['Host', 'x.com']] } });
+
+// ensureUser is the real module talking to the fake pool; give it a row.
+const userRow = { UserId: 'admin-1', UserDetails: 'admin@finishessolutions.com',
+  DisplayName: 'Matthew', Email: 'matthews@finishessolutions.com', SettingsDoc: '{}',
+  LoginCount: 1, PrevLogins: 1 };
+
+test('anyone signed in can file a report, and it is stored before mail is tried', async () => {
+  queries.length = 0;
+  MAIL = { ok: true };
+  nextResult = { recordset: [Object.assign({ FeedbackId: 41, CreatedAt: new Date() }, userRow)],
+                 rowsAffected: [1] };
+  const r = await call(fbReq('POST', ['authenticated'], goodReport()));
+  assert.strictEqual(r.status, 201, JSON.stringify(r.body));
+  assert.strictEqual(r.body.feedbackId, 41);
+  assert.strictEqual(r.body.emailStatus, 'sent');
+
+  const ins = queries.findIndex(q => /INSERT INTO dbo\.Feedback/.test(q.q));
+  const upd = queries.findIndex(q => /UPDATE dbo\.Feedback SET EmailStatus/.test(q.q));
+  assert.ok(ins >= 0, 'the report was inserted');
+  assert.ok(upd > ins, 'delivery is recorded after the row exists, never before');
+  assert.strictEqual(queries[ins].inputs.kind, 'bug');
+  assert.strictEqual(queries[ins].inputs.route, '#/budgets');
+  assert.strictEqual(queries[upd].inputs.st, 'sent');
+  // The email carries the reporter so a reply reaches them, not the robot.
+  assert.match(MAIL.last.subject, /^\[FS Suite · Bug · major\] Export does nothing/);
+  assert.strictEqual(MAIL.last.replyTo, 'matthews@finishessolutions.com');
+});
+
+test('a mail failure is recorded on the row and does not fail the submission', async () => {
+  queries.length = 0;
+  MAIL = { ok: false, error: 'Graph sendMail failed (403): Access denied' };
+  nextResult = { recordset: [Object.assign({ FeedbackId: 42, CreatedAt: new Date() }, userRow)],
+                 rowsAffected: [1] };
+  const r = await call(fbReq('POST', ['authenticated'], goodReport()));
+  assert.strictEqual(r.status, 201);
+  assert.strictEqual(r.body.emailStatus, 'failed');
+  const upd = queries.find(q => /UPDATE dbo\.Feedback SET EmailStatus/.test(q.q));
+  assert.strictEqual(upd.inputs.st, 'failed');
+  assert.match(upd.inputs.err, /Access denied/);
+});
+
+test('unconfigured mail reads as disabled, which is not a failure', async () => {
+  MAIL = { ok: false, disabled: true, error: 'Mail is not configured: set GRAPH_TENANT_ID…' };
+  nextResult = { recordset: [Object.assign({ FeedbackId: 43, CreatedAt: new Date() }, userRow)],
+                 rowsAffected: [1] };
+  const r = await call(fbReq('POST', ['authenticated'], goodReport()));
+  assert.strictEqual(r.body.emailStatus, 'disabled');
+});
+
+test('an incomplete report is refused with wording the reporter can act on', async () => {
+  MAIL = { ok: true };
+  const r = await call(fbReq('POST', ['authenticated'], { kind: 'bug', title: 'x' }));
+  assert.strictEqual(r.status, 400);
+  assert.match(r.body.message, /short title/);
+});
+
+test('a flood of reports from one account is throttled', async () => {
+  queries.length = 0;
+  nextResult = { recordset: [{ N: 12 }], rowsAffected: [1] };
+  const r = await call(fbReq('POST', ['authenticated'], goodReport()));
+  assert.strictEqual(r.status, 429);
+  assert.ok(!queries.some(q => /INSERT INTO dbo\.Feedback/.test(q.q)), 'nothing was written');
+});
+
+test('the board is super_admin only', async () => {
+  const r = await call(fbReq('GET', ['authenticated']));
+  assert.strictEqual(r.status, 403);
+  const w = await call(fbReq('PUT', ['authenticated'], { feedbackId: 1, status: 'Done' }));
+  assert.strictEqual(w.status, 403);
+});
+
+test('a super_admin reads the board and sets a status', async () => {
+  nextResult = { recordset: [{ FeedbackId: 7, Kind: 'bug', Title: 'T', Body: 'B',
+    Severity: 'minor', UserName: 'A', UserEmail: 'a@b.com', PageRoute: '#/home',
+    Status: 'New', EmailStatus: 'sent', CreatedAt: new Date(), UpdatedAt: new Date() }],
+    rowsAffected: [1] };
+  const list = await call(fbReq('GET', ['super_admin']));
+  assert.strictEqual(list.status, 200);
+  assert.strictEqual(list.body[0].feedbackId, 7);
+  assert.strictEqual(list.body[0].status, 'New');
+
+  queries.length = 0;
+  nextResult = { recordset: [], rowsAffected: [1] };
+  const set = await call(fbReq('PUT', ['super_admin'], { feedbackId: 7, status: 'Triaged', notes: 'mine' }));
+  assert.strictEqual(set.status, 200);
+  const upd = queries.find(q => /SET Status = @st/.test(q.q));
+  assert.strictEqual(upd.inputs.st, 'Triaged');
+  assert.strictEqual(upd.inputs.notes, 'mine');
+});
+
+test('a status change for a report that is gone is a 404', async () => {
+  nextResult = { recordset: [], rowsAffected: [0] };
+  const r = await call(fbReq('PUT', ['super_admin'], { feedbackId: 999, status: 'Done' }));
+  assert.strictEqual(r.status, 404);
+});
+
+test('before the migration, feedback says what to run rather than failing', async () => {
+  FEATURES = Object.assign({}, FEATURES, { feedbackTable: false });
+  const r = await call(fbReq('POST', ['authenticated'], goodReport()));
+  assert.strictEqual(r.status, 503);
+  assert.match(r.body.message, /migrate_feedback\.sql/);
+  FEATURES = Object.assign({}, FEATURES, { feedbackTable: true });
 });

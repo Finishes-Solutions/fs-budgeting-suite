@@ -50,8 +50,10 @@ try{
 <script src="investment-analysis.js"></script>
 <link rel="stylesheet" href="dashboard.css">
 <link rel="stylesheet" href="home.css">
+<link rel="stylesheet" href="feedback.css">
 <script src="dashboard.js"></script>
 <script src="home.js"></script>
+<script src="feedback.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 :root{
@@ -410,11 +412,11 @@ main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 
 label.fld{display:block}
 label.fld .lab{display:block;margin-bottom:6px;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
-input[type=text],input[type=number],input[type=password],input[type=month],input[type=date],select{
+input[type=text],input[type=number],input[type=password],input[type=month],input[type=date],select,textarea{
   width:100%;padding:9px 12px;border:1px solid var(--ink-200);border-radius:var(--r);
   font-family:var(--fb);font-size:14px;color:var(--ink-900);background:var(--white);outline:none;
   transition:border-color .12s,box-shadow .12s}
-input:focus,select:focus{border-color:var(--green-600);box-shadow:var(--focus)}
+input:focus,select:focus,textarea:focus{border-color:var(--green-600);box-shadow:var(--focus)}
 input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .err{border-color:var(--danger)!important}
 .fld-err{font-size:11.5px;color:var(--danger);margin-top:4px}
@@ -1330,6 +1332,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <a href="#help-exports">Exports</a>
       <a href="#help-access">Who Can Do What</a>
       <a href="#help-faq">Troubleshooting</a>
+      <a href="#help-report">Reporting a Problem</a>
     </nav>
 
     <div class="help">
@@ -1889,6 +1892,17 @@ th.sortable.sorted{color:var(--ink-900)}
               if that warning was dismissed, the work is gone. While the budget is still open,
               <b>Cmd/Ctrl+Z</b> steps back up to ten changes.</td></tr>
         </tbody></table>
+
+        <h3 id="help-report">Reporting a Problem</h3>
+        <p>The <b>Report a Bug</b> button sits in the bottom-left corner of every page. It takes a bug report
+          or a feature request, and it sends the diagnostics with it — which page you were on, which pricing
+          library and engine you were running, your browser and screen size — so nobody has to ask you what
+          version you were on. You can see exactly what will be sent before you press Send. Nothing from your
+          budgets or analyses is included.</p>
+        <p>Reports go to Matthew. They are stored the moment you send them, so a mail problem cannot lose one;
+          if the app cannot reach the server at all, the dialog offers to hand the same report to your email
+          client instead. For a bug, say what you did, what happened, and what you expected — those three
+          lines are usually enough to reproduce it.</p>
       </div></section>
 
     </div>
@@ -1946,14 +1960,29 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= ADMIN (super_admin only) ================= -->
 <div class="page" id="page-admin">
   <div class="page-title">
-    <div><h1>User Management</h1>
-      <div class="sub">Assign application roles to control what each user can see and do.</div></div>
-    <div><button class="btn btn-dark" id="adminRefreshBtn" onclick="loadAdminUsers()">Refresh</button></div>
+    <div><h1 id="adminHeading">User Management</h1>
+      <div class="sub" id="adminSub">Assign application roles to control what each user can see and do.</div></div>
+    <div><button class="btn btn-dark" id="adminRefreshBtn" onclick="refreshAdmin()">Refresh</button></div>
   </div>
-  <section class="card"><div class="card-bd">
+  <div class="fb-tabs" style="margin-bottom:14px">
+    <button class="fb-tab on" id="adminTab-users" onclick="showAdminTab('users')">Users</button>
+    <button class="fb-tab" id="adminTab-feedback" onclick="showAdminTab('feedback')">Feedback</button>
+    <span class="fb-counts" id="fbCounts"></span>
+  </div>
+  <section class="card" id="adminUsersPane"><div class="card-bd">
     <table class="tbl" id="adminTable"><thead><tr>
       <th style="padding-left:22px">User</th><th>Email</th><th>Role</th><th>Last Seen</th><th>Logins</th><th class="no-print"></th>
     </tr></thead><tbody id="adminBody"></tbody></table>
+  </div></section>
+  <section class="card" id="adminFeedbackPane" style="display:none"><div class="card-bd">
+    <div class="fb-tabs" style="padding:12px 22px 0">
+      <button class="fb-tab on" id="fbFilter-open" onclick="FSFeedback.setFilter('open')">Open</button>
+      <button class="fb-tab" id="fbFilter-closed" onclick="FSFeedback.setFilter('closed')">Closed</button>
+      <button class="fb-tab" id="fbFilter-all" onclick="FSFeedback.setFilter('all')">All</button>
+    </div>
+    <table class="tbl" id="fbBoardTable"><thead><tr>
+      <th style="padding-left:22px">Type</th><th>Report</th><th>From</th><th>Received</th><th>Status</th><th class="no-print"></th>
+    </tr></thead><tbody id="fbBoardBody"></tbody></table>
   </div></section>
 </div>
 
@@ -2275,6 +2304,61 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <div id="printDoc" aria-hidden="true"></div>
 
+<!-- ================= FEEDBACK =================
+     A bug button parked in the bottom-left corner on every page, and the
+     dialog it opens. The report is stored in dbo.Feedback and emailed to
+     matthews@finishessolutions.com from automation@finishessolutions.com;
+     the store is the record, the email is a notification. Shown only to a
+     signed-in account (see renderProfile). -->
+<button id="fbFab" style="display:none" onclick="FSFeedback.show('bug')"
+  aria-label="Report a bug or request a feature" title="Report a bug or request a feature">
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M8 6a4 4 0 0 1 8 0"/><rect x="7" y="7" width="10" height="12" rx="5"/>
+    <path d="M7 11H3M21 11h-4M7 16H4M20 16h-3M9.5 5 8 3M14.5 5 16 3"/>
+  </svg>
+  <span class="fb-fab-lab">Report a Bug</span>
+</button>
+
+<div id="fbModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:70;align-items:center;justify-content:center;padding:20px 14px"
+  onclick="if(event.target===this)FSFeedback.close()">
+  <div class="card mod-sheet" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column"
+    role="dialog" aria-modal="true" aria-labelledby="fbHeading">
+    <div class="card-hd"><h2 class="mod-title" id="fbHeading">Report a Bug</h2>
+      <button class="btn-x" onclick="FSFeedback.close()" aria-label="Close feedback">×</button></div>
+    <div class="card-bd" style="overflow:auto">
+      <div class="fb-kinds">
+        <button class="fb-kind-btn on" id="fbKindBug" aria-pressed="true" onclick="FSFeedback.setKind('bug')">
+          Something is broken<span class="fb-kind-sub">A bug report</span></button>
+        <button class="fb-kind-btn" id="fbKindFeature" aria-pressed="false" onclick="FSFeedback.setKind('feature')">
+          Something is missing<span class="fb-kind-sub">A feature request</span></button>
+      </div>
+      <label class="set-lab" for="fbTitle">Short title</label>
+      <input type="text" id="fbTitle" maxlength="200" placeholder="Export does nothing on the budget page">
+      <label class="set-lab" for="fbBody" id="fbBodyLab">What happened, and what did you expect?</label>
+      <textarea id="fbBody" maxlength="8000"></textarea>
+      <div id="fbSevRow">
+        <label class="set-lab" for="fbSev">How badly is it hurting?</label>
+        <select id="fbSev">
+          <option value="minor">Minor — an annoyance, there is a way around it</option>
+          <option value="major">Major — it is costing me real time</option>
+          <option value="blocking">Blocking — I cannot do the work at all</option>
+        </select>
+      </div>
+      <label class="set-lab">Sent with your report</label>
+      <div class="fb-ctx" id="fbCtx"></div>
+      <div class="fb-note">Goes to matthews@finishessolutions.com. Nothing from your budgets is included.</div>
+      <div class="fb-error" id="fbError"></div>
+      <div class="fb-fallback" id="fbFallback">Could not reach the server.
+        <button onclick="FSFeedback.mailFallback()">Send it as an email instead</button></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;padding:14px 22px;border-top:1px solid var(--ink-150)">
+      <button class="btn btn-ghost" onclick="FSFeedback.close()">Cancel</button>
+      <button class="btn btn-primary" id="fbSend" onclick="FSFeedback.submit()">Send Report</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2509,6 +2593,30 @@ async function changeAdminRole(sel){
   }catch(e){toast('Could not update role — '+e.message);loadAdminUsers();}
 }
 
+/* ---- Admin: which board is showing ----
+   Two surfaces under one page: who can see what, and what people are telling
+   us. Both are super_admin only, and both load on demand rather than on every
+   visit to the page. */
+let adminTab='users';
+function showAdminTab(t){
+  adminTab=(t==='feedback')?'feedback':'users';
+  const fb=adminTab==='feedback';
+  document.getElementById('adminUsersPane').style.display=fb?'none':'';
+  document.getElementById('adminFeedbackPane').style.display=fb?'':'none';
+  document.getElementById('adminTab-users').classList.toggle('on',!fb);
+  document.getElementById('adminTab-feedback').classList.toggle('on',fb);
+  document.getElementById('adminHeading').textContent=fb?'Feedback':'User Management';
+  document.getElementById('adminSub').textContent=fb
+    ?'Bug reports and feature requests sent from the app, newest first.'
+    :'Assign application roles to control what each user can see and do.';
+  document.getElementById('fbCounts').style.display=fb?'':'none';
+  if(fb&&window.FSFeedback)FSFeedback.loadBoard();
+}
+function refreshAdmin(){
+  if(adminTab==='feedback'&&window.FSFeedback)FSFeedback.loadBoard();
+  else loadAdminUsers();
+}
+
 /* ---- created-by avatar (initials circle with user's avatar color) ---- */
 const DEFAULT_AVATAR_BG='var(--green-700)';
 function creatorAvatar(name,avatarColor){
@@ -2704,6 +2812,19 @@ async function initAuth(){
             document.getElementById('printDoc').innerHTML='';},600);
         }});
     }
+  }
+  // The bug button is for people who are signed in: a report with no account
+  // behind it cannot be answered, and the endpoint would refuse it anyway.
+  if(window.FSFeedback){
+    FSFeedback.init({
+      api:api, esc:esc, toast:toast,
+      fmtWhen:v=>fmtWhen(new Date(v)),
+      versionRows:versionInfoRows,
+      currentRoute:()=>location.hash||('#/'+currentPage),
+      mailTo:'matthews@finishessolutions.com'
+    });
+    const fab=document.getElementById('fbFab');
+    if(fab&&principal)fab.style.display='';
   }
   if(window.FSHome)FSHome.init({
     esc:esc, usd:usd, fmtDay:fmtDay,
@@ -3229,7 +3350,7 @@ function go(p){
   if(p==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
   if(p==='pricing'){renderPricing();renderCatalog();}
   if(p==='dashboard'&&window.FSDashboard)FSDashboard.render();
-  if(p==='admin')loadAdminUsers();
+  if(p==='admin')refreshAdmin();
   if(p==='version')renderVersionPage();
   if(p==='budget'||p==='input'||p==='csi')recalc();
   window.scrollTo(0,0);
@@ -5779,7 +5900,8 @@ function wireDelegates(){
     c.addEventListener('change',()=>rememberExportOptions('budget',sel())));
   mountBudgetsList('budgets','budgetsHost');
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();closeNewBudget();closeStatusMenu();return;}
+    if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();closeNewBudget();closeStatusMenu();
+      if(window.FSFeedback)FSFeedback.close();return;}
     // Cmd/Ctrl+K opens the global search palette from anywhere in the app.
     if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();palToggle();return;}
     // Cmd/Ctrl+S saves rather than letting the browser offer to save the page.
@@ -5920,8 +6042,11 @@ const BOOT_STAGES=[
   [120000,'Taking longer than usual. Hang on — the app will load whatever it can, and the red banner will say if the server is actually unreachable.']
 ];
 let bootTimers=[];
-function renderVersionPage(){
-  var el=document.getElementById('versionContent');if(!el)return;
+/* The environment diagnostics, as label/value pairs. Shared: the Version page
+   paints them, and a bug report carries them, so what a reporter sends is
+   exactly what the page would have shown them. Values are HTML-escaped here;
+   feedback.js unescapes for storage and email. */
+function versionInfoRows(){
   var renderer=window.__exportRenderer||'engine';
   var invConst=window.FSInvestmentUI?'before-tax-1.1.0':'--';
   var pv=pricing?pricing.version:'--';
@@ -5929,7 +6054,7 @@ function renderVersionPage(){
   var ua=navigator.userAgent;
   var host=location.hostname;
   var proto=location.protocol;
-  var rows=[
+  return [
     ['Application','Finishes Solutions Budgeting Suite'],
     ['Environment',host.includes('staging')?'Staging':host.includes('localhost')||host.includes('127.')?'Local Development':'Production'],
     ['Host',esc(host)],
@@ -5947,6 +6072,11 @@ function renderVersionPage(){
     ['User Agent',esc(ua)],
     ['Page Loaded',new Date().toLocaleString()]
   ];
+}
+
+function renderVersionPage(){
+  var el=document.getElementById('versionContent');if(!el)return;
+  var rows=versionInfoRows();
   var html='<div style="background:var(--white);border:1px solid var(--ink-200);border-radius:10px;padding:18px 20px;margin-top:18px;position:relative">'
     +'<button onclick="copyVersionInfo()" title="Copy to Clipboard" style="position:absolute;top:14px;right:14px;background:none;border:1px solid var(--ink-200);border-radius:6px;padding:6px 8px;cursor:pointer;color:var(--ink-500);display:flex;align-items:center;gap:5px;font-size:11px;transition:background .15s,color .15s" onmouseover="this.style.background=\'var(--ink-50)\';this.style.color=\'var(--ink-800)\'" onmouseout="this.style.background=\'none\';this.style.color=\'var(--ink-500)\'">'
     +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>'
