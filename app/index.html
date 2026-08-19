@@ -2709,6 +2709,10 @@ async function initAuth(){
     esc:esc, usd:usd, fmtDay:fmtDay,
     api:api,
     openBudget:openBudget,
+    // Pins live in the account settings document; chooseSetting stores the
+    // value and queues the same debounced save every preference uses.
+    settings:usSettings,
+    setSetting:(k,v)=>chooseSetting(k,v),
     currentPage:()=>currentPage,
     userId:()=>(principal&&principal.userId)||'anon',
     // Same precedence the avatar uses: the Settings display name wins,

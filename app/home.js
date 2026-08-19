@@ -11,13 +11,14 @@
 // so recency is personal (what YOU touched) rather than global (what anyone
 // touched), which is the thing the two index pages structurally cannot show.
 //
-// PINS ARE BROWSER-LOCAL, ON PURPOSE FOR NOW. The settings document is a
-// strict whitelist (api/shared/user-settings-contract.js) that silently drops
-// unknown keys, so storing pins per account needs one entry added there — an
-// API change that was explicitly out of scope for this pass. Until then pins
-// live in localStorage under the signed-in user id, so two people sharing a
-// machine do not see each other's. Moving them to the account later is a
-// straight swap of pinsRead/pinsWrite; nothing else here changes.
+// PINS LIVE ON THE ACCOUNT, in the settings document's `pinned` key
+// (api/shared/user-settings-contract.js validates and caps it), so they follow
+// the user to any signed-in browser rather than being stranded in one. Writes
+// go through the same debounced settings save every other preference uses.
+//
+// Pins made before that existed were kept in localStorage; adoptLocalPins()
+// below lifts them onto the account once and then clears the local copy, so
+// nobody loses the pins they had already set.
 (function () {
 'use strict';
 
@@ -29,6 +30,7 @@ var loaded = false;
 var loading = false;
 var loadError = null;
 var greeting = null;         // picked once per page load so repaints do not reshuffle
+var adopted = false;         // legacy localStorage pins are lifted once per load
 
 function esc(s) { return A.esc ? A.esc(String(s)) : String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function usd(n) { return A.usd ? A.usd(n) : '$' + Math.round(n || 0).toLocaleString('en-US'); }
@@ -36,23 +38,49 @@ function fmtDay(d) { return A.fmtDay ? A.fmtDay(d) : String(d || '').slice(0, 10
 
 /* ================= pins ================= */
 
-function pinKey() {
+// The pre-account storage key, read once by adoptLocalPins() and then removed.
+function legacyPinKey() {
   var uid = (A.userId && A.userId()) || 'anon';
   return 'fs-home-pins-v1:' + uid;
 }
+function emptyPins() { return { budget: [], analysis: [] }; }
+function normalisePins(v) {
+  if (!v || typeof v !== 'object') return emptyPins();
+  var take = function (a) {
+    return Array.isArray(a)
+      ? a.filter(function (x) { return typeof x === 'string' && x; }).slice(0, 50)
+      : [];
+  };
+  return { budget: take(v.budget), analysis: take(v.analysis) };
+}
 function pinsRead() {
-  try {
-    var raw = localStorage.getItem(pinKey());
-    var v = raw ? JSON.parse(raw) : null;
-    if (!v || typeof v !== 'object') return { budget: [], analysis: [] };
-    return {
-      budget: Array.isArray(v.budget) ? v.budget.filter(function (x) { return typeof x === 'string'; }).slice(0, 50) : [],
-      analysis: Array.isArray(v.analysis) ? v.analysis.filter(function (x) { return typeof x === 'string'; }).slice(0, 50) : []
-    };
-  } catch (e) { return { budget: [], analysis: [] }; }
+  var s = (A.settings && A.settings()) || {};
+  return normalisePins(s.pinned);
 }
 function pinsWrite(p) {
-  try { localStorage.setItem(pinKey(), JSON.stringify(p)); } catch (e) { /* private mode: pins just do not persist */ }
+  // setSetting stores it and queues the same debounced save every other
+  // preference uses; the contract sanitises it again server-side.
+  if (A.setSetting) A.setSetting('pinned', normalisePins(p));
+}
+
+/* One-time lift of pins made while they were browser-local. Runs only when the
+   account has none, so it can never overwrite pins set on another machine. */
+function adoptLocalPins() {
+  var key;
+  try { key = legacyPinKey(); } catch (e) { return; }
+  var local;
+  try {
+    var raw = localStorage.getItem(key);
+    if (!raw) return;
+    local = normalisePins(JSON.parse(raw));
+  } catch (e) { return; }
+  if (!local.budget.length && !local.analysis.length) {
+    try { localStorage.removeItem(key); } catch (e) {}
+    return;
+  }
+  var acct = pinsRead();
+  if (!acct.budget.length && !acct.analysis.length) pinsWrite(local);
+  try { localStorage.removeItem(key); } catch (e) {}
 }
 function isPinned(kind, id) {
   var p = pinsRead();
@@ -196,6 +224,7 @@ async function load() {
     analyses = results[1] || [];
   }
   events = (results[2] && results[2].events) || [];
+  if (!adopted) { adopted = true; adoptLocalPins(); }
   loading = false; loaded = true;
 }
 
@@ -472,6 +501,7 @@ window.FSHome = {
   // exposed for the suites
   _attention: function () { return attentionItems(); },
   _recent: function (n) { return recentItems(n || 6); },
+  _pins: function () { return pinsRead(); },
   _greetingPools: GREET
 };
 })();

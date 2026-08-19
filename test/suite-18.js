@@ -171,10 +171,29 @@ const BASE='http://127.0.0.1:8100';
       return !!s && /Analysis/.test(s.textContent);
     }));
 
- // ---------- 8. pins are scoped to the account ----------
- ok('pins are stored under the signed-in account',
-    await p.evaluate(()=>Object.keys(localStorage).some(k=>/^fs-home-pins-v1:/.test(k))),
+ // ---------- 8. pins live on the account, not in the browser ----------
+ await p.waitForTimeout(1200);            // the settings save is debounced
+ const svrPins=await p.evaluate(async()=>{
+   const r=await fetch('/api/user-settings');
+   const j=await r.json();
+   return (j.settings&&j.settings.pinned)||null;
+ });
+ ok('the pin is written to the account settings document',
+    !!svrPins && Array.isArray(svrPins.analysis) && svrPins.analysis.length===1,
+    JSON.stringify(svrPins));
+ ok('nothing pin-shaped is left behind in localStorage',
+    await p.evaluate(()=>!Object.keys(localStorage).some(k=>/fs-home-pins/.test(k))),
     await p.evaluate(()=>Object.keys(localStorage).filter(k=>/fs-home-pins/.test(k)).join(',')));
+ // A different browser is the same account: wipe every local trace and reload.
+ await p.evaluate(()=>localStorage.clear());
+ await p.reload({waitUntil:'networkidle'});
+ await p.waitForTimeout(1400);
+ ok('the pin survives a browser with no local state',
+    await p.evaluate(()=>FSHome.isPinned('analysis',
+      ((FSHome._pins&&FSHome._pins().analysis)||[])[0]||'')),
+    JSON.stringify(await p.evaluate(()=>FSHome._pins&&FSHome._pins())));
+ ok('the Pinned section renders from the account settings',
+    (await sections()).includes('Pinned'), JSON.stringify(await sections()));
 
  // ---------- 9. greetings vary ----------
  ok('there are many greetings to draw from',
