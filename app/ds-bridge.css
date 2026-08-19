@@ -1,0 +1,62 @@
+/* Design system alias shim
+   ==================================================================
+   Points this app's short token names at the vendored design system
+   tokens (vendor/ds/dist/variables.css), one alias at a time.
+
+   Loaded AFTER the inline <style> on purpose. The design system files
+   load before it so the app wins on colliding token names; this file
+   is the opposite direction — it is the only place allowed to restate
+   an app token, and it must therefore come after to take effect. It
+   still loads BEFORE theme-ramp.css, which keeps the last word.
+
+   The :root selector is deliberate. The dark theme, the accent themes
+   and the ramp pack all hang off html[data-theme=…] / [data-accent=…] /
+   [data-skin=…], which outrank :root regardless of source order, so
+   nothing here can leak into a themed value. Verified: --sh still
+   resolves to the dark shadow under data-theme=dark, and the ramp pack
+   keeps its own --r/--rm/--sh/--fb under data-skin=ramp.
+
+   RULE FOR THIS FILE: an alias lands only when the design system token
+   holds byte-equivalent output to the value it replaces. Anything that
+   would move a pixel stays on its literal with a TODO naming the gap.
+   ================================================================== */
+:root{
+  /* Safe: same family, same order. --font-body/--font-mono each append
+     extra fallbacks (-apple-system; 'SF Mono', Menlo) *after* the entries
+     the app already lists. Montserrat / IBM Plex Mono still win, and the
+     appended names are ones system-ui and ui-monospace already resolve to
+     on the platforms that have them. Rendered output is unchanged.
+     The ramp pack overrides --fb with Inter under its own scope; that is
+     untouched. */
+  --fb: var(--font-body);
+  --fm: var(--font-mono);
+
+  /* TODO(ds): --radius-md is 6px; this app's --r is 4px across 22 uses.
+     Aliasing it as originally specced would round every 4px corner in the
+     app. The design system token that actually matches is --radius-sm.
+     Switch to var(--radius-sm) once someone confirms 4px is intended —
+     that swap is value-identical. Note --rm (6px) already equals
+     --radius-md, so the pair maps cleanly as --r→sm, --rm→md. */
+  --r: 4px;
+
+  /* TODO(ds): no design system shadow matches. This app's --sh is
+       0 1px 2px rgba(11,13,12,.06), 0 1px 3px rgba(11,13,12,.08)
+     and --shadow-sm is
+       0 1px 3px rgba(11,13,12,.08), 0 1px 2px rgba(11,13,12,.04)
+     — the layers are in the opposite order and the 1px-2px layer drops
+     from .06 to .04 alpha. (--shadow-xs is exactly this app's first
+     layer, so the app's --sh reads as "xs plus sm's first layer".)
+     Needs a design decision, not a rename. */
+  --sh: 0 1px 2px rgba(11,13,12,.06),0 1px 3px rgba(11,13,12,.08);
+
+  /* TODO(ds): --fs-accent is NOT a free name — theme-ramp.css already
+     owns it as the Editorial pack's lime accent (#dff200, plus -hover,
+     -active, -soft, -line), used by 8 rules under html[data-skin=ramp].
+     Defining it here as var(--brand) would be safe today (the pack's
+     scoping outranks :root) but it would mean one name carrying two
+     unrelated meanings depending on skin, which is how theme bugs start.
+     Left undefined. If the intent was "the app's brand green", --brand
+     already resolves through var(--green-700) and tracks the active
+     accent — use that directly, or pick a name the ramp pack does not
+     claim. */
+}

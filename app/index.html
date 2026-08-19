@@ -50,6 +50,15 @@ try{
 <!-- legacy-render.js is the frozen pre-cutover renderer set, the fallback
      behind the FS_EXPORT_RENDERER setting ('local'). -->
 <script src="legacy-render.js"></script>
+<!-- Design system tokens, vendored from the finishes-solutions-design bundle.
+     These load FIRST, ahead of all five app stylesheets and the inline <style>,
+     so that where a token name collides (--green-*, --ink-*, --white) the app's
+     own :root block is the later rule and keeps winning. The design system is
+     the floor here, not the override. Only variables.css and fonts.css are
+     vendored; base.css / styles.css carry element resets that would break this
+     app. theme-ramp.css still loads last and is untouched. -->
+<link rel="stylesheet" href="vendor/ds/dist/variables.css">
+<link rel="stylesheet" href="vendor/ds/dist/fonts.css">
 <!-- The investment-analysis workflow is an external no-build module (IIFE) so
      the inline script stays the budget application. index.html contributes only
      the nav button, page containers, routes, and the adapter passed to init. -->
@@ -885,6 +894,11 @@ th.sortable.sorted{color:var(--ink-900)}
     margin-top:20px;padding-top:6px;font-size:7.5pt;color:var(--ink-500)}
 }
 </style>
+<!-- Alias shim: maps this app's token names onto the design system tokens.
+     Sits after the inline <style> so the aliases take effect, and before
+     theme-ramp.css so the pack keeps the last word. See the file header for
+     the aliases held back on literals. -->
+<link rel="stylesheet" href="ds-bridge.css">
 <!-- Theme packs: alternate visual presentations offered to super_admin accounts.
      Every rule in the file is scoped to html[data-skin=...], so with no pack
      selected nothing in it applies. Loaded last on purpose — it is meant to sit
