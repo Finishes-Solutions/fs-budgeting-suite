@@ -283,31 +283,64 @@ const BASE='http://127.0.0.1:8100';
    const s=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Pinned');
    const c=s&&s.querySelector('.hm-card');
    if(!c) return null;
-   const pin=c.querySelector('.hm-pin');
-   const top=c.querySelector('.hm-card-top').getBoundingClientRect();
+   const wrap=c.closest('.hm-card-wrap');
+   const pin=wrap&&wrap.querySelector('.hm-pin');
+   const card=c.getBoundingClientRect();
+   const id=c.querySelector('.hm-id').getBoundingClientRect();
    return {when:c.querySelector('.hm-when').textContent.trim(),
-           hasPin:!!pin, label:pin?pin.getAttribute('aria-label'):'',
+           hasPin:!!pin, tag:pin?pin.tagName:'', label:pin?pin.getAttribute('aria-label'):'',
            svg:!!(pin&&pin.querySelector('svg')),
-           pinRight:pin?Math.round(top.right-pin.getBoundingClientRect().right):-1,
-           overlaps:!!(pin&&pin.getBoundingClientRect().left
-             < c.querySelector('.hm-id').getBoundingClientRect().right)};
+           nested:!!(pin&&pin.closest('.hm-card')),
+           fromRight:pin?Math.round(card.right-pin.getBoundingClientRect().right):-1,
+           fromTop:pin?Math.round(pin.getBoundingClientRect().top-card.top):-1,
+           overlaps:!!(pin&&pin.getBoundingClientRect().left<id.right)};
  });
  const pc=await pinCard();
  ok('a pinned card carries a pin icon', !!pc && pc.hasPin && pc.svg, JSON.stringify(pc));
- ok('the pin icon is labelled for screen readers', !!pc && pc.label==='Pinned to Home',
-    pc?pc.label:'none');
- ok('the pin sits at the top right of the card', !!pc && pc.pinRight===0 && !pc.overlaps,
+ ok('the pin is a real button, not a button inside a button',
+    !!pc && pc.tag==='BUTTON' && !pc.nested, JSON.stringify(pc&&{tag:pc.tag,nested:pc.nested}));
+ ok('the pin says what clicking it does',
+    !!pc && /^Unpin .+ from Home$/.test(pc.label||''), pc?pc.label:'none');
+ ok('the pin sits in the top right corner and clears the record id',
+    !!pc && pc.fromRight>=4 && pc.fromRight<=14 && pc.fromTop>=4 && pc.fromTop<=14 && !pc.overlaps,
     JSON.stringify(pc));
  ok('the pinned card shows its real update time, not the word Pinned',
     !!pc && /^Updated · \S/.test(pc.when) && !/Pinned/.test(pc.when), pc?pc.when:'none');
  ok('no card anywhere puts Pinned where the timestamp goes',
     await p.evaluate(()=>[...document.querySelectorAll('#page-home .hm-when')]
       .every(w=>!/^Pinned$/.test(w.textContent.trim()))));
+ // Clicking the pin is the way back out: it unpins, says so, and the section
+ // goes with it — while the record itself stays exactly where it was.
+ const recentBefore=await p.locator('#page-home .hm-card').count();
+ await p.locator('#page-home .hm-sec .hm-pin').first().click();
+ await p.waitForTimeout(700);
+ ok('clicking the pin unpins the record',
+    !(await sections()).includes('Pinned'), JSON.stringify(await sections()));
+ ok('and says so', /Unpinned/i.test(await p.locator('#toast').textContent()),
+    await p.locator('#toast').textContent());
+ ok('unpinning does not delete anything — the record is still in Recent',
+    (await p.locator('#page-home .hm-card').count())===recentBefore-1
+    && /Riverside|Analysis/.test(await p.locator('#page-home').textContent()),
+    (await p.locator('#page-home .hm-card').count())+' cards, was '+recentBefore);
+ ok('the unpin reached the account, not just this browser',
+    await p.evaluate(async()=>{
+      await new Promise(r=>setTimeout(r,900));    // the settings save is debounced
+      const j=await (await fetch('/api/user-settings')).json();
+      const pin=(j.settings&&j.settings.pinned)||{budget:[],analysis:[]};
+      return pin.budget.length===0 && pin.analysis.length===0;
+    }),
+    JSON.stringify(await p.evaluate(()=>FSHome._pins())));
+ // put it back for the checks that follow
+ await p.evaluate(()=>{
+   const a=(FSHome._recent(6)||[]).filter(x=>x.kind==='analysis')[0];
+   if(a)FSHome.togglePin('analysis',a.rec.analysisId);
+ });
+ await p.waitForTimeout(800);
  ok('the same record pinned and recent is marked in both places',
     await p.evaluate(()=>{
-      const ids=[...document.querySelectorAll('#page-home .hm-card')]
-        .filter(c=>c.querySelector('.hm-pin')).length;
-      return ids>=1;
+      // the pin is a sibling of the card, inside the same wrapper
+      return [...document.querySelectorAll('#page-home .hm-card-wrap')]
+        .filter(w=>w.querySelector('.hm-pin')).length>=1;
     }));
 
  // ---------- 12. narrow screens ----------
@@ -323,9 +356,9 @@ const BASE='http://127.0.0.1:8100';
     await p.evaluate(()=>{
       const secs=[...document.querySelectorAll('#page-home .hm-sec')];
       const s=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Pinned');
-      const c=s&&s.querySelector('.hm-card');
-      return !!c && !!c.querySelector('.hm-pin')
-        && /^Updated · \S/.test(c.querySelector('.hm-when').textContent.trim());
+      const w=s&&s.querySelector('.hm-card-wrap');
+      return !!w && !!w.querySelector('.hm-pin')
+        && /^Updated · \S/.test(w.querySelector('.hm-when').textContent.trim());
     }));
  await p.setViewportSize({width:1400,height:1000});
  await p.waitForTimeout(300);

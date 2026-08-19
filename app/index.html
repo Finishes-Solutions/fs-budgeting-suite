@@ -1894,15 +1894,15 @@ th.sortable.sorted{color:var(--ink-900)}
         </tbody></table>
 
         <h3 id="help-report">Reporting a Problem</h3>
-        <p>The <b>Report a Bug</b> button sits in the bottom-left corner of every page. It takes a bug report
-          or a feature request, and it sends the diagnostics with it — which page you were on, which pricing
-          library and engine you were running, your browser and screen size — so nobody has to ask you what
-          version you were on. You can see exactly what will be sent before you press Send. Nothing from your
-          budgets or analyses is included.</p>
-        <p>Reports go to Matthew. They are stored the moment you send them, so a mail problem cannot lose one;
-          if the app cannot reach the server at all, the dialog offers to hand the same report to your email
-          client instead. For a bug, say what you did, what happened, and what you expected — those three
-          lines are usually enough to reproduce it.</p>
+        <p>The <b>Report a Bug</b> button sits in the bottom-left corner of every page. Pick whether
+          something is broken or something is missing, and your email app opens with a message to Matthew
+          already written: the subject filled in, and the details underneath — which page you were on, which
+          pricing library and engine you were running, your browser and screen size. You describe it in your
+          own words and press send. You can see exactly what will be attached before you pick. Nothing from
+          your budgets or analyses is included.</p>
+        <p>For a bug, say what you did, what happened, and what you expected — those three lines are usually
+          enough to reproduce it. If your machine will not open a mail app, <b>Copy Details</b> puts the same
+          message on your clipboard to paste anywhere.</p>
       </div></section>
 
     </div>
@@ -2327,34 +2327,42 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="card-hd"><h2 class="mod-title" id="fbHeading">Report a Bug</h2>
       <button class="btn-x" onclick="FSFeedback.close()" aria-label="Close feedback">×</button></div>
     <div class="card-bd" style="overflow:auto">
+      <!-- The two kind buttons serve both modes: with in-app delivery
+           configured they switch the form below; without it, picking one hands
+           the report straight to the user's mail client. -->
       <div class="fb-kinds">
-        <button class="fb-kind-btn on" id="fbKindBug" aria-pressed="true" onclick="FSFeedback.setKind('bug')">
+        <button class="fb-kind-btn on" id="fbKindBug" aria-pressed="true" onclick="FSFeedback.pick('bug')">
           Something is broken<span class="fb-kind-sub">A bug report</span></button>
-        <button class="fb-kind-btn" id="fbKindFeature" aria-pressed="false" onclick="FSFeedback.setKind('feature')">
+        <button class="fb-kind-btn" id="fbKindFeature" aria-pressed="false" onclick="FSFeedback.pick('feature')">
           Something is missing<span class="fb-kind-sub">A feature request</span></button>
       </div>
-      <label class="set-lab" for="fbTitle">Short title</label>
-      <input type="text" id="fbTitle" maxlength="200" placeholder="Export does nothing on the budget page">
-      <label class="set-lab" for="fbBody" id="fbBodyLab">What happened, and what did you expect?</label>
-      <textarea id="fbBody" maxlength="8000"></textarea>
-      <div id="fbSevRow">
-        <label class="set-lab" for="fbSev">How badly is it hurting?</label>
-        <select id="fbSev">
-          <option value="minor">Minor — an annoyance, there is a way around it</option>
-          <option value="major">Major — it is costing me real time</option>
-          <option value="blocking">Blocking — I cannot do the work at all</option>
-        </select>
+      <div id="fbForm">
+        <label class="set-lab" for="fbTitle">Short title</label>
+        <input type="text" id="fbTitle" maxlength="200" placeholder="Export does nothing on the budget page">
+        <label class="set-lab" for="fbBody" id="fbBodyLab">What happened, and what did you expect?</label>
+        <textarea id="fbBody" maxlength="8000"></textarea>
+        <div id="fbSevRow">
+          <label class="set-lab" for="fbSev">How badly is it hurting?</label>
+          <select id="fbSev">
+            <option value="minor">Minor — an annoyance, there is a way around it</option>
+            <option value="major">Major — it is costing me real time</option>
+            <option value="blocking">Blocking — I cannot do the work at all</option>
+          </select>
+        </div>
       </div>
       <label class="set-lab">Sent with your report</label>
       <div class="fb-ctx" id="fbCtx"></div>
-      <div class="fb-note">Goes to matthews@finishessolutions.com. Nothing from your budgets is included.</div>
+      <div class="fb-note" id="fbNote"></div>
       <div class="fb-error" id="fbError"></div>
       <div class="fb-fallback" id="fbFallback">Could not reach the server.
         <button onclick="FSFeedback.mailFallback()">Send it as an email instead</button></div>
     </div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;padding:14px 22px;border-top:1px solid var(--ink-150)">
-      <button class="btn btn-ghost" onclick="FSFeedback.close()">Cancel</button>
-      <button class="btn btn-primary" id="fbSend" onclick="FSFeedback.submit()">Send Report</button>
+    <div style="display:flex;justify-content:space-between;gap:8px;padding:14px 22px;border-top:1px solid var(--ink-150)">
+      <button class="btn btn-ghost" id="fbCopy" onclick="FSFeedback.copyDetails()">Copy Details</button>
+      <span style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="FSFeedback.close()">Cancel</button>
+        <button class="btn btn-primary" id="fbSend" onclick="FSFeedback.submit()">Send Report</button>
+      </span>
     </div>
   </div>
 </div>
@@ -2429,7 +2437,8 @@ async function loadUserSettings(){
   try{
     const r=await api('user-settings?boot=1');
     US={settings:r.settings,profile:{displayName:r.displayName||'',email:r.email||'',phone:r.phone||''},
-        userDetails:r.userDetails||'',loginCount:r.loginCount,appRole:r.appRole||'user'};
+        userDetails:r.userDetails||'',loginCount:r.loginCount,appRole:r.appRole||'user',
+        features:r.features||{}};
     applyUserSettings();
     if(US.appRole==='super_admin'||US.appRole==='director'){
       document.getElementById('nav-admin').style.display=(US.appRole==='super_admin')?'':'none';
@@ -2821,6 +2830,11 @@ async function initAuth(){
       fmtWhen:v=>fmtWhen(new Date(v)),
       versionRows:versionInfoRows,
       currentRoute:()=>location.hash||('#/'+currentPage),
+      pageLabel:()=>PAGE_LABEL[currentPage]||currentPage,
+      userName:()=>(US.profile&&US.profile.displayName)||(principal?principalName(principal):''),
+      // Told by the server on the settings call: with no mail configured the
+      // button hands the report to the user's own mail client instead.
+      features:()=>US.features||{},
       mailTo:'matthews@finishessolutions.com'
     });
     const fab=document.getElementById('fbFab');
@@ -2828,7 +2842,7 @@ async function initAuth(){
   }
   if(window.FSHome)FSHome.init({
     esc:esc, usd:usd, fmtDay:fmtDay,
-    api:api,
+    api:api, toast:toast,
     openBudget:openBudget,
     // Pins live in the account settings document; chooseSetting stores the
     // value and queues the same debounced save every preference uses.
@@ -3308,6 +3322,12 @@ function editReason(it){
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
 const PAGE_SLUG={home:'home',budgets:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+/* Human names for the pages, for anything a person reads: today the subject
+   line of a feedback email, which is more use as "Project Budgets" than as
+   "budgets". */
+const PAGE_LABEL={home:'Home',budgets:'Project Budgets',input:'Budget Inputs',budget:'Budget Detail',
+  csi:'CSI Schedule',analyses:'Investment Analysis',analysis:'Investment Analysis Editor',
+  pricing:'Pricing Library',help:'How to Use',dashboard:'Analytics',admin:'Admin',version:'Version'};
 const SLUG_PAGE={home:'home',budgets:'budgets',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
 const DOC_PAGES=['input','budget','csi'];
 

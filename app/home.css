@@ -26,7 +26,10 @@
    a 232px card from overflowing a narrower container. */
 #page-home .hm-cards{display:grid;
   grid-template-columns:repeat(auto-fill,minmax(min(232px,100%),1fr));gap:12px}
-#page-home .hm-card{display:flex;flex-direction:column;gap:10px;text-align:left;
+/* The card and its pin are siblings, not nested buttons. The wrapper is the
+   grid item, so the card still stretches to the row height. */
+#page-home .hm-card-wrap{position:relative;display:flex;min-width:0}
+#page-home .hm-card{flex:1;display:flex;flex-direction:column;gap:10px;text-align:left;
   background:var(--white);border:1px solid var(--ink-150);border-radius:var(--rm);
   box-shadow:var(--sh);padding:13px 15px;cursor:pointer;font-family:var(--fb);
   min-width:0;overflow:hidden;
@@ -41,10 +44,20 @@
 #page-home .hm-kind-analysis{background:#EAF1FB;color:#2B579A}
 #page-home .hm-id{font-size:11.5px;color:var(--ink-400);min-width:0;flex:0 1 auto;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* The pin sits in the header row rather than absolutely over the card, so it
-   reserves its own space and cannot land on the id or a long title. */
-#page-home .hm-pin{margin-left:auto;flex:none;display:inline-flex;align-items:center;
-  padding:1px 0 1px 8px;color:var(--green-700);line-height:0}
+/* The pin: a real button over the card's top-right corner. The header row
+   reserves the space it occupies (below), so it never lands on the id or a
+   title however long they run. */
+#page-home .hm-pin{position:absolute;top:9px;right:9px;z-index:1;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;padding:0;border:1px solid transparent;border-radius:6px;
+  background:none;cursor:pointer;color:var(--green-700);line-height:0;
+  transition:background .12s,border-color .12s,color .12s}
+#page-home .hm-pin:hover{background:var(--ink-100);border-color:var(--ink-200);color:var(--ink-700)}
+#page-home .hm-pin:active{background:var(--ink-150)}
+#page-home .hm-pin:focus-visible{outline:none;box-shadow:var(--focus)}
+/* Only the pinned card needs the gap, so an unpinned one keeps its full width
+   for the record id. */
+#page-home .hm-card-wrap.is-pinned .hm-card-top{padding-right:26px}
 #page-home .hm-card-name{font-size:13.5px;font-weight:600;color:var(--ink-900);line-height:1.35;
   min-height:2.7em;overflow-wrap:anywhere;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}

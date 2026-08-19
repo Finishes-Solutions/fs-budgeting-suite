@@ -40,8 +40,9 @@ stub('../api/shared/schema', { features: async () => FEATURES });
 // The mailer is stubbed rather than exercised — test/feedback.test.js drives
 // the real one. Here it only has to report an outcome the handler must record.
 let MAIL = { ok: true };
+let MAIL_CONFIGURED = true;
 stub('../api/shared/mailer', { send: async (m) => { MAIL.last = m; return MAIL; },
-                               isConfigured: () => true });
+                               isConfigured: () => MAIL_CONFIGURED });
 
 const handler = require('../api/user-settings');
 
@@ -230,5 +231,22 @@ test('before the migration, feedback says what to run rather than failing', asyn
   const r = await call(fbReq('POST', ['authenticated'], goodReport()));
   assert.strictEqual(r.status, 503);
   assert.match(r.body.message, /migrate_feedback\.sql/);
+  FEATURES = Object.assign({}, FEATURES, { feedbackTable: true });
+});
+
+test('the settings call tells the app what the server can do', async () => {
+  nextResult = { recordset: [userRow], rowsAffected: [1] };
+  const r = await call({ method: 'GET', query: {},
+    headers: { 'x-ms-client-principal': principalHeader(['authenticated']) } });
+  assert.strictEqual(r.status, 200);
+  // The feedback button reads these to choose between filing a report here and
+  // handing one to the user's mail client, so they have to be on this call —
+  // there is no second request to fall back on.
+  assert.deepStrictEqual(r.body.features, { feedbackStore: true, feedbackMail: true });
+
+  FEATURES = Object.assign({}, FEATURES, { feedbackTable: false });
+  const r2 = await call({ method: 'GET', query: {},
+    headers: { 'x-ms-client-principal': principalHeader(['authenticated']) } });
+  assert.strictEqual(r2.body.features.feedbackStore, false);
   FEATURES = Object.assign({}, FEATURES, { feedbackTable: true });
 });

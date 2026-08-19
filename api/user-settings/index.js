@@ -284,7 +284,14 @@ module.exports = async function (context, req) {
     const loggedIn = boot && (row.PrevLogins === null || row.PrevLogins === undefined
       || row.LoginCount > row.PrevLogins);
     if (loggedIn) await U.recordActivity(pool, principal, 'login', null, null, null);
-    context.res = jsonRes(200, U.userResponse(row));
+    // What the server can actually do, answered on the call the app already
+    // makes rather than in a probe of its own. The feedback button reads this
+    // to decide between filing a report here and handing one to the user's
+    // mail client, so finishing the Azure setup switches it over on its own.
+    const f = await features(pool);
+    context.res = jsonRes(200, Object.assign(U.userResponse(row), {
+      features: { feedbackStore: !!f.feedbackTable, feedbackMail: mailer.isConfigured() }
+    }));
     return;
   }
 

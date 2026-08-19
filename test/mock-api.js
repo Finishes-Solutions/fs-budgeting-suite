@@ -25,7 +25,9 @@ const mockUsers = new Map();   // userId -> profile + settings row
 const mockFeedback = [];       // dbo.Feedback stand-in, newest first
 let nextFeedbackId = 1;
 // Set by a suite to make the mailer look unconfigured or broken.
-let mockMailMode = 'sent';     // 'sent' | 'failed' | 'disabled'
+// Default 'disabled' because that is production today: the row is stored, the
+// email is not sent, and the button hands reports to the user's mail client.
+let mockMailMode = 'disabled'; // 'sent' | 'failed' | 'disabled'
 const mockActivity = [];       // newest first, like the timeline index
 const GUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // id -> {projectId, name, status, sourceBudgetVersionNumber, input, result,
@@ -422,7 +424,10 @@ http.createServer((req, res) => {
     const resp = () => json(res, 200, {
       userDetails: u.userDetails, displayName: u.displayName, email: u.email, phone: u.phone,
       appRole: u.appRole || 'user', settings: usc.sanitizeSettings(u.settings),
-      firstSeenAt: u.firstSeenAt, lastSeenAt: u.lastSeenAt, loginCount: u.loginCount });
+      firstSeenAt: u.firstSeenAt, lastSeenAt: u.lastSeenAt, loginCount: u.loginCount,
+      // The real API answers the same two capabilities here; mockMailMode
+      // stands in for whether the Graph app registration has been set up.
+      features: { feedbackStore: true, feedbackMail: mockMailMode === 'sent' } });
     if (req.method === 'GET') {
       const q = new URL(req.url, 'http://x').searchParams;
       if (/^(1|true)$/i.test(String(q.get('boot') || ''))) {

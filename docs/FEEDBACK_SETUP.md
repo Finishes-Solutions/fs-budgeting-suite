@@ -1,31 +1,62 @@
 # In-App Feedback — how it works, and the Azure setup email needs
 
-The bug button in the bottom-left corner of every page opens a short form: a
-bug report or a feature request, plus the diagnostics the app already knows
-about itself. What happens next is deliberately in two halves.
+The bug button in the bottom-left corner of every page takes a bug report or a
+feature request, along with the diagnostics the app already knows about itself.
+How that report leaves the app depends on whether the server can send mail yet.
 
-**The database is the record. The email is a notification.** A report is
-written to `dbo.Feedback` first; only then is the email attempted. If mail is
-misconfigured, if Graph is down, if the app registration expires — the report
-is still safe, still on the Admin board, and the row says exactly what went
-wrong in `EmailStatus` / `EmailError`. Nobody's bug report can be lost by a
-mail problem, and the person who filed it is told the truth either way ("sent
-to Matthew" vs "saved — email delivery is not switched on yet").
+## Two modes, and what switches between them
 
-If the API itself cannot be reached, the dialog offers the same report as a
-prefilled `mailto:` draft. There is no path where a user types a report and
-has nowhere to put it.
+The server tells the app whether it can send mail — `features.feedbackMail`,
+answered on the `/api/user-settings` call the app already makes at start-up —
+and the button behaves accordingly. **Finishing the Azure setup below switches
+it over on its own: no code change, no deploy.**
+
+**Mail mode — the default, and what is running today.** Pick *Something is
+broken* or *Something is missing* and the machine's own mail client opens with
+the subject written, the recipient set, and every diagnostic already in the
+body. The user describes it in their own words and presses send. Nothing is
+stored, because nothing reached us — the email is the report. A *Copy Details*
+button covers the locked-down desktops where `mailto:` does nothing at all.
+
+**App mode — once the five settings below exist.** The report is typed in the
+dialog, stored in `dbo.Feedback`, and emailed from the automation mailbox.
+
+In app mode: **the database is the record, the email is a notification.** The
+row is written first; only then is the email attempted. If Graph is down or the
+client secret expires, the report is still safe, still on the Admin board, and
+the row says what went wrong in `EmailStatus` / `EmailError`. The person who
+filed it is told the truth either way ("sent to Matthew" vs "saved — email
+delivery is not switched on yet"). If the API itself cannot be reached, the
+dialog falls back to the same `mailto:` draft, keeping the words they already
+typed.
+
+There is no path where a user types a report and has nowhere to put it.
+
+## What the auto-filled email contains
+
+Subject, written for you and still editable:
+
+```
+[FS Suite · Bug] Project Budgets — Matthew Sturm
+```
+
+Body: a prompt to describe it, then a marked block of details — type, page
+(named and as a route), environment, host, pricing and engine versions,
+pricing source, screen size, signed-in account, roles, browser, and the time.
+Deliberately not the whole Version table: several mail clients truncate a long
+`mailto:`, and a draft that arrives cut in half is worse than one that never
+had the last four lines. The whole URL stays under ~1,000 characters.
 
 ## What ships without any Azure work
 
-- The button, the dialog, and the automatic diagnostics.
+- The button, the kind picker, and the auto-filled email.
 - Storage in `dbo.Feedback` (after the migration below).
 - The **Feedback** tab on the Admin page: open/closed/all views, one-click
   triage (New → Triaged → In Progress → Done / Declined), and an expandable
-  detail panel with everything the report carries.
+  detail panel with everything a report carries.
 - Honest delivery state on every row.
 
-Email is the only part that needs Azure configuration.
+Email *from the app itself* is the only part that needs Azure configuration.
 
 ## Step 1 — run the migration (required)
 
@@ -89,8 +120,9 @@ than one person should get them.
 
 ## Checking it
 
-File a test report from the app, then open **Admin → Feedback**. The row shows
-its delivery state:
+Once the settings are saved, reload the app: the bug button stops opening your
+mail client and starts taking the report in-app. File a test report, then open
+**Admin → Feedback**. The row shows its delivery state:
 
 - **(no badge)** — emailed. It is in the inbox.
 - **Email off** — `isConfigured()` is false: one of the five settings is
@@ -108,12 +140,13 @@ automation mailbox.
 
 ## What is in a report
 
-Everything on the Version page, collected automatically and shown to the user
-before they send — environment, host, export renderer, investment engine,
-input schema, pricing library version and source, auth provider, API runtime,
-database, signed-in account and roles, user agent — plus the route they were
-on, their viewport, and what they typed. No budget or analysis data is
-included, and the dialog says so.
+In app mode, everything on the Version page — environment, host, export
+renderer, investment engine, input schema, pricing library version and source,
+auth provider, API runtime, database, signed-in account and roles, user agent —
+plus the route, the viewport, and what the reporter typed. In mail mode, the
+shorter block listed above, for the URL-length reason. Both are collected
+automatically and shown to the user before anything leaves the page. No budget
+or analysis data is included, and the dialog says so.
 
 ## Limits
 
@@ -126,9 +159,9 @@ included, and the dialog says so.
 
 | Piece | File |
 |---|---|
-| Button, dialog, Admin board | `app/feedback.js`, `app/feedback.css` |
+| Button, dialog, mail draft, Admin board | `app/feedback.js`, `app/feedback.css` |
 | Markup and wiring | `app/index.html` (`#fbFab`, `#fbModal`, `#page-admin`) |
-| Endpoint | `api/user-settings/index.js` (`?scope=feedback`) |
+| Endpoint and the capability flags | `api/user-settings/index.js` (`?scope=feedback`; `features` on GET) |
 | Validation and email wording | `api/shared/feedback.js` (shared with the mock) |
 | Graph transport | `api/shared/mailer.js` |
 | Table | `sql/migrate_feedback.sql` |

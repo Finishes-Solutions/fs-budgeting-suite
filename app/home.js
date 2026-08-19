@@ -86,6 +86,16 @@ function isPinned(kind, id) {
   var p = pinsRead();
   return (p[kind] || []).indexOf(String(id)) !== -1;
 }
+/* The pin on a Home card. Only ever unpins — the icon is only there because
+   the record is pinned — so it says so plainly rather than toggling something
+   the user cannot see the other half of. */
+function unpin(kind, id) {
+  if (!isPinned(kind, id)) return false;
+  togglePin(kind, id);
+  if (A.toast) A.toast('Unpinned from Home.');
+  return true;
+}
+
 // Returns the new state so the caller can word its own toast.
 function togglePin(kind, id) {
   if (kind !== 'budget' && kind !== 'analysis') return false;
@@ -363,11 +373,12 @@ function openAttr(kind, rec) {
   return kind === 'budget' ? `FSHome.openBudget('${esc(id)}')` : `FSHome.openAnalysis('${esc(id)}')`;
 }
 
-/* A pinned record is marked with a filled pin at the top right of the card.
-   It is a marker, not a control: the whole card is a <button>, and a nested
-   <button> is invalid HTML that does not reliably receive clicks. Pinning and
-   unpinning stay in the row menus on the Budgets and Investment Analysis
-   pages, which is where they already were. */
+/* A pinned record is marked with a filled pin at the top right of the card,
+   and clicking it unpins. It cannot live inside the card: the card is a
+   <button> and a nested <button> is invalid HTML that does not reliably
+   receive clicks. So the card and the pin are siblings inside a positioned
+   wrapper — two real buttons, each with its own label — and the header row
+   reserves space on the right so the pin never lands on the id or a title. */
 var PIN_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false">'
   + '<path fill="currentColor" d="M16 9V4h1a1 1 0 0 0 0-2H7a1 1 0 0 0 0 2h1v5c0 1.66-1.34 3-3 3v2h5.97v7'
   + 'l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/></svg>';
@@ -382,24 +393,28 @@ function itemCard(kind, rec, meta, pinned) {
     ? usd(rec.projectCost || rec.contractSum || 0)
     : usd(rec.purchasePrice || 0);
   var moneyLab = kind === 'budget' ? 'Total Project' : 'Purchase Price';
+  var safeId = String(id).replace(/'/g, '');
   var pin = pinned
-    ? `<span class="hm-pin" role="img" aria-label="Pinned to Home" title="Pinned to Home">${PIN_SVG}</span>`
+    ? `<button class="hm-pin" onclick="FSHome.unpin('${kind}','${esc(safeId)}')"
+         aria-label="Unpin ${esc(recordName(kind, rec))} from Home"
+         title="Unpin from Home">${PIN_SVG}</button>`
     : '';
-  return `<button class="hm-card" onclick="${openAttr(kind, rec)}">
-    <div class="hm-card-hd">
-      <div class="hm-card-top">
-        <span class="hm-kind hm-kind-${kind}">${kind === 'budget' ? 'Budget' : 'Analysis'}</span>
-        <span class="hm-id mono">${esc(kind === 'budget' ? id : (rec.projectId || 'Standalone'))}</span>
-        ${pin}
+  return `<div class="hm-card-wrap${pinned ? ' is-pinned' : ''}">
+    <button class="hm-card" onclick="${openAttr(kind, rec)}">
+      <div class="hm-card-hd">
+        <div class="hm-card-top">
+          <span class="hm-kind hm-kind-${kind}">${kind === 'budget' ? 'Budget' : 'Analysis'}</span>
+          <span class="hm-id mono">${esc(kind === 'budget' ? id : (rec.projectId || 'Standalone'))}</span>
+        </div>
+        <div class="hm-card-name">${esc(recordName(kind, rec))}</div>
       </div>
-      <div class="hm-card-name">${esc(recordName(kind, rec))}</div>
-    </div>
-    <div class="hm-card-sum">
-      <div class="hm-card-money"><span class="k">${moneyLab}</span><span class="v mono">${money}</span></div>
-      <div class="hm-card-ft">${statusChipStatic(rec.status)}
-        <span class="hm-when">${esc(meta || '')}</span></div>
-    </div>
-  </button>`;
+      <div class="hm-card-sum">
+        <div class="hm-card-money"><span class="k">${moneyLab}</span><span class="v mono">${money}</span></div>
+        <div class="hm-card-ft">${statusChipStatic(rec.status)}
+          <span class="hm-when">${esc(meta || '')}</span></div>
+      </div>
+    </button>${pin}
+  </div>`;
 }
 
 function section(title, body, action) {
@@ -524,6 +539,7 @@ window.FSHome = {
   render: render,
   invalidate: invalidate,
   togglePin: togglePin,
+  unpin: unpin,
   isPinned: isPinned,
   openBudget: function (id) { if (A.openBudget) A.openBudget(id); },
   openAnalysis: function (id) {

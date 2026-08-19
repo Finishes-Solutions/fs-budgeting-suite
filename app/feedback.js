@@ -4,18 +4,29 @@
    One small module rather than more of index.html, and one place where both
    halves live: what a user sends, and what an admin reads.
 
-   A report goes to POST /api/user-settings?scope=feedback. The row is written
-   before any email is attempted, so a mail outage costs nothing. If the POST
-   itself fails — offline, or the migration has not been run yet — the dialog
-   offers the same report as a prefilled email instead, so the user is never
-   left holding something they cannot send.
+   There are two ways a report can leave this page, and the server decides
+   which by telling the app whether it can send mail (features.feedbackMail,
+   answered on the settings call the app already makes):
+
+     mail mode  — the default until the Graph app registration exists. Pick
+                  bug or feature request and the user's own mail client opens
+                  with the subject and every diagnostic already filled in;
+                  they describe it in their own words and press send. Nothing
+                  is stored, because nothing reached us.
+     app mode   — once mail is configured. The report is typed here, stored in
+                  dbo.Feedback, and emailed from the automation mailbox. If
+                  that POST fails, the mail draft is offered as the fallback.
+
+   Finishing the Azure setup switches the button over on its own; no code
+   change, no deploy.
 
    Diagnostics are collected automatically. They are the difference between a
    report you can act on and "it broke", and they are shown to the user before
    they send, because a report that quietly harvests context is not honest.
 
    Injected by index.html (init):
-     api, esc, toast, fmtWhen, versionRows, currentRoute, mailTo
+     api, esc, toast, fmtWhen, versionRows, currentRoute, pageLabel, userName,
+     features, mailTo
    ============================================================ */
 (function () {
 'use strict';
@@ -46,6 +57,11 @@ function context() {
   };
   return {
     route: (A.currentRoute && A.currentRoute()) || location.hash || '#/',
+    page: (A.pageLabel && A.pageLabel()) || 'the app',
+    signedIn: plain(find('Signed In')),
+    roles: plain(find('Roles')),
+    host: plain(find('Host')),
+    pricingSource: plain(find('Pricing Source')),
     environment: plain(find('Environment')),
     appVersion: 'pricing ' + plain(find('Pricing Library Version'))
       + ' · engine ' + plain(find('Investment Engine')),
@@ -59,6 +75,13 @@ function context() {
 
 function el(id) { return document.getElementById(id); }
 
+/* 'app' only once the server says it can actually deliver; anything else —
+   unknown, offline, not configured — is 'mail', which always works. */
+function mode() {
+  var f = (A.features && A.features()) || {};
+  return (f.feedbackMail && f.feedbackStore) ? 'app' : 'mail';
+}
+
 function show(k) {
   kind = k === 'feature' ? 'feature' : 'bug';
   lastError = '';
@@ -67,8 +90,10 @@ function show(k) {
   open = true;
   m.style.display = 'flex';
   paintForm();
-  var t = el('fbTitle');
-  if (t) setTimeout(function () { t.focus(); }, 30);
+  // In mail mode the first thing to do is choose a kind, so the kind buttons
+  // take focus rather than a field that is not there.
+  var first = mode() === 'app' ? el('fbTitle') : el('fbKindBug');
+  if (first) setTimeout(function () { first.focus(); }, 30);
 }
 
 function close() {
@@ -77,16 +102,26 @@ function close() {
   if (m) m.style.display = 'none';
 }
 
-function setKind(k) {
+/* One click on a kind button. In app mode it selects; in mail mode it is the
+   whole interaction — the next thing the user sees is their own mail client. */
+function pick(k) {
   kind = k === 'feature' ? 'feature' : 'bug';
-  paintForm();
+  if (mode() === 'app') { paintForm(); return; }
+  var url = compose();
+  close();
+  A.toast('Opening your email app…');
+  return url;
 }
+function setKind(k) { kind = k === 'feature' ? 'feature' : 'bug'; paintForm(); }
 
 /* The severity row and the wording both belong to bugs; a feature request
    asking "what went wrong" reads as a form nobody proofread. */
 function paintForm() {
   var bug = kind === 'bug';
-  var t = el('fbHeading'); if (t) t.textContent = bug ? 'Report a Bug' : 'Request a Feature';
+  var app = mode() === 'app';
+  var t = el('fbHeading');
+  if (t) t.textContent = app ? (bug ? 'Report a Bug' : 'Request a Feature')
+                             : 'Report a Bug or Request a Feature';
   var sev = el('fbSevRow'); if (sev) sev.style.display = bug ? '' : 'none';
   var lab = el('fbBodyLab');
   if (lab) lab.textContent = bug ? 'What happened, and what did you expect?' : 'What would you like it to do?';
@@ -94,15 +129,32 @@ function paintForm() {
   if (body) body.placeholder = bug
     ? 'I clicked Export on a budget and nothing downloaded. I expected the PDF to open.'
     : 'It would help to filter the budgets list by the person who created it.';
-  [['fbKindBug', bug], ['fbKindFeature', !bug]].forEach(function (p) {
+  // In mail mode the kind buttons are actions, not a selection, so neither is
+  // shown as chosen and nothing claims to be pressed.
+  [['fbKindBug', app && bug], ['fbKindFeature', app && !bug]].forEach(function (p) {
     var b = el(p[0]);
-    if (b) { b.classList.toggle('on', p[1]); b.setAttribute('aria-pressed', p[1] ? 'true' : 'false'); }
+    if (!b) return;
+    b.classList.toggle('on', p[1]);
+    if (app) b.setAttribute('aria-pressed', p[1] ? 'true' : 'false');
+    else b.removeAttribute('aria-pressed');
   });
+  var form = el('fbForm'); if (form) form.style.display = app ? '' : 'none';
+  var send = el('fbSend'); if (send) send.style.display = app ? '' : 'none';
+  // Copying is the way out when a locked-down desktop refuses mailto:; it only
+  // means anything in the mode that depends on a mail client.
+  var copy = el('fbCopy'); if (copy) copy.style.display = app ? 'none' : '';
+  var note = el('fbNote');
+  if (note) note.textContent = app
+    ? 'Goes to ' + (A.mailTo || 'the team') + '. Nothing from your budgets is included.'
+    : 'Pick one and your email app opens with all of this filled in, addressed to '
+      + (A.mailTo || 'the team') + '. Describe it in your own words and send. '
+      + 'Nothing from your budgets is included.';
   paintContext();
   var err = el('fbError');
   // The stylesheet hides both of these, so showing one means setting a value,
   // not clearing the inline style back to the rule that hides it.
   if (err) { err.textContent = lastError; err.style.display = lastError ? 'block' : 'none'; }
+  var fb = el('fbFallback'); if (fb && !lastError) fb.style.display = 'none';
 }
 
 function paintContext() {
@@ -112,7 +164,8 @@ function paintContext() {
   var line = function (k, v) {
     return '<div class="fb-ctx-row"><span>' + A.esc(k) + '</span><span>' + A.esc(v || '—') + '</span></div>';
   };
-  box.innerHTML = line('Page', c.route) + line('Environment', c.environment)
+  box.innerHTML = line('Page', c.page + ' (' + c.route + ')')
+    + line('Environment', c.environment)
     + line('Versions', c.appVersion) + line('Screen', c.viewport);
 }
 
@@ -169,24 +222,81 @@ function clearForm() {
   var fb = el('fbFallback'); if (fb) fb.style.display = 'none';
 }
 
-/* The escape hatch: everything the user typed, plus the diagnostics, as a
-   mail draft. Used when the API cannot be reached at all. Returns the URL it
-   navigated to, which is also how a test reads it — location.href cannot be
+/* ---------- the mail draft ---------- */
+
+var KIND_WORD = { bug: 'Bug', feature: 'Feature Request' };
+
+/* Everything the developer needs, short enough to survive a mailto URL.
+   Deliberately not the whole Version table: Outlook and several webmail
+   clients truncate a long mailto, and a draft that arrives cut in half is
+   worse than one that never had the last four lines. */
+function detailLines(c) {
+  return [
+    'Type: ' + (KIND_WORD[kind] || 'Report'),
+    'Page: ' + c.page + ' (' + c.route + ')',
+    'Environment: ' + c.environment,
+    'Host: ' + c.host,
+    'Versions: ' + c.appVersion,
+    'Pricing source: ' + c.pricingSource,
+    'Screen: ' + c.viewport,
+    'Signed in: ' + c.signedIn,
+    'Roles: ' + c.roles,
+    'Browser: ' + c.userAgent,
+    'Reported: ' + new Date().toLocaleString()
+  ];
+}
+
+function detailBlock(c) {
+  return '----- Details for the developer — please leave these in -----\n'
+    + detailLines(c).join('\n');
+}
+
+/* The subject is written for you, not left blank: type, where they were, and
+   who they are. Enough to file it without opening it, and still editable. */
+function subjectFor(c) {
+  var who = (A.userName && A.userName()) || c.signedIn || '';
+  return '[FS Suite · ' + (KIND_WORD[kind] || 'Report') + '] '
+    + c.page + (who ? ' — ' + who : '');
+}
+
+function bodyFor(c, typed) {
+  var prompt = kind === 'bug'
+    ? 'Describe the problem here — what you did, what happened, and what you expected.'
+    : 'Describe what you would like the app to do, and what it would help you get done.';
+  return (typed ? typed : prompt) + '\n\n\n' + detailBlock(c) + '\n';
+}
+
+/* Hands the report to whatever mail client the machine uses. Returns the URL
+   it navigated to, which is also how a test reads it — location.href cannot be
    stubbed, and a draft nobody can inspect is a draft nobody can trust. */
-function mailFallback() {
-  var r = readForm();
-  var c = r.context;
-  var lines = [r.body, '', '---', 'Type: ' + (r.kind === 'bug' ? 'Bug' : 'Feature request')];
-  if (r.severity) lines.push('Severity: ' + r.severity);
-  lines.push('Page: ' + c.route, 'Environment: ' + c.environment,
-             'Versions: ' + c.appVersion, 'Screen: ' + c.viewport, 'Browser: ' + c.userAgent);
-  var subject = '[FS Suite] ' + r.title;
+function compose(typed) {
+  var c = context();
   var url = 'mailto:' + (A.mailTo || 'matthews@finishessolutions.com')
-    + '?subject=' + encodeURIComponent(subject)
-    + '&body=' + encodeURIComponent(lines.join('\n'));
+    + '?subject=' + encodeURIComponent(subjectFor(c))
+    + '&body=' + encodeURIComponent(bodyFor(c, typed));
   location.href = url;
   return url;
 }
+
+/* Some browsers and locked-down desktops refuse mailto: entirely, and the
+   failure is silent — nothing opens and the user is left guessing. Copying the
+   same text is the way out that needs no mail client at all. */
+async function copyDetails() {
+  var c = context();
+  var text = 'To: ' + (A.mailTo || 'matthews@finishessolutions.com') + '\n'
+    + 'Subject: ' + subjectFor(c) + '\n\n' + bodyFor(c, readForm().body.trim());
+  try {
+    await navigator.clipboard.writeText(text);
+    A.toast('Details copied — paste them into an email.');
+  } catch (e) {
+    A.toast('Could not copy automatically. Select the details and copy them.');
+  }
+  return text;
+}
+
+/* The app-mode fallback: the user typed a report, the POST failed, and this
+   hands the same words to their mail client rather than losing them. */
+function mailFallback() { return compose(readForm().body.trim()); }
 
 /* ---------- admin board ---------- */
 
@@ -310,9 +420,13 @@ window.FSFeedback = {
   init: function (a) { A = a || {}; },
   show: show,
   close: close,
+  pick: pick,
   setKind: setKind,
   submit: submit,
+  compose: compose,
+  copyDetails: copyDetails,
   mailFallback: mailFallback,
+  mode: mode,
   loadBoard: loadBoard,
   setFilter: setFilter,
   setStatus: setStatus,
