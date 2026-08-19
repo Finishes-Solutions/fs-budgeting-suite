@@ -19,27 +19,43 @@
 #page-home .hm-link:focus-visible{outline:none;box-shadow:var(--focus)}
 
 /* ---- record cards ---- */
-#page-home .hm-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px}
-#page-home .hm-card{display:flex;flex-direction:column;gap:6px;text-align:left;
+/* The grid stretches every card in a row to the tallest, and each card is a
+   flex column whose summary block is pushed down with margin-top:auto. That
+   is what keeps the amount, the status chip and the timestamp on the same
+   line across a row no matter how long a title runs. min() on the track keeps
+   a 232px card from overflowing a narrower container. */
+#page-home .hm-cards{display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(232px,100%),1fr));gap:12px}
+#page-home .hm-card{display:flex;flex-direction:column;gap:10px;text-align:left;
   background:var(--white);border:1px solid var(--ink-150);border-radius:var(--rm);
   box-shadow:var(--sh);padding:13px 15px;cursor:pointer;font-family:var(--fb);
+  min-width:0;overflow:hidden;
   transition:border-color .12s,box-shadow .12s,transform .12s}
 #page-home .hm-card:hover{border-color:var(--ink-300);transform:translateY(-1px)}
 #page-home .hm-card:focus-visible{outline:none;box-shadow:var(--focus)}
-#page-home .hm-card-top{display:flex;align-items:center;gap:7px}
+#page-home .hm-card-hd{display:flex;flex-direction:column;gap:6px;min-width:0}
+#page-home .hm-card-top{display:flex;align-items:center;gap:7px;min-width:0}
 #page-home .hm-kind{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
-  border-radius:3px;padding:2px 5px;font-weight:500}
+  border-radius:3px;padding:2px 5px;font-weight:500;flex:none}
 #page-home .hm-kind-budget{background:var(--green-50);color:var(--green-700)}
 #page-home .hm-kind-analysis{background:#EAF1FB;color:#2B579A}
-#page-home .hm-id{font-size:11.5px;color:var(--ink-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#page-home .hm-id{font-size:11.5px;color:var(--ink-400);min-width:0;flex:0 1 auto;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The pin sits in the header row rather than absolutely over the card, so it
+   reserves its own space and cannot land on the id or a long title. */
+#page-home .hm-pin{margin-left:auto;flex:none;display:inline-flex;align-items:center;
+  padding:1px 0 1px 8px;color:var(--green-700);line-height:0}
 #page-home .hm-card-name{font-size:13.5px;font-weight:600;color:var(--ink-900);line-height:1.35;
+  min-height:2.7em;overflow-wrap:anywhere;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#page-home .hm-card-sum{margin-top:auto;display:flex;flex-direction:column;gap:6px;min-width:0}
 #page-home .hm-card-money{display:flex;justify-content:space-between;align-items:baseline;
-  font-size:11.5px;color:var(--ink-500)}
-#page-home .hm-card-money .v{font-size:12.5px;color:var(--ink-800)}
+  gap:8px;font-size:11.5px;color:var(--ink-500)}
+#page-home .hm-card-money .k{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#page-home .hm-card-money .v{font-size:12.5px;color:var(--ink-800);flex:none;white-space:nowrap}
 #page-home .hm-card-ft{display:flex;align-items:center;justify-content:space-between;gap:8px;
-  margin-top:2px;padding-top:8px;border-top:1px solid var(--ink-100)}
-#page-home .hm-when{font-size:11px;color:var(--ink-400);text-align:right;
+  padding-top:8px;border-top:1px solid var(--ink-100)}
+#page-home .hm-when{font-size:11px;color:var(--ink-400);text-align:right;min-width:0;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ---- needs attention ---- */

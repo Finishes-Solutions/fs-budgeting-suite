@@ -229,6 +229,107 @@ const BASE='http://127.0.0.1:8100';
     await p.evaluate(()=>document.getElementById('page-home').getBoundingClientRect().height<1800),
     await p.evaluate(()=>Math.round(document.getElementById('page-home').getBoundingClientRect().height)+'px'));
 
+ // ---------- 11. card alignment and the pinned indicator ----------
+ // A deliberately long name so one card in the grid wraps to two lines while
+ // its neighbours take one: that is the case the old layout got wrong.
+ await p.evaluate(async()=>{
+   const doc={projectId:'BD-6009',name:'Riverside Commons Phase Two Redevelopment',status:'Draft',
+     resSF:1000,amenSF:0,units:[],other:[],expenses:[],
+     lines:[{lineId:'s1',scope:'res',grp:'General',code:'',desc:'Shell',basis:'ls',auto:true,qty:0,unit:98765432}],
+     companies:[],contingency:{mode:'fixed',val:0},projectCosts:{land:0,dev:0,mkt:0,cls:0},
+     pricingVersion:'2026.08-v2',updated:new Date().toISOString()};
+   await fetch('/api/budget/BD-6009',{method:'PUT',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({meta:{projectId:'BD-6009',name:doc.name,status:'Draft'},doc})});
+ });
+ await p.evaluate(()=>{FSHome.invalidate();return FSHome.show();});
+ await p.waitForTimeout(900);
+
+ // Measure each grid row on its own: cards that share a top edge.
+ const rows=await p.evaluate(()=>{
+   const round=n=>Math.round(n);
+   return [...document.querySelectorAll('#page-home .hm-cards')].map(g=>{
+     const cards=[...g.querySelectorAll('.hm-card')].map(c=>{
+       const r=c.getBoundingClientRect();
+       const m=c.querySelector('.hm-card-money').getBoundingClientRect();
+       const f=c.querySelector('.hm-card-ft').getBoundingClientRect();
+       // Real wrapped line boxes, not the height of the title area: the area
+       // reserves two lines on purpose, so measuring it would say 2 always.
+       const n=c.querySelector('.hm-card-name');
+       const rg=document.createRange(); rg.selectNodeContents(n);
+       const lines=rg.getClientRects().length;
+       return {top:round(r.top),h:round(r.height),money:round(m.top),ft:round(f.top),lines,
+               overflow:c.scrollWidth>c.clientWidth+1};
+     });
+     const by={};
+     cards.forEach(c=>{(by[c.top]=by[c.top]||[]).push(c);});
+     return Object.keys(by).map(k=>by[k]);
+   }).reduce((a,b)=>a.concat(b),[]);
+ });
+ const uniq=(a,k)=>new Set(a.map(x=>x[k])).size;
+ ok('cards in a row are the same height',
+    rows.every(r=>uniq(r,'h')===1), JSON.stringify(rows.map(r=>r.map(c=>c.h))));
+ ok('the metric row sits at the same height across a row',
+    rows.every(r=>uniq(r,'money')===1), JSON.stringify(rows.map(r=>r.map(c=>c.money))));
+ ok('the footer sits at the same height across a row',
+    rows.every(r=>uniq(r,'ft')===1), JSON.stringify(rows.map(r=>r.map(c=>c.ft))));
+ ok('a one-line and a multi-line title share a row, and still line up',
+    rows.some(r=>r.length>1 && uniq(r,'lines')>1 && uniq(r,'ft')===1),
+    JSON.stringify(rows.map(r=>r.map(c=>c.lines))));
+ ok('no card overflows its own box', rows.every(r=>r.every(c=>!c.overflow)));
+
+ // The pinned card: an icon, and the same Updated · value every card shows.
+ const pinCard=async()=>p.evaluate(()=>{
+   const secs=[...document.querySelectorAll('#page-home .hm-sec')];
+   const s=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Pinned');
+   const c=s&&s.querySelector('.hm-card');
+   if(!c) return null;
+   const pin=c.querySelector('.hm-pin');
+   const top=c.querySelector('.hm-card-top').getBoundingClientRect();
+   return {when:c.querySelector('.hm-when').textContent.trim(),
+           hasPin:!!pin, label:pin?pin.getAttribute('aria-label'):'',
+           svg:!!(pin&&pin.querySelector('svg')),
+           pinRight:pin?Math.round(top.right-pin.getBoundingClientRect().right):-1,
+           overlaps:!!(pin&&pin.getBoundingClientRect().left
+             < c.querySelector('.hm-id').getBoundingClientRect().right)};
+ });
+ const pc=await pinCard();
+ ok('a pinned card carries a pin icon', !!pc && pc.hasPin && pc.svg, JSON.stringify(pc));
+ ok('the pin icon is labelled for screen readers', !!pc && pc.label==='Pinned to Home',
+    pc?pc.label:'none');
+ ok('the pin sits at the top right of the card', !!pc && pc.pinRight===0 && !pc.overlaps,
+    JSON.stringify(pc));
+ ok('the pinned card shows its real update time, not the word Pinned',
+    !!pc && /^Updated · \S/.test(pc.when) && !/Pinned/.test(pc.when), pc?pc.when:'none');
+ ok('no card anywhere puts Pinned where the timestamp goes',
+    await p.evaluate(()=>[...document.querySelectorAll('#page-home .hm-when')]
+      .every(w=>!/^Pinned$/.test(w.textContent.trim()))));
+ ok('the same record pinned and recent is marked in both places',
+    await p.evaluate(()=>{
+      const ids=[...document.querySelectorAll('#page-home .hm-card')]
+        .filter(c=>c.querySelector('.hm-pin')).length;
+      return ids>=1;
+    }));
+
+ // ---------- 12. narrow screens ----------
+ await p.setViewportSize({width:390,height:900});
+ await p.waitForTimeout(400);
+ ok('cards do not overflow a phone-width screen',
+    await p.evaluate(()=>[...document.querySelectorAll('#page-home .hm-card')]
+      .every(c=>c.scrollWidth<=c.clientWidth+1)));
+ ok('Home itself does not scroll sideways on a phone',
+    await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),
+    await p.evaluate(()=>document.documentElement.scrollWidth+' vs '+window.innerWidth));
+ ok('the pinned card keeps its icon and timestamp when narrow',
+    await p.evaluate(()=>{
+      const secs=[...document.querySelectorAll('#page-home .hm-sec')];
+      const s=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Pinned');
+      const c=s&&s.querySelector('.hm-card');
+      return !!c && !!c.querySelector('.hm-pin')
+        && /^Updated · \S/.test(c.querySelector('.hm-when').textContent.trim());
+    }));
+ await p.setViewportSize({width:1400,height:1000});
+ await p.waitForTimeout(300);
+
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();

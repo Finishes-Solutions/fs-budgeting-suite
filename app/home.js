@@ -349,6 +349,11 @@ function statusChipStatic(status) {
 }
 
 function recordId(kind, rec) { return kind === 'budget' ? rec.projectId : rec.analysisId; }
+/* Budgets and analyses spell their timestamp differently; both indexes carry
+   one, so the card footer never has to invent a value. */
+function recordUpdated(kind, rec) {
+  return kind === 'budget' ? rec.updated : (rec.updatedAt || rec.updated);
+}
 function recordName(kind, rec) {
   var n = rec.name || '';
   return n || (kind === 'budget' ? 'Untitled budget' : 'Untitled analysis');
@@ -358,21 +363,42 @@ function openAttr(kind, rec) {
   return kind === 'budget' ? `FSHome.openBudget('${esc(id)}')` : `FSHome.openAnalysis('${esc(id)}')`;
 }
 
-function itemCard(kind, rec, meta) {
+/* A pinned record is marked with a filled pin at the top right of the card.
+   It is a marker, not a control: the whole card is a <button>, and a nested
+   <button> is invalid HTML that does not reliably receive clicks. Pinning and
+   unpinning stay in the row menus on the Budgets and Investment Analysis
+   pages, which is where they already were. */
+var PIN_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false">'
+  + '<path fill="currentColor" d="M16 9V4h1a1 1 0 0 0 0-2H7a1 1 0 0 0 0 2h1v5c0 1.66-1.34 3-3 3v2h5.97v7'
+  + 'l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/></svg>';
+
+/* One card shape for budgets and analyses alike. The header (type, id, title)
+   grows with the title; the summary block (amount, rule, status, timestamp)
+   is pushed to the bottom with margin-top:auto, so a two-line title never
+   drags the footer out of line with the card beside it. */
+function itemCard(kind, rec, meta, pinned) {
   var id = recordId(kind, rec);
   var money = kind === 'budget'
     ? usd(rec.projectCost || rec.contractSum || 0)
     : usd(rec.purchasePrice || 0);
   var moneyLab = kind === 'budget' ? 'Total Project' : 'Purchase Price';
+  var pin = pinned
+    ? `<span class="hm-pin" role="img" aria-label="Pinned to Home" title="Pinned to Home">${PIN_SVG}</span>`
+    : '';
   return `<button class="hm-card" onclick="${openAttr(kind, rec)}">
-    <div class="hm-card-top">
-      <span class="hm-kind hm-kind-${kind}">${kind === 'budget' ? 'Budget' : 'Analysis'}</span>
-      <span class="hm-id mono">${esc(kind === 'budget' ? id : (rec.projectId || 'Standalone'))}</span>
+    <div class="hm-card-hd">
+      <div class="hm-card-top">
+        <span class="hm-kind hm-kind-${kind}">${kind === 'budget' ? 'Budget' : 'Analysis'}</span>
+        <span class="hm-id mono">${esc(kind === 'budget' ? id : (rec.projectId || 'Standalone'))}</span>
+        ${pin}
+      </div>
+      <div class="hm-card-name">${esc(recordName(kind, rec))}</div>
     </div>
-    <div class="hm-card-name">${esc(recordName(kind, rec))}</div>
-    <div class="hm-card-money"><span>${moneyLab}</span><span class="v mono">${money}</span></div>
-    <div class="hm-card-ft">${statusChipStatic(rec.status)}
-      <span class="hm-when">${esc(meta || '')}</span></div>
+    <div class="hm-card-sum">
+      <div class="hm-card-money"><span class="k">${moneyLab}</span><span class="v mono">${money}</span></div>
+      <div class="hm-card-ft">${statusChipStatic(rec.status)}
+        <span class="hm-when">${esc(meta || '')}</span></div>
+    </div>
   </button>`;
 }
 
@@ -419,7 +445,11 @@ function render() {
   if (pins.length) {
     html += section('Pinned',
       '<div class="hm-cards">' + pins.map(function (x) {
-        return itemCard(x.kind, x.rec, 'Pinned');
+        // The footer keeps saying what every other card says. The pin icon
+        // carries "this is pinned", so the timestamp is not spent on it.
+        // A record with no timestamp gets no half-written line.
+        var w = relTime(recordUpdated(x.kind, x.rec));
+        return itemCard(x.kind, x.rec, w ? 'Updated · ' + w : '', true);
       }).join('') + '</div>');
   }
 
@@ -427,7 +457,8 @@ function render() {
   var rec = recentItems(6);
   if (rec.length) {
     html += section('Recent', '<div class="hm-cards">' + rec.map(function (x) {
-      return itemCard(x.kind, x.rec, x.why + ' · ' + relTime(x.when));
+      return itemCard(x.kind, x.rec, x.why + ' · ' + relTime(x.when),
+        isPinned(x.kind, recordId(x.kind, x.rec)));
     }).join('') + '</div>');
   } else if (!budgets.length && !analyses.length) {
     html += section('Get Started',

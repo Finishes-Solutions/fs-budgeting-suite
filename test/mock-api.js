@@ -463,6 +463,10 @@ http.createServer((req, res) => {
       const { meta, doc } = body;
       if ((doc.projectId || '').toUpperCase() !== id) { res.writeHead(400); return res.end('id mismatch'); }
       const calc = parts(doc);
+      // The real API reads UpdatedAt off the row, so `updated` is always
+      // present on the list. Seeded values are kept; only a missing one is
+      // filled, so a suite can still plant an old timestamp.
+      if (!meta.updated) meta.updated = new Date().toISOString();
       meta.contractSum = Math.round(calc.contract * 100) / 100;
       meta.projectCost = Math.round(calc.project * 100) / 100;
       const prev = budgets.get(id) || { versions: [] };
