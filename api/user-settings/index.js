@@ -143,7 +143,6 @@ module.exports = async function (context, req) {
     : stored;
   const settingsJson = JSON.stringify(merged);
 
-  const { sql } = require('../shared/db');
   const rq = pool.request()
     .input('uid', sql.NVarChar(128), principal.userId)
     .input('settings', sql.NVarChar(sql.MAX), settingsJson);
