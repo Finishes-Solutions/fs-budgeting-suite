@@ -61,16 +61,32 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const summaryRows=await p.locator('#dashActivityBody tr').count();
  ok('the summary shows at most 30 activity rows', summaryRows<=30&&summaryRows>0,
     'rows='+summaryRows);
- ok('a centered View All button is offered',
+ ok('a centered View More button is offered',
     await p.evaluate(()=>{const btn=document.getElementById('dashViewAllBtn');
       return btn.style.display!=='none'&&
         getComputedStyle(btn.parentElement).textAlign==='center';}));
+ ok('the button says View More, not View All',
+    (await p.locator('#dashViewAllBtn').textContent()).trim()==='View More',
+    await p.locator('#dashViewAllBtn').textContent());
+ // The filter has to be usable before you have paged anything, or a filtered
+ // CSV is impossible — which is exactly how it behaved before.
+ ok('the user filter is populated as soon as the dashboard loads',
+    (await p.locator('#dashUserFilter option').count())>1,
+    (await p.locator('#dashUserFilter option').allTextContents()).join(' | '));
 
- // ---- View All pages into the full log
+ // ---- View More pages into the full log, 50 at a time
  await p.click('#dashViewAllBtn'); await p.waitForTimeout(700);
  const allRows=await p.locator('#dashActivityBody tr').count();
- ok('View All loads more rows than the summary', allRows>summaryRows,
+ ok('View More loads more rows than the summary', allRows>summaryRows,
     'summary='+summaryRows+' all='+allRows);
+ ok('it loads a page of 50, not everything at once', allRows<=50, 'rows='+allRows);
+ ok('and it still offers more when there is more',
+    await p.evaluate(async()=>{
+      const t=await (await fetch('/api/analytics?scope=activity&limit=1&offset=0')).json();
+      const btn=document.getElementById('dashViewAllBtn');
+      return t.total>50 ? /View More \(\d+ remaining\)/.test(btn.textContent) : true;
+    }),
+    await p.locator('#dashViewAllBtn').textContent());
 
  // ---- filters reach the API
  const filterReq=[];
@@ -84,6 +100,20 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     filterReq.slice(-1)[0]||'none');
  ok('rows survive a wide-open date range',
     (await p.locator('#dashActivityBody tr').count())>0);
+ ok('picking a user is sent to the activity API',
+    filterReq.some(u=>u.includes('userId=')),
+    filterReq.slice(-1)[0]||'none');
+ // A filter that does not reach the export is a filter that lies about what
+ // the file contains.
+ const csvReq=[];
+ p.on('request',r=>{ if(r.url().includes('scope=activity')&&r.url().includes('limit=1000')) csvReq.push(r.url()); });
+ const dl0=p.waitForEvent('download',{timeout:9000}).catch(()=>null);
+ await p.click('#page-dashboard button:has-text("Export CSV")');
+ await dl0;
+ ok('the CSV export asks the API for the filtered rows, on a route that exists',
+    csvReq.length>0 && csvReq[0].includes('userId=') && csvReq[0].includes('/api/analytics?scope=activity'),
+    csvReq[0]||'no export request');
+ await p.selectOption('#dashUserFilter',{index:0}); await p.waitForTimeout(600);
 
  // ---- the activity API honours filtering and paging directly
  const api=await p.evaluate(async()=>{
@@ -112,58 +142,186 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     await p.evaluate(()=>{
       const svg=document.querySelector('#dashTrend svg.dash-line');
       if(!svg) return false;
-      // the primary series path must have real coordinates, not an empty d
       const paths=[...svg.querySelectorAll('path')].map(x=>x.getAttribute('d')||'');
       return paths.some(d=>/M[\d.]+ [\d.]+ L/.test(d));
     }));
- ok('the trend plots one point per day for 30 days',
-    (await p.evaluate(()=>document.querySelectorAll('#dashTrend svg circle').length))===30,
-    'points='+await p.evaluate(()=>document.querySelectorAll('#dashTrend svg circle').length));
- ok('the trend carries a legend',
-    (await p.evaluate(()=>document.querySelectorAll('#dashTrend .dash-lg-row').length))>=3);
- // The trend and the status donuts share a row rather than stacking, which is
- // what keeps the page from running several screens tall.
- ok('the trend and status breakdown sit side by side',
+ ok('the trend plots the six things worth watching',
     await p.evaluate(()=>{
-      const cols=document.querySelector('#page-dashboard .dash-cols');
-      if(!cols) return false;
-      const t=document.getElementById('dashTrend').closest('.card');
-      const b=document.getElementById('dashBreakdowns').closest('.card');
-      const rt=t.getBoundingClientRect(), rb=b.getBoundingClientRect();
-      return Math.abs(rt.top-rb.top)<40 && rb.left>rt.left;   // same row, breakdown to the right
+      const names=[...document.querySelectorAll('#dashTrend .dash-lg-name')].map(x=>x.textContent.trim());
+      return JSON.stringify(names)===JSON.stringify(['Saves','Logins','Budgets Created',
+        'Analyses Created','Budgets Deleted','Analyses Deleted']);
+    }),
+    (await p.evaluate(()=>[...document.querySelectorAll('#dashTrend .dash-lg-name')].map(x=>x.textContent.trim()))).join(', '));
+ ok('there is one line per series',
+    await p.evaluate(()=>{
+      const svg=document.querySelector('#dashTrend svg.dash-line');
+      return [...svg.querySelectorAll('path')].filter(x=>/^M[\d.]/.test(x.getAttribute('d')||'')).length===6;
+    }),
+    'paths='+await p.evaluate(()=>[...document.querySelectorAll('#dashTrend svg path')]
+      .filter(x=>/^M[\d.]/.test(x.getAttribute('d')||'')).length));
+ ok('every series has its own colour',
+    await p.evaluate(()=>{
+      const c=[...document.querySelectorAll('#dashTrend .dash-lg-dot')]
+        .map(x=>getComputedStyle(x).backgroundColor);
+      return c.length===6 && new Set(c).size===6;
+    }));
+
+ // ---- the range buttons
+ ok('the activity card offers 1D, 7D, 14D, 30D and All',
+    JSON.stringify(await p.locator('#page-dashboard .dash-range').allTextContents())
+      ===JSON.stringify(['1D','7D','14D','30D','All']),
+    (await p.locator('#page-dashboard .dash-range').allTextContents()).join(','));
+ ok('the range buttons sit in the card header, beside the title',
+    await p.evaluate(()=>{
+      const hd=document.getElementById('dashTrendTitle').closest('.card-hd');
+      return !!hd && !!hd.querySelector('.dash-ranges');
+    }));
+ ok('30 days is the default', (await p.locator('#page-dashboard .dash-range.on').textContent()).trim()==='30D');
+ // How many days the chart is currently plotting. A single day has no line to
+ // draw, so it is marked with one dot per series instead.
+ const days=async()=>p.evaluate(()=>{
+   const svg=document.querySelector('#dashTrend svg.dash-line');
+   const p0=svg.querySelector('path');
+   if(p0) return ((p0.getAttribute('d')||'').match(/[ML]/g)||[]).length;
+   return svg.querySelectorAll('circle').length/6;
+ });
+ const d30=await days();
+ await p.click('.dash-range[data-range="7"]'); await p.waitForTimeout(400);
+ const d7=await days();
+ ok('picking 7D redraws a shorter series', d7===7 && d30===30, '30D='+d30+' 7D='+d7);
+ ok('and the title says which range is showing',
+    (await p.locator('#dashTrendTitle').textContent()).trim()==='Activity — Last 7 Days',
+    await p.locator('#dashTrendTitle').textContent());
+ await p.click('.dash-range[data-range="1"]'); await p.waitForTimeout(400);
+ ok('one day still draws something rather than an empty chart',
+    (await p.evaluate(()=>document.querySelectorAll('#dashTrend svg circle').length))===6,
+    'marks='+await p.evaluate(()=>document.querySelectorAll('#dashTrend svg circle').length));
+ await p.click('.dash-range[data-range="0"]'); await p.waitForTimeout(400);
+ ok('All plots every day back to the first record',
+    await p.evaluate(async()=>{
+      const d=await (await fetch('/api/analytics')).json();
+      const all=(d.activityByDay||[]).map(x=>x.day).sort();
+      const today=new Date(); today.setUTCHours(0,0,0,0);
+      const want=all.length
+        ? Math.round((today.getTime()-Date.parse(all[0]+'T00:00:00Z'))/86400000)+1 : 1;
+      const svg=document.querySelector('#dashTrend svg.dash-line');
+      const p0=svg.querySelector('path');
+      const marks=p0?((p0.getAttribute('d')||'').match(/[ML]/g)||[]).length
+                    :svg.querySelectorAll('circle').length/6;
+      return marks===want;
+    }),
+    'points='+await days());
+ ok('and says so', (await p.locator('#dashTrendTitle').textContent()).trim()==='Activity — All Time');
+ await p.click('.dash-range[data-range="30"]'); await p.waitForTimeout(400);
+
+ // ---- hovering answers "what is that spike"
+ const cb=await p.locator('#dashChartWrap').boundingBox();
+ await p.mouse.move(cb.x+cb.width*0.9, cb.y+cb.height*0.5);
+ await p.waitForTimeout(300);
+ ok('hovering the chart opens a readout', await p.locator('#dashTip').isVisible());
+ ok('the readout names the day and every series',
+    await p.evaluate(()=>{
+      const t=document.getElementById('dashTip');
+      const keys=[...t.querySelectorAll('.dash-tip-k')].map(x=>x.textContent.trim());
+      return keys.length===6 && /\d{4}/.test(t.querySelector('.dash-tip-d').textContent);
+    }),
+    (await p.locator('#dashTip').textContent()).replace(/\s+/g,' ').slice(0,80));
+ ok('the readout carries numbers, not just labels',
+    await p.evaluate(()=>[...document.querySelectorAll('#dashTip .dash-tip-v')]
+      .every(x=>/^\d+$/.test(x.textContent.trim()))));
+ ok('a guide line marks the day being read',
+    await p.evaluate(()=>{
+      const g=document.getElementById('dashGuide');
+      return !!g && g.style.display!=='none' && +g.getAttribute('x1')>0;
+    }));
+ ok('a dot marks each series at that day',
+    (await p.evaluate(()=>document.querySelectorAll('#dashHoverDots circle').length))===6);
+ await p.mouse.move(cb.x+cb.width*0.5, cb.y-60);
+ await p.waitForTimeout(250);
+ ok('leaving the chart clears the readout', !(await p.locator('#dashTip').isVisible()));
+
+ // ---- layout: activity full width, the two breakdowns beneath it as halves
+ ok('the activity chart spans the full width of the page',
+    await p.evaluate(()=>{
+      const card=document.getElementById('dashTrend').closest('.card').getBoundingClientRect();
+      const cols=document.querySelector('#page-dashboard .dash-cols').getBoundingClientRect();
+      return Math.abs(card.width-cols.width)<2 && card.bottom<=cols.top+1;
     }),
     await p.evaluate(()=>{
-      const t=document.getElementById('dashTrend').closest('.card').getBoundingClientRect();
-      const b=document.getElementById('dashBreakdowns').closest('.card').getBoundingClientRect();
-      return JSON.stringify({trendTop:Math.round(t.top),breakdownTop:Math.round(b.top),
-                             trendLeft:Math.round(t.left),breakdownLeft:Math.round(b.left)});
+      const card=document.getElementById('dashTrend').closest('.card').getBoundingClientRect();
+      const cols=document.querySelector('#page-dashboard .dash-cols').getBoundingClientRect();
+      return JSON.stringify({trend:Math.round(card.width),cols:Math.round(cols.width)});
     }));
- // "Concise" is the actual requirement, so measure it: the KPI strip plus the
- // whole chart row must fit one 1000px viewport, leaving the Activity Log to
- // start near the fold rather than three screens down.
- ok('the KPIs and every chart fit above the fold',
-    await p.evaluate(()=>{
-      const top=document.getElementById('dashKpis').getBoundingClientRect().top;
-      const cols=document.querySelector('#page-dashboard .dash-cols');
-      const bottom=cols.getBoundingClientRect().bottom;
-      return (bottom-top)<=700;
-    }),
-    await p.evaluate(()=>{
-      const top=document.getElementById('dashKpis').getBoundingClientRect().top;
-      const cols=document.querySelector('#page-dashboard .dash-cols');
-      return Math.round(cols.getBoundingClientRect().bottom-top)+'px tall';
-    }));
- ok('all three charts share one row',
+ ok('status breakdown and budgets by value are equal halves of that width',
     await p.evaluate(()=>{
       const cards=[...document.querySelectorAll('#page-dashboard .dash-cols > .card')];
-      if(cards.length!==3) return false;
-      const tops=cards.map(c=>c.getBoundingClientRect().top);
-      return Math.max(...tops)-Math.min(...tops)<40;
+      if(cards.length!==2) return false;
+      const r=cards.map(c=>c.getBoundingClientRect());
+      return Math.abs(r[0].top-r[1].top)<2 && Math.abs(r[0].width-r[1].width)<2
+        && r[1].left>r[0].left;
+    }),
+    await p.evaluate(()=>[...document.querySelectorAll('#page-dashboard .dash-cols > .card')]
+      .map(c=>Math.round(c.getBoundingClientRect().width)).join(' + ')));
+ // The complaint that started this: the chart row sat flush against the card
+ // below it. Every top-level card must keep the app's 20px rhythm.
+ ok('the sections keep the page spacing and never overlap',
+    await p.evaluate(()=>{
+      const secs=[...document.querySelectorAll('#page-dashboard > section.card, #page-dashboard > .dash-cols')];
+      for(let i=0;i<secs.length-1;i++){
+        const gap=secs[i+1].getBoundingClientRect().top-secs[i].getBoundingClientRect().bottom;
+        if(gap<16||gap>28) return false;
+      }
+      return secs.length>=4;
     }),
     await p.evaluate(()=>{
-      const cards=[...document.querySelectorAll('#page-dashboard .dash-cols > .card')];
-      return 'cards='+cards.length+' tops='+cards.map(c=>Math.round(c.getBoundingClientRect().top)).join(',');
+      const secs=[...document.querySelectorAll('#page-dashboard > section.card, #page-dashboard > .dash-cols')];
+      return secs.slice(0,-1).map((s,i)=>Math.round(
+        secs[i+1].getBoundingClientRect().top-s.getBoundingClientRect().bottom)).join(',');
     }));
+
+ // Stacking cost height, but "concise" still has to mean something: the whole
+ // visual half of the dashboard — tiles, chart, breakdowns, ranking — stays
+ // inside one scroll, with the Activity Log starting just past it.
+ ok('the whole chart half of the page stays around one screen',
+    await p.evaluate(()=>{
+      const top=document.getElementById('dashKpis').getBoundingClientRect().top;
+      const bottom=document.getElementById('dashTop').closest('.card').getBoundingClientRect().bottom;
+      return (bottom-top)<=1000;
+    }),
+    await p.evaluate(()=>{
+      const top=document.getElementById('dashKpis').getBoundingClientRect().top;
+      const bottom=document.getElementById('dashTop').closest('.card').getBoundingClientRect().bottom;
+      return Math.round(bottom-top)+'px tall';
+    }));
+
+ // ---- the ranking widget
+ ok('a Top 5 Projects widget sits below the breakdowns',
+    await p.evaluate(()=>{
+      const top=document.getElementById('dashTop').closest('.card').getBoundingClientRect();
+      const cols=document.querySelector('#page-dashboard .dash-cols').getBoundingClientRect();
+      return top.top>=cols.bottom-1;
+    }));
+ ok('it ranks five projects at most',
+    await (async()=>{ const n=await p.locator('#dashTop .dash-rank-row').count();
+      return n>0 && n<=5; })(),
+    'rows='+await p.locator('#dashTop .dash-rank-row').count());
+ ok('biggest first, by project cost',
+    await p.evaluate(()=>{
+      const v=[...document.querySelectorAll('#dashTop .dash-rank-v')]
+        .map(x=>Number(x.textContent.replace(/[^0-9.]/g,'')));
+      return v.length>1 && v.every((n,i)=>i===0||v[i-1]>=n);
+    }),
+    (await p.locator('#dashTop .dash-rank-v').allTextContents()).join(' > '));
+ ok('each row says what share of the total it is',
+    await p.evaluate(()=>[...document.querySelectorAll('#dashTop .dash-rank-p')]
+      .every(x=>/^\d+%$/.test(x.textContent.trim()))));
+ ok('the ranking names the project, not just the id',
+    await p.evaluate(()=>{
+      const r=document.querySelector('#dashTop .dash-rank-row');
+      return /BD-|OP-|AS-/.test(r.querySelector('.dash-rank-id').textContent)
+        && r.querySelector('.dash-rank-nm').textContent.trim().length>0;
+    }));
+
  ok('status breakdown renders donut charts',
     (await p.evaluate(()=>document.querySelectorAll('#dashBreakdowns svg.dash-donut').length))===2);
  ok('the donut centre shows the total and its slices sum to it',

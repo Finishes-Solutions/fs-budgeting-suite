@@ -1919,12 +1919,23 @@ th.sortable.sorted{color:var(--ink-900)}
       <button class="btn btn-dark" onclick="FSDashboard.refresh()">Refresh</button></div>
   </div>
   <div class="dash-kpis" id="dashKpis"></div>
-  <!-- Every chart on one row. Stacked, these three cost three screens; in
-       three columns they cost one, which is the whole point of a dashboard. -->
+  <!-- Activity gets the full width: six series in a third of a row is a
+       thicket. The two breakdown cards sit under it as equal halves, and the
+       ranking under those. -->
+  <section class="card">
+    <div class="card-hd">
+      <span class="eyebrow" id="dashTrendTitle">Activity — Last 30 Days</span>
+      <div class="dash-ranges no-print" role="group" aria-label="Activity range">
+        <button class="dash-range" data-range="1" onclick="FSDashboard.setRange(1)">1D</button>
+        <button class="dash-range" data-range="7" onclick="FSDashboard.setRange(7)">7D</button>
+        <button class="dash-range" data-range="14" onclick="FSDashboard.setRange(14)">14D</button>
+        <button class="dash-range on" data-range="30" onclick="FSDashboard.setRange(30)">30D</button>
+        <button class="dash-range" data-range="0" onclick="FSDashboard.setRange(0)">All</button>
+      </div>
+    </div>
+    <div class="card-bd"><div id="dashTrend"></div></div>
+  </section>
   <div class="dash-cols">
-    <section class="card"><div class="card-hd"><span class="eyebrow">Activity — Last 30 Days</span></div>
-      <div class="card-bd"><div id="dashTrend"></div></div>
-    </section>
     <section class="card"><div class="card-hd"><span class="eyebrow">Status Breakdown</span></div>
       <div class="card-bd"><div class="dash-grid" id="dashBreakdowns"></div></div>
     </section>
@@ -1932,6 +1943,11 @@ th.sortable.sorted{color:var(--ink-900)}
       <div class="card-bd"><div id="dashValue"></div></div>
     </section>
   </div>
+  <section class="card">
+    <div class="card-hd"><span class="eyebrow">Top 5 Projects By Budget Amount</span>
+      <span class="dash-hd-note" id="dashTopNote"></span></div>
+    <div class="card-bd"><div id="dashTop"></div></div>
+  </section>
   <section class="card">
     <div class="card-hd">
       <span class="eyebrow">Activity Log</span>
@@ -1952,7 +1968,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <div id="dashActivityEmpty" style="display:none;text-align:center;padding:28px;color:var(--ink-500);font-size:13px">No activity found</div>
     </div>
     <div style="text-align:center;padding:14px 0" id="dashViewAllWrap">
-      <button class="btn btn-ghost" id="dashViewAllBtn" onclick="FSDashboard.viewAll()" style="display:none">View All</button>
+      <button class="btn btn-ghost" id="dashViewAllBtn" onclick="FSDashboard.viewMore()" style="display:none">View More</button>
     </div>
   </section>
 </div>

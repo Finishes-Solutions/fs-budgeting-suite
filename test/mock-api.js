@@ -302,18 +302,31 @@ http.createServer((req, res) => {
         eventType: r.eventType, entityType: r.entityType, entityId: r.entityId,
         createdAt: r.createdAt, userName: principal.clientPrincipal.userDetails
       })),
+      // Same six series the real query builds, from the same two sources:
+      // creations off the records (there is no 'created' event), deletions and
+      // everything else off the activity log.
       activityByDay: (() => {
         const byDay = {};
+        const day = d => byDay[d] || (byDay[d] = { day: d, total: 0, logins: 0, saves: 0,
+          exports: 0, budgetsCreated: 0, budgetsDeleted: 0,
+          analysesCreated: 0, analysesDeleted: 0 });
         mockActivity.forEach(r => {
-          const d = String(r.createdAt).slice(0, 10);
-          const e = byDay[d] || (byDay[d] = { day: d, total: 0, logins: 0, saves: 0, exports: 0 });
+          const e = day(String(r.createdAt).slice(0, 10));
           e.total++;
           if (r.eventType === 'login') e.logins++;
           if (r.eventType === 'budget_save' || r.eventType === 'analysis_save') e.saves++;
           if (/^export_/.test(r.eventType)) e.exports++;
+          if (r.eventType === 'budget_delete') e.budgetsDeleted++;
+          if (r.eventType === 'analysis_delete') e.analysesDeleted++;
         });
+        [...budgets.values()].filter(b => !b.meta.projectId.startsWith('TST-'))
+          .forEach(b => { day(String(b.meta.updated || new Date().toISOString()).slice(0, 10)).budgetsCreated++; });
+        [...invAnalyses.values()].filter(a => !a.id.startsWith('TST-'))
+          .forEach(a => { day(String(a.createdAt || new Date().toISOString()).slice(0, 10)).analysesCreated++; });
         return Object.values(byDay).sort((x, y) => x.day < y.day ? -1 : 1);
       })(),
+      activityUsers: [...mockUsers.entries()].map(([id, u]) => ({
+        userId: id, name: u.displayName || u.email || 'Unknown' })),
       topBudgets: budgetList
         .slice().sort((x, y) => (y.meta.projectCost || 0) - (x.meta.projectCost || 0)).slice(0, 8)
         .map(x => ({ projectId: x.meta.projectId, name: x.meta.name,

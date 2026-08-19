@@ -11,7 +11,10 @@ var activityData = null;
 var activityPage = 'summary';  // 'summary' = first 30, 'all' = paginated
 var activityOffset = 0;
 var SUMMARY_LIMIT = 30;
-var PAGE_SIZE = 100;
+// 50 a click: enough to be worth the press, small enough that the table stays
+// something you can actually read.
+var PAGE_SIZE = 50;
+var range = 30;                // days shown in the activity chart; 0 = all
 
 function esc(s){ return adapter.esc ? adapter.esc(String(s)) : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -155,18 +158,42 @@ function donutHTML(breakdown){
     +'</svg><div class="dash-legend">'+legend+'</div></div>';
 }
 
-// Fills the gaps: the API only returns days that saw events, but a trend line
-// with missing days would compress quiet periods and misread the shape.
+/* The six things worth watching, in the order they read: what people did,
+   then what appeared, then what went away. Colours are far enough apart to
+   tell six lines apart at a glance, and each one keeps its meaning across the
+   chart, the legend and the hover readout. */
+var SERIES=[
+  {key:'saves',           name:'Saves',            color:'#006527'},
+  {key:'logins',          name:'Logins',           color:'#2B579A'},
+  {key:'budgetsCreated',  name:'Budgets Created',  color:'#0E8C8C'},
+  {key:'analysesCreated', name:'Analyses Created', color:'#7C3AED'},
+  {key:'budgetsDeleted',  name:'Budgets Deleted',  color:'#C43C3C'},
+  {key:'analysesDeleted', name:'Analyses Deleted', color:'#D98A16'}
+];
+
+// Fills the gaps: the API only returns days that saw something, but a trend
+// line with missing days would compress quiet periods and misread the shape.
+// days = 0 means every day from the first record to today.
 function fillDays(series, days){
   var byDay={};
   (series||[]).forEach(function(r){ byDay[r.day]=r; });
-  var out=[], d=new Date();
-  d.setUTCHours(0,0,0,0);
+  var today=new Date(); today.setUTCHours(0,0,0,0);
+  if(!days){
+    var keys=Object.keys(byDay).sort();
+    if(!keys.length) days=1;
+    else {
+      var first=new Date(keys[0]+'T00:00:00Z').getTime();
+      days=Math.max(1, Math.round((today.getTime()-first)/86400000)+1);
+    }
+  }
+  var out=[];
   for(var i=days-1;i>=0;i--){
-    var t=new Date(d.getTime()-i*86400000);
+    var t=new Date(today.getTime()-i*86400000);
     var key=t.toISOString().slice(0,10);
-    var r=byDay[key];
-    out.push({day:key, total:r?r.total:0, logins:r?r.logins:0, saves:r?r.saves:0, exports:r?r.exports:0});
+    var r=byDay[key]||{};
+    var row={day:key, total:r.total||0};
+    SERIES.forEach(function(sx){ row[sx.key]=r[sx.key]||0; });
+    out.push(row);
   }
   return out;
 }
@@ -175,14 +202,21 @@ function linePath(pts){
   return pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' ');
 }
 
-function lineChartHTML(series){
-  var days=fillDays(series, 30);
-  var W=440,H=190,padL=34,padR=8,padT=10,padB=24;
+/* Hover data for the chart, stashed where the mousemove handler can reach it
+   without re-deriving the geometry. */
+var chartHover=null;
+
+function lineChartHTML(series, days){
+  var rows=fillDays(series, days);
+  // The viewBox aspect is the rendered aspect — no preserveAspectRatio games,
+  // which stretch the axis type along with the lines.
+  var W=1000,H=180,padL=40,padR=14,padT=10,padB=22;
   var iw=W-padL-padR, ih=H-padT-padB;
-  var max=Math.max(1, days.reduce(function(m,d){return Math.max(m,d.total);},0));
+  var max=1;
+  rows.forEach(function(d){ SERIES.forEach(function(sx){ max=Math.max(max,d[sx.key]||0); }); });
   // Round the axis up to something readable rather than the raw maximum.
   var step=Math.max(1,Math.ceil(max/3)), top=step*3;
-  var x=function(i){return padL+(days.length<2?iw/2:(i/(days.length-1))*iw);};
+  var x=function(i){return padL+(rows.length<2?iw/2:(i/(rows.length-1))*iw);};
   var y=function(v){return padT+ih-(v/top)*ih;};
 
   var grid='',labels='';
@@ -191,41 +225,126 @@ function lineChartHTML(series){
     grid+='<line x1="'+padL+'" y1="'+gy.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+gy.toFixed(1)+'" stroke="'+GRID+'" stroke-width="1"/>';
     labels+='<text x="'+(padL-8)+'" y="'+(gy+4).toFixed(1)+'" text-anchor="end" class="dash-ax">'+gv+'</text>';
   }
-  // Date ticks only every 5th day, or they collide.
+  // Roughly eight date ticks whatever the range, or they collide.
+  var every=Math.max(1,Math.ceil(rows.length/8));
   var ticks='';
-  days.forEach(function(d,i){
-    if(i%10!==0 && i!==days.length-1) return;
-    ticks+='<text x="'+x(i).toFixed(1)+'" y="'+(H-10)+'" text-anchor="middle" class="dash-ax">'
+  rows.forEach(function(d,i){
+    if(i%every!==0 && i!==rows.length-1) return;
+    ticks+='<text x="'+x(i).toFixed(1)+'" y="'+(H-9)+'" text-anchor="middle" class="dash-ax">'
       +d.day.slice(5).replace('-','/')+'</text>';
   });
 
-  var pts=days.map(function(d,i){return [x(i),y(d.total)];});
-  var area='M'+padL+' '+(padT+ih)+' '+linePath(pts).slice(1)+' L'+(W-padR)+' '+(padT+ih)+' Z';
-  var series2=[
-    {key:'saves', color:'#0a7a36'},
-    {key:'logins', color:'#2B579A'}
-  ].map(function(s){
-    var p=days.map(function(d,i){return [x(i),y(d[s.key])];});
-    return '<path d="'+linePath(p)+'" fill="none" stroke="'+s.color+'" stroke-width="1.6" '
-      +'stroke-dasharray="4 3" stroke-linejoin="round" stroke-linecap="round"/>';
+  var lines=SERIES.map(function(sx){
+    var pts=rows.map(function(d,i){return [x(i),y(d[sx.key])];});
+    // A single day has no line to draw, so it shows as a dot instead.
+    if(rows.length===1){
+      return '<circle cx="'+pts[0][0].toFixed(1)+'" cy="'+pts[0][1].toFixed(1)+'" r="4" fill="'+sx.color+'"/>';
+    }
+    return '<path d="'+linePath(pts)+'" fill="none" stroke="'+sx.color+'" stroke-width="2" '
+      +'stroke-linejoin="round" stroke-linecap="round"/>';
   }).join('');
 
-  var dots=days.map(function(d,i){
-    return '<circle cx="'+x(i).toFixed(1)+'" cy="'+y(d.total).toFixed(1)+'" r="2.6" fill="#006527">'
-      +'<title>'+d.day+': '+d.total+' events</title></circle>';
+  var legend=SERIES.map(function(sx){
+    return '<div class="dash-lg-row"><span class="dash-lg-dot" style="background:'+sx.color+'"></span>'
+      +'<span class="dash-lg-name">'+sx.name+'</span></div>';
   }).join('');
 
-  return '<div class="dash-chart-scroll"><svg viewBox="0 0 '+W+' '+H+'" class="dash-line" role="img" aria-label="Activity over the last 30 days">'
+  // Geometry the hover handler needs, rather than a second copy of the same
+  // constants that could drift out of step with these.
+  chartHover={rows:rows, W:W, padL:padL, iw:iw, xOf:x, yOf:y};
+
+  return '<div class="dash-chart-wrap" id="dashChartWrap">'
+    +'<svg viewBox="0 0 '+W+' '+H+'" class="dash-line" role="img" '
+    +'aria-label="Activity by day">'
     +grid+labels+ticks
-    +'<path d="'+area+'" fill="rgba(0,101,39,.10)"/>'
-    +'<path d="'+linePath(pts)+'" fill="none" stroke="#006527" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>'
-    +series2+dots
-    +'</svg></div>'
-    +'<div class="dash-legend dash-legend-h">'
-    +'<div class="dash-lg-row"><span class="dash-lg-dot" style="background:#006527"></span><span class="dash-lg-name">All</span></div>'
-    +'<div class="dash-lg-row"><span class="dash-lg-dot" style="background:#0a7a36"></span><span class="dash-lg-name">Saves</span></div>'
-    +'<div class="dash-lg-row"><span class="dash-lg-dot" style="background:#2B579A"></span><span class="dash-lg-name">Logins</span></div>'
-    +'</div>';
+    +'<line id="dashGuide" x1="0" y1="'+padT+'" x2="0" y2="'+(padT+ih)+'" stroke="'+AXIS+'" '
+    +'stroke-width="1" stroke-dasharray="3 3" style="display:none"/>'
+    +lines
+    +'<g id="dashHoverDots"></g>'
+    +'</svg>'
+    +'<div class="dash-tip" id="dashTip" style="display:none"></div>'
+    +'</div>'
+    +'<div class="dash-legend dash-legend-h">'+legend+'</div>';
+}
+
+/* Turns a pointer position into the day under it and paints the readout: a
+   guide line, a dot on every series, and a panel of the six values. Hover on a
+   chart should answer "what is that spike", which a static picture cannot. */
+function chartMove(ev){
+  var wrap=document.getElementById('dashChartWrap');
+  var svg=wrap&&wrap.querySelector('svg');
+  var tip=document.getElementById('dashTip');
+  var guide=document.getElementById('dashGuide');
+  var dots=document.getElementById('dashHoverDots');
+  if(!wrap||!svg||!chartHover||!tip) return;
+  var box=svg.getBoundingClientRect();
+  var vb=svg.viewBox.baseVal;
+  var sx=vb.width/box.width;
+  var vx=(ev.clientX-box.left)*sx;
+  var n=chartHover.rows.length;
+  var frac=n<2?0:(vx-chartHover.padL)/chartHover.iw;
+  var i=Math.max(0,Math.min(n-1,Math.round(frac*(n-1))));
+  var row=chartHover.rows[i];
+  var gx=chartHover.xOf(i);
+
+  guide.setAttribute('x1',gx); guide.setAttribute('x2',gx); guide.style.display='';
+  dots.innerHTML=SERIES.map(function(s2){
+    var cy=chartHover.yOf(row[s2.key]||0);
+    return '<circle cx="'+gx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="3.4" fill="'+s2.color+'" '
+      +'stroke="#fff" stroke-width="1.2"/>';
+  }).join('');
+
+  tip.innerHTML='<div class="dash-tip-d">'+esc(fmtDay(row.day))+'</div>'
+    +SERIES.map(function(s2){
+      return '<div class="dash-tip-r"><span class="dash-lg-dot" style="background:'+s2.color+'"></span>'
+        +'<span class="dash-tip-k">'+s2.name+'</span>'
+        +'<span class="dash-tip-v">'+(row[s2.key]||0)+'</span></div>';
+    }).join('');
+  tip.style.display='block';
+  // Keep the panel inside the card rather than letting it run off the edge.
+  var left=gx/sx+14;
+  if(left+tip.offsetWidth>box.width-6) left=gx/sx-tip.offsetWidth-14;
+  tip.style.left=Math.max(4,left)+'px';
+  tip.style.top='8px';
+}
+
+function chartLeave(){
+  var tip=document.getElementById('dashTip');
+  var guide=document.getElementById('dashGuide');
+  var dots=document.getElementById('dashHoverDots');
+  if(tip) tip.style.display='none';
+  if(guide) guide.style.display='none';
+  if(dots) dots.innerHTML='';
+}
+
+function fmtDay(iso){
+  var d=new Date(iso+'T00:00:00Z');
+  return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});
+}
+
+/* The ranking the KPI tiles cannot show: which projects actually carry the
+   money, and how much of the total each one is. Deliberately one metric —
+   total project cost — where Budgets By Value compares two. */
+function topProjectsHTML(rows){
+  rows=(rows||[]).filter(function(r){return (r.projectCost||0)>0;})
+    .slice().sort(function(a,b){return (b.projectCost||0)-(a.projectCost||0);}).slice(0,5);
+  if(!rows.length) return '<div style="color:var(--ink-500);font-size:13px;padding:8px 0">No budgets yet</div>';
+  var max=rows[0].projectCost||1;
+  var all=(data&&data.budgets&&data.budgets.totalProjectCost)||rows.reduce(function(s,r){return s+(r.projectCost||0);},0);
+  var html='<div class="dash-rank">';
+  rows.forEach(function(r,i){
+    var w=Math.max(2,Math.round((r.projectCost||0)/max*100));
+    var share=all>0?Math.round((r.projectCost||0)/all*100):0;
+    html+='<div class="dash-rank-row" title="'+esc(r.name||'Untitled')+' — '+money(r.projectCost)
+      +' ('+share+'% of all project cost)">'
+      +'<span class="dash-rank-n">'+(i+1)+'</span>'
+      +'<span class="dash-rank-id mono">'+esc(r.projectId)+'</span>'
+      +'<span class="dash-rank-nm">'+esc(r.name||'Untitled')+'</span>'
+      +'<div class="dash-rank-track"><div class="dash-rank-fill" style="width:'+w+'%"></div></div>'
+      +'<span class="dash-rank-v mono">'+money(r.projectCost)+'</span>'
+      +'<span class="dash-rank-p">'+share+'%</span></div>';
+  });
+  return html+'</div>';
 }
 
 function budgetValueChartHTML(rows){
@@ -250,11 +369,36 @@ function budgetValueChartHTML(rows){
   return html+'</div>';
 }
 
+var RANGE_TITLE={1:'Activity — Today',7:'Activity — Last 7 Days',
+  14:'Activity — Last 14 Days',30:'Activity — Last 30 Days',0:'Activity — All Time'};
+
 function renderCharts(){
   var trend=document.getElementById('dashTrend');
   var value=document.getElementById('dashValue');
-  if(trend) trend.innerHTML=data?lineChartHTML(data.activityByDay):'';
+  var top=document.getElementById('dashTop');
+  var title=document.getElementById('dashTrendTitle');
+  if(title) title.textContent=RANGE_TITLE[range]||RANGE_TITLE[30];
+  if(trend){
+    trend.innerHTML=data?lineChartHTML(data.activityByDay, range):'';
+    var wrap=document.getElementById('dashChartWrap');
+    if(wrap){
+      wrap.addEventListener('mousemove',chartMove);
+      wrap.addEventListener('mouseleave',chartLeave);
+    }
+  }
   if(value) value.innerHTML=data?budgetValueChartHTML(data.topBudgets):'';
+  if(top) top.innerHTML=data?topProjectsHTML(data.topBudgets):'';
+  var note=document.getElementById('dashTopNote');
+  if(note&&data) note.textContent='Share of '+money(data.budgets.totalProjectCost)+' total project cost';
+  document.querySelectorAll('#page-dashboard .dash-range').forEach(function(b){
+    b.classList.toggle('on', Number(b.dataset.range)===range);
+  });
+}
+
+function setRange(d){
+  range=Number(d)||0;
+  chartLeave();
+  renderCharts();
 }
 
 function renderActivity(){
@@ -292,12 +436,12 @@ function renderActivity(){
 
   if(activityPage==='summary'){
     viewBtn.style.display = total > SUMMARY_LIMIT ? '' : 'none';
-    viewBtn.textContent = 'View All';
+    viewBtn.textContent = 'View More';
   } else {
-    var hasMore = activityOffset + events.length < total;
-    if(hasMore){
+    var remaining = total - (activityOffset + events.length);
+    if(remaining>0){
       viewBtn.style.display='';
-      viewBtn.textContent='Load More (' + (total - activityOffset - events.length) + ' remaining)';
+      viewBtn.textContent='View More (' + remaining + ' remaining)';
     } else {
       viewBtn.style.display='none';
     }
@@ -348,6 +492,10 @@ async function loadData(){
   loading=false;
   activityPage='summary';
   activityOffset=0;
+  // The filter is populated from the dashboard payload, not from the first
+  // page of the log: before this it stayed empty until you had already paged
+  // the log, so filtering — and therefore a filtered CSV — was impossible.
+  if(data&&data.activityUsers) populateUserFilter(data.activityUsers);
   renderDashboard();
 }
 
@@ -380,7 +528,9 @@ async function loadActivityPage(offset){
   }catch(e){/* silently fail */}
 }
 
-function viewAll(){
+/* One press, the next 50. The first press swaps the 30-row summary for the
+   real, filtered log; every press after that appends a page. */
+function viewMore(){
   if(activityPage==='summary'){
     activityPage='all';
     loadActivityPage(0);
@@ -406,7 +556,9 @@ async function exportCSV(){
     var offset=0;
     var batch=1000;
     while(true){
-      var parts=['/api/analytics-activity?limit='+batch+'&offset='+offset];
+      // ?scope=activity on the analytics function — /api/analytics-activity
+      // was never a real endpoint, so every export came back empty.
+      var parts=['/api/analytics?scope=activity&limit='+batch+'&offset='+offset];
       if(from&&from.value) parts.push('from='+encodeURIComponent(from.value+'T00:00:00Z'));
       if(to&&to.value) parts.push('to='+encodeURIComponent(to.value+'T23:59:59Z'));
       if(user&&user.value) parts.push('userId='+encodeURIComponent(user.value));
@@ -489,8 +641,8 @@ function exportPDF(){
     +kpi('Registered Users',num(u.total),num(u.totalLogins)+' total logins')
     +'</div>'
 
-    +'<h2 class="dpdf-h">Activity — Last 30 Days</h2>'
-    +'<div class="dpdf-chart">'+lineChartHTML(data.activityByDay)+'</div>'
+    +'<h2 class="dpdf-h">'+esc(RANGE_TITLE[range]||RANGE_TITLE[30])+'</h2>'
+    +'<div class="dpdf-chart">'+lineChartHTML(data.activityByDay, range)+'</div>'
 
     +'<h2 class="dpdf-h">Status Breakdown</h2>'
     +'<div class="dpdf-two">'
@@ -500,6 +652,9 @@ function exportPDF(){
 
     +'<h2 class="dpdf-h">Budgets By Value</h2>'
     +'<div class="dpdf-chart">'+budgetValueChartHTML(data.topBudgets)+'</div>'
+
+    +'<h2 class="dpdf-h">Top 5 Projects By Budget Amount</h2>'
+    +'<div class="dpdf-chart">'+topProjectsHTML(data.topBudgets)+'</div>'
 
     +'<h2 class="dpdf-h">Activity Log</h2>'
     +(log
@@ -520,7 +675,8 @@ window.FSDashboard={
   init:function(a){ adapter=a||{}; },
   render:function(){ if(!data&&!loading)loadData(); else renderDashboard(); },
   refresh:refresh,
-  viewAll:viewAll,
+  viewMore:viewMore,
+  setRange:setRange,
   applyFilter:applyFilter,
   exportCSV:exportCSV,
   exportPDF:exportPDF
