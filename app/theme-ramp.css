@@ -34,6 +34,11 @@
 html[data-skin=ramp]{
   /* The one decisive accent. Reserved for primary actions, selection, and
      small progress accents — never for body text, and never on white. */
+  /* The Home field's clearings are painted in the canvas colour, which has to
+     be an rgb triplet so they can fade to fully transparent without the grey
+     fringe a `transparent` keyword interpolates through. */
+  --fs-canvas-rgb:245,244,241;
+
   --fs-accent:#dff200;
   --fs-accent-hover:#d1e600;
   --fs-accent-active:#c4d800;
@@ -87,6 +92,7 @@ html[data-skin=ramp]{
    text in a few places (avatars, step numbers); the text-coloured usages are
    corrected individually further down. */
 html[data-skin=ramp][data-theme=dark]{
+  --fs-canvas-rgb:26,27,24;
   --fs-accent-soft:#2f3512;
   --fs-accent-line:#4a5320;
   --fs-success:#63c184;--fs-success-soft:#16271b;--fs-success-line:#2a4a34;
@@ -399,42 +405,74 @@ html[data-skin=ramp][data-theme=dark] .fb-fallback button{color:var(--ink-900)}
 html[data-skin=ramp][data-theme=dark] #page-home .hm-kind-budget,
 html[data-skin=ramp][data-theme=dark] #page-home .hm-tone-idea{color:var(--ink-900)}
 
-/* ---- 12. Home hero: the ambient dot grid ---------------------------------
-   Decorative only. It is an absolutely positioned pseudo-element, so it is
-   not a flex item of the hero, contributes no layout, and cannot shift
-   anything; it is pointer-transparent and never enters the accessibility
-   tree (a pseudo-element cannot). Nothing but atmosphere is expressed here.
+/* ---- 12. Home: the ambient dot field -------------------------------------
+   Decorative only, and only on Home. Two absolutely positioned
+   pseudo-elements on the page itself, so neither is a flex item of anything,
+   neither contributes layout, both are pointer-transparent, and a
+   pseudo-element never enters the accessibility tree. Nothing but atmosphere
+   is expressed here.
 
-   One repeating radial-gradient, translated by exactly one 20px tile over
-   22s, which loops seamlessly. The movement is a composited transform rather
-   than an animated background-position, so the field never repaints per
-   frame; there is no canvas, no timer, and no per-frame state.
+   The field spans the whole top of the page rather than the greeting band —
+   it reaches the page gutters and runs down past the first section, so the
+   texture reads as the page's own surface instead of a stripe behind the
+   headline.
 
-   The drift is downward only. The mask holds the top of the field at
-   ~0 opacity, so the 20px the transform uncovers up there is invisible and
-   no geometric overhang is needed — which is what keeps a full-bleed layer
-   from ever producing horizontal overflow. The horizontal bleed matches
-   main's own padding exactly (32px desktop, 12px under 760px), so the field
-   reaches the page edge and stops there.
+   It is deliberately NOT one even grid:
+     · ::before is a fine 18px lattice, faint;
+     · ::after is a coarser 31px lattice at a larger dot and a touch more
+       weight, so the two beat against each other instead of tiling;
+     · ::after also carries soft clearings painted in the CANVAS colour,
+       which thin the field out in a few places — that is what stops it
+       reading as wallpaper. They sit above both lattices because ::after
+       paints over ::before.
 
-   A vertical mask keeps the greeting area quiet and lets the dots emerge
-   below it, so the motion is noticed second and the headline never loses
-   contrast. */
-html[data-skin=ramp] #page-home .hm-hero{position:relative;isolation:isolate;
-  padding:26px 0 34px;margin-bottom:30px}
-html[data-skin=ramp] #page-home .hm-hero::before{
-  content:'';position:absolute;top:-26px;bottom:-14px;left:-32px;right:-32px;z-index:-1;
-  pointer-events:none;
-  background-image:radial-gradient(circle at 1px 1px,rgba(21,22,21,.13) 1px,transparent 0);
-  background-size:20px 20px;
-  -webkit-mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.18) 18%,#000 45%,#000 100%);
-  mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.18) 18%,#000 45%,#000 100%);
-  animation:fs-ramp-dot-drift 22s linear infinite}
-html[data-skin=ramp][data-theme=dark] #page-home .hm-hero::before{
-  background-image:radial-gradient(circle at 1px 1px,rgba(247,247,243,.14) 1px,transparent 0)}
-@keyframes fs-ramp-dot-drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,20px,0)}}
+   Both layers drift, in OPPOSITE directions and at different speeds, each by
+   exactly one of its own tiles so the loop is seamless. The movement is a
+   composited transform, never an animated background-position, so nothing
+   repaints per frame: no canvas, no timer, no per-frame state.
+
+   The masks fade the top (the greeting keeps its contrast and the motion is
+   noticed second) and the bottom (the field ends softly rather than on a
+   line). Because the drift is vertical only, no layer ever needs to overhang
+   sideways — which is what keeps a full-bleed decoration from producing
+   horizontal overflow. The bleed matches main's own padding exactly (32px
+   desktop, 12px under 760px). */
+html[data-skin=ramp] #page-home{position:relative;isolation:isolate}
+html[data-skin=ramp] #page-home::before,
+html[data-skin=ramp] #page-home::after{
+  content:'';position:absolute;top:-26px;left:-32px;right:-32px;
+  height:clamp(460px,54vh,780px);pointer-events:none}
+html[data-skin=ramp] #page-home::before{z-index:-2;
+  background-image:radial-gradient(circle at 1px 1px,rgba(21,22,21,.085) 1px,transparent 0);
+  background-size:18px 18px;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.16) 13%,#000 34%,#000 62%,rgba(0,0,0,.34) 84%,transparent 100%);
+  mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.16) 13%,#000 34%,#000 62%,rgba(0,0,0,.34) 84%,transparent 100%);
+  animation:fs-ramp-dots-fine 15s linear infinite}
+html[data-skin=ramp] #page-home::after{z-index:-1;
+  background-image:
+    radial-gradient(42% 54% at 16% 26%,rgba(var(--fs-canvas-rgb),.92) 0%,rgba(var(--fs-canvas-rgb),0) 64%),
+    radial-gradient(34% 46% at 74% 8%,rgba(var(--fs-canvas-rgb),.85) 0%,rgba(var(--fs-canvas-rgb),0) 68%),
+    radial-gradient(50% 42% at 92% 68%,rgba(var(--fs-canvas-rgb),.9) 0%,rgba(var(--fs-canvas-rgb),0) 70%),
+    radial-gradient(38% 40% at 44% 92%,rgba(var(--fs-canvas-rgb),.8) 0%,rgba(var(--fs-canvas-rgb),0) 72%),
+    radial-gradient(circle at 1.4px 1.4px,rgba(21,22,21,.15) 1.4px,transparent 0);
+  background-size:100% 100%,100% 100%,100% 100%,100% 100%,31px 31px;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.14) 15%,#000 38%,#000 60%,rgba(0,0,0,.3) 82%,transparent 100%);
+  mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.14) 15%,#000 38%,#000 60%,rgba(0,0,0,.3) 82%,transparent 100%);
+  animation:fs-ramp-dots-coarse 21s linear infinite}
+html[data-skin=ramp][data-theme=dark] #page-home::before{
+  background-image:radial-gradient(circle at 1px 1px,rgba(247,247,243,.10) 1px,transparent 0)}
+html[data-skin=ramp][data-theme=dark] #page-home::after{
+  background-image:
+    radial-gradient(42% 54% at 16% 26%,rgba(var(--fs-canvas-rgb),.92) 0%,rgba(var(--fs-canvas-rgb),0) 64%),
+    radial-gradient(34% 46% at 74% 8%,rgba(var(--fs-canvas-rgb),.85) 0%,rgba(var(--fs-canvas-rgb),0) 68%),
+    radial-gradient(50% 42% at 92% 68%,rgba(var(--fs-canvas-rgb),.9) 0%,rgba(var(--fs-canvas-rgb),0) 70%),
+    radial-gradient(38% 40% at 44% 92%,rgba(var(--fs-canvas-rgb),.8) 0%,rgba(var(--fs-canvas-rgb),0) 72%),
+    radial-gradient(circle at 1.4px 1.4px,rgba(247,247,243,.17) 1.4px,transparent 0)}
+@keyframes fs-ramp-dots-fine{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,18px,0)}}
+@keyframes fs-ramp-dots-coarse{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,-31px,0)}}
 /* The greeting is the one place in the product that takes an editorial size;
    it still scales with the viewport and never overflows. */
+html[data-skin=ramp] #page-home .hm-hero{padding:30px 0 38px;margin-bottom:32px}
 html[data-skin=ramp] #page-home .hm-greet{font-size:clamp(30px,4vw,46px);font-weight:500;
   letter-spacing:-.022em;line-height:1.04}
 html[data-skin=ramp] #page-home .hm-greet-sub{font-size:15px;color:var(--ink-600);margin-top:10px}
@@ -444,18 +482,19 @@ html[data-skin=ramp] #page-home .hm-sec-hd{margin-bottom:12px}
    main's mobile padding so the page never scrolls sideways. */
 @media(max-width:760px){
   html[data-skin=ramp] main{padding:16px 12px 40px}
-  html[data-skin=ramp] #page-home .hm-hero::before{left:-12px;right:-12px;
-    background-size:26px 26px;
-    background-image:radial-gradient(circle at 1px 1px,rgba(21,22,21,.09) 1px,transparent 0);
-    animation:none}
-  html[data-skin=ramp][data-theme=dark] #page-home .hm-hero::before{
-    background-image:radial-gradient(circle at 1px 1px,rgba(247,247,243,.10) 1px,transparent 0)}
-  html[data-skin=ramp] #page-home .hm-hero{padding:18px 0 24px}
+  html[data-skin=ramp] #page-home::before,html[data-skin=ramp] #page-home::after{
+    left:-12px;right:-12px;height:clamp(360px,42vh,560px);animation:none}
+  html[data-skin=ramp] #page-home::before{background-size:24px 24px;
+    background-image:radial-gradient(circle at 1px 1px,rgba(21,22,21,.07) 1px,transparent 0)}
+  html[data-skin=ramp] #page-home::after{background-size:100% 100%,100% 100%,100% 100%,100% 100%,40px 40px}
+  html[data-skin=ramp][data-theme=dark] #page-home::before{
+    background-image:radial-gradient(circle at 1px 1px,rgba(247,247,243,.09) 1px,transparent 0)}
+  html[data-skin=ramp] #page-home .hm-hero{padding:20px 0 26px;margin-bottom:24px}
   html[data-skin=ramp] .hd{height:56px}
 }
 /* Reduced motion keeps the texture and drops the movement entirely. */
 @media (prefers-reduced-motion:reduce){
-  html[data-skin=ramp] #page-home .hm-hero::before{animation:none}
+  html[data-skin=ramp] #page-home::before,html[data-skin=ramp] #page-home::after{animation:none}
 }
 
 /* ---- 13. Print -----------------------------------------------------------

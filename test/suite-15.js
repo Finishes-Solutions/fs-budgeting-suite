@@ -114,11 +114,22 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the pack changes no navigation label',
     JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('body>header nav button')]
       .map(b=>b.textContent.trim())))===JSON.stringify(navBefore), navBefore.join('|'));
- ok('the Home hero gains the decorative dot field: behind content, pointer-transparent',
+ // Two counter-drifting lattices, both behind every piece of content and both
+ // pointer-transparent. A decoration that ever caught a click, took layout, or
+ // climbed above the page would be a bug, not a style.
+ ok('Home gains the decorative dot field: two layers, behind content, pointer-transparent',
     await p.evaluate(()=>{
-      const st=getComputedStyle(document.querySelector('#page-home .hm-hero'),'::before');
-      return /radial-gradient/.test(st.backgroundImage)&&st.pointerEvents==='none'
-        &&parseInt(st.zIndex,10)<0;}));
+      const host=document.getElementById('page-home');
+      return ['::before','::after'].every(ps=>{
+        const st=getComputedStyle(host,ps);
+        return /radial-gradient/.test(st.backgroundImage)&&st.pointerEvents==='none'
+          &&parseInt(st.zIndex,10)<0&&st.position==='absolute';});}));
+ ok('the two field layers drift in opposite directions',
+    await p.evaluate(()=>{
+      const host=document.getElementById('page-home');
+      const a=getComputedStyle(host,'::before').animationName;
+      const c=getComputedStyle(host,'::after').animationName;
+      return a!=='none'&&c!=='none'&&a!==c;}));
  // The decoration is full-bleed, so the phone width is where it would show up
  // as a sideways scroll if the bleed ever exceeded main's own padding.
  await p.setViewportSize({width:390,height:844}); await p.waitForTimeout(400);
