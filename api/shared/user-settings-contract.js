@@ -16,6 +16,12 @@ const ACCENTS = ['green', 'blue', 'violet', 'graphite', 'red', 'orange'];
 // own choice, so budgets can be a list while analyses are cards. (This
 // replaced the earlier homeView + tableDensity pair — sanitize maps them.)
 const LIST_VIEWS = ['comfortable', 'compact', 'cards'];
+// Theme packs are alternate visual PRESENTATIONS of the same product — paint
+// only, scoped in CSS to html[data-skin=<pack>]. 'default' is the Finishes
+// Solutions appearance. Packs are a super_admin preview: the client decides by
+// role whether to apply a stored pack, so an account that loses the role stops
+// seeing one without its setting being rewritten.
+const THEME_PACKS = ['default', 'ramp'];
 const HEX_RX = /^#[0-9a-fA-F]{6}$/;
 // Pinned records on Home. Two lists of ids — budget project ids and analysis
 // GUIDs — so a pin follows the account to any signed-in browser. Bounded on
@@ -26,6 +32,7 @@ const PIN_ID_MAX = 64;
 
 const DEFAULT_SETTINGS = {
   theme: 'light',
+  themePack: 'default',
   timeFormat: '12h',
   accentColor: 'green',
   avatarColor: null,          // null = the app default (accent-colored)
@@ -81,6 +88,7 @@ function sanitizeSettings(input) {
   const pin = s.pinned && typeof s.pinned === 'object' && !Array.isArray(s.pinned) ? s.pinned : {};
   return {
     theme: pickEnum(s.theme, THEMES, DEFAULT_SETTINGS.theme),
+    themePack: pickEnum(s.themePack, THEME_PACKS, DEFAULT_SETTINGS.themePack),
     timeFormat: pickEnum(s.timeFormat, TIME_FORMATS, DEFAULT_SETTINGS.timeFormat),
     accentColor: (typeof s.accentColor === 'string' && HEX_RX.test(s.accentColor))
       ? s.accentColor.toLowerCase()

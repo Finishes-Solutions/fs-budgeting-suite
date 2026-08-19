@@ -50,6 +50,7 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 |---|---|
 | `app/index.html` | The budget frontend — HTML + inline CSS + inline JS, no build step |
 | `app/investment-analysis.js` / `.css` | The Investment Analysis workflow — external no-build IIFE behind `window.FSInvestmentUI`, wired through an adapter |
+| `app/theme-ramp.css` | The Editorial theme pack — presentation only, every rule scoped to `html[data-skin=ramp]`, loaded after the inline sheet |
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement (first auth gate) |
 | `app/vendor/exceljs.min.js` | ExcelJS 4.4.0, vendored — see [Single sources of truth](#single-sources-of-truth) |
 | `app/assets/` | Logos + favicon set; regenerate with `tools/make-favicons.py`, don't hand-edit |
@@ -164,6 +165,13 @@ custom provider for sign-in.
   guard with `nz()`.
 - **`touch()` / `markDirty()` / `recalc()`** are the change pipeline — call
   `touch()` after mutating the document; don't invent parallel dirty tracking.
+- **Theme packs are paint only.** A pack (Settings → Theme Pack, super_admin)
+  is an alternate appearance of the same product: it may remap tokens and
+  restyle primitives, never move a route, label, control, calculation or
+  permission. Every rule lives in its own file, scoped to `html[data-skin=…]`,
+  so the default appearance cannot regress; the role decides whether a stored
+  pack is applied, and `beforeprint` strips the attribute so exports never
+  inherit one. Details in `docs/HANDOFF.md`.
 - **CSS scoping:** the page is one stylesheet; qualify selectors
   (e.g. `.tbl input.codein`) because broad rules like `.tbl input` win on
   specificity and have caused real clipping bugs.

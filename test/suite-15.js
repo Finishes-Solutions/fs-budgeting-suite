@@ -1,6 +1,7 @@
 // Suite 15 — per-account settings (dbo.Users stand-in): boot bootstrap and
 // login counting, profile fields, accent / avatar / time format / density,
-// Home card view, remembered export options, and the activity log.
+// theme packs (the super_admin visual preview), Home card view, remembered
+// export options, and the activity log.
 const { chromium } = require('playwright');
 const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:''}`);
 (async()=>{ try{
@@ -91,6 +92,88 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the Remember Export Settings toggle flips the setting',
     await p.evaluate(()=>usSettings().rememberExport===true
       &&document.getElementById('setRememberExport').checked));
+ // ---- theme packs: a super_admin preview that repaints and nothing else
+ ok('Settings offers the Theme Pack control to a super admin',
+    await p.evaluate(()=>getComputedStyle(document.getElementById('setThemePackRow')).display!=='none'));
+ const navBefore=await p.evaluate(()=>[...document.querySelectorAll('body>header nav button')]
+   .map(b=>b.textContent.trim()));
+ await p.click('#settingsModal [data-themepack-pick=ramp]'); await p.waitForTimeout(1200);
+ ok('the pack applies as one scoped attribute',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-skin')==='ramp'));
+ ok('the pack follows the account',
+    (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json()).settings.themePack))==='ramp');
+ ok('the primary action carries the pack accent',
+    await p.evaluate(()=>{const b=document.querySelector('#page-home .btn-primary');
+      return b&&getComputedStyle(b).backgroundColor==='rgb(223, 242, 0)';}),
+    await p.evaluate(()=>{const b=document.querySelector('#page-home .btn-primary');
+      return b?getComputedStyle(b).backgroundColor:'(no button)';}));
+ ok('a pack owns its palette, so the accent attribute stands down',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-accent')===null));
+ ok('the account keeps its accent choice underneath the pack',
+    (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json()).settings.accentColor))==='blue');
+ ok('the pack changes no navigation label',
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('body>header nav button')]
+      .map(b=>b.textContent.trim())))===JSON.stringify(navBefore), navBefore.join('|'));
+ ok('the Home hero gains the decorative dot field: behind content, pointer-transparent',
+    await p.evaluate(()=>{
+      const st=getComputedStyle(document.querySelector('#page-home .hm-hero'),'::before');
+      return /radial-gradient/.test(st.backgroundImage)&&st.pointerEvents==='none'
+        &&parseInt(st.zIndex,10)<0;}));
+ // The decoration is full-bleed, so the phone width is where it would show up
+ // as a sideways scroll if the bleed ever exceeded main's own padding.
+ await p.setViewportSize({width:390,height:844}); await p.waitForTimeout(400);
+ ok('the pack never widens the page on a phone',
+    await p.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),
+    await p.evaluate(()=>document.documentElement.scrollWidth+' vs '+document.documentElement.clientWidth));
+ await p.setViewportSize({width:1400,height:1000}); await p.waitForTimeout(400);
+ // Print renders the default pack, so an export can never inherit a preview.
+ await p.evaluate(()=>window.dispatchEvent(new Event('beforeprint'))); await p.waitForTimeout(150);
+ ok('printing strips the pack',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-skin')===null));
+ await p.evaluate(()=>window.dispatchEvent(new Event('afterprint'))); await p.waitForTimeout(150);
+ ok('the pack comes back after printing',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-skin')==='ramp'));
+ // The ROLE decides, not the stored value: losing super_admin stops the pack
+ // being painted without rewriting the account's setting.
+ const gate=await p.evaluate(()=>{
+   const role=US.appRole, roles=principal?principal.userRoles:null;
+   US.appRole='user'; if(principal)principal.userRoles=['authenticated'];
+   applyThemePack('ramp');
+   const applied=document.documentElement.getAttribute('data-skin');
+   US.appRole=role; if(principal)principal.userRoles=roles;
+   applyThemePack(themePackSetting());
+   return {applied, restored:document.documentElement.getAttribute('data-skin'),
+           stored:usSettings().themePack};
+ });
+ ok('an account without super_admin never gets the pack, and keeps its setting',
+    gate.applied===null&&gate.restored==='ramp'&&gate.stored==='ramp', JSON.stringify(gate));
+ // home.css, dashboard.css and feedback.css qualify many rules with a page id,
+ // so a pack override has to carry the same id or silently lose the cascade.
+ // These three are the trap in miniature: shell, list, and an id-owned tag.
+ ok('the pack repaints the shell, the list and the id-scoped tags alike',
+    await p.evaluate(()=>{
+      const hd=getComputedStyle(document.querySelector('body>header')).backgroundColor;
+      const tag=document.querySelector('#page-home .hm-kind-budget');
+      return hd==='rgb(255, 255, 255)'
+        &&(!tag||getComputedStyle(tag).backgroundColor==='rgb(244, 250, 194)');}),
+    await p.evaluate(()=>getComputedStyle(document.querySelector('body>header')).backgroundColor));
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(600);
+ ok('list headers restyle while money cells keep the mono, tabular figures',
+    await p.evaluate(()=>{
+      const th=getComputedStyle(document.querySelector('#page-budgets .tbl th'));
+      const td=document.querySelector('#page-budgets .tbl td.calc');
+      return /Inter|Helvetica|system-ui/.test(th.fontFamily)&&!/Plex/.test(th.fontFamily)
+        &&(!td||(/Plex/.test(getComputedStyle(td).fontFamily)
+          &&/tabular-nums/.test(getComputedStyle(td).fontVariantNumeric)));}));
+ await p.evaluate(()=>go('home')); await p.waitForTimeout(600);
+ await p.click('#settingsModal [data-themepack-pick=default]'); await p.waitForTimeout(1200);
+ ok('switching back restores the default appearance and repaints the accent',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-skin')===null
+      &&document.documentElement.getAttribute('data-accent')==='blue'));
+ ok('the default appearance is byte-for-byte the app chrome again',
+    await p.evaluate(()=>getComputedStyle(document.querySelector('body>header')).backgroundColor)
+      ==='rgb(22, 25, 26)');
+
  // ---- per-section views: three options each, budgets and analyses separate
  await p.click('#settingsModal [data-budgetview-pick=compact]'); await p.waitForTimeout(400);
  ok('compact view tightens the budgets card only',

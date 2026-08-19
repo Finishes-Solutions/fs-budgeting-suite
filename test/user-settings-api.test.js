@@ -250,3 +250,28 @@ test('the settings call tells the app what the server can do', async () => {
   assert.strictEqual(r2.body.features.feedbackStore, false);
   FEATURES = Object.assign({}, FEATURES, { feedbackTable: true });
 });
+
+// ---- the settings contract itself (dependency-free, so no stubs needed).
+// A theme pack is a stored preference like any other: the whitelist is what
+// stops an unknown value ever reaching a browser, and the role check that
+// decides whether a pack is painted lives in the client, not here.
+const contract = require('../api/shared/user-settings-contract');
+
+test('a theme pack round-trips, and an unknown pack falls back to default', () => {
+  assert.strictEqual(contract.sanitizeSettings({ themePack: 'ramp' }).themePack, 'ramp');
+  assert.strictEqual(contract.sanitizeSettings({ themePack: 'evergreen' }).themePack, 'default');
+  assert.strictEqual(contract.sanitizeSettings({ themePack: 7 }).themePack, 'default');
+});
+
+test('an account that never picked a pack gets the default appearance', () => {
+  assert.strictEqual(contract.sanitizeSettings({}).themePack, 'default');
+  assert.strictEqual(contract.DEFAULT_SETTINGS.themePack, 'default');
+});
+
+test('the pack is additive: it disturbs no other stored setting', () => {
+  const s = contract.sanitizeSettings({ themePack: 'ramp', accentColor: 'blue',
+    theme: 'dark', budgetView: 'cards' });
+  assert.strictEqual(s.accentColor, 'blue');
+  assert.strictEqual(s.theme, 'dark');
+  assert.strictEqual(s.budgetView, 'cards');
+});

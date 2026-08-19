@@ -1,0 +1,472 @@
+/* ============================================================================
+   Theme pack: "Ramp-Inspired" — a PRESENTATION-ONLY skin of the Budgeting
+   Suite, offered to super_admin accounts from Settings → Theme Pack.
+
+   Everything here is scoped to html[data-skin=ramp]. With the attribute
+   absent (every other account, and every print) not one rule in this file
+   applies, so the default Finishes Solutions appearance cannot regress.
+
+   How it works, in the order the cascade sees it:
+     1. token remap — the app's existing custom properties (--ink-*, --green-*,
+        --r, --sh, --focus, fonts) are re-pointed at this direction's palette.
+        That alone carries most of the app, because every surface in
+        index.html, home.css, dashboard.css, feedback.css and
+        investment-analysis.css already paints from those tokens.
+     2. primitive overrides — the places where a remap is not enough: the
+        header (dark chrome becomes a white bar), the primary button (the one
+        chartreuse surface), tables, inputs, dialogs, and the token usages
+        that double as both a fill and a text colour.
+     3. the Home hero's ambient dot grid.
+
+   This file is loaded AFTER the inline <style> block in index.html, so a rule
+   here beats an equal-specificity rule there on order alone and no selector
+   needs inflating (and there is no !important in this file except the two
+   documented cases at the end).
+
+   Nothing here changes markup, copy, routes, data, or behaviour.
+   ========================================================================= */
+
+/* ---- 1. Tokens -----------------------------------------------------------
+   The --fs-* names are this pack's own palette (near-black ink, warm
+   off-white surfaces, one chartreuse accent). The app's tokens are then
+   mapped onto them, so the rest of the product inherits the direction
+   without a single page-level colour. */
+html[data-skin=ramp]{
+  /* The one decisive accent. Reserved for primary actions, selection, and
+     small progress accents — never for body text, and never on white. */
+  --fs-accent:#dff200;
+  --fs-accent-hover:#d1e600;
+  --fs-accent-active:#c4d800;
+  --fs-accent-soft:#f4fac2;
+  --fs-accent-line:#e3ecab;
+  --fs-on-accent:#151615;
+
+  /* The semantic inks are a step darker than the direction's display values:
+     each one has to clear AA as 10–12px TEXT on its own soft tint (status
+     chips, badges, pills, banners), which the lighter display tones do not. */
+  --fs-success:#24713e;--fs-success-soft:#e8f4eb;--fs-success-line:#c6e3d0;
+  --fs-warning:#8a5b12;--fs-warning-soft:#fbf0df;--fs-warning-line:#ecd8b4;
+  --fs-danger:#b03a28;--fs-danger-soft:#f9e9e5;--fs-danger-line:#eec9c1;
+  --fs-info:#31539f;--fs-info-soft:#e9eefb;--fs-info-line:#cfdaf5;
+
+  /* --- the app's neutral scale, warmed and pushed to near-black --- */
+  --ink-950:#151615;--ink-900:#1f201e;--ink-800:#2f2f2b;--ink-700:#46453f;
+  --ink-600:#5c5b54;--ink-500:#77766e;--ink-400:#96958d;--ink-300:#c3c2bb;
+  --ink-200:#d8d7d2;--ink-150:#e4e3de;--ink-100:#eeede9;--ink-50:#f5f4f1;
+  --white:#ffffff;
+
+  /* --- the accent scale ---
+     700–900 carry text, icons and dark fills, so they stay near-black: the
+     brief forbids chartreuse type on white. 50–200 are the selection tints,
+     which is where the accent is allowed to show. */
+  --green-900:#151615;--green-800:#22231f;--green-700:#2d2e2a;
+  --green-600:#3a3b36;--green-500:#565750;
+  --green-200:#e3ecab;--green-100:#eef7c9;--green-50:#f7fbe4;
+
+  --warn:#8a5b12;--danger:#b03a28;
+  --edit:#3d63c8;--edit-100:#d7e0f7;--edit-50:#eef2fc;
+
+  /* Surfaces that are dark in every theme. Near-black rather than the
+     default's cool ink. */
+  --chrome:#ffffff;--solid:#151615;--solid-2:#262723;
+
+  --fs-ease:cubic-bezier(.2,.75,.25,1);
+  --r:6px;--rm:10px;
+  --sh:0 1px 2px rgba(21,22,21,.05);
+  --focus:0 0 0 3px rgba(70,103,217,.34);
+
+  /* Inter is the approved stand-in for the reference grotesk; the stack falls
+     all the way back to system-ui, so a blocked font request costs weight and
+     nothing else. The mono face stays IBM Plex Mono — it is already loaded,
+     already tabular, and every money column in the product depends on it. */
+  --fb:'Inter','Inter Tight','Helvetica Neue',Helvetica,Arial,system-ui,sans-serif;
+}
+/* Dark stays exactly the toggle, storage and default it already was — this is
+   only the same direction re-mapped for it. The accent scale keeps a mid
+   olive rather than flipping light, because --green-700 is a FILL under white
+   text in a few places (avatars, step numbers); the text-coloured usages are
+   corrected individually further down. */
+html[data-skin=ramp][data-theme=dark]{
+  --fs-accent-soft:#2f3512;
+  --fs-accent-line:#4a5320;
+  --fs-success:#63c184;--fs-success-soft:#16271b;--fs-success-line:#2a4a34;
+  --fs-warning:#d9a441;--fs-warning-soft:#2b2113;--fs-warning-line:#4d3a1c;
+  --fs-danger:#e08072;--fs-danger-soft:#2c1815;--fs-danger-line:#553028;
+  --fs-info:#8fb0ea;--fs-info-soft:#161d2e;--fs-info-line:#2b3a5c;
+
+  /* The muted steps are lifted a little against the raised panel colour:
+     table headers, timestamps and helper text are 11–12px, so they still have
+     to clear AA on white-token surfaces, not only on the page canvas. */
+  --ink-950:#f7f7f3;--ink-900:#eaeae4;--ink-800:#d5d5cd;--ink-700:#b8b8b0;
+  --ink-600:#a3a39a;--ink-500:#9a9a91;--ink-400:#87877e;--ink-300:#4c4c46;
+  --ink-200:#373832;--ink-150:#2c2d28;--ink-100:#232420;--ink-50:#1a1b18;
+  --white:#20211e;
+
+  --green-900:#0f1109;--green-800:#4d5527;--green-700:#6e7a3a;
+  --green-600:#7d8a44;--green-500:#94a256;
+  --green-200:#4a5320;--green-100:#33390f;--green-50:#26290f;
+
+  --warn:#d9a441;--danger:#e08072;
+  --edit:#8fb0ea;--edit-100:#1e2b45;--edit-50:#171f30;
+
+  --chrome:#121311;--solid:#0d0e0c;--solid-2:#262723;
+  --sh:0 1px 2px rgba(0,0,0,.5);
+  --focus:0 0 0 3px rgba(126,152,233,.38);
+}
+
+/* ---- 2. Typography -------------------------------------------------------
+   Editorial where there is room, controlled where there is work. Application
+   headings never take the marketing scale. */
+html[data-skin=ramp] body{background:var(--ink-50);color:var(--ink-800);
+  -webkit-font-smoothing:antialiased;letter-spacing:-.004em}
+html[data-skin=ramp] .page-title h1{font-size:29px;font-weight:600;letter-spacing:-.018em}
+html[data-skin=ramp] .card-hd h2{font-size:15px;font-weight:600;letter-spacing:-.008em}
+html[data-skin=ramp] .mod-title,
+html[data-skin=ramp] .card-hd .mod-title{font-size:20px;font-weight:600;letter-spacing:-.014em}
+html[data-skin=ramp] .eyebrow,
+html[data-skin=ramp] .set-lab,
+html[data-skin=ramp] label.fld .lab{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:.05em}
+/* Eyebrows, tags and micro labels move to the sans face at the design's
+   micro-label size. Figures are deliberately NOT in this list: the mono face
+   is what keeps money columns aligned, and it stays exactly where it is. */
+html[data-skin=ramp] .stat .k,html[data-skin=ramp] .metric .k,
+html[data-skin=ramp] #page-dashboard .dash-kpi .k,html[data-skin=ramp] #page-dashboard .dash-card h3,
+html[data-skin=ramp] .inv-report .kpi .k,html[data-skin=ramp] .pal-sec,
+html[data-skin=ramp] .home-cards .grp-lab,html[data-skin=ramp] #page-home .hm-kind,
+html[data-skin=ramp] #page-home .hm-att-tag,html[data-skin=ramp] #page-admin .fb-kind,
+html[data-skin=ramp] .hcard .hc-row span:first-child{
+  font-family:var(--fb);letter-spacing:.05em;font-weight:600}
+html[data-skin=ramp] .stat .k,html[data-skin=ramp] .metric .k,
+html[data-skin=ramp] #page-dashboard .dash-kpi .k,
+html[data-skin=ramp] #page-dashboard .dash-card h3{font-size:11px}
+
+/* Financial figures line up column to column at every size. */
+html[data-skin=ramp] .tbl td.calc,html[data-skin=ramp] .inv-list td.calc,
+html[data-skin=ramp] .tbl input[type=number],html[data-skin=ramp] input.num,
+html[data-skin=ramp] .stat .v,html[data-skin=ramp] .metric .v,
+html[data-skin=ramp] .sum-row .v,html[data-skin=ramp] .inv-rpt td,
+html[data-skin=ramp] .inv-report .kpi .v,html[data-skin=ramp] #page-dashboard .dash-kpi .v,
+html[data-skin=ramp] .hcard .hc-row .v,html[data-skin=ramp] #page-home .hm-card-money .v{
+  font-variant-numeric:tabular-nums lining-nums}
+
+/* ---- 3. Application shell ------------------------------------------------
+   The dark chrome bar becomes a white bar with a single hairline under it.
+   Navigation keeps every item, its order, its label and its active logic —
+   only the paint changes. */
+html[data-skin=ramp] body>header{background:var(--white);color:var(--ink-900);
+  border-bottom:1px solid var(--ink-200)}
+/* The lockup in the header is the reversed (pure #fff) mark; on a light bar
+   the brand rule calls for the black lockup, which is the same artwork
+   inverted — no second asset, no flash, and it flips back with the theme. */
+html[data-skin=ramp] .brand img{filter:invert(1)}
+html[data-skin=ramp][data-theme=dark] .brand img{filter:none}
+html[data-skin=ramp] .hd{height:58px}
+html[data-skin=ramp] nav button{font-family:var(--fb);font-size:13.5px;font-weight:500;
+  letter-spacing:normal;text-transform:none;color:var(--ink-600);padding:7px 12px;border-radius:6px}
+html[data-skin=ramp] nav button:hover{color:var(--ink-950);background:var(--ink-100)}
+html[data-skin=ramp] nav button.on{color:var(--ink-950);background:var(--ink-100);font-weight:600}
+html[data-skin=ramp] .nav-drop{background:var(--white);border:1px solid var(--ink-200);
+  border-radius:10px;box-shadow:0 18px 48px rgba(21,22,21,.11)}
+html[data-skin=ramp] .nav-drop button{font-size:13.5px;letter-spacing:normal;text-transform:none;
+  color:var(--ink-700);padding:8px 12px}
+html[data-skin=ramp] .nav-drop button:hover{background:var(--ink-100);color:var(--ink-950)}
+html[data-skin=ramp] .nav-drop button.on{background:var(--ink-100);color:var(--ink-950)}
+html[data-skin=ramp] #profileBtn{border-color:var(--ink-200)}
+html[data-skin=ramp] #profileBtn:focus-visible{box-shadow:var(--focus)}
+/* The save-state pill used to sit on dark chrome; on the light bar it needs
+   real semantic colour instead of translucent white. */
+html[data-skin=ramp] .savepill{font-family:var(--fb);font-size:10.5px;font-weight:600}
+html[data-skin=ramp] .savepill.saved{background:var(--fs-success-soft);color:var(--fs-success)}
+html[data-skin=ramp] .savepill.dirty{background:var(--fs-warning-soft);color:var(--fs-warning)}
+html[data-skin=ramp] .savepill.saving{background:var(--ink-100);color:var(--ink-600)}
+html[data-skin=ramp] main{padding:26px 32px 56px}
+
+/* ---- 4. Surfaces ---------------------------------------------------------
+   Warm canvas outside, white panel inside, one hairline border, and hierarchy
+   from spacing rather than shadow. */
+html[data-skin=ramp] .card{border-color:var(--ink-200);border-radius:var(--rm);box-shadow:none}
+html[data-skin=ramp] .card-hd{border-bottom-color:var(--ink-150);padding:14px 20px}
+html[data-skin=ramp] .mod-sheet{border-radius:14px;box-shadow:0 18px 48px rgba(21,22,21,.18)}
+html[data-skin=ramp] .metric{background:var(--white);border-left-width:3px}
+html[data-skin=ramp] .stats{border-radius:var(--rm)}
+/* The dark summary band's rule was the accent scale, which is now near-black
+   and would vanish on it. This is one of the accent's few appearances. */
+html[data-skin=ramp] .stat{border-left-color:var(--fs-accent)}
+html[data-skin=ramp] .hcard,html[data-skin=ramp] #page-home .hm-card,
+html[data-skin=ramp] #page-home .hm-atts,html[data-skin=ramp] #page-home .hm-log,
+html[data-skin=ramp] #page-dashboard .dash-kpi{border-color:var(--ink-200);box-shadow:none}
+html[data-skin=ramp] #page-home .hm-card:hover{border-color:var(--ink-400);box-shadow:var(--sh)}
+/* Timestamps, ids and card footers are real content, not placeholders: at
+   11px they need the muted step that clears AA, not the faint one. */
+html[data-skin=ramp] #page-home .hm-when,html[data-skin=ramp] #page-home .hm-log-when,
+html[data-skin=ramp] #page-home .hm-att-id,html[data-skin=ramp] #page-home .hm-id,
+html[data-skin=ramp] .hcard .hc-ft{color:var(--ink-500)}
+
+/* ---- 5. Controls ---------------------------------------------------------
+   Primary is the accent, and it is the only surface in the product that is.
+   Secondary is near-black, outline is a hairline on white; every label,
+   action and disabled rule is untouched. */
+html[data-skin=ramp] .btn{border-radius:6px;font-weight:550;font-size:13.5px;padding:9px 16px;
+  transition:background-color .14s var(--fs-ease),border-color .14s var(--fs-ease),color .14s var(--fs-ease)}
+html[data-skin=ramp] .btn-sm{padding:6px 11px;font-size:12.5px}
+html[data-skin=ramp] .btn-primary{background:var(--fs-accent);color:var(--fs-on-accent);
+  border-color:var(--fs-accent)}
+html[data-skin=ramp] .btn-primary:hover{background:var(--fs-accent-hover);border-color:var(--fs-accent-hover)}
+html[data-skin=ramp] .btn-primary:active{background:var(--fs-accent-active);border-color:var(--fs-accent-active)}
+html[data-skin=ramp] .btn-ghost{border-color:var(--ink-200);color:var(--ink-800);background:var(--white)}
+html[data-skin=ramp] .btn-ghost:hover{border-color:var(--ink-300);background:var(--ink-50);color:var(--ink-950)}
+html[data-skin=ramp] .btn-dark{background:var(--solid);color:#fff;border-color:var(--solid)}
+html[data-skin=ramp] .btn-dark:hover{background:var(--solid-2);border-color:var(--solid-2)}
+/* Disabled must read as disabled without leaning on opacity alone. */
+html[data-skin=ramp] .btn[disabled],html[data-skin=ramp] .btn-soon{opacity:1;
+  background:var(--ink-100);color:var(--ink-400);border-color:var(--ink-200)}
+html[data-skin=ramp] .btn:focus-visible{outline:none;box-shadow:var(--focus)}
+html[data-skin=ramp] input[type=text],html[data-skin=ramp] input[type=number],
+html[data-skin=ramp] input[type=password],html[data-skin=ramp] input[type=month],
+html[data-skin=ramp] input[type=date],html[data-skin=ramp] select,html[data-skin=ramp] textarea{
+  border-radius:8px;padding:10px 12px;border-color:var(--ink-200)}
+html[data-skin=ramp] input:hover:not(:focus),html[data-skin=ramp] select:hover:not(:focus),
+html[data-skin=ramp] textarea:hover:not(:focus){border-color:var(--ink-300)}
+html[data-skin=ramp] input:focus,html[data-skin=ramp] select:focus,html[data-skin=ramp] textarea:focus{
+  border-color:var(--ink-950);box-shadow:var(--focus)}
+html[data-skin=ramp] input.set-locked{background:var(--ink-50)}
+/* The budget grid's in-cell inputs stay borderless until touched — that is
+   what keeps the sheet readable — so only the resting padding is re-tuned. */
+html[data-skin=ramp] .tbl input,html[data-skin=ramp] .tbl select{border-radius:6px;padding:4px 8px}
+html[data-skin=ramp] .tbl input:focus,html[data-skin=ramp] .tbl select:focus{border-color:var(--ink-950)}
+html[data-skin=ramp] .tbl input[type=checkbox]:checked,
+html[data-skin=ramp] .tbl input[type=checkbox]:indeterminate{
+  background:var(--fs-accent);border-color:var(--fs-accent-active)}
+html[data-skin=ramp] .tbl input[type=checkbox]:checked::after{border-color:var(--fs-on-accent)}
+html[data-skin=ramp] .tbl input[type=checkbox]:indeterminate::after{border-top-color:var(--fs-on-accent)}
+html[data-skin=ramp] .seg,html[data-skin=ramp] .mini-seg{border-radius:8px;border-color:var(--ink-200)}
+html[data-skin=ramp] .seg button{font-family:var(--fb);font-size:12px;letter-spacing:.02em;
+  text-transform:none;font-weight:550}
+/* A selected view/density is a selection, not an action, so it takes the
+   accent's soft tint — the solid accent stays with the primary buttons. */
+html[data-skin=ramp] .mini-seg button.on{background:var(--fs-accent-soft);color:var(--ink-950);
+  box-shadow:inset 0 0 0 1px var(--fs-accent-line)}
+html[data-skin=ramp] .mini-seg button.on:hover{background:var(--fs-accent-soft);color:var(--ink-950)}
+html[data-skin=ramp] .wf-steps button,html[data-skin=ramp] .wf-steps a{border-radius:999px;
+  border-color:var(--ink-200);font-size:12.5px;padding:7px 15px}
+html[data-skin=ramp] .wf-steps button.done::after,html[data-skin=ramp] .wf-steps a.done::after{
+  background:var(--ink-400)}
+html[data-skin=ramp] .wf-steps button.on.done::after,html[data-skin=ramp] .wf-steps a.on.done::after{
+  background:var(--fs-accent)}
+html[data-skin=ramp] .set-choice button{border-radius:8px}
+html[data-skin=ramp] .set-choice button.on{border-color:var(--ink-950);box-shadow:none;color:var(--ink-950)}
+html[data-skin=ramp] .set-choice button.on svg,html[data-skin=ramp] .set-choice .tick{color:var(--ink-950)}
+html[data-skin=ramp] .set-swatch.on{box-shadow:0 0 0 3px var(--fs-accent-soft)}
+/* The guided Next button is a primary action once it is available. */
+html[data-skin=ramp] .inv-next{border-radius:8px}
+html[data-skin=ramp] .inv-next.ready{background:var(--fs-accent);border-color:var(--fs-accent);
+  color:var(--fs-on-accent);box-shadow:none}
+html[data-skin=ramp] #fbModal .fb-kind-btn.on{border-color:var(--ink-950);background:var(--ink-50);color:var(--ink-950)}
+html[data-skin=ramp] #fbFab{border-radius:10px;box-shadow:var(--sh)}
+html[data-skin=ramp] #fbFab svg{color:var(--ink-700)}
+
+/* ---- 6. Tables -----------------------------------------------------------
+   The working surface of the product: quiet headers, hairline dividers, warm
+   hover, and the accent kept for actual selection. Column widths, sorting,
+   sticky headers, and every cell's content are untouched. */
+html[data-skin=ramp] .tbl th,html[data-skin=ramp] .inv-list th,html[data-skin=ramp] .inv-table th{
+  font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:.05em;
+  color:var(--ink-500);border-bottom-color:var(--ink-200)}
+html[data-skin=ramp] .tbl td,html[data-skin=ramp] .inv-table td,html[data-skin=ramp] .inv-list td{
+  border-bottom-color:var(--ink-150)}
+html[data-skin=ramp] #page-budgets .tbl th,html[data-skin=ramp] #page-budgets .tbl td,
+html[data-skin=ramp] .inv-list th,html[data-skin=ramp] .inv-list td{padding-left:12px;padding-right:12px}
+html[data-skin=ramp] tr.clickable:hover td,html[data-skin=ramp] .inv-table tbody tr:hover{
+  background:var(--ink-50)}
+html[data-skin=ramp] .tbl tr.sel td{background:var(--fs-accent-soft)}
+html[data-skin=ramp] .tbl tr.total td{border-top-color:var(--ink-950)}
+html[data-skin=ramp] .grp-hd td,html[data-skin=ramp] .inv-grp td{background:var(--ink-100);
+  font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--ink-700)}
+html[data-skin=ramp] .grp-hd:hover td{background:var(--ink-150)}
+html[data-skin=ramp] .scope-hd td{font-family:var(--fb);font-size:11px;letter-spacing:.05em;font-weight:600}
+html[data-skin=ramp] th.sortable::after{color:var(--ink-500)}
+html[data-skin=ramp] .budget-scroll thead th{box-shadow:inset 0 -1px 0 var(--ink-200)}
+html[data-skin=ramp] .selbar{background:var(--fs-accent-soft);border-color:var(--fs-accent-line);
+  color:var(--ink-950)}
+
+/* ---- 7. Status, badges, banners ------------------------------------------
+   Status text and meaning are the product's, not this pack's. Only the tints
+   move — to the semantic set, so nothing signals with the accent. */
+html[data-skin=ramp] .badge{font-family:var(--fb);font-size:10.5px;font-weight:600;
+  letter-spacing:.04em;border-radius:999px;padding:3px 9px}
+html[data-skin=ramp] .badge.ok{border-color:var(--fs-success-line);background:var(--fs-success-soft);
+  color:var(--fs-success)}
+html[data-skin=ramp] .badge.warn{border-color:var(--fs-warning-line);background:var(--fs-warning-soft);
+  color:var(--fs-warning)}
+html[data-skin=ramp] .st-chip{font-family:var(--fb);font-size:10.5px;letter-spacing:.04em}
+html[data-skin=ramp] .st-draft{color:var(--ink-600);border-color:var(--ink-200);background:var(--ink-100)}
+html[data-skin=ramp] .st-review{color:var(--fs-warning);border-color:var(--fs-warning-line);
+  background:var(--fs-warning-soft)}
+html[data-skin=ramp] .st-done{color:var(--fs-success);border-color:var(--fs-success-line);
+  background:var(--fs-success-soft)}
+html[data-skin=ramp] .st-cancel{color:var(--fs-danger);border-color:var(--fs-danger-line);
+  background:var(--fs-danger-soft)}
+html[data-skin=ramp] .banner{border-radius:var(--rm);border-color:var(--fs-warning-line);
+  background:var(--fs-warning-soft);color:var(--fs-warning)}
+html[data-skin=ramp] .banner.green{border-color:var(--fs-success-line);background:var(--fs-success-soft);
+  color:var(--fs-success)}
+html[data-skin=ramp] .banner.danger{border-color:var(--fs-danger-line);background:var(--fs-danger-soft);
+  color:var(--fs-danger)}
+html[data-skin=ramp] .banner.test{border-color:var(--fs-info-line);background:var(--fs-info-soft);
+  color:var(--fs-info)}
+html[data-skin=ramp] .badge.test{border-color:var(--fs-info-line);background:var(--fs-info-soft);
+  color:var(--fs-info)}
+html[data-skin=ramp] .inv-pill{font-size:11.5px}
+html[data-skin=ramp] .inv-pill.saved{background:var(--fs-success-soft);color:var(--fs-success)}
+html[data-skin=ramp] .inv-pill.stale,html[data-skin=ramp] .inv-pill.dirty{
+  background:var(--fs-warning-soft);color:var(--fs-warning)}
+html[data-skin=ramp] .inv-pill.busy{background:var(--fs-info-soft);color:var(--fs-info)}
+html[data-skin=ramp] .inv-pill.conflict{background:var(--fs-danger-soft);color:var(--fs-danger)}
+html[data-skin=ramp] .inv-warnings{background:var(--fs-warning-soft);border-color:var(--fs-warning-line);
+  color:var(--fs-warning);border-radius:var(--rm)}
+html[data-skin=ramp] .inv-origin{background:var(--ink-100);color:var(--ink-700)}
+html[data-skin=ramp] .inv-vsub{background:var(--ink-100);color:var(--ink-600)}
+html[data-skin=ramp] #page-home .hm-kind-budget{background:var(--fs-accent-soft);color:var(--ink-950)}
+html[data-skin=ramp] #page-home .hm-kind-analysis{background:var(--fs-info-soft);color:var(--fs-info)}
+html[data-skin=ramp] #page-home .hm-tone-review{background:var(--fs-warning-soft);color:var(--fs-warning)}
+html[data-skin=ramp] #page-home .hm-tone-idle{background:var(--ink-100);color:var(--ink-600)}
+html[data-skin=ramp] #page-home .hm-tone-idea{background:var(--fs-accent-soft);color:var(--ink-950)}
+html[data-skin=ramp] #page-admin .fb-kind-bug{background:var(--fs-danger-soft);color:var(--fs-danger)}
+html[data-skin=ramp] #page-admin .fb-kind-feature{background:var(--fs-info-soft);color:var(--fs-info)}
+html[data-skin=ramp] #page-dashboard .dash-error,html[data-skin=ramp] #fbModal .fb-error{background:var(--fs-danger-soft);
+  border-color:var(--fs-danger-line);color:var(--fs-danger);border-radius:var(--rm)}
+html[data-skin=ramp] .ver-hist,html[data-skin=ramp] .tpl-banner{border-radius:var(--rm)}
+
+/* ---- 8. Overlays ---------------------------------------------------------
+   Menus, popovers, dialogs and toasts: one border, one restrained shadow. */
+html[data-skin=ramp] #rowMenu,html[data-skin=ramp] #profileMenu,html[data-skin=ramp] .st-menu,
+html[data-skin=ramp] .pal-card{border-radius:12px;border-color:var(--ink-200);
+  box-shadow:0 18px 48px rgba(21,22,21,.13)}
+html[data-skin=ramp] .rowmenu-item{border-radius:6px;padding:9px 12px;font-size:13.5px}
+html[data-skin=ramp] .rowmenu-item:hover,html[data-skin=ramp] .rowmenu-item:focus-visible{
+  background:var(--ink-100)}
+html[data-skin=ramp] .rowmenu-item.danger{color:var(--fs-danger)}
+html[data-skin=ramp] .rowmenu-item.danger:hover,html[data-skin=ramp] .rowmenu-item.danger:focus-visible{
+  background:var(--fs-danger-soft)}
+html[data-skin=ramp] .pal-row{border-radius:8px}
+html[data-skin=ramp] .pal-row:hover{background:var(--ink-100)}
+html[data-skin=ramp] .pal-row.sel{background:var(--fs-accent-soft);box-shadow:inset 0 0 0 1px var(--fs-accent-line)}
+html[data-skin=ramp] .pal-row .pal-id{color:var(--ink-700)}
+html[data-skin=ramp] .toast{border-radius:10px;box-shadow:0 18px 48px rgba(21,22,21,.28)}
+
+/* ---- 9. Guide, help, and the settings sheet ------------------------------ */
+html[data-skin=ramp] .help .callout{background:var(--ink-50);border-left-color:var(--ink-950);
+  color:var(--ink-800);border-radius:0 var(--r) var(--r) 0}
+html[data-skin=ramp] .help .callout.warn{background:var(--fs-warning-soft);
+  border-left-color:var(--fs-warning);color:var(--fs-warning)}
+html[data-skin=ramp] .help .step .n{background:var(--fs-accent);color:var(--fs-on-accent);
+  font-family:var(--fb);font-weight:600}
+html[data-skin=ramp] #helpToc a:hover{background:var(--ink-100);color:var(--ink-950);
+  border-left-color:var(--ink-300)}
+html[data-skin=ramp] #helpToc a.on{color:var(--ink-950);border-left-color:var(--ink-950)}
+html[data-skin=ramp] .help code,html[data-skin=ramp] .help .kbd{background:var(--ink-100);
+  border-color:var(--ink-200);border-radius:5px}
+
+/* ---- 10. Charts ----------------------------------------------------------
+   Data, scales, series order, labels and tooltips are the dashboard's; only
+   the surface behind them is calmed. */
+html[data-skin=ramp] #page-dashboard .dash-bar-track,html[data-skin=ramp] #page-dashboard .dash-vbar-track{
+  background:var(--ink-100);border-radius:999px}
+html[data-skin=ramp] #page-dashboard .dash-bar-fill,
+html[data-skin=ramp] #page-dashboard .dash-vbar-fill{border-radius:999px}
+html[data-skin=ramp] .inv-report .kpi{background:var(--ink-50);border:1px solid var(--ink-150);
+  border-radius:var(--rm)}
+html[data-skin=ramp] #page-dashboard .dash-rank-track{background:var(--ink-100);border-radius:999px}
+html[data-skin=ramp] #page-dashboard .dash-rank-fill{border-radius:999px}
+html[data-skin=ramp] #page-dashboard .dash-ranges{background:var(--ink-100);border-radius:8px}
+/* The chart tooltip is a small floating panel, so it takes the overlay
+   treatment at a size that suits a hover card rather than a dialog. */
+html[data-skin=ramp] #page-dashboard .dash-tip{border-color:var(--ink-200);border-radius:10px;
+  box-shadow:0 6px 18px rgba(21,22,21,.10)}
+html[data-skin=ramp] #page-dashboard .dash-rank-v,html[data-skin=ramp] #page-dashboard .dash-rank-p,
+html[data-skin=ramp] #page-dashboard .dash-tip-v,html[data-skin=ramp] #page-dashboard .dash-bar-count{
+  font-variant-numeric:tabular-nums lining-nums}
+
+/* ---- 11. Dark-mode text corrections --------------------------------------
+   In dark, --green-700 is a mid olive so it still works as a FILL under white
+   (avatars, step numbers). These are its text-coloured usages, which need the
+   light ink instead. */
+html[data-skin=ramp][data-theme=dark] .hcard .hc-id,
+html[data-skin=ramp][data-theme=dark] .sum-row.grand .v,
+html[data-skin=ramp][data-theme=dark] #page-home .hm-pin,
+html[data-skin=ramp][data-theme=dark] .inv-srclink:hover,
+html[data-skin=ramp][data-theme=dark] .fb-fallback button{color:var(--ink-900)}
+html[data-skin=ramp][data-theme=dark] #page-home .hm-kind-budget,
+html[data-skin=ramp][data-theme=dark] #page-home .hm-tone-idea{color:var(--ink-900)}
+
+/* ---- 12. Home hero: the ambient dot grid ---------------------------------
+   Decorative only. It is an absolutely positioned pseudo-element, so it is
+   not a flex item of the hero, contributes no layout, and cannot shift
+   anything; it is pointer-transparent and never enters the accessibility
+   tree (a pseudo-element cannot). Nothing but atmosphere is expressed here.
+
+   One repeating radial-gradient, translated by exactly one 20px tile over
+   22s, which loops seamlessly. The movement is a composited transform rather
+   than an animated background-position, so the field never repaints per
+   frame; there is no canvas, no timer, and no per-frame state.
+
+   The drift is downward only. The mask holds the top of the field at
+   ~0 opacity, so the 20px the transform uncovers up there is invisible and
+   no geometric overhang is needed — which is what keeps a full-bleed layer
+   from ever producing horizontal overflow. The horizontal bleed matches
+   main's own padding exactly (32px desktop, 12px under 760px), so the field
+   reaches the page edge and stops there.
+
+   A vertical mask keeps the greeting area quiet and lets the dots emerge
+   below it, so the motion is noticed second and the headline never loses
+   contrast. */
+html[data-skin=ramp] #page-home .hm-hero{position:relative;isolation:isolate;
+  padding:26px 0 34px;margin-bottom:30px}
+html[data-skin=ramp] #page-home .hm-hero::before{
+  content:'';position:absolute;top:-26px;bottom:-14px;left:-32px;right:-32px;z-index:-1;
+  pointer-events:none;
+  background-image:radial-gradient(circle at 1px 1px,rgba(21,22,21,.13) 1px,transparent 0);
+  background-size:20px 20px;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.18) 18%,#000 45%,#000 100%);
+  mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.18) 18%,#000 45%,#000 100%);
+  animation:fs-ramp-dot-drift 22s linear infinite}
+html[data-skin=ramp][data-theme=dark] #page-home .hm-hero::before{
+  background-image:radial-gradient(circle at 1px 1px,rgba(247,247,243,.14) 1px,transparent 0)}
+@keyframes fs-ramp-dot-drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,20px,0)}}
+/* The greeting is the one place in the product that takes an editorial size;
+   it still scales with the viewport and never overflows. */
+html[data-skin=ramp] #page-home .hm-greet{font-size:clamp(30px,4vw,46px);font-weight:500;
+  letter-spacing:-.022em;line-height:1.04}
+html[data-skin=ramp] #page-home .hm-greet-sub{font-size:15px;color:var(--ink-600);margin-top:10px}
+html[data-skin=ramp] #page-home .hm-sec-hd{margin-bottom:12px}
+
+/* Small screens: a wider, fainter, static field — and the bleed follows
+   main's mobile padding so the page never scrolls sideways. */
+@media(max-width:760px){
+  html[data-skin=ramp] main{padding:16px 12px 40px}
+  html[data-skin=ramp] #page-home .hm-hero::before{left:-12px;right:-12px;
+    background-size:26px 26px;
+    background-image:radial-gradient(circle at 1px 1px,rgba(21,22,21,.09) 1px,transparent 0);
+    animation:none}
+  html[data-skin=ramp][data-theme=dark] #page-home .hm-hero::before{
+    background-image:radial-gradient(circle at 1px 1px,rgba(247,247,243,.10) 1px,transparent 0)}
+  html[data-skin=ramp] #page-home .hm-hero{padding:18px 0 24px}
+  html[data-skin=ramp] .hd{height:56px}
+}
+/* Reduced motion keeps the texture and drops the movement entirely. */
+@media (prefers-reduced-motion:reduce){
+  html[data-skin=ramp] #page-home .hm-hero::before{animation:none}
+}
+
+/* ---- 13. Print -----------------------------------------------------------
+   The exported report is built into #printDoc from the data model and must
+   look identical whatever the screen is wearing. index.html already strips
+   data-skin before printing (the same hook that strips data-theme), so this
+   is only the belt to that braces: if a print starts before the hook runs,
+   the two rules below still keep the report on white with black artwork.
+   These two !important declarations are the only ones in this file; they
+   exist because the base sheet's own print block uses the same weapon. */
+@media print{
+  html[data-skin=ramp] .brand img{filter:none!important}
+  html[data-skin=ramp] body{background:#fff!important}
+}

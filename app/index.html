@@ -10,8 +10,15 @@
    server copy wins the moment it arrives. */
 try{
   var t=localStorage.getItem('fsTheme');if(t==='dark')document.documentElement.setAttribute('data-theme',t);
-  var a=localStorage.getItem('fsAccent');if(a&&a!=='green'&&a.charAt(0)!=='#')document.documentElement.setAttribute('data-accent',a);
+  var sk=localStorage.getItem('fsThemePack');
+  var a=localStorage.getItem('fsAccent');
+  if(!sk&&a&&a!=='green'&&a.charAt(0)!=='#')document.documentElement.setAttribute('data-accent',a);
   var av=localStorage.getItem('fsAvatar');if(av)document.documentElement.style.setProperty('--avatar-bg',av);
+  /* Theme packs are alternate visual presentations (Settings → Theme Pack,
+     super_admin only). Cached here so the pack paints with the first frame;
+     the account's stored setting confirms or clears it at boot. A pack owns
+     its own accent, which is why the accent above is skipped while one is on. */
+  if(sk==='ramp')document.documentElement.setAttribute('data-skin',sk);
   window.__fsTimeFormat=localStorage.getItem('fsTimeFormat')==='24h'?'24h':'12h';
 }catch(_){}
 </script>
@@ -878,6 +885,11 @@ th.sortable.sorted{color:var(--ink-900)}
     margin-top:20px;padding-top:6px;font-size:7.5pt;color:var(--ink-500)}
 }
 </style>
+<!-- Theme packs: alternate visual presentations offered to super_admin accounts.
+     Every rule in the file is scoped to html[data-skin=...], so with no pack
+     selected nothing in it applies. Loaded last on purpose — it is meant to sit
+     after the stylesheet above in the cascade. -->
+<link rel="stylesheet" href="theme-ramp.css">
 </head>
 <body>
 
@@ -1374,6 +1386,10 @@ th.sortable.sorted{color:var(--ink-900)}
             defaults from your sign-in identity) and a phone number. Email is shown but locked to
             the account you are signed in with.</li>
           <li><b>Theme</b> — Light (the default) or Dark.</li>
+          <li><b>Theme Pack</b> — super admins only: Finishes Solutions (the default) or Editorial, an
+            alternate look for the whole suite. A pack changes appearance only — every page, control,
+            label and number stays exactly where it is — and it brings its own accent color, so the
+            Accent Color choice below applies while the Finishes Solutions pack is selected.</li>
           <li><b>Accent Color</b> — Green (the default), Blue, Violet, Graphite, Red, Orange, or
             <b>Custom</b>: the rainbow button opens a color picker and the app derives a full light
             and dark palette from whatever color you choose.</li>
@@ -1851,7 +1867,7 @@ th.sortable.sorted{color:var(--ink-900)}
             <td>Can see all budgets and analyses across the organization, regardless of who created them.</td></tr>
           <tr><td style="white-space:nowrap"><b>Super Admin</b></td>
             <td>Everything Director can do, plus access to the Analytics dashboard, the Admin page for managing
-              user roles, and any platform administration features.</td></tr>
+              user roles, the Theme Pack setting, and any platform administration features.</td></tr>
         </tbody></table>
         <h4>Platform Roles</h4>
         <p>Platform roles are assigned through Azure and control access to specific features beyond the
@@ -2200,6 +2216,21 @@ th.sortable.sorted{color:var(--ink-900)}
           Dark<span class="tick">✓</span></button>
       </div>
 
+      <!-- Theme packs — super_admin only, hidden by paintSettingsUI otherwise.
+           A pack restyles the suite; it never changes what a page does. -->
+      <div class="set-lab" id="setThemePackLab" style="display:none">Theme Pack</div>
+      <div class="set-choice" id="setThemePackRow" role="group" aria-label="Theme Pack" style="display:none">
+        <button data-themepack-pick="default" onclick="chooseSetting('themePack','default')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          Finishes Solutions<span class="tick">✓</span></button>
+        <button data-themepack-pick="ramp" onclick="chooseSetting('themePack','ramp')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="1.4"/><circle cx="12" cy="6" r="1.4"/><circle cx="18" cy="6" r="1.4"/><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/><circle cx="6" cy="18" r="1.4"/><circle cx="12" cy="18" r="1.4"/><circle cx="18" cy="18" r="1.4"/></svg>
+          Editorial<span class="tick">✓</span></button>
+      </div>
+      <div class="set-note" id="setThemePackNote" style="display:none">Theme packs restyle the suite for
+        preview. Every page, action and number stays exactly where it is. A pack brings its own accent
+        color, so the accent below applies while the Finishes Solutions pack is selected.</div>
+
       <div class="set-lab">Accent Color</div>
       <div class="set-choice" role="group" aria-label="Accent Color" style="flex-wrap:wrap">
         <button data-accent-pick="green" onclick="chooseSetting('accentColor','green')">
@@ -2440,6 +2471,50 @@ function setTheme(name){
     b.setAttribute('aria-pressed',on?'true':'false');
   });
 }
+/* ---- theme packs (Settings → Theme Pack) ----
+   A pack is an alternate visual PRESENTATION of the same product: paint only,
+   scoped in CSS to html[data-skin=<pack>]. No route, label, permission,
+   calculation, export or workflow is a pack's business. 'default' is the
+   Finishes Solutions appearance — the stylesheet with no attribute set.
+
+   Packs are a super_admin preview, so the role decides, not the stored value:
+   an account that loses the role stops seeing the pack on its next boot while
+   its setting is left untouched. Print always renders the default pack; the
+   beforeprint hook strips the attribute alongside data-theme. */
+const THEME_PACKS=['default','ramp'];
+function themePackAllowed(){
+  if(US.appRole==='super_admin')return true;
+  const roles=(principal&&principal.userRoles)||[];
+  return roles.includes('super_admin');
+}
+function themePackSetting(){
+  const v=usSettings().themePack;
+  return THEME_PACKS.includes(v)?v:'default';
+}
+function activeThemePack(){return document.documentElement.getAttribute('data-skin')||'default';}
+function applyThemePack(name){
+  if(!THEME_PACKS.includes(name))name='default';
+  if(!themePackAllowed())name='default';
+  const root=document.documentElement;
+  if(name==='default')root.removeAttribute('data-skin');
+  else{root.setAttribute('data-skin',name);loadPackFont(name);}
+  try{
+    if(name==='default')localStorage.removeItem('fsThemePack');
+    else localStorage.setItem('fsThemePack',name);
+  }catch(_){}
+}
+/* The Ramp-inspired pack asks for a grotesk the app does not otherwise load.
+   It is requested only once that pack is actually switched on, so no other
+   account pays for the fetch, and the CSS stack falls back through Helvetica
+   to system-ui if the request never lands. */
+function loadPackFont(name){
+  if(name!=='ramp'||document.getElementById('packFontInter'))return;
+  const l=document.createElement('link');
+  l.id='packFontInter';l.rel='stylesheet';
+  l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400..700'
+        +'&family=Inter+Tight:wght@400..700&display=swap';
+  document.head.appendChild(l);
+}
 /* ---- per-account settings (dbo.Users via /api/user-settings) ----
    The server is the source of truth: settings load at boot and follow the
    account to any signed-in browser. localStorage keeps a small cache purely
@@ -2465,6 +2540,7 @@ async function loadUserSettings(){
 function applyUserSettings(){
   const s=usSettings();
   setTheme(s.theme||'light');
+  applyThemePack(s.themePack||'default');   // before the accent: a pack owns the palette
   applyAccent(s.accentColor||'green');
   applyAvatar(s.avatarColor||null);
   window.__fsTimeFormat=s.timeFormat==='24h'?'24h':'12h';
@@ -2483,6 +2559,14 @@ function applyAccent(name){
   const root=document.documentElement;
   ['900','800','700','600','500','200','100','50'].forEach(k=>root.style.removeProperty('--green-'+k));
   root.style.removeProperty('--focus');
+  /* A theme pack ships its own complete palette, accent included. The
+     account's accent choice is kept in settings and comes straight back when
+     the pack is switched off — it is simply not painted underneath one. */
+  if(activeThemePack()!=='default'){
+    root.removeAttribute('data-accent');
+    try{localStorage.setItem('fsAccent',name);}catch(_){}
+    return;
+  }
   if(/^#[0-9a-f]{6}$/i.test(name)){
     root.removeAttribute('data-accent');
     const sc=accentScale(name,currentTheme()==='dark');
@@ -2679,6 +2763,13 @@ function paintSettingsUI(){
   mark('[data-avatar-pick]',AVATAR_PRESETS.includes(av)?av:'custom');
   const vp=document.getElementById('avatarPicker');
   if(vp&&av&&!AVATAR_PRESETS.includes(av))vp.value=av.toLowerCase();
+  mark('[data-themepack-pick]',themePackSetting());
+  // The pack control is a super_admin preview; everyone else never sees it.
+  const packOn=themePackAllowed();
+  ['setThemePackLab','setThemePackRow','setThemePackNote'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.style.display=packOn?(id==='setThemePackRow'?'flex':'block'):'none';
+  });
   mark('[data-timefmt-pick]',s.timeFormat||'12h');
   mark('[data-budgetview-pick]',budgetView());
   mark('[data-analysisview-pick]',analysisView());
@@ -2737,10 +2828,12 @@ function postActivity(eventType,entityType,entityId,detail){
     .catch(()=>{});
 }
 let printThemeStash=null;
-let printAccentStash=null;
+let printAccentStash=null,printPackStash=null;
 window.addEventListener('beforeprint',()=>{
   printThemeStash=currentTheme();
   document.documentElement.removeAttribute('data-theme');
+  printPackStash=activeThemePack();
+  document.documentElement.removeAttribute('data-skin');
   var s=usSettings();printAccentStash=s.accentColor||'green';
   if(printAccentStash!=='green'){
     var root=document.documentElement;
@@ -2753,6 +2846,8 @@ window.addEventListener('afterprint',()=>{
   if(printThemeStash&&printThemeStash!=='light')
     document.documentElement.setAttribute('data-theme',printThemeStash);
   printThemeStash=null;
+  if(printPackStash&&printPackStash!=='default')applyThemePack(printPackStash);
+  printPackStash=null;
   if(printAccentStash&&printAccentStash!=='green'){applyAccent(printAccentStash);}
   printAccentStash=null;
 });
