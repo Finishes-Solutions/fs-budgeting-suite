@@ -280,6 +280,99 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     /Cancelled/.test(await p.locator('#invStatusHost').textContent())
     &&(await p.evaluate(async()=>(await (await fetch('/api/investment-analyses')).json())[0].status))==='Cancelled');
 
+ // ---- first run: the welcome, and the sign-in screen behind it.
+ // The mock seeds welcomeSeen TRUE (a first-run overlay would sit in front of
+ // every other suite's first click), so turning it off is what makes this
+ // account look genuinely new.
+ await p.evaluate(()=>go('home')); await p.waitForTimeout(400);
+ await p.evaluate(async()=>{await fetch('/api/user-settings',{method:'PUT',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({settings:{welcomeSeen:false}})});});
+ await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(900);
+ ok('a first-run account is welcomed', await p.locator('#welcomeModal').isVisible());
+ ok('the welcome is a summary, not a tour',
+    /Welcome to the Budgeting Suite/.test(await p.locator('#welcomeTitle').textContent())
+    &&(await p.locator('#welcomeModal .card-bd').textContent()).trim().length<700);
+ const welTxt=await p.locator('#welcomeModal').textContent();
+ ok('the three things it can do are named',
+    ['Budgets','Investment Analysis','Exports'].every(x=>welTxt.includes(x)), welTxt.slice(0,120));
+ // A first-run account meets a loaded app, not the cold-start overlay: the
+ // welcome opens at the END of boot, after Home has painted behind it.
+ ok('the app has finished loading behind it',
+    (await p.locator('#bootScreen').count())===0
+    &&await p.locator('#page-home').isVisible());
+ await p.click('#welcomeModal button:has-text("Get Started")'); await p.waitForTimeout(900);
+ ok('dismissing it puts the user on Home', await p.locator('#welcomeModal').isHidden());
+ ok('dismissal saves to the ACCOUNT, not the browser',
+    (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json())
+      .settings.welcomeSeen))===true);
+ await p.evaluate(()=>localStorage.clear());
+ await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(900);
+ ok('a welcomed account is never welcomed again, even in a cleared browser',
+    await p.locator('#welcomeModal').isHidden());
+ ok('an established account is not interrupted by it',
+    await p.evaluate(()=>{
+      // loginCount > 1 is an account that has been here before: its stored
+      // settings simply predate the flag, which is not a first run.
+      US.loginCount=6; US.settings.welcomeSeen=false;
+      maybeShowWelcome();
+      const shown=document.getElementById('welcomeModal').style.display==='flex';
+      US.loginCount=1; US.settings.welcomeSeen=true;
+      return !shown;
+    }));
+ ok('it can still be opened on demand',
+    await p.evaluate(()=>{showWelcome();
+      return document.getElementById('welcomeModal').style.display==='flex';}));
+ await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+ ok('Escape closes it like every other sheet', await p.locator('#welcomeModal').isHidden());
+
+ // ---- a session that ends mid-session. The platform answers a 401 with a 302
+ // to the sign-in screen, so the app receives HTML where it asked for JSON —
+ // which must read as "signed out", never as an empty success.
+ await p.route('**/api/pricing', r=>r.fulfill({status:302,headers:{location:'/login.html'}}));
+ ok('an expired session fails loudly instead of returning nothing',
+    await p.evaluate(async()=>{
+      try{ await api('pricing'); return false; }
+      catch(e){ return /Session expired/.test(e.message); }
+    }));
+ ok('and the banner says what to do about it',
+    await p.locator('#apiBanner').isVisible()
+    &&/session has ended/i.test(await p.locator('#apiBannerMsg').textContent()),
+    await p.locator('#apiBannerMsg').textContent());
+ await p.unroute('**/api/pricing');
+ await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(700);
+ ok('the banner clears once the session is good again',
+    await p.locator('#apiBanner').isHidden());
+
+ // ---- the sign-in screen: the one page an anonymous visitor may load
+ const lp=await b.newPage();
+ // The mock always answers /.auth/me with a principal, so this is the
+ // signed-in case: nobody with a session should be left sitting on it.
+ await lp.goto('http://127.0.0.1:8100/login.html',{waitUntil:'domcontentloaded'});
+ await lp.waitForTimeout(500);
+ ok('a signed-in visitor is sent into the app', !/login\.html/.test(lp.url()), lp.url());
+ await lp.close();
+
+ const lo=await b.newPage();
+ await lo.route('**/.auth/me', r=>r.abort());     // no session, as in production
+ await lo.goto('http://127.0.0.1:8100/login.html#/budget/TST-9955',{waitUntil:'domcontentloaded'});
+ await lo.waitForTimeout(500);
+ ok('the sign-in screen stays put with no session', /login\.html/.test(lo.url()), lo.url());
+ ok('it offers exactly one action, and says whose it is',
+    (await lo.locator('a.ms').count())===1
+    &&/Sign in with Microsoft/.test(await lo.locator('a.ms').textContent())
+    &&/Budgeting Suite/.test(await lo.locator('h1').textContent()));
+ ok('it signs in through the platform route, carrying the deep link',
+    (await lo.locator('a.ms').getAttribute('href'))
+      ==='/.auth/login/aad?post_login_redirect_uri='+encodeURIComponent('/#/budget/TST-9955'),
+    await lo.locator('a.ms').getAttribute('href'));
+ await lo.goto('http://127.0.0.1:8100/login.html?error=access_denied',{waitUntil:'domcontentloaded'});
+ await lo.waitForTimeout(400);
+ ok('a provider failure is explained rather than swallowed',
+    await lo.locator('#err').isVisible()
+    &&/access_denied/.test(await lo.locator('#err').textContent()));
+ await lo.close();
+
  // ---- activity log carries the whole story
  const evs=await p.evaluate(async()=>(await (await fetch('/api/user-activity')).json()).events.map(e=>e.eventType));
  ok('activity log records logins, saves and settings changes',

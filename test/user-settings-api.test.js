@@ -275,3 +275,22 @@ test('the pack is additive: it disturbs no other stored setting', () => {
   assert.strictEqual(s.theme, 'dark');
   assert.strictEqual(s.budgetView, 'cards');
 });
+
+// The first-run welcome is a stored preference too: the client shows it from
+// what boot already loaded, so the only thing that can go wrong here is a
+// stored value that is not a strict boolean.
+test('the welcome flag defaults to unseen and only a real true dismisses it', () => {
+  assert.strictEqual(contract.DEFAULT_SETTINGS.welcomeSeen, false);
+  assert.strictEqual(contract.sanitizeSettings({}).welcomeSeen, false);
+  assert.strictEqual(contract.sanitizeSettings({ welcomeSeen: true }).welcomeSeen, true);
+  assert.strictEqual(contract.sanitizeSettings({ welcomeSeen: 'true' }).welcomeSeen, false);
+  assert.strictEqual(contract.sanitizeSettings({ welcomeSeen: 1 }).welcomeSeen, false);
+});
+
+test('dismissing the welcome disturbs no other stored setting', () => {
+  const s = contract.sanitizeSettings({ welcomeSeen: true, accentColor: 'blue',
+    themePack: 'ramp', pinned: { budget: ['OP-1001'], analysis: [] } });
+  assert.strictEqual(s.accentColor, 'blue');
+  assert.strictEqual(s.themePack, 'ramp');
+  assert.deepStrictEqual(s.pinned.budget, ['OP-1001']);
+});

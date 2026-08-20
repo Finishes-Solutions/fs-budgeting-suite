@@ -49,6 +49,7 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | Path | What it is |
 |---|---|
 | `app/index.html` | The budget frontend — HTML + inline CSS + inline JS, no build step |
+| `app/login.html` | The sign-in screen — the ONLY page an anonymous visitor may load, standalone by necessity |
 | `app/investment-analysis.js` / `.css` | The Investment Analysis workflow — external no-build IIFE behind `window.FSInvestmentUI`, wired through an adapter |
 | `app/theme-ramp.css` | The Editorial theme pack — presentation only, every rule scoped to `html[data-skin=ramp]`, loaded after the inline sheet |
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement (first auth gate) |
@@ -165,6 +166,12 @@ custom provider for sign-in.
   guard with `nz()`.
 - **`touch()` / `markDirty()` / `recalc()`** are the change pipeline — call
   `touch()` after mutating the document; don't invent parallel dirty tracking.
+- **The first-run welcome is settings-driven, not browser-driven.** It opens
+  from what boot already loaded — `welcomeSeen` in the account settings and
+  `loginCount` — so it costs no extra request, follows the account to any
+  browser, and never fires on an established account whose stored settings
+  simply predate the flag. No settings (signed out, or the API down) means no
+  welcome: an offline boot is not evidence of a first run.
 - **Theme packs are paint only.** A pack (Settings → Theme Pack, super_admin)
   is an alternate appearance of the same product: it may remap tokens and
   restyle primitives, never move a route, label, control, calculation or
@@ -192,6 +199,15 @@ custom provider for sign-in.
   route listed as public.
 - **Roles, not email allow-lists.** Authorization is Entra app roles. Never gate
   by email address or domain in code.
+- **`app/login.html` is the only anonymous surface** (plus `/favicon.ico`, which
+  it links). Everything else stays `authenticated`, and the `401` override
+  redirects there instead of straight to `/.auth/login/aad`. Two rules that must
+  not drift: the anonymous route stays **above** the `/*` rule (below it, the
+  login page would demand a session and the override would bounce the visitor
+  back to it — a redirect loop, not a login screen), and the page stays
+  **self-contained** — no `<script src>`, no app CSS, nothing that would 401 for
+  the very visitor it exists for. `test/auth-routes.test.js` pins both; nothing
+  else can, because `test/mock-api.js` serves every path unguarded.
 - **`ID_RX` lives in four files that change together:**
   `app/index.html`, `api/budget/index.js`, `api/budget-versions/index.js`, and
   `test/mock-api.js` — all must accept exactly

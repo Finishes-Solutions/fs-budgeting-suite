@@ -38,6 +38,10 @@ const DEFAULT_SETTINGS = {
   avatarColor: null,          // null = the app default (accent-colored)
   budgetView: 'comfortable',
   analysisView: 'comfortable',
+  // The first-run welcome has been dismissed. Per ACCOUNT, not per browser, so
+  // a returning user is not welcomed again on a second machine, and it rides
+  // the settings document the client already loads at boot.
+  welcomeSeen: false,
   rememberExport: false,
   exportOptions: {},          // { budget: {..bools}, analysis: {..bools} }
   pinned: { budget: [], analysis: [] }
@@ -96,6 +100,7 @@ function sanitizeSettings(input) {
     avatarColor: typeof s.avatarColor === 'string' && HEX_RX.test(s.avatarColor) ? s.avatarColor : null,
     budgetView: LIST_VIEWS.includes(s.budgetView) ? s.budgetView : legacyView(s),
     analysisView: LIST_VIEWS.includes(s.analysisView) ? s.analysisView : legacyView(s),
+    welcomeSeen: s.welcomeSeen === true,
     rememberExport: s.rememberExport === true,
     exportOptions: { budget: cleanBoolMap(ex.budget), analysis: cleanBoolMap(ex.analysis) },
     pinned: { budget: cleanIdList(pin.budget), analysis: cleanIdList(pin.analysis) }
