@@ -9,12 +9,11 @@
    an app token, and it must therefore come after to take effect. It
    still loads BEFORE theme-ramp.css, which keeps the last word.
 
-   The :root selector is deliberate. The dark theme, the accent themes
-   and the ramp pack all hang off html[data-theme=…] / [data-accent=…] /
-   [data-skin=…], which outrank :root regardless of source order, so
-   nothing here can leak into a themed value. Verified: --sh still
-   resolves to the dark shadow under data-theme=dark, and the ramp pack
-   keeps its own --r/--rm/--sh/--fb under data-skin=ramp.
+   The :root selector is deliberate. The dark theme and the accent themes
+   hang off html[data-theme=…] / html[data-accent=…], which outrank :root
+   regardless of source order, so nothing here can leak into a themed
+   value. Verified: --sh still resolves to the dark shadow under
+   data-theme=dark.
 
    RULE FOR THIS FILE: an alias lands only when the design system token
    holds byte-equivalent output to the value it replaces. Anything that
@@ -25,9 +24,7 @@
      extra fallbacks (-apple-system; 'SF Mono', Menlo) *after* the entries
      the app already lists. Montserrat / IBM Plex Mono still win, and the
      appended names are ones system-ui and ui-monospace already resolve to
-     on the platforms that have them. Rendered output is unchanged.
-     The ramp pack overrides --fb with Inter under its own scope; that is
-     untouched. */
+     on the platforms that have them. Rendered output is unchanged. */
   --fb: var(--font-body);
   --fm: var(--font-mono);
 
@@ -49,14 +46,14 @@
      Needs a design decision, not a rename. */
   --sh: 0 1px 2px rgba(11,13,12,.06),0 1px 3px rgba(11,13,12,.08);
 
-  /* TODO(ds): --fs-accent is NOT a free name — theme-ramp.css already
-     owns it as the Editorial pack's lime accent (#dff200, plus -hover,
-     -active, -soft, -line), used by 8 rules under html[data-skin=ramp].
-     Defining it here as var(--brand) would be safe today (the pack's
-     scoping outranks :root) but it would mean one name carrying two
-     unrelated meanings depending on skin, which is how theme bugs start.
-     Left undefined. If the intent was "the app's brand green", --brand
-     already resolves through var(--green-700) and tracks the active
-     accent — use that directly, or pick a name the ramp pack does not
-     claim. */
+  /* Brand accent. --brand is var(--green-700) rather than a literal, so
+     it re-resolves against whichever --green-700 the active theme and
+     accent supply — it tracks the app's accent switching instead of
+     pinning #006527.
+
+     Nothing outside theme-ramp.css reads --fs-accent, and every rule that
+     does is scoped to html[data-skin=ramp], which outranks :root — so this
+     declaration cannot reach that throwaway test pack, and the pack cannot
+     reach anything styled from here. */
+  --fs-accent: var(--brand);
 }
