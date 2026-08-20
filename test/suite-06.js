@@ -130,10 +130,13 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await m.goto('http://127.0.0.1:8100/index.html',{waitUntil:'networkidle'});
  await m.waitForTimeout(900);
 
+ // The primary nav is four items now; the workflow sections are reached
+ // through the budget pills, and Pricing Library lives under More.
  ok('Every nav tab is present on a phone', await m.evaluate(() =>
-    ['nav-home','nav-input','nav-budget','nav-csi','nav-analyses','nav-pricing','nav-more-btn']
+    ['nav-home','nav-budgets','nav-analyses','nav-more-btn']
       .every(id => document.getElementById(id).offsetParent !== null)
-    && document.getElementById('nav-help') !== null));
+    && document.getElementById('nav-help') !== null
+    && document.getElementById('nav-pricing') !== null));
  ok('The home page does not overflow the phone viewport', await m.evaluate(() =>
     document.documentElement.scrollWidth <= window.innerWidth + 1),
     await m.evaluate(() => document.documentElement.scrollWidth + 'px wide in a '
@@ -156,15 +159,16 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
    });
    await renderHome();
  });
- await m.waitForTimeout(400);
+ await m.evaluate(() => go('budgets'));
+ await m.waitForTimeout(700);
  ok('The budgets table pans inside its card instead of crushing', await m.evaluate(() => {
-   const bd = document.querySelector('#homeBudgetsCard .card-bd');
+   const bd = document.querySelector('#budgetsBudgetsCard .card-bd');
    return bd.scrollWidth > bd.clientWidth;
  }));
- await m.click('#homeBody tr .rowmenu-btn'); await m.waitForTimeout(300);
+ await m.click('#budgetsBody tr .rowmenu-btn'); await m.waitForTimeout(300);
  ok('The row menu offers the full action set on a phone',
     (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|')
-      === 'Edit|Update Pricing|Versions|Delete',
+      === 'Edit|Pin to Home|Update Pricing|Versions|Delete',
     (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|'));
  await m.keyboard.press('Escape'); await m.waitForTimeout(150);
 
@@ -194,7 +198,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // Printing switches the browser to print media; exports must stay on the page
  // being exported. (The old width-query mobile mode is gone, but the invariant
  // it once broke is still worth pinning.)
- await p.click('#nav-csi').catch(() => {});
+ await p.click(".page.on [data-wf-pills] a:has-text('CSI Schedule')").catch(() => {});
  await p.waitForTimeout(300);
  const pageBefore = await p.evaluate(() => currentPage);
  await p.emulateMedia({media:'print'});

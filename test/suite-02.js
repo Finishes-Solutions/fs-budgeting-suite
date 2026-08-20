@@ -92,16 +92,16 @@ const BASE = 'http://127.0.0.1:8100';
 
   // leaving a clean budget must NOT prompt
   const d0 = dialogs;
-  await p.click('#nav-home');
+  await p.click('#nav-budgets');
   await p.waitForTimeout(300);
   ok('D2 clean budget leaves without prompting', dialogs === d0);
 
   // --- home list
   await p.waitForTimeout(300);
-  ok('Saved budget appears in list', (await p.locator('#homeBody tr').count()) === 1);
-  ok('TST row carries a Test badge', await p.locator('#homeBody .badge.test').first().isVisible());
-  ok('U2 count reads correctly', /1 of 1 budget/.test(await p.locator('#homeCount').textContent()),
-     await p.locator('#homeCount').textContent());
+  ok('Saved budget appears in list', (await p.locator('#budgetsBody tr').count()) === 1);
+  ok('TST row carries a Test badge', await p.locator('#budgetsBody .badge.test').first().isVisible());
+  ok('U2 count reads correctly', /1 of 1 budget/.test(await p.locator('#budgetsCount').textContent()),
+     await p.locator('#budgetsCount').textContent());
 
   // --- add more rows via the API, then exercise sort + filter properly
   await p.evaluate(async () => {
@@ -122,36 +122,37 @@ const BASE = 'http://127.0.0.1:8100';
     await mk('BD-0002', 'Zephyr Landing', 3000000, 'Draft', '2026-06-20T00:00:00Z');
     await mk('AS-0007', 'Midtown Assessment', 6000000, 'In Review', '2026-03-10T00:00:00Z');
   });
-  await p.evaluate(() => go('help')); await p.evaluate(() => go('home'));   // force a refetch
+  await p.evaluate(() => go('help')); await p.evaluate(() => go('budgets'));   // force a refetch
   await p.waitForTimeout(400);
-  ok('All budgets listed', (await p.locator('#homeBody tr').count()) === 4,
-     (await p.locator('#homeBody tr').count()) + ' rows');
+  ok('All budgets listed', (await p.locator('#budgetsBody tr').count()) === 4,
+     (await p.locator('#budgetsBody tr').count()) + ' rows');
 
-  const ids = async () => (await p.locator('#homeBody tr td:first-child').allTextContents()).map(s => s.trim().split(' ')[0]);
+  // Column 1 is the User column (creator avatar); Project ID is column 2.
+  const ids = async () => (await p.locator('#budgetsBody tr td:nth-child(2)').allTextContents()).map(s => s.trim().split(' ')[0]);
 
-  await p.click('#homeHead th[data-sort="contractSum"]');           // desc first
+  await p.click('#budgetsHead th[data-sort="contractSum"]');           // desc first
   ok('U2 sort by contract sum desc', (await ids())[0] === 'BD-0001', (await ids()).join(','));
-  await p.click('#homeHead th[data-sort="contractSum"]');           // toggle asc
+  await p.click('#budgetsHead th[data-sort="contractSum"]');           // toggle asc
   const asc = await ids();
   ok('U2 sort toggles to asc', asc[0] === 'TST-9999' || asc[0] === 'BD-0002', asc.join(','));
-  await p.click('#homeHead th[data-sort="name"]');
+  await p.click('#budgetsHead th[data-sort="name"]');
   ok('U2 sort by name asc', (await ids())[0] === 'BD-0001', (await ids()).join(','));
   ok('U2 sort arrow rendered',
-     (await p.locator('#homeHead th[data-sort="name"]').getAttribute('data-arrow')) === '▴');
+     (await p.locator('#budgetsHead th[data-sort="name"]').getAttribute('data-arrow')) === '▴');
 
-  await p.selectOption('#homeStatus', 'Completed');   // legacy Finalized maps to Completed
-  ok('U2 status filter narrows to 1', (await p.locator('#homeBody tr').count()) === 1);
-  await p.selectOption('#homeStatus', 'all');
-  await p.fill('#homeSearch', 'zeph');
-  ok('U2 search matches name case-insensitively', (await p.locator('#homeBody tr').count()) === 1);
-  ok('U2 filtered count text', /1 of 4 budgets/.test(await p.locator('#homeCount').textContent()));
-  await p.fill('#homeSearch', 'nomatch');
-  ok('U2 no-match empty state', /Nothing matches/.test(await p.locator('#homeEmptyBig').textContent()));
-  await p.fill('#homeSearch', '');
+  await p.selectOption('#budgetsStatus', 'Completed');   // legacy Finalized maps to Completed
+  ok('U2 status filter narrows to 1', (await p.locator('#budgetsBody tr').count()) === 1);
+  await p.selectOption('#budgetsStatus', 'all');
+  await p.fill('#budgetsSearch', 'zeph');
+  ok('U2 search matches name case-insensitively', (await p.locator('#budgetsBody tr').count()) === 1);
+  ok('U2 filtered count text', /1 of 4 budgets/.test(await p.locator('#budgetsCount').textContent()));
+  await p.fill('#budgetsSearch', 'nomatch');
+  ok('U2 no-match empty state', /Nothing matches/.test(await p.locator('#budgetsEmptyBig').textContent()));
+  await p.fill('#budgetsSearch', '');
 
   // --- house timestamp format: local time, MM-DD-YYYY (h:mm AM/PM with time)
-  const updCell = await p.locator('#homeBody tr', { hasText: 'Alpha Ridge' })
-    .locator('td:nth-child(6)').textContent();
+  const updCell = await p.locator('#budgetsBody tr', { hasText: 'Alpha Ridge' })
+    .locator('td:nth-child(7)').textContent();
   ok('Updated column shows MM-DD-YYYY', updCell.trim() === '01-05-2026', updCell);
   ok('fmtWhen renders MM-DD-YYYY h:mm AM/PM in local time',
      await p.evaluate(() => fmtWhen('2026-08-17T20:52:00') === '08-17-2026 8:52 PM'
@@ -159,40 +160,43 @@ const BASE = 'http://127.0.0.1:8100';
        && fmtDay('2026-01-05T00:00:00') === '01-05-2026'));
 
   // --- Group By
-  ok('Group By offers no-grouping, address, ID, type and status',
-     (await p.locator('#homeGroup option').allTextContents()).join('|')
-       === 'No Grouping|Group by Address|Group by Project ID|Group by Type|Group by Status');
+  ok('Group By offers no-grouping, address, ID, type, status and user',
+     (await p.locator('#budgetsGroup option').allTextContents()).join('|')
+       === 'No Grouping|Group by Address|Group by Project ID|Group by Type|Group by Status|Group by User',
+     (await p.locator('#budgetsGroup option').allTextContents()).join('|'));
   ok('The list is ungrouped by default',
-     (await p.locator('#homeBody tr.grp-hd').count()) === 0);
+     (await p.locator('#budgetsBody tr.grp-hd').count()) === 0);
 
   const grouped = async (key) => {
-    await p.selectOption('#homeGroup', key); await p.waitForTimeout(250);
+    await p.selectOption('#budgetsGroup', key); await p.waitForTimeout(250);
     return p.evaluate(() => ({
-      groups: [...document.querySelectorAll('#homeBody tr.grp-hd')].length,
-      rows: [...document.querySelectorAll('#homeBody tr:not(.grp-hd)')].length,
-      first: (document.querySelector('#homeBody tr.grp-hd') || {}).textContent || '',
-      last: [...document.querySelectorAll('#homeBody tr.grp-hd')].pop().textContent || '',
+      groups: [...document.querySelectorAll('#budgetsBody tr.grp-hd')].length,
+      rows: [...document.querySelectorAll('#budgetsBody tr:not(.grp-hd)')].length,
+      first: (document.querySelector('#budgetsBody tr.grp-hd') || {}).textContent || '',
+      last: [...document.querySelectorAll('#budgetsBody tr.grp-hd')].pop().textContent || '',
       // colspan means element count != column count; measure the real span, and
       // check the money lands under Contract Sum and Total Project.
-      headerSpan: [...document.querySelector('#homeBody tr.grp-hd').children]
+      headerSpan: [...document.querySelector('#budgetsBody tr.grp-hd').children]
         .reduce((n, c) => n + (+c.getAttribute('colspan') || 1), 0),
       moneyCols: (() => {
         let col = 0, cols = [];
-        for (const c of document.querySelector('#homeBody tr.grp-hd').children) {
+        for (const c of document.querySelector('#budgetsBody tr.grp-hd').children) {
           if (/^\$/.test(c.textContent.trim())) cols.push(col);
           col += (+c.getAttribute('colspan') || 1);
         }
         return cols;
       })(),
-      allGroups: [...document.querySelectorAll('#homeBody tr.grp-hd')].map(t => t.textContent)
+      allGroups: [...document.querySelectorAll('#budgetsBody tr.grp-hd')].map(t => t.textContent)
     }));
   };
   const byStatus = await grouped('status');
   ok('Grouping by status splits the list', byStatus.groups >= 2, byStatus.groups + ' groups');
   ok('Grouping shows every budget exactly once', byStatus.rows === 4, byStatus.rows + ' rows');
-  ok('Group headers span the full table', byStatus.headerSpan === 7, 'span ' + byStatus.headerSpan);
+  // 8 columns since the User column joined: User, Project ID, Name, Status,
+  // Contract Sum, Total Project Cost, Updated, actions.
+  ok('Group headers span the full table', byStatus.headerSpan === 8, 'span ' + byStatus.headerSpan);
   ok('Group totals sit under Contract Sum and Total Project Cost',
-     JSON.stringify(byStatus.moneyCols) === '[3,4]', JSON.stringify(byStatus.moneyCols));
+     JSON.stringify(byStatus.moneyCols) === '[4,5]', JSON.stringify(byStatus.moneyCols));
   const byType = await grouped('type');
   ok('Grouping by type works', byType.groups >= 1 && byType.rows === 4);
   const byId = await grouped('id');
@@ -210,27 +214,31 @@ const BASE = 'http://127.0.0.1:8100';
     const all = homeRows().reduce((s, x) => s + (+x.contractSum || 0), 0);
     return Math.abs(g.reduce((s, x) => s + x.contract, 0) - all) < 0.01;
   }));
-  await p.selectOption('#homeGroup', ''); await p.waitForTimeout(200);
-  ok('Grouping can be turned off again', (await p.locator('#homeBody tr.grp-hd').count()) === 0);
+  await p.selectOption('#budgetsGroup', ''); await p.waitForTimeout(200);
+  ok('Grouping can be turned off again', (await p.locator('#budgetsBody tr.grp-hd').count()) === 0);
   await p.screenshot({ path: OUT + '/home.png' });
 
   // --- reopen a saved budget round-trips
-  await p.click('#homeBody tr:has-text("TST-9999")');
+  await p.click('#budgetsBody tr:has-text("TST-9999")');
   await p.waitForTimeout(400);
   ok('Reopened budget restores name', (await p.locator('#bTitle').textContent()).includes('Waller Preview Test'));
   ok('Reopened contract sum matches', (await p.locator('#rContract').textContent()) === contract);
-  ok('D5 status persisted as Draft', await p.locator('#bStatus').inputValue() === 'Draft');
+  // Status is the shared chip now, the same component the lists and the
+  // analysis editor use — not a select.
+  ok('D5 status persisted as Draft',
+     (await p.locator('#bStatusHost .st-chip').textContent()).trim() === 'Draft');
 
-  // --- status change persists
-  await p.selectOption('#bStatus', 'In Review');
+  // --- status change persists, through the chip's menu
+  await p.click('#bStatusHost .st-chip'); await p.waitForTimeout(200);
+  await p.click('#stMenu [data-st="In Review"]'); await p.waitForTimeout(500);
   await p.click('#page-budget button[data-save-btn]');
   await p.waitForTimeout(500);
-  await p.click('#nav-home'); await p.waitForTimeout(400);
+  await p.click('#nav-budgets'); await p.waitForTimeout(400);
   ok('D5 status change persisted to the list',
-     (await p.locator('#homeBody tr:has-text("TST-9999")').textContent()).includes('In Review'));
+     (await p.locator('#budgetsBody tr:has-text("TST-9999")').textContent()).includes('In Review'));
 
   // --- stale pricing banner after publishing a new version
-  await p.click('#nav-pricing'); await p.waitForTimeout(300);
+  await p.click('#nav-more-btn').then(()=>p.click('#nav-pricing')); await p.waitForTimeout(300);
   ok('pricing_admin unlocks the editor', await p.locator('#unlockedBanner').isVisible());
   await p.click('button:has-text("Publish New Version")');
   await p.waitForTimeout(500);
@@ -241,8 +249,8 @@ const BASE = 'http://127.0.0.1:8100';
   await p.click('#staleBanner .btn-x'); await p.waitForTimeout(200);
   ok('X hides the banner for this budget', !(await p.locator('#staleBanner').isVisible()));
   // the persistent path after dismissing: Home row menu → Update Pricing
-  await p.click('#nav-home'); await p.waitForTimeout(400);
-  await p.locator('#homeBody tr', { hasText: 'TST-9999' }).locator('.rowmenu-btn').click();
+  await p.click('#nav-budgets'); await p.waitForTimeout(400);
+  await p.locator('#budgetsBody tr', { hasText: 'TST-9999' }).locator('.rowmenu-btn').click();
   await p.waitForTimeout(200);
   ok('row menu offers Update Pricing',
      (await p.locator('#rowMenu .rowmenu-item').allTextContents()).includes('Update Pricing'));
@@ -294,22 +302,23 @@ const BASE = 'http://127.0.0.1:8100';
   ok('Line IDs are unique', new Set(lineIds).size === lineIds.length);
 
   // --- three-dot row actions menu (replaced the bare × delete button)
-  await p.click('#nav-home'); await p.waitForTimeout(400);
-  await p.click('#homeBody tr:has-text("TST-9999") .rowmenu-btn');
+  await p.click('#nav-budgets'); await p.waitForTimeout(400);
+  await p.click('#budgetsBody tr:has-text("TST-9999") .rowmenu-btn');
   await p.waitForTimeout(200);
   ok('Row menu opens', await p.locator('#rowMenu').isVisible());
-  ok('Row menu offers Edit, Versions and Delete',
-     (await p.locator('#rowMenu .rowmenu-item').allTextContents()).join('|') === 'Edit|Update Pricing|Versions|Delete');
+  ok('Row menu offers Edit, Pin, Update Pricing, Versions and Delete',
+     (await p.locator('#rowMenu .rowmenu-item').allTextContents()).join('|') === 'Edit|Pin to Home|Update Pricing|Versions|Delete',
+     (await p.locator('#rowMenu .rowmenu-item').allTextContents()).join('|'));
   ok('Trigger reports expanded state',
-     await p.locator('#homeBody tr:has-text("TST-9999") .rowmenu-btn').getAttribute('aria-expanded') === 'true');
+     await p.locator('#budgetsBody tr:has-text("TST-9999") .rowmenu-btn').getAttribute('aria-expanded') === 'true');
   ok('Trigger carries an accessible label',
-     (await p.locator('#homeBody tr:has-text("TST-9999") .rowmenu-btn').getAttribute('aria-label')) === 'Actions for TST-9999');
+     (await p.locator('#budgetsBody tr:has-text("TST-9999") .rowmenu-btn').getAttribute('aria-label')) === 'Actions for TST-9999');
   await p.keyboard.press('Escape'); await p.waitForTimeout(150);
   ok('Escape closes the row menu', !(await p.locator('#rowMenu').isVisible()));
 
   // --- version history, read-only
   const openBefore = await p.evaluate(() => doc ? JSON.stringify(doc) : null);
-  await p.click('#homeBody tr:has-text("TST-9999") .rowmenu-btn'); await p.waitForTimeout(150);
+  await p.click('#budgetsBody tr:has-text("TST-9999") .rowmenu-btn'); await p.waitForTimeout(150);
   await p.click('#rowMenu .rowmenu-item:has-text("Versions")');
   await p.waitForTimeout(500);
   ok('Versions modal opens', await p.locator('#versionsModal').isVisible());
@@ -330,10 +339,10 @@ const BASE = 'http://127.0.0.1:8100';
   ok('Escape closes the versions modal', !(await p.locator('#versionsModal').isVisible()));
 
   // --- delete, now behind the menu and recoverable
-  await p.click('#homeBody tr:has-text("TST-9999") .rowmenu-btn'); await p.waitForTimeout(150);
+  await p.click('#budgetsBody tr:has-text("TST-9999") .rowmenu-btn'); await p.waitForTimeout(150);
   await p.click('#rowMenu .rowmenu-item:has-text("Delete")');
   await p.waitForTimeout(500);
-  ok('Delete removes the row', (await p.locator('#homeBody tr').count()) === 3);
+  ok('Delete removes the row', (await p.locator('#budgetsBody tr').count()) === 3);
 
    // --- sign out
   await p.click('#profileBtn'); await p.waitForTimeout(200);
@@ -369,25 +378,25 @@ const BASE = 'http://127.0.0.1:8100';
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: 'fromBudget', projectId: 'BD-0001', analysisName: 'Alpha Underwriting' }) });
   });
-  await p.evaluate(() => go('help')); await p.evaluate(() => go('home'));   // force a refetch
+  await p.evaluate(() => go('help')); await p.evaluate(() => go('budgets'));   // force a refetch
   await p.waitForTimeout(500);
-  ok('Home carries a separate Investment Analyses section below the budgets',
-     await p.evaluate(() => {
-       const budgets = document.getElementById('homeBody'), sec = document.getElementById('homeAnalyses');
-       return !!sec && !!(budgets.compareDocumentPosition(sec) & Node.DOCUMENT_POSITION_FOLLOWING);
-     }));
-  const iaRow = p.locator('#homeAnalyses [data-inv-list] tr', { hasText: 'Alpha Underwriting' }).first();
+  ok('the budgets list and the analyses list are separate pages now',
+     await p.evaluate(() => !!document.getElementById('page-budgets')
+       && !!document.getElementById('page-analyses')
+       && document.getElementById('page-budgets') !== document.getElementById('page-analyses')));
+  await p.evaluate(() => go('analyses')); await p.waitForTimeout(600);
+  const iaRow = p.locator('#page-analyses [data-inv-list] tr', { hasText: 'Alpha Underwriting' }).first();
   ok('the analysis lists with its project', /BD-0001/.test(await iaRow.textContent().catch(() => '')),
      await iaRow.textContent().catch(() => 'row missing'));
   ok('budget rows carry no analysis chips anymore', (await p.locator('.ia-chip').count()) === 0);
-  ok('no emoji in the analyses section', !/[\u{1F300}-\u{1FAFF}]/u.test(await p.locator('#homeAnalyses').textContent()));
+  ok('no emoji in the analyses section', !/[\u{1F300}-\u{1FAFF}]/u.test(await p.locator('#page-analyses').textContent()));
 
   // versions open from the row's three-dot menu, like budgets
   await iaRow.locator('.rowmenu-btn').click();
   await p.waitForTimeout(200);
   const menuItems = await p.locator('#invRowMenu .rowmenu-item').allTextContents();
-  ok('three-dot menu offers Open, Versions, Duplicate, Delete',
-     JSON.stringify(menuItems) === JSON.stringify(['Open Analysis', 'Versions', 'Duplicate', 'Delete Analysis']),
+  ok('three-dot menu offers Open, Pin, Versions, Duplicate, Delete',
+     JSON.stringify(menuItems) === JSON.stringify(['Open Analysis', 'Pin to Home', 'Versions', 'Duplicate', 'Delete Analysis']),
      menuItems.join(','));
   await p.locator('#invRowMenu .rowmenu-item', { hasText: 'Versions' }).click();
   await p.waitForTimeout(500);

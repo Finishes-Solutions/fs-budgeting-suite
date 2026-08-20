@@ -1,42 +1,126 @@
 /* Analytics Dashboard — super_admin only. Scoped to #page-dashboard so rules
-   cannot collide with the main stylesheet or investment-analysis.css. */
+   cannot collide with the main stylesheet or investment-analysis.css.
+   Uses the app's card/tbl system for consistency. */
 
-#page-dashboard .dash-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin:18px 0}
-#page-dashboard .dash-kpi{background:var(--white);border:1px solid var(--ink-200);border-radius:10px;padding:16px 18px}
-#page-dashboard .dash-kpi .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-500);margin-bottom:4px}
-#page-dashboard .dash-kpi .v{font-family:var(--fm);font-size:22px;font-weight:600;color:var(--ink-900)}
-#page-dashboard .dash-kpi .sub{font-size:12px;color:var(--ink-500);margin-top:2px}
+/* Compact tiles: eight of them fit two rows instead of three, which is most of
+   the height the dashboard used to spend before the first chart. */
+#page-dashboard .dash-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px;margin:16px 0}
+#page-dashboard .dash-kpi{background:var(--white);border:1px solid var(--ink-200);border-radius:8px;padding:11px 13px}
+#page-dashboard .dash-kpi .k{font-family:var(--fm);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500);font-weight:500;margin-bottom:2px}
+#page-dashboard .dash-kpi .v{font-family:var(--fm);font-size:18px;font-weight:600;color:var(--ink-900);line-height:1.2}
+#page-dashboard .dash-kpi .sub{font-size:11px;color:var(--ink-500);margin-top:1px}
 
-#page-dashboard .dash-section{margin:28px 0 0}
-#page-dashboard .dash-section h2{font-size:15px;margin:0 0 12px;color:var(--ink-800)}
-
+/* Two halves under the full-width activity chart. The children drop their own
+   margin so the grid gap is the only spacing, and the row carries the same
+   20px gap below it that every .card does — without it the next card sat
+   flush against this one. */
+#page-dashboard .dash-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;
+  align-items:start;margin-bottom:20px}
+#page-dashboard .dash-cols>.card{margin-bottom:0}
+/* The two donuts sit side by side within their half. */
 #page-dashboard .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 
-#page-dashboard .dash-card{background:var(--white);border:1px solid var(--ink-200);border-radius:10px;padding:18px 20px}
-#page-dashboard .dash-card h3{font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-500);margin:0 0 12px}
+/* Range buttons in the activity card's header. */
+#page-dashboard .dash-ranges{display:flex;gap:2px;background:var(--ink-100);border-radius:8px;padding:2px}
+#page-dashboard .dash-range{border:none;background:none;cursor:pointer;border-radius:6px;
+  padding:4px 10px;font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;font-weight:600;
+  color:var(--ink-500);transition:background .12s,color .12s}
+#page-dashboard .dash-range:hover{color:var(--ink-900)}
+#page-dashboard .dash-range.on{background:var(--white);color:var(--ink-950);box-shadow:var(--sh)}
+#page-dashboard .dash-range:focus-visible{outline:none;box-shadow:var(--focus)}
+#page-dashboard .dash-hd-note{font-size:11.5px;color:var(--ink-400)}
+
+#page-dashboard .dash-card{padding:4px 0}
+#page-dashboard .dash-card h3{font-family:var(--fm);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500);font-weight:500;margin:0 0 7px}
 
 /* status breakdown bars */
 #page-dashboard .dash-bar-group{display:flex;flex-direction:column;gap:8px}
 #page-dashboard .dash-bar-row{display:flex;align-items:center;gap:10px;font-size:13px}
-#page-dashboard .dash-bar-label{width:100px;text-align:right;color:var(--ink-700);white-space:nowrap}
+#page-dashboard .dash-bar-label{width:120px;text-align:right;color:var(--ink-700);white-space:nowrap;font-size:12.5px}
 #page-dashboard .dash-bar-track{flex:1;height:22px;background:var(--ink-100);border-radius:6px;overflow:hidden;position:relative}
 #page-dashboard .dash-bar-fill{height:100%;border-radius:6px;transition:width .3s ease}
 #page-dashboard .dash-bar-count{font-family:var(--fm);font-size:12px;color:var(--ink-600);min-width:28px}
 
-/* activity table */
-#page-dashboard .dash-activity{width:100%;border-collapse:collapse;font-size:13px}
-#page-dashboard .dash-activity th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--ink-500);padding:6px 10px;border-bottom:1px solid var(--ink-200)}
-#page-dashboard .dash-activity td{padding:8px 10px;border-bottom:1px solid var(--ink-100);vertical-align:middle}
-#page-dashboard .dash-activity td.mono{font-family:var(--fm);font-size:12px;color:var(--ink-600);white-space:nowrap}
-#page-dashboard .dash-activity tbody tr:hover{background:var(--ink-50)}
+/* ---- charts (inline SVG, no library) ---- */
+#page-dashboard .dash-chart-scroll{overflow-x:auto}
+#page-dashboard .dash-line{width:100%;min-width:0;height:auto;display:block}
+#page-dashboard .dash-ax{font-family:var(--fm);font-size:9px;fill:var(--ink-500)}
+
+/* The hover readout floats over the chart, so the chart is the positioning
+   context and the panel never escapes the card. */
+#page-dashboard .dash-chart-wrap{position:relative}
+#page-dashboard .dash-tip{position:absolute;z-index:2;pointer-events:none;
+  background:var(--white);border:1px solid var(--ink-200);border-radius:8px;
+  box-shadow:0 4px 16px rgba(11,13,12,.14);padding:9px 11px;min-width:172px}
+#page-dashboard .dash-tip-d{font-family:var(--fm);font-size:10.5px;color:var(--ink-500);
+  margin-bottom:6px;white-space:nowrap}
+#page-dashboard .dash-tip-r{display:flex;align-items:center;gap:7px;font-size:11.5px;
+  color:var(--ink-700);padding:1px 0}
+#page-dashboard .dash-tip-k{flex:1;white-space:nowrap}
+#page-dashboard .dash-tip-v{font-family:var(--fm);font-size:12px;color:var(--ink-950);font-weight:600}
+
+/* top projects: a ranked single-metric bar, where Budgets By Value compares two */
+#page-dashboard .dash-rank{display:flex;flex-direction:column;gap:9px}
+#page-dashboard .dash-rank-row{display:flex;align-items:center;gap:10px;min-width:0}
+#page-dashboard .dash-rank-n{width:18px;flex:none;font-family:var(--fm);font-size:11px;
+  color:var(--ink-400);text-align:right}
+#page-dashboard .dash-rank-id{width:64px;flex:none;font-size:12px;color:var(--green-700);font-weight:600}
+#page-dashboard .dash-rank-nm{width:180px;flex:none;font-size:12.5px;color:var(--ink-800);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#page-dashboard .dash-rank-track{flex:1;min-width:40px;height:16px;background:var(--ink-100);
+  border-radius:4px;overflow:hidden}
+#page-dashboard .dash-rank-fill{height:100%;border-radius:4px;background:var(--green-700)}
+#page-dashboard .dash-rank-v{width:104px;flex:none;text-align:right;font-size:12px;color:var(--ink-900)}
+#page-dashboard .dash-rank-p{width:40px;flex:none;text-align:right;font-family:var(--fm);
+  font-size:11px;color:var(--ink-400)}
+
+#page-dashboard .dash-donut-wrap{display:flex;align-items:center;gap:12px;flex-wrap:nowrap}
+#page-dashboard .dash-donut{width:88px;height:88px;flex:none}
+#page-dashboard .dash-donut-n{font-family:var(--fm);font-size:26px;font-weight:600;fill:var(--ink-900)}
+#page-dashboard .dash-donut-l{font-family:var(--fm);font-size:9px;letter-spacing:.14em;fill:var(--ink-500)}
+
+#page-dashboard .dash-legend{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+#page-dashboard .dash-legend-h{flex-direction:row;gap:18px;flex-wrap:wrap;margin-top:10px;justify-content:center}
+#page-dashboard .dash-lg-row{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-700)}
+#page-dashboard .dash-lg-dot{width:10px;height:10px;border-radius:3px;flex:none}
+#page-dashboard .dash-lg-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#page-dashboard .dash-lg-val{font-family:var(--fm);font-size:12px;color:var(--ink-900)}
+#page-dashboard .dash-lg-pct{font-family:var(--fm);font-size:10.5px;color:var(--ink-500);min-width:30px;text-align:right}
+
+/* budgets-by-value: paired bars per project */
+#page-dashboard .dash-vbars{display:flex;flex-direction:column;gap:10px}
+#page-dashboard .dash-vbar-hd{display:flex;gap:7px;align-items:baseline;margin-bottom:3px;min-width:0}
+#page-dashboard .dash-vbar-hd .mono{font-family:var(--fm);font-size:12px;color:var(--green-700);font-weight:600}
+#page-dashboard .dash-vbar-nm{font-size:11.5px;color:var(--ink-500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#page-dashboard .dash-vbar-row{display:flex;align-items:center;gap:7px;margin-top:2px}
+#page-dashboard .dash-vbar-k{width:52px;font-size:10.5px;color:var(--ink-500);text-align:right;flex:none}
+#page-dashboard .dash-vbar-track{flex:1;min-width:0;height:10px;background:var(--ink-100);border-radius:3px;overflow:hidden}
+#page-dashboard .dash-vbar-fill{height:100%;border-radius:4px}
+#page-dashboard .dash-vbar-v{width:84px;text-align:right;font-size:11px;color:var(--ink-700);flex:none}
 
 /* loading + empty */
 #page-dashboard .dash-loading{text-align:center;padding:40px;color:var(--ink-500);font-size:14px}
 #page-dashboard .dash-error{background:#FDF3F3;border:1px solid #E8C4C4;border-radius:8px;padding:12px 16px;
   color:#C43C3C;font-size:13px;margin:18px 0}
 
+/* Activity Log filter bar. The inputs inherit the app's global field styling
+   (input[type=date] and select are in the shared selector list); these rules
+   only size them down to toolbar scale, matching .list-toolbar elsewhere. */
+#page-dashboard .dash-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#page-dashboard .dash-filters select{width:150px;padding:6px 10px;font-size:13px}
+#page-dashboard .dash-filters input[type=date]{width:145px;padding:6px 10px;font-size:13px}
+#page-dashboard .dash-filter-sep{font-size:12.5px;color:var(--ink-500)}
+
+@media(max-width:980px){
+  #page-dashboard .dash-cols{grid-template-columns:1fr}
+  #page-dashboard .dash-rank-nm{width:120px}
+}
 @media(max-width:760px){
   #page-dashboard .dash-grid{grid-template-columns:1fr}
-  #page-dashboard .dash-kpis{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  #page-dashboard .dash-kpis{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  /* Too little room for a name and a bar both; the bar carries the shape and
+     the id still says which project it is. */
+  #page-dashboard .dash-rank-nm{display:none}
+  #page-dashboard .dash-rank-v{width:88px}
+  #page-dashboard .dash-tip{min-width:150px}
 }

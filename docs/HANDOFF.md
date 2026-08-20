@@ -350,9 +350,40 @@ rows, badges and row menus), budgetView + analysisView (each
 'comfortable' | 'compact' | 'cards' — per-SECTION views; the density attribute
 sits on each section's card, cards use `.home-cards`/`.hcard`; legacy
 homeView/tableDensity documents map forward in the contract), rememberExport
-(a switch) + exportOptions (per-product export-modal defaults). Each list's
-toolbar carries the same three-way `.mini-seg` toggle, sharing the Settings
-buttons' data attributes so one paint marks both.
+(a switch) + exportOptions (per-product export-modal defaults), and themePack
+(see below). Each list's toolbar carries the same three-way `.mini-seg` toggle,
+sharing the Settings buttons' data attributes so one paint marks both.
+
+**Theme packs (`themePack`, super_admin only).** A pack is an alternate visual
+PRESENTATION of the same product — paint and nothing else. `default` is the
+Finishes Solutions appearance; `ramp` is the Editorial pack in
+`app/theme-ramp.css`, whose every rule is scoped to `html[data-skin=ramp]`, so
+with no pack selected the file cannot affect a single pixel. The stylesheet is
+linked AFTER the inline `<style>` block on purpose: it is meant to win an
+equal-specificity tie on order, which is what keeps its selectors flat instead
+of inflated. The pack works by remapping the EXISTING tokens (`--ink-*`,
+`--green-*`, `--r`, `--sh`, `--focus`, `--fb`) plus targeted primitive
+overrides, so every stylesheet in `app/` follows it without a page-level color.
+The ROLE decides whether a stored pack is painted (`themePackAllowed()`), not
+the stored value — an account that loses super_admin stops seeing the pack
+without its setting being rewritten. A pack owns its whole palette, so
+`applyAccent()` stands down while one is active and repaints the account's
+accent the moment it is switched off. `beforeprint` strips `data-skin` next to
+`data-theme`, so an export never inherits a preview appearance. Adding a pack
+is: a value in the contract's `THEME_PACKS`, a scoped stylesheet, and a button
+in Settings — never a schema migration.
+
+The Editorial pack's Home field is two pseudo-elements on `#page-home` (not on
+the hero): a fine 18px lattice and a coarser 31px one, drifting in opposite
+directions by exactly one of their own tiles so each loop is seamless, plus
+soft clearings painted in the canvas colour that thin the field out in places
+so it does not read as wallpaper. Movement is a composited transform — never
+an animated `background-position` — so nothing repaints per frame. The drift
+is vertical ONLY: a horizontal drift would need the layer to overhang
+sideways, and a full-bleed decoration that overhangs is a horizontal
+scrollbar. Both layers are `pointer-events:none`, sit at a negative z-index
+under `isolation:isolate`, and go static under `prefers-reduced-motion` and on
+phones.
 
 **Statuses.** One shared model for budgets AND analyses: Draft · In Review ·
 Completed · Cancelled (STATUS_LIST/normStatus/statusChip in app/index.html;

@@ -145,7 +145,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.evaluate(()=>{document.getElementById('printDoc').innerHTML='';document.body.classList.remove('printing');});
 
  // ---- editable CSI codes move a line to the matching division
- await p.click('#nav-budget'); await p.waitForTimeout(400);
+ // Getting back to the budget is a precondition here, and the guide test above
+ // leaves us on Help, which has no workflow pills — so route directly.
+ await p.evaluate(()=>go('budget')); await p.waitForTimeout(400);
  const moved = await p.evaluate(() => {
    const l = doc.lines.find(x => x.scope === 'res' && x.grp === 'Interiors');
    const b = {id:l.lineId, qty:lineQty(l), unit:l.unit, scope:l.scope, basis:l.basis,

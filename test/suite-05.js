@@ -58,7 +58,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(300);
  await p.fill('#pId','TST-9998'); await p.fill('#pName','CSI Format Check');
  await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
- await p.click('#nav-csi'); await p.waitForTimeout(500);
+ await p.click(".page.on [data-wf-pills] a:has-text('CSI Schedule')"); await p.waitForTimeout(500);
  ok('CSI tab renders', await p.locator('#page-csi').isVisible());
  ok('CSI hash route', p.url().endsWith('#/csi/TST-9998'), p.url());
  const divs=await p.locator('#csiBody tr.scope-hd').count();
@@ -69,10 +69,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('markups present as Division 99', (await p.locator('#csiBody').textContent()).includes('Division 99'));
  ok('contingency shown as 99 03 00', (await p.locator('#csiBody').textContent()).includes('99 03 00'));
  const csiTotal=(await p.locator('#csiBody tr.total td').nth(1).textContent()).trim();
- await p.click('#nav-budget'); await p.waitForTimeout(300);
+ await p.click(".page.on [data-wf-pills] a:has-text('Budget')"); await p.waitForTimeout(300);
  ok('CSI contract sum matches Budget page', csiTotal===(await p.locator('#rContract').textContent()).trim(),
     csiTotal+' vs '+(await p.locator('#rContract').textContent()));
- await p.click('#nav-csi'); await p.waitForTimeout(300);
+ await p.click(".page.on [data-wf-pills] a:has-text('CSI Schedule')"); await p.waitForTimeout(300);
  ok('soft costs listed separately', (await p.locator('#csiSoftBody tr').count())>10);
  await p.screenshot({path:OUT+'/shot-csi.png'});
 
@@ -112,7 +112,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
 
  // ================= BUDGET TEMPLATES =================
- await p.click('#nav-pricing'); await p.waitForTimeout(500);
+ await p.click('#nav-more-btn').then(()=>p.click('#nav-pricing')); await p.waitForTimeout(500);
  ok('Budget Templates section is present', await p.locator('#tplCard').isVisible());
  ok('Template selector lists the seeded multifamily template',
     (await p.locator('#tplSelect option').allTextContents()).some(t => /Multifamily/.test(t)));

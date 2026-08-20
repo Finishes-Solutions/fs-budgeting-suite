@@ -34,7 +34,7 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' �
   await p.evaluate(() => go('help')); await p.waitForTimeout(300);
   ok('U4 hash set for help', p.url().endsWith('#/help'), p.url());
   ok('Help page visible', await p.locator('#page-help').isVisible());
-  ok('Help TOC has 12 entries', (await p.locator('#helpToc a').count()) === 12);
+  ok('Help TOC has 13 entries', (await p.locator('#helpToc a').count()) === 13);
   await p.screenshot({ path: OUT + '/help.png', fullPage: false });
 
   // New budget
@@ -92,8 +92,11 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' �
   ok('D4 unsafe name renders literally', sub.includes('Preview <Test> & Co'), sub);
 
   // D5 — status
-  await p.selectOption('#bStatus', 'Completed');
-  ok('D5 status settable', await p.locator('#bStatus').inputValue() === 'Completed');
+  // Status is the shared chip, opened from the budget header.
+  await p.click('#bStatusHost .st-chip'); await p.waitForTimeout(200);
+  await p.click('#stMenu [data-st="Completed"]'); await p.waitForTimeout(300);
+  ok('D5 status settable',
+     (await p.locator('#bStatusHost .st-chip').textContent()).trim() === 'Completed');
 
   // U1 — collapse
   const before = await p.locator('#budBody tr').count();
@@ -126,15 +129,15 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' �
 
   // D2 — the unsaved guard must fire when leaving a dirty budget
   const before2 = dialogs;
-  await p.click('#nav-home');
+  await p.click('#nav-budgets');
   ok('D2 leaving a dirty budget prompts', dialogs === before2 + 1, `dialogs=${dialogs}`);
 
-  // U2 — home search / sort (no data, but controls must wire without error)
-  await p.fill('#homeSearch', 'BD');
-  await p.selectOption('#homeStatus', 'Draft');
-  await p.click('#homeHead th[data-sort="name"]');
-  ok('U2 home controls operate without error', true);
-  ok('U2 empty state message switches', /No budgets yet/.test(await p.locator('#homeEmptyBig').textContent()));
+  // U2 — the budgets list controls (no data, but they must wire without error)
+  await p.fill('#budgetsSearch', 'BD');
+  await p.selectOption('#budgetsStatus', 'Draft');
+  await p.click('#budgetsHead th[data-sort="name"]');
+  ok('U2 budgets list controls operate without error', true);
+  ok('U2 empty state message switches', /No budgets yet/.test(await p.locator('#budgetsEmptyBig').textContent()));
 
   // U4 — deep link on cold load
   await p.goto('http://127.0.0.1:8099/index.html#/pricing', { waitUntil: 'networkidle' });

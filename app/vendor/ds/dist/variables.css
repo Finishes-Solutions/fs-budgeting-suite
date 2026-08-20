@@ -1,0 +1,200 @@
+/* Finishes Solutions design system — variable tokens.
+   ------------------------------------------------------------------
+   GENERATED — do not edit here. This file is the concatenation of the
+   design system's token sources, in this order:
+
+       tokens/colors.css
+       tokens/typography.css
+       tokens/spacing.css
+
+   Source: the `finishes-solutions-design` skill bundle.
+   tokens/base.css is deliberately EXCLUDED: it carries element resets
+   (body/h1-h5/a/p) that would fight this app's own stylesheet.
+
+   Regenerate by re-concatenating the three files above in that order.
+   ------------------------------------------------------------------ */
+
+/* ==================== tokens/colors.css ==================== */
+/* Finishes Solutions — Color tokens
+   Palette: black / white / grey + #006527 brand green.
+   Industrial, architectural, high-contrast. */
+
+:root {
+  /* ---- Brand green ---------------------------------------- */
+  --green-950: #00210d;
+  --green-900: #00351a;  /* deep, near-black green (logo gradient low) */
+  --green-800: #004d1e;
+  --green-700: #006527;  /* ◆ BRAND PRIMARY */
+  --green-600: #0a7a36;
+  --green-500: #1f9249;
+  --green-400: #4caf70;
+  --green-300: #8acda3;
+  --green-200: #c2e3d0;
+  --green-100: #e2f1e8;
+  --green-50:  #f1f8f4;
+
+  /* ---- Neutral / concrete grey ---------------------------- */
+  --black:     #000000;
+  --ink-950:   #0b0d0c;
+  --ink-900:   #16191a;  /* primary dark surface */
+  --ink-800:   #23282a;
+  --ink-700:   #353b3d;
+  --ink-600:   #4d5457;
+  --ink-500:   #6b7174;  /* mid grey */
+  --ink-400:   #939a9d;
+  --ink-300:   #bcc2c4;
+  --ink-200:   #dde1e2;
+  --ink-150:   #e8ebeb;
+  --ink-100:   #f1f3f3;
+  --ink-50:    #f8f9f9;
+  --white:     #ffffff;
+
+  /* ---- Semantic (status) ---------------------------------- */
+  --status-success: var(--green-600);
+  --status-warning: #b7791f;
+  --status-danger:  #b42318;
+  --status-info:    #1f6fb2;
+
+  /* ============ SEMANTIC ALIASES ============ */
+  /* Brand */
+  --brand:            var(--green-700);
+  --brand-strong:     var(--green-800);
+  --brand-contrast:   var(--white);
+
+  /* Surfaces */
+  --surface-page:     var(--white);
+  --surface-raised:   var(--white);
+  --surface-sunken:   var(--ink-50);
+  --surface-card:     var(--white);
+  --surface-inverse:  var(--ink-900);
+  --surface-brand:    var(--green-700);
+  --surface-brand-tint: var(--green-50);
+
+  /* Text */
+  --text-strong:      var(--ink-950);
+  --text-body:        var(--ink-800);
+  --text-muted:       var(--ink-500);
+  --text-faint:       var(--ink-400);
+  --text-inverse:     var(--white);
+  --text-inverse-muted: var(--ink-300);
+  --text-brand:       var(--green-700);
+  --text-on-brand:    var(--white);
+
+  /* Borders / lines */
+  --border-subtle:    var(--ink-150);
+  --border-default:   var(--ink-200);
+  --border-strong:    var(--ink-300);
+  --border-inverse:   rgba(255,255,255,0.16);
+  --border-brand:     var(--green-700);
+
+  /* Interactive states */
+  --focus-ring:       var(--green-600);
+  --overlay-scrim:    rgba(11,13,12,0.55);
+}
+
+/* ==================== tokens/typography.css ==================== */
+/* Finishes Solutions — Typography tokens */
+
+:root {
+  /* ---- Families ------------------------------------------- */
+  --font-display: 'Montserrat', system-ui, -apple-system, sans-serif; /* headings — geometric sans, stands in for the custom wordmark */
+  --font-body:    'Montserrat', system-ui, -apple-system, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace; /* labels, eyebrows, data */
+
+  /* ---- Weights -------------------------------------------- */
+  --fw-regular:   400; /* @kind other */
+  --fw-medium:    500; /* @kind other */
+  --fw-semibold:  600; /* @kind other */
+  --fw-bold:      700; /* @kind other */
+  --fw-extrabold: 800; /* @kind other */
+  --fw-black:     900; /* @kind other */
+
+  /* ---- Type scale (rem, 16px base) ------------------------ */
+  --text-2xs:  0.6875rem;  /* 11px — mono micro-labels */
+  --text-xs:   0.75rem;    /* 12px */
+  --text-sm:   0.875rem;   /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-md:   1.125rem;   /* 18px */
+  --text-lg:   1.375rem;   /* 22px */
+  --text-xl:   1.75rem;    /* 28px */
+  --text-2xl:  2.25rem;    /* 36px */
+  --text-3xl:  3rem;       /* 48px */
+  --text-4xl:  4rem;       /* 64px */
+  --text-5xl:  5.25rem;    /* 84px — hero display */
+
+  /* ---- Line heights --------------------------------------- */
+  --leading-tight:   1.04;
+  --leading-snug:    1.18;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+
+  /* ---- Letter spacing ------------------------------------- */
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.04em;
+  --tracking-label:  0.14em;  /* uppercase mono eyebrows */
+
+  /* ---- Semantic roles ------------------------------------- */
+  --type-display-font: var(--font-display);
+  --type-display-weight: var(--fw-extrabold);
+  --type-heading-font: var(--font-display);
+  --type-heading-weight: var(--fw-bold);
+  --type-body-font: var(--font-body);
+  --type-label-font: var(--font-mono);
+}
+
+/* ==================== tokens/spacing.css ==================== */
+/* Finishes Solutions — Spacing, radius, shadow, motion, layout tokens */
+
+:root {
+  /* ---- Spacing scale (4px base grid) ---------------------- */
+  --space-0:   0;
+  --space-1:   0.25rem;  /* 4 */
+  --space-2:   0.5rem;   /* 8 */
+  --space-3:   0.75rem;  /* 12 */
+  --space-4:   1rem;     /* 16 */
+  --space-5:   1.5rem;   /* 24 */
+  --space-6:   2rem;     /* 32 */
+  --space-7:   2.5rem;   /* 40 */
+  --space-8:   3rem;     /* 48 */
+  --space-9:   4rem;     /* 64 */
+  --space-10:  5rem;     /* 80 */
+  --space-12:  6rem;     /* 96 */
+  --space-16:  8rem;     /* 128 */
+
+  /* ---- Radius --------------------------------------------- */
+  /* Industrial / engineered: tight radii. Square-ish by default. */
+  --radius-none: 0;
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   10px;
+  --radius-xl:   16px;
+  --radius-pill: 999px;
+
+  /* ---- Border widths -------------------------------------- */
+  --border-width: 1px; /* @kind other */
+  --border-width-strong: 2px; /* @kind other */
+
+  /* ---- Shadows (cool, low-spread, architectural) ---------- */
+  --shadow-xs: 0 1px 2px rgba(11,13,12,0.06);
+  --shadow-sm: 0 1px 3px rgba(11,13,12,0.08), 0 1px 2px rgba(11,13,12,0.04);
+  --shadow-md: 0 4px 12px rgba(11,13,12,0.08), 0 2px 4px rgba(11,13,12,0.04);
+  --shadow-lg: 0 12px 28px rgba(11,13,12,0.12), 0 4px 8px rgba(11,13,12,0.05);
+  --shadow-xl: 0 24px 56px rgba(11,13,12,0.16);
+  --shadow-focus: 0 0 0 3px rgba(10,122,54,0.32);
+
+  /* ---- Motion --------------------------------------------- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1); /* @kind other */
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1); /* @kind other */
+  --ease-in-out:   cubic-bezier(0.65, 0, 0.35, 1); /* @kind other */
+  --dur-fast:   120ms; /* @kind other */
+  --dur-base:   200ms; /* @kind other */
+  --dur-slow:   360ms; /* @kind other */
+
+  /* ---- Layout --------------------------------------------- */
+  --container-max: 1240px;
+  --container-narrow: 760px;
+  --gutter: var(--space-5);
+}
+

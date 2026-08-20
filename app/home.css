@@ -1,0 +1,114 @@
+/* Home — the personal dashboard. Scoped to #page-home so nothing here can
+   reach the two index pages, which keep the shared card/tbl system. */
+
+/* ---- greeting ---- */
+#page-home .hm-hero{display:flex;justify-content:space-between;align-items:flex-end;
+  gap:18px;flex-wrap:wrap;margin-bottom:26px}
+#page-home .hm-greet{font-size:26px;font-weight:800;letter-spacing:-.025em;color:var(--ink-950);margin:0}
+#page-home .hm-greet-sub{font-size:13.5px;color:var(--ink-500);margin-top:4px}
+#page-home .hm-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* ---- sections ---- */
+#page-home .hm-sec{margin-bottom:26px}
+#page-home .hm-sec-hd{display:flex;align-items:baseline;justify-content:space-between;
+  gap:12px;margin-bottom:10px}
+#page-home .hm-more{font-size:12px;color:var(--ink-400)}
+#page-home .hm-link{background:none;border:none;padding:0;font-family:var(--fb);font-size:12px;
+  color:var(--ink-500);cursor:pointer;border-radius:4px}
+#page-home .hm-link:hover{color:var(--ink-900)}
+#page-home .hm-link:focus-visible{outline:none;box-shadow:var(--focus)}
+
+/* ---- record cards ---- */
+/* The grid stretches every card in a row to the tallest, and each card is a
+   flex column whose summary block is pushed down with margin-top:auto. That
+   is what keeps the amount, the status chip and the timestamp on the same
+   line across a row no matter how long a title runs. min() on the track keeps
+   a 232px card from overflowing a narrower container. */
+#page-home .hm-cards{display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(232px,100%),1fr));gap:12px}
+/* The card and its pin are siblings, not nested buttons. The wrapper is the
+   grid item, so the card still stretches to the row height. */
+#page-home .hm-card-wrap{position:relative;display:flex;min-width:0}
+#page-home .hm-card{flex:1;display:flex;flex-direction:column;gap:10px;text-align:left;
+  background:var(--white);border:1px solid var(--ink-150);border-radius:var(--rm);
+  box-shadow:var(--sh);padding:13px 15px;cursor:pointer;font-family:var(--fb);
+  min-width:0;overflow:hidden;
+  transition:border-color .12s,box-shadow .12s,transform .12s}
+#page-home .hm-card:hover{border-color:var(--ink-300);transform:translateY(-1px)}
+#page-home .hm-card:focus-visible{outline:none;box-shadow:var(--focus)}
+#page-home .hm-card-hd{display:flex;flex-direction:column;gap:6px;min-width:0}
+#page-home .hm-card-top{display:flex;align-items:center;gap:7px;min-width:0}
+#page-home .hm-kind{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:3px;padding:2px 5px;font-weight:500;flex:none}
+#page-home .hm-kind-budget{background:var(--green-50);color:var(--green-700)}
+#page-home .hm-kind-analysis{background:#EAF1FB;color:#2B579A}
+#page-home .hm-id{font-size:11.5px;color:var(--ink-400);min-width:0;flex:0 1 auto;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The pin: a real button over the card's top-right corner. The header row
+   reserves the space it occupies (below), so it never lands on the id or a
+   title however long they run. */
+#page-home .hm-pin{position:absolute;top:9px;right:9px;z-index:1;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;padding:0;border:1px solid transparent;border-radius:6px;
+  background:none;cursor:pointer;color:var(--green-700);line-height:0;
+  transition:background .12s,border-color .12s,color .12s}
+#page-home .hm-pin:hover{background:var(--ink-100);border-color:var(--ink-200);color:var(--ink-700)}
+#page-home .hm-pin:active{background:var(--ink-150)}
+#page-home .hm-pin:focus-visible{outline:none;box-shadow:var(--focus)}
+/* Only the pinned card needs the gap, so an unpinned one keeps its full width
+   for the record id. */
+#page-home .hm-card-wrap.is-pinned .hm-card-top{padding-right:26px}
+#page-home .hm-card-name{font-size:13.5px;font-weight:600;color:var(--ink-900);line-height:1.35;
+  min-height:2.7em;overflow-wrap:anywhere;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#page-home .hm-card-sum{margin-top:auto;display:flex;flex-direction:column;gap:6px;min-width:0}
+#page-home .hm-card-money{display:flex;justify-content:space-between;align-items:baseline;
+  gap:8px;font-size:11.5px;color:var(--ink-500)}
+#page-home .hm-card-money .k{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#page-home .hm-card-money .v{font-size:12.5px;color:var(--ink-800);flex:none;white-space:nowrap}
+#page-home .hm-card-ft{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding-top:8px;border-top:1px solid var(--ink-100)}
+#page-home .hm-when{font-size:11px;color:var(--ink-400);text-align:right;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---- needs attention ---- */
+#page-home .hm-atts{display:flex;flex-direction:column;gap:1px;
+  border:1px solid var(--ink-150);border-radius:var(--rm);overflow:hidden;background:var(--ink-150)}
+#page-home .hm-att{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  background:var(--white);border:none;padding:10px 14px;cursor:pointer;font-family:var(--fb);
+  transition:background .12s}
+#page-home .hm-att:hover{background:var(--ink-50)}
+#page-home .hm-att:focus-visible{outline:none;box-shadow:var(--focus)}
+#page-home .hm-att-tag{font-family:var(--fm);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+  border-radius:3px;padding:3px 7px;white-space:nowrap;flex:none;font-weight:500}
+#page-home .hm-tone-review{background:#FBF3E4;color:#8A6116}
+#page-home .hm-tone-idle{background:var(--ink-100);color:var(--ink-600)}
+#page-home .hm-tone-idea{background:var(--green-50);color:var(--green-700)}
+#page-home .hm-att-name{flex:1;min-width:0;font-size:13px;color:var(--ink-900);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#page-home .hm-att-id{font-size:11.5px;color:var(--ink-400);flex:none}
+#page-home .hm-att-note{font-size:11.5px;color:var(--ink-500);flex:none;text-align:right;min-width:150px}
+
+/* ---- activity ---- */
+#page-home .hm-log{border:1px solid var(--ink-150);border-radius:var(--rm);overflow:hidden}
+#page-home .hm-log-row{display:flex;align-items:center;gap:12px;padding:7px 14px;
+  border-bottom:1px solid var(--ink-100);font-size:12.5px}
+#page-home .hm-log-row:last-child{border-bottom:none}
+#page-home .hm-log-ev{color:var(--ink-800);min-width:130px;flex:none}
+#page-home .hm-log-what{flex:1;min-width:0;font-size:11.5px;color:var(--ink-500);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#page-home .hm-log-when{font-size:11.5px;color:var(--ink-400);flex:none}
+
+/* ---- states ---- */
+#page-home .hm-loading{text-align:center;padding:52px;color:var(--ink-500);font-size:14px}
+#page-home .hm-empty{border:1px dashed var(--ink-200);border-radius:var(--rm);
+  padding:28px;text-align:center;color:var(--ink-500);font-size:13px}
+#page-home .hm-empty-big{font-size:15px;font-weight:600;color:var(--ink-800);margin-bottom:5px}
+
+@media(max-width:640px){
+  #page-home .hm-greet{font-size:22px}
+  #page-home .hm-actions{width:100%}
+  #page-home .hm-actions .btn{flex:1}
+  #page-home .hm-att-note{display:none}
+  #page-home .hm-log-ev{min-width:104px}
+}

@@ -1,6 +1,7 @@
 // Suite 15 — per-account settings (dbo.Users stand-in): boot bootstrap and
 // login counting, profile fields, accent / avatar / time format / density,
-// Home card view, remembered export options, and the activity log.
+// theme packs (the super_admin visual preview), Home card view, remembered
+// export options, and the activity log.
 const { chromium } = require('playwright');
 const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:''}`);
 (async()=>{ try{
@@ -91,40 +92,137 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the Remember Export Settings toggle flips the setting',
     await p.evaluate(()=>usSettings().rememberExport===true
       &&document.getElementById('setRememberExport').checked));
+ // ---- theme packs: a super_admin preview that repaints and nothing else
+ ok('Settings offers the Theme Pack control to a super admin',
+    await p.evaluate(()=>getComputedStyle(document.getElementById('setThemePackRow')).display!=='none'));
+ const navBefore=await p.evaluate(()=>[...document.querySelectorAll('body>header nav button')]
+   .map(b=>b.textContent.trim()));
+ await p.click('#settingsModal [data-themepack-pick=ramp]'); await p.waitForTimeout(1200);
+ ok('the pack applies as one scoped attribute',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-skin')==='ramp'));
+ ok('the pack follows the account',
+    (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json()).settings.themePack))==='ramp');
+ ok('the primary action carries the pack accent',
+    await p.evaluate(()=>{const b=document.querySelector('#page-home .btn-primary');
+      return b&&getComputedStyle(b).backgroundColor==='rgb(223, 242, 0)';}),
+    await p.evaluate(()=>{const b=document.querySelector('#page-home .btn-primary');
+      return b?getComputedStyle(b).backgroundColor:'(no button)';}));
+ ok('a pack owns its palette, so the accent attribute stands down',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-accent')===null));
+ ok('the account keeps its accent choice underneath the pack',
+    (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json()).settings.accentColor))==='blue');
+ ok('the pack changes no navigation label',
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('body>header nav button')]
+      .map(b=>b.textContent.trim())))===JSON.stringify(navBefore), navBefore.join('|'));
+ // Two counter-drifting lattices, both behind every piece of content and both
+ // pointer-transparent. A decoration that ever caught a click, took layout, or
+ // climbed above the page would be a bug, not a style.
+ ok('Home gains the decorative dot field: two layers, behind content, pointer-transparent',
+    await p.evaluate(()=>{
+      const host=document.getElementById('page-home');
+      return ['::before','::after'].every(ps=>{
+        const st=getComputedStyle(host,ps);
+        return /radial-gradient/.test(st.backgroundImage)&&st.pointerEvents==='none'
+          &&parseInt(st.zIndex,10)<0&&st.position==='absolute';});}));
+ ok('the two field layers drift in opposite directions',
+    await p.evaluate(()=>{
+      const host=document.getElementById('page-home');
+      const a=getComputedStyle(host,'::before').animationName;
+      const c=getComputedStyle(host,'::after').animationName;
+      return a!=='none'&&c!=='none'&&a!==c;}));
+ // The decoration is full-bleed, so the phone width is where it would show up
+ // as a sideways scroll if the bleed ever exceeded main's own padding.
+ await p.setViewportSize({width:390,height:844}); await p.waitForTimeout(400);
+ ok('the pack never widens the page on a phone',
+    await p.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),
+    await p.evaluate(()=>document.documentElement.scrollWidth+' vs '+document.documentElement.clientWidth));
+ await p.setViewportSize({width:1400,height:1000}); await p.waitForTimeout(400);
+ // Print renders the default pack, so an export can never inherit a preview.
+ await p.evaluate(()=>window.dispatchEvent(new Event('beforeprint'))); await p.waitForTimeout(150);
+ ok('printing strips the pack',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-skin')===null));
+ await p.evaluate(()=>window.dispatchEvent(new Event('afterprint'))); await p.waitForTimeout(150);
+ ok('the pack comes back after printing',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-skin')==='ramp'));
+ // The ROLE decides, not the stored value: losing super_admin stops the pack
+ // being painted without rewriting the account's setting.
+ const gate=await p.evaluate(()=>{
+   const role=US.appRole, roles=principal?principal.userRoles:null;
+   US.appRole='user'; if(principal)principal.userRoles=['authenticated'];
+   applyThemePack('ramp');
+   const applied=document.documentElement.getAttribute('data-skin');
+   US.appRole=role; if(principal)principal.userRoles=roles;
+   applyThemePack(themePackSetting());
+   return {applied, restored:document.documentElement.getAttribute('data-skin'),
+           stored:usSettings().themePack};
+ });
+ ok('an account without super_admin never gets the pack, and keeps its setting',
+    gate.applied===null&&gate.restored==='ramp'&&gate.stored==='ramp', JSON.stringify(gate));
+ // home.css, dashboard.css and feedback.css qualify many rules with a page id,
+ // so a pack override has to carry the same id or silently lose the cascade.
+ // These three are the trap in miniature: shell, list, and an id-owned tag.
+ ok('the pack repaints the shell, the list and the id-scoped tags alike',
+    await p.evaluate(()=>{
+      const hd=getComputedStyle(document.querySelector('body>header')).backgroundColor;
+      const tag=document.querySelector('#page-home .hm-kind-budget');
+      return hd==='rgb(255, 255, 255)'
+        &&(!tag||getComputedStyle(tag).backgroundColor==='rgb(244, 250, 194)');}),
+    await p.evaluate(()=>getComputedStyle(document.querySelector('body>header')).backgroundColor));
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(600);
+ ok('list headers restyle while money cells keep the mono, tabular figures',
+    await p.evaluate(()=>{
+      const th=getComputedStyle(document.querySelector('#page-budgets .tbl th'));
+      const td=document.querySelector('#page-budgets .tbl td.calc');
+      return /Inter|Helvetica|system-ui/.test(th.fontFamily)&&!/Plex/.test(th.fontFamily)
+        &&(!td||(/Plex/.test(getComputedStyle(td).fontFamily)
+          &&/tabular-nums/.test(getComputedStyle(td).fontVariantNumeric)));}));
+ await p.evaluate(()=>go('home')); await p.waitForTimeout(600);
+ await p.click('#settingsModal [data-themepack-pick=default]'); await p.waitForTimeout(1200);
+ ok('switching back restores the default appearance and repaints the accent',
+    await p.evaluate(()=>document.documentElement.getAttribute('data-skin')===null
+      &&document.documentElement.getAttribute('data-accent')==='blue'));
+ ok('the default appearance is byte-for-byte the app chrome again',
+    await p.evaluate(()=>getComputedStyle(document.querySelector('body>header')).backgroundColor)
+      ==='rgb(22, 25, 26)');
+
  // ---- per-section views: three options each, budgets and analyses separate
  await p.click('#settingsModal [data-budgetview-pick=compact]'); await p.waitForTimeout(400);
  ok('compact view tightens the budgets card only',
-    await p.evaluate(()=>document.getElementById('homeBudgetsCard').getAttribute('data-density')==='compact'
+    await p.evaluate(()=>document.getElementById('budgetsBudgetsCard').getAttribute('data-density')==='compact'
       &&usSettings().analysisView==='comfortable'));
  await p.click('#settingsModal [data-budgetview-pick=cards]'); await p.waitForTimeout(800);
  await p.keyboard.press('Escape'); await p.waitForTimeout(300);
 
- // ---- the Home toolbar three-way toggle drives the budgets view
- await p.click('#page-home .mini-seg [data-budgetview-pick=comfortable]'); await p.waitForTimeout(400);
+ // ---- the Budgets toolbar three-way toggle drives the budgets view
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
+ await p.click('#page-budgets .mini-seg [data-budgetview-pick=comfortable]'); await p.waitForTimeout(400);
  ok('the toolbar flips budgets back to the comfortable list',
-    !(await p.evaluate(()=>document.getElementById('homeCards').classList.contains('on'))));
- const hComfy=await p.evaluate(()=>document.querySelector('#homeBody td').getBoundingClientRect().height);
- await p.click('#page-home .mini-seg [data-budgetview-pick=compact]'); await p.waitForTimeout(400);
- const hCompact=await p.evaluate(()=>document.querySelector('#homeBody td').getBoundingClientRect().height);
+    !(await p.evaluate(()=>document.getElementById('budgetsCards').classList.contains('on'))));
+ const hComfy=await p.evaluate(()=>document.querySelector('#budgetsBody td').getBoundingClientRect().height);
+ await p.click('#page-budgets .mini-seg [data-budgetview-pick=compact]'); await p.waitForTimeout(400);
+ const hCompact=await p.evaluate(()=>document.querySelector('#budgetsBody td').getBoundingClientRect().height);
  ok('comfortable rows are dramatically taller than compact rows', hComfy-hCompact>=10,
     JSON.stringify({hComfy,hCompact}));
  ok('the toolbar marks the active choice',
-    await p.evaluate(()=>document.querySelector('#page-home .mini-seg [data-budgetview-pick=compact]').classList.contains('on')));
- await p.click('#page-home .mini-seg [data-budgetview-pick=cards]'); await p.waitForTimeout(500);
+    await p.evaluate(()=>document.querySelector('#page-budgets .mini-seg [data-budgetview-pick=compact]').classList.contains('on')));
+ await p.click('#page-budgets .mini-seg [data-budgetview-pick=cards]'); await p.waitForTimeout(500);
  await p.evaluate(()=>chooseSetting('analysisView','cards')); await p.waitForTimeout(900);
- ok('card view replaces the budget table on Home',
-    await p.evaluate(()=>document.getElementById('homeCards').classList.contains('on')
-      &&document.querySelector('#page-home .tbl').style.display==='none'
-      &&document.querySelectorAll('#homeCards .hcard').length>=1));
+ ok('card view replaces the budget table on the Budgets page',
+    await p.evaluate(()=>document.getElementById('budgetsCards').classList.contains('on')
+      &&document.querySelector('#page-budgets .tbl').style.display==='none'
+      &&document.querySelectorAll('#budgetsCards .hcard').length>=1));
+ await p.evaluate(()=>go('analyses')); await p.waitForTimeout(800);
  ok('analyses render as cards too',
-    (await p.locator('#homeAnalyses [data-inv-cards] .hcard').count())>=1);
+    (await p.locator('#page-analyses [data-inv-cards] .hcard').count())>=1);
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
  ok('a budget card carries the money and status',
-    /Contract Sum/.test(await p.locator('#homeCards .hcard').first().textContent())
-    &&/\$2,000,000|\$/.test(await p.locator('#homeCards .hcard').first().textContent()));
- await p.locator('#homeAnalyses [data-inv-cards] .hcard').first().click(); await p.waitForTimeout(700);
+    /Contract Sum/.test(await p.locator('#budgetsCards .hcard').first().textContent())
+    &&/\$2,000,000|\$/.test(await p.locator('#budgetsCards .hcard').first().textContent()));
+ await p.evaluate(()=>go('analyses')); await p.waitForTimeout(800);
+ await p.locator('#page-analyses [data-inv-cards] .hcard').first().click(); await p.waitForTimeout(700);
  ok('clicking an analysis card opens the editor', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
- await p.click('#nav-home'); await p.waitForTimeout(500);
- await p.locator('#homeCards .hcard').first().click(); await p.waitForTimeout(700);
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
+ await p.locator('#budgetsCards .hcard').first().click(); await p.waitForTimeout(700);
  ok('clicking a budget card opens the budget',
     await p.evaluate(()=>doc&&doc.projectId==='TST-9955'));
 
@@ -145,34 +243,35 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       &&(window.__fsTimeFormat||'')==='24h'));
  ok('a quick return visit is not another login',
     (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json()).loginCount))===1);
- await p.click('#nav-home'); await p.waitForTimeout(500);
- await p.click('#page-home .hcard'); await p.waitForTimeout(700);
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
+ await p.click('#page-budgets .hcard'); await p.waitForTimeout(700);
  await p.click('#page-budget button:has-text("Export")'); await p.waitForTimeout(300);
  ok('remembered export options seed the modal after reload',
     !(await p.locator('#ex-csi').isChecked()));
  await p.click('#exportModal .btn-x');
 
  // ---- the shared status system: editable chips everywhere
- await p.click('#nav-home'); await p.waitForTimeout(500);
- await p.click('#page-home .mini-seg [data-budgetview-pick=comfortable]'); await p.waitForTimeout(400);
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
+ await p.click('#page-budgets .mini-seg [data-budgetview-pick=comfortable]'); await p.waitForTimeout(400);
  ok('budget rows carry editable status chips',
-    (await p.locator('#homeBody .st-chip').count())>=1);
- await p.locator('#homeBody .st-chip').first().click(); await p.waitForTimeout(200);
+    (await p.locator('#budgetsBody .st-chip').count())>=1);
+ await p.locator('#budgetsBody .st-chip').first().click(); await p.waitForTimeout(200);
  ok('clicking a chip opens the status menu with all four statuses',
     await p.evaluate(()=>['Draft','In Review','Completed','Cancelled'].every(x=>
       document.getElementById('stMenu').textContent.includes(x))));
  await p.click('#stMenu [data-st="In Review"]'); await p.waitForTimeout(600);
  ok('the budget status saves and repaints without a refresh',
-    /In Review/.test(await p.locator('#homeBody .st-chip').first().textContent())
+    /In Review/.test(await p.locator('#budgetsBody .st-chip').first().textContent())
     &&(await p.evaluate(async()=>(await (await fetch('/api/budgets')).json())[0].status))==='In Review');
+ await p.evaluate(()=>go('analyses')); await p.waitForTimeout(800);
  ok('the analyses list chips are the same component',
-    (await p.locator('#homeAnalyses .st-chip').count())>=1);
- await p.locator('#homeAnalyses .st-chip').first().click(); await p.waitForTimeout(200);
+    (await p.locator('#page-analyses .st-chip').count())>=1);
+ await p.locator('#page-analyses .st-chip').first().click(); await p.waitForTimeout(200);
  await p.click('#stMenu [data-st="Completed"]'); await p.waitForTimeout(600);
  ok('the analysis status saves through the status-only PUT',
     (await p.evaluate(async()=>(await (await fetch('/api/investment-analyses')).json())[0].status))==='Completed');
  // the editors expose the same status controls (analyses are in card view here)
- await p.locator('#homeAnalyses [data-inv-cards] .hcard').first().click(); await p.waitForTimeout(700);
+ await p.locator('#page-analyses [data-inv-cards] .hcard').first().click(); await p.waitForTimeout(700);
  ok('the analysis editor shows the editable status chip',
     /Completed/.test(await p.locator('#invStatusHost').textContent()));
  await p.locator('#invStatusHost .st-chip').click(); await p.waitForTimeout(200);

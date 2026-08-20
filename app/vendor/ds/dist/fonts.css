@@ -1,0 +1,11 @@
+/* Finishes Solutions — Webfonts
+   ----------------------------------------------------------------
+   The "Finishes" logotype is a CUSTOM wide geometric techno wordmark
+   (delivered as PNG art in /assets/logo). It is NOT available as a
+   webfont. Headings and body both use MONTSERRAT — a geometric sans
+   whose wide, even proportions echo the engineered wordmark.
+   Data/labels use IBM PLEX MONO.
+   Fonts are served from Google Fonts. Flag to brand team if local
+   binaries are required for offline / production use. */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');

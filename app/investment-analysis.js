@@ -82,7 +82,10 @@
   }
   const LV_GROUPS = {
     project: { of: r => r.projectId || 'Standalone' },
-    status: { of: r => window.normStatus ? normStatus(r.status) : (r.status || 'Draft') }
+    status: { of: r => window.normStatus ? normStatus(r.status) : (r.status || 'Draft') },
+    // Same placeholder wording the budgets list uses, so the two group headers
+    // read alike for records with no recorded creator.
+    user: { of: r => (r.createdByName || '').trim() || 'No User' }
   };
 
   async function renderListInto(host, opts) {
@@ -117,6 +120,7 @@
             <option value="">No Grouping</option>
             <option value="project">Group by Project</option>
             <option value="status">Group by Status</option>
+            <option value="user">Group by User</option>
           </select>
         </div>
         <div style="display:flex;gap:12px;align-items:center">
@@ -132,7 +136,7 @@
         </div>
       </div>
       <table class="inv-table inv-list"><thead><tr>
-        <th style="padding-left:22px">Analysis</th><th>Project / Budget</th><th>Status</th><th class="r">Purchase Price</th>
+        <th style="padding-left:22px" class="no-print lt-user-col">User</th><th>Analysis</th><th>Project / Budget</th><th>Status</th><th class="r">Purchase Price</th>
         <th class="r">Year 1 NOI</th><th class="r">Equity IRR</th><th class="r">Optimal Hold</th>
         <th class="r">Analysis Ver.</th><th class="r" style="padding-right:22px">Updated</th><th class="no-print"></th>
       </tr></thead><tbody data-inv-list></tbody></table>
@@ -202,12 +206,15 @@
       const map = new Map();
       rows.forEach(r => { const k = g.of(r); if (!map.has(k)) map.set(k, []); map.get(k).push(r); });
       [...map.keys()].sort((a, z) => {
-        const pa = a === 'Standalone', pz = z === 'Standalone';   // placeholder group pinned last
+        // Placeholder groups (no linked project, no recorded creator) sort last
+        // rather than landing wherever the alphabet puts them.
+        const ph = v => v === 'Standalone' || v === 'No User';
+        const pa = ph(a), pz = ph(z);
         return pa !== pz ? (pa ? 1 : -1) : a.localeCompare(z, undefined, { numeric: true });
       }).forEach(k => {
         const tr = document.createElement('tr');
         tr.className = 'inv-grp';
-        tr.innerHTML = `<td colspan="10"${pad}>${esc(k)}
+        tr.innerHTML = `<td colspan="11"${pad}>${esc(k)}
           <span class="shut">${map.get(k).length} ${map.get(k).length === 1 ? 'analysis' : 'analyses'}</span></td>`;
         tb.appendChild(tr);
         map.get(k).forEach(r => tb.appendChild(invListRow(r, pad)));
@@ -217,7 +224,7 @@
 
   function invCard(r) {
     return `<div class="hcard" data-inv-card="${esc(r.analysisId)}">
-      <div class="hc-id">${esc(r.projectId || 'Standalone')}${r.sourceBudgetVersionNumber
+      <div class="hc-id">${window.creatorAvatar ? creatorAvatar(r.createdByName, r.createdByAvatar) + ' ' : ''}${esc(r.projectId || 'Standalone')}${r.sourceBudgetVersionNumber
         ? ' <span class="inv-vsub">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</div>
       <div class="hc-name">${esc(r.name)}</div>
       <div class="hc-row"><span>Purchase Price</span><span class="v">${usd(r.purchasePrice)}</span></div>
@@ -233,6 +240,7 @@
     tr.className = 'clickable';
     tr.addEventListener('click', () => { location.hash = '#/analysis/' + r.analysisId; });
     tr.innerHTML = `
+      <td class="no-print" style="padding-left:22px">${window.creatorAvatar ? creatorAvatar(r.createdByName, r.createdByAvatar) : ''}</td>
       <td${pad}>${esc(r.name)}</td>
       <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-vsub" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
       <td>${window.statusChip ? statusChip(r.status, 'analysis', r.analysisId) : esc(r.status)}</td>
@@ -282,8 +290,12 @@
     if (wasOpen) return;
     const m = invMenuEl();
     m.dataset.aid = analysisId;          // never interpolated into markup
+    // The pin label reads as the action it performs, so it flips per row.
+    const pinned = window.FSHome && FSHome.isPinned('analysis', analysisId);
     const items = [
-      ['open', 'Open Analysis'], ['versions', 'Versions'], ['duplicate', 'Duplicate'],
+      ['open', 'Open Analysis'],
+      ['pin', pinned ? 'Unpin From Home' : 'Pin to Home'],
+      ['versions', 'Versions'], ['duplicate', 'Duplicate'],
       ['sep'], ['delete', 'Delete Analysis', 'danger']
     ];
     m.innerHTML = items.map(([act, label, danger]) => act === 'sep'
@@ -308,6 +320,11 @@
   function invRowMenuAction(act) {
     const aid = el('invRowMenu').dataset.aid;
     closeInvRowMenu(act === 'delete');
+    if (act === 'pin') {
+      const on = window.FSHome && FSHome.togglePin('analysis', aid);
+      A.toast(on ? 'Pinned this analysis to Home.' : 'Unpinned this analysis from Home.');
+      return;
+    }
     if (act === 'open') location.hash = '#/analysis/' + aid;
     else if (act === 'versions') showVersions(aid);
     else if (act === 'duplicate') duplicate(aid);
@@ -357,7 +374,7 @@
         <td class="mono" style="color:var(--green-700);font-weight:600">${esc(b.projectId)}</td><td>${esc(b.name || '—')}</td>
         <td>${stChipStatic(b.status)}</td>
         <td>${esc(fmtDay(b.updated))}</td></tr>`).join('');
-    openInvModal(`<h2 style="margin-top:0">New Investment Analysis</h2>
+    openInvModal(`<h2 class="mod-title">New Investment Analysis</h2>
       <div class="set-lab">From Existing Budget</div>
       <p style="font-size:12.5px;color:var(--ink-500);margin:0 0 10px">Select the project this analysis is
       for. It is created from that project's latest saved budget version — an exact snapshot, so the budget
@@ -495,6 +512,29 @@
       'Completed': 'st-done', 'Cancelled': 'st-cancel' }[n] || 'st-draft';
     return `<span class="st-chip ${cls}" style="pointer-events:none">${esc(n)}</span>`;
   }
+  /* The source budget, as a real link to its Inputs page rather than plain
+     text. The id comes from the analysis's own source record, never a
+     constant, so it always points at the budget this analysis was cut from. */
+  function sourceBudgetLink(projectId) {
+    const pid = String(projectId || '');
+    if (!pid) return '';
+    return `<a class="inv-srclink" href="#/inputs/${esc(pid)}"
+      aria-label="Open linked budget ${esc(pid)}" title="Open linked budget ${esc(pid)}"
+      onclick="event.preventDefault();FSInvestmentUI.openSourceBudget('${esc(pid)}')"
+      ><span class="mono">${esc(pid)}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+        ><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg></a>`;
+  }
+  // Leaving the editor goes through the same unsaved-changes guard as any
+  // other navigation — openBudget()/go() own that check.
+  function openSourceBudget(projectId) {
+    // The link points at #/inputs/<id>, so open that page, not the default
+    // Budget page openBudget() lands on from a list row.
+    if (typeof window.openBudget === 'function') window.openBudget(projectId, 'input');
+    else A.navigate('#/inputs/' + projectId);
+  }
+  function backToList() { A.navigate('#/analyses'); }
+
   function paintStatusChip() {
     const h = el('invStatusHost');
     if (h) h.innerHTML = st.id && window.statusChip ? statusChip(st.status, 'analysis', st.id) : '';
@@ -541,9 +581,12 @@
     const dollarExp = inp.expenses && inp.expenses.mode === 'annualDollar';
     host.innerHTML = `
       <div class="page-title">
-        <div><h1 id="invTitle">${esc(inp.analysisName)}</h1>
+        <div><button class="btn-back" onclick="FSInvestmentUI.backToList()"
+            aria-label="Back to Investment Analyses" title="Back to Investment Analyses">&larr; Back</button>
+          <h1 id="invTitle">${esc(inp.analysisName)}</h1>
           <div class="sub">${st.source
-            ? 'From budget <span class="mono">' + esc(st.source.projectId) + '</span> version ' + esc(st.source.budgetVersionNumber)
+            ? 'From Budget ' + sourceBudgetLink(st.source.projectId)
+              + ' <span class="inv-vsub">v' + esc(st.source.budgetVersionNumber) + '</span>'
             : 'Standalone Analysis'}</div></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
           <span id="invStatusHost"></span>
@@ -554,7 +597,7 @@
         </div>
       </div>
       <div id="invConflict"></div>
-      <div class="inv-steps no-print" id="invSteps">${STEPS.map((s, i) =>
+      <div class="wf-steps no-print" id="invSteps">${STEPS.map((s, i) =>
         `<button data-step="${i + 1}" class="${st.step === i + 1 ? 'on' : ''}" onclick="FSInvestmentUI.goStep(${i + 1})"><span class="n">${i + 1}</span>${s}</button>`).join('')}</div>
       <div id="invErrSummary"></div>
 
@@ -1040,7 +1083,7 @@
         <td>${esc(v.createdByName || '—')}</td>
         <td class="r mono">${usd(v.purchasePrice)}</td>
         <td class="r mono">${pctf(v.finalYearEquityIRR)}</td></tr>`).join('');
-      openInvModal(`<h2 style="margin-top:0">Version History</h2>
+      openInvModal(`<h2 class="mod-title">Version History</h2>
         <p style="font-size:12.5px;color:var(--ink-500)">Versions are immutable — they are shown exactly as calculated
         when saved and are never recalculated.</p>
         <table class="inv-table inv-verlist"><thead><tr><th>Version</th><th>Saved</th><th>By</th>
@@ -1052,7 +1095,7 @@
   async function viewVersion(n) {
     try {
       const r = await A.api('investment-analysis/' + (versionsCtx || st.id) + '/versions/' + n);
-      openInvModal(`<h2 style="margin-top:0">Version ${n} — Read-Only</h2>
+      openInvModal(`<h2 class="mod-title">Version ${n} — Read-Only</h2>
         <div class="inv-provenance">Saved ${esc(fmtWhen(r.version.createdAt))}
         by ${esc(r.version.createdByName || '—')}</div>
         <div class="inv-report">${reportHTML(r.result)}</div>`);
@@ -1071,7 +1114,9 @@
       m.addEventListener('click', e => { if (e.target === m) m.remove(); });
       document.body.appendChild(m);
     }
-    m.innerHTML = `<div style="background:#fff;border-radius:12px;max-width:${maxWidth || 960}px;width:100%;padding:22px 26px;position:relative;margin:auto">
+    // .mod-sheet carries the shared dialog look (index.html): the card
+    // system's corner radius, so this matches the New Budget popup exactly.
+    m.innerHTML = `<div class="mod-sheet" style="max-width:${maxWidth || 960}px;padding:22px 26px">
       <button class="btn-x" style="position:absolute;top:14px;right:14px" title="Close" onclick="document.getElementById('invModal').remove()">×</button>
       ${html}</div>`;
   }
@@ -1192,7 +1237,7 @@
     const src = R.normalizedInput && R.normalizedInput.source;
     h += `<h3>Assumptions &amp; Provenance</h3>
       <div class="inv-provenance">
-      ${src ? 'Created from budget <span class="mono">' + esc(src.projectId) + '</span> version ' + esc(src.budgetVersionNumber)
+      ${src ? 'Created from Budget <span class="mono">' + esc(src.projectId) + '</span> <span class="inv-vsub">v' + esc(src.budgetVersionNumber) + '</span>'
             + (src.importedAt ? ' (imported ' + esc(fmtDay(src.importedAt)) + ')' : '') + '.' : 'Standalone Analysis.'}
       Vacancy ${pctf(R.normalizedInput.vacancy.value)} · expenses ${R.normalizedInput.expenses.mode === 'percentOfGOI'
         ? pctf(R.normalizedInput.expenses.value) + ' of GOI'
@@ -1223,7 +1268,7 @@
       <input type="checkbox" id="${EX_IDS[k]}" ${exOpts[k] ? 'checked' : ''}> ${label}</label>`;
     // The button row matches the budget export modal exactly — one order
     // everywhere: Email (Soon) · Print · PDF · Excel (.xlsx).
-    openInvModal(`<h2 style="margin-top:0">Export Analysis</h2>
+    openInvModal(`<h2 class="mod-title">Export Analysis</h2>
       <div class="eyebrow" style="margin-bottom:12px">Include Sections</div>
       <div style="display:grid;gap:12px;margin-bottom:24px">
         ${chk('kpis', 'Summary &amp; Key Metrics')}
@@ -1358,7 +1403,7 @@
         <div class="muted" style="font-size:9pt">${esc(N.analysisName)}${N.property.address ? ' · ' + esc(N.property.address) : ''}</div>
       </div>
       <div class="muted" style="text-align:right;font-size:8.5pt">${esc(stamp)}<br>
-        ${src ? 'From budget <span class="mono">' + esc(src.projectId) + '</span> v' + esc(src.budgetVersionNumber) : 'Standalone Analysis'}${st.loadedVersion ? '<br>Analysis v' + st.loadedVersion : ''}</div>
+        ${src ? 'From Budget <span class="mono">' + esc(src.projectId) + '</span> <span class="inv-vsub">v' + esc(src.budgetVersionNumber) + '</span>' : 'Standalone Analysis'}${st.loadedVersion ? '<br>Analysis v' + st.loadedVersion : ''}</div>
     </div>`;
 
     // The KPI band never highlights — Highlight Key Metrics marks only the
@@ -1488,7 +1533,7 @@
         <div class="rpt-2col"><div>`
         + rr('Analysis', esc(N.analysisName))
         + rr('Property', esc(N.property.name) + (N.property.address ? ' · ' + esc(N.property.address) : ''))
-        + rr('Source', src ? 'Budget <span class="mono">' + esc(src.projectId) + '</span> version ' + esc(src.budgetVersionNumber) : 'Standalone Analysis')
+        + rr('Source', src ? 'Budget <span class="mono">' + esc(src.projectId) + '</span> <span class="inv-vsub">v' + esc(src.budgetVersionNumber) + '</span>' : 'Standalone Analysis')
         + rr('Saved Analysis Version', st.loadedVersion ? 'v' + st.loadedVersion : '(unsaved)')
         + rr('Projection', years.length + '-Year Before-Tax')
         + '</div><div>'
@@ -1529,6 +1574,7 @@
   window.FSInvestmentUI = {
     init(adapter) { A = adapter; },
     renderList, renderListInto, open, createFromBudget, createStandalone,
+    openSourceBudget, backToList,
     createStandaloneFromModal, createBlank, openProjectPicker, softDelete,
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep, undo, redo,
     openExport, emailSoon, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,

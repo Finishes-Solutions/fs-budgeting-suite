@@ -11,17 +11,8 @@
 .inv-table tbody tr:hover{background:var(--ink-50)}
 .inv-table .mono{font-family:var(--fm)}
 
-/* step navigation */
-.inv-steps{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 18px}
-.inv-steps button{border:1px solid var(--ink-200);background:var(--white);border-radius:999px;
-  padding:6px 14px;font-size:12.5px;cursor:pointer;color:var(--ink-700)}
-.inv-steps button.on{background:var(--solid,#16191a);border-color:var(--solid,#16191a);color:#fff}
-.inv-steps button .n{font-family:var(--fm);font-size:11px;opacity:.65;margin-right:6px}
-/* a completed step earns a checkmark on its pill */
-/* completed steps carry a green dot (owner preference: dot, not a check mark) */
-.inv-steps button.done::after{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;
-  background:var(--green-700);margin-left:7px;vertical-align:middle}
-.inv-steps button.on.done::after{background:#9FE0B8}
+/* Step navigation is now the shared .wf-steps component in index.html, so the
+   budget workflow and this one are literally the same pills. Nothing here. */
 
 /* guided per-step footer: the Next button lights up when the step's required
    fields are filled */
@@ -46,9 +37,19 @@
 .inv-grid .fld input,.inv-grid .fld select{width:100%}
 .inv-grid .wide{grid-column:span 2}
 
+/* The source budget link in the editor subtitle. Compact and secondary to the
+   title: it inherits the subtitle's size and only picks up colour on hover. */
+.inv-srclink{display:inline-flex;align-items:center;gap:4px;color:inherit;text-decoration:none;
+  border-radius:4px;padding:0 2px;transition:color .12s,background .12s}
+.inv-srclink .mono{font-family:var(--fm)}
+.inv-srclink svg{width:11px;height:11px;flex:none;opacity:.7}
+.inv-srclink:hover{color:var(--green-700);background:var(--green-50)}
+.inv-srclink:hover svg{opacity:1}
+.inv-srclink:focus-visible{outline:none;box-shadow:var(--focus);color:var(--green-700)}
+
 /* the linked budget version, visually secondary to the Project ID */
-.inv-vsub{font-family:var(--fm);font-size:10.5px;color:var(--ink-400);font-weight:500;margin-left:6px;
-  white-space:nowrap}
+.inv-vsub{font-family:var(--fm);font-size:10.5px;color:var(--ink-500);font-weight:500;margin-left:6px;
+  white-space:nowrap;background:var(--ink-100);border-radius:999px;padding:1px 7px}
 
 /* imported-value badge */
 .inv-origin{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--green-700);
@@ -110,17 +111,25 @@
    :root --lt-* tokens): the two identity columns total 42% — the same as
    the budget table's — so Status, Updated, and the action column line up
    vertically across both Home cards. The financial columns differ freely. */
-.inv-list th:nth-child(1){width:28%}
-.inv-list th:nth-child(2){width:14%}
-.inv-list th:nth-child(3){width:var(--lt-status,9%)}
-.inv-list th:nth-child(4){width:9%}
-.inv-list th:nth-child(5){width:8%}
-.inv-list th:nth-child(6){width:7%}
-.inv-list th:nth-child(7){width:8%}
-.inv-list th:nth-child(8){width:6%}
-.inv-list th:nth-child(9){width:var(--lt-updated,10%)}
+/* Column 1 is the User column (the creator's avatar), so the identity and
+   money columns that follow are all one place further along than they read.
+   These indices must move together with the header row in
+   investment-analysis.js — a mismatch overlaps the name and project cells. */
+.inv-list th:nth-child(2){width:28%}
+.inv-list th:nth-child(3){width:14%}
+.inv-list th:nth-child(4){width:var(--lt-status,9%)}
+.inv-list th:nth-child(5){width:9%}
+.inv-list th:nth-child(6){width:8%}
+.inv-list th:nth-child(7){width:7%}
+.inv-list th:nth-child(8){width:8%}
+.inv-list th:nth-child(9){width:6%}
+.inv-list th:nth-child(10){width:var(--lt-updated,10%)}
 .inv-list th.no-print{width:var(--lt-actions,44px)}
-.inv-list td:first-child{line-height:1.35}   /* long names may wrap to two lines */
+/* The User column is also .no-print, so it needs its own rule after that one
+   to keep its width rather than inheriting the action column's. */
+.inv-list th.lt-user-col{width:var(--lt-user,56px)}
+/* the analysis name, now the second cell, may wrap to two lines */
+.inv-list td:nth-child(2){line-height:1.35}
 
 /* Small screens: the editor is fully capable — these rules only reflow it.
    Wide-span fields fall back to a single column, and the step pills / state

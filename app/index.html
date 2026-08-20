@@ -10,8 +10,15 @@
    server copy wins the moment it arrives. */
 try{
   var t=localStorage.getItem('fsTheme');if(t==='dark')document.documentElement.setAttribute('data-theme',t);
-  var a=localStorage.getItem('fsAccent');if(a&&a!=='green'&&a.charAt(0)!=='#')document.documentElement.setAttribute('data-accent',a);
+  var sk=localStorage.getItem('fsThemePack');
+  var a=localStorage.getItem('fsAccent');
+  if(!sk&&a&&a!=='green'&&a.charAt(0)!=='#')document.documentElement.setAttribute('data-accent',a);
   var av=localStorage.getItem('fsAvatar');if(av)document.documentElement.style.setProperty('--avatar-bg',av);
+  /* Theme packs are alternate visual presentations (Settings → Theme Pack,
+     super_admin only). Cached here so the pack paints with the first frame;
+     the account's stored setting confirms or clears it at boot. A pack owns
+     its own accent, which is why the accent above is skipped while one is on. */
+  if(sk==='ramp')document.documentElement.setAttribute('data-skin',sk);
   window.__fsTimeFormat=localStorage.getItem('fsTimeFormat')==='24h'?'24h':'12h';
 }catch(_){}
 </script>
@@ -43,13 +50,26 @@ try{
 <!-- legacy-render.js is the frozen pre-cutover renderer set, the fallback
      behind the FS_EXPORT_RENDERER setting ('local'). -->
 <script src="legacy-render.js"></script>
+<!-- Design system tokens, vendored from the finishes-solutions-design bundle.
+     These load FIRST, ahead of all five app stylesheets and the inline <style>,
+     so that where a token name collides (--green-*, --ink-*, --white) the app's
+     own :root block is the later rule and keeps winning. The design system is
+     the floor here, not the override. Only variables.css and fonts.css are
+     vendored; base.css / styles.css carry element resets that would break this
+     app. theme-ramp.css still loads last and is untouched. -->
+<link rel="stylesheet" href="vendor/ds/dist/variables.css">
+<link rel="stylesheet" href="vendor/ds/dist/fonts.css">
 <!-- The investment-analysis workflow is an external no-build module (IIFE) so
      the inline script stays the budget application. index.html contributes only
      the nav button, page containers, routes, and the adapter passed to init. -->
 <link rel="stylesheet" href="investment-analysis.css">
 <script src="investment-analysis.js"></script>
 <link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet" href="home.css">
+<link rel="stylesheet" href="feedback.css">
 <script src="dashboard.js"></script>
+<script src="home.js"></script>
+<script src="feedback.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 :root{
@@ -73,7 +93,7 @@ try{
      identity columns the same combined width (42%), so those anchors line up
      vertically across the two cards. The financial columns between Status and
      Updated are free to differ. */
-  --lt-pad:22px;--lt-status:9%;--lt-updated:10%;--lt-actions:44px;
+  --lt-pad:22px;--lt-user:56px;--lt-status:9%;--lt-updated:10%;--lt-actions:44px;
 }
 /* ---- Themes ----
    The palette lives entirely in the custom properties above, so a theme is a
@@ -132,8 +152,8 @@ html[data-theme=dark][data-accent=orange]{--green-900:#38200a;--green-800:#8a4c1
    the list tables roomy rows; compact strips them to zero vertical padding
    with smaller chips and row menus. The density attribute sits on each
    section's own card, never globally. */
-#page-home .tbl td,.inv-list td{padding-top:9px;padding-bottom:9px}
-#page-home [data-density=compact] .tbl td,
+#page-budgets .tbl td,.inv-list td{padding-top:9px;padding-bottom:9px}
+#page-budgets [data-density=compact] .tbl td,
 [data-density=compact] .inv-list td{padding-top:0;padding-bottom:0}
 [data-density=compact] .inv-table td{padding-top:2px;padding-bottom:2px}
 [data-density=compact] .tbl .badge,[data-density=compact] .inv-table .badge,
@@ -142,7 +162,7 @@ html[data-theme=dark][data-accent=orange]{--green-900:#38200a;--green-800:#8a4c1
 [data-density=compact] .tbl th,[data-density=compact] .inv-list th{padding-top:5px;padding-bottom:5px}
 [data-density=compact] .grp-hd td,[data-density=compact] .inv-grp td{padding-top:3px;padding-bottom:3px}
 /* identity cells never stack their inline pieces (TEST tag, vN) */
-#homeBody td:first-child,.inv-list td:nth-child(2){white-space:nowrap}
+#budgetsBody td:first-child,.inv-list td:nth-child(2){white-space:nowrap}
 /* ---- Status chips: one shared, editable status system ----
    Draft (gray) · In Review (amber) · Completed (green, accent-aware) ·
    Cancelled (red). Restrained tints, a small dot, clickable everywhere —
@@ -185,6 +205,12 @@ html[data-theme=dark] .st-cancel{color:#E0685E;border-color:#6E2D28;background:#
 .hcard .hc-ft{display:flex;justify-content:space-between;align-items:center;margin-top:10px;
   padding-top:8px;border-top:1px solid var(--ink-100);font-size:11.5px;color:var(--ink-400)}
 .hcard .hc-menu{position:absolute;top:10px;right:10px}
+/* ---- creator avatar (initials circle) ---- */
+.creator-av{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;
+  border-radius:50%;background:var(--cav,var(--green-700));color:#fff;font-family:var(--fb);
+  font-size:10px;font-weight:700;letter-spacing:.02em;flex:none;vertical-align:middle}
+.admin-role-sel{font-family:var(--fb);font-size:13px;padding:4px 8px;border:1px solid var(--ink-200);
+  border-radius:var(--r);background:var(--white);color:var(--ink-900);cursor:pointer}
 /* ---- Settings modal (profile menu → Settings) ---- */
 .set-lab{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink-500);font-weight:500;margin:20px 0 8px}
@@ -259,13 +285,15 @@ input.set-locked{background:var(--ink-50);color:var(--ink-500);cursor:not-allowe
    metrics → Updated → actions), so the anchors align across both cards.
    Fixed layout makes the percentage widths exact — auto layout re-weights
    by content and the anchors drift apart. */
-#page-home .tbl,#page-home .inv-table.inv-list,#page-analyses .inv-table.inv-list{table-layout:fixed}
-#page-home .tbl th[data-sort=projectId]{width:11%}
-#page-home .tbl th[data-sort=name]{width:31%}
-#page-home .tbl th[data-sort=status]{width:var(--lt-status)}
-#page-home .tbl th[data-sort=contractSum],#page-home .tbl th[data-sort=projectCost]{width:19%}
-#page-home .tbl th[data-sort=updated]{width:var(--lt-updated)}
-#page-home .tbl th.no-print{width:var(--lt-actions)}
+#page-budgets .tbl,#page-analyses .inv-table.inv-list{table-layout:fixed}
+#page-budgets .tbl th[data-sort=projectId]{width:11%}
+#page-budgets .tbl th[data-sort=name]{width:31%}
+#page-budgets .tbl th[data-sort=status]{width:var(--lt-status)}
+#page-budgets .tbl th[data-sort=contractSum],#page-budgets .tbl th[data-sort=projectCost]{width:19%}
+#page-budgets .tbl th[data-sort=updated]{width:var(--lt-updated)}
+#page-budgets .tbl th.no-print{width:var(--lt-actions)}
+/* The User column carries .no-print too, so it reclaims its own width here. */
+#page-budgets .tbl th.lt-user-col{width:var(--lt-user)}
 /* ---- shared list toolbar: both Home cards use the identical control row */
 .list-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .list-toolbar input[type=text]{width:240px}
@@ -344,16 +372,67 @@ main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 .card-hd{padding:14px 22px;border-bottom:1px solid var(--ink-150);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .card-hd h2{font-size:15px;font-weight:700;color:var(--ink-950)}
 .card-bd{padding:22px}
+/* ---- Back control ----
+   Sits above the page title on the left, where a reader looks for the way out,
+   rather than among the action buttons on the right. Deliberately quiet: it is
+   navigation, not an action competing with Save or Export. */
+.btn-back{display:inline-flex;align-items:center;gap:5px;background:none;border:none;padding:0;
+  margin:0 0 6px;font-family:var(--fb);font-size:12.5px;font-weight:500;color:var(--ink-500);
+  cursor:pointer;border-radius:4px;transition:color .12s}
+.btn-back:hover{color:var(--ink-900)}
+.btn-back:focus-visible{outline:none;box-shadow:var(--focus);color:var(--ink-900)}
+
+/* ---- Shared workflow pills (.wf-steps) ----
+   One component for both multi-page workflows: the Investment Analysis steps
+   and the Budget's Inputs / Budget / CSI Schedule. It lived in
+   investment-analysis.css as .inv-steps; it is here now so the budget pages
+   use the same pills rather than a copy that drifts.
+   A pill is a <button> (analysis steps) or an <a> (budget sections, which are
+   real routes and so should be linkable) — both are styled identically. */
+.wf-steps{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 18px}
+.wf-steps button,.wf-steps a{display:inline-flex;align-items:center;border:1px solid var(--ink-200);
+  background:var(--white);border-radius:999px;padding:6px 14px;font-size:12.5px;cursor:pointer;
+  color:var(--ink-700);font-family:var(--fb);text-decoration:none;line-height:1.4;
+  transition:background .12s,border-color .12s,color .12s}
+.wf-steps button:hover,.wf-steps a:hover{background:var(--ink-50);border-color:var(--ink-300);color:var(--ink-900)}
+.wf-steps button.on,.wf-steps a.on{background:var(--solid,#16191a);border-color:var(--solid,#16191a);color:#fff}
+.wf-steps button.on:hover,.wf-steps a.on:hover{background:var(--solid,#16191a);border-color:var(--solid,#16191a);color:#fff}
+.wf-steps button:focus-visible,.wf-steps a:focus-visible{outline:none;box-shadow:var(--focus)}
+.wf-steps button[disabled]{opacity:.45;cursor:not-allowed}
+.wf-steps button[disabled]:hover{background:var(--white);border-color:var(--ink-200);color:var(--ink-700)}
+.wf-steps .n{font-family:var(--fm);font-size:11px;opacity:.65;margin-right:6px}
+/* completed steps carry a green dot (owner preference: dot, not a check mark) */
+.wf-steps button.done::after,.wf-steps a.done::after{content:'';display:inline-block;width:7px;height:7px;
+  border-radius:50%;background:var(--green-700);margin-left:7px;vertical-align:middle}
+.wf-steps button.on.done::after,.wf-steps a.on.done::after{background:#9FE0B8}
+@media(max-width:640px){
+  .wf-steps{gap:5px}
+  .wf-steps button,.wf-steps a{padding:6px 11px;font-size:12px}
+}
+
+/* ---- Shared dialog look ----
+   Every popup — New Budget, New Investment Analysis, exports, version history
+   — is one sheet: the card system's corner radius, and a title at the larger
+   dialog scale so the heading reads as a heading rather than a section label.
+   openInvModal() in investment-analysis.js builds its sheet with these same
+   classes, so the two stay identical without duplicating the values. */
+.mod-sheet{background:var(--white);border:1px solid var(--ink-150);border-radius:var(--rm);
+  box-shadow:var(--sh);width:100%;position:relative;margin:auto}
+.mod-title{font-size:19px;font-weight:800;letter-spacing:-.015em;color:var(--ink-950);margin:0 0 14px}
+/* In a card header the row itself provides the spacing. The size is restated
+   because `.card-hd h2` (0,1,1) out-specifies a bare `.mod-title` (0,1,0) and
+   would otherwise hold every dialog title at the 15px section-header scale. */
+.card-hd .mod-title{margin:0;font-size:19px;font-weight:800;letter-spacing:-.015em}
 .grid{display:grid;gap:14px}.g5{grid-template-columns:repeat(5,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
 @media(max-width:900px){.g4,.g5{grid-template-columns:1fr 1fr}}
 
 label.fld{display:block}
 label.fld .lab{display:block;margin-bottom:6px;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
-input[type=text],input[type=number],input[type=password],input[type=month],select{
+input[type=text],input[type=number],input[type=password],input[type=month],input[type=date],select,textarea{
   width:100%;padding:9px 12px;border:1px solid var(--ink-200);border-radius:var(--r);
   font-family:var(--fb);font-size:14px;color:var(--ink-900);background:var(--white);outline:none;
   transition:border-color .12s,box-shadow .12s}
-input:focus,select:focus{border-color:var(--green-600);box-shadow:var(--focus)}
+input:focus,select:focus,textarea:focus{border-color:var(--green-600);box-shadow:var(--focus)}
 input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .err{border-color:var(--danger)!important}
 .fld-err{font-size:11.5px;color:var(--danger);margin-top:4px}
@@ -454,7 +533,7 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
   .card-bd{padding:14px;overflow-x:auto}
   /* Data tables keep their desktop column widths and pan horizontally; letting
      them shrink instead stacks text on top of itself. */
-  #page-home .tbl,.inv-table.inv-list{min-width:720px}
+  #page-budgets .tbl,.inv-table.inv-list{min-width:720px}
   #page-budget .tbl,#page-csi .tbl{min-width:760px}
   #page-input .tbl{min-width:640px}
   #page-pricing .tbl{min-width:640px}
@@ -622,7 +701,10 @@ th.sortable.sorted{color:var(--ink-900)}
 #helpToc a:hover{color:var(--green-700);border-left-color:var(--green-200);background:var(--green-50)}
 #helpToc a.on{color:var(--green-800);border-left-color:var(--green-700);font-weight:600}
 .help h3{font-size:15px;font-weight:700;color:var(--ink-950);margin-bottom:14px;scroll-margin-top:20px}
-.help h4{font-size:13px;font-weight:700;color:var(--ink-800);margin:26px 0 8px}
+.help h4{font-size:13px;font-weight:600;color:var(--ink-800);margin:26px 0 8px}
+/* Montserrat's 700 reads as very heavy at body size, so emphasis inside the
+   guide is semibold. Applies to the role tables and every other <b> in here. */
+.help b,.help strong{font-weight:600}
 .help p{color:var(--ink-700);margin-bottom:12px;max-width:70ch}
 .help ul,.help ol{margin:0 0 14px 20px;color:var(--ink-700)}
 .help li{margin-bottom:7px;max-width:68ch}
@@ -680,6 +762,53 @@ th.sortable.sorted{color:var(--ink-900)}
   .rpt-title{margin-bottom:14px}
   .rpt-title h1{font-size:21pt;font-weight:800;letter-spacing:-.02em;color:var(--ink-950);margin:2px 0 4px}
   .rpt-meta{font-size:8.5pt;color:var(--ink-600)}
+
+  /* ---- Analytics snapshot (Export Dashboard) ----
+     The charts are the same inline SVG the dashboard renders, so they print as
+     vector. The page's #page-dashboard-scoped rules do not reach into
+     #printDoc, so the chart internals are restated here at print scale. */
+  #printDoc .dpdf-h{font-size:11pt;font-weight:700;color:var(--ink-950);
+    margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--ink-300);break-after:avoid}
+  #printDoc .dpdf-h3{font-size:8pt;font-family:var(--fm);letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-600);margin:0 0 6px;font-weight:500}
+  #printDoc .dpdf-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;break-inside:avoid}
+  #printDoc .dpdf-kpi{border:1px solid var(--ink-200);border-left:3px solid var(--green-700);
+    border-radius:3px;padding:7px 9px}
+  #printDoc .dpdf-k{font-family:var(--fm);font-size:6.5pt;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-600)}
+  #printDoc .dpdf-v{font-family:var(--fm);font-size:12pt;font-weight:600;color:var(--ink-950);margin-top:1px}
+  #printDoc .dpdf-s{font-size:7pt;color:var(--ink-500);margin-top:1px}
+  #printDoc .dpdf-chart{break-inside:avoid;margin-bottom:6px}
+  #printDoc .dpdf-two{display:grid;grid-template-columns:1fr 1fr;gap:18px;break-inside:avoid}
+  #printDoc .dpdf-note{font-size:7.5pt;color:var(--ink-500);margin-top:5px}
+  #printDoc .dpdf-tbl{width:100%;border-collapse:collapse;font-size:8pt}
+  #printDoc .dpdf-tbl th{text-align:left;font-family:var(--fm);font-size:6.5pt;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-600);border-bottom:1px solid var(--ink-300);padding:4px 6px}
+  #printDoc .dpdf-tbl td{padding:3px 6px;border-bottom:1px solid var(--ink-150)}
+  #printDoc .dpdf-tbl .r{text-align:right}
+  /* chart internals at print scale */
+  #printDoc .dash-line{width:100%;height:auto;display:block}
+  #printDoc .dash-ax{font-family:var(--fm);font-size:9px;fill:var(--ink-600)}
+  #printDoc .dash-donut-wrap{display:flex;align-items:center;gap:12px}
+  #printDoc .dash-donut{width:112px;height:112px;flex:none}
+  #printDoc .dash-donut-n{font-family:var(--fm);font-size:26px;font-weight:600;fill:var(--ink-900)}
+  #printDoc .dash-donut-l{font-family:var(--fm);font-size:9px;letter-spacing:.14em;fill:var(--ink-600)}
+  #printDoc .dash-legend{display:flex;flex-direction:column;gap:3px;flex:1}
+  #printDoc .dash-legend-h{flex-direction:row;gap:14px;justify-content:center;margin-top:4px}
+  #printDoc .dash-lg-row{display:flex;align-items:center;gap:5px;font-size:7.5pt;color:var(--ink-700)}
+  #printDoc .dash-lg-dot{width:8px;height:8px;border-radius:2px;flex:none}
+  #printDoc .dash-lg-name{flex:1;white-space:nowrap}
+  #printDoc .dash-lg-val{font-family:var(--fm);font-size:7.5pt}
+  #printDoc .dash-lg-pct{font-family:var(--fm);font-size:7pt;color:var(--ink-500);min-width:26px;text-align:right}
+  #printDoc .dash-vbars{display:flex;flex-direction:column;gap:9px}
+  #printDoc .dash-vbar{break-inside:avoid}
+  #printDoc .dash-vbar-hd{display:flex;gap:8px;align-items:baseline;margin-bottom:2px}
+  #printDoc .dash-vbar-hd .mono{font-family:var(--fm);font-size:8pt;color:var(--green-700);font-weight:600}
+  #printDoc .dash-vbar-nm{font-size:8pt;color:var(--ink-700)}
+  #printDoc .dash-vbar-row{display:flex;align-items:center;gap:7px;margin-top:2px}
+  #printDoc .dash-vbar-k{width:46px;font-size:7pt;color:var(--ink-500);text-align:right;flex:none}
+  #printDoc .dash-vbar-track{flex:1;height:9px;background:var(--ink-150);border-radius:2px;overflow:hidden}
+  #printDoc .dash-vbar-fill{height:100%;border-radius:2px}
+  #printDoc .dash-vbar-v{width:82px;text-align:right;font-size:7.5pt;color:var(--ink-700);flex:none}
 
   .rpt-stats{display:grid;grid-template-columns:repeat(5,1fr);background:var(--ink-900);
     border-radius:4px;overflow:hidden;margin-bottom:18px;break-inside:avoid}
@@ -765,26 +894,37 @@ th.sortable.sorted{color:var(--ink-900)}
     margin-top:20px;padding-top:6px;font-size:7.5pt;color:var(--ink-500)}
 }
 </style>
+<!-- Alias shim: maps this app's token names onto the design system tokens.
+     Sits after the inline <style> so the aliases take effect, and before
+     theme-ramp.css so the pack keeps the last word. See the file header for
+     the aliases held back on literals. -->
+<link rel="stylesheet" href="ds-bridge.css">
+<!-- Theme packs: alternate visual presentations offered to super_admin accounts.
+     Every rule in the file is scoped to html[data-skin=...], so with no pack
+     selected nothing in it applies. Loaded last on purpose — it is meant to sit
+     after the stylesheet above in the cascade. -->
+<link rel="stylesheet" href="theme-ramp.css">
 </head>
 <body>
 
 <header>
   <div class="hd">
-    <a class="brand" href="#/budgets" title="Finishes Solutions Budgeting Suite">
+    <a class="brand" href="#/home" title="Finishes Solutions Budgeting Suite">
       <img src="assets/finishes-logo-white.svg" alt="Finishes Solutions">
     </a>
     <nav class="no-print">
+      <!-- Four top-level destinations. Inputs / Budget / CSI Schedule are
+           reached through the workflow pills on a budget, not from here. -->
       <button id="nav-home" class="on" onclick="go('home')">Home</button>
-      <button id="nav-input" onclick="go('input')" disabled>Inputs</button>
-      <button id="nav-budget" onclick="go('budget')" disabled>Budget</button>
-      <button id="nav-csi" onclick="go('csi')" disabled>CSI Schedule</button>
+      <button id="nav-budgets" onclick="go('budgets')">Budgets</button>
       <button id="nav-analyses" onclick="go('analyses')">Investment Analysis</button>
-      <button id="nav-pricing" onclick="go('pricing')">Pricing Library</button>
       <div class="nav-more" id="navMore">
         <button id="nav-more-btn" onclick="toggleNavMore()" aria-expanded="false" aria-haspopup="menu">More <span class="nav-caret">&#9662;</span></button>
         <div class="nav-drop" id="navDrop" role="menu">
+          <button id="nav-pricing" role="menuitem" onclick="go('pricing');closeNavMore()">Pricing Library</button>
           <button id="nav-help" role="menuitem" onclick="go('help');closeNavMore()">How to Use</button>
           <button id="nav-dashboard" role="menuitem" onclick="go('dashboard');closeNavMore()" style="display:none">Analytics</button>
+          <button id="nav-admin" role="menuitem" onclick="go('admin');closeNavMore()" style="display:none">Admin</button>
           <button id="nav-version" role="menuitem" onclick="go('version');closeNavMore()">Version</button>
         </div>
       </div>
@@ -805,91 +945,24 @@ th.sortable.sorted{color:var(--ink-900)}
 </div>
 
 <!-- ================= HOME ================= -->
+<!-- ================= HOME =================
+     Not a third copy of the indexes: a personal "what should I do next"
+     screen, rendered by app/home.js from endpoints that already exist. -->
 <div class="page on" id="page-home">
-  <div class="page-title">
-    <div><h1>Project Budgets</h1><div class="sub">Business Development budgeting — Multifamily template seeded from the Finishes budget model.</div></div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-primary" id="newBudgetBtn" onclick="openNewBudget()">+ New Budget</button>
-    </div>
-  </div>
-  <div class="card" id="homeBudgetsCard">
-    <div class="card-hd no-print">
-      <div class="list-toolbar">
-        <input type="text" id="homeSearch" placeholder="Search ID or name…">
-        <select id="homeStatus" class="lt-status">
-          <option value="all">All Statuses</option>
-          <option value="Draft">Draft</option>
-          <option value="In Review">In Review</option>
-          <option value="Completed">Completed</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
-        <select id="homeGroup" class="lt-group" title="Group the list" aria-label="Group By">
-          <option value="">No Grouping</option>
-          <option value="address">Group by Address</option>
-          <option value="id">Group by Project ID</option>
-          <option value="type">Group by Type</option>
-          <option value="status">Group by Status</option>
-        </select>
-      </div>
-      <div style="display:flex;gap:12px;align-items:center">
-        <!-- The budgets view — Comfortable · Compact · Cards — right where it
-             acts; the shared data attribute keeps it in step with Settings. -->
-        <div class="mini-seg" role="group" aria-label="Budgets View" title="Budgets View — also in Settings">
-          <button data-budgetview-pick="comfortable" aria-label="Comfortable List" title="Comfortable List" onclick="chooseSetting('budgetView','comfortable')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg></button>
-          <button data-budgetview-pick="compact" aria-label="Compact List" title="Compact List" onclick="chooseSetting('budgetView','compact')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
-          <button data-budgetview-pick="cards" aria-label="Card View" title="Card View" onclick="chooseSetting('budgetView','cards')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
-        </div>
-        <span class="eyebrow" id="homeCount">—</span>
-      </div>
-    </div>
-    <div class="card-bd" style="padding:0;overflow-x:auto">
-    <table class="tbl">
-      <thead id="homeHead"><tr>
-        <th style="padding-left:22px" class="sortable" data-sort="projectId">Project ID</th>
-        <th class="sortable" data-sort="name">Name</th>
-        <th class="sortable" data-sort="status">Status</th>
-        <th class="r sortable" data-sort="contractSum">Contract Sum</th>
-        <th class="r sortable" data-sort="projectCost">Total Project Cost</th>
-        <th class="r sortable" data-sort="updated" style="padding-right:22px">Updated</th>
-        <th class="no-print"></th></tr></thead>
-      <tbody id="homeBody"></tbody>
-    </table>
-    <div class="home-cards" id="homeCards"></div>
-    <div class="empty" id="homeEmpty" style="display:none">
-      <div class="big" id="homeEmptyBig">No budgets yet</div>
-      <div id="homeEmptyMsg">Create one to get started. Budgets snapshot the pricing library at creation.</div>
-    </div>
-  </div></div>
-
-  <!-- Investment analyses: their own list below the budgets, rendered by the
-       investment module. Row actions (Versions, Duplicate, Delete) live in
-       each row's three-dot menu, exactly like the budget rows above. -->
-  <!-- Same layout as Project Budgets above: title row (heading left, creation
-       buttons right) sitting ABOVE the list card, not inside its header. -->
-  <div class="page-title" style="margin-top:34px">
-    <div><h1>Investment Analyses</h1>
-      <div class="sub">Before-tax underwriting, linked to exact saved budget versions.</div></div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-primary" onclick="FSInvestmentUI.openProjectPicker()">+ New Investment Analysis</button>
-    </div>
-  </div>
-  <section class="card">
-    <div class="card-bd" style="padding:0;overflow-x:auto" id="homeAnalyses"></div>
-  </section>
+  <div id="homeContent"></div>
 </div>
 
 <!-- ================= INPUTS ================= -->
 <div class="page" id="page-input">
   <div class="page-title">
-    <div><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
-    <div style="display:flex;gap:10px" class="no-print">
+    <div><button class="btn-back" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Back</button><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
+      <span id="iStatusHost"></span>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save Draft</button>
       <button class="btn btn-primary" onclick="toBudget()">Continue to Budget →</button>
     </div>
   </div>
+  <div class="wf-steps no-print" data-wf-pills></div>
 
   <section class="card">
     <div class="card-hd"><h2>Project</h2><span class="eyebrow">ID formats: OP-0001 · BD-0001 · AS-0001 · TST-9999 (test)</span></div>
@@ -1031,22 +1104,14 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= BUDGET ================= -->
 <div class="page" id="page-budget">
   <div class="page-title">
-    <div><h1 id="bTitle">Budget</h1><div class="sub" id="bSub"></div></div>
+    <div><button class="btn-back" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Back</button><h1 id="bTitle">Budget</h1><div class="sub" id="bSub"></div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
-      <label class="fld" style="display:flex;align-items:center;gap:8px">
-        <span class="lab" style="margin:0">Status</span>
-        <select id="bStatus" style="width:130px;font-size:12px;padding:6px 8px" onchange="setStatus(this.value)">
-          <option value="Draft">Draft</option>
-          <option value="In Review">In Review</option>
-          <option value="Completed">Completed</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
-      </label>
-      <button class="btn btn-ghost" onclick="go('input')">← Inputs</button>
+      <span id="bStatusHost"></span>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
       <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
   </div>
+  <div class="wf-steps no-print" data-wf-pills></div>
 
   <div class="banner test no-print" id="testBanner" style="display:none">
     <span><b>Test budget.</b> TST-#### budgets are throwaway records for checking a preview build. They are written to the
@@ -1140,13 +1205,14 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= CSI SCHEDULE ================= -->
 <div class="page" id="page-csi">
   <div class="page-title">
-    <div><h1>CSI Schedule of Values</h1>
+    <div><button class="btn-back" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Back</button><h1>CSI Schedule of Values</h1>
       <div class="sub" id="csiSub">The same budget, ordered as MasterFormat divisions — the form a lender, architect or GC expects.</div></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap" class="no-print">
-      <button class="btn btn-ghost" onclick="go('budget')">← Budget</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
+      <span id="cStatusHost"></span>
       <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
   </div>
+  <div class="wf-steps no-print" data-wf-pills></div>
 
   <section class="card" id="sec-csi">
     <div class="card-hd"><h2>Construction Contract</h2>
@@ -1253,6 +1319,21 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <!-- ================= HOW TO USE ================= -->
 <!-- ================= INVESTMENT ANALYSIS (rendered by investment-analysis.js) -->
+<!-- ================= BUDGETS (dedicated list) =================
+     The Budget counterpart of the Investment Analyses page: same page shell,
+     same list card. Its contents are mounted from budgetsListShell('budgets')
+     — the identical template Home uses — so the two lists cannot drift. -->
+<div class="page" id="page-budgets">
+  <div class="page-title">
+    <div><h1>Project Budgets</h1>
+      <div class="sub">Every budget you can see, newest first. Open one to work through Inputs, Budget and the CSI Schedule.</div></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="openNewBudget()">+ New Budget</button>
+    </div>
+  </div>
+  <div id="budgetsHost"></div>
+</div>
+
 <div class="page" id="page-analyses"></div>
 <div class="page" id="page-analysis"></div>
 
@@ -1277,6 +1358,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <a href="#help-exports">Exports</a>
       <a href="#help-access">Who Can Do What</a>
       <a href="#help-faq">Troubleshooting</a>
+      <a href="#help-report">Reporting a Problem</a>
     </nav>
 
     <div class="help">
@@ -1318,6 +1400,10 @@ th.sortable.sorted{color:var(--ink-900)}
             defaults from your sign-in identity) and a phone number. Email is shown but locked to
             the account you are signed in with.</li>
           <li><b>Theme</b> — Light (the default) or Dark.</li>
+          <li><b>Theme Pack</b> — super admins only: Finishes Solutions (the default) or Editorial, an
+            alternate look for the whole suite. A pack changes appearance only — every page, control,
+            label and number stays exactly where it is — and it brings its own accent color, so the
+            Accent Color choice below applies while the Finishes Solutions pack is selected.</li>
           <li><b>Accent Color</b> — Green (the default), Blue, Violet, Graphite, Red, Orange, or
             <b>Custom</b>: the rainbow button opens a color picker and the app derives a full light
             and dark palette from whatever color you choose.</li>
@@ -1781,17 +1867,32 @@ th.sortable.sorted{color:var(--ink-900)}
 
       <section class="card"><div class="card-bd">
         <h3 id="help-access">Who Can Do What</h3>
+        <h4>Application Roles</h4>
+        <p>Every user who signs in gets a default application role. Roles control which budgets and analyses
+          you can see in the list view. A super admin can change any user's role from the Admin page.</p>
         <table class="tbl"><tbody>
-          <tr><td>Everyone</td><td>Anyone who can sign in with a Finishes account can create, edit, save, delete
-            and export budgets and investment analyses, and can read the pricing library.</td></tr>
-          <tr><td>pricing_admin</td><td>Additionally can edit and publish the pricing library. This is deliberately
-            a very short list, because a rate change affects every budget created afterwards.</td></tr>
-          <tr><td>super_admin</td><td>Everything pricing_admin can do, plus access to the Analytics dashboard
-            (platform-wide KPIs, status breakdowns, and user activity). The Analytics tab appears only for
-            accounts holding this role.</td></tr>
+          <tr><td style="white-space:nowrap"><b>User</b> <span class="muted">(default)</span></td>
+            <td>Can create, edit, save, delete and export budgets and investment analyses. Sees only budgets and
+              analyses they created.</td></tr>
+          <tr><td style="white-space:nowrap"><b>Manager</b></td>
+            <td>Same as User. Sees only budgets and analyses they created. Intended for team leads who do not
+              need visibility into other teams' work.</td></tr>
+          <tr><td style="white-space:nowrap"><b>Director</b></td>
+            <td>Can see all budgets and analyses across the organization, regardless of who created them.</td></tr>
+          <tr><td style="white-space:nowrap"><b>Super Admin</b></td>
+            <td>Everything Director can do, plus access to the Analytics dashboard, the Admin page for managing
+              user roles, the Theme Pack setting, and any platform administration features.</td></tr>
         </tbody></table>
-        <p>The pricing page shows whether your account holds the role. If you need it, ask the tool owner for a
-          role invitation.</p>
+        <h4>Platform Roles</h4>
+        <p>Platform roles are assigned through Azure and control access to specific features beyond the
+          application role.</p>
+        <table class="tbl"><tbody>
+          <tr><td>pricing_admin</td><td>Can edit and publish the pricing library. This is deliberately
+            a very short list, because a rate change affects every budget created afterwards.</td></tr>
+          <tr><td>super_admin</td><td>Grants Super Admin application role automatically. Required for the
+            Analytics dashboard and Admin page. The pricing page shows whether your account holds this role.</td></tr>
+        </tbody></table>
+        <p>If you need a role change, ask a super admin or the tool owner.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -1821,6 +1922,17 @@ th.sortable.sorted{color:var(--ink-900)}
               if that warning was dismissed, the work is gone. While the budget is still open,
               <b>Cmd/Ctrl+Z</b> steps back up to ten changes.</td></tr>
         </tbody></table>
+
+        <h3 id="help-report">Reporting a Problem</h3>
+        <p>The <b>Report a Bug</b> button sits in the bottom-left corner of every page. Pick whether
+          something is broken or something is missing, and your email app opens with a message to Matthew
+          already written: the subject filled in, and the details underneath — which page you were on, which
+          pricing library and engine you were running, your browser and screen size. You describe it in your
+          own words and press send. You can see exactly what will be attached before you pick. Nothing from
+          your budgets or analyses is included.</p>
+        <p>For a bug, say what you did, what happened, and what you expected — those three lines are usually
+          enough to reproduce it. If your machine will not open a mail app, <b>Copy Details</b> puts the same
+          message on your clipboard to paste anywhere.</p>
       </div></section>
 
     </div>
@@ -1831,16 +1943,93 @@ th.sortable.sorted{color:var(--ink-900)}
 <div class="page" id="page-dashboard">
   <div class="page-title">
     <div><h1>Analytics Dashboard</h1>
-      <div class="sub">Platform usage, budget and investment KPIs, and recent activity across all users.</div></div>
-    <div><button class="btn btn-dark" onclick="FSDashboard.refresh()">Refresh</button></div>
+      <div class="sub">Platform usage, budget and investment KPIs, and activity across all users.</div></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="FSDashboard.exportPDF()" title="Branded PDF snapshot of this dashboard">Export Dashboard</button>
+      <button class="btn btn-dark" onclick="FSDashboard.refresh()">Refresh</button></div>
   </div>
   <div class="dash-kpis" id="dashKpis"></div>
-  <div class="dash-section"><h2>Status Breakdown</h2>
-    <div class="dash-grid" id="dashBreakdowns"></div>
+  <!-- Activity gets the full width: six series in a third of a row is a
+       thicket. The two breakdown cards sit under it as equal halves, and the
+       ranking under those. -->
+  <section class="card">
+    <div class="card-hd">
+      <span class="eyebrow" id="dashTrendTitle">Activity — Last 30 Days</span>
+      <div class="dash-ranges no-print" role="group" aria-label="Activity range">
+        <button class="dash-range" data-range="1" onclick="FSDashboard.setRange(1)">1D</button>
+        <button class="dash-range" data-range="7" onclick="FSDashboard.setRange(7)">7D</button>
+        <button class="dash-range" data-range="14" onclick="FSDashboard.setRange(14)">14D</button>
+        <button class="dash-range on" data-range="30" onclick="FSDashboard.setRange(30)">30D</button>
+        <button class="dash-range" data-range="0" onclick="FSDashboard.setRange(0)">All</button>
+      </div>
+    </div>
+    <div class="card-bd"><div id="dashTrend"></div></div>
+  </section>
+  <div class="dash-cols">
+    <section class="card"><div class="card-hd"><span class="eyebrow">Status Breakdown</span></div>
+      <div class="card-bd"><div class="dash-grid" id="dashBreakdowns"></div></div>
+    </section>
+    <section class="card"><div class="card-hd"><span class="eyebrow">Budgets By Value</span></div>
+      <div class="card-bd"><div id="dashValue"></div></div>
+    </section>
   </div>
-  <div class="dash-section"><h2>Recent Activity</h2>
-    <div id="dashActivity"></div>
+  <section class="card">
+    <div class="card-hd"><span class="eyebrow">Top 5 Projects By Budget Amount</span>
+      <span class="dash-hd-note" id="dashTopNote"></span></div>
+    <div class="card-bd"><div id="dashTop"></div></div>
+  </section>
+  <section class="card">
+    <div class="card-hd">
+      <span class="eyebrow">Activity Log</span>
+      <div class="dash-filters no-print">
+        <select id="dashUserFilter" onchange="FSDashboard.applyFilter()" aria-label="Filter by User">
+          <option value="">All Users</option>
+        </select>
+        <input type="date" id="dashDateFrom" onchange="FSDashboard.applyFilter()" aria-label="From Date">
+        <span class="dash-filter-sep">to</span>
+        <input type="date" id="dashDateTo" onchange="FSDashboard.applyFilter()" aria-label="To Date">
+        <button class="btn btn-ghost btn-sm" onclick="FSDashboard.exportCSV()" title="Export Activity Log to CSV">Export CSV</button>
+      </div>
+    </div>
+    <div class="card-bd" style="padding:0;overflow-x:auto">
+      <table class="tbl" id="dashActivityTable"><thead><tr>
+        <th style="padding-left:22px">User</th><th>Event</th><th>Entity</th><th class="r" style="padding-right:22px">When</th>
+      </tr></thead><tbody id="dashActivityBody"></tbody></table>
+      <div id="dashActivityEmpty" style="display:none;text-align:center;padding:28px;color:var(--ink-500);font-size:13px">No activity found</div>
+    </div>
+    <div style="text-align:center;padding:14px 0" id="dashViewAllWrap">
+      <button class="btn btn-ghost" id="dashViewAllBtn" onclick="FSDashboard.viewMore()" style="display:none">View More</button>
+    </div>
+  </section>
+</div>
+
+<!-- ================= ADMIN (super_admin only) ================= -->
+<div class="page" id="page-admin">
+  <div class="page-title">
+    <div><h1 id="adminHeading">User Management</h1>
+      <div class="sub" id="adminSub">Assign application roles to control what each user can see and do.</div></div>
+    <div><button class="btn btn-dark" id="adminRefreshBtn" onclick="refreshAdmin()">Refresh</button></div>
   </div>
+  <div class="fb-tabs" style="margin-bottom:14px">
+    <button class="fb-tab on" id="adminTab-users" onclick="showAdminTab('users')">Users</button>
+    <button class="fb-tab" id="adminTab-feedback" onclick="showAdminTab('feedback')">Feedback</button>
+    <span class="fb-counts" id="fbCounts"></span>
+  </div>
+  <section class="card" id="adminUsersPane"><div class="card-bd">
+    <table class="tbl" id="adminTable"><thead><tr>
+      <th style="padding-left:22px">User</th><th>Email</th><th>Role</th><th>Last Seen</th><th>Logins</th><th class="no-print"></th>
+    </tr></thead><tbody id="adminBody"></tbody></table>
+  </div></section>
+  <section class="card" id="adminFeedbackPane" style="display:none"><div class="card-bd">
+    <div class="fb-tabs" style="padding:12px 22px 0">
+      <button class="fb-tab on" id="fbFilter-open" onclick="FSFeedback.setFilter('open')">Open</button>
+      <button class="fb-tab" id="fbFilter-closed" onclick="FSFeedback.setFilter('closed')">Closed</button>
+      <button class="fb-tab" id="fbFilter-all" onclick="FSFeedback.setFilter('all')">All</button>
+    </div>
+    <table class="tbl" id="fbBoardTable"><thead><tr>
+      <th style="padding-left:22px">Type</th><th>Report</th><th>From</th><th>Received</th><th>Status</th><th class="no-print"></th>
+    </tr></thead><tbody id="fbBoardBody"></tbody></table>
+  </div></section>
 </div>
 
 <!-- ================= VERSION (internal diagnostics) ================= -->
@@ -1849,15 +2038,15 @@ th.sortable.sorted{color:var(--ink-900)}
     <div><h1>Version</h1>
       <div class="sub">System versions, providers, and environment diagnostics.</div></div>
   </div>
-  <div id="versionContent"></div>
+  <div id="versionContent" style="position:relative"></div>
 </div>
 
 </main>
 
 <!-- ================= EXPORT MODAL ================= -->
 <div id="exportModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
-  <div class="card" style="width:580px;max-width:92vw;margin:0">
-    <div class="card-hd"><h2>Export Budget</h2><button class="btn-x" onclick="closeExport()">×</button></div>
+  <div class="card mod-sheet" style="width:580px;max-width:92vw;margin:0">
+    <div class="card-hd"><h2 class="mod-title">Export Budget</h2><button class="btn-x" onclick="closeExport()">×</button></div>
     <div class="card-bd" style="padding:22px 26px">
       <div class="eyebrow" style="margin-bottom:12px">Include Sections</div>
       <div style="display:grid;gap:12px;margin-bottom:24px">
@@ -1898,8 +2087,8 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <!-- ================= GUIDE EXPORT MODAL ================= -->
 <div id="guideExportModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
-  <div class="card" style="width:460px;max-width:92vw;margin:0">
-    <div class="card-hd"><h2>Download Guide</h2><button class="btn-x" onclick="closeGuideExport()">×</button></div>
+  <div class="card mod-sheet" style="width:460px;max-width:92vw;margin:0">
+    <div class="card-hd"><h2 class="mod-title">Download Guide</h2><button class="btn-x" onclick="closeGuideExport()">×</button></div>
     <div class="card-bd" style="padding:22px 26px">
       <div class="eyebrow" style="margin-bottom:12px">Options</div>
       <div style="display:grid;gap:12px;margin-bottom:24px">
@@ -1914,8 +2103,8 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <!-- ================= CSI PICKER MODAL ================= -->
 <div id="pickModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
-  <div class="card" style="width:640px;max-width:94vw;margin:0">
-    <div class="card-hd"><h2>Add Line From CSI Catalog</h2>
+  <div class="card mod-sheet" style="width:640px;max-width:94vw;margin:0">
+    <div class="card-hd"><h2 class="mod-title">Add Line From CSI Catalog</h2>
       <button class="btn-x" onclick="closePick()" aria-label="Close"
         style="font-size:20px;padding:2px 8px">×</button></div>
     <div class="card-bd" style="padding-top:12px">
@@ -1979,8 +2168,8 @@ th.sortable.sorted{color:var(--ink-900)}
      structured for them. Custom templates come from the template system. -->
 <div id="newBudgetModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:60;align-items:center;justify-content:center;padding:20px 14px"
   onclick="if(event.target===this)closeNewBudget()">
-  <div class="card" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="newBudgetTitle">
-    <div class="card-hd"><h2 id="newBudgetTitle">New Budget</h2>
+  <div class="card mod-sheet" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="newBudgetTitle">
+    <div class="card-hd"><h2 class="mod-title" id="newBudgetTitle">New Budget</h2>
       <button class="btn-x" onclick="closeNewBudget()" aria-label="Close new budget">×</button></div>
     <div class="card-bd" style="overflow:auto">
       <div class="set-lab">Budget Templates</div>
@@ -2011,8 +2200,8 @@ th.sortable.sorted{color:var(--ink-900)}
      button. -->
 <div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:60;align-items:center;justify-content:center;padding:20px 14px"
   onclick="if(event.target===this)closeSettings()">
-  <div class="card" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="card-hd"><h2 id="settingsTitle">Settings</h2>
+  <div class="card mod-sheet" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="card-hd"><h2 class="mod-title" id="settingsTitle">Settings</h2>
       <button class="btn-x" onclick="closeSettings()" aria-label="Close settings">×</button></div>
     <div class="card-bd" style="overflow:auto">
 
@@ -2040,6 +2229,21 @@ th.sortable.sorted{color:var(--ink-900)}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
           Dark<span class="tick">✓</span></button>
       </div>
+
+      <!-- Theme packs — super_admin only, hidden by paintSettingsUI otherwise.
+           A pack restyles the suite; it never changes what a page does. -->
+      <div class="set-lab" id="setThemePackLab" style="display:none">Theme Pack</div>
+      <div class="set-choice" id="setThemePackRow" role="group" aria-label="Theme Pack" style="display:none">
+        <button data-themepack-pick="default" onclick="chooseSetting('themePack','default')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          Finishes Solutions<span class="tick">✓</span></button>
+        <button data-themepack-pick="ramp" onclick="chooseSetting('themePack','ramp')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="1.4"/><circle cx="12" cy="6" r="1.4"/><circle cx="18" cy="6" r="1.4"/><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/><circle cx="6" cy="18" r="1.4"/><circle cx="12" cy="18" r="1.4"/><circle cx="18" cy="18" r="1.4"/></svg>
+          Editorial<span class="tick">✓</span></button>
+      </div>
+      <div class="set-note" id="setThemePackNote" style="display:none">Theme packs restyle the suite for
+        preview. Every page, action and number stays exactly where it is. A pack brings its own accent
+        color, so the accent below applies while the Finishes Solutions pack is selected.</div>
 
       <div class="set-lab">Accent Color</div>
       <div class="set-choice" role="group" aria-label="Accent Color" style="flex-wrap:wrap">
@@ -2152,14 +2356,77 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <!-- ================= BUDGET VERSIONS MODAL ================= -->
 <div id="versionsModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
-  <div class="card" style="width:820px;max-width:94vw;margin:0" role="dialog" aria-modal="true" aria-labelledby="versionsTitle">
-    <div class="card-hd"><h2 id="versionsTitle">Budget Versions</h2>
+  <div class="card mod-sheet" style="width:820px;max-width:94vw;margin:0" role="dialog" aria-modal="true" aria-labelledby="versionsTitle">
+    <div class="card-hd"><h2 class="mod-title" id="versionsTitle">Budget Versions</h2>
       <button class="btn-x" onclick="closeVersions()" aria-label="Close version history">×</button></div>
     <div class="card-bd" style="max-height:70vh;overflow:auto"><div id="versionsBody"></div></div>
   </div>
 </div>
 
 <div id="printDoc" aria-hidden="true"></div>
+
+<!-- ================= FEEDBACK =================
+     A bug button parked in the bottom-left corner on every page, and the
+     dialog it opens. The report is stored in dbo.Feedback and emailed to
+     matthews@finishessolutions.com from automation@finishessolutions.com;
+     the store is the record, the email is a notification. Shown only to a
+     signed-in account (see renderProfile). -->
+<button id="fbFab" style="display:none" onclick="FSFeedback.show('bug')"
+  aria-label="Report a bug or request a feature" title="Report a bug or request a feature">
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M8 6a4 4 0 0 1 8 0"/><rect x="7" y="7" width="10" height="12" rx="5"/>
+    <path d="M7 11H3M21 11h-4M7 16H4M20 16h-3M9.5 5 8 3M14.5 5 16 3"/>
+  </svg>
+  <span class="fb-fab-lab">Report a Bug</span>
+</button>
+
+<div id="fbModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:70;align-items:center;justify-content:center;padding:20px 14px"
+  onclick="if(event.target===this)FSFeedback.close()">
+  <div class="card mod-sheet" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column"
+    role="dialog" aria-modal="true" aria-labelledby="fbHeading">
+    <div class="card-hd"><h2 class="mod-title" id="fbHeading">Report a Bug</h2>
+      <button class="btn-x" onclick="FSFeedback.close()" aria-label="Close feedback">×</button></div>
+    <div class="card-bd" style="overflow:auto">
+      <!-- The two kind buttons serve both modes: with in-app delivery
+           configured they switch the form below; without it, picking one hands
+           the report straight to the user's mail client. -->
+      <div class="fb-kinds">
+        <button class="fb-kind-btn on" id="fbKindBug" aria-pressed="true" onclick="FSFeedback.pick('bug')">
+          Something is broken<span class="fb-kind-sub">A bug report</span></button>
+        <button class="fb-kind-btn" id="fbKindFeature" aria-pressed="false" onclick="FSFeedback.pick('feature')">
+          Something is missing<span class="fb-kind-sub">A feature request</span></button>
+      </div>
+      <div id="fbForm">
+        <label class="set-lab" for="fbTitle">Short title</label>
+        <input type="text" id="fbTitle" maxlength="200" placeholder="Export does nothing on the budget page">
+        <label class="set-lab" for="fbBody" id="fbBodyLab">What happened, and what did you expect?</label>
+        <textarea id="fbBody" maxlength="8000"></textarea>
+        <div id="fbSevRow">
+          <label class="set-lab" for="fbSev">How badly is it hurting?</label>
+          <select id="fbSev">
+            <option value="minor">Minor — an annoyance, there is a way around it</option>
+            <option value="major">Major — it is costing me real time</option>
+            <option value="blocking">Blocking — I cannot do the work at all</option>
+          </select>
+        </div>
+      </div>
+      <label class="set-lab">Sent with your report</label>
+      <div class="fb-ctx" id="fbCtx"></div>
+      <div class="fb-note" id="fbNote"></div>
+      <div class="fb-error" id="fbError"></div>
+      <div class="fb-fallback" id="fbFallback">Could not reach the server.
+        <button onclick="FSFeedback.mailFallback()">Send it as an email instead</button></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;gap:8px;padding:14px 22px;border-top:1px solid var(--ink-150)">
+      <button class="btn btn-ghost" id="fbCopy" onclick="FSFeedback.copyDetails()">Copy Details</button>
+      <span style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="FSFeedback.close()">Cancel</button>
+        <button class="btn btn-primary" id="fbSend" onclick="FSFeedback.submit()">Send Report</button>
+      </span>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -2218,6 +2485,50 @@ function setTheme(name){
     b.setAttribute('aria-pressed',on?'true':'false');
   });
 }
+/* ---- theme packs (Settings → Theme Pack) ----
+   A pack is an alternate visual PRESENTATION of the same product: paint only,
+   scoped in CSS to html[data-skin=<pack>]. No route, label, permission,
+   calculation, export or workflow is a pack's business. 'default' is the
+   Finishes Solutions appearance — the stylesheet with no attribute set.
+
+   Packs are a super_admin preview, so the role decides, not the stored value:
+   an account that loses the role stops seeing the pack on its next boot while
+   its setting is left untouched. Print always renders the default pack; the
+   beforeprint hook strips the attribute alongside data-theme. */
+const THEME_PACKS=['default','ramp'];
+function themePackAllowed(){
+  if(US.appRole==='super_admin')return true;
+  const roles=(principal&&principal.userRoles)||[];
+  return roles.includes('super_admin');
+}
+function themePackSetting(){
+  const v=usSettings().themePack;
+  return THEME_PACKS.includes(v)?v:'default';
+}
+function activeThemePack(){return document.documentElement.getAttribute('data-skin')||'default';}
+function applyThemePack(name){
+  if(!THEME_PACKS.includes(name))name='default';
+  if(!themePackAllowed())name='default';
+  const root=document.documentElement;
+  if(name==='default')root.removeAttribute('data-skin');
+  else{root.setAttribute('data-skin',name);loadPackFont(name);}
+  try{
+    if(name==='default')localStorage.removeItem('fsThemePack');
+    else localStorage.setItem('fsThemePack',name);
+  }catch(_){}
+}
+/* The Ramp-inspired pack asks for a grotesk the app does not otherwise load.
+   It is requested only once that pack is actually switched on, so no other
+   account pays for the fetch, and the CSS stack falls back through Helvetica
+   to system-ui if the request never lands. */
+function loadPackFont(name){
+  if(name!=='ramp'||document.getElementById('packFontInter'))return;
+  const l=document.createElement('link');
+  l.id='packFontInter';l.rel='stylesheet';
+  l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400..700'
+        +'&family=Inter+Tight:wght@400..700&display=swap';
+  document.head.appendChild(l);
+}
 /* ---- per-account settings (dbo.Users via /api/user-settings) ----
    The server is the source of truth: settings load at boot and follow the
    account to any signed-in browser. localStorage keeps a small cache purely
@@ -2231,14 +2542,19 @@ async function loadUserSettings(){
   try{
     const r=await api('user-settings?boot=1');
     US={settings:r.settings,profile:{displayName:r.displayName||'',email:r.email||'',phone:r.phone||''},
-        userDetails:r.userDetails||'',loginCount:r.loginCount};
+        userDetails:r.userDetails||'',loginCount:r.loginCount,appRole:r.appRole||'user',
+        features:r.features||{}};
     applyUserSettings();
+    if(US.appRole==='super_admin'||US.appRole==='director'){
+      document.getElementById('nav-admin').style.display=(US.appRole==='super_admin')?'':'none';
+    }
     renderProfile();          // the display name may override the platform name
   }catch(e){/* signed out or offline: the pre-paint caches already applied */}
 }
 function applyUserSettings(){
   const s=usSettings();
   setTheme(s.theme||'light');
+  applyThemePack(s.themePack||'default');   // before the accent: a pack owns the palette
   applyAccent(s.accentColor||'green');
   applyAvatar(s.avatarColor||null);
   window.__fsTimeFormat=s.timeFormat==='24h'?'24h':'12h';
@@ -2257,6 +2573,14 @@ function applyAccent(name){
   const root=document.documentElement;
   ['900','800','700','600','500','200','100','50'].forEach(k=>root.style.removeProperty('--green-'+k));
   root.style.removeProperty('--focus');
+  /* A theme pack ships its own complete palette, accent included. The
+     account's accent choice is kept in settings and comes straight back when
+     the pack is switched off — it is simply not painted underneath one. */
+  if(activeThemePack()!=='default'){
+    root.removeAttribute('data-accent');
+    try{localStorage.setItem('fsAccent',name);}catch(_){}
+    return;
+  }
   if(/^#[0-9a-f]{6}$/i.test(name)){
     root.removeAttribute('data-accent');
     const sc=accentScale(name,currentTheme()==='dark');
@@ -2306,13 +2630,15 @@ function chooseSetting(key,value){
   US.settings=Object.assign({},prev,{[key]:value});
   applyUserSettings();
   // the affected lists re-render only when their view actually changed
-  if(key==='budgetView'&&currentPage==='home')renderHome();
-  if(key==='analysisView'){
-    if(currentPage==='home'&&window.FSInvestmentUI)
-      FSInvestmentUI.renderListInto(document.getElementById('homeAnalyses'),{embedded:true});
-    else if(currentPage==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
+  if(key==='budgetView')paintBudgets();
+  if(key==='analysisView'&&currentPage==='analyses'&&window.FSInvestmentUI){
+    FSInvestmentUI.renderList();
   }
-  if(key==='timeFormat'&&currentPage==='home')paintHome();
+  // Home shows relative times and status chips, so a format change repaints it.
+  if((key==='timeFormat'||key==='analysisView'||key==='budgetView')
+     &&currentPage==='home'&&window.FSHome){
+    FSHome.invalidate();FSHome.show();
+  }
   queueSettingsSave();
 }
 function queueSettingsSave(){
@@ -2339,6 +2665,90 @@ async function saveProfile(){
     toast('Profile saved to your account.');
   }catch(e){toast('Could not save your profile — '+e.message);}
 }
+/* ---- Admin: user role management (super_admin only) ---- */
+const ADMIN_ROLES=['user','manager','director','super_admin'];
+const ROLE_LABELS={user:'User',manager:'Manager',director:'Director',super_admin:'Super Admin'};
+let adminUsers=[];
+async function loadAdminUsers(){
+  const tb=document.getElementById('adminBody');if(!tb)return;
+  tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--ink-400)">Loading...</td></tr>';
+  try{
+    adminUsers=await api('user-settings?scope=roles');
+    paintAdminTable();
+  }catch(e){
+    // 503 means the roles migration has not been run against this database.
+    // Say what to do about it rather than showing a bare status code.
+    const pending=/migration_pending|migrate_roles_and_ownership/.test(e.message);
+    const msg=pending
+      ? 'Role management is not available yet — this database still needs '
+        +'sql/migrate_roles_and_ownership.sql to be run. Everything else in the app works meanwhile.'
+      : e.message;
+    tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--danger)">'+esc(msg)+'</td></tr>';
+  }
+}
+function paintAdminTable(){
+  const tb=document.getElementById('adminBody');if(!tb)return;
+  tb.innerHTML='';
+  adminUsers.forEach(u=>{
+    const displayName=u.displayName||u.userDetails||u.userId;
+    const ini=initialsOf(displayName);
+    tb.insertAdjacentHTML('beforeend',
+      `<tr>
+        <td style="padding-left:22px"><span class="creator-av" style="margin-right:8px">${esc(ini)}</span>${esc(displayName)}</td>
+        <td style="font-size:12px;color:var(--ink-400)">${esc(u.email||u.userDetails||'')}</td>
+        <td><select class="admin-role-sel" data-admin-uid="${esc(u.userId)}" onchange="changeAdminRole(this)">
+          ${ADMIN_ROLES.map(r=>'<option value="'+r+'"'+(u.appRole===r?' selected':'')+'>'+esc(ROLE_LABELS[r])+'</option>').join('')}
+        </select></td>
+        <td style="font-size:12px;color:var(--ink-400)">${u.lastSeenAt?esc(fmtDay(u.lastSeenAt)):'Never'}</td>
+        <td style="font-size:12px;color:var(--ink-400)">${u.loginCount||0}</td>
+        <td class="no-print"></td></tr>`);
+  });
+  if(!adminUsers.length)tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--ink-400)">No users found.</td></tr>';
+}
+async function changeAdminRole(sel){
+  const uid=sel.dataset.adminUid;
+  const role=sel.value;
+  try{
+    await api('user-settings?scope=roles',{method:'PUT',body:JSON.stringify({userId:uid,appRole:role})});
+    const u=adminUsers.find(x=>x.userId===uid);
+    if(u)u.appRole=role;
+    toast('Role updated to '+ROLE_LABELS[role]+'.');
+  }catch(e){toast('Could not update role — '+e.message);loadAdminUsers();}
+}
+
+/* ---- Admin: which board is showing ----
+   Two surfaces under one page: who can see what, and what people are telling
+   us. Both are super_admin only, and both load on demand rather than on every
+   visit to the page. */
+let adminTab='users';
+function showAdminTab(t){
+  adminTab=(t==='feedback')?'feedback':'users';
+  const fb=adminTab==='feedback';
+  document.getElementById('adminUsersPane').style.display=fb?'none':'';
+  document.getElementById('adminFeedbackPane').style.display=fb?'':'none';
+  document.getElementById('adminTab-users').classList.toggle('on',!fb);
+  document.getElementById('adminTab-feedback').classList.toggle('on',fb);
+  document.getElementById('adminHeading').textContent=fb?'Feedback':'User Management';
+  document.getElementById('adminSub').textContent=fb
+    ?'Bug reports and feature requests sent from the app, newest first.'
+    :'Assign application roles to control what each user can see and do.';
+  document.getElementById('fbCounts').style.display=fb?'':'none';
+  if(fb&&window.FSFeedback)FSFeedback.loadBoard();
+}
+function refreshAdmin(){
+  if(adminTab==='feedback'&&window.FSFeedback)FSFeedback.loadBoard();
+  else loadAdminUsers();
+}
+
+/* ---- created-by avatar (initials circle with user's avatar color) ---- */
+const DEFAULT_AVATAR_BG='var(--green-700)';
+function creatorAvatar(name,avatarColor){
+  if(!name)return '';
+  const ini=initialsOf(name);
+  const bg=avatarColor||DEFAULT_AVATAR_BG;
+  return '<span class="creator-av" style="--cav:'+esc(bg)+'" title="'+esc(name)+'">'+esc(ini)+'</span>';
+}
+
 const AVATAR_PRESETS=['','#14418A','#6D28D9','#B42318','#B7791F','#23282A'];
 const RAINBOW='conic-gradient(#e03131,#f59f00,#94d82d,#20c997,#339af0,#845ef7,#e03131)';
 function paintSettingsUI(){
@@ -2367,6 +2777,13 @@ function paintSettingsUI(){
   mark('[data-avatar-pick]',AVATAR_PRESETS.includes(av)?av:'custom');
   const vp=document.getElementById('avatarPicker');
   if(vp&&av&&!AVATAR_PRESETS.includes(av))vp.value=av.toLowerCase();
+  mark('[data-themepack-pick]',themePackSetting());
+  // The pack control is a super_admin preview; everyone else never sees it.
+  const packOn=themePackAllowed();
+  ['setThemePackLab','setThemePackRow','setThemePackNote'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.style.display=packOn?(id==='setThemePackRow'?'flex':'block'):'none';
+  });
   mark('[data-timefmt-pick]',s.timeFormat||'12h');
   mark('[data-budgetview-pick]',budgetView());
   mark('[data-analysisview-pick]',analysisView());
@@ -2425,10 +2842,12 @@ function postActivity(eventType,entityType,entityId,detail){
     .catch(()=>{});
 }
 let printThemeStash=null;
-let printAccentStash=null;
+let printAccentStash=null,printPackStash=null;
 window.addEventListener('beforeprint',()=>{
   printThemeStash=currentTheme();
   document.documentElement.removeAttribute('data-theme');
+  printPackStash=activeThemePack();
+  document.documentElement.removeAttribute('data-skin');
   var s=usSettings();printAccentStash=s.accentColor||'green';
   if(printAccentStash!=='green'){
     var root=document.documentElement;
@@ -2441,6 +2860,8 @@ window.addEventListener('afterprint',()=>{
   if(printThemeStash&&printThemeStash!=='light')
     document.documentElement.setAttribute('data-theme',printThemeStash);
   printThemeStash=null;
+  if(printPackStash&&printPackStash!=='default')applyThemePack(printPackStash);
+  printPackStash=null;
   if(printAccentStash&&printAccentStash!=='green'){applyAccent(printAccentStash);}
   printAccentStash=null;
 });
@@ -2513,9 +2934,52 @@ async function initAuth(){
     adminUnlocked=roles.includes('pricing_admin')||isSuperAdmin;
     if(isSuperAdmin){
       document.getElementById('nav-dashboard').style.display='';
-      FSDashboard.init({esc:esc});
+      document.getElementById('nav-admin').style.display='';
+      // Same print pipeline the budget and analysis PDFs use: a purpose-made
+      // document in #printDoc, never a picture of the app UI.
+      FSDashboard.init({esc:esc, stamp:()=>fmtWhen(new Date()),
+        print:html=>{
+          document.getElementById('printDoc').innerHTML=html;
+          document.body.classList.add('printing');
+          window.print();
+          setTimeout(()=>{document.body.classList.remove('printing');
+            document.getElementById('printDoc').innerHTML='';},600);
+        }});
     }
   }
+  // The bug button is for people who are signed in: a report with no account
+  // behind it cannot be answered, and the endpoint would refuse it anyway.
+  if(window.FSFeedback){
+    FSFeedback.init({
+      api:api, esc:esc, toast:toast,
+      fmtWhen:v=>fmtWhen(new Date(v)),
+      versionRows:versionInfoRows,
+      currentRoute:()=>location.hash||('#/'+currentPage),
+      pageLabel:()=>PAGE_LABEL[currentPage]||currentPage,
+      userName:()=>(US.profile&&US.profile.displayName)||(principal?principalName(principal):''),
+      // Told by the server on the settings call: with no mail configured the
+      // button hands the report to the user's own mail client instead.
+      features:()=>US.features||{},
+      mailTo:'matthews@finishessolutions.com'
+    });
+    const fab=document.getElementById('fbFab');
+    if(fab&&principal)fab.style.display='';
+  }
+  if(window.FSHome)FSHome.init({
+    esc:esc, usd:usd, fmtDay:fmtDay,
+    api:api, toast:toast,
+    openBudget:openBudget,
+    // Pins live in the account settings document; chooseSetting stores the
+    // value and queues the same debounced save every preference uses.
+    settings:usSettings,
+    setSetting:(k,v)=>chooseSetting(k,v),
+    currentPage:()=>currentPage,
+    userId:()=>(principal&&principal.userId)||'anon',
+    // Same precedence the avatar uses: the Settings display name wins,
+    // otherwise the platform name claim, otherwise a humanised sign-in local part.
+    displayName:()=>(typeof US!=='undefined'&&US.profile&&US.profile.displayName)
+      ||(principal?principalName(principal):'')
+  });
   renderProfile();
 }
 
@@ -2982,12 +3446,18 @@ function editReason(it){
 /* ============ NAV + HASH ROUTING ============
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
-const PAGE_SLUG={home:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',version:'version'};
-const SLUG_PAGE={budgets:'home',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',version:'version'};
+const PAGE_SLUG={home:'home',budgets:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+/* Human names for the pages, for anything a person reads: today the subject
+   line of a feedback email, which is more use as "Project Budgets" than as
+   "budgets". */
+const PAGE_LABEL={home:'Home',budgets:'Project Budgets',input:'Budget Inputs',budget:'Budget Detail',
+  csi:'CSI Schedule',analyses:'Investment Analysis',analysis:'Investment Analysis Editor',
+  pricing:'Pricing Library',help:'How to Use',dashboard:'Analytics',admin:'Admin',version:'Version'};
+const SLUG_PAGE={home:'home',budgets:'budgets',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
 const DOC_PAGES=['input','budget','csi'];
 
 function hashFor(p){
-  const s=PAGE_SLUG[p]||'budgets';
+  const s=PAGE_SLUG[p]||'home';
   if(DOC_PAGES.includes(p)&&doc&&doc.projectId)return '#/'+s+'/'+doc.projectId;
   // Analysis IDs are GUIDs, not project IDs — they stay lowercase and are
   // resolved by the investment module, never by openBudget().
@@ -3010,18 +3480,22 @@ function go(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   document.getElementById('page-'+p).classList.add('on');
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
-  // The analysis editor has no nav button of its own — it lights the
-  // Investment Analysis tab, the way budget pages light their own tabs.
-  const nb=document.getElementById('nav-'+(p==='analysis'?'analyses':p));
+  // Nested pages light their parent tab: the whole budget workflow keeps
+  // Budgets lit, and the analysis editor keeps Investment Analysis lit.
+  var NAV_PARENT={analysis:'analyses',input:'budgets',budget:'budgets',csi:'budgets'};
+  const nb=document.getElementById('nav-'+(NAV_PARENT[p]||p));
   if(nb)nb.classList.add('on');
-  var MORE_PAGES=['help','dashboard','version'];
+  var MORE_PAGES=['help','dashboard','admin','version','pricing'];
   if(MORE_PAGES.includes(p))document.getElementById('nav-more-btn').classList.add('on');
   syncHash(p);
   renderSaveState();
   if(p==='home')renderHome();
+  if(p==='budgets')renderBudgetsPage();
+  if(DOC_PAGES.includes(p))paintWorkflowPills(p);
   if(p==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
   if(p==='pricing'){renderPricing();renderCatalog();}
   if(p==='dashboard'&&window.FSDashboard)FSDashboard.render();
+  if(p==='admin')refreshAdmin();
   if(p==='version')renderVersionPage();
   if(p==='budget'||p==='input'||p==='csi')recalc();
   window.scrollTo(0,0);
@@ -3054,13 +3528,136 @@ async function routeFromHash(){
 window.addEventListener('hashchange',routeFromHash);
 
 /* ============ HOME ============ */
+/* ---- the budgets list card, one template, two mount points ----
+   Home embeds it under the page title; the dedicated Budgets page is the same
+   card with its own heading. Element ids are prefixed so both can sit in the
+   DOM at once (pages are hidden, not removed) — with prefix 'home' the ids are
+   exactly the ones Home has always used, so nothing that reads them changes. */
+function budgetsListShell(p){
+  return `<div class="card" id="${p}BudgetsCard">
+    <div class="card-hd no-print">
+      <div class="list-toolbar">
+        <input type="text" id="${p}Search" placeholder="Search ID or name…" aria-label="Search Budgets">
+        <select id="${p}Status" class="lt-status" aria-label="Filter by Status">
+          <option value="all">All Statuses</option>
+          <option value="Draft">Draft</option>
+          <option value="In Review">In Review</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+        <select id="${p}Group" class="lt-group" title="Group the list" aria-label="Group By">
+          <option value="">No Grouping</option>
+          <option value="address">Group by Address</option>
+          <option value="id">Group by Project ID</option>
+          <option value="type">Group by Type</option>
+          <option value="status">Group by Status</option>
+          <option value="user">Group by User</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div class="mini-seg" role="group" aria-label="Budgets View" title="Budgets View — also in Settings">
+          <button data-budgetview-pick="comfortable" aria-label="Comfortable List" title="Comfortable List" onclick="chooseSetting('budgetView','comfortable')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg></button>
+          <button data-budgetview-pick="compact" aria-label="Compact List" title="Compact List" onclick="chooseSetting('budgetView','compact')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+          <button data-budgetview-pick="cards" aria-label="Card View" title="Card View" onclick="chooseSetting('budgetView','cards')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
+        </div>
+        <span class="eyebrow" id="${p}Count">—</span>
+      </div>
+    </div>
+    <div class="card-bd" style="padding:0;overflow-x:auto">
+    <table class="tbl">
+      <thead id="${p}Head"><tr>
+        <th style="padding-left:22px" class="no-print lt-user-col">User</th>
+        <th class="sortable" data-sort="projectId">Project ID</th>
+        <th class="sortable" data-sort="name">Name</th>
+        <th class="sortable" data-sort="status">Status</th>
+        <th class="r sortable" data-sort="contractSum">Contract Sum</th>
+        <th class="r sortable" data-sort="projectCost">Total Project Cost</th>
+        <th class="r sortable" data-sort="updated" style="padding-right:22px">Updated</th>
+        <th class="no-print"></th></tr></thead>
+      <tbody id="${p}Body"></tbody>
+    </table>
+    <div class="home-cards" id="${p}Cards"></div>
+    <div class="empty" id="${p}Empty" style="display:none">
+      <div class="big" id="${p}EmptyBig">No budgets yet</div>
+      <div id="${p}EmptyMsg">Create one to get started. Budgets snapshot the pricing library at creation.</div>
+    </div>
+  </div></div>`;
+}
+
+/* Mount a list into its host and wire its toolbar. Both lists read and write
+   the one homeView state, so a search typed on either is the same search. */
+function mountBudgetsList(p,hostId){
+  const host=document.getElementById(hostId);
+  if(!host||host.dataset.mounted==='1')return;
+  host.innerHTML=budgetsListShell(p);
+  host.dataset.mounted='1';
+  const q=document.getElementById(p+'Search');
+  const st=document.getElementById(p+'Status');
+  const gr=document.getElementById(p+'Group');
+  if(q)q.addEventListener('input',e=>{homeView.q=e.target.value;paintBudgets();});
+  if(st)st.addEventListener('change',e=>{homeView.status=e.target.value;paintBudgets();});
+  if(gr)gr.addEventListener('change',e=>{homeView.group=e.target.value;paintBudgets();});
+  const head=document.getElementById(p+'Head');
+  if(head)head.addEventListener('click',e=>{
+    const th=e.target.closest('th[data-sort]');
+    if(th)homeSort(th.dataset.sort);
+  });
+  // Reflect whatever filter state is already in effect.
+  if(q)q.value=homeView.q;
+  if(st)st.value=homeView.status;
+  if(gr)gr.value=homeView.group;
+}
+// Every mounted list, so a repaint keeps them in step.
+const BUDGET_LIST_PREFIXES=['budgets'];
+
+/* The dedicated Budgets page: same data load as Home, same list card. */
+async function renderBudgetsPage(){
+  const host=document.getElementById('budgetsHost');
+  if(host&&host.dataset.mounted!=='1')mountBudgetsList('budgets','budgetsHost');
+  try{
+    index=(await sGet('budgets-index'))||[];
+    paintBudgets();
+  }catch(e){
+    const card=document.getElementById('budgetsBudgetsCard');
+    if(card)card.innerHTML='<div class="empty"><div class="big">Could not load budgets</div><div>'
+      +esc(e.message)+'</div></div>';
+  }
+}
+
+/* The budget workflow pills — the same .wf-steps component the analysis steps
+   use. Each pill is a real route, so the current page is both marked `on` and
+   given aria-current for assistive tech. */
+const WORKFLOW_STEPS=[{page:'input',label:'Inputs'},{page:'budget',label:'Budget'},{page:'csi',label:'CSI Schedule'}];
+function workflowPillsHTML(active){
+  return WORKFLOW_STEPS.map((s,i)=>
+    `<a href="${hashFor(s.page)}" class="${s.page===active?'on':''}"
+       ${s.page===active?'aria-current="page"':''}
+       onclick="event.preventDefault();go('${s.page}')"><span class="n">${i+1}</span>${s.label}</a>`).join('');
+}
+function paintWorkflowPills(active){
+  document.querySelectorAll('[data-wf-pills]').forEach(host=>{
+    host.innerHTML=workflowPillsHTML(active);
+  });
+}
+
+/* Home is the personal dashboard now (app/home.js), not a copy of the two
+   indexes. It keeps `index` fresh because the row menus and status writes
+   still read it. */
 async function renderHome(){
   index=(await sGet('budgets-index'))||[];
-  paintHome();
-  // The investment analyses render as their own list below the budgets; a
-  // failure there must never blank the budget list, so it renders separately.
-  if(window.FSInvestmentUI)
-    FSInvestmentUI.renderListInto(document.getElementById('homeAnalyses'),{embedded:true});
+  if(window.FSHome)FSHome.show();
+}
+
+/* A budget was created, deleted or repriced: refresh both surfaces that show
+   budgets. Callers used to get this for free from renderHome(), because Home
+   WAS the list; it is not any more, so the refresh has to be explicit. */
+async function refreshBudgetSurfaces(){
+  index=(await sGet('budgets-index'))||[];
+  paintBudgets();
+  if(window.FSHome){FSHome.invalidate();if(currentPage==='home')FSHome.show();}
 }
 function homeRows(){
   const q=homeView.q.trim().toLowerCase();
@@ -3085,7 +3682,10 @@ const HOME_GROUPS={
             return m?({BD:'BD — Business Development',OP:'OP — Operations',
                        AS:'AS — Assessment',TST:'TST — Test'}[m[1]]||m[1]):'Other';}},
   type:   {label:'Type', of:x=>(x.type||'').trim()||'No Type'},
-  status: {label:'Status', of:x=>normStatus(x.status)}
+  status: {label:'Status', of:x=>normStatus(x.status)},
+  // Records saved before ownership tracking have no creator; they group under
+  // a placeholder that sorts last rather than pretending to be a person.
+  user:   {label:'User', of:x=>(x.createdByName||'').trim()||'No User'}
 };
 // "No Address" / "No Type" are placeholders for missing data, not real groups, so
 // they are pinned last rather than landing wherever the alphabet puts them.
@@ -3157,68 +3757,84 @@ function closeStatusMenu(){
   stMenuBtn=null;
 }
 async function setEntityStatus(kind,id,status){
+  // The open budget: local edit + dirty flag, persisted by Save. Never a PUT,
+  // which would also be wrong for a budget that has no ID yet.
+  if(kind==='budget-doc'){
+    if(!doc)return;
+    setStatus(status);
+    paintBudgetStatusChips();
+    return;
+  }
   try{
     await api(kind==='budget'?'budget/'+encodeURIComponent(id):'investment-analysis/'+id,
       {method:'PUT',body:JSON.stringify({status})});
     if(kind==='budget'){
       if(doc&&doc.projectId===id){
         doc.status=status;
-        const sel=document.getElementById('bStatus');if(sel)sel.value=status;
+        paintBudgetStatusChips();
       }
       const row=index.find(x=>x.projectId===id);if(row)row.status=status;
-      if(currentPage==='home')paintHome();
+      if(currentPage==='home'||currentPage==='budgets')paintBudgets();
     }else{
       if(window.FSInvestmentUI)FSInvestmentUI._statusApplied(id,status);
       if(currentPage==='home'&&window.FSInvestmentUI)
-        FSInvestmentUI.renderListInto(document.getElementById('homeAnalyses'),{embedded:true});
+        if(window.FSHome)FSHome.invalidate();
       else if(currentPage==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
     }
     toast('Status updated to '+status+'.');
   }catch(e){toast('Could not update the status — '+e.message);}
 }
 
-function paintHome(){
-  const rows=homeRows(),b=document.getElementById('homeBody');b.innerHTML='';
-  const cards=document.getElementById('homeCards');
-  const cardsMode=budgetView()==='cards';
-  document.getElementById('homeBudgetsCard').setAttribute('data-density',
-    budgetView()==='compact'?'compact':'comfortable');
-  document.querySelector('#page-home .tbl').style.display=cardsMode?'none':'';
-  cards.classList.toggle('on',cardsMode&&rows.length>0);
-  cards.innerHTML='';
-  document.getElementById('homeEmpty').style.display=rows.length?'none':'block';
-  document.getElementById('homeEmptyBig').textContent=index.length?'Nothing matches':'No budgets yet';
-  document.getElementById('homeEmptyMsg').textContent=index.length
-    ?'No budgets match this search or filter.'
-    :'Create one to get started. Budgets snapshot the pricing library at creation.';
-  document.getElementById('homeCount').textContent=index.length
-    ?rows.length+' of '+index.length+(index.length===1?' budget':' budgets'):'—';
+function paintHome(){ paintBudgets(); }
+
+/* Paints every mounted budgets list from the one filtered/sorted row set, so
+   Home and the Budgets page always agree. `p` is the id prefix of a list. */
+function paintBudgets(){
+  const rows=homeRows();
   const groups=groupedRows(rows);
-  if(cardsMode){
-    if(groups)groups.forEach(gr=>{
-      cards.insertAdjacentHTML('beforeend',`<div class="grp-lab">${esc(gr.key)}
-        <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'} · ${usd(gr.contract)} contract</span></div>`);
-      gr.rows.forEach(x=>cards.insertAdjacentHTML('beforeend',homeCard(x)));
-    });
-    else rows.forEach(x=>cards.insertAdjacentHTML('beforeend',homeCard(x)));
-    return;
-  }
-  if(groups){
-    groups.forEach(gr=>{
-      // Totals sit in the Contract Sum and Total Project Cost columns,
-      // matching the division headers on the budget grid.
-      b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="3" style="padding-left:22px">${esc(gr.key)}
-        <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'}</span></td>
-        <td class="calc r strong">${usd(gr.contract)}</td><td class="calc r strong">${usd(gr.project)}</td>
-        <td></td><td class="no-print"></td></tr>`);
-      gr.rows.forEach(homeRow);
-    });
-  } else rows.forEach(homeRow);
+  const cardsMode=budgetView()==='cards';
+  BUDGET_LIST_PREFIXES.forEach(p=>{
+    const card=document.getElementById(p+'BudgetsCard');
+    if(!card)return;                       // that list is not mounted
+    const b=document.getElementById(p+'Body');
+    const cards=document.getElementById(p+'Cards');
+    b.innerHTML='';cards.innerHTML='';
+    card.setAttribute('data-density',budgetView()==='compact'?'compact':'comfortable');
+    card.querySelector('.tbl').style.display=cardsMode?'none':'';
+    cards.classList.toggle('on',cardsMode&&rows.length>0);
+    document.getElementById(p+'Empty').style.display=rows.length?'none':'block';
+    document.getElementById(p+'EmptyBig').textContent=index.length?'Nothing matches':'No budgets yet';
+    document.getElementById(p+'EmptyMsg').textContent=index.length
+      ?'No budgets match this search or filter.'
+      :'Create one to get started. Budgets snapshot the pricing library at creation.';
+    document.getElementById(p+'Count').textContent=index.length
+      ?rows.length+' of '+index.length+(index.length===1?' budget':' budgets'):'—';
+    if(cardsMode){
+      if(groups)groups.forEach(gr=>{
+        cards.insertAdjacentHTML('beforeend',`<div class="grp-lab">${esc(gr.key)}
+          <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'} · ${usd(gr.contract)} contract</span></div>`);
+        gr.rows.forEach(x=>cards.insertAdjacentHTML('beforeend',homeCard(x)));
+      });
+      else rows.forEach(x=>cards.insertAdjacentHTML('beforeend',homeCard(x)));
+      return;
+    }
+    if(groups){
+      groups.forEach(gr=>{
+        // Totals sit in the Contract Sum and Total Project Cost columns,
+        // matching the division headers on the budget grid.
+        b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4" style="padding-left:22px">${esc(gr.key)}
+          <span class="shut">${gr.rows.length} ${gr.rows.length===1?'budget':'budgets'}</span></td>
+          <td class="calc r strong">${usd(gr.contract)}</td><td class="calc r strong">${usd(gr.project)}</td>
+          <td></td><td class="no-print"></td></tr>`);
+        gr.rows.forEach(x=>b.insertAdjacentHTML('beforeend',homeRowHTML(x)));
+      });
+    } else rows.forEach(x=>b.insertAdjacentHTML('beforeend',homeRowHTML(x)));
+  });
   paintHomeSortArrows();
 }
 function homeCard(x){
   return `<div class="hcard" onclick="openBudget('${x.projectId}')">
-    <div class="hc-id">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</div>
+    <div class="hc-id">${x.createdByName?creatorAvatar(x.createdByName,x.createdByAvatar)+' ':''}${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</div>
     <div class="hc-name">${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</div>
     <div class="hc-row"><span>Contract Sum</span><span class="v">${usd(x.contractSum||0)}</span></div>
     <div class="hc-row"><span>Total Project</span><span class="v">${usd(x.projectCost||0)}</span></div>
@@ -3227,10 +3843,13 @@ function homeCard(x){
     <button class="rowmenu-btn hc-menu" data-pid="${esc(x.projectId)}" aria-haspopup="menu" aria-expanded="false"
       aria-label="Actions for ${esc(x.projectId)}" onclick="event.stopPropagation();openRowMenu(this)">⋮</button></div>`;
 }
-function homeRow(x){
-  document.getElementById('homeBody').insertAdjacentHTML('beforeend',
+// Returns the row rather than writing it, so every mounted list can paint the
+// same markup into its own tbody.
+function homeRowHTML(x){
+  return (
     `<tr class="clickable" onclick="openBudget('${x.projectId}')">
-      <td class="mono" style="padding-left:22px;font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
+      <td class="no-print" style="padding-left:22px">${creatorAvatar(x.createdByName,x.createdByAvatar)}</td>
+      <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
       <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
       <td>${statusChip(x.status,'budget',x.projectId)}</td>
       <td class="calc r">${usd(x.contractSum||0)}</td>
@@ -3240,11 +3859,29 @@ function homeRow(x){
         aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${esc(x.projectId)}"
         onclick="event.stopPropagation();openRowMenu(this)">⋮</button></td></tr>`);
 }
+/* The budget's status, as the same chip the analysis editor and both lists use.
+   Clicking it opens the shared status menu, so editing still works exactly as
+   the old select did — setStatus() remains the single write path. */
+function paintBudgetStatusChips(){
+  // 'budget-doc' marks the editor's own chip: it edits the open document and
+  // marks it dirty, exactly as the old select did, so an unsaved status change
+  // still goes through Save and still raises the unsaved-changes warning. The
+  // list chips keep kind 'budget' and write straight through the API.
+  const html=doc?statusChip(doc.status,'budget-doc',doc.projectId||''):'';
+  ['iStatusHost','bStatusHost','cStatusHost'].forEach(id=>{
+    const h=document.getElementById(id);
+    if(h)h.innerHTML=html;
+  });
+}
 function paintHomeSortArrows(){
-  document.querySelectorAll('#homeHead th[data-sort]').forEach(th=>{
-    const on=th.dataset.sort===homeView.sort;
-    th.classList.toggle('sorted',on);
-    th.setAttribute('data-arrow',on?(homeView.dir<0?'▾':'▴'):'');
+  BUDGET_LIST_PREFIXES.forEach(p=>{
+    const head=document.getElementById(p+'Head');
+    if(!head)return;
+    head.querySelectorAll('th[data-sort]').forEach(th=>{
+      const on=th.dataset.sort===homeView.sort;
+      th.classList.toggle('sorted',on);
+      th.setAttribute('data-arrow',on?(homeView.dir<0?'▾':'▴'):'');
+    });
   });
 }
 function homeSort(k){
@@ -3252,9 +3889,12 @@ function homeSort(k){
   else{homeView.sort=k;homeView.dir=(k==='updated'||k==='contractSum'||k==='projectCost')?-1:1;}
   paintHome();
 }
-function enableDocNav(){
-  ['nav-input','nav-budget','nav-csi'].forEach(id=>{document.getElementById(id).disabled=false;});
-}
+/* Inputs / Budget / CSI Schedule left the global nav — they are reached only
+   through the workflow pills, which render only while a budget is open. There
+   is nothing left to enable, so this is kept as the single place that used to
+   own that state rather than scattering the removal across its callers. */
+function enableDocNav(){ /* no global workflow tabs to enable any more */ }
+function disableDocNav(){ /* likewise */ }
 /* ============ BUDGET TEMPLATES ============
    The template system is the authoritative source of new-budget defaults
    (docs/DATA_CONTRACT.md). A template is edited by loading its document into the
@@ -3385,7 +4025,7 @@ function exitTemplateEdit(){
   if(!confirmDiscard())return;
   templateEdit=null;doc=null;dirty=false;selected.clear();
   renderTemplateBanner();
-  ['nav-input','nav-budget','nav-csi'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
+  disableDocNav();
   go('pricing');
 }
 async function publishTemplate(){
@@ -3478,10 +4118,16 @@ async function openBudget(pid,page){
    shared element positioned from the trigger, which keeps "only one open" true
    by construction and survives paintHome() rebuilding every row. */
 let rowMenuTrigger=null,versionsReturn=null,versionsPid=null;
-const ROW_ACTIONS=[{act:'edit',label:'Edit'},
-                   {act:'reprice',label:'Update Pricing'},
-                   {act:'versions',label:'Versions'},
-                   {act:'sep'},{act:'delete',label:'Delete',danger:true}];
+/* The pin label reads as the action it performs, so it flips per row — hence
+   a function rather than a constant list. */
+function rowActions(pid){
+  const pinned=window.FSHome&&FSHome.isPinned('budget',pid);
+  return [{act:'edit',label:'Edit'},
+          {act:'pin',label:pinned?'Unpin From Home':'Pin to Home'},
+          {act:'reprice',label:'Update Pricing'},
+          {act:'versions',label:'Versions'},
+          {act:'sep'},{act:'delete',label:'Delete',danger:true}];
+}
 function rowMenuItems(){return [...document.querySelectorAll('#rowMenu .rowmenu-item')];}
 function openRowMenu(btn){
   const wasOpen=rowMenuTrigger===btn;
@@ -3489,7 +4135,7 @@ function openRowMenu(btn){
   if(wasOpen)return;                       // the trigger toggles its own menu
   const m=document.getElementById('rowMenu');
   m.dataset.pid=btn.dataset.pid;           // never interpolated into markup
-  m.innerHTML=ROW_ACTIONS
+  m.innerHTML=rowActions(btn.dataset.pid)
     .map(a=>a.act==='sep'?'<div class="rowmenu-sep"></div>'
     :`<button class="rowmenu-item${a.danger?' danger':''}" role="menuitem" tabindex="-1" data-act="${a.act}">${a.label}</button>`).join('');
   rowMenuItems().forEach(el=>{el.onclick=()=>rowMenuAction(el.dataset.act);});
@@ -3512,6 +4158,11 @@ function rowMenuAction(act){
   const pid=document.getElementById('rowMenu').dataset.pid,t=rowMenuTrigger;
   versionsReturn=t;
   closeRowMenu(act==='delete');            // the other two navigate away from the row
+  if(act==='pin'){
+    const on=window.FSHome&&FSHome.togglePin('budget',pid);
+    toast(on?('Pinned '+pid+' to Home.'):('Unpinned '+pid+' from Home.'));
+    return;
+  }
   if(act==='edit')openBudget(pid);
   else if(act==='reprice')repriceFromHome(pid);
   else if(act==='versions')openVersions(pid);
@@ -3604,9 +4255,8 @@ async function deleteBudget(pid){
   // version history, and restores it if the same project ID is saved again.
   if(!confirm('Delete '+pid+'?\n\nIt will be removed from your budgets list. Its saved version history is kept, and an administrator can restore it.'))return;
   try{await sDel('budget-'+pid);}catch(e){toast('Delete failed: '+e.message);return;}
-  if(doc&&doc.projectId===pid){doc=null;dirty=false;
-    ['nav-input','nav-budget','nav-csi'].forEach(id=>{document.getElementById(id).disabled=true;});}
-  renderHome();toast('Deleted '+pid);
+  if(doc&&doc.projectId===pid){doc=null;dirty=false;disableDocNav();}
+  refreshBudgetSurfaces();toast('Deleted '+pid);
 }
 
 /* ============ FORMS ============ */
@@ -4234,8 +4884,7 @@ function renderSummary(){
   document.getElementById('mYield').textContent='Yield (net inc) '+(p.project?(100*g.netYr/p.project).toFixed(1)+'%':'—');
   document.getElementById('mPricing').textContent='Pricing '+doc.pricingVersion+(pricingFromApi?'':' · built-in fallback');
   document.getElementById('mPricing').className='badge'+(pricingFromApi?'':' warn');
-  const st=document.getElementById('bStatus');
-  if(st&&st.value!==normStatus(doc.status))st.value=normStatus(doc.status);
+  paintBudgetStatusChips();
   document.getElementById('testBanner').style.display=isTest(doc.projectId)?'flex':'none';
   document.getElementById('sUnits').textContent=num(tu);
   document.getElementById('sRev').textContent=usd(g.netYr);
@@ -5390,18 +6039,14 @@ function wireDelegates(){
     const btn=e.target.closest('[data-cat-add]');if(!btn)return;
     catAdd(btn.dataset.code,btn.dataset.title);
   });
-  document.getElementById('homeHead').addEventListener('click',e=>{
-    const th=e.target.closest('th[data-sort]');if(!th)return;homeSort(th.dataset.sort);
-  });
   // Remembered export options: any change in the budget export modal becomes
   // the account default when Settings → Exports says to remember.
   document.querySelectorAll('#exportModal input[type=checkbox]').forEach(c=>
     c.addEventListener('change',()=>rememberExportOptions('budget',sel())));
-  document.getElementById('homeSearch').addEventListener('input',e=>{homeView.q=e.target.value;paintHome();});
-  document.getElementById('homeStatus').addEventListener('change',e=>{homeView.status=e.target.value;paintHome();});
-  document.getElementById('homeGroup').addEventListener('change',e=>{homeView.group=e.target.value;paintHome();});
+  mountBudgetsList('budgets','budgetsHost');
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();closeNewBudget();closeStatusMenu();return;}
+    if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();closeNewBudget();closeStatusMenu();
+      if(window.FSFeedback)FSFeedback.close();return;}
     // Cmd/Ctrl+K opens the global search palette from anywhere in the app.
     if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();palToggle();return;}
     // Cmd/Ctrl+S saves rather than letting the browser offer to save the page.
@@ -5542,8 +6187,11 @@ const BOOT_STAGES=[
   [120000,'Taking longer than usual. Hang on — the app will load whatever it can, and the red banner will say if the server is actually unreachable.']
 ];
 let bootTimers=[];
-function renderVersionPage(){
-  var el=document.getElementById('versionContent');if(!el)return;
+/* The environment diagnostics, as label/value pairs. Shared: the Version page
+   paints them, and a bug report carries them, so what a reporter sends is
+   exactly what the page would have shown them. Values are HTML-escaped here;
+   feedback.js unescapes for storage and email. */
+function versionInfoRows(){
   var renderer=window.__exportRenderer||'engine';
   var invConst=window.FSInvestmentUI?'before-tax-1.1.0':'--';
   var pv=pricing?pricing.version:'--';
@@ -5551,7 +6199,7 @@ function renderVersionPage(){
   var ua=navigator.userAgent;
   var host=location.hostname;
   var proto=location.protocol;
-  var rows=[
+  return [
     ['Application','Finishes Solutions Budgeting Suite'],
     ['Environment',host.includes('staging')?'Staging':host.includes('localhost')||host.includes('127.')?'Local Development':'Production'],
     ['Host',esc(host)],
@@ -5569,14 +6217,35 @@ function renderVersionPage(){
     ['User Agent',esc(ua)],
     ['Page Loaded',new Date().toLocaleString()]
   ];
-  var html='<div style="background:var(--white);border:1px solid var(--ink-200);border-radius:10px;padding:18px 20px;margin-top:18px">'
-    +'<table style="width:100%;border-collapse:collapse;font-size:13px">';
+}
+
+function renderVersionPage(){
+  var el=document.getElementById('versionContent');if(!el)return;
+  var rows=versionInfoRows();
+  var html='<div style="background:var(--white);border:1px solid var(--ink-200);border-radius:10px;padding:18px 20px;margin-top:18px;position:relative">'
+    +'<button onclick="copyVersionInfo()" title="Copy to Clipboard" style="position:absolute;top:14px;right:14px;background:none;border:1px solid var(--ink-200);border-radius:6px;padding:6px 8px;cursor:pointer;color:var(--ink-500);display:flex;align-items:center;gap:5px;font-size:11px;transition:background .15s,color .15s" onmouseover="this.style.background=\'var(--ink-50)\';this.style.color=\'var(--ink-800)\'" onmouseout="this.style.background=\'none\';this.style.color=\'var(--ink-500)\'">'
+    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>'
+    +'Copy</button>'
+    +'<table id="versionTable" style="width:100%;border-collapse:collapse;font-size:13px">';
   rows.forEach(function(r){
     html+='<tr><td style="padding:8px 10px;border-bottom:1px solid var(--ink-100);color:var(--ink-500);white-space:nowrap;width:200px;vertical-align:top">'+r[0]+'</td>'
       +'<td style="padding:8px 10px;border-bottom:1px solid var(--ink-100);font-family:var(--fm);font-size:12px;color:var(--ink-800);word-break:break-all">'+r[1]+'</td></tr>';
   });
   html+='</table></div>';
   el.innerHTML=html;
+}
+function copyVersionInfo(){
+  var tbl=document.getElementById('versionTable');if(!tbl)return;
+  var lines=[];
+  tbl.querySelectorAll('tr').forEach(function(tr){
+    var cells=tr.querySelectorAll('td');
+    if(cells.length>=2) lines.push(cells[0].textContent.trim()+': '+cells[1].textContent.trim());
+  });
+  var text=lines.join('\n');
+  navigator.clipboard.writeText(text).then(function(){
+    var btn=tbl.parentElement.querySelector('button');
+    if(btn){var orig=btn.innerHTML;btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Copied';setTimeout(function(){btn.innerHTML=orig;},1500);}
+  });
 }
 
 function startBoot(){

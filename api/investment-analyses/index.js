@@ -12,26 +12,52 @@ const { getPool, sql } = require('../shared/db');
 const { getPrincipal } = require('../shared/auth');
 const { parts, grossIncome, totUnits, nz } = require('../shared/budget-calc');
 const { GUID_RX, jsonRes } = require('../shared/investment-persistence');
+const { ensureUser } = require('../shared/users');
+const { features } = require('../shared/schema');
 const D = require('../shared/investment/defaults');
 
 const ID_RX = /^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
+const FULL_VISIBILITY_ROLES = new Set(['director', 'super_admin']);
 
 module.exports = async function (context, req) {
   const pool = await getPool();
+  const principal = getPrincipal(req);
+  const userId = principal ? (principal.userId || null) : null;
 
   if (req.method === 'GET') {
+    // Roles only exist once sql/migrate_roles_and_ownership.sql has run. Before
+    // that every account reads as the default 'user', so applying the filter
+    // would hide analyses that used to be visible — leave it off entirely.
+    const f = await features(pool);
+    let appRole = 'user';
+    if (userId) {
+      try {
+        const row = await ensureUser(pool, principal, {});
+        if (row) appRole = row.AppRole || 'user';
+      } catch (e) { /* default to user */ }
+    }
+    const swaSuper = principal && Array.isArray(principal.userRoles) && principal.userRoles.includes('super_admin');
+    const canSeeAll = !f.usersAppRole || swaSuper || FULL_VISIBILITY_ROLES.has(appRole);
+
     const projectId = (req.query.projectId || '').toUpperCase();
     if (projectId && !ID_RX.test(projectId)) { context.res = jsonRes(400, { error: 'bad_request', message: 'Invalid project ID filter.' }); return; }
     const rq = pool.request();
     let where = 'a.IsDeleted = 0';
     if (projectId) { rq.input('pid', sql.VarChar(16), projectId); where += ' AND a.ProjectId = @pid'; }
+    if (!canSeeAll && userId) {
+      rq.input('uid', sql.NVarChar(128), userId);
+      where += ' AND (a.CreatedById = @uid OR a.CreatedById IS NULL)';
+    }
     const r = await rq.query(
       `SELECT a.AnalysisId, a.ProjectId, a.Name, a.Status, a.CurrentVersionNumber,
               a.SourceBudgetVersionId, bv.VersionNumber AS SourceBudgetVersionNumber,
               a.PurchasePrice, a.Year1NOI, a.InitialEquity, a.FinalYearEquityIRR,
-              a.OptimalHoldingYear, a.CalculationVersion, a.CreatedAt, a.UpdatedAt
+              a.OptimalHoldingYear, a.CalculationVersion,
+              a.CreatedById, a.CreatedByName, a.CreatedAt, a.UpdatedAt,
+              JSON_VALUE(cu.SettingsDoc, '$.avatarColor') AS CreatedByAvatar
        FROM dbo.InvestmentAnalyses AS a
        LEFT JOIN dbo.BudgetVersions AS bv ON bv.Id = a.SourceBudgetVersionId
+       LEFT JOIN dbo.Users AS cu ON cu.UserId = a.CreatedById
        WHERE ${where}
        ORDER BY a.UpdatedAt DESC`);
     context.res = jsonRes(200, r.recordset.map(x => ({
@@ -44,6 +70,7 @@ module.exports = async function (context, req) {
       finalYearEquityIRR: x.FinalYearEquityIRR === null ? null : +x.FinalYearEquityIRR,
       optimalHoldingYear: x.OptimalHoldingYear,
       calculationVersion: x.CalculationVersion,
+      createdById: x.CreatedById || null, createdByName: x.CreatedByName || null, createdByAvatar: x.CreatedByAvatar || null,
       createdAt: x.CreatedAt, updatedAt: x.UpdatedAt
     })));
     return;
@@ -51,8 +78,6 @@ module.exports = async function (context, req) {
 
   // ---- POST: create
   const body = req.body || {};
-  const principal = getPrincipal(req);
-  const userId = principal ? (principal.userId || null) : null;
   const userName = principal ? (principal.userDetails || null) : null;
 
   let input, projectId = null, sourceBudgetVersionId = null;

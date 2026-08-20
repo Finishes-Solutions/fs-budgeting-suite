@@ -16,17 +16,31 @@ const ACCENTS = ['green', 'blue', 'violet', 'graphite', 'red', 'orange'];
 // own choice, so budgets can be a list while analyses are cards. (This
 // replaced the earlier homeView + tableDensity pair — sanitize maps them.)
 const LIST_VIEWS = ['comfortable', 'compact', 'cards'];
+// Theme packs are alternate visual PRESENTATIONS of the same product — paint
+// only, scoped in CSS to html[data-skin=<pack>]. 'default' is the Finishes
+// Solutions appearance. Packs are a super_admin preview: the client decides by
+// role whether to apply a stored pack, so an account that loses the role stops
+// seeing one without its setting being rewritten.
+const THEME_PACKS = ['default', 'ramp'];
 const HEX_RX = /^#[0-9a-fA-F]{6}$/;
+// Pinned records on Home. Two lists of ids — budget project ids and analysis
+// GUIDs — so a pin follows the account to any signed-in browser. Bounded on
+// both count and id length: this document is stored per user and read on every
+// bootstrap, and an unbounded list would let one account bloat it.
+const PIN_MAX = 50;
+const PIN_ID_MAX = 64;
 
 const DEFAULT_SETTINGS = {
   theme: 'light',
+  themePack: 'default',
   timeFormat: '12h',
   accentColor: 'green',
   avatarColor: null,          // null = the app default (accent-colored)
   budgetView: 'comfortable',
   analysisView: 'comfortable',
   rememberExport: false,
-  exportOptions: {}           // { budget: {..bools}, analysis: {..bools} }
+  exportOptions: {},          // { budget: {..bools}, analysis: {..bools} }
+  pinned: { budget: [], analysis: [] }
 };
 
 function pickEnum(v, allowed, dflt) { return allowed.includes(v) ? v : dflt; }
@@ -48,12 +62,33 @@ function cleanBoolMap(v) {
   return out;
 }
 
+// A pin list: strings only, trimmed, de-duplicated, order preserved (most
+// recently pinned first), and capped. Anything else is dropped rather than
+// stored, so the document a client gets back is always safe to render.
+function cleanIdList(v) {
+  const out = [];
+  const seen = Object.create(null);
+  if (Array.isArray(v)) {
+    for (const raw of v) {
+      if (typeof raw !== 'string') continue;
+      const id = raw.trim();
+      if (!id || id.length > PIN_ID_MAX || seen[id]) continue;
+      seen[id] = 1;
+      out.push(id);
+      if (out.length >= PIN_MAX) break;
+    }
+  }
+  return out;
+}
+
 function sanitizeSettings(input) {
   const s = input && typeof input === 'object' && !Array.isArray(input) ? input : {};
   const ex = s.exportOptions && typeof s.exportOptions === 'object' && !Array.isArray(s.exportOptions)
     ? s.exportOptions : {};
+  const pin = s.pinned && typeof s.pinned === 'object' && !Array.isArray(s.pinned) ? s.pinned : {};
   return {
     theme: pickEnum(s.theme, THEMES, DEFAULT_SETTINGS.theme),
+    themePack: pickEnum(s.themePack, THEME_PACKS, DEFAULT_SETTINGS.themePack),
     timeFormat: pickEnum(s.timeFormat, TIME_FORMATS, DEFAULT_SETTINGS.timeFormat),
     accentColor: (typeof s.accentColor === 'string' && HEX_RX.test(s.accentColor))
       ? s.accentColor.toLowerCase()
@@ -62,7 +97,8 @@ function sanitizeSettings(input) {
     budgetView: LIST_VIEWS.includes(s.budgetView) ? s.budgetView : legacyView(s),
     analysisView: LIST_VIEWS.includes(s.analysisView) ? s.analysisView : legacyView(s),
     rememberExport: s.rememberExport === true,
-    exportOptions: { budget: cleanBoolMap(ex.budget), analysis: cleanBoolMap(ex.analysis) }
+    exportOptions: { budget: cleanBoolMap(ex.budget), analysis: cleanBoolMap(ex.analysis) },
+    pinned: { budget: cleanIdList(pin.budget), analysis: cleanIdList(pin.analysis) }
   };
 }
 

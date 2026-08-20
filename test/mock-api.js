@@ -18,7 +18,16 @@ const INV_D = require('../api/shared/investment/defaults');
 const crypto = require('crypto');
 // Per-user settings validation: the REAL contract module (dependency-free).
 const usc = require('../api/shared/user-settings-contract');
+// Same for feedback: the mock validates and words things through the module
+// the deployed endpoint uses, so a suite cannot pass against friendlier rules.
+const fbc = require('../api/shared/feedback');
 const mockUsers = new Map();   // userId -> profile + settings row
+const mockFeedback = [];       // dbo.Feedback stand-in, newest first
+let nextFeedbackId = 1;
+// Set by a suite to make the mailer look unconfigured or broken.
+// Default 'disabled' because that is production today: the row is stored, the
+// email is not sent, and the button hands reports to the user's mail client.
+let mockMailMode = 'disabled'; // 'sent' | 'failed' | 'disabled'
 const mockActivity = [];       // newest first, like the timeline index
 const GUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // id -> {projectId, name, status, sourceBudgetVersionNumber, input, result,
@@ -28,17 +37,23 @@ const invHash = (rawInput, sourceBudgetVersionId) =>
   crypto.createHash('sha256').update(canonical({ rawInput,
     sourceBudgetVersionId: sourceBudgetVersionId || null,
     calculationVersion: INV_C.CALCULATION_VERSION }), 'utf8').digest('hex');
-const invSummary = a => ({
-  analysisId: a.id, projectId: a.projectId, name: a.name, status: a.status,
-  currentVersionNumber: a.currentVersionNumber,
-  sourceBudgetVersionNumber: a.sourceBudgetVersionNumber,
-  purchasePrice: a.result ? a.result.summary.purchasePrice : null,
-  year1NOI: a.result ? a.result.summary.year1NOI : null,
-  initialEquity: a.result ? a.result.summary.initialEquity : null,
-  finalYearEquityIRR: a.result ? a.result.summary.finalYearEquityIRR : null,
-  optimalHoldingYear: a.result ? a.result.summary.optimalHoldingYear : null,
-  calculationVersion: INV_C.CALCULATION_VERSION,
-  createdAt: a.createdAt, updatedAt: a.updatedAt });
+const invSummary = a => {
+  const uid = a.createdById || null;
+  const u = uid ? mockUsers.get(uid) : null;
+  return {
+    analysisId: a.id, projectId: a.projectId, name: a.name, status: a.status,
+    currentVersionNumber: a.currentVersionNumber,
+    sourceBudgetVersionNumber: a.sourceBudgetVersionNumber,
+    purchasePrice: a.result ? a.result.summary.purchasePrice : null,
+    year1NOI: a.result ? a.result.summary.year1NOI : null,
+    initialEquity: a.result ? a.result.summary.initialEquity : null,
+    finalYearEquityIRR: a.result ? a.result.summary.finalYearEquityIRR : null,
+    optimalHoldingYear: a.result ? a.result.summary.optimalHoldingYear : null,
+    calculationVersion: INV_C.CALCULATION_VERSION,
+    createdById: uid, createdByName: a.createdByName || null,
+    createdByAvatar: u && u.settings ? (u.settings.avatarColor || null) : null,
+    createdAt: a.createdAt, updatedAt: a.updatedAt };
+};
 const PORT = +(process.env.PORT || 8100);
 // NO_API=1 serves the frontend with every /api/* route dead, which is how the offline
 // banner and the built-in pricing fallback get exercised (suite-01 runs against this).
@@ -229,6 +244,35 @@ http.createServer((req, res) => {
     if (!principal.clientPrincipal.userRoles.includes('super_admin')) {
       res.writeHead(403); return res.end('super_admin required');
     }
+    // ?scope=activity is the filtered, paged activity log — folded into this
+    // endpoint because a separate function did not register on the host.
+    const aq = new URL(req.url, 'http://x').searchParams;
+    if ((aq.get('scope') || '') === 'activity') {
+      let filtered = mockActivity.slice();
+      if (aq.get('from')) {
+        const from = new Date(aq.get('from')).getTime();
+        filtered = filtered.filter(r => new Date(r.createdAt).getTime() >= from);
+      }
+      if (aq.get('to')) {
+        const to = new Date(aq.get('to')).getTime();
+        filtered = filtered.filter(r => new Date(r.createdAt).getTime() <= to);
+      }
+      if (aq.get('userId')) filtered = filtered.filter(r => r.userId === aq.get('userId'));
+      const total = filtered.length;
+      const limit = Math.min(Math.max(parseInt(aq.get('limit'), 10) || 500, 1), 5000);
+      const offset = Math.max(parseInt(aq.get('offset'), 10) || 0, 0);
+      return json(res, 200, {
+        events: filtered.slice(offset, offset + limit).map(r => ({
+          eventType: r.eventType, entityType: r.entityType, entityId: r.entityId,
+          createdAt: r.createdAt,
+          userName: principal.clientPrincipal.userDetails,
+          userId: r.userId || principal.clientPrincipal.userId
+        })),
+        total,
+        users: [...mockUsers.entries()].map(([id, u]) => ({
+          userId: id, name: u.displayName || u.email || 'Unknown' }))
+      });
+    }
     const budgetList = [...budgets.values()].filter(b => !b.deleted && !b.meta.projectId.startsWith('TST-'));
     const analysisList = [...invAnalyses.values()].filter(a => !a.deleted && !a.id.startsWith('TST-'));
     const bStatus = {};
@@ -257,7 +301,47 @@ http.createServer((req, res) => {
       recentActivity: mockActivity.slice(0, 50).map(r => ({
         eventType: r.eventType, entityType: r.entityType, entityId: r.entityId,
         createdAt: r.createdAt, userName: principal.clientPrincipal.userDetails
-      }))
+      })),
+      // Same six series the real query builds, from the same two sources:
+      // creations off the records (there is no 'created' event), deletions and
+      // everything else off the activity log.
+      activityByDay: (() => {
+        const byDay = {};
+        const day = d => byDay[d] || (byDay[d] = { day: d, total: 0, logins: 0, saves: 0,
+          exports: 0, budgetsCreated: 0, budgetsDeleted: 0,
+          analysesCreated: 0, analysesDeleted: 0 });
+        mockActivity.forEach(r => {
+          const e = day(String(r.createdAt).slice(0, 10));
+          e.total++;
+          if (r.eventType === 'login') e.logins++;
+          if (r.eventType === 'budget_save' || r.eventType === 'analysis_save') e.saves++;
+          if (/^export_/.test(r.eventType)) e.exports++;
+          if (r.eventType === 'budget_delete') e.budgetsDeleted++;
+          if (r.eventType === 'analysis_delete') e.analysesDeleted++;
+        });
+        [...budgets.values()].filter(b => !b.meta.projectId.startsWith('TST-'))
+          .forEach(b => { day(String(b.meta.updated || new Date().toISOString()).slice(0, 10)).budgetsCreated++; });
+        [...invAnalyses.values()].filter(a => !a.id.startsWith('TST-'))
+          .forEach(a => { day(String(a.createdAt || new Date().toISOString()).slice(0, 10)).analysesCreated++; });
+        return Object.values(byDay).sort((x, y) => x.day < y.day ? -1 : 1);
+      })(),
+      activityUsers: [...mockUsers.entries()].map(([id, u]) => ({
+        userId: id, name: u.displayName || u.email || 'Unknown' })),
+      topBudgets: budgetList
+        .slice().sort((x, y) => (y.meta.projectCost || 0) - (x.meta.projectCost || 0)).slice(0, 8)
+        .map(x => ({ projectId: x.meta.projectId, name: x.meta.name,
+          contractSum: x.meta.contractSum || 0, projectCost: x.meta.projectCost || 0 }))
+    });
+  }
+
+  // Mock-only: lets a suite make mail look unconfigured or broken, which is
+  // the state the board must render honestly. No counterpart in the real API.
+  if (p === '/api/_mock/mail-mode') {
+    let b = ''; req.on('data', c => b += c);
+    return req.on('end', () => {
+      const m = (b || '').trim();
+      if (['sent', 'failed', 'disabled'].includes(m)) mockMailMode = m;
+      return json(res, 200, { mode: mockMailMode });
     });
   }
 
@@ -265,17 +349,98 @@ http.createServer((req, res) => {
   // Validation is the REAL contract module, so drift is impossible.
   if (p === '/api/user-settings') {
     const uid = principal.clientPrincipal.userId;
+    // ?scope=roles is the Admin page's role management, served from this
+    // endpoint because a dedicated function did not register on the host.
+    const scope = new URL(req.url, 'http://x').searchParams.get('scope') || '';
+    if (scope === 'roles') {
+      if (!principal.clientPrincipal.userRoles.includes('super_admin'))
+        return json(res, 403, { error: 'forbidden', message: 'Requires super_admin role.' });
+      if (req.method === 'GET') {
+        return json(res, 200, [...mockUsers.entries()].map(([id, u]) => ({
+          userId: id, userDetails: u.userDetails || null,
+          displayName: u.displayName || null, email: u.email || null,
+          appRole: u.appRole || 'user', lastSeenAt: u.lastSeenAt, loginCount: u.loginCount })));
+      }
+      if (req.method === 'PUT') {
+        let rb = ''; req.on('data', c => rb += c);
+        return req.on('end', () => {
+          const body = rb ? JSON.parse(rb) : {};
+          const targetId = typeof body.userId === 'string' ? body.userId : '';
+          if (!targetId) return json(res, 400, { error: 'bad_request', message: 'userId is required.' });
+          const valid = ['user', 'manager', 'director', 'super_admin'];
+          if (!valid.includes(body.appRole))
+            return json(res, 400, { error: 'bad_request', message: 'appRole must be one of: ' + valid.join(', ') });
+          const target = mockUsers.get(targetId);
+          if (!target) return json(res, 404, { error: 'not_found', message: 'User not found.' });
+          target.appRole = body.appRole;
+          return json(res, 200, { ok: true, userId: targetId, appRole: body.appRole });
+        });
+      }
+      return json(res, 405, { error: 'method_not_allowed' });
+    }
+    if (scope === 'feedback') {
+      const isAdmin = principal.clientPrincipal.userRoles.includes('super_admin');
+      if (req.method === 'POST') {
+        let rb = ''; req.on('data', c => rb += c);
+        return req.on('end', () => {
+          const parsed = fbc.sanitizeSubmission(rb);
+          if (!parsed.ok) return json(res, 400, { error: 'bad_request', message: parsed.message });
+          const mine = mockFeedback.filter(x => x.userId === uid
+            && (Date.now() - new Date(x.createdAt).getTime()) < 3600000);
+          if (mine.length >= 12)
+            return json(res, 429, { error: 'rate_limited', message: 'That is a lot of reports in one hour.' });
+          const u = mockUsers.get(uid) || {};
+          const row = Object.assign({}, parsed.report, {
+            feedbackId: nextFeedbackId++, userId: uid,
+            userName: u.displayName || u.userDetails || principal.clientPrincipal.userDetails,
+            userEmail: u.email || principal.clientPrincipal.userDetails,
+            status: 'New', adminNotes: null,
+            emailStatus: mockMailMode,
+            emailError: mockMailMode === 'sent' ? null : 'mock mail is ' + mockMailMode,
+            emailedAt: mockMailMode === 'sent' ? new Date().toISOString() : null,
+            createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+          });
+          // Built here so a suite can assert on exactly what would be sent.
+          row.emailSubject = fbc.subjectFor(row);
+          row.emailHtml = fbc.htmlFor(row);
+          mockFeedback.unshift(row);
+          mockActivity.unshift({ eventType: 'feedback_submit', entityType: 'feedback',
+            entityId: String(row.feedbackId), detail: { kind: row.kind, title: row.title },
+            userId: uid, createdAt: new Date().toISOString() });
+          return json(res, 201, { ok: true, feedbackId: row.feedbackId, emailStatus: row.emailStatus });
+        });
+      }
+      if (!isAdmin) return json(res, 403, { error: 'forbidden', message: 'Requires super_admin role.' });
+      if (req.method === 'GET') return json(res, 200, mockFeedback);
+      if (req.method === 'PUT') {
+        let rb = ''; req.on('data', c => rb += c);
+        return req.on('end', () => {
+          const parsed = fbc.sanitizeStatusUpdate(rb);
+          if (!parsed.ok) return json(res, 400, { error: 'bad_request', message: parsed.message });
+          const row = mockFeedback.find(x => x.feedbackId === parsed.update.feedbackId);
+          if (!row) return json(res, 404, { error: 'not_found', message: 'Report not found.' });
+          row.status = parsed.update.status;
+          if (parsed.update.notes !== undefined) row.adminNotes = parsed.update.notes || null;
+          row.updatedAt = new Date().toISOString();
+          return json(res, 200, { ok: true, feedbackId: row.feedbackId, status: row.status });
+        });
+      }
+      return json(res, 405, { error: 'method_not_allowed' });
+    }
     if (!mockUsers.has(uid)) mockUsers.set(uid, {
       userDetails: principal.clientPrincipal.userDetails, displayName: null,
       email: principal.clientPrincipal.userDetails,   // locked to the sign-in account
-      phone: null,
+      phone: null, appRole: 'super_admin',
       settings: {}, firstSeenAt: new Date().toISOString(),
       lastSeenAt: new Date(0).toISOString(), loginCount: 0 });
     const u = mockUsers.get(uid);
     const resp = () => json(res, 200, {
       userDetails: u.userDetails, displayName: u.displayName, email: u.email, phone: u.phone,
-      settings: usc.sanitizeSettings(u.settings),
-      firstSeenAt: u.firstSeenAt, lastSeenAt: u.lastSeenAt, loginCount: u.loginCount });
+      appRole: u.appRole || 'user', settings: usc.sanitizeSettings(u.settings),
+      firstSeenAt: u.firstSeenAt, lastSeenAt: u.lastSeenAt, loginCount: u.loginCount,
+      // The real API answers the same two capabilities here; mockMailMode
+      // stands in for whether the Graph app registration has been set up.
+      features: { feedbackStore: true, feedbackMail: mockMailMode === 'sent' } });
     if (req.method === 'GET') {
       const q = new URL(req.url, 'http://x').searchParams;
       if (/^(1|true)$/i.test(String(q.get('boot') || ''))) {
@@ -283,7 +448,7 @@ http.createServer((req, res) => {
         if ((Date.now() - new Date(u.lastSeenAt).getTime()) / 60000 >= 30) {
           u.loginCount += 1;
           mockActivity.unshift({ eventType: 'login', entityType: null, entityId: null,
-            detail: null, createdAt: new Date().toISOString() });
+            detail: null, userId: uid, createdAt: new Date().toISOString() });
         }
         u.lastSeenAt = new Date().toISOString();
       }
@@ -298,7 +463,7 @@ http.createServer((req, res) => {
         if (body.settings !== undefined)
           u.settings = usc.sanitizeSettings(Object.assign({}, usc.sanitizeSettings(u.settings), body.settings));
         mockActivity.unshift({ eventType: 'settings_update', entityType: null, entityId: null,
-          detail: { changed: Object.keys(body.settings || {}) }, createdAt: new Date().toISOString() });
+          detail: { changed: Object.keys(body.settings || {}) }, userId: uid, createdAt: new Date().toISOString() });
         return resp();
       });
     }
@@ -314,7 +479,7 @@ http.createServer((req, res) => {
         if (!usc.CLIENT_EVENTS.has(String(body.eventType || '')))
           return json(res, 400, { error: 'bad_request', message: 'eventType not allowed' });
         mockActivity.unshift({ eventType: body.eventType, entityType: body.entityType || null,
-          entityId: body.entityId || null, detail: body.detail || null, createdAt: new Date().toISOString() });
+          entityId: body.entityId || null, detail: body.detail || null, userId: principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
         res.writeHead(204); return res.end();
       });
     }
@@ -322,9 +487,14 @@ http.createServer((req, res) => {
   }
 
   if (p === '/api/budgets') {
-    // Address comes off the document, mirroring the JSON_VALUE the real API uses.
     return json(res, 200, [...budgets.values()].filter(x => !x.deleted)
-      .map(x => ({ ...x.meta, address: (x.doc && x.doc.address) || '' })));
+      .map(x => {
+        const uid = x.createdById || null;
+        const u = uid ? mockUsers.get(uid) : null;
+        return { ...x.meta, address: (x.doc && x.doc.address) || '',
+          createdById: uid, createdByName: x.createdByName || null,
+          createdByAvatar: u && u.settings ? (u.settings.avatarColor || null) : null };
+      }));
   }
 
   if (p.startsWith('/api/budget/')) {
@@ -378,10 +548,16 @@ http.createServer((req, res) => {
       const { meta, doc } = body;
       if ((doc.projectId || '').toUpperCase() !== id) { res.writeHead(400); return res.end('id mismatch'); }
       const calc = parts(doc);
+      // The real API reads UpdatedAt off the row, so `updated` is always
+      // present on the list. Seeded values are kept; only a missing one is
+      // filled, so a suite can still plant an old timestamp.
+      if (!meta.updated) meta.updated = new Date().toISOString();
       meta.contractSum = Math.round(calc.contract * 100) / 100;
       meta.projectCost = Math.round(calc.project * 100) / 100;
       const prev = budgets.get(id) || { versions: [] };
-      const entry = { meta, doc, deleted: false, versions: prev.versions };  // PUT restores
+      const entry = { meta, doc, deleted: false, versions: prev.versions,
+        createdById: (prev && prev.createdById) || principal.clientPrincipal.userId,
+        createdByName: (prev && prev.createdByName) || principal.clientPrincipal.userDetails };  // PUT restores
       const last = entry.versions[entry.versions.length - 1];
       let versionCreated = false;
       if (!last || canonical(last.doc) !== canonical(doc)) {
@@ -396,7 +572,8 @@ http.createServer((req, res) => {
       }
       budgets.set(id, entry);
       if (versionCreated) mockActivity.unshift({ eventType: 'budget_save', entityType: 'budget',
-        entityId: id, detail: { versionNumber: entry.versions.length }, createdAt: new Date().toISOString() });
+        entityId: id, detail: { versionNumber: entry.versions.length },
+        userId: principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
       json(res, 200, { ok: true, versionNumber: entry.versions.length, versionCreated });
     });
   }
@@ -505,7 +682,9 @@ http.createServer((req, res) => {
       const now = new Date().toISOString();
       invAnalyses.set(id, { id, projectId, name: input.analysisName, status: 'Draft',
         sourceBudgetVersionNumber, input, result: null, currentVersionNumber: 0,
-        deleted: false, versions: [], createdAt: now, updatedAt: now });
+        deleted: false, versions: [], createdAt: now, updatedAt: now,
+        createdById: principal.clientPrincipal.userId,
+        createdByName: principal.clientPrincipal.userDetails });
       return json(res, 201, { ok: true, analysisId: id, input, currentVersionNumber: 0,
         source: input.source ? { projectId, budgetVersionId: sourceBudgetVersionNumber,
           budgetVersionNumber: sourceBudgetVersionNumber } : null });
@@ -687,7 +866,8 @@ http.createServer((req, res) => {
       a.deleted = false; a.deletedAt = null;
       a.updatedAt = new Date().toISOString();
       if (!unchanged) mockActivity.unshift({ eventType: 'analysis_save', entityType: 'analysis',
-        entityId: id, detail: { versionNumber: a.currentVersionNumber }, createdAt: new Date().toISOString() });
+        entityId: id, detail: { versionNumber: a.currentVersionNumber },
+        userId: principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
       return json(res, 200, { ok: true, versionNumber: a.currentVersionNumber,
         versionCreated: !unchanged, result });
     });

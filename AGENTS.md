@@ -50,6 +50,7 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 |---|---|
 | `app/index.html` | The budget frontend — HTML + inline CSS + inline JS, no build step |
 | `app/investment-analysis.js` / `.css` | The Investment Analysis workflow — external no-build IIFE behind `window.FSInvestmentUI`, wired through an adapter |
+| `app/theme-ramp.css` | The Editorial theme pack — presentation only, every rule scoped to `html[data-skin=ramp]`, loaded after the inline sheet |
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement (first auth gate) |
 | `app/vendor/exceljs.min.js` | ExcelJS 4.4.0, vendored — see [Single sources of truth](#single-sources-of-truth) |
 | `app/assets/` | Logos + favicon set; regenerate with `tools/make-favicons.py`, don't hand-edit |
@@ -84,6 +85,20 @@ custom provider for sign-in.
   accepted failure — do **not** "fix" it by adding a deployment token (see ground
   rule 3). Consequence: per-PR preview environments linger and are cleaned up
   manually in Azure. Details in `docs/HANDOFF.md`.
+- **A NEW `api/<name>/` folder is not reliably picked up by the deployed host.**
+  `api/admin-roles/` answered 404 on staging across two deploys — through a
+  parameterised route and then a flat one — while every established endpoint kept
+  working, its files were present in the deployed tree, no route collided, and the
+  deploy logs showed the API building cleanly. The cause was never reproducible
+  from this repo. So: **prefer extending an endpoint that already deploys over
+  adding a function folder.** Role management is `GET/PUT
+  /api/user-settings?scope=roles` and the activity log is
+  `GET /api/analytics?scope=activity` for exactly this reason. If a new folder is
+  genuinely warranted, deploy it on its own first and confirm it answers before
+  building a feature on top of it. Note the security consequence: a
+  `staticwebapp.config.json` route rule matches paths, not query strings, so a
+  query-parameter scope is gated **only** by the in-function role check — that
+  check becomes the real gate and must not be treated as defence in depth.
 
 ## Database rules
 
@@ -110,6 +125,17 @@ custom provider for sign-in.
 - **Keep `sql/schema.sql` in parity with the migrations**, including constraint
   names. `schema.sql` is what a from-scratch provision runs; the migration is what
   the live database ran. They must describe the same end state.
+- **A deploy lands before its migration, so never name a new column
+  unconditionally.** A migration is run by a human in the portal, minutes or days
+  after the code that needs it ships. SQL referencing a column that is not there
+  yet fails the whole request — that is how a pending migration turns into a blank
+  Home page and a red banner instead of a feature that is merely not on yet.
+  Columns added by a migration are optional until it runs: ask
+  `api/shared/schema.js` what exists and build SQL that names only real columns,
+  falling back to the pre-migration behaviour. Guard the *behaviour* too — a role
+  column that is absent makes every account read as the default role, so applying
+  a role filter then would hide records that used to be visible. Cover the
+  not-yet-migrated shape in tests (`test/schema-probe.test.js`).
 
 ## Frontend invariants (the ones that bite)
 
@@ -139,6 +165,13 @@ custom provider for sign-in.
   guard with `nz()`.
 - **`touch()` / `markDirty()` / `recalc()`** are the change pipeline — call
   `touch()` after mutating the document; don't invent parallel dirty tracking.
+- **Theme packs are paint only.** A pack (Settings → Theme Pack, super_admin)
+  is an alternate appearance of the same product: it may remap tokens and
+  restyle primitives, never move a route, label, control, calculation or
+  permission. Every rule lives in its own file, scoped to `html[data-skin=…]`,
+  so the default appearance cannot regress; the role decides whether a stored
+  pack is applied, and `beforeprint` strips the attribute so exports never
+  inherit one. Details in `docs/HANDOFF.md`.
 - **CSS scoping:** the page is one stylesheet; qualify selectors
   (e.g. `.tbl input.codein`) because broad rules like `.tbl input` win on
   specificity and have caused real clipping bugs.
