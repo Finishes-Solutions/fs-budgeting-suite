@@ -129,9 +129,36 @@ function renderBreakdowns(el){
   el.innerHTML=
     '<div class="dash-card"><h3>Budget Status</h3>'+donutHTML(b.statusBreakdown)+'</div>'
     +'<div class="dash-card"><h3>Analysis Status</h3>'+donutHTML(a.statusBreakdown)+'</div>'
-    +(pj&&pj.available
-      ? '<div class="dash-card"><h3>Project Pipeline</h3>'+donutHTML(pipelineRows(pj))+'</div>'
-      : '');
+    +(pj&&pj.available ? pipelineHTML(pj) : '');
+}
+
+/* The pipeline as a single proportional bar spanning both donut columns: a
+   distribution, read left to right in PIPELINE order — the shape of a pipeline
+   is the information, and sorting it by count destroys that. Stages with
+   nothing in them are dropped from the bar (a zero-width segment is not a
+   fact anyone can see) but the order of the rest is preserved. */
+function pipelineHTML(p){
+  var rows=pipelineRows(p).filter(function(r){return r.count>0;});
+  var total=rows.reduce(function(s,r){return s+r.count;},0);
+  if(!total) return '<div class="dash-card dash-span"><h3>Project Pipeline</h3>'
+    +'<div class="dash-empty-inline">No projects yet.</div></div>';
+  // The legend rides on the title line rather than under the bar: it costs a
+  // whole row otherwise, and this card is buying its height from a neighbour.
+  return '<div class="dash-card dash-span">'
+    +'<div class="dash-pipe-hd"><h3>Project Pipeline</h3>'
+    +'<div class="dash-legend dash-legend-h">'
+    +rows.map(function(r){
+      return '<span class="dash-lg-row"><span class="dash-lg-dot" style="background:'+statusColor(r.status)+'"></span>'
+        +'<span class="dash-lg-name">'+esc(r.status)+'</span>'
+        +'<span class="dash-lg-val">'+num(r.count)+'</span></span>';
+    }).join('')
+    +'</div></div>'
+    +'<div class="dash-pipe">'
+    +rows.map(function(r){
+      return '<span class="dash-pipe-seg" style="flex:'+r.count+';background:'+statusColor(r.status)+'"'
+        +' title="'+esc(r.status)+': '+num(r.count)+'"></span>';
+    }).join('')
+    +'</div></div>';
 }
 
 /* The pipeline in its real order rather than sorted by count — the shape of a
