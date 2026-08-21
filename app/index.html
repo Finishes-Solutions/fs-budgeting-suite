@@ -431,6 +431,19 @@ html[data-theme=dark] .wf-steps button.flag{background:#2a2317;border-color:#4d4
    dialog scale so the heading reads as a heading rather than a section label.
    openInvModal() in investment-analysis.js builds its sheet with these same
    classes, so the two stay identical without duplicating the values. */
+/* The overlay every dialog sits in. It existed only as a copied-and-pasted
+   inline style on each modal element, so a dialog built in JS that said
+   class="modal" — the Add Investment Analysis picker did — got NO styling at
+   all and rendered as a plain block at the bottom of the document. Naming it
+   once is what makes "a dialog is centered, over a dimmed page" true by
+   construction rather than by remembering. */
+.modal{position:fixed;inset:0;z-index:60;display:none;background:rgba(11,13,12,.55);
+  align-items:center;justify-content:center;padding:20px 14px;overflow:auto}
+.modal.on{display:flex}
+/* While a dialog is open the page behind it does not scroll. Without this the
+   wheel reaches the list underneath and the backdrop slides away from the
+   dialog sitting on top of it. */
+body.modal-open{overflow:hidden}
 .mod-sheet{background:var(--white);border:1px solid var(--ink-150);border-radius:var(--rm);
   box-shadow:var(--sh);width:100%;position:relative;margin:auto}
 .mod-title{font-size:19px;font-weight:800;letter-spacing:-.015em;color:var(--ink-950);margin:0 0 14px}
@@ -487,7 +500,7 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
   padding:3px 8px;border-radius:var(--r)}
 .rowmenu-btn:hover{color:var(--ink-900);background:var(--ink-100)}
 .rowmenu-btn:focus-visible{outline:none;box-shadow:var(--focus)}
-#rowMenu{position:fixed;z-index:60;min-width:176px;background:var(--white);border:1px solid var(--ink-200);
+#rowMenu,.rowmenu{position:fixed;z-index:60;min-width:176px;background:var(--white);border:1px solid var(--ink-200);
   border-radius:var(--rm);box-shadow:0 8px 24px rgba(11,13,12,.18);padding:4px}
 .rowmenu-item{display:block;width:100%;text-align:left;background:none;border:0;border-radius:var(--r);
   padding:8px 12px;font-family:inherit;font-size:13px;color:var(--ink-900);cursor:pointer}
@@ -694,6 +707,7 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .pj-live{font-family:var(--fm);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-400)}
 .pj-go{font-family:var(--fm);font-size:11px;color:var(--ink-400);white-space:nowrap}
 .pj-tbl tr.pj-row:hover .pj-go{color:var(--green-700)}
+.pj-card-menu{position:absolute;top:9px;right:37px;z-index:1}
 #page-project .page-title #projectStar .hm-star{position:static}
 
 /* ---- guard rails ----
@@ -1071,7 +1085,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <div class="sub">Every project, with the budgets and investment analyses linked to it. One project per ID.</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <button class="btn btn-ghost" onclick="FSProjects.render(true)">Refresh</button>
-      <button class="btn btn-dark" onclick="openNewBudget()">+ New Budget</button>
+      <button class="btn btn-dark" onclick="openNewProject()">+ Create Project</button>
     </div>
   </div>
   <div id="projectsBody"></div>
@@ -1094,7 +1108,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= INPUTS ================= -->
 <div class="page" id="page-input">
   <div class="page-title">
-    <div><button class="btn-back" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Back</button><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
+    <div><button class="btn-back" id="backInputs" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="iStatusHost"></span>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save Draft</button>
@@ -1104,21 +1118,32 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="wf-steps no-print" data-wf-pills></div>
 
   <section class="card">
-    <div class="card-hd"><h2>Project</h2><span class="eyebrow">ID formats: OP-0001 · BD-0001 · AS-0001 · TST-9999 (test)</span></div>
+    <div class="card-hd"><h2>Budget</h2><span class="eyebrow">Budget IDs are BD-#### · projects are OP-####</span></div>
     <div class="card-bd">
       <div class="grid g4">
-        <label class="fld"><span class="lab">Project ID</span>
+        <label class="fld"><span class="lab">Budget ID</span>
           <input type="text" id="pId" placeholder="BD-0001" oninput="validateId();markDirty()" style="font-family:var(--fm);text-transform:uppercase">
-          <div class="fld-err" id="pIdErr" style="display:none">Must match OP-####, BD-####, AS-#### or TST-#### (test)</div></label>
-        <label class="fld"><span class="lab">Project Name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
+          <div class="fld-err" id="pIdErr" style="display:none">Must match BD-#### (or a legacy OP-/AS-/TST-####)</div></label>
+        <label class="fld"><span class="lab">Budget Name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
+        <!-- Which project this budget belongs to. Read-only because it is the
+             budget's parent, not one of its fields: it is chosen when the
+             budget is created and changed from the project itself. -->
+        <label class="fld"><span class="lab">Project</span>
+          <input type="text" id="pProject" class="set-locked" readonly
+            title="The project this budget belongs to. Chosen when the budget is created."
+            style="font-family:var(--fm)"></label>
       </div>
       <!-- Property type is chosen when the budget is created (+ New Budget →
            template), so it is not re-asked here. Site SF and Site Acreage are
            one measurement in two units: fill either and the other follows. -->
       <div class="grid g4" style="margin-top:14px">
-        <label class="fld"><span class="lab">Residential Buildable SF</span><input type="number" class="num" id="pSF" value="51365" min="0" step="100" oninput="touch()"></label>
-        <label class="fld"><span class="lab">Amenity / Clubhouse SF</span><input type="number" class="num" id="pASF" value="1200" min="0" step="50" oninput="touch()"></label>
+        <label class="fld"><span class="lab">Residential Buildable SF</span>
+          <input type="number" class="num" id="pSF" value="51365" min="0" step="100"
+            aria-describedby="pSizeErr" oninput="touch();validateSize()">
+          <div class="fld-err" id="pSizeErr" style="display:none">Square footage is required — enter a building size greater than zero.</div></label>
+        <label class="fld"><span class="lab">Amenity / Clubhouse SF</span>
+          <input type="number" class="num" id="pASF" value="1200" min="0" step="50" oninput="touch();validateSize()"></label>
         <label class="fld"><span class="lab">Total Site SF</span><input type="number" class="num" id="pSiteSF" value="0" min="0" step="1000" oninput="syncSiteFromSF()"></label>
         <label class="fld"><span class="lab">Site Acreage</span><input type="number" class="num" id="pSiteAc" value="0" min="0" step="0.01" oninput="syncSiteFromAcres()"></label>
       </div>
@@ -1268,7 +1293,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= BUDGET ================= -->
 <div class="page" id="page-budget">
   <div class="page-title">
-    <div><button class="btn-back" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Back</button><h1 id="bTitle">Budget</h1><div class="sub" id="bSub"></div></div>
+    <div><button class="btn-back" id="backBudget" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1 id="bTitle">Budget</h1><div class="sub" id="bSub"></div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="bStatusHost"></span>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
@@ -1380,7 +1405,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= CSI SCHEDULE ================= -->
 <div class="page" id="page-csi">
   <div class="page-title">
-    <div><button class="btn-back" onclick="go('budgets')" aria-label="Back to Budgets" title="Back to Budgets">&larr; Back</button><h1>CSI Schedule of Values</h1>
+    <div><button class="btn-back" id="backCsi" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>CSI Schedule of Values</h1>
       <div class="sub" id="csiSub">The same budget, ordered as MasterFormat divisions — the form a lender, architect or GC expects.</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="cStatusHost"></span>
@@ -2447,12 +2472,11 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
 </div>
 
-<div id="newBudgetModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:60;align-items:center;justify-content:center;padding:20px 14px"
-  onclick="if(event.target===this)closeNewBudget()">
+<div id="newBudgetModal" class="modal" onclick="if(event.target===this)closeNewBudget()">
   <div class="card mod-sheet" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="newBudgetTitle">
     <div class="card-hd"><h2 class="mod-title" id="newBudgetTitle">New Budget</h2>
       <button class="btn-x" onclick="closeNewBudget()" aria-label="Close new budget">×</button></div>
-    <div class="card-bd" style="overflow:auto">
+    <div class="card-bd" style="overflow:auto" id="nbStep1">
       <div class="set-lab">Budget Templates</div>
       <div class="tpl-list">
         <button class="tpl-row" onclick="pickNewBudget('multifamily')">
@@ -2471,6 +2495,91 @@ th.sortable.sorted{color:var(--ink-900)}
       <div class="set-lab">Custom Templates</div>
       <div class="tpl-list" id="customTplList"></div>
     </div>
+
+    <!-- Step 2. A budget belongs to a project, so the project is asked for
+         here rather than inferred from whatever gets typed into the ID field
+         later. Picking one carries its name and address across; the Budget ID
+         is its own value in its own namespace. -->
+    <div class="card-bd" style="overflow:auto;display:none" id="nbStep2">
+      <div class="set-lab">Project</div>
+      <div class="set-grid">
+        <label class="fld wide"><span class="lab">Link To Project</span>
+          <select id="nbProject" onchange="nbProjectPicked()" aria-describedby="nbProjectErr"></select>
+          <span class="fld-err" id="nbProjectErr" style="display:none"></span></label>
+      </div>
+      <div class="set-lab" style="margin-top:16px">Budget</div>
+      <div class="set-grid">
+        <label class="fld wide"><span class="lab">Budget ID</span>
+          <input type="text" id="nbId" placeholder="BD-0001" autocomplete="off"
+            style="font-family:var(--fm);text-transform:uppercase"
+            aria-describedby="nbIdErr" oninput="nbValidate()">
+          <span class="fld-err" id="nbIdErr" style="display:none"></span></label>
+        <label class="fld wide"><span class="lab">Budget Name</span>
+          <input type="text" id="nbName" placeholder="Phase 1" aria-describedby="nbNameErr" oninput="nbValidate()">
+          <span class="fld-err" id="nbNameErr" style="display:none"></span></label>
+        <label class="fld wide"><span class="lab">Address</span>
+          <input type="text" id="nbAddress" placeholder="10514 Woodedge Dr"></label>
+      </div>
+      <p class="set-note" style="margin:14px 0 0" id="nbTplNote"></p>
+      <div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px">
+        <button class="btn btn-ghost" onclick="nbBack()">&larr; Templates</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" onclick="closeNewBudget()">Cancel</button>
+          <button class="btn btn-dark" id="nbCreate" onclick="nbCreate()">Create Budget</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CREATE PROJECT MODAL =================
+     A project is created here and nowhere else. A budget id can no longer
+     conjure one, because a budget id cannot name a project. All three fields
+     are required and the ID must be unique — the messages below are the
+     courteous half of rules the API enforces for real. -->
+<div id="newProjectModal" class="modal" onclick="if(event.target===this)closeNewProject()">
+  <div class="card mod-sheet" style="width:520px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column"
+    role="dialog" aria-modal="true" aria-labelledby="newProjectTitle">
+    <div class="card-hd"><h2 class="mod-title" id="newProjectTitle">Create Project</h2>
+      <button class="btn-x" onclick="closeNewProject()" aria-label="Close create project">&times;</button></div>
+    <div class="card-bd" style="overflow:auto">
+      <p class="set-note" style="margin:0 0 14px">The project is the parent. Each of its budgets
+        carries its own type, so one property can hold a Multifamily budget and a Commercial
+        budget at the same time.</p>
+      <div class="set-grid">
+        <label class="fld wide"><span class="lab">Project ID</span>
+          <input type="text" id="npId" placeholder="OP-0001" autocomplete="off"
+            style="font-family:var(--fm);text-transform:uppercase"
+            aria-describedby="npIdErr" oninput="npValidate()">
+          <span class="fld-err" id="npIdErr" style="display:none"></span></label>
+        <label class="fld wide"><span class="lab">Project Name</span>
+          <input type="text" id="npName" placeholder="Jones Rd Apartments"
+            aria-describedby="npNameErr" oninput="npValidate()">
+          <span class="fld-err" id="npNameErr" style="display:none"></span></label>
+        <label class="fld wide"><span class="lab">Address</span>
+          <input type="text" id="npAddress" placeholder="10514 Woodedge Dr"
+            aria-describedby="npAddressErr" oninput="npValidate()">
+          <span class="fld-err" id="npAddressErr" style="display:none"></span></label>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button class="btn btn-ghost" onclick="closeNewProject()">Cancel</button>
+        <button class="btn btn-dark" id="npCreate" onclick="submitNewProject()">Create Project</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD INVESTMENT ANALYSIS PICKER =================
+     Filled by app/projects.js. It lives here, as a real element with the
+     shared dialog classes, because the version built in JS said class="modal"
+     when no such class existed — so it rendered as a plain block at the foot
+     of the document and nothing ever unmounted it on navigation. -->
+<div id="invPickModal" class="modal" onclick="if(event.target===this)FSProjects.closeBudgetPicker()">
+  <div class="card mod-sheet" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column"
+    role="dialog" aria-modal="true" aria-labelledby="invPickTitle">
+    <div class="card-hd"><h2 class="mod-title" id="invPickTitle">Add Investment Analysis</h2>
+      <button class="btn-x" onclick="FSProjects.closeBudgetPicker()" aria-label="Close">&times;</button></div>
+    <div class="card-bd" style="overflow:auto" id="invPickBody"></div>
   </div>
 </div>
 
@@ -3140,10 +3249,53 @@ function openSettings(){
   document.getElementById('settingsModal').style.display='flex';
 }
 function closeSettings(){document.getElementById('settingsModal').style.display='none';}
-/* ---- New Budget modal: one button, all the ways to start a budget.
-   Multifamily and Blank run the EXISTING creation logic; the disabled rows
-   are future project types; custom templates come from the template system. */
-function openNewBudget(){
+/* ---- Dialog plumbing ----
+   Focus enters the dialog and returns to whatever opened it, the page behind
+   stops scrolling, and Escape closes. Written once because every dialog is
+   supposed to behave this way and each hand-rolled one had to remember to.
+   The stack exists so a dialog opened over another restores the right focus. */
+const openDialogs=[];
+function openDialog(id,focusSel){
+  const m=document.getElementById(id);if(!m)return;
+  if(openDialogs.some(d=>d.id===id))return;
+  openDialogs.push({id:id,returnTo:document.activeElement});
+  m.classList.add('on');
+  document.body.classList.add('modal-open');
+  const f=focusSel?m.querySelector(focusSel):null;
+  const target=f||m.querySelector('input,select,textarea,button');
+  if(target)target.focus();
+}
+function closeDialog(id){
+  const m=document.getElementById(id);
+  const i=openDialogs.findIndex(d=>d.id===id);
+  const rec=i<0?null:openDialogs.splice(i,1)[0];
+  if(m)m.classList.remove('on');
+  if(!openDialogs.length)document.body.classList.remove('modal-open');
+  if(rec&&rec.returnTo&&document.body.contains(rec.returnTo))rec.returnTo.focus();
+}
+function topDialog(){return openDialogs.length?openDialogs[openDialogs.length-1].id:null;}
+/* Leaving the page a dialog belongs to closes it. A dialog is about what you
+   were looking at; one that outlives the page it was opened from is a bug you
+   can carry to every other tab, which is exactly what the Add Investment
+   Analysis picker used to do. */
+function closeAllDialogs(){
+  openDialogs.slice().reverse().forEach(d=>{
+    if(d.id==='invPickModal'&&window.FSProjects)FSProjects.closeBudgetPicker();
+    else closeDialog(d.id);
+  });
+}
+
+/* ---- New Budget: one button, all the ways to start a budget ----
+   Two steps, because a budget is not free-floating: first WHAT it is built
+   from, then WHICH PROJECT it belongs to. The project step is not a formality
+   — a budget id can no longer imply a project, so the link has to be stated,
+   and stating it is what lets the name and address come across instead of
+   being retyped. */
+let nbTemplateKey=null,nbProjects=[],nbPreset=null;
+function openNewBudget(presetProjectId){
+  nbTemplateKey=null;
+  nbPreset=presetProjectId&&PROJECT_ID_RX.test(String(presetProjectId).toUpperCase())
+    ?String(presetProjectId).toUpperCase():null;
   const host=document.getElementById('customTplList');
   const customs=activeTemplates().filter(t=>t.templateKey!=='multifamily');
   host.innerHTML=customs.length
@@ -3151,14 +3303,214 @@ function openNewBudget(){
         <span class="tpl-name">${esc(t.name||t.templateKey)}</span>
         <span class="tpl-sub">${esc(t.description||'Published custom template')}</span></button>`).join('')
     :'<div class="set-note">No custom templates yet. Open a budget and publish it as a template to see it here.</div>';
-  document.getElementById('newBudgetModal').style.display='flex';
+  nbShowStep(1);
+  openDialog('newBudgetModal');
+  loadNbProjects();      // in the background: the list is only needed at step 2
 }
-function closeNewBudget(){document.getElementById('newBudgetModal').style.display='none';}
-function pickNewBudget(key){
-  closeNewBudget();
-  if(key==='blank')newBudget('blank');
-  else newBudgetFromTemplate(key);
+function closeNewBudget(){closeDialog('newBudgetModal');}
+function nbShowStep(n){
+  document.getElementById('nbStep1').style.display=n===1?'':'none';
+  document.getElementById('nbStep2').style.display=n===2?'':'none';
+  document.getElementById('newBudgetTitle').textContent=n===1?'New Budget':'New Budget — Project';
 }
+function nbBack(){nbShowStep(1);document.querySelector('#nbStep1 .tpl-row').focus();}
+
+async function loadNbProjects(){
+  try{
+    const r=await api('budgets?scope=projects');
+    nbProjects=(r&&r.projects)||[];
+  }catch(e){nbProjects=[];}
+  paintNbProjects();
+}
+function paintNbProjects(){
+  const sel=document.getElementById('nbProject');
+  if(!sel)return;
+  const chosen=nbPreset||sel.value||'';
+  sel.innerHTML='<option value="">Choose a project…</option>'
+    +nbProjects.map(p=>`<option value="${esc(p.projectId)}">${esc(p.projectId)} — ${esc(p.name||'Untitled')}</option>`).join('');
+  if(chosen)sel.value=chosen;
+  // Opened from a project page: that IS the project, so it is shown rather
+  // than re-asked. Still a real select, so the choice is visible and, if the
+  // preset has gone stale, correctable.
+  if(nbPreset&&sel.value===nbPreset)nbProjectPicked();
+}
+function nbProject(){
+  return nbProjects.filter(p=>p.projectId===document.getElementById('nbProject').value)[0]||null;
+}
+/* Picking the project fills in what the project already knows. Both stay
+   editable: a budget may legitimately carry its own name and site address. */
+function nbProjectPicked(){
+  const p=nbProject();
+  if(p){
+    const n=document.getElementById('nbName'),a=document.getElementById('nbAddress');
+    if(!n.dataset.touched)n.value=p.name||'';
+    if(!a.dataset.touched)a.value=p.address||'';
+  }
+  nbValidate();
+}
+function nbFieldErr(id,msg){
+  const f=document.getElementById(id),e=document.getElementById(id+'Err');
+  if(f)f.classList.toggle('err',!!msg);
+  if(e){e.textContent=msg||'';e.style.display=msg?'block':'none';}
+  return !msg;
+}
+function nbValidate(show){
+  const idv=(document.getElementById('nbId').value||'').toUpperCase();
+  document.getElementById('nbId').value=idv;
+  const name=(document.getElementById('nbName').value||'').trim();
+  const proj=document.getElementById('nbProject').value;
+  let ok=true;
+  ok=nbFieldErr('nbProject',!proj&&show?'Choose the project this budget belongs to.':'')&&ok;
+  ok=nbFieldErr('nbId',idv&&!ID_RX.test(idv)?'Use a budget ID like BD-0001.'
+      :(!idv&&show?'Budget ID is required.':''))&&ok;
+  ok=nbFieldErr('nbName',!name&&show?'Budget Name is required.':'')&&ok;
+  const btn=document.getElementById('nbCreate');
+  if(btn)btn.disabled=!(proj&&ID_RX.test(idv)&&name);
+  return !!(proj&&ID_RX.test(idv)&&name)&&ok;
+}
+async function pickNewBudget(key){
+  nbTemplateKey=key;
+  document.getElementById('nbTplNote').textContent=key==='blank'
+    ?'Starting from a blank budget — no units, no income, no scope.'
+    :'Starting from the '+(key==='multifamily'?'Multifamily':key)+' template, on the current pricing library.';
+  ['nbName','nbAddress'].forEach(id=>{const e=document.getElementById(id);e.value='';delete e.dataset.touched;});
+  ['nbName','nbAddress'].forEach(id=>{
+    document.getElementById(id).oninput=function(){this.dataset.touched='1';nbValidate();};
+  });
+  document.getElementById('nbId').value='';
+  nbShowStep(2);
+  paintNbProjects();
+  // A suggested next free BD-####. Only a suggestion: the field is editable
+  // and the API refuses a duplicate for real.
+  try{
+    const r=await api('budget/BD-0000?scope=next-budget-id');
+    if(r&&r.budgetId&&!document.getElementById('nbId').value)document.getElementById('nbId').value=r.budgetId;
+  }catch(e){/* type one instead */}
+  nbValidate();
+  document.getElementById('nbProject').focus();
+}
+
+/* The current pricing library, re-read at the moment a budget is created.
+   Publishing a new library must make it authoritative for everything created
+   afterwards, and the copy loaded at boot is exactly the stale value that made
+   a brand-new budget open with an "update to current pricing" banner. */
+async function refreshPricing(){
+  try{
+    const p=await sGet('pricing-multifamily');
+    if(p&&p.version&&Array.isArray(p.lines)){pricing=p;pricingFromApi=true;renderApiBanner();}
+  }catch(e){/* keep whatever we already have; the banner already says so */}
+  return pricing;
+}
+/* Stamping the current version alone would be a lie — the document would claim
+   v3 while holding v2 rates — so every line the current library still carries
+   is re-rated first, and baseUnit moves with it so the budget does not open
+   flagged as manually re-priced. */
+function stampCurrentPricing(d){
+  const map={};
+  (pricing.lines||[]).forEach(l=>{map[l.scope+'|'+l.code+'|'+l.desc]=l;});
+  (d.lines||[]).forEach(it=>{
+    const m=map[it.scope+'|'+it.code+'|'+it.desc];
+    if(!m)return;
+    it.unit=m.unit;it.baseUnit=m.unit;
+  });
+  d.pricingVersion=pricing.version;
+  return d;
+}
+
+async function nbCreate(){
+  if(!nbValidate(true))return;
+  if(!confirmDiscard())return;
+  const p=nbProject();
+  const id=(document.getElementById('nbId').value||'').toUpperCase();
+  const name=(document.getElementById('nbName').value||'').trim();
+  const address=(document.getElementById('nbAddress').value||'').trim();
+  const btn=document.getElementById('nbCreate');
+  btn.disabled=true;btn.textContent='Creating…';
+  try{
+    await refreshPricing();     // born on the CURRENT library, never a cached one
+    if(nbTemplateKey==='blank')applyNewBudget('blank');
+    else if(!await applyTemplateBudget(nbTemplateKey))return;
+    doc.projectId=id;
+    doc.name=name;
+    doc.address=address||(p?p.address:'')||'';
+    doc.projectKey=p?p.projectId:null;
+    docIsNew=true;              // the first save must CREATE, never overwrite
+    closeNewBudget();
+    fillForms();markDirty();go('input');
+    toast('New budget '+id+' on '+(p?p.projectId:'its project')+'. Fill in the size, then Save.');
+    const sf=document.getElementById('pSF');if(sf)sf.focus();
+  }finally{
+    btn.disabled=false;btn.textContent='Create Budget';
+  }
+}
+/* ---- Create Project ----
+   The only way a project comes into existence. Every field is required and
+   the ID must be unique; both rules are enforced by the API, which is what
+   makes them true when two people submit at once. The checks here exist so
+   the answer arrives against the field it concerns instead of as a toast. */
+function openNewProject(){
+  ['npId','npName','npAddress'].forEach(id=>{
+    document.getElementById(id).value='';
+    npFieldErr(id,'');
+  });
+  openDialog('newProjectModal','#npId');
+  // A suggested next free OP-####. Only a suggestion — the field is editable,
+  // and uniqueness is decided by the database, not by this read.
+  api('budgets?scope=next-project-id').then(r=>{
+    const f=document.getElementById('npId');
+    if(r&&r.projectId&&!f.value){f.value=r.projectId;npValidate();}
+  }).catch(()=>{});
+}
+function closeNewProject(){closeDialog('newProjectModal');}
+function npFieldErr(id,msg){
+  const f=document.getElementById(id),e=document.getElementById(id+'Err');
+  if(f)f.classList.toggle('err',!!msg);
+  if(e){e.textContent=msg||'';e.style.display=msg?'block':'none';}
+  return !msg;
+}
+function npValidate(show){
+  const f=document.getElementById('npId');
+  f.value=f.value.toUpperCase();
+  const id=f.value.trim(),name=document.getElementById('npName').value.trim(),
+        addr=document.getElementById('npAddress').value.trim();
+  let ok=true;
+  ok=npFieldErr('npId',id&&!PROJECT_ID_RX.test(id)?'Use the format OP-####.'
+      :(!id&&show?'Project ID is required.':''))&&ok;
+  ok=npFieldErr('npName',!name&&show?'Project Name is required.':'')&&ok;
+  ok=npFieldErr('npAddress',!addr&&show?'Address is required.':'')&&ok;
+  const btn=document.getElementById('npCreate');
+  if(btn)btn.disabled=!(PROJECT_ID_RX.test(id)&&name&&addr);
+  return PROJECT_ID_RX.test(id)&&!!name&&!!addr&&ok;
+}
+async function submitNewProject(){
+  if(!npValidate(true))return;
+  const id=document.getElementById('npId').value.trim().toUpperCase();
+  const body={create:true,
+    name:document.getElementById('npName').value.trim(),
+    address:document.getElementById('npAddress').value.trim()};
+  const btn=document.getElementById('npCreate');
+  btn.disabled=true;btn.textContent='Creating…';
+  try{
+    await api('budget/'+encodeURIComponent(id)+'?scope=project',
+      {method:'PUT',body:JSON.stringify(body)});
+    closeNewProject();
+    if(window.FSProjects){FSProjects.invalidate();FSProjects.open(id);}
+    toast('Project '+id+' created.');
+  }catch(e){
+    // The server answers per field, so the message lands on the input it is
+    // about — a duplicate ID is a fact about the ID box, not about the form.
+    const field=e.body&&e.body.field;
+    if(field==='projectId')npFieldErr('npId',e.body.message);
+    else if(field==='name')npFieldErr('npName',e.body.message);
+    else if(field==='address')npFieldErr('npAddress',e.body.message);
+    else toast('Could not create the project — '+e.message);
+    if(field==='projectId')document.getElementById('npId').focus();
+  }finally{
+    btn.disabled=false;btn.textContent='Create Project';
+    npValidate();
+  }
+}
+
 /* ---- export-option memory + client-reported activity ---- */
 function exportDefaultsFor(product){
   const s=usSettings();
@@ -3204,15 +3556,23 @@ window.addEventListener('afterprint',()=>{
 });
 const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>ESC_MAP[c]);
-/* Budget ids. The plain form is a project's base budget; the -NN suffix is an
-   ALTERNATE budget under the same project (BD-0001, BD-0001-02, BD-0001-03 …).
-   Stripping the suffix gives the project id, which is what dbo.Projects is
-   keyed by — that is what makes "one project per ID" true.
-   This regex lives in four files that change together: app/index.html,
-   api/budget/index.js, api/budget-versions/index.js, test/mock-api.js. */
+/* TWO NAMESPACES, and keeping them apart is the point.
+
+   A BUDGET id is BD-#### (legacy budgets may carry OP-/AS-/TST-), optionally
+   with a -NN ALTERNATE suffix: BD-0001, BD-0001-02, BD-0001-03 … New budgets
+   are always minted BD-.
+
+   A PROJECT id is OP-####. It is the project's own identity, not something
+   derived from a budget — a budget says which project it belongs to by
+   carrying a projectKey. Stripping a budget's suffix gives its BASE BUDGET,
+   which is only ever used to number the next alternate.
+
+   ID_RX lives in four files that change together: app/index.html,
+   api/budget/index.js, api/budget-versions/index.js, test/mock-api.js.
+   PROJECT_ID_RX likewise pairs with api/shared/projects.js. */
 const ID_RX=/^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/;
-const PROJECT_ID_RX=/^(OP|BD|AS|TST)-\d{4}$/;
-function projectKeyOf(id){
+const PROJECT_ID_RX=/^OP-\d{4}$/;
+function budgetBaseOf(id){
   const s=String(id||'').toUpperCase();
   return /^(OP|BD|AS|TST)-\d{4}-\d{2}$/.test(s)?s.slice(0,-3):s;
 }
@@ -3337,13 +3697,21 @@ async function initAuth(){
   if(window.FSProjects)FSProjects.init({
     esc:esc, usd:usd, fmtDay:fmtDay,
     api:api, toast:toast,
-    openBudget:openBudget,
+    // Opened FROM a project, so Back returns to that project rather than to
+    // the Budgets list — the origin travels with the open, not with history.
+    openBudget:(id,page)=>openBudget(id,page,
+      {page:'project',id:window.FSProjects&&FSProjects.currentId()}),
     // The Projects list has the same three views every other list offers, and
     // stores the choice through the same per-account preference mechanism.
     projectView:projectView,
     setSetting:(k,v)=>chooseSetting(k,v),
     go:go, navigate:h=>{location.hash=h;},
     currentPage:()=>currentPage,
+    // The shared dialog plumbing, so a popup built in projects.js is centered,
+    // dimmed, focus-managed and unmounted on navigation like every other one.
+    openDialog:openDialog, closeDialog:closeDialog,
+    // Creating a budget from a project starts with that project chosen.
+    newBudget:pid=>openNewBudget(pid),
     // An alternate starts as a copy of the budget it is an alternative to.
     duplicateBudget:duplicateBudgetAs,
     // Converting a project changes what the dashboard reports, so its cache
@@ -3462,17 +3830,25 @@ function closeProfile(refocus){
 function logoutUrl(){
   return '/.auth/logout?post_logout_redirect_uri='+encodeURIComponent('/login.html');
 }
-/* Signing in again REPLACES the session, so changing account is one navigation
-   to the provider and nothing else: prompt=select_account (set in
-   staticwebapp.config.json) means Microsoft opens on the account picker, and
-   the account picked owns the session from then on. No sign-out, so Entra's
-   "which account are you signing out of" page never appears.
+/* Switching accounts has to LOG OUT FIRST, and that is the whole fix.
 
-   This is a SWITCH, not a way out: it leaves the previous session in place
-   until the new one lands, so it is the wrong control for walking away from a
-   shared machine. Sign Out remains that, and remains a real sign-out. */
+   /.auth/login/aad SHORT-CIRCUITS while the Static Web Apps session cookie is
+   present: it never reaches Entra, so prompt=select_account is never sent and
+   the page simply reloads as the same user. That is exactly what "it just
+   refreshes" was. The cookie is HttpOnly, so nothing in script can clear it —
+   /.auth/logout is the only thing that can.
+
+   So the destination is logout, told to come back to login: the cookie is
+   dropped, the authorize request that follows carries the
+   prompt=select_account already configured in staticwebapp.config.json, and
+   Microsoft opens on the account picker.
+
+   Both controls now end the session. What still separates them is where you
+   land: Sign Out returns to the login screen, Switch Account goes straight
+   back out to Microsoft to pick the next account. */
 function switchAccountUrl(){
-  return '/.auth/login/aad?post_login_redirect_uri='+encodeURIComponent(location.origin+'/');
+  return '/.auth/logout?post_logout_redirect_uri='
+    +encodeURIComponent('/.auth/login/aad?post_login_redirect_uri='+encodeURIComponent('/'));
 }
 /* Both paths leave the app the same way: confirm unsaved work, drop anything
    this browser is holding, then navigate. Only the destination differs. */
@@ -3934,6 +4310,10 @@ function go(p){
   if(p!==currentPage&&currentPage==='analysis'&&window.FSInvestmentUI&&!FSInvestmentUI.confirmLeave()){
     syncHash(currentPage);return;
   }
+  // Leaving the page closes anything that was opened over it. A dialog is
+  // about what you were looking at; the Add Investment Analysis picker used to
+  // survive the trip and follow you to every other tab.
+  if(p!==currentPage)closeAllDialogs();
   currentPage=p;
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   document.getElementById('page-'+p).classList.add('on');
@@ -4545,25 +4925,32 @@ function duplicateTemplate(){createTemplate();}
    an alternate is the same project priced a different way, not a blank sheet.
    The copy is left OPEN AND UNSAVED so nothing is written until the user
    decides it is worth keeping — and so the guard rails get their say first. */
-async function duplicateBudgetAs(fromId,newId){
+async function duplicateBudgetAs(fromId,newId,projectKey){
   if(!ID_RX.test(newId)){toast('Invalid budget ID.');return;}
-  await openBudget(fromId,'input');
+  await openBudget(fromId,'input',
+    projectKey?{page:'project',id:projectKey}:null);
   if(!doc||doc.projectId!==fromId){toast('Could not open '+fromId+' to copy.');return;}
   doc.projectId=newId;
   doc.name=(doc.name||fromId)+' — Alternate';
   doc.status='Draft';
+  // An alternate belongs to the SAME project as the budget it copies — the
+  // caller passes it explicitly rather than the id implying it.
+  if(projectKey)doc.projectKey=projectKey;
   doc.created=new Date().toISOString();
   // A copy is not the original's history: it starts its own.
   delete doc.templateVersionId;
+  docIsNew=true;                  // its first save must create, not overwrite
   fillForms();
   markDirty();
   go('input');
   toast('Alternate '+newId+' started from '+fromId+'. Review it and Save to keep it.');
 }
 
-async function newBudgetFromTemplate(key){
-  if(!key)return;
-  if(!confirmDiscard())return;
+/* Builds `doc` from a published template. Returns false when it could not,
+   having already said so — the caller is mid-creation and must not carry on
+   as though a document exists. The discard prompt is the caller's: this runs
+   after the user has committed to creating something. */
+async function applyTemplateBudget(key){
   let t=null;
   try{t=await api('templates/'+encodeURIComponent(key));}catch(e){}
   if(!t||!t.doc){
@@ -4571,20 +4958,24 @@ async function newBudgetFromTemplate(key){
     // leaving the user with a button that does nothing.
     applyNewBudget();
     toast('Started from the built-in defaults — the published template could not be loaded');
-    return;
+    return true;
   }
   const d=JSON.parse(JSON.stringify(t.doc));        // deep clone — never share the template object
   d.projectId='';d.name='';d.address='';d.status='Draft';
   d.type=t.budgetType||t.name||d.type;
   d.templateKey=t.templateKey;
   d.templateVersionId=t.currentVersionId||null;
-  d.pricingVersion=d.pricingVersion||(pricing&&pricing.version)||'';
+  // The template carries the pricing version it was PUBLISHED on, which is not
+  // the same thing as the current one. Taking it was the bug: a budget created
+  // after 2026.08-v3 went live opened claiming v2 and flagged itself outdated
+  // on its first paint.
   (d.lines||[]).forEach(l=>{l.lineId=newLineId();});   // fresh identity per budget
+  stampCurrentPricing(d);
   d.created=new Date().toISOString();d.updated=d.created;
   templateEdit=null;renderTemplateBanner();
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
-  enableDocNav();fillForms();resetUndo();go('input');
-  toast('New '+(t.name||'budget')+' from template version '+(t.currentVersion||1));
+  enableDocNav();resetUndo();
+  return true;
 }
 
 function newBudget(kind){
@@ -4598,13 +4989,45 @@ function applyNewBudget(kind){
   enableDocNav();fillForms();resetUndo();go('input');
   if(kind==='blank')toast('Blank budget — build the scope from the CSI catalog on the Budget page');
 }
-async function openBudget(pid,page){
+/* True while `doc` has never been written to the server. The first save of a
+   new budget must CREATE: without that signal, typing an id that already
+   exists replaced that budget and versioned the replacement as its next
+   revision, and the original survived only in history. */
+let docIsNew=false;
+/* Where the budget currently open was reached FROM.
+
+   Deliberately route state rather than browser history: history holds every
+   page you passed through, including ones you only bounced off, so
+   history.back() from a budget is a coin toss. This is set at the moment a
+   budget is opened and read by exactly one control. */
+let budgetOrigin=null;              // {page:'project',id:'OP-0007'} | null
+function backFromBudget(){
+  if(budgetOrigin&&budgetOrigin.page==='project'&&budgetOrigin.id
+     &&PROJECT_ID_RX.test(budgetOrigin.id)&&window.FSProjects){
+    FSProjects.open(budgetOrigin.id);return;
+  }
+  go('budgets');                    // the safe fallback: no origin, or a stale one
+}
+/* The label says where Back actually goes, so the control is not a guess. */
+function paintBackTargets(){
+  const onProject=!!(budgetOrigin&&budgetOrigin.page==='project'&&budgetOrigin.id);
+  const label=onProject?('Back to '+budgetOrigin.id):'Back to Budgets';
+  ['backInputs','backBudget','backCsi'].forEach(id=>{
+    const b=document.getElementById(id);
+    if(!b)return;
+    b.setAttribute('aria-label',label);b.setAttribute('title',label);
+  });
+}
+async function openBudget(pid,page,origin){
   if(!confirmDiscard())return;
   const d=await sGet('budget-'+pid);
   if(!d){toast('Could not load '+pid);return;}
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
+  docIsNew=false;                 // it exists: saving it is an update
+  budgetOrigin=origin&&origin.page?origin:null;
   templateEdit=null;renderTemplateBanner();      // opening a budget leaves template mode
   enableDocNav();fillForms();resetUndo();
+  paintBackTargets();
   go(page||'budget');
 }
 /* ---- Budgets list row actions ----
@@ -4614,14 +5037,21 @@ async function openBudget(pid,page){
    by construction and survives paintHome() rebuilding every row. */
 let rowMenuTrigger=null,versionsReturn=null,versionsPid=null;
 /* The favorite label reads as the action it performs, so it flips per row —
-   hence a function rather than a constant list. */
-function rowActions(pid){
+   hence a function rather than a constant list.
+
+   Opened from a project page the trigger also carries which project the row
+   is on and whether the row is already the primary, which is what lets Make
+   Primary appear — and lets it NOT appear on the budget that already is,
+   rather than appearing greyed out for no reason. */
+function rowActions(pid,ctx){
   const fav=window.FSHome&&FSHome.isFavorite('budget',pid);
-  return [{act:'edit',label:'Edit'},
-          {act:'fav',label:fav?'Remove From Favorites':'Add to Favorites'},
-          {act:'reprice',label:'Update Pricing'},
-          {act:'versions',label:'Versions'},
-          {act:'sep'},{act:'delete',label:'Delete',danger:true}];
+  const acts=[{act:'edit',label:'Edit'}];
+  if(ctx&&ctx.project&&ctx.primary!=='1')acts.push({act:'primary',label:'Make Primary'});
+  acts.push({act:'fav',label:fav?'Remove From Favorites':'Add to Favorites'},
+            {act:'reprice',label:'Update Pricing'},
+            {act:'versions',label:'Versions'},
+            {act:'sep'},{act:'delete',label:'Delete Budget',danger:true});
+  return acts;
 }
 function rowMenuItems(){return [...document.querySelectorAll('#rowMenu .rowmenu-item')];}
 function openRowMenu(btn){
@@ -4630,7 +5060,9 @@ function openRowMenu(btn){
   if(wasOpen)return;                       // the trigger toggles its own menu
   const m=document.getElementById('rowMenu');
   m.dataset.pid=btn.dataset.pid;           // never interpolated into markup
-  m.innerHTML=rowActions(btn.dataset.pid)
+  m.dataset.project=btn.dataset.project||'';
+  m.innerHTML=rowActions(btn.dataset.pid,
+      {project:btn.dataset.project,primary:btn.dataset.primary})
     .map(a=>a.act==='sep'?'<div class="rowmenu-sep"></div>'
     :`<button class="rowmenu-item${a.danger?' danger':''}" role="menuitem" tabindex="-1" data-act="${a.act}">${a.label}</button>`).join('');
   rowMenuItems().forEach(el=>{el.onclick=()=>rowMenuAction(el.dataset.act);});
@@ -4660,7 +5092,15 @@ function rowMenuAction(act){
     if(currentPage==='budgets')renderBudgetsPage();
     return;
   }
-  if(act==='edit')openBudget(pid);
+  if(act==='primary'){
+    if(window.FSProjects)FSProjects.makePrimary(pid);
+    return;
+  }
+  if(act==='edit'){
+    // Opened from a project, so Back goes back to that project.
+    const from=document.getElementById('rowMenu').dataset.project;
+    openBudget(pid,'budget',from?{page:'project',id:from}:null);
+  }
   else if(act==='reprice')repriceFromHome(pid);
   else if(act==='versions')openVersions(pid);
   else if(act==='delete')deleteBudget(pid);
@@ -4671,6 +5111,17 @@ document.addEventListener('click',e=>{     // outside click closes; the trigger 
 });
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&profileOpen){e.preventDefault();closeProfile(true);return;}
+  // The dialog stack answers Escape before anything else that might: whatever
+  // is on top is what the key is about.
+  if(e.key==='Escape'&&topDialog()){
+    e.preventDefault();
+    const top=topDialog();
+    if(top==='invPickModal'&&window.FSProjects)FSProjects.closeBudgetPicker();
+    else if(top==='newBudgetModal')closeNewBudget();
+    else if(top==='newProjectModal')closeNewProject();
+    else closeDialog(top);
+    return;
+  }
   if(e.key==='Escape'&&document.getElementById('versionsModal').style.display==='flex'&&!rowMenuTrigger){
     e.preventDefault();closeVersions();return;}
   if(!rowMenuTrigger)return;
@@ -4761,10 +5212,16 @@ function fillForms(){
   document.getElementById('pId').value=doc.projectId;
   document.getElementById('pName').value=doc.name;
   document.getElementById('pAddr').value=doc.address;
+  // A budget saved before projects had their own ids carries no link yet; it
+  // says so rather than showing a blank box, and saving does not invent one.
+  const pj=document.getElementById('pProject');
+  if(pj)pj.value=doc.projectKey||'Not linked';
   document.getElementById('pSF').value=doc.resSF;
   document.getElementById('pASF').value=doc.amenSF;
   document.getElementById('pSiteSF').value=doc.siteSF||0;
   document.getElementById('pSiteAc').value=doc.siteSF?+((doc.siteSF)/SQFT_PER_ACRE).toFixed(3):0;
+  delete document.getElementById('pSF').dataset.sizeTouched;
+  validateSize();
   document.getElementById('cVal').value=doc.contingency.val;
   document.getElementById('pcLand').value=doc.projectCosts.land;
   ['dev','mkt','cls'].forEach(k=>{
@@ -4820,6 +5277,7 @@ function pullForms(){
   doc.siteSF=+document.getElementById('pSiteSF').value||0;
   // Property type is set at creation (template choice); no input re-asks it.
   doc.type=doc.type||'Multifamily';
+  // projectKey is not an input — the read-only Project field mirrors it.
 }
 function validateId(){
   const el=document.getElementById('pId');
@@ -4829,9 +5287,29 @@ function validateId(){
   document.getElementById('pIdErr').style.display=(el.value.trim()!==''&&!ok)?'block':'none';
   return ok;
 }
+/* Building square footage is REQUIRED and must be greater than zero.
+
+   Not a nicety: the investment analysis imports the building size from the
+   budget, so a budget saved with no size produced an analysis that could
+   never calculate — which is what the review caught. Residential + amenity is
+   the BUILDING; site area is land and has never counted toward it. The API
+   enforces the same rule and is the one that actually decides. */
+function buildingSF(){
+  return (+document.getElementById('pSF').value||0)+(+document.getElementById('pASF').value||0);
+}
+function validateSize(show){
+  const ok=buildingSF()>0;
+  const f=document.getElementById('pSF'),e=document.getElementById('pSizeErr');
+  // Silent until it matters: a half-typed budget should not be shouted at.
+  const flag=!ok&&(show||f.dataset.sizeTouched==='1');
+  if(!ok&&show)f.dataset.sizeTouched='1';
+  f.classList.toggle('err',flag);
+  e.style.display=flag?'block':'none';
+  return ok;
+}
 function toBudget(){
   pullForms();
-  if(!validateId()){toast('Enter a valid project ID (OP-0001 / BD-0001 / AS-0001)');document.getElementById('pId').focus();return;}
+  if(!validateId()){toast('Enter a valid budget ID (BD-0001)');document.getElementById('pId').focus();return;}
   go('budget');
 }
 
@@ -5665,15 +6143,29 @@ async function saveBudget(show){
     toast(gr.blocking+' guard rail'+(gr.blocking===1?'':'s')+' blocking — fix the value or record an override.');
     return;
   }
+  // Size is required, and the endpoint refuses the save too — this is the
+  // courteous half, shown against the field it belongs to.
+  if(!validateSize(true)){
+    go('input');
+    document.getElementById('pSF').focus();
+    toast('Square footage is required — enter a building size greater than zero.');
+    return;
+  }
   saving=true;renderSaveState();
   doc.updated=new Date().toISOString();
   const p=parts();
   const meta={projectId:doc.projectId,name:doc.name,type:doc.type,status:doc.status,
     contractSum:p.contract,projectCost:p.project,updated:doc.updated,
+    // Which project this budget belongs to. Only sent when the document
+    // carries one: a save that does not mention a project leaves the existing
+    // link alone, which is what every edit of an older budget does.
+    projectKey:doc.projectKey||undefined,
     guardrailStatus:gr.status,guardrailBreachCount:gr.breaches.length};
   try{
-    await api('budget/'+encodeURIComponent(doc.projectId),{method:'PUT',body:JSON.stringify({meta,doc})});
-    saving=false;markSaved();
+    await api('budget/'+encodeURIComponent(doc.projectId),
+      {method:'PUT',body:JSON.stringify({meta,doc,create:docIsNew||undefined})});
+    saving=false;docIsNew=false;markSaved();
+    if(window.FSProjects)FSProjects.invalidate();   // its counts and money just moved
     if(show)toast('Saved '+doc.projectId);
   }catch(e){
     saving=false;renderSaveState();
@@ -5684,6 +6176,29 @@ async function saveBudget(show){
       go('budget');renderGuardrails();
       document.getElementById('sec-guardrails').scrollIntoView({block:'start'});
       toast(e.message);
+      return;
+    }
+    // The size rule, from the side that decides.
+    if(e.status===422&&e.body&&e.body.error==='size_required'){
+      go('input');validateSize(true);document.getElementById('pSF').focus();
+      toast(e.message);
+      return;
+    }
+    // The id is taken. This is the whole point of sending `create`: without
+    // it the save landed on that budget and versioned the replacement as its
+    // next revision. Offer the next free id rather than just refusing.
+    if(e.status===409&&e.body&&e.body.error==='budget_id_taken'){
+      go('input');
+      const sug=e.body.suggestion;
+      document.getElementById('pId').classList.add('err');
+      document.getElementById('pIdErr').textContent=e.body.message;
+      document.getElementById('pIdErr').style.display='block';
+      if(sug&&confirm(e.body.message+'\n\nUse '+sug+' instead?')){
+        doc.projectId=sug;fillForms();validateId();markDirty();
+        return saveBudget(show);
+      }
+      document.getElementById('pId').focus();
+      toast(e.body.message);
       return;
     }
     toast('Save failed: '+e.message);

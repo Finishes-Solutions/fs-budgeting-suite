@@ -666,7 +666,7 @@
     if (!s2 || !s2.drift) return '';
     return ` <button class="inv-drift" onclick="FSInvestmentUI.resync()"
       title="Re-import size, purchase price, income and the expense ratio from budget v${esc(s2.budgetCurrentVersionNumber)}">
-      Budget updated to v${esc(s2.budgetCurrentVersionNumber)} — Re-sync</button>`;
+      Budget Updated to v${esc(s2.budgetCurrentVersionNumber)} - Click to Re-Sync</button>`;
   }
   async function resync() {
     if (!st.id) return;
@@ -940,7 +940,22 @@
         <h2>Income</h2>
         <p class="hint">Potential rental income is gross scheduled rent before vacancy and expenses${st.source ? ' — imported as the budget’s unit-mix rent × 12, never its Net Income figure' : ''}.</p>
         <div class="inv-grid">
-          <label class="fld"><span class="lab">Year-1 Potential Rental Income ${originBadge('income.year1PotentialIncome')}</span>
+          <!-- Year 1 potential income AS A WHOLE: unit rent plus other income.
+               It is computed and read-only on purpose — it is the sum of the
+               two fields beside and below it, so making it typeable would give
+               the same number two owners.
+
+               The components are what the model actually carries:
+               income.year1PotentialIncome stays UNIT RENT ALONE and other
+               income stays its own rows, exactly as before. Nothing downstream
+               changed, so vacancy still applies to rent only, Gross Operating
+               Income still adds other income once, and the projection is
+               untouched. This field is a total, not a new input. -->
+          <label class="fld"><span class="lab">Year 1 - Potential Income</span>
+            <input type="text" id="invY1Total" class="set-locked" readonly tabindex="-1"
+              title="Unit/rental income plus other income. Computed from the two below."
+              value="${esc(fmtMoneyIn(year1PotentialTotal()))}"></label>
+          <label class="fld"><span class="lab">Unit / Rental Income ${originBadge('income.year1PotentialIncome')}</span>
             <input type="text" inputmode="decimal" data-f="income.year1PotentialIncome" data-k="inv.pri" value="${esc(fmtMoneyIn(inp.income.year1PotentialIncome))}"${ro('income.year1PotentialIncome')}></label>
           <label class="fld"><span class="lab">Annual Income Growth %</span>
             <input type="text" inputmode="decimal" data-f="income.growth.value" data-k="inv.incGrowth" value="${esc(fmtPctIn(inp.income.growth.value))}"></label>
@@ -1292,11 +1307,24 @@
      other-income lines, and the sum the rest of the model actually uses.
      Reads st.input only, so it stays true while the fields above are typed
      into and never has to be recalculated by hand. */
+  /* Year 1 potential income as a whole. One definition, used by the field at
+     the top of the step and by the summary at the bottom, so the two cannot
+     drift apart. */
+  function year1OtherIncome() {
+    return ((st.input.income && st.input.income.otherIncome) || [])
+      .reduce((s, r) => s + nz(r.year1Amount), 0);
+  }
+  function year1PotentialTotal() {
+    return nz(st.input.income && st.input.income.year1PotentialIncome) + year1OtherIncome();
+  }
   function renderIncomeSummary() {
     const host = el('invIncomeSummary'); if (!host) return;
     const inc = st.input.income;
     const unit = nz(inc.year1PotentialIncome);
-    const other = (inc.otherIncome || []).reduce((s, r) => s + nz(r.year1Amount), 0);
+    const other = year1OtherIncome();
+    // The computed field at the top of the step follows its components.
+    const tot = el('invY1Total');
+    if (tot) tot.value = fmtMoneyIn(unit + other);
     host.innerHTML = `<h2 style="margin-top:16px;font-size:13px">Unit &amp; Other Income</h2>
       <table class="inv-table" style="max-width:420px"><tbody>
       <tr><td>Unit Income</td><td class="r mono">${usd(unit)}</td></tr>
@@ -1394,7 +1422,7 @@
     ['acquisition.basis.value', 1, 'Purchase Price'],
     ['acquisition.basis', 1, 'Price Basis'],
     ['acquisition.costPercent', 1, 'Acquisition Costs %'],
-    ['income.year1PotentialIncome', 2, 'Year-1 Potential Rental Income'],
+    ['income.year1PotentialIncome', 2, 'Unit / Rental Income'],
     ['income.growth', 2, 'Annual Income Growth %'],
     ['income.otherIncome', 2, 'Other Income'],
     ['income', 2, 'Income'],
@@ -1454,7 +1482,10 @@
     const sum = el('invErrSummary');
     if (!sum) { paintStepFlags(); return; }
     const n = entries.length;
-    sum.innerHTML = n ? `<div class="inv-warnings"><b>${n} assumption${n > 1 ? 's need' : ' needs'} attention before this can calculate.</b>
+    // No count sentence: the amber banner already IS "something needs
+    // attention", and the list below already says how many by being a list.
+    // Restating it above the detail was the flag explaining itself.
+    sum.innerHTML = n ? `<div class="inv-warnings">
       <ul class="inv-errlist">${entries.map(([path, msg]) => {
         const f = fieldInfo(path);
         return `<li><button type="button" class="inv-errjump" onclick="FSInvestmentUI.goStep(${f.step})"
@@ -1980,7 +2011,14 @@
     h += '<section class="rpt-sec"><h2>Assumptions</h2><div class="rpt-2col"><div>'
       + rr('Property Size', N.property.size.value + ' ' + (N.property.size.unit === 'squareFeet' ? 'SF' : N.property.size.unit))
       + rr('Purchase Month', N.property.purchaseMonth)
-      + rr('Year-1 Potential Income', usd(N.income.year1PotentialIncome))
+      // Named for what it holds. This line is UNIT RENT; other income is its
+      // own line and its own row in the projection, and adding them together
+      // here under one label is how a report starts double-counting.
+      + rr('Year-1 Unit / Rental Income', usd(N.income.year1PotentialIncome))
+      + rr('Year-1 Other Income', usd((N.income.otherIncome || [])
+          .reduce((a, r) => a + (+r.year1Amount || 0), 0)))
+      + rr('Year 1 - Potential Income', usd((+N.income.year1PotentialIncome || 0)
+          + (N.income.otherIncome || []).reduce((a, r) => a + (+r.year1Amount || 0), 0)))
       + rr('Income Growth', pctf(N.income.growth.value))
       + rr('Vacancy / Credit Loss', pctf(N.vacancy.value))
       + '</div><div>'

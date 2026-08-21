@@ -171,7 +171,17 @@ function rowFor(p) {
     + '<td class="r mono">' + usd(total) + '</td>'
     + '<td class="r mono">' + num(p.budgetCount) + '</td>'
     + '<td class="r mono">' + num(p.analysisCount) + '</td>'
-    + '<td class="r"><span class="pj-go">Open →</span></td></tr>';
+    // The same ⋮ affordance every other list uses. "Open →" was a second way
+    // to do what clicking the row already does, occupying the place the row
+    // actions belong.
+    + '<td class="r no-print" onclick="event.stopPropagation()">' + projectMenuBtn(p) + '</td></tr>';
+}
+
+function projectMenuBtn(p) {
+  return '<button class="rowmenu-btn" data-pjid="' + esc(p.projectId) + '"'
+    + ' aria-haspopup="menu" aria-expanded="false"'
+    + ' aria-label="Actions for project ' + esc(p.projectId) + '"'
+    + ' onclick="event.stopPropagation();FSProjects.openProjectMenu(this)">\u22EE</button>';
 }
 
 function cardFor(p) {
@@ -190,7 +200,11 @@ function cardFor(p) {
     + '<span class="v mono">' + usd(contract) + '</span></div>'
     + '<div class="hm-card-ft"><span class="st-chip ' + (STATUS_CLS[s] || 'st-draft') + '">' + esc(s) + '</span>'
     + '<span>' + num(p.budgetCount) + ' · ' + num(p.analysisCount) + '</span></div></div>'
-    + '</button>' + star('project', p.projectId, p.name || p.projectId) + '</div>';
+    + '</button>'
+    // The card carries the same actions as the row: a card view is a different
+    // shape for the same list, not a reduced one.
+    + '<div class="pj-card-menu no-print">' + projectMenuBtn(p) + '</div>'
+    + '</div>';
 }
 
 /* The four headline numbers as real cards rather than four labelled figures
@@ -250,7 +264,10 @@ function paintDetail() {
   el('projectTitle').textContent = p.projectId + ' — ' + (p.name || 'Untitled');
   // Counts read as proper nouns and pluralise honestly, including at zero:
   // "1 Budget · 2 Analyses", "0 Budgets · 0 Analyses".
-  el('projectSub').innerHTML = [p.address ? esc(p.address) : '', esc(p.type),
+  // The types the project's BUDGETS are, not a type the project claims. One
+  // property can carry a Multifamily budget and a Commercial budget at once,
+  // so a single locked project type was a fiction the page had to keep.
+  el('projectSub').innerHTML = [p.address ? esc(p.address) : '', esc(p.budgetTypes || ''),
     num(budgets.length) + ' Budget' + (budgets.length === 1 ? '' : 's'),
     num(analyses.length) + ' Analys' + (analyses.length === 1 ? 'is' : 'es')]
     .filter(Boolean).join(' · ');
@@ -263,8 +280,12 @@ function paintDetail() {
     // once; the cards carry the number, not a repeated caption.
     + statCard(conv ? 'Contract Amount' : 'Contract Sum',
         usd(conv && p.contractAmount !== null ? p.contractAmount : p.liveContractSum), '')
-    + statCard(conv ? 'Project Amount' : 'Total Project Cost',
-        usd(conv && p.projectAmount !== null ? p.projectAmount : p.liveProjectCost), '')
+    // Named for what it actually is. It reports the PRIMARY budget's cost and
+    // nothing else — an alternate is a different way of pricing the same work,
+    // so adding one in would double-count the project.
+    + statCard(conv ? 'Project Amount' : 'Total Project Cost (Primary)',
+        usd(conv && p.projectAmount !== null ? p.projectAmount : p.liveProjectCost),
+        conv ? '' : (primaryOf(budgets) ? primaryOf(budgets).projectId : ''))
     // The only sub-line kept here is a warning: "all clear" is what the
     // absence of one already means, but a breach has to be visible.
     + statCard('Budgets', num(budgets.length),
@@ -278,6 +299,12 @@ function paintDetail() {
     + (favB.length || favA.length ? favoritesCard(favB, favA) : '')
     + budgetsCard(p, budgets)
     + analysesCard(analyses, budgets);
+}
+
+/* Which budget the project's money comes from. The server decides — this is
+   the same answer, so the card can name it without a second rule. */
+function primaryOf(budgets) {
+  return (budgets || []).filter(function (b) { return b.isPrimary; })[0] || null;
 }
 
 function favoritesCard(favB, favA) {
@@ -309,7 +336,13 @@ function budgetsCard(p, budgets) {
   return '<div class="card"><div class="card-hd"><h2>Budgets</h2>'
     + '<div class="pj-hd-r">'
     + '<span class="eyebrow">The base budget and its alternates</span>'
-    + '<button class="btn btn-ghost btn-sm no-print" onclick="FSProjects.addAlternate()">+ Add Alternate Budget</button>'
+    // A project can exist before any budget does now, so the first budget has
+    // to be creatable from here — the alternate button copies one and cannot
+    // be the only way in.
+    + '<button class="btn btn-ghost btn-sm no-print" onclick="FSProjects.newBudget()">+ New Budget</button>'
+    + (budgets.length
+      ? '<button class="btn btn-ghost btn-sm no-print" onclick="FSProjects.addAlternate()">+ Add Alternate Budget</button>'
+      : '')
     + '</div></div>'
     + '<div class="card-bd" style="overflow-x:auto">'
     + (budgets.length
@@ -335,6 +368,10 @@ function budgetsCard(p, budgets) {
             // The same ⋮ menu the Budgets tab and Home use, so Edit, Versions,
             // Update Pricing and the favorite toggle behave identically here.
             + '<button class="rowmenu-btn" data-pid="' + esc(b.projectId) + '"'
+            // The project context the menu needs to offer Make Primary — and
+            // to know not to offer it on the budget that already is.
+            + ' data-project="' + esc(p.projectId) + '"'
+            + ' data-primary="' + (b.isPrimary ? '1' : '0') + '"'
             + ' aria-haspopup="menu" aria-expanded="false"'
             + ' aria-label="Actions for budget ' + esc(b.projectId) + '"'
             + ' onclick="event.stopPropagation();openRowMenu(this)">\u22EE</button></td></tr>';
@@ -415,25 +452,24 @@ async function createAnalysisFrom(budgetId) {
   }
 }
 
-var pickerKeyHandler = null;
+/* The picker is a REAL dialog now: #invPickModal in index.html, with the same
+   shell every other popup uses. The version built here said class="modal" when
+   no such class existed, so it had no styling at all — it rendered as a plain
+   block at the foot of the document, and nothing unmounted it, which is why it
+   followed you to every other tab. Centering, the dimmed backdrop, the scroll
+   lock, focus in and out, Escape and backdrop-click all come from the shared
+   dialog plumbing; leaving the page closes it. */
 function openBudgetPicker(budgets) {
-  closeBudgetPicker();
-  var m = document.createElement('div');
-  m.id = 'pjBudgetPick';
-  m.className = 'modal';
-  m.style.display = 'flex';
-  m.setAttribute('role', 'dialog');
-  m.setAttribute('aria-modal', 'true');
-  m.setAttribute('aria-label', 'Choose a budget');
-  m.innerHTML = '<div class="mod-sheet" style="max-width:520px"><div class="card-bd">'
-    + '<h2 class="mod-title">Add Investment Analysis</h2>'
-    + '<p style="font-size:12.5px;color:var(--ink-500);margin:0 0 12px">'
+  var body = el('invPickBody');
+  if (!body || !A.openDialog) return;
+  body.innerHTML =
+    '<p style="font-size:12.5px;color:var(--ink-500);margin:0 0 12px">'
     + esc(detail.project.projectId) + ' has ' + num(budgets.length) + ' budgets. '
     + 'Choose the one to underwrite — the analysis snapshots that budget\u2019s latest saved version.</p>'
     + '<div style="max-height:300px;overflow:auto;border:1px solid var(--ink-150);border-radius:8px">'
     + '<table class="tbl"><thead><tr><th>Budget ID</th><th>Budget Name</th><th class="r">Total Project</th></tr></thead><tbody>'
     + budgets.map(function (b) {
-      return '<tr class="clickable" data-pick="' + esc(b.projectId) + '">'
+      return '<tr class="clickable" tabindex="0" data-pick="' + esc(b.projectId) + '">'
         + '<td><span class="pj-id mono">' + esc(b.projectId) + '</span>'
         + (b.isPrimary ? ' <span class="badge ok">Primary</span>' : '') + '</td>'
         + '<td>' + esc(b.name || 'Untitled') + '</td>'
@@ -441,28 +477,22 @@ function openBudgetPicker(budgets) {
     }).join('')
     + '</tbody></table></div>'
     + '<div style="display:flex;justify-content:flex-end;margin-top:14px">'
-    + '<button class="btn btn-ghost" data-pick-cancel>Cancel</button></div>'
-    + '</div></div>';
-  document.body.appendChild(m);
-  m.querySelectorAll('[data-pick]').forEach(function (tr) {
-    tr.onclick = function () {
-      var id = tr.dataset.pick;
-      closeBudgetPicker();
-      createAnalysisFrom(id);
+    + '<button class="btn btn-ghost" data-pick-cancel>Cancel</button></div>';
+  body.querySelectorAll('[data-pick]').forEach(function (tr) {
+    var pick = function () { var id = tr.dataset.pick; closeBudgetPicker(); createAnalysisFrom(id); };
+    tr.onclick = pick;
+    // A row that can be reached by keyboard has to be usable by keyboard.
+    tr.onkeydown = function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); }
     };
   });
-  m.querySelector('[data-pick-cancel]').onclick = function () { closeBudgetPicker(); };
-  m.addEventListener('click', function (e) { if (e.target === m) closeBudgetPicker(); });
-  pickerKeyHandler = function (e) { if (e.key === 'Escape') { e.preventDefault(); closeBudgetPicker(); } };
-  document.addEventListener('keydown', pickerKeyHandler);
-  var first = m.querySelector('[data-pick]');
-  if (first) first.setAttribute('tabindex', '0');
-  (first || m.querySelector('[data-pick-cancel]')).focus();
+  body.querySelector('[data-pick-cancel]').onclick = function () { closeBudgetPicker(); };
+  A.openDialog('invPickModal', '[data-pick]');
 }
 function closeBudgetPicker() {
-  var m = el('pjBudgetPick');
-  if (m) m.remove();
-  if (pickerKeyHandler) { document.removeEventListener('keydown', pickerKeyHandler); pickerKeyHandler = null; }
+  if (A.closeDialog) A.closeDialog('invPickModal');
+  var body = el('invPickBody');
+  if (body) body.innerHTML = '';
 }
 
 function errorCard(msg) {
@@ -541,12 +571,26 @@ async function setStatus(projectId, status) {
   }
 }
 
+/* A budget id with any alternate suffix stripped — the BASE BUDGET, which is
+   the only thing this is for. It is not a project id: a project id is OP-####
+   and lives in its own namespace. */
+function budgetBaseOf(id) {
+  var s = String(id || '').toUpperCase();
+  return /^(OP|BD|AS|TST)-\d{4}-\d{2}$/.test(s) ? s.slice(0, -3) : s;
+}
+
 /* An alternate is the same budget priced a different way, so it starts as a
-   copy rather than a blank sheet. The next free -NN suffix under this project;
-   the ids the widened ID_RX allows are -02 … -99. */
+   copy rather than a blank sheet, and it belongs to the SAME project. The
+   suffix is numbered from the budget it copies — BD-0002 gives BD-0002-02 —
+   never from the project id, which has no suffixes. */
 function addAlternate() {
   if (!detail || !detail.project) return;
-  var base = detail.project.projectId;
+  var from = primaryOf(detail.budgets) || (detail.budgets || [])[0];
+  if (!from) {
+    if (A.toast) A.toast('Create the first budget on this project — an alternate is a copy of one.');
+    return;
+  }
+  var base = budgetBaseOf(from.projectId);
   var taken = {};
   (detail.budgets || []).forEach(function (b) { taken[b.projectId] = 1; });
   var next = null;
@@ -554,10 +598,148 @@ function addAlternate() {
     var cand = base + '-' + (i < 10 ? '0' + i : String(i));
     if (!taken[cand]) { next = cand; break; }
   }
-  if (!next) { if (A.toast) A.toast('This project already has 98 alternate budgets.'); return; }
-  var from = (detail.budgets || [])[0];
-  if (!from) { if (A.toast) A.toast('Create the base budget first — an alternate is a copy of one.'); return; }
-  if (A.duplicateBudget) A.duplicateBudget(from.projectId, next);
+  if (!next) { if (A.toast) A.toast('This budget already has 98 alternates.'); return; }
+  if (A.duplicateBudget) A.duplicateBudget(from.projectId, next, detail.project.projectId);
+}
+
+/* The first budget on a project, or another one beside the alternates. Opens
+   the New Budget dialog with this project already chosen, so its name and
+   address come across instead of being retyped. */
+function newBudget() {
+  if (!detail || !detail.project) return;
+  if (A.newBudget) A.newBudget(detail.project.projectId);
+}
+
+/* ================= primary budget ================= */
+
+/* Exactly one budget is the project's primary, and it is what the project's
+   money is reported from. Promoting one demotes the previous in the same
+   write — the server stores a single PrimaryBudgetId — so the project cannot
+   pass through a state with none or two. */
+async function makePrimary(budgetId) {
+  if (!detail || !detail.project) return;
+  var pid = detail.project.projectId;
+  try {
+    await A.api('budget/' + encodeURIComponent(pid) + '?scope=project',
+      { method: 'PUT', body: JSON.stringify({ primaryBudgetId: budgetId }) });
+    // Re-read rather than patch: the labels, the row flags and the money all
+    // move together, and the money is the server's answer, not ours.
+    list = null;
+    await loadDetail(pid, true);
+    paintDetail();
+    if (A.toast) A.toast(budgetId + ' is now the primary budget for ' + pid + '.');
+    if (A.dashboardInvalidate) A.dashboardInvalidate();
+  } catch (e) {
+    if (A.toast) A.toast('Could not change the primary budget — ' + e.message);
+  }
+}
+
+/* ================= project row menu ================= */
+
+var pjMenuTrigger = null;
+function projectMenuEl() {
+  var m = el('pjRowMenu');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'pjRowMenu';
+    m.className = 'rowmenu';
+    m.setAttribute('role', 'menu');
+    document.body.appendChild(m);
+    document.addEventListener('click', function (e) {
+      if (pjMenuTrigger && !e.target.closest('#pjRowMenu')) closeProjectMenu(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (!pjMenuTrigger) return;
+      var items = [].slice.call(m.querySelectorAll('.rowmenu-item'));
+      var i = items.indexOf(document.activeElement);
+      if (e.key === 'Escape') { e.preventDefault(); closeProjectMenu(true); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); items[i < 0 ? 0 : (i + 1) % items.length].focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); items[i < 0 ? items.length - 1 : (i - 1 + items.length) % items.length].focus(); }
+      else if (e.key === 'Tab') closeProjectMenu(false);
+    });
+  }
+  return m;
+}
+function openProjectMenu(btn) {
+  var was = pjMenuTrigger === btn;
+  closeProjectMenu(false);
+  if (was) return;                       // the trigger toggles its own menu
+  var pid = btn.dataset.pjid;
+  var m = projectMenuEl();
+  m.dataset.pjid = pid;                  // never interpolated into markup
+  var fav = isFav('project', pid);
+  var items = [
+    ['open', 'Open Project'],
+    ['fav', fav ? 'Remove From Favorites' : 'Add to Favorites'],
+    ['sep'],
+    ['delete', 'Delete Project', 'danger']
+  ];
+  m.innerHTML = items.map(function (it) {
+    return it[0] === 'sep' ? '<div class="rowmenu-sep"></div>'
+      : '<button class="rowmenu-item' + (it[2] ? ' ' + it[2] : '') + '" role="menuitem"'
+        + ' tabindex="-1" data-act="' + it[0] + '">' + esc(it[1]) + '</button>';
+  }).join('');
+  m.querySelectorAll('.rowmenu-item').forEach(function (x) {
+    x.onclick = function () { projectMenuAction(x.dataset.act); };
+  });
+  m.style.display = 'block';
+  var r = btn.getBoundingClientRect();
+  m.style.top = (r.bottom + 4) + 'px';
+  m.style.left = Math.max(8, Math.min(r.right - m.offsetWidth, window.innerWidth - m.offsetWidth - 8)) + 'px';
+  btn.setAttribute('aria-expanded', 'true');
+  pjMenuTrigger = btn;
+  var first = m.querySelector('.rowmenu-item');
+  if (first) first.focus();
+}
+function closeProjectMenu(refocus) {
+  var m = el('pjRowMenu'), t = pjMenuTrigger;
+  pjMenuTrigger = null;
+  if (m) { m.style.display = 'none'; m.innerHTML = ''; }
+  if (t) {
+    t.setAttribute('aria-expanded', 'false');
+    if (refocus && document.body.contains(t)) t.focus();
+  }
+}
+function projectMenuAction(act) {
+  var pid = el('pjRowMenu').dataset.pjid;
+  closeProjectMenu(act === 'delete');
+  if (act === 'open') { open(pid); return; }
+  if (act === 'fav') {
+    // FSHome words the toast and repaints whichever page is showing.
+    if (window.FSHome) FSHome.toggleFavorite('project', pid);
+    return;
+  }
+  if (act === 'delete') removeProject(pid);
+}
+
+/* Deleting a project takes its budgets and its analyses with it, so the
+   warning says exactly how many — and says plainly that nothing is destroyed.
+   The server does all three in one transaction; a project flagged deleted
+   while its budgets were still live would keep being counted. */
+async function removeProject(projectId) {
+  var p = ((list && list.projects) || []).filter(function (x) { return x.projectId === projectId; })[0]
+    || (detail && detail.project && detail.project.projectId === projectId ? detail.project : null);
+  var nb = p ? p.budgetCount : 0, na = p ? p.analysisCount : 0;
+  var msg = 'Delete project ' + projectId + (p && p.name ? ' — ' + p.name : '') + '?\n\n'
+    + 'This also deletes ' + nb + ' budget' + (nb === 1 ? '' : 's')
+    + ' and ' + na + ' investment analys' + (na === 1 ? 'is' : 'es') + ' linked to it.\n\n'
+    + 'Nothing is destroyed: everything is flagged deleted and every saved version is kept, '
+    + 'so an administrator can restore it.';
+  if (!confirm(msg)) return;
+  try {
+    var r = await A.api('budget/' + encodeURIComponent(projectId) + '?scope=project', { method: 'DELETE' });
+    if (window.FSHome && FSHome.unfavorite) FSHome.unfavorite('project', projectId);
+    invalidate();
+    if (A.toast) A.toast('Deleted ' + projectId + ' — ' + r.budgetsDeleted + ' budget'
+      + (r.budgetsDeleted === 1 ? '' : 's') + ' and ' + r.analysesDeleted + ' analys'
+      + (r.analysesDeleted === 1 ? 'is' : 'es') + ' with it.');
+    if (A.dashboardInvalidate) A.dashboardInvalidate();
+    // Standing on the project that just went away is not a place to be.
+    if (A.currentPage && A.currentPage() === 'project') { if (A.go) A.go('projects'); render(true); }
+    else render(true);
+  } catch (e) {
+    if (A.toast) A.toast('Could not delete the project — ' + e.message);
+  }
 }
 
 window.FSProjects = {
@@ -567,8 +749,13 @@ window.FSProjects = {
   open: open,
   invalidate: invalidate,
   openStatusMenu: openStatusMenu,
+  openProjectMenu: openProjectMenu,
+  closeProjectMenu: closeProjectMenu,
+  makePrimary: makePrimary,
   addAlternate: addAlternate,
+  newBudget: newBudget,
   addAnalysis: addAnalysis,
+  closeBudgetPicker: closeBudgetPicker,
   setView: setView,
   paint: paintDetail,
   currentId: function () { return openId; },
