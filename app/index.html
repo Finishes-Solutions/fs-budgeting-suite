@@ -3522,8 +3522,12 @@ async function submitNewProject(){
     else toast('Could not create the project — '+e.message);
     if(field==='projectId')document.getElementById('npId').focus();
   }finally{
-    btn.disabled=false;btn.textContent='Create Project';
-    npValidate();
+    // Deliberately NOT npValidate() here: it would clear the message the
+    // server just attached to a field whose FORMAT is fine — a taken ID looks
+    // perfectly valid. The message clears when the user edits the field,
+    // which is when it stops being true.
+    btn.textContent='Create Project';
+    btn.disabled=false;
   }
 }
 

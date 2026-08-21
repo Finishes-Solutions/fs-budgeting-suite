@@ -511,17 +511,39 @@ update selectors alongside label changes.
   Changing that convention changes what "3% developer fee" means on every
   export, so it is documented in `docs/DATA_CONTRACT.md` rather than left to
   whoever next opens `parts()`.
-- **`BD-0001-02` is an alternate budget of project `BD-0001`.** The suffix is
-  how many-budgets-per-project was reached without re-keying `dbo.Budgets` or
-  any of its three foreign keys. The cost: moving a budget between projects
-  means a new id, not an edited column.
+- **A project id is `OP-####`; a budget id is `BD-####`.** Two namespaces, and
+  keeping them apart is the point. Project identity used to be *borrowed* from a
+  budget — the project row for `BD-0002` was literally keyed `'BD-0002'` and
+  alternates were attributed by stripping the suffix — which is why the Projects
+  list showed `BD-…` in its PROJECT ID column.
+  `sql/migrate_project_op_ids.sql` re-keyed the existing rows and
+  `sql/widen_project_op_ids.sql` widened them to four digits;
+  `dbo.ProjectIdMap` is the permanent record of what moved, and the input to
+  `sql/rollback_project_op_ids.sql`.
+- **`BD-0001-02` is an alternate of BUDGET `BD-0001`,** not of a project. The
+  suffix numbers alternates and nothing else; which project a budget belongs to
+  is `dbo.Budgets.ProjectKey`, an explicit link stated when the budget is
+  created. Moving a budget between projects is now an edited column, not a new
+  id — which is what the old scheme could not do.
+- **A project is created deliberately.** Saving a budget no longer conjures its
+  parent, because a budget id cannot name one. `+ Create Project` on the
+  Projects page is the only way in, and it asks for ID, Name and Address — all
+  three required, uniqueness decided by `PK_Projects`, not by a pre-read.
+- **A project has no type.** One property can carry a Multifamily budget and a
+  Commercial budget at once, so type lives on each budget and the project
+  reports the distinct types its budgets are.
+- **Exactly one primary budget, and the project's money is its alone.**
+  `PrimaryBudgetId` is one scalar column, so Make Primary promotes and demotes
+  in a single write. The project's live money is a `TOP 1` on that budget,
+  never a `SUM` across alternates.
 - **Converting a project snapshots its money.** `ContractAmount` /
   `ProjectAmount` are frozen at conversion so reported backlog does not move
   when someone edits a budget afterwards. Anything reporting converted totals
   reads those columns, never a live join.
 - **The project surface is query scopes on endpoints that already deploy.** A
   route rule matches paths, not query strings, so the in-function check on
-  `?scope=projects` / `?scope=project` is the *only* gate — same warning that
+  `?scope=projects` / `?scope=project` / `?scope=next-project-id` /
+  `?scope=next-budget-id` is the *only* gate — same warning that
   applies to `/api/user-settings?scope=roles`.
 - **`api/shared/investment/from-budget.js` is used by creation AND re-sync.**
   If they derived separately, re-syncing would quietly change numbers that were
@@ -556,6 +578,17 @@ update selectors alongside label changes.
 - `sql/publish_multifamily_opex_template.sql` — all four PASS. The multifamily
   template is now **v3**, carrying `opexSchemaVersion: 2` and all sixteen
   expense rows; v2 is retained, because publishing is append-only.
+- `sql/migrate_project_op_ids.sql` then `sql/widen_project_op_ids.sql` — the
+  seven existing projects were re-keyed from borrowed budget ids to
+  `OP-0001` … `OP-0007`. `dbo.ProjectIdMap` records every one of them, and is
+  what `sql/rollback_project_op_ids.sql` reverses from. The same batch backfilled
+  `PrimaryBudgetId`, rewrote the project ids held inside `Users.SettingsDoc`
+  favourites and `UserActivity`, and added `UX_PricingLibrary_Current` so "the
+  current pricing library" is a database-enforced singleton.
+
+  Run order for a fresh database: `schema.sql` already describes the OP-####
+  end state, so only an EXISTING database needs the two migrations, in that
+  order.
 
   Consequence worth knowing: budgets created from **v3 onward** are judged by
   the 35–55% expense rail and **blocked** when they fall outside it. Every

@@ -199,9 +199,9 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
      await p.evaluate(() => budgetOrigin && budgetOrigin.page === 'project' && budgetOrigin.id === 'OP-0900'),
      JSON.stringify(await p.evaluate(() => budgetOrigin)));
   ok('and Back says so', /Back to OP-0900/.test(
-     await p.locator('#page-budget .btn-back, #page-input .btn-back').first().getAttribute('title') || ''),
-     await p.locator('#page-budget .btn-back, #page-input .btn-back').first().getAttribute('title'));
-  await p.click('#page-budget .btn-back, #page-input .btn-back');
+     await p.locator('.page.on .btn-back').getAttribute('title') || ''),
+     await p.locator('.page.on .btn-back').getAttribute('title'));
+  await p.click('.page.on .btn-back');
   await p.waitForTimeout(800);
   ok('Back returns to that project, not to the Budgets list',
      /#\/project\/OP-0900/.test(p.url()), p.url());
@@ -211,7 +211,7 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   await p.waitForTimeout(600);
   await p.evaluate(id => openBudget(id, 'budget'), newBudgetId);
   await p.waitForTimeout(700);
-  await p.click('#page-budget .btn-back');
+  await p.click('.page.on .btn-back');
   await p.waitForTimeout(600);
   ok('with no project origin, Back falls back to the Budgets list',
      await p.locator('#page-budgets').isVisible(), p.url());
@@ -408,9 +408,22 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   ok('and it is read-only — it is a sum, not a second owner of the number',
      await p.locator('#invY1Total').evaluate(e => e.readOnly));
 
-  // nothing downstream double-counts: GOI is still rent-after-vacancy + other
+  // nothing downstream double-counts: GOI is still rent-after-vacancy + other.
+  // The assumptions an imported analysis cannot know are filled in first —
+  // an exit cap and an expense ratio — so there is a result to read.
+  await p.evaluate(() => FSInvestmentUI.goStep(5));
+  await p.waitForTimeout(300);
+  await p.fill('[data-f="disposition.exitCapRate.value"]', '6');
+  await p.locator('[data-f="disposition.exitCapRate.value"]').dispatchEvent('change');
+  await p.waitForTimeout(300);
+  await p.evaluate(() => {
+    const st = FSInvestmentUI._state();
+    if (st.input.expenses.value === null || st.input.expenses.value === undefined) {
+      st.input.expenses.value = 0.35;
+    }
+  });
   await p.evaluate(() => FSInvestmentUI.calculate());
-  await p.waitForTimeout(1400);
+  await p.waitForTimeout(1600);
   const yr1 = await p.evaluate(() => {
     const st = FSInvestmentUI._state();
     if (!st.result) return null;

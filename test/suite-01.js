@@ -57,7 +57,9 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' �
   await p.click('#nbCreate');
   await p.waitForTimeout(400);
   ok('Inputs page after new budget', await p.locator('#page-input').isVisible());
-  ok('U4 hash for inputs', p.url().endsWith('#/inputs'), p.url());
+  // The budget is created WITH its id now — it is typed in the dialog rather
+  // than left blank for the Inputs page — so the route carries it.
+  ok('U4 hash for inputs', /#\/inputs\/BD-0001$/.test(p.url()), p.url());
 
   // TST id validation
   await p.fill('#pId', 'TST-9999');

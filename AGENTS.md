@@ -254,12 +254,47 @@ custom provider for sign-in.
 
 ## Projects
 
+- **TWO NAMESPACES, and keeping them apart is the point.** A **project id is
+  `OP-####`** — the project's own identity, matched by `PROJECT_ID_RX` in
+  `app/index.html` and `api/shared/projects.js`, and enforced by
+  `CK_Projects_IdFormat` in the database. A **budget id is `BD-####`** (legacy
+  budgets may carry `OP-`/`AS-`/`TST-`), optionally with a `-NN` alternate
+  suffix. A budget id is never generated, stored, routed, labelled or displayed
+  as a project id.
+  Project identity used to be BORROWED from a budget — `projectKeyOf()` stripped
+  a budget's suffix and called the result a project id, which is why the
+  Projects list showed `BD-…` in its PROJECT ID column.
+  `budgetBaseOf()` is what survives of that function, and it does only what it
+  was ever really doing: numbering a budget's next alternate.
+  `sql/migrate_project_op_ids.sql` + `sql/widen_project_op_ids.sql` re-keyed the
+  existing rows; `dbo.ProjectIdMap` is the permanent record of what moved.
 - **`dbo.Projects` is the parent, and its primary key is the "one project per
-  ID" guarantee.** Budgets and analyses link to it by `ProjectKey` — the budget
-  id with any `-NN` alternate suffix stripped.
+  ID" guarantee.** Budgets and analyses link to it by `ProjectKey`, an EXPLICIT
+  link stated when the record is created — never derived from an id.
+- **A project is created deliberately, and only one way:**
+  `PUT /api/budget/{OP-####}?scope=project` with `{create:true}`. Saving a
+  budget no longer conjures its parent, because a budget id cannot name one.
+  A budget save may carry `meta.projectKey` to state its link; a save that
+  does not mention a project leaves the existing link alone.
+- **A project has NO type.** One property can carry a Multifamily budget and a
+  Commercial budget at the same time, so the type belongs to each budget; the
+  project reports `budgetTypes`, the distinct types its budgets actually are.
+  `dbo.Projects.Type` keeps its default and the application never reads it.
+- **Exactly one primary budget, and the project's money is its alone.**
+  `PrimaryBudgetId` is one scalar column, so Make Primary promotes and demotes
+  in the same write — a project cannot pass through a state with none or two.
+  `liveContractSum` / `liveProjectCost` are a `TOP 1` on that budget, never a
+  `SUM` across alternates: an alternate is a different way of pricing the same
+  work, and adding it in double-counts the project.
+- **Deleting a project is a soft delete that cascades**, in one transaction, to
+  its budgets and its analyses — a project flagged deleted while its budgets
+  were still live would keep being counted. Nothing is destroyed; only
+  `sql/purge_deleted_budgets.sql` does that.
 - **The project surface is query scopes on endpoints that already deploy**
   (`GET /api/budgets?scope=projects`, `?scope=project&id=…`,
-  `PUT /api/budget/{id}?scope=project`), for the same reason role management is:
+  `?scope=next-project-id`, `PUT`/`DELETE /api/budget/{id}?scope=project`,
+  `GET /api/budget/{id}?scope=next-budget-id`),
+  for the same reason role management is:
   a new `api/<name>/` folder is not reliably picked up by the deployed host.
   A route rule matches paths, not query strings, so the in-function check on
   these scopes is the **only** gate and must be written as the real gate.
@@ -273,14 +308,44 @@ custom provider for sign-in.
   again. A budget edited afterwards must not restate reported backlog, which is
   why the analytics totals read those columns and not a live join.
 - **The project page borrows the app's row menus rather than growing its own.**
-  Budget rows open `openRowMenu()` from `index.html` (Edit · Favorite · Update
-  Pricing · Versions · Delete); analysis rows open
-  `FSInvestmentUI.openInvRowMenu()`. Both repaint through
+  Budget rows open `openRowMenu()` from `index.html` (Edit · **Make Primary**
+  when the row is not already primary · Favorite · Update Pricing · Versions ·
+  Delete Budget); analysis rows open `FSInvestmentUI.openInvRowMenu()`; project
+  rows and cards open `FSProjects.openProjectMenu()` (Open · Favorite · Delete
+  Project). Every destructive item carries `danger`, which is what makes it
+  red — there is no second styling path. Both repaint through
   `FSHome.toggleFavorite()` → the adapter's `favoritesChanged`, which already
   knows which page is showing — don't add a second repaint path.
 - **Projects is the third `*View` section.** `projectView` sits beside
   `budgetView` and `analysisView` in `api/shared/user-settings-contract.js`;
   the toolbar control and the Settings row both go through `chooseSetting`.
+
+## Activity log
+
+- **Every event names WHAT it happened to.** `dbo.UserActivity` already had
+  `EntityType`, `EntityId` and a JSON `DetailDoc`; what was missing was anyone
+  filling them. Favoriting travelled through `PUT /api/user-settings` as a whole
+  settings document and landed as one blunt `settings_update` row with no
+  entity — the log rendered it as "Updated settings" and that was all anyone
+  could learn from it.
+- **The diff happens server-side**, in `api/user-settings/index.js`, where the
+  stored and merged documents are both already in hand. One row per favorite
+  that actually moved (`favorite_add` / `favorite_remove`, typed by
+  budget/project/analysis), `profile_update` with from/to, and `settings_update`
+  only for a preference that genuinely changed. Client-side would be worse: the
+  beacon can be lost, and the settings save is debounced so several toggles
+  arrive as one PUT — the diff still emits one row per id.
+- **A record's NAME is looked up, not taken from the request.** The client's
+  copy can be stale, and the name is the one part of an audit row a person
+  reads. Best-effort: a name that cannot be read is absent, never a failed save.
+- **`eventDetail()` exists twice on purpose** — `app/dashboard.js` (the admin
+  Activity Log, its CSV and its PDF) and `app/home.js` (Your Activity). One
+  vocabulary, two places it is read; they change together. Both are tolerant of
+  an event written before its shape existed, because the pre-granular rows are
+  still in the table and always will be.
+- **Adding an event type means adding its label in both**, and its detail case
+  where the row deserves a sentence. An unlabelled event renders its raw
+  keyword rather than breaking — but shipping that is a bug, not a fallback.
 
 ## Auth & security
 
@@ -304,14 +369,21 @@ custom provider for sign-in.
   `app/index.html`, `api/budget/index.js`, `api/budget-versions/index.js`, and
   `test/mock-api.js` — all must accept exactly
   `OP-####`, `BD-####`, `AS-####`, `TST-####`, **plus an optional `-NN` suffix**
-  (`BD-0001-02`). The plain form is a project's base budget; the suffix is an
-  ALTERNATE budget under the same project. Stripping the suffix gives the
-  project id, which is what `dbo.Projects` is keyed by — that is what makes
-  "one project per ID" true, and it is why many-budgets-per-project needed no
-  re-keying of `dbo.Budgets`, its three foreign keys, or any route. `TST-` ids are test data:
-  excluded from views (`sql/views.sql`) and purgeable by the cleanup script.
+  (`BD-0001-02`). That is the BUDGET namespace; new budgets are minted `BD-`.
+  The plain form is a base budget and the suffix is an alternate of it.
+  `PROJECT_ID_RX` (`^OP-\d{4}$`) is a separate rule in `app/index.html` and
+  `api/shared/projects.js` and must never be widened to accept a budget id.
+  `TST-` ids are test data: excluded from views (`sql/views.sql`) and purgeable
+  by the cleanup script.
 - **From the client principal, store only `userId` and `userDetails`.** Don't
   persist claims or tokens.
+- **Switch Account has to log out first.** `/.auth/login/aad` short-circuits
+  while the Static Web Apps session cookie is present: it never reaches Entra,
+  so the `prompt=select_account` configured in `staticwebapp.config.json` is
+  never sent and the page just reloads as the same user. The cookie is
+  HttpOnly — nothing in script can clear it — so the control navigates to
+  `/.auth/logout` with a `post_logout_redirect_uri` pointing back at
+  `/.auth/login/aad`. Sign Out is the same drop, landing on `/login.html`.
 
 ## Single sources of truth
 
