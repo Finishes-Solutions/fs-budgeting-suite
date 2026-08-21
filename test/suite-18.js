@@ -296,12 +296,13 @@ const BASE='http://127.0.0.1:8100';
            overlaps:!!(pin&&pin.getBoundingClientRect().left<id.right)};
  });
  const pc=await pinCard();
- ok('a pinned card carries a pin icon', !!pc && pc.hasPin && pc.svg, JSON.stringify(pc));
- ok('the pin is a real button, not a button inside a button',
+ ok('a favorited card carries a filled star', !!pc && pc.hasPin && pc.svg, JSON.stringify(pc));
+ ok('the star is a real button, not a button inside a button',
     !!pc && pc.tag==='BUTTON' && !pc.nested, JSON.stringify(pc&&{tag:pc.tag,nested:pc.nested}));
- ok('the pin says what clicking it does',
-    !!pc && /^Unpin .+ from Home$/.test(pc.label||''), pc?pc.label:'none');
- ok('the pin sits in the top right corner and clears the record id',
+ // The star TOGGLES, so its label says which direction this click goes.
+ ok('the star says what clicking it does',
+    !!pc && /^Remove .+ from Favorites$/.test(pc.label||''), pc?pc.label:'none');
+ ok('the star sits in the top right corner and clears the record id',
     !!pc && pc.fromRight>=4 && pc.fromRight<=14 && pc.fromTop>=4 && pc.fromTop<=14 && !pc.overlaps,
     JSON.stringify(pc));
  ok('the pinned card shows its real update time, not the word Pinned',
@@ -333,12 +334,12 @@ const BASE='http://127.0.0.1:8100';
  // put it back for the checks that follow
  await p.evaluate(()=>{
    const a=(FSHome._recent(6)||[]).filter(x=>x.kind==='analysis')[0];
-   if(a)FSHome.togglePin('analysis',a.rec.analysisId);
+   if(a)FSHome.toggleFavorite('analysis',a.rec.analysisId);
  });
  await p.waitForTimeout(800);
- ok('the same record pinned and recent is marked in both places',
+ ok('the same record favorited and recent is marked in both places',
     await p.evaluate(()=>{
-      // the pin is a sibling of the card, inside the same wrapper
+      // the star is a sibling of the card, inside the same wrapper
       return [...document.querySelectorAll('#page-home .hm-card-wrap')]
         .filter(w=>w.querySelector('.hm-star')).length>=1;
     }));

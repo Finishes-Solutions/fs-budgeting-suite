@@ -18,7 +18,12 @@
   align-items:start;margin-bottom:20px}
 #page-dashboard .dash-cols>.card{margin-bottom:0}
 /* The two donuts sit side by side within their half. */
-#page-dashboard .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+/* auto-fit rather than a fixed 1fr 1fr: the row holds two breakdowns before the
+   project pipeline exists and three after, and a hard two-column rule wrapped
+   the third onto its own line — which pushed the whole visual half of the
+   dashboard past one screen. auto-fit collapses empty tracks, so two cards
+   still fill the width. */
+#page-dashboard .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
 
 /* Range buttons in the activity card's header. */
 #page-dashboard .dash-ranges{display:flex;gap:2px;background:var(--ink-100);border-radius:8px;padding:2px}

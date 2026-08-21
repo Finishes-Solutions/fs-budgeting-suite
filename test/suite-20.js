@@ -17,7 +17,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.waitForTimeout(500);
 
  // ---------- 1. a brand-new budget is never blocked ----------
- await p.click('button:has-text("+ New Budget")');
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(400);
+ await p.click('.page.on button:has-text("+ New Budget")');
  await p.click('#newBudgetModal .tpl-row:has-text("Blank Budget")');
  await p.waitForTimeout(400);
  await p.fill('#pId','TST-7201'); await p.fill('#pName','Empty Shell');
@@ -26,12 +27,13 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('an empty budget has nothing to judge', emptyRails.rails.length===0,
     JSON.stringify(emptyRails.rails.map(r=>r.id)));
  ok('and therefore cannot be blocked', emptyRails.blocking===0);
- await p.click('button[data-save-btn]'); await p.waitForTimeout(900);
+ await p.click('.page.on button[data-save-btn]'); await p.waitForTimeout(900);
  ok('an empty budget saves', /^Saved /.test(await p.locator('#saveState').textContent()),
     await p.locator('#saveState').textContent());
 
  // ---------- 2. the multifamily template lands inside the rails ----------
- await p.click('button:has-text("+ New Budget")');
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(400);
+ await p.click('.page.on button:has-text("+ New Budget")');
  await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")');
  await p.waitForTimeout(500);
  await p.fill('#pId','TST-7202'); await p.fill('#pName','Rail Tower');
@@ -56,7 +58,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     /blocking/i.test(await p.locator('#mGuardrails').textContent()),
     await p.locator('#mGuardrails').textContent());
 
- await p.click('button[data-save-btn]'); await p.waitForTimeout(800);
+ await p.click('.page.on button[data-save-btn]'); await p.waitForTimeout(800);
  ok('the save is refused', /guard rail/i.test(await p.locator('#toast').textContent()),
     await p.locator('#toast').textContent());
  ok('and nothing was written',
@@ -71,7 +73,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const direct=await p.evaluate(async()=>{
    const r=await fetch('/api/budget/TST-7202',{method:'PUT',
      headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({meta:{projectId:'TST-7202',name:'Rail Tower',status:'Draft'},doc:window.doc})});
+     body:JSON.stringify({meta:{projectId:'TST-7202',name:'Rail Tower',status:'Draft'},doc})});
    return {status:r.status, body:await r.json().catch(()=>null)};
  });
  ok('a client that skips the check still cannot write', direct.status===422, String(direct.status));
@@ -102,7 +104,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     acked.breaches.some(x=>x.id==='opexRatio'&&x.severity==='warn'&&x.acked));
  ok('the card marks it overridden', /Overridden/.test(await p.locator('#grBody').textContent()));
 
- await p.click('button[data-save-btn]'); await p.waitForTimeout(900);
+ await p.click('.page.on button[data-save-btn]'); await p.waitForTimeout(900);
  ok('an overridden budget saves', /^Saved /.test(await p.locator('#saveState').textContent()),
     await p.locator('#saveState').textContent());
 
@@ -116,7 +118,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const fixed=await p.evaluate(()=>guardrails());
  ok('the ratio is back in range', fixed.breaches.every(x=>x.id!=='opexRatio'),
     JSON.stringify(fixed.breaches.map(x=>x.id)));
- await p.click('button[data-save-btn]'); await p.waitForTimeout(900);
+ await p.click('.page.on button[data-save-btn]'); await p.waitForTimeout(900);
  ok('and saving prunes the stale override',
     (await p.evaluate(()=>(doc.guardrailAcks||[]).length))===0,
     JSON.stringify(await p.evaluate(()=>doc.guardrailAcks)));
@@ -141,7 +143,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const legacy=await p.evaluate(async()=>{
    // Exactly the shape a budget saved before this release has: service expense
    // rows only, and no opexSchemaVersion at all.
-   const d=JSON.parse(JSON.stringify(window.doc));
+   const d=JSON.parse(JSON.stringify(doc));
    d.projectId='TST-7203'; d.name='Legacy Budget';
    delete d.opexSchemaVersion;
    d.guardrailAcks=[];

@@ -52,6 +52,8 @@ module.exports = async function (context, req) {
     const r = await rq.query(
       `SELECT a.AnalysisId, a.ProjectId, a.Name, a.Status, a.CurrentVersionNumber,
               a.SourceBudgetVersionId, bv.VersionNumber AS SourceBudgetVersionNumber,
+              (SELECT MAX(v2.VersionNumber) FROM dbo.BudgetVersions AS v2
+                WHERE v2.ProjectId = a.ProjectId) AS BudgetCurrentVersionNumber,
               a.PurchasePrice, a.Year1NOI, a.InitialEquity, a.FinalYearEquityIRR,
               a.OptimalHoldingYear, a.CalculationVersion,
               a.CreatedById, a.CreatedByName, a.CreatedAt, a.UpdatedAt,
@@ -65,6 +67,12 @@ module.exports = async function (context, req) {
       analysisId: x.AnalysisId.toLowerCase(), projectId: x.ProjectId, name: x.Name,
       status: x.Status, currentVersionNumber: x.CurrentVersionNumber,
       sourceBudgetVersionNumber: x.SourceBudgetVersionNumber,
+      // The budget's CURRENT version, so the list can flag an analysis whose
+      // source has moved on. Reporting it is all this does — nothing
+      // recalculates on its own.
+      budgetCurrentVersionNumber: x.BudgetCurrentVersionNumber || null,
+      budgetDrift: !!(x.BudgetCurrentVersionNumber && x.SourceBudgetVersionNumber
+                      && x.BudgetCurrentVersionNumber > x.SourceBudgetVersionNumber),
       purchasePrice: x.PurchasePrice === null ? null : +x.PurchasePrice,
       year1NOI: x.Year1NOI === null ? null : +x.Year1NOI,
       initialEquity: x.InitialEquity === null ? null : +x.InitialEquity,

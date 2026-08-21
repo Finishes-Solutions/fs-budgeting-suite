@@ -175,11 +175,22 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the analysis knows the budget has moved past it',
     after.source.drift===true && after.source.budgetCurrentVersionNumber===2,
     JSON.stringify(after.source));
- await p.goto('http://127.0.0.1:8100/index.html#/analysis/'+aid,{waitUntil:'networkidle'});
- await p.waitForTimeout(900);
+ // A same-URL goto is a same-document navigation, so it does NOT refetch —
+ // reload explicitly, which is what a user opening the analysis fresh does.
+ await p.reload({waitUntil:'networkidle'});
+ await p.waitForTimeout(1200);
  ok('and offers the re-sync in the header',
     (await p.locator('.inv-drift').count())===1,
     await p.locator('#page-analysis .page-title .sub').textContent());
+
+ // The list flags it too, quietly — the re-sync button stays in the editor,
+ // where the consequences of pressing it are visible.
+ await p.evaluate(()=>go('analyses')); await p.waitForTimeout(900);
+ ok('the list marks an analysis whose budget has moved on',
+    (await p.locator('#page-analyses .inv-drift-dot').count())>=1,
+    await p.locator('#page-analyses').textContent().then(t=>t.replace(/\s+/g,' ').slice(0,140)));
+ await p.goto('http://127.0.0.1:8100/index.html#/analysis/'+aid,{waitUntil:'networkidle'});
+ await p.waitForTimeout(1000);
 
  await p.locator('.inv-drift').click(); await p.waitForTimeout(1200);
  const resynced=await p.evaluate(async id=>await (await fetch('/api/investment-analysis/'+id)).json(),aid);

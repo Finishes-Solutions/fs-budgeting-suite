@@ -21,13 +21,14 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // ---------- 2. saving a budget creates its project ----------
  await p.click('#nav-budgets'); await p.waitForTimeout(400);
- await p.click('button:has-text("+ New Budget")');
+ await p.evaluate(()=>go('budgets')); await p.waitForTimeout(400);
+ await p.click('.page.on button:has-text("+ New Budget")');
  await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")');
  await p.waitForTimeout(500);
  await p.fill('#pId','TST-7301'); await p.fill('#pName','Harbour Point');
  await p.fill('#pAddr','5 Dock Road');
  await p.waitForTimeout(300);
- await p.click('button[data-save-btn]'); await p.waitForTimeout(1000);
+ await p.click('.page.on button[data-save-btn]'); await p.waitForTimeout(1000);
  ok('the budget saved', /^Saved /.test(await p.locator('#saveState').textContent()),
     await p.locator('#saveState').textContent());
 
@@ -66,7 +67,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('and is unsaved until the user decides',
     /unsaved/i.test(await p.locator('#saveState').textContent()),
     await p.locator('#saveState').textContent());
- await p.click('button[data-save-btn]'); await p.waitForTimeout(1100);
+ await p.click('.page.on button[data-save-btn]'); await p.waitForTimeout(1100);
  ok('the alternate saves under the widened ID format',
     /^Saved /.test(await p.locator('#saveState').textContent()),
     await p.locator('#saveState').textContent());

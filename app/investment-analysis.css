@@ -154,3 +154,9 @@
   padding:2px 10px;cursor:pointer}
 .inv-drift:hover{border-color:var(--warn)}
 html[data-theme=dark] .inv-origin-warn,html[data-theme=dark] .inv-drift{background:#2a2317;border-color:#4d4026}
+/* Drift in the LIST: a quiet marker, not a call to action — the re-sync button
+   lives in the editor where the consequences of pressing it are visible. */
+.inv-drift-dot{font-family:var(--fm);font-size:9.5px;letter-spacing:.04em;margin-left:6px;
+  white-space:nowrap;border-radius:999px;padding:1px 7px;
+  border:1px solid #e6d3ae;background:#fdf6e8;color:var(--warn);cursor:default}
+html[data-theme=dark] .inv-drift-dot{background:#2a2317;border-color:#4d4026}

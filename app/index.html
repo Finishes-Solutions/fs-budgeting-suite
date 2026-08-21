@@ -3764,7 +3764,7 @@ function go(p){
   renderSaveState();
   if(p==='home')renderHome();
   if(p==='budgets')renderBudgetsPage();
-  if(p==='projects'&&window.FSProjects)FSProjects.render();
+  if(p==='projects'&&window.FSProjects)FSProjects.render(true);
   if(DOC_PAGES.includes(p))paintWorkflowPills(p);
   if(p==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
   if(p==='pricing'){renderPricing();renderCatalog();}
@@ -3940,6 +3940,13 @@ async function refreshBudgetSurfaces(){
   index=(await sGet('budgets-index'))||[];
   paintBudgets();
   if(window.FSHome){FSHome.invalidate();if(currentPage==='home')FSHome.show();}
+  // Saving a budget can CREATE its project, so a cached project list is stale
+  // the moment the save lands. Drop it; the page refetches when next opened.
+  if(window.FSProjects){
+    FSProjects.invalidate();
+    if(currentPage==='projects')FSProjects.render(true);
+    else if(currentPage==='project')FSProjects.show(FSProjects.currentId(),true);
+  }
 }
 function homeRows(){
   const q=homeView.q.trim().toLowerCase();

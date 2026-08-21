@@ -46,6 +46,15 @@ const invSummary = a => {
     analysisId: a.id, projectId: a.projectId, name: a.name, status: a.status,
     currentVersionNumber: a.currentVersionNumber,
     sourceBudgetVersionNumber: a.sourceBudgetVersionNumber,
+    budgetCurrentVersionNumber: (function () {
+      const br = a.projectId ? budgets.get(a.projectId) : null;
+      return br && !br.deleted ? br.versions.length : null;
+    })(),
+    budgetDrift: (function () {
+      const br = a.projectId ? budgets.get(a.projectId) : null;
+      const cur = br && !br.deleted ? br.versions.length : null;
+      return !!(cur && a.sourceBudgetVersionNumber && cur > a.sourceBudgetVersionNumber);
+    })(),
     purchasePrice: a.result ? a.result.summary.purchasePrice : null,
     year1NOI: a.result ? a.result.summary.year1NOI : null,
     initialEquity: a.result ? a.result.summary.initialEquity : null,
@@ -201,8 +210,26 @@ pushVersion('multifamily', {doc:{
          {label:'Townhome (1,200)',bd:2,bth:2.5,sf:1200,count:14,rent:1500}],
   other:[{label:'Utilities billback',rate:77,count:0,auto:true},
          {label:'Parking (reserved spaces)',rate:25,count:15,auto:false}],
+  // The full operating-expense schedule, as sql/publish_multifamily_opex_template.sql
+  // publishes it: services PLUS taxes, insurance, management, payroll, R&M,
+  // turnover, marketing, G&A, landscaping and reserves. Against this unit mix
+  // it lands around 46% of income — inside the 35-55% guard rail, which is the
+  // whole reason the schedule and the rail shipped together. Seeding the OLD
+  // six rows here would make every new-budget suite a warned budget and hide
+  // the state the deployed app is actually in.
   expenses:[{label:'Water & sewer',per:'unit',rate:60,count:0,auto:true},
-            {label:'Valet trash',per:'unit',rate:15,count:0,auto:true}],
+            {label:'Valet trash',per:'unit',rate:15,count:0,auto:true},
+            {label:'Property Taxes',per:'pctIncome',rate:12,count:0,auto:false},
+            {label:'Property Insurance',per:'unit',rate:65,count:0,auto:true},
+            {label:'Property Management Fee',per:'pctIncome',rate:4,count:0,auto:false},
+            {label:'On-Site Payroll',per:'unit',rate:95,count:0,auto:true},
+            {label:'Repairs & Maintenance',per:'unit',rate:55,count:0,auto:true},
+            {label:'Turnover / Make-Ready',per:'unit',rate:30,count:0,auto:true},
+            {label:'Marketing & Leasing',per:'unit',rate:22,count:0,auto:true},
+            {label:'General & Administrative',per:'unit',rate:18,count:0,auto:true},
+            {label:'Landscaping & Amenity Upkeep',per:'unit',rate:20,count:0,auto:true},
+            {label:'Replacement Reserves',per:'unit',rate:25,count:0,auto:true}],
+  opexSchemaVersion:2,
   lines: pricing.lines.map(l => ({...l, lineId:'tpl-'+Math.random().toString(36).slice(2,10),
     qty: l.basis==='ls'?1:0, auto: l.basis!=='ls', baseUnit:l.unit})),
   companies:[{name:'Finishes Solutions LLC',pct:12}],
@@ -686,7 +713,12 @@ http.createServer((req, res) => {
         live.meta.updated = live.doc.updated = new Date().toISOString();
         return json(res, 200, { ok: true, status: body.status });
       }
-      const { meta, doc } = body;
+      // A malformed body must answer 400, exactly as api/budget/index.js does.
+      // Throwing here would kill the whole mock and cascade into every suite
+      // that runs after it — which is precisely how a five-minute mistake costs
+      // an hour of misread failures.
+      const { meta, doc } = body || {};
+      if (!doc || !meta) { res.writeHead(400); return res.end('Body must be { meta, doc }'); }
       if ((doc.projectId || '').toUpperCase() !== id) { res.writeHead(400); return res.end('id mismatch'); }
       // Behaviour-parallel with api/budget/index.js: the rails are re-evaluated
       // from the SUBMITTED document and refuse the write, never trusting a

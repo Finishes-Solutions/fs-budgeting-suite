@@ -225,7 +225,7 @@
   function invCard(r) {
     return `<div class="hcard" data-inv-card="${esc(r.analysisId)}">
       <div class="hc-id">${window.creatorAvatar ? creatorAvatar(r.createdByName, r.createdByAvatar) + ' ' : ''}${esc(r.projectId || 'Standalone')}${r.sourceBudgetVersionNumber
-        ? ' <span class="inv-vsub">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</div>
+        ? ' <span class="inv-vsub">v' + r.sourceBudgetVersionNumber + '</span>' : ''}${listDrift(r)}</div>
       <div class="hc-name">${esc(r.name)}</div>
       <div class="hc-row"><span>Purchase Price</span><span class="v">${usd(r.purchasePrice)}</span></div>
       <div class="hc-row"><span>Equity IRR</span><span class="v">${pctf(r.finalYearEquityIRR)}</span></div>
@@ -242,7 +242,7 @@
     tr.innerHTML = `
       <td class="no-print" style="padding-left:22px">${window.creatorAvatar ? creatorAvatar(r.createdByName, r.createdByAvatar) : ''}</td>
       <td${pad}>${esc(r.name)}</td>
-      <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-vsub" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
+      <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-vsub" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}${listDrift(r)}</td>
       <td>${window.statusChip ? statusChip(r.status, 'analysis', r.analysisId) : esc(r.status)}</td>
       <td class="calc r">${usd(r.purchasePrice)}</td>
       <td class="calc r">${usd(r.year1NOI)}</td>
@@ -512,6 +512,16 @@
       'Completed': 'st-done', 'Cancelled': 'st-cancel' }[n] || 'st-draft';
     return `<span class="st-chip ${cls}" style="pointer-events:none">${esc(n)}</span>`;
   }
+  /* An analysis whose source budget has moved past the version it was built
+     from is FLAGGED in the list, not quietly refreshed. The re-sync lives in
+     the editor, where the consequences are visible. */
+  function listDrift(r) {
+    if (!r || !r.budgetDrift) return '';
+    return ' <span class="inv-drift-dot" title="Budget '
+      + esc(r.projectId) + ' is now at v' + esc(r.budgetCurrentVersionNumber)
+      + ' — open the analysis to re-sync">v' + esc(r.budgetCurrentVersionNumber) + ' available</span>';
+  }
+
   /* ---------- budget-derived expense ratio ----------
      The number is computed server-side from the budget version and stored with
      its provenance, so the UI only reads it. Turning Override on is a decision
