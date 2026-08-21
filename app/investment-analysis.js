@@ -11,7 +11,12 @@
   const st = {
     id: null, input: null, result: null, source: null,
     loadedVersion: 0, dirty: false, stale: false, busy: '',
-    step: 1, viewingVersion: null, conflict: null, errors: {}
+    step: 1, viewingVersion: null, conflict: null, errors: {},
+    // Per-session, never persisted: an override of the budget-derived inputs
+    // is a decision about the edit being made now, so it re-arms on load.
+    overrideSource: false,
+    // The canonical property area in square feet — see setSizeUnit().
+    sizeSF: null
   };
 
   /* ---------- formatting (display only — never feeds arithmetic) ---------- */
@@ -31,6 +36,74 @@
   const toPct = v => v === null || v === undefined ? '' : String(Math.round(v * 1e6) / 1e4);
   const fromPct = s => s === '' || s === null || s === undefined ? null : nz(s) / 100;
   const numOrNull = s => s === '' || s === null || s === undefined ? null : nz(s);
+
+  /* ---------- display formatting for the assumption fields ----------
+     A handful of inputs render as TEXT so they can carry a $, thousands
+     separators, a % or a unit suffix. The DECORATION is display only: the
+     value in st.input stays a plain number, parseNum() strips the decoration
+     off again on every read, and nothing that calculates, saves or exports
+     ever sees a formatted string. Fields not listed in FMT keep their native
+     number input. */
+  const parseNum = s => {
+    if (s === null || s === undefined) return null;
+    const t = String(s).replace(/[^0-9.eE+-]/g, '');
+    return t === '' || !Number.isFinite(+t) ? null : +t;
+  };
+  const grp = (v, min, max) => (+v).toLocaleString('en-US',
+    { minimumFractionDigits: min, maximumFractionDigits: max });
+  // Cents only when the value actually has them: $3,810,600 stays whole while
+  // $45,408,771.05 keeps its five cents.
+  function fmtMoneyIn(v) {
+    if (v === null || v === undefined || !Number.isFinite(+v)) return '';
+    return '$' + grp(v, Math.round(+v * 100) % 100 === 0 ? 0 : 2, 2);
+  }
+  // A RATE (0.02) shown the way the review asked for it: "2.00%".
+  function fmtPctIn(v) {
+    if (v === null || v === undefined || !Number.isFinite(+v)) return '';
+    return grp(Math.round(+v * 1e6) / 1e4, 2, 2) + '%';
+  }
+  // The price field is money in one mode and a rate in the other, so the
+  // display it carries follows the mode rather than the field.
+  function basisDisplay(inp) {
+    const b = inp.acquisition.basis;
+    if (b.value === null || b.value === undefined) return '';
+    return b.mode === 'acquisitionCapRate' ? toPct(b.value) : fmtMoneyIn(b.value);
+  }
+  const SIZE_SUFFIX = { squareFeet: 'SF', acres: 'AC', units: 'Units' };
+  function fmtSizeIn(v, unit) {
+    if (v === null || v === undefined || !Number.isFinite(+v)) return '';
+    return grp(v, 0, unit === 'acres' ? 4 : 2) + ' ' + (SIZE_SUFFIX[unit] || 'SF');
+  }
+
+  /* ---------- the canonical property size ----------
+     Square feet and acres are the same area said two ways, so switching the
+     unit CONVERTS the value rather than relabelling it. The conversion runs
+     off one canonical square-foot figure, which is why switching SF → acres →
+     SF lands back on the number you started with instead of drifting through
+     two roundings. Units is not an area at all: it has no conversion, so it
+     takes the property's unit count and leaves the canonical area untouched
+     for the trip back. */
+  const SF_PER_ACRE = 43560;
+  const isArea = u => u === 'squareFeet' || u === 'acres';
+  const toSF = (v, u) => v === null || v === undefined ? null : (u === 'acres' ? +v * SF_PER_ACRE : +v);
+  const fromSF = (sf, u) => sf === null || sf === undefined ? null : (u === 'acres' ? sf / SF_PER_ACRE : sf);
+  function noteSizeCanonical() {
+    const sz = st.input && st.input.property && st.input.property.size;
+    if (sz && isArea(sz.unit) && Number.isFinite(+sz.value)) st.sizeSF = toSF(sz.value, sz.unit);
+  }
+  function setSizeUnit(to) {
+    const sz = st.input.property.size, from = sz.unit;
+    sz.unit = to;
+    if (from === to) return;
+    if (isArea(to)) {
+      if (st.sizeSF !== null && st.sizeSF !== undefined) sz.value = fromSF(st.sizeSF, to);
+    } else {
+      const uc = st.input.property.unitCount;
+      if (Number.isFinite(+uc) && +uc > 0) sz.value = +uc;
+    }
+    const box = host_input('property.size.value');
+    if (box) box.value = fmtSizeIn(sz.value, to);
+  }
 
   // House timestamp format, matching the budget app: the viewer's LOCAL time
   // as MM-DD-YYYY h:mm AM/PM, or MM-DD-YYYY where only the day matters.
@@ -225,7 +298,7 @@
   function invCard(r) {
     return `<div class="hcard" data-inv-card="${esc(r.analysisId)}">
       <div class="hc-id">${window.creatorAvatar ? creatorAvatar(r.createdByName, r.createdByAvatar) + ' ' : ''}${esc(r.projectId || 'Standalone')}${r.sourceBudgetVersionNumber
-        ? ' <span class="inv-vsub">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</div>
+        ? ' <span class="inv-vsub">v' + r.sourceBudgetVersionNumber + '</span>' : ''}${listDrift(r)}</div>
       <div class="hc-name">${esc(r.name)}</div>
       <div class="hc-row"><span>Purchase Price</span><span class="v">${usd(r.purchasePrice)}</span></div>
       <div class="hc-row"><span>Equity IRR</span><span class="v">${pctf(r.finalYearEquityIRR)}</span></div>
@@ -242,7 +315,7 @@
     tr.innerHTML = `
       <td class="no-print" style="padding-left:22px">${window.creatorAvatar ? creatorAvatar(r.createdByName, r.createdByAvatar) : ''}</td>
       <td${pad}>${esc(r.name)}</td>
-      <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-vsub" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}</td>
+      <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(r.projectId || '—')}${r.sourceBudgetVersionNumber ? ' <span class="inv-vsub" title="Created from budget version ' + r.sourceBudgetVersionNumber + '">v' + r.sourceBudgetVersionNumber + '</span>' : ''}${listDrift(r)}</td>
       <td>${window.statusChip ? statusChip(r.status, 'analysis', r.analysisId) : esc(r.status)}</td>
       <td class="calc r">${usd(r.purchasePrice)}</td>
       <td class="calc r">${usd(r.year1NOI)}</td>
@@ -290,11 +363,11 @@
     if (wasOpen) return;
     const m = invMenuEl();
     m.dataset.aid = analysisId;          // never interpolated into markup
-    // The pin label reads as the action it performs, so it flips per row.
-    const pinned = window.FSHome && FSHome.isPinned('analysis', analysisId);
+    // The favorite label reads as the action it performs, so it flips per row.
+    const fav = window.FSHome && FSHome.isFavorite('analysis', analysisId);
     const items = [
       ['open', 'Open Analysis'],
-      ['pin', pinned ? 'Unpin From Home' : 'Pin to Home'],
+      ['fav', fav ? 'Remove From Favorites' : 'Add to Favorites'],
       ['versions', 'Versions'], ['duplicate', 'Duplicate'],
       ['sep'], ['delete', 'Delete Analysis', 'danger']
     ];
@@ -320,9 +393,11 @@
   function invRowMenuAction(act) {
     const aid = el('invRowMenu').dataset.aid;
     closeInvRowMenu(act === 'delete');
-    if (act === 'pin') {
-      const on = window.FSHome && FSHome.togglePin('analysis', aid);
-      A.toast(on ? 'Pinned this analysis to Home.' : 'Unpinned this analysis from Home.');
+    if (act === 'fav') {
+      // FSHome words the toast and repaints whichever page is showing; this
+      // menu opens from the project page as well as the list.
+      if (window.FSHome) FSHome.toggleFavorite('analysis', aid);
+      if (!A.currentPage || A.currentPage() === 'analyses') renderList();
       return;
     }
     if (act === 'open') location.hash = '#/analysis/' + aid;
@@ -432,6 +507,11 @@
       st.source = r.source; st.loadedVersion = r.currentVersionNumber;
       st.dirty = false; st.stale = false; st.busy = ''; st.step = r.result ? 6 : 1;
       st.viewingVersion = null; st.conflict = null; st.errors = {};
+      // Budget-derived fields relock every time the analysis is opened: an
+      // override is a decision about the edit you are making now, not a
+      // property of the record.
+      st.overrideSource = false;
+      st.sizeSF = null; noteSizeCanonical();
       // Badge baseline: the server-stored original import (or values as
       // loaded, for analyses created before originals were stored). Editing
       // a field away from it hides its From Budget badge; putting the exact
@@ -487,6 +567,7 @@
   // Refresh the ✓ pills and every Next button without touching any input —
   // called from field changes, so focus and caret are never disturbed.
   function updateStepUI() {
+    paintStepFlags();
     document.querySelectorAll('#invSteps button[data-step]').forEach(b => {
       const n = +b.dataset.step;
       if (n === 6) return;
@@ -512,6 +593,97 @@
       'Completed': 'st-done', 'Cancelled': 'st-cancel' }[n] || 'st-draft';
     return `<span class="st-chip ${cls}" style="pointer-events:none">${esc(n)}</span>`;
   }
+  /* An analysis whose source budget has moved past the version it was built
+     from is FLAGGED in the list, not quietly refreshed. The re-sync lives in
+     the editor, where the consequences are visible. */
+  function listDrift(r) {
+    if (!r || !r.budgetDrift) return '';
+    return ' <span class="inv-drift-dot" title="Budget '
+      + esc(r.projectId) + ' is now at v' + esc(r.budgetCurrentVersionNumber)
+      + ' — open the analysis to re-sync">v' + esc(r.budgetCurrentVersionNumber) + ' available</span>';
+  }
+
+  /* ---------- budget-derived expense ratio ----------
+     The number is computed server-side from the budget version and stored with
+     its provenance, so the UI only reads it. Turning Override on is a decision
+     the analysis then carries visibly — on the editor, in the list, and in
+     every export. */
+  // Other income arrives from the budget's own other-income lines. While it
+  // does, the rows are the budget's to state and only the growth rate is the
+  // underwriter's to choose — so the labels, the amounts, Add and Remove all
+  // go read-only together. Half a lock is no lock.
+  function otherIncomeLocked() { return fromBudget('income.otherIncome'); }
+  function derivedExpenses() {
+    const e = st.input && st.input.expenses;
+    return e && e.derivedFrom && typeof e.derivedFrom === 'object' ? e.derivedFrom : null;
+  }
+  function expensesOverridden() {
+    return !!(st.input && st.input.expenses && st.input.expenses.override && derivedExpenses());
+  }
+  function expBadge() {
+    const d = derivedExpenses();
+    if (!d) return '';
+    return expensesOverridden()
+      ? ` <span class="inv-origin inv-origin-warn" title="This no longer matches budget ${esc(d.projectId)} v${esc(d.budgetVersionNumber)}">Overridden</span>`
+      : ` <span class="inv-origin" title="Derived from budget ${esc(d.projectId)} v${esc(d.budgetVersionNumber)}">From Budget</span>`;
+  }
+  function expDerivedNote() {
+    const d = derivedExpenses();
+    if (!d) return '';
+    const base = usd(d.annualOpex) + ' of operating expenses ÷ ' + usd(d.goi)
+      + ' gross operating income (' + usd(d.grossIncomeYr) + ' less ' + pctf(d.vacancy, 1) + ' vacancy)';
+    // A source budget that is itself outside the 35–55% rail cannot produce a
+    // trustworthy ratio, and saying so here is the whole point of the rail.
+    const ratio = d.goi > 0 ? d.annualOpex / d.goi : null;
+    const bad = ratio !== null && (ratio < 0.35 || ratio > 0.55);
+    return esc(base) + (bad
+      ? '<br><b class="inv-warn-text">Budget ' + esc(d.projectId) + ' is at ' + pctf(ratio, 1)
+        + ' — outside the 35–55% guard rail'
+        + (nz(d.opexSchemaVersion) < 2 ? ' and predates the full expense schedule' : '')
+        + '. This analysis will misstate NOI until the budget is corrected.</b>'
+      : '');
+  }
+  function setExpenseOverride(on) {
+    if (!st.input || !st.input.expenses) return;
+    const d = derivedExpenses();
+    st.input.expenses.override = !!on;
+    // Turning the override back off restores the budget's number rather than
+    // leaving whatever was typed sitting there looking derived.
+    if (!on && d) {
+      st.input.expenses.mode = 'percentOfGOI';
+      st.input.expenses.value = d.goi > 0 ? Math.round((d.annualOpex / d.goi) * 10000) / 10000 : null;
+    }
+    markDirty();
+    renderEditor();
+  }
+
+  /* ---------- budget drift ----------
+     The analysis pins a budget version. When the budget moves past it we SAY so
+     and offer the re-sync; nothing recalculates on its own, because a saved
+     analysis is never quietly restated. */
+  function driftBadge() {
+    const s2 = st.source;
+    if (!s2 || !s2.drift) return '';
+    return ` <button class="inv-drift" onclick="FSInvestmentUI.resync()"
+      title="Re-import size, purchase price, income and the expense ratio from budget v${esc(s2.budgetCurrentVersionNumber)}">
+      Budget updated to v${esc(s2.budgetCurrentVersionNumber)} — Re-sync</button>`;
+  }
+  async function resync() {
+    if (!st.id) return;
+    if (st.dirty && !confirm('Re-syncing replaces the imported values with the budget\u2019s current ones. Unsaved edits to those fields will be lost. Continue?')) return;
+    try {
+      const r = await A.api('investment-analysis/' + st.id + '?scope=resync', { method: 'PUT', body: '{}' });
+      st.input = r.input;
+      st.source = r.source;
+      st.dirty = true; st.stale = true; st.result = null;
+      snapshotOrigins();
+      renderEditor();
+      A.toast(r.message + (r.expensesOverridden ? ' The expense override was kept.' : ''));
+    } catch (e) {
+      A.toast('Could not re-sync — ' + e.message);
+    }
+  }
+
   /* The source budget, as a real link to its Inputs page rather than plain
      text. The id comes from the analysis's own source record, never a
      constant, so it always points at the budget this analysis was cut from. */
@@ -574,11 +746,124 @@
     });
   }
 
+  /* ---------- budget-derived inputs are LOCKED ----------
+     Every value the analysis imported from a budget version is read-only by
+     default, because typing over one silently is how an analysis stops
+     matching the budget it claims to come from. The card's ⋮ menu unlocks
+     them for this editing session; unlocking changes NO value — it only lets
+     you edit, and a field edited away from its import loses its From Budget
+     badge exactly as before. */
+  function srcOrigins() {
+    const s = st.input && st.input.source;
+    return s && s.fieldOrigins && typeof s.fieldOrigins === 'object' ? s.fieldOrigins : null;
+  }
+  function hasBudgetInputs() {
+    const o = srcOrigins();
+    return !!(o && Object.keys(o).length);
+  }
+  // property.size covers property.size.unit AND property.size.value; likewise
+  // acquisition.basis covers its mode and its value.
+  function fromBudget(path) {
+    const o = srcOrigins();
+    if (!o) return false;
+    return Object.keys(o).some(k => path === k || path.indexOf(k + '.') === 0);
+  }
+  function srcLocked(path) { return !st.overrideSource && fromBudget(path); }
+  const ro = path => srcLocked(path) ? ' readonly aria-readonly="true"' : '';
+  const dis = path => srcLocked(path) ? ' disabled' : '';
+  function setSourceOverride(on) {
+    st.overrideSource = !!on;
+    renderEditor();
+    A.toast(on
+      ? 'Budget inputs unlocked — the imported values are unchanged until you edit one.'
+      : 'Budget inputs locked again.');
+  }
+
+  /* ---------- the step cards' ⋮ menus ----------
+     Same element, classes, focus handling and Escape / click-outside behavior
+     as the list row menus, so one menu pattern covers the whole app. */
+  let stepMenuTrigger = null;
+  function stepMenuEl() {
+    let m = el('invStepMenu');
+    if (!m) {
+      m = document.createElement('div');
+      m.id = 'invStepMenu';
+      m.className = 'rowmenu';
+      m.setAttribute('role', 'menu');
+      m.setAttribute('aria-hidden', 'true');
+      m.style.cssText = 'position:fixed;display:none;z-index:70;background:var(--white);border:1px solid var(--ink-200);border-radius:10px;box-shadow:0 8px 28px rgba(22,25,26,.14);padding:6px;min-width:210px';
+      document.body.appendChild(m);
+      document.addEventListener('click', e => {
+        if (!m.contains(e.target) && e.target !== stepMenuTrigger) closeStepMenu();
+      });
+      document.addEventListener('keydown', e => {
+        if (!stepMenuTrigger) return;
+        const items = [...m.querySelectorAll('.rowmenu-item')];
+        const i = items.indexOf(document.activeElement);
+        const step = d => items[i < 0 ? (d > 0 ? 0 : items.length - 1) : (i + d + items.length) % items.length].focus();
+        if (e.key === 'Escape') { e.preventDefault(); closeStepMenu(true); }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); step(1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); step(-1); }
+        else if (e.key === 'Tab') closeStepMenu(false);
+      });
+    }
+    return m;
+  }
+  function stepMenuItems(which) {
+    if (which === 'expenses') {
+      return expensesOverridden()
+        ? [['exp-off', 'Use the Budget\u2019s Expense Ratio']]
+        : [['exp-on', 'Override Budget Inputs']];
+    }
+    return st.overrideSource
+      ? [['src-off', 'Lock Budget Inputs']]
+      : [['src-on', 'Override Budget Inputs']];
+  }
+  function openStepMenu(btn, which) {
+    const wasOpen = stepMenuTrigger === btn;
+    closeStepMenu();
+    if (wasOpen) return;
+    const m = stepMenuEl();
+    m.innerHTML = stepMenuItems(which).map(([act, label]) =>
+      `<button class="rowmenu-item" role="menuitem" tabindex="-1" data-act="${act}">${label}</button>`).join('');
+    m.querySelectorAll('.rowmenu-item').forEach(x => { x.onclick = () => stepMenuAction(x.dataset.act); });
+    m.style.display = 'block';
+    const r = btn.getBoundingClientRect();
+    m.style.top = (r.bottom + 4) + 'px';
+    m.style.left = Math.max(8, Math.min(r.right - m.offsetWidth, window.innerWidth - m.offsetWidth - 8)) + 'px';
+    m.setAttribute('aria-hidden', 'false');
+    btn.setAttribute('aria-expanded', 'true');
+    stepMenuTrigger = btn;
+    m.querySelector('.rowmenu-item').focus();
+  }
+  function closeStepMenu(refocus) {
+    const m = el('invStepMenu'), t = stepMenuTrigger;
+    stepMenuTrigger = null;
+    if (m) { m.style.display = 'none'; m.setAttribute('aria-hidden', 'true'); m.innerHTML = ''; }
+    if (t) { t.setAttribute('aria-expanded', 'false'); if (refocus && document.body.contains(t)) t.focus(); }
+  }
+  function stepMenuAction(act) {
+    closeStepMenu();
+    if (act === 'src-on') setSourceOverride(true);
+    else if (act === 'src-off') setSourceOverride(false);
+    else if (act === 'exp-on') setExpenseOverride(true);
+    else if (act === 'exp-off') setExpenseOverride(false);
+  }
+  // The card's ⋮ trigger, rendered only when there is something to unlock.
+  function stepMenuBtn(which, label) {
+    return `<button class="rowmenu-btn inv-step-menu" data-step-menu="${which}"
+      aria-haspopup="menu" aria-expanded="false" aria-label="${label}" title="${label}"
+      onclick="FSInvestmentUI.openStepMenu(this,'${which}')">\u22EE</button>`;
+  }
+
   function renderEditor() {
     const host = el('page-analysis'); if (!host) return;
     const inp = st.input;
     const loan = (inp.financing && inp.financing.loans && inp.financing.loans[0]) || null;
     const dollarExp = inp.expenses && inp.expenses.mode === 'annualDollar';
+    // Derived-and-locked by default; the Override checkbox is the only way to
+    // type into it, and turning it on is visible everywhere the analysis is.
+    const expLocked = !!derivedExpenses() && !(inp.expenses && inp.expenses.override);
     host.innerHTML = `
       <div class="page-title">
         <div><button class="btn-back" onclick="FSInvestmentUI.backToList()"
@@ -587,6 +872,7 @@
           <div class="sub">${st.source
             ? 'From Budget ' + sourceBudgetLink(st.source.projectId)
               + ' <span class="inv-vsub">v' + esc(st.source.budgetVersionNumber) + '</span>'
+              + driftBadge()
             : 'Standalone Analysis'}</div></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
           <span id="invStatusHost"></span>
@@ -602,25 +888,34 @@
       <div id="invErrSummary"></div>
 
       <div class="inv-step ${st.step === 1 ? 'on' : ''}" data-steppane="1">
-        <h2>Source &amp; Property</h2>
-        <p class="hint">Review every imported value — each is a suggestion from the exact saved budget version, not a live link. The budget changing later never changes this analysis.</p>
+        <div class="inv-step-hd">
+          <div class="inv-step-hd-t">
+            <h2>Source &amp; Property</h2>
+            <p class="hint">Review every imported value — each is a suggestion from the exact saved budget version, not a live link. The budget changing later never changes this analysis.${hasBudgetInputs()
+              ? (st.overrideSource
+                ? ' <b class="inv-warn-text">Budget inputs are unlocked for editing.</b>'
+                : ' Budget-derived fields are locked; use the ⋮ menu to override them.')
+              : ''}</p>
+          </div>
+          ${hasBudgetInputs() ? stepMenuBtn('source', 'Source & Property actions') : ''}
+        </div>
         <div class="inv-grid">
           <label class="fld wide"><span class="lab">Analysis Name</span>
             <input type="text" data-f="analysisName" data-k="inv.analysisName" value="${esc(inp.analysisName)}"></label>
           <label class="fld wide"><span class="lab">Property Name ${originBadge('property.name')}</span>
-            <input type="text" data-f="property.name" data-k="inv.property.name" value="${esc(inp.property.name)}"></label>
+            <input type="text" data-f="property.name" data-k="inv.property.name" value="${esc(inp.property.name)}"${ro('property.name')}></label>
           <label class="fld wide"><span class="lab">Address ${originBadge('property.address')}</span>
-            <input type="text" data-f="property.address" data-k="inv.property.address" value="${esc(inp.property.address)}"></label>
+            <input type="text" data-f="property.address" data-k="inv.property.address" value="${esc(inp.property.address)}"${ro('property.address')}></label>
           <label class="fld"><span class="lab">Size Unit ${originBadge('property.size')}</span>
-            <select data-f="property.size.unit" data-k="inv.size.unit">
+            <select data-f="property.size.unit" data-k="inv.size.unit"${dis('property.size')}>
               <option value="squareFeet" ${inp.property.size.unit === 'squareFeet' ? 'selected' : ''}>Square Feet</option>
               <option value="acres" ${inp.property.size.unit === 'acres' ? 'selected' : ''}>Acres</option>
               <option value="units" ${inp.property.size.unit === 'units' ? 'selected' : ''}>Units</option>
             </select></label>
           <label class="fld"><span class="lab">Size Value</span>
-            <input type="number" min="0" step="any" data-f="property.size.value" data-k="inv.size.value" value="${inp.property.size.value === null ? '' : inp.property.size.value}"></label>
+            <input type="text" inputmode="decimal" data-f="property.size.value" data-k="inv.size.value" value="${esc(fmtSizeIn(inp.property.size.value, inp.property.size.unit))}"${ro('property.size')}></label>
           <label class="fld"><span class="lab">Unit Count ${originBadge('property.unitCount')}</span>
-            <input type="number" min="0" step="1" data-f="property.unitCount" data-k="inv.unitCount" value="${inp.property.unitCount === null ? '' : inp.property.unitCount}"></label>
+            <input type="number" min="0" step="1" data-f="property.unitCount" data-k="inv.unitCount" value="${inp.property.unitCount === null ? '' : inp.property.unitCount}"${ro('property.unitCount')}></label>
           <label class="fld"><span class="lab">Purchase Month</span>
             <input type="month" data-f="property.purchaseMonth" data-k="inv.purchaseMonth" value="${esc(inp.property.purchaseMonth || '')}"></label>
           <label class="fld"><span class="lab">Projection Years</span>
@@ -629,14 +924,14 @@
               <option value="10" ${inp.projection.years === 10 ? 'selected' : ''}>10 Years</option>
             </select></label>
           <label class="fld"><span class="lab">Price Basis</span>
-            <select data-f="acquisition.basis.mode" data-k="inv.basis.mode">
+            <select data-f="acquisition.basis.mode" data-k="inv.basis.mode"${dis('acquisition.basis')}>
               <option value="purchasePrice" ${inp.acquisition.basis.mode === 'purchasePrice' ? 'selected' : ''}>Purchase Price ($)</option>
               <option value="acquisitionCapRate" ${inp.acquisition.basis.mode === 'acquisitionCapRate' ? 'selected' : ''}>Acquisition Cap Rate (%)</option>
             </select></label>
           <label class="fld"><span class="lab" id="invBasisLab">${inp.acquisition.basis.mode === 'acquisitionCapRate' ? 'Acquisition Cap Rate %' : 'Purchase Price'} ${originBadge('acquisition.basis')}</span>
-            <input type="number" min="0" step="any" data-f="acquisition.basis.value" data-k="inv.basis.value" value="${inp.acquisition.basis.value === null ? '' : (inp.acquisition.basis.mode === 'acquisitionCapRate' ? toPct(inp.acquisition.basis.value) : inp.acquisition.basis.value)}"></label>
+            <input type="text" inputmode="decimal" data-f="acquisition.basis.value" data-k="inv.basis.value" value="${esc(basisDisplay(inp))}"${ro('acquisition.basis')}></label>
           <label class="fld"><span class="lab">Acquisition Costs %</span>
-            <input type="number" min="0" step="any" data-f="acquisition.costPercent" data-k="inv.costPct" value="${toPct(inp.acquisition.costPercent)}"></label>
+            <input type="text" inputmode="decimal" data-f="acquisition.costPercent" data-k="inv.costPct" value="${esc(fmtPctIn(inp.acquisition.costPercent))}"></label>
         </div>
         ${stepNav(1)}
       </div>
@@ -646,32 +941,50 @@
         <p class="hint">Potential rental income is gross scheduled rent before vacancy and expenses${st.source ? ' — imported as the budget’s unit-mix rent × 12, never its Net Income figure' : ''}.</p>
         <div class="inv-grid">
           <label class="fld"><span class="lab">Year-1 Potential Rental Income ${originBadge('income.year1PotentialIncome')}</span>
-            <input type="number" min="0" step="any" data-f="income.year1PotentialIncome" data-k="inv.pri" value="${inp.income.year1PotentialIncome === null ? '' : inp.income.year1PotentialIncome}"></label>
+            <input type="text" inputmode="decimal" data-f="income.year1PotentialIncome" data-k="inv.pri" value="${esc(fmtMoneyIn(inp.income.year1PotentialIncome))}"${ro('income.year1PotentialIncome')}></label>
           <label class="fld"><span class="lab">Annual Income Growth %</span>
-            <input type="number" step="any" data-f="income.growth.value" data-k="inv.incGrowth" value="${toPct(inp.income.growth.value)}"></label>
+            <input type="text" inputmode="decimal" data-f="income.growth.value" data-k="inv.incGrowth" value="${esc(fmtPctIn(inp.income.growth.value))}"></label>
         </div>
         <h2 style="margin-top:16px;font-size:13px">Other Income ${originBadge('income.otherIncome')}</h2>
+        ${otherIncomeLocked()
+          ? '<p class="hint" style="margin:0 0 8px">These rows come from the budget and are read-only. Only the growth rate is yours to set.</p>'
+          : ''}
         <div id="invOtherRows"></div>
-        <button class="btn btn-sm btn-ghost" data-inv-edit onclick="FSInvestmentUI.addOtherIncome()">+ Add Other Income</button>
+        ${otherIncomeLocked() ? ''
+          : '<button class="btn btn-sm btn-ghost" data-inv-edit onclick="FSInvestmentUI.addOtherIncome()">+ Add Other Income</button>'}
         <div id="invUnitMix"></div>
+        <div id="invIncomeSummary"></div>
         ${stepNav(2)}
       </div>
 
       <div class="inv-step ${st.step === 3 ? 'on' : ''}" data-steppane="3">
-        <h2>Vacancy &amp; Expenses</h2>
-        <p class="hint">Enter the property's complete operating expenses.${st.source ? ' The budget’s service-expense rows below are a partial reference only — they are not a full OPEX picture and are never applied automatically.' : ''}</p>
+        <div class="inv-step-hd">
+          <div class="inv-step-hd-t">
+            <h2>Vacancy &amp; Expenses</h2>
+            <p class="hint">${derivedExpenses()
+              ? 'The expense ratio comes from the budget — its operating expenses divided by gross operating income, after vacancy. Override it from the ⋮ menu only if this property is genuinely priced differently from the budget.'
+              : 'Enter the property\u2019s complete operating expenses.'}</p>
+          </div>
+          ${derivedExpenses() ? stepMenuBtn('expenses', 'Vacancy & Expenses actions') : ''}
+        </div>
         <div class="inv-grid">
           <label class="fld"><span class="lab">Vacancy / Credit Loss %</span>
             <input type="number" min="0" step="any" data-f="vacancy.value" data-k="inv.vacancy" value="${toPct(inp.vacancy.value)}"></label>
           <label class="fld"><span class="lab">Expense Mode</span>
-            <select data-f="expenses.mode" data-k="inv.expMode">
+            <select data-f="expenses.mode" data-k="inv.expMode" ${expLocked ? 'disabled' : ''}>
               <option value="percentOfGOI" ${!dollarExp ? 'selected' : ''}>% of GOI</option>
               <option value="annualDollar" ${dollarExp ? 'selected' : ''}>Annual $ Amount</option>
             </select></label>
-          <label class="fld"><span class="lab" id="invExpLab">${dollarExp ? 'Year-1 Operating Expenses $' : 'Operating Expenses % of GOI'}</span>
-            <input type="number" min="0" step="any" data-f="expenses.value" data-k="inv.expValue" value="${inp.expenses.value === null ? '' : (dollarExp ? inp.expenses.value : toPct(inp.expenses.value))}"></label>
+          <label class="fld"><span class="lab" id="invExpLab">${dollarExp ? 'Year-1 Operating Expenses $' : 'Operating Expenses % of GOI'}${expBadge()}</span>
+            <input type="number" min="0" step="any" data-f="expenses.value" data-k="inv.expValue" ${expLocked ? 'readonly' : ''}
+              value="${inp.expenses.value === null ? '' : (dollarExp ? inp.expenses.value : toPct(inp.expenses.value))}"></label>
           <label class="fld" id="invExpGrowthFld" style="${dollarExp ? '' : 'display:none'}"><span class="lab">Expense Growth %</span>
             <input type="number" step="any" data-f="expenses.growth.value" data-k="inv.expGrowth" value="${toPct(inp.expenses.growth ? inp.expenses.growth.value : 0.03)}"></label>
+          <!-- The provenance note is its own full-width row rather than a tail
+               on the ratio field: inside the field it made that cell taller
+               than its neighbours, which is what pushed the ratio out of line
+               with Vacancy and Expense Mode. -->
+          <span class="inv-derived inv-grid-full" id="invExpDerived">${expDerivedNote()}</span>
         </div>
         <h2 style="margin-top:16px;font-size:13px">Capital Expenses / Reserves (annual)</h2>
         <div id="invCapexRows"></div>
@@ -737,6 +1050,10 @@
     // Badges compare against the server-stored originals, so a field edited
     // and SAVED must render with its badge already hidden on reload.
     refreshOriginBadges();
+    // A re-render rebuilds the empty summary host, so outstanding validation
+    // has to be re-applied or the banner and the amber pills disappear while
+    // the problem they describe is still there.
+    if (Object.keys(st.errors || {}).length) showErrors(st.errors);
     paintStatusChip();
   }
 
@@ -772,8 +1089,11 @@
       case 'analysisName': inp.analysisName = v.trim() || inp.analysisName; el('invTitle').textContent = inp.analysisName; break;
       case 'property.name': inp.property.name = v; break;
       case 'property.address': inp.property.address = v; break;
-      case 'property.size.unit': inp.property.size.unit = v; break;
-      case 'property.size.value': inp.property.size.value = num; break;
+      case 'property.size.unit': setSizeUnit(v); break;
+      case 'property.size.value':
+        inp.property.size.value = parseNum(v);
+        noteSizeCanonical();
+        break;
       case 'property.unitCount': inp.property.unitCount = num; break;
       case 'property.purchaseMonth': inp.property.purchaseMonth = v || null; break;
       case 'projection.years': {
@@ -791,11 +1111,26 @@
         host_input('acquisition.basis.value').value = '';
         break;
       }
-      case 'acquisition.basis.value':
-        inp.acquisition.basis.value = inp.acquisition.basis.mode === 'acquisitionCapRate' ? pct : num; break;
-      case 'acquisition.costPercent': inp.acquisition.costPercent = pct; break;
-      case 'income.year1PotentialIncome': inp.income.year1PotentialIncome = num; break;
-      case 'income.growth.value': inp.income.growth.value = pct; break;
+      case 'acquisition.basis.value': {
+        const raw = parseNum(v);
+        inp.acquisition.basis.value = inp.acquisition.basis.mode === 'acquisitionCapRate'
+          ? (raw === null ? null : raw / 100) : raw;
+        break;
+      }
+      case 'acquisition.costPercent': {
+        const raw = parseNum(v);
+        inp.acquisition.costPercent = raw === null ? null : raw / 100;
+        break;
+      }
+      case 'income.year1PotentialIncome':
+        inp.income.year1PotentialIncome = parseNum(v);
+        renderIncomeSummary();
+        break;
+      case 'income.growth.value': {
+        const raw = parseNum(v);
+        inp.income.growth.value = raw === null ? null : raw / 100;
+        break;
+      }
       case 'vacancy.value': inp.vacancy.value = pct; break;
       case 'expenses.mode': {
         const dollar = v === 'annualDollar';
@@ -825,7 +1160,26 @@
       case 'disposition.exitCapRate.value': inp.disposition.exitCapRate.value = pct; break;
       case 'disposition.sellingCostPercent': inp.disposition.sellingCostPercent = pct; break;
     }
+    repaintFormatted(f);
     markDirty();
+  }
+
+  /* The formatted fields re-render from the stored NUMBER after every commit,
+     so what you see is always the value the model holds — never the raw text
+     that happened to produce it. This runs on change (not on input), so a
+     caret is never moved mid-typing. */
+  const FORMATTED = {
+    'property.size.value': inp => fmtSizeIn(inp.property.size.value, inp.property.size.unit),
+    'acquisition.basis.value': inp => basisDisplay(inp),
+    'acquisition.costPercent': inp => fmtPctIn(inp.acquisition.costPercent),
+    'income.year1PotentialIncome': inp => fmtMoneyIn(inp.income.year1PotentialIncome),
+    'income.growth.value': inp => fmtPctIn(inp.income.growth.value)
+  };
+  function repaintFormatted(f) {
+    const fmt = FORMATTED[f];
+    if (!fmt) return;
+    const box = host_input(f);
+    if (box) box.value = fmt(st.input);
   }
   const host_input = f => document.querySelector('#page-analysis [data-f="' + f + '"]');
 
@@ -833,6 +1187,7 @@
     recordInvUndo();
     if (!st.dirty || !st.stale) { st.dirty = true; st.stale = !!st.result; renderStateBar(); }
     updateStepUI();          // keep the Next buttons and step dots live as fields fill in
+    pruneErrors();           // and the amber clears the moment its cause is answered
     refreshOriginBadges();   // From Budget disappears when a value is edited away
   }
 
@@ -897,30 +1252,58 @@
   function renderOtherIncomeRows() {
     const host = el('invOtherRows'); if (!host) return;
     const rows = st.input.income.otherIncome || [];
+    const lock = otherIncomeLocked();
     host.innerHTML = rows.length ? `<table class="inv-table" style="max-width:640px"><thead>
-      <tr><th>Label</th><th class="r">Year-1 Annual $</th><th class="r">Growth %</th><th></th></tr></thead><tbody>` +
+      <tr><th>Label</th><th class="r">Year-1 Annual $</th><th class="r">Growth %</th>${lock ? '' : '<th></th>'}</tr></thead><tbody>` +
       rows.map((r, i) => `<tr>
-        <td><input type="text" data-k="inv.other.${i}.label" value="${esc(r.label)}"
+        <td><input type="text" data-k="inv.other.${i}.label" value="${esc(r.label)}"${lock ? ' readonly aria-readonly="true"' : ''}
              onchange="FSInvestmentUI._other(${i},'label',this.value)"></td>
-        <td class="r"><input type="number" min="0" step="any" style="width:120px" data-k="inv.other.${i}.amount"
-             value="${r.year1Amount === null ? '' : r.year1Amount}" onchange="FSInvestmentUI._other(${i},'amount',this.value)"></td>
+        <td class="r"><input type="${lock ? 'text' : 'number'}"${lock ? ' inputmode="decimal" readonly aria-readonly="true"' : ' min="0" step="any"'} style="width:120px" data-k="inv.other.${i}.amount"
+             value="${lock ? esc(fmtMoneyIn(r.year1Amount)) : (r.year1Amount === null ? '' : r.year1Amount)}" onchange="FSInvestmentUI._other(${i},'amount',this.value)"></td>
         <td class="r"><input type="number" step="any" style="width:80px" data-k="inv.other.${i}.growth"
              value="${toPct(r.growth.value)}" onchange="FSInvestmentUI._other(${i},'growth',this.value)"></td>
-        <td class="no-print"><button class="btn-x" data-inv-edit title="Remove row"
-             onclick="FSInvestmentUI._otherRemove(${i})">×</button></td></tr>`).join('') +
+        ${lock ? '' : `<td class="no-print"><button class="btn-x" data-inv-edit title="Remove row"
+             onclick="FSInvestmentUI._otherRemove(${i})">×</button></td>`}</tr>`).join('') +
       '</tbody></table>' : '<div style="font-size:12.5px;color:var(--ink-500);margin:6px 0 10px">No other-income rows.</div>';
+    renderIncomeSummary();
   }
   function _other(i, k, v) {
     const r = st.input.income.otherIncome[i]; if (!r) return;
+    // The growth rate is the one column that stays the underwriter's while the
+    // rows are the budget's.
+    if (otherIncomeLocked() && k !== 'growth') return;
     if (k === 'label') r.label = v;
-    if (k === 'amount') r.year1Amount = numOrNull(v);
+    if (k === 'amount') r.year1Amount = parseNum(v);
     if (k === 'growth') r.growth.value = fromPct(v) === null ? 0.03 : fromPct(v);
     markDirty();
+    renderIncomeSummary();
   }
-  function _otherRemove(i) { st.input.income.otherIncome.splice(i, 1); markDirty(); renderOtherIncomeRows(); }
+  function _otherRemove(i) {
+    if (otherIncomeLocked()) return;
+    st.input.income.otherIncome.splice(i, 1); markDirty(); renderOtherIncomeRows();
+  }
   function addOtherIncome() {
+    if (otherIncomeLocked()) return;
     st.input.income.otherIncome.push({ label: 'Other Income', year1Amount: 0, growth: { mode: 'constant', value: 0.03 } });
     markDirty(); renderOtherIncomeRows();
+  }
+
+  /* Where Year-1 total income comes from, in one place: the unit rent, the
+     other-income lines, and the sum the rest of the model actually uses.
+     Reads st.input only, so it stays true while the fields above are typed
+     into and never has to be recalculated by hand. */
+  function renderIncomeSummary() {
+    const host = el('invIncomeSummary'); if (!host) return;
+    const inc = st.input.income;
+    const unit = nz(inc.year1PotentialIncome);
+    const other = (inc.otherIncome || []).reduce((s, r) => s + nz(r.year1Amount), 0);
+    host.innerHTML = `<h2 style="margin-top:16px;font-size:13px">Unit &amp; Other Income</h2>
+      <table class="inv-table" style="max-width:420px"><tbody>
+      <tr><td>Unit Income</td><td class="r mono">${usd(unit)}</td></tr>
+      <tr><td>Other Income</td><td class="r mono">${usd(other)}</td></tr>
+      <tr class="tot"><td><b>Total Income</b></td><td class="r mono"><b>${usd(unit + other)}</b></td></tr>
+      </tbody></table>
+      <div class="inv-provenance">Year-1 gross potential income, before vacancy and operating expenses.</div>`;
   }
 
   function renderCapexRows() {
@@ -969,13 +1352,17 @@
     const ex = el('invExpSupport');
     if (ex) {
       if (sup && sup.serviceExpenseRows && sup.serviceExpenseRows.length) {
-        ex.innerHTML = `<h2 style="margin-top:16px;font-size:13px">Budget Service Expenses (reference only)</h2>
-          <div class="inv-warnings">These rows come from the construction budget's service-expense list. They are a
-            <b>partial</b> reference — real property OPEX (taxes, insurance, management, maintenance, utilities)
-            is usually much larger. They are never applied automatically.</div>
+        const stale = nz(sup.opexSchemaVersion) < 2;
+        ex.innerHTML = `<h2 style="margin-top:16px;font-size:13px">Budget Operating Expenses</h2>
+          <div class="inv-warnings">${stale
+            ? `These rows come from the budget's old service-expense list — utilities and trash, but no taxes,
+               insurance, management or payroll. They are a <b>partial</b> picture, and the ratio derived from them
+               is correspondingly low. Update the budget's expense schedule from its template to fix it at source.`
+            : `The expense ratio above is derived from these rows. They are the budget's complete operating
+               expense schedule, which is what the 35–55% guard rail keeps honest.`}</div>
           <table class="inv-table" style="max-width:420px"><tbody>
           ${sup.serviceExpenseRows.map(r => `<tr><td>${esc(r.label)}</td><td class="r mono">${usd(r.annualAmount)}/yr</td></tr>`).join('')}
-          <tr class="tot"><td>Total imported service expenses</td><td class="r mono">${usd(sup.annualServiceExpenses)}/yr</td></tr>
+          <tr class="tot"><td><b>Total Operating Expenses</b></td><td class="r mono"><b>${usd(sup.annualServiceExpenses)}/yr</b></td></tr>
           </tbody></table>`;
       } else ex.innerHTML = '';
     }
@@ -989,26 +1376,116 @@
     window.scrollTo(0, 0);
   }
 
-  /* ---------- validation display ---------- */
+  /* ---------- validation display ----------
+     A banner that says "1 assumption needs attention" and stops there sends
+     you hunting through six steps. Every flagged assumption is NAMED here,
+     with the step it lives on and a button that goes straight to it, and the
+     step pill itself carries the same amber the banner does. */
+  const FIELD_STEP = [
+    ['analysisName', 1, 'Analysis Name'],
+    ['property.name', 1, 'Property Name'],
+    ['property.address', 1, 'Address'],
+    ['property.size.value', 1, 'Size Value'],
+    ['property.size.unit', 1, 'Size Unit'],
+    ['property.size', 1, 'Property Size'],
+    ['property.unitCount', 1, 'Unit Count'],
+    ['property.purchaseMonth', 1, 'Purchase Month'],
+    ['projection.years', 1, 'Projection Years'],
+    ['acquisition.basis.value', 1, 'Purchase Price'],
+    ['acquisition.basis', 1, 'Price Basis'],
+    ['acquisition.costPercent', 1, 'Acquisition Costs %'],
+    ['income.year1PotentialIncome', 2, 'Year-1 Potential Rental Income'],
+    ['income.growth', 2, 'Annual Income Growth %'],
+    ['income.otherIncome', 2, 'Other Income'],
+    ['income', 2, 'Income'],
+    ['vacancy', 3, 'Vacancy / Credit Loss %'],
+    ['expenses.mode', 3, 'Expense Mode'],
+    ['expenses.value', 3, 'Operating Expenses'],
+    ['expenses.growth', 3, 'Expense Growth %'],
+    ['expenses', 3, 'Operating Expenses'],
+    ['capitalExpenses', 3, 'Capital Expenses / Reserves'],
+    ['financing.loans.0.amount', 4, 'Loan Amount'],
+    ['financing.loans.0.annualRate', 4, 'Annual Rate %'],
+    ['financing.loans.0.amortizationYears', 4, 'Amortization (Years)'],
+    ['financing.loans.0.termYears', 4, 'Loan Term (Years)'],
+    ['financing.loans.0.feePercent', 4, 'Loan Fees / Points %'],
+    ['financing', 4, 'Mortgage'],
+    ['disposition.exitCapRate', 5, 'Exit Cap Rate %'],
+    ['disposition.sellingCostPercent', 5, 'Selling Costs %'],
+    ['disposition', 5, 'Disposition']
+  ];
+  // Longest prefix wins, so expenses.value beats the bare expenses entry.
+  function fieldInfo(path) {
+    let best = null;
+    for (const [k, step, label] of FIELD_STEP) {
+      if (path === k || path.indexOf(k + '.') === 0) {
+        if (!best || k.length > best.k.length) best = { k, step, label };
+      }
+    }
+    if (!best) return { step: 6, label: path };
+    // The price field is money or a rate depending on the mode it is in.
+    if (best.k === 'acquisition.basis.value' && st.input
+        && st.input.acquisition.basis.mode === 'acquisitionCapRate') {
+      return { step: 1, label: 'Acquisition Cap Rate %' };
+    }
+    if (best.k === 'expenses.value' && st.input && st.input.expenses.mode === 'annualDollar') {
+      return { step: 3, label: 'Year-1 Operating Expenses $' };
+    }
+    if (best.k === 'expenses.value') return { step: 3, label: 'Operating Expenses % of GOI' };
+    return { step: best.step, label: best.label };
+  }
+  const inputNameFor = path => path.startsWith('financing.loans.0.')
+    ? 'loan.' + path.slice('financing.loans.0.'.length) : path;
+
   function showErrors(fields) {
     st.errors = fields || {};
     document.querySelectorAll('#page-analysis .inv-err').forEach(e => e.classList.remove('inv-err'));
     document.querySelectorAll('#page-analysis .inv-errmsg').forEach(e => e.remove());
-    const unmatched = [];
-    for (const [path, msg] of Object.entries(st.errors)) {
-      const fieldName = path.startsWith('financing.loans.0.') ? 'loan.' + path.slice('financing.loans.0.'.length) : path;
-      const input = host_input(fieldName);
+    const entries = Object.entries(st.errors);
+    for (const [path, msg] of entries) {
+      const input = host_input(inputNameFor(path));
       if (input) {
         input.classList.add('inv-err');
         const m = document.createElement('div');
         m.className = 'inv-errmsg'; m.textContent = msg;
         input.parentElement.appendChild(m);
-      } else unmatched.push(msg);
+      }
     }
     const sum = el('invErrSummary');
-    const n = Object.keys(st.errors).length;
+    if (!sum) { paintStepFlags(); return; }
+    const n = entries.length;
     sum.innerHTML = n ? `<div class="inv-warnings"><b>${n} assumption${n > 1 ? 's need' : ' needs'} attention before this can calculate.</b>
-      ${unmatched.length ? '<ul>' + unmatched.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul>' : ''}</div>` : '';
+      <ul class="inv-errlist">${entries.map(([path, msg]) => {
+        const f = fieldInfo(path);
+        return `<li><button type="button" class="inv-errjump" onclick="FSInvestmentUI.goStep(${f.step})"
+          >Step ${f.step} · ${esc(STEPS[f.step - 1])}</button>
+          <b>${esc(f.label)}</b> — ${esc(msg)}</li>`;
+      }).join('')}</ul></div>` : '';
+    paintStepFlags();
+  }
+
+  // The pills wear the banner's colour for exactly the steps the banner names.
+  function paintStepFlags() {
+    const flagged = new Set(Object.keys(st.errors || {}).map(p => fieldInfo(p).step));
+    document.querySelectorAll('#invSteps button[data-step]').forEach(b => {
+      b.classList.toggle('flag', flagged.has(+b.dataset.step));
+    });
+  }
+
+  /* Flags clear as the assumptions are answered rather than waiting for the
+     next Calculate — a warning that outlives its cause teaches people to
+     ignore warnings. Calculate remains the real gate; the server re-validates
+     everything there. */
+  function pruneErrors() {
+    const keys = Object.keys(st.errors || {});
+    if (!keys.length) return;
+    const kept = {};
+    for (const k of keys) {
+      const box = host_input(inputNameFor(k));
+      if (box && String(box.value).trim() !== '') continue;
+      kept[k] = st.errors[k];
+    }
+    if (Object.keys(kept).length !== keys.length) showErrors(kept);
   }
 
   /* ---------- calculate / save ---------- */
@@ -1574,7 +2051,8 @@
   window.FSInvestmentUI = {
     init(adapter) { A = adapter; },
     renderList, renderListInto, open, createFromBudget, createStandalone,
-    openSourceBudget, backToList,
+    openSourceBudget, backToList, resync, setExpenseOverride, setSourceOverride,
+    openStepMenu, openInvRowMenu,
     createStandaloneFromModal, createBlank, openProjectPicker, softDelete,
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep, undo, redo,
     openExport, emailSoon, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,

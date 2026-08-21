@@ -4,6 +4,8 @@
 -- Fresh-install order: schema.sql → seed_pricing.sql →
 -- migrate_budget_history_and_templates.sql (no-op on this schema except
 -- seeding the multifamily template) → views.sql.
+-- migrate_projects_and_guardrails.sql is likewise a no-op here: this file
+-- already describes its end state, including dbo.Projects.
 --
 -- This file is kept in parity with the migration: same objects, same
 -- constraint and index names. A database built from this file plus the seed
@@ -66,6 +68,42 @@ CREATE UNIQUE INDEX UX_BudgetTemplateVersions_Current
 CREATE INDEX IX_BudgetTemplateVersions_Template_VersionDesc
   ON dbo.BudgetTemplateVersions (TemplateKey, VersionNumber DESC);
 
+-- Projects — the parent of budgets and investment analyses. Its primary key is
+-- what enforces "one project per ID". A project carries a base budget plus any
+-- number of alternates (BD-0001, BD-0001-02, BD-0001-03 …), which is why the
+-- budget id format below allows a two-digit suffix.
+CREATE TABLE dbo.Projects (
+    ProjectId       VARCHAR(16)    NOT NULL,
+    Name            NVARCHAR(200)  NOT NULL CONSTRAINT DF_Projects_Name     DEFAULT (N''),
+    Address         NVARCHAR(300)  NOT NULL CONSTRAINT DF_Projects_Address  DEFAULT (N''),
+    Type            NVARCHAR(50)   NOT NULL CONSTRAINT DF_Projects_Type     DEFAULT (N'Multifamily'),
+    -- Lead / Qualified / Budgeting / Proposal Sent / Awarded /
+    -- Converted to Project / On Hold / Lost. Deliberately unconstrained: the
+    -- app owns the vocabulary, and a CHECK would need a migration per status.
+    Status          NVARCHAR(40)   NOT NULL CONSTRAINT DF_Projects_Status   DEFAULT (N'Lead'),
+    PrimaryBudgetId VARCHAR(16)    NULL,
+    -- Stamped when Status becomes 'Converted to Project'. The two amounts are
+    -- SNAPSHOTS taken at that moment, not a live join — a budget edited after
+    -- conversion must not restate reported backlog.
+    ConvertedAt     DATETIME2      NULL,
+    ContractAmount  DECIMAL(18,2)  NULL,
+    ProjectAmount   DECIMAL(18,2)  NULL,
+    Notes           NVARCHAR(2000) NOT NULL CONSTRAINT DF_Projects_Notes    DEFAULT (N''),
+    CreatedById     NVARCHAR(128)  NULL,
+    CreatedByName   NVARCHAR(200)  NULL,
+    CreatedAt       DATETIME2      NOT NULL CONSTRAINT DF_Projects_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    UpdatedAt       DATETIME2      NOT NULL CONSTRAINT DF_Projects_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+    IsDeleted       BIT            NOT NULL CONSTRAINT DF_Projects_IsDeleted DEFAULT (0),
+    DeletedAt       DATETIME2      NULL,
+    CONSTRAINT PK_Projects PRIMARY KEY (ProjectId),
+    CONSTRAINT CK_Projects_IdFormat CHECK (
+      ProjectId LIKE '[A-Z][A-Z]-[0-9][0-9][0-9][0-9]'
+      OR ProjectId LIKE '[A-Z][A-Z][A-Z]-[0-9][0-9][0-9][0-9]')
+);
+CREATE INDEX IX_Projects_Status_Updated ON dbo.Projects (Status, UpdatedAt DESC) WHERE IsDeleted = 0;
+CREATE INDEX IX_Projects_Converted ON dbo.Projects (ConvertedAt DESC)
+  INCLUDE (ContractAmount, ProjectAmount) WHERE IsDeleted = 0;
+
 CREATE TABLE dbo.Budgets (
     ProjectId      VARCHAR(16)   NOT NULL PRIMARY KEY,  -- OP-#### / BD-#### / AS-#### / TST-####
     Name           NVARCHAR(200) NOT NULL DEFAULT '',
@@ -88,9 +126,27 @@ CREATE TABLE dbo.Budgets (
     -- from. NULL for budgets that predate the template system.
     TemplateKey       VARCHAR(64) NULL,
     TemplateVersionId BIGINT      NULL,
+    -- Which project this budget belongs to: the id with any alternate suffix
+    -- stripped. Nullable so a pre-Projects deploy keeps working.
+    ProjectKey        VARCHAR(16) NULL,
+    -- What the guard rails said at the last save. The rails themselves live in
+    -- app/guardrails.js + api/shared/guardrails.js (byte-identical); this is a
+    -- queryable summary for the lists, never the authority.
+    GuardrailStatus      VARCHAR(10) NULL,   -- ok | warn | breach
+    GuardrailBreachCount INT         NULL,
     CONSTRAINT FK_Budgets_TemplateKey     FOREIGN KEY (TemplateKey)       REFERENCES dbo.BudgetTemplates (TemplateKey),
-    CONSTRAINT FK_Budgets_TemplateVersion FOREIGN KEY (TemplateVersionId) REFERENCES dbo.BudgetTemplateVersions (Id)
+    CONSTRAINT FK_Budgets_TemplateVersion FOREIGN KEY (TemplateVersionId) REFERENCES dbo.BudgetTemplateVersions (Id),
+    CONSTRAINT FK_Budgets_Project         FOREIGN KEY (ProjectKey)        REFERENCES dbo.Projects (ProjectId),
+    -- A project's alternates are BD-0001-02, BD-0001-03 …; the base budget
+    -- keeps the plain id.
+    CONSTRAINT CK_Budgets_IdFormat CHECK (
+      ProjectId LIKE '[A-Z][A-Z]-[0-9][0-9][0-9][0-9]'
+      OR ProjectId LIKE '[A-Z][A-Z][A-Z]-[0-9][0-9][0-9][0-9]'
+      OR ProjectId LIKE '[A-Z][A-Z]-[0-9][0-9][0-9][0-9]-[0-9][0-9]'
+      OR ProjectId LIKE '[A-Z][A-Z][A-Z]-[0-9][0-9][0-9][0-9]-[0-9][0-9]')
 );
+CREATE INDEX IX_Budgets_ProjectKey ON dbo.Budgets (ProjectKey)
+  INCLUDE (Name, Status, ContractSum, ProjectCost) WHERE IsDeleted = 0;
 CREATE INDEX IX_Budgets_Template ON dbo.Budgets (TemplateKey, TemplateVersionId);
 CREATE INDEX IX_Budgets_CreatedById ON dbo.Budgets (CreatedById) WHERE IsDeleted = 0;
 
@@ -132,6 +188,8 @@ CREATE TABLE dbo.BudgetVersions (
     Doc                   NVARCHAR(MAX)  NOT NULL,   -- complete immutable budget JSON
     ContentHash           CHAR(64)       NOT NULL,   -- SHA-256 hex (see migration header for convention)
     DocumentSchemaVersion INT            NOT NULL CONSTRAINT DF_BudgetVersions_Schema DEFAULT (1),
+    GuardrailStatus       VARCHAR(10)    NULL,   -- what the rails said at this save
+    GuardrailBreachCount  INT            NULL,
     ChangeSummary         NVARCHAR(1000) NULL,
     CreatedById           NVARCHAR(128)  NULL,
     CreatedByName         NVARCHAR(200)  NULL,
@@ -180,7 +238,8 @@ CREATE INDEX IX_BudgetVersionSovLines_LineKey ON dbo.BudgetVersionSovLines (Line
 
 CREATE TABLE dbo.InvestmentAnalyses (
     AnalysisId            UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_InvestmentAnalyses_Id DEFAULT (NEWSEQUENTIALID()),
-    ProjectId             VARCHAR(16)    NULL,        -- optional link to the Finishes project
+    ProjectId             VARCHAR(16)    NULL,        -- the exact budget this was built from
+    ProjectKey            VARCHAR(16)    NULL,        -- the project it rolls up to
     Name                  NVARCHAR(200)  NOT NULL,
     Status                NVARCHAR(30)   NOT NULL CONSTRAINT DF_InvestmentAnalyses_Status DEFAULT (N'Draft'),
     ProjectionYears       TINYINT        NOT NULL CONSTRAINT DF_InvestmentAnalyses_Years  DEFAULT (5),
@@ -209,6 +268,7 @@ CREATE TABLE dbo.InvestmentAnalyses (
     -- NO ACTION on both: soft delete keeps every row, and the admin purge
     -- scripts handle ordering explicitly.
     CONSTRAINT FK_InvestmentAnalyses_Budget        FOREIGN KEY (ProjectId)             REFERENCES dbo.Budgets (ProjectId),
+    CONSTRAINT FK_InvestmentAnalyses_Project       FOREIGN KEY (ProjectKey)            REFERENCES dbo.Projects (ProjectId),
     CONSTRAINT FK_InvestmentAnalyses_BudgetVersion FOREIGN KEY (SourceBudgetVersionId) REFERENCES dbo.BudgetVersions (Id),
     CONSTRAINT CK_InvestmentAnalyses_Input      CHECK (ISJSON(InputDoc) = 1),
     CONSTRAINT CK_InvestmentAnalyses_Normalized CHECK (ISJSON(NormalizedInputDoc) = 1),
@@ -218,6 +278,8 @@ CREATE INDEX IX_InvestmentAnalyses_Project_Updated
   ON dbo.InvestmentAnalyses (ProjectId, UpdatedAt DESC) WHERE IsDeleted = 0;
 CREATE INDEX IX_InvestmentAnalyses_Updated
   ON dbo.InvestmentAnalyses (UpdatedAt DESC) WHERE IsDeleted = 0;
+CREATE INDEX IX_InvestmentAnalyses_ProjectKey
+  ON dbo.InvestmentAnalyses (ProjectKey, UpdatedAt DESC) WHERE IsDeleted = 0;
 
 -- Immutable analysis versions: raw input, normalized input, result, and
 -- provenance are copied whole. A version row is written once, never updated,

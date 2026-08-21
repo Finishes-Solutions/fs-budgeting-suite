@@ -473,6 +473,50 @@ update selectors alongside label changes.
 
 ---
 
+### Guard rails, projects and derived underwriting (added 2026-08)
+
+- **`app/guardrails.js` and `api/shared/guardrails.js` are byte-identical.**
+  `test/guardrails.test.js` fails the build if they drift. Copy one over the
+  other; never "fix" one side.
+- **`evaluate()` never recomputes `parts()` or `grossIncome()`.** It takes them
+  as arguments. There are already exactly two implementations of that
+  arithmetic (the browser CALC block and `api/shared/budget-calc.js`); a third
+  would be a third thing to keep in parity.
+- **Two rules keep block-on-save survivable, and both look removable.**
+  A rail whose denominator is zero is *not evaluated* — a blank budget cannot be
+  blocked. And `opexRatio` blocks only when `doc.opexSchemaVersion >= 2`, because
+  every budget that predates this release sits at ~9% of income and would
+  otherwise become unsaveable the moment the code shipped.
+- **An override is a record.** `doc.guardrailAcks` carries a mandatory reason,
+  who, and when; it downgrades the rail to a warning, prints on the PDF and the
+  Excel workbook, and is pruned automatically once the value is back in range.
+  Gated to `director` / `super_admin` — a rail anyone can wave through is not
+  a rail.
+- **`feeOf(k)` is `nz()` for the fee object.** `doc.projectCosts.dev` can be
+  absent on an old document, and `undefined.mode` is a TypeError exactly as
+  absent arithmetic is `$NaN`. Every read goes through `feeOf()`, which repairs
+  in place. Suite-08 (the strip-every-numeric suite) is what catches this.
+- **A percentage fee is a share of the FINAL total**, solved in closed form
+  (`project = (base + fixedFees) / (1 − f)`), not of a smaller pre-fee base.
+  Changing that convention changes what "3% developer fee" means on every
+  export, so it is documented in `docs/DATA_CONTRACT.md` rather than left to
+  whoever next opens `parts()`.
+- **`BD-0001-02` is an alternate budget of project `BD-0001`.** The suffix is
+  how many-budgets-per-project was reached without re-keying `dbo.Budgets` or
+  any of its three foreign keys. The cost: moving a budget between projects
+  means a new id, not an edited column.
+- **Converting a project snapshots its money.** `ContractAmount` /
+  `ProjectAmount` are frozen at conversion so reported backlog does not move
+  when someone edits a budget afterwards. Anything reporting converted totals
+  reads those columns, never a live join.
+- **The project surface is query scopes on endpoints that already deploy.** A
+  route rule matches paths, not query strings, so the in-function check on
+  `?scope=projects` / `?scope=project` is the *only* gate — same warning that
+  applies to `/api/user-settings?scope=roles`.
+- **`api/shared/investment/from-budget.js` is used by creation AND re-sync.**
+  If they derived separately, re-syncing would quietly change numbers that were
+  never wrong.
+
 ## 8 · Outstanding
 
 **Security, do first**
@@ -493,6 +537,26 @@ update selectors alongside label changes.
 - Publishing a template is the only way to change new-budget defaults. Do not hand-edit
   `DEFAULT_PRICING` in `app/index.html` and expect it to matter — it is the offline
   fallback only (docs/DATA_CONTRACT.md, "Single source of truth").
+
+**Database state — both scripts have run (2026-08-21)**
+
+- `sql/migrate_projects_and_guardrails.sql` — all eight verification rows PASS.
+  Five projects backfilled from the existing budgets, zero unlinked budgets,
+  zero unlinked analyses, zero orphans, both foreign keys in place.
+- `sql/publish_multifamily_opex_template.sql` — all four PASS. The multifamily
+  template is now **v3**, carrying `opexSchemaVersion: 2` and all sixteen
+  expense rows; v2 is retained, because publishing is append-only.
+
+  Consequence worth knowing: budgets created from **v3 onward** are judged by
+  the 35–55% expense rail and **blocked** when they fall outside it. Every
+  budget that predates v3 sits at `opexSchemaVersion: 1` and is **warned**, not
+  blocked, until someone runs *Update Expense Schedule* on it from the Guard
+  Rails card.
+
+  The rates in v3 are the ones this release proposed, not a reviewed house
+  standard. They land the template at 46.2% of income against its own unit mix.
+  Whoever owns the underwriting standard should review them and republish —
+  editing the script and re-running it publishes v4; nothing is overwritten.
 
 **Housekeeping**
 

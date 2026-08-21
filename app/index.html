@@ -67,8 +67,10 @@ try{
 <link rel="stylesheet" href="dashboard.css">
 <link rel="stylesheet" href="home.css">
 <link rel="stylesheet" href="feedback.css">
+<script src="guardrails.js"></script>
 <script src="dashboard.js"></script>
 <script src="home.js"></script>
+<script src="projects.js"></script>
 <script src="feedback.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
@@ -176,7 +178,13 @@ html[data-theme=dark][data-accent=orange]{--green-900:#38200a;--green-800:#8a4c1
 .st-review{color:#8A6116;border-color:#EAD9B0;background:#FBF3E4}
 .st-done{color:var(--green-700);border-color:var(--green-200);background:var(--green-50)}
 .st-cancel{color:#B42318;border-color:#F0C6C2;background:#FDF3F2}
+/* Project statuses. Converted to Project is the terminal one the analytics
+   dashboard counts, so it gets the accent rather than another shade of green
+   that reads as "just another done". */
+.st-converted{color:#fff;border-color:var(--green-700);background:var(--green-700)}
+.st-hold{color:#8A6116;border-color:#EAD9B0;background:#FBF3E4}
 html[data-theme=dark] .st-review{color:#D9A441;border-color:#5C4715;background:#332A12}
+html[data-theme=dark] .st-hold{color:#D9A441;border-color:#5C4715;background:#332A12}
 html[data-theme=dark] .st-cancel{color:#E0685E;border-color:#6E2D28;background:#391714}
 .st-menu{position:fixed;display:none;z-index:75;background:var(--white);border:1px solid var(--ink-200);
   border-radius:10px;box-shadow:0 8px 28px rgba(22,25,26,.16);padding:6px;min-width:150px}
@@ -401,6 +409,13 @@ main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 .wf-steps button[disabled]{opacity:.45;cursor:not-allowed}
 .wf-steps button[disabled]:hover{background:var(--white);border-color:var(--ink-200);color:var(--ink-700)}
 .wf-steps .n{font-family:var(--fm);font-size:11px;opacity:.65;margin-right:6px}
+/* A step whose assumptions are flagged wears the same amber as the warning
+   banner that names them, so the banner and the pills read as one thing. */
+.wf-steps button.flag{border-color:#EAD9B0;background:#FBF3E4;color:#6E4E12}
+.wf-steps button.flag:hover{background:#F6E9CE;border-color:#DFC98F;color:#5A400E}
+.wf-steps button.on.flag{background:#8A6116;border-color:#8A6116;color:#fff}
+.wf-steps button.on.flag:hover{background:#8A6116;border-color:#8A6116;color:#fff}
+html[data-theme=dark] .wf-steps button.flag{background:#2a2317;border-color:#4d4026;color:#E8C97A}
 /* completed steps carry a green dot (owner preference: dot, not a check mark) */
 .wf-steps button.done::after,.wf-steps a.done::after{content:'';display:inline-block;width:7px;height:7px;
   border-radius:50%;background:var(--green-700);margin-left:7px;vertical-align:middle}
@@ -628,6 +643,89 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
   padding:3px 8px;border-radius:var(--r);border:1px solid var(--ink-200);color:var(--ink-600)}
 .badge.warn{border-color:#e6d3ae;background:#fdf6e8;color:var(--warn)}
 .badge.ok{border-color:var(--green-200);background:var(--green-50);color:var(--green-700)}
+.badge.bad{border-color:#eccbc7;background:#fdf1f0;color:var(--danger)}
+
+/* ---- projects ----
+   The row is clickable, so it needs to look it; the star and the status chip
+   inside it stop propagation, which is why they are real buttons and not
+   decorated spans. */
+/* ---- project stat cards ----
+   Four headline numbers as real cards: a labelled surface with the figure
+   anchored to the bottom of the card, so the numbers line up across the row
+   however long a label runs. */
+.pj-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.pj-stat{display:flex;flex-direction:column;background:var(--white);border:1px solid var(--ink-150);
+  border-radius:var(--rm);box-shadow:var(--sh);padding:15px 17px;min-height:104px}
+.pj-stat-k{font-family:var(--fm);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-500);font-weight:500}
+.pj-stat-v{font-family:var(--fm);font-size:23px;font-weight:600;color:var(--ink-950);
+  line-height:1.15;margin-top:auto;overflow-wrap:anywhere}
+.pj-stat-sub{font-size:11.5px;color:var(--ink-500);min-height:1.35em;margin-top:3px}
+@media(max-width:1040px){.pj-stats{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.pj-stats{grid-template-columns:1fr}.pj-stat{min-height:0}}
+
+/* The right-hand side of a projects card header: the view control, the count,
+   and any action button, wrapping rather than colliding on narrow screens. */
+.pj-hd-r{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+
+/* Declared column widths so the identity columns stop stealing room from the
+   money columns, and the three project tables line up with one another. */
+.pj-tbl-index th:nth-child(2){width:13%}
+.pj-tbl-index th:nth-child(3){width:26%}
+.pj-tbl-index th:nth-child(4){width:13%}
+.pj-tbl-index th:nth-child(5),.pj-tbl-index th:nth-child(6){width:14%}
+.pj-tbl-index th:nth-child(7),.pj-tbl-index th:nth-child(8){width:7%}
+.pj-tbl-budgets th:nth-child(2){width:15%}
+.pj-tbl-budgets th:nth-child(3){width:24%}
+.pj-tbl-budgets th:nth-child(4){width:11%}
+.pj-tbl-budgets th:nth-child(5){width:13%}
+.pj-tbl-budgets th:nth-child(6),.pj-tbl-budgets th:nth-child(7){width:15%}
+.pj-tbl-analyses th:nth-child(2){width:32%}
+.pj-tbl-analyses th:nth-child(3){width:15%}
+.pj-tbl-analyses th:nth-child(4){width:11%}
+.pj-tbl-analyses th:nth-child(5),.pj-tbl-analyses th:nth-child(6){width:15%}
+.pj-tbl th.no-print{width:44px}
+.pj-tbl tr.pj-row{cursor:pointer}
+.pj-tbl tr.pj-row:hover td{background:var(--ink-50)}
+.pj-tbl td{vertical-align:middle}
+.pj-id{font-size:12.5px;color:var(--green-700);font-weight:600}
+.pj-name{font-size:13px;color:var(--ink-900);font-weight:600;margin-top:1px}
+.pj-addr{font-size:11.5px;color:var(--ink-500);margin-top:1px}
+.pj-live{font-family:var(--fm);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-400)}
+.pj-go{font-family:var(--fm);font-size:11px;color:var(--ink-400);white-space:nowrap}
+.pj-tbl tr.pj-row:hover .pj-go{color:var(--green-700)}
+#page-project .page-title #projectStar .hm-star{position:static}
+
+/* ---- guard rails ----
+   Qualified selectors throughout: broad rules like `.tbl input` have won on
+   specificity here before and clipped real inputs. */
+.gr-pill{cursor:pointer;font-family:var(--fm)}
+.gr-pill:hover{border-color:var(--ink-300)}
+.gr-tbl td{vertical-align:top}
+.gr-tbl .gr-measures{font-size:11px;color:var(--ink-500);text-transform:none;letter-spacing:0;margin-top:2px}
+.gr-tbl tr.gr-r-bad td{background:#fdf1f0}
+.gr-tbl tr.gr-r-warn td{background:#fdf6e8}
+.gr-alert{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:11px 14px;border-radius:var(--rm);
+  font-size:13px;margin-bottom:12px;line-height:1.5}
+.gr-alert.bad{border:1px solid #eccbc7;background:#fdf1f0;color:#7a2019}
+.gr-alert.warn{border:1px solid #e6d3ae;background:#fdf6e8;color:#7a5514}
+.fld.gr-bad input.num,.fld.gr-bad textarea{border-color:var(--danger);box-shadow:0 0 0 3px rgba(180,35,24,.14)}
+.fld.gr-warn input.num{border-color:var(--warn)}
+[data-gr].gr-bad>.lab::after{content:' ▲';color:var(--danger);font-size:10px}
+[data-gr].gr-warn>.lab::after{content:' ▲';color:var(--warn);font-size:10px}
+/* A marked CARD header has no .lab to hang an arrow off, so it takes a stripe.
+   Qualified to .card-hd on purpose: a broad [data-gr] rule would also hit the
+   .fld blocks above and double up. */
+.card-hd[data-gr].gr-bad{box-shadow:inset 3px 0 0 var(--danger)}
+.card-hd[data-gr].gr-warn{box-shadow:inset 3px 0 0 var(--warn)}
+.fee-row{display:flex;gap:6px;align-items:stretch}
+.fee-row input.num{flex:1 1 auto;min-width:0}
+.mini-seg.fee-seg{flex:0 0 auto;align-self:stretch}
+.mini-seg.fee-seg button{padding:0 9px;font-family:var(--fm);font-size:12px}
+.fee-note{display:block;min-height:14px;margin-top:4px;font-size:11px;color:var(--ink-500)}
+html[data-theme=dark] .gr-alert.bad,html[data-theme=dark] .gr-tbl tr.gr-r-bad td{background:#2c1a19;color:#e9b6b1;border-color:#523030}
+html[data-theme=dark] .gr-alert.warn,html[data-theme=dark] .gr-tbl tr.gr-r-warn td{background:#2a2317;color:#e6cf9f;border-color:#4d4026}
+html[data-theme=dark] .badge.bad{background:#2c1a19;border-color:#523030}
 
 .banner{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 18px;border-radius:var(--rm);
   border:1px solid #e6d3ae;background:#fdf6e8;color:#7a5514;font-size:13px;margin-bottom:20px}
@@ -926,6 +1024,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <!-- Four top-level destinations. Inputs / Budget / CSI Schedule are
            reached through the workflow pills on a budget, not from here. -->
       <button id="nav-home" class="on" onclick="go('home')">Home</button>
+      <button id="nav-projects" onclick="go('projects')">Projects</button>
       <button id="nav-budgets" onclick="go('budgets')">Budgets</button>
       <button id="nav-analyses" onclick="go('analyses')">Investment Analysis</button>
       <div class="nav-more" id="navMore">
@@ -960,6 +1059,36 @@ th.sortable.sorted{color:var(--ink-900)}
      screen, rendered by app/home.js from endpoints that already exist. -->
 <div class="page on" id="page-home">
   <div id="homeContent"></div>
+</div>
+
+<!-- ================= PROJECTS =================
+     The parent view: one project per ID, with the budgets and investment
+     analyses that belong to it. Rendered by app/projects.js from query scopes
+     on endpoints that already deploy. -->
+<div class="page" id="page-projects">
+  <div class="page-title">
+    <div><h1>Projects</h1>
+      <div class="sub">Every project, with the budgets and investment analyses linked to it. One project per ID.</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
+      <button class="btn btn-ghost" onclick="FSProjects.render(true)">Refresh</button>
+      <button class="btn btn-dark" onclick="openNewBudget()">+ New Budget</button>
+    </div>
+  </div>
+  <div id="projectsBody"></div>
+</div>
+
+<div class="page" id="page-project">
+  <div class="page-title">
+    <div><button class="btn-back" onclick="go('projects')" aria-label="Back to Projects" title="Back to Projects">&larr; Back</button>
+      <h1 id="projectTitle">Project</h1>
+      <div class="sub" id="projectSub"></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
+      <span id="projectStar"></span>
+      <span id="projectStatusHost"></span>
+      <button class="btn btn-ghost" onclick="FSProjects.show(FSProjects.currentId(),true)">Refresh</button>
+    </div>
+  </div>
+  <div id="projectBody"></div>
 </div>
 
 <!-- ================= INPUTS ================= -->
@@ -1004,7 +1133,7 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card">
-    <div class="card-hd"><h2>Unit Mix &amp; Rent Revenue</h2>
+    <div class="card-hd" data-gr="units"><h2>Unit Mix &amp; Rent Revenue</h2>
       <div style="display:flex;gap:10px;align-items:center">
         <span id="sfCheck" class="badge">—</span>
         <button class="btn btn-ghost btn-sm no-print" onclick="addUnit()">+ Add Unit Type</button>
@@ -1051,7 +1180,7 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card">
-    <div class="card-hd"><h2>Operating Expenses</h2>
+    <div class="card-hd" data-gr="expenses"><h2>Operating Expenses</h2>
       <div style="display:flex;gap:10px;align-items:center">
         <span class="eyebrow">Per-unit or fixed monthly costs netted against income</span>
         <button class="btn btn-ghost btn-sm no-print" onclick="addExpense()">+ Add Expense</button>
@@ -1098,14 +1227,39 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card" id="sec-project">
-    <div class="card-hd"><h2>Land &amp; Project Costs</h2><span class="eyebrow">Outside the construction contract — rolls into total project cost</span></div>
+    <div class="card-hd" data-gr="projectCosts"><h2>Land &amp; Project Costs</h2><span class="eyebrow">Outside the construction contract — rolls into total project cost</span></div>
     <div class="card-bd">
       <div class="grid g4">
         <label class="fld"><span class="lab">Land Cost</span><input type="number" class="num" id="pcLand" min="0" step="10000" oninput="doc.projectCosts.land=+this.value;touch()"></label>
-        <label class="fld"><span class="lab">Developer Fee</span><input type="number" class="num" id="pcDev" min="0" step="5000" oninput="doc.projectCosts.dev=+this.value;touch()"></label>
-        <label class="fld"><span class="lab">Marketing / Brokerage</span><input type="number" class="num" id="pcMkt" min="0" step="5000" oninput="doc.projectCosts.mkt=+this.value;touch()"></label>
-        <label class="fld"><span class="lab">Closing Costs</span><input type="number" class="num" id="pcCls" min="0" step="5000" oninput="doc.projectCosts.cls=+this.value;touch()"></label>
+        <div class="fld" data-gr="pcDev"><span class="lab">Developer Fee</span>
+          <div class="fee-row">
+            <div class="mini-seg fee-seg" role="group" aria-label="Developer Fee Basis">
+              <button type="button" data-feemode="dev.amt" onclick="setFeeMode('dev','amt')" title="A fixed dollar amount">$</button>
+              <button type="button" data-feemode="dev.pct" onclick="setFeeMode('dev','pct')" title="A percentage of total project cost">%</button>
+            </div>
+            <input type="number" class="num" id="pcDev" min="0" step="5000" oninput="setFeeVal('dev',this.value)">
+          </div>
+          <span class="fee-note" id="pcDevNote"></span></div>
+        <div class="fld" data-gr="pcMkt"><span class="lab">Marketing / Brokerage</span>
+          <div class="fee-row">
+            <div class="mini-seg fee-seg" role="group" aria-label="Marketing Basis">
+              <button type="button" data-feemode="mkt.amt" onclick="setFeeMode('mkt','amt')" title="A fixed dollar amount">$</button>
+              <button type="button" data-feemode="mkt.pct" onclick="setFeeMode('mkt','pct')" title="A percentage of total project cost">%</button>
+            </div>
+            <input type="number" class="num" id="pcMkt" min="0" step="5000" oninput="setFeeVal('mkt',this.value)">
+          </div>
+          <span class="fee-note" id="pcMktNote"></span></div>
+        <div class="fld" data-gr="pcCls"><span class="lab">Closing Costs</span>
+          <div class="fee-row">
+            <div class="mini-seg fee-seg" role="group" aria-label="Closing Costs Basis">
+              <button type="button" data-feemode="cls.amt" onclick="setFeeMode('cls','amt')" title="A fixed dollar amount">$</button>
+              <button type="button" data-feemode="cls.pct" onclick="setFeeMode('cls','pct')" title="A percentage of total project cost">%</button>
+            </div>
+            <input type="number" class="num" id="pcCls" min="0" step="5000" oninput="setFeeVal('cls',this.value)">
+          </div>
+          <span class="fee-note" id="pcClsNote"></span></div>
       </div>
+      <div class="note" style="margin-top:10px">A percentage is a share of the <b>total project cost</b> — the number on the summary line, fees included. That is circular by definition, so it is solved rather than approximated: total = (contract + soft costs + land) ÷ (1 − the fee percentages). A 3% developer fee really is 3% of the printed total, and the resolved dollar amount appears under each field as you type.</div>
     </div>
   </section>
 
@@ -1195,12 +1349,15 @@ th.sortable.sorted{color:var(--ink-900)}
           <div style="height:16px"></div>
           <div class="sum-row sub"><span class="k">Soft Costs</span><span class="v" id="rSoft">$0</span></div>
           <div class="sum-row sub"><span class="k">Land</span><span class="v" id="rLand">$0</span></div>
-          <div class="sum-row sub"><span class="k">Developer Fee · Marketing · Closing</span><span class="v" id="rFees">$0</span></div>
+          <div class="sum-row sub"><span class="k" id="rFeesLab">Developer Fee · Marketing · Closing</span><span class="v" id="rFees">$0</span></div>
           <div class="sum-row grand"><span class="k">Total Project Cost</span><span class="v" id="rProject">$0</span></div>
           <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
             <span class="badge" id="mMargin">Margin —</span>
             <span class="badge" id="mYield">Gross yield —</span>
             <span class="badge" id="mPricing">Pricing —</span>
+            <button type="button" class="badge gr-pill no-print" id="mGuardrails"
+              onclick="document.getElementById('sec-guardrails').scrollIntoView({block:'start'})"
+              title="Jump to Guard Rails">Guard Rails —</button>
           </div>
         </div>
         <div>
@@ -1208,6 +1365,14 @@ th.sortable.sorted{color:var(--ink-900)}
           <table class="tbl"><tbody id="sovBody"></tbody></table>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section class="card" id="sec-guardrails">
+    <div class="card-hd"><h2>Guard Rails</h2>
+      <span class="eyebrow" id="grHeadline">Every ratio this budget is judged on</span></div>
+    <div class="card-bd">
+      <div id="grBody"></div>
     </div>
   </section>
 </div>
@@ -1359,9 +1524,11 @@ th.sortable.sorted{color:var(--ink-900)}
       <a href="#help-overview" class="on">What This Is</a>
       <a href="#help-quickstart">Quick Start</a>
       <a href="#help-firstproject">Your First Project</a>
+      <a href="#help-projects">Projects</a>
       <a href="#help-ids">Project IDs</a>
       <a href="#help-inputs">Inputs Reference</a>
       <a href="#help-budget">The Budget Page</a>
+      <a href="#help-guardrails">Guard Rails</a>
       <a href="#help-csi">CSI Schedule</a>
       <a href="#help-pricing">Pricing Library</a>
       <a href="#help-investment">Investment Analysis</a>
@@ -1421,8 +1588,8 @@ th.sortable.sorted{color:var(--ink-900)}
             rainbow swatch for any custom color.</li>
           <li><b>Time Format</b> — 12-hour (8:52 PM) or 24-hour (20:52) for every timestamp.</li>
           <li><b>Views</b> — three options per section: a Comfortable list, a Compact list, or Cards —
-            chosen separately for Project Budgets and Investment Analyses (a roomy budget list next to
-            analysis cards is fine). The same three-way icon toggle sits above each list.</li>
+            chosen separately for Projects, Project Budgets and Investment Analyses (a roomy budget list
+            next to analysis cards is fine). The same three-way icon toggle sits above each list.</li>
           <li><b>Exports</b> — the <b>Remember Export Settings</b> toggle: on, the sections and options
             you pick in the export popups (budget and analysis separately) become your defaults
             everywhere you sign in; off, every export starts from the standard defaults.</li>
@@ -1509,13 +1676,15 @@ th.sortable.sorted{color:var(--ink-900)}
           12), and total project cost as a suggested purchase price — each imported value shows a green
           <b>From Budget</b> badge.</div></div>
         <div class="step"><div class="n">9</div><div class="t">Walk the six steps:
-          <br><b>Step 1 — Source &amp; Property:</b> Set Purchase Month to the target closing date. The
-          address, unit count, and square footage carry over from the budget.
+          <br><b>Step 1 — Source &amp; Property:</b> Purchase Month starts at the current month — change it to
+          the target closing date. The address, unit count, and square footage carry over from the budget and
+          are <b>locked</b>; the card's three-dot menu has <b>Override Budget Inputs</b> when one genuinely
+          needs to differ.
           <br><b>Step 2 — Income:</b> Gross Scheduled Rent is pre-filled from the unit mix. Add any
           additional income lines.
-          <br><b>Step 3 — Vacancy &amp; Expenses:</b> Set a vacancy rate (e.g. 5%) and enter the full
-          operating expenses — insurance, taxes, management, maintenance, and the service expenses the
-          budget suggested.
+          <br><b>Step 3 — Vacancy &amp; Expenses:</b> Set a vacancy rate (e.g. 5%). The operating expense
+          ratio is derived from the budget's own expense schedule; that card's three-dot menu has
+          <b>Override Budget Inputs</b> if this property is genuinely priced differently.
           <br><b>Step 4 — Mortgage:</b> Choose <b>Amortizing Mortgage</b> and enter the loan amount,
           interest rate (e.g. 6.5%), and 30-year term. Or choose <b>All Cash</b> for an unleveraged view.
           <br><b>Step 5 — Disposition:</b> Set the Exit Cap Rate (e.g. 5.75%) and selling costs (e.g. 2%).
@@ -1530,6 +1699,30 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></section>
 
       <section class="card"><div class="card-bd">
+        <h3 id="help-projects">Projects</h3>
+        <p>The <b>Projects</b> tab is the parent view. One project per ID, and everything that belongs to it hangs
+          off its page: the budgets, the investment analyses built from them, and whatever you have starred.</p>
+        <p>A project is created automatically the first time a budget is saved against its ID — there is nothing to
+          set up. From a project page you can:</p>
+        <ul>
+          <li><b>Add an alternate budget</b> — a copy of the base budget under a suffixed ID (<span class="mono">BD-0001-02</span>),
+            for pricing the same project a different way. It opens unsaved so you can change it before keeping it.</li>
+          <li><b>Move it through the pipeline</b> — Lead, Qualified, Budgeting, Proposal Sent, Awarded, and finally
+            <b>Converted to Project</b>, with On Hold and Lost for everything else.</li>
+          <li><b>See what you starred</b> — the Favorites strip shows only the budget and analysis you starred on
+            this project, rather than everything that exists.</li>
+          <li><b>Add an investment analysis</b> — <span class="kbd">+ Add Investment Analysis</span> on the
+            Investment Analyses card. With one budget on the project it links to that budget without asking;
+            with several it asks which one, offering only this project's budgets.</li>
+          <li><b>Act on a row</b> — the <b>three-dot menu</b> at the end of each budget row carries the same
+            Edit, Versions, Update Pricing and favorite actions as the Budgets tab; each analysis row carries
+            the analysis menu (Open, Versions, Duplicate, Delete and its favorite toggle).</li>
+        </ul>
+        <div class="callout"><b>Converting captures the numbers.</b> Moving a project to <b>Converted to Project</b>
+          records the contract and total project amounts from its primary budget <i>at that moment</i>. They stop
+          moving when the budget is edited afterwards, which is what makes the Analytics totals a stable record of
+          work won rather than a figure that drifts.</div>
+
         <h3 id="help-ids">Project IDs</h3>
         <p>The ID is the primary key for the budget, in the database and in every downstream system. It cannot be
           changed by renaming later without creating a second record, so get it right at the start.</p>
@@ -1538,7 +1731,12 @@ th.sortable.sorted{color:var(--ink-900)}
           <tr><td>BD-####</td><td>Business Development pursuit — four digits, e.g. <code>BD-0001</code>.</td></tr>
           <tr><td>AS-####</td><td>Assessment — four digits, e.g. <code>AS-0001</code>.</td></tr>
           <tr><td>TST-####</td><td>Test budget. Use <code>TST-9999</code> when checking a preview build.</td></tr>
+          <tr><td>…-##</td><td>An <b>alternate budget</b> under the same project — <code>BD-0001-02</code>,
+            <code>BD-0001-03</code>. Created from the project page, never typed by hand.</td></tr>
         </tbody></table>
+        <p>Strip the alternate suffix and you have the <b>project</b> ID, which is what the Projects tab is keyed
+          by. <code>BD-0001</code> and <code>BD-0001-02</code> are two budgets on one project; there is never more
+          than one project per ID.</p>
         <div class="callout warn"><b>Test budgets are real rows.</b> Preview builds share the production database,
           so a <code>TST-</code> budget is written to the same tables as live projects. It is flagged with a Test
           badge everywhere it appears — delete it when you are finished.</div>
@@ -1733,6 +1931,29 @@ th.sortable.sorted{color:var(--ink-900)}
       </div></section>
 
       <section class="card"><div class="card-bd">
+        <h3 id="help-guardrails">Guard Rails</h3>
+        <p>Every budget is measured against a set of ratios — the <b>Guard Rails</b> card at the bottom of the
+          Budget page lists each one, what it measures, where it currently sits, and the range it is expected to
+          fall in. The pill beside <b>Margin</b> and <b>Gross yield</b> tells you at a glance whether anything
+          needs looking at.</p>
+        <p>Most rails only flag. Three of them <b>refuse the save</b>:</p>
+        <ul>
+          <li><b>Operating expenses</b> must be between <b>35% and 55%</b> of gross income. A multifamily budget
+            outside that band is almost always missing whole categories of cost — taxes, insurance, management,
+            payroll — rather than genuinely being cheap to run.</li>
+          <li><b>Fee percentages</b> — developer fee, marketing and closing together — cannot exceed 95% of
+            total project cost. Above that the arithmetic that resolves them stops having a sensible answer.</li>
+          <li><b>Leasable unit SF</b> cannot exceed residential buildable SF, which cannot be true.</li>
+        </ul>
+        <p>A rail is only checked once the numbers it divides actually exist, so a half-built budget is never
+          blocked. Budgets created before the full expense schedule shipped are <i>warned</i> rather than blocked
+          on the 35–55% rail, and the card offers <b>Update Expense Schedule</b> to append the missing categories
+          at $0 for you to fill in.</p>
+        <div class="callout warn"><b>Overriding a rail.</b> A director or super admin can record an override with
+          a written reason. The override is stored on the budget with your name and the date, shown on the summary,
+          and <b>printed on the PDF and the Excel workbook</b> — it is a decision on the record, not a way to
+          switch the check off. Bringing the value back into range clears it automatically.</div>
+
         <h3 id="help-csi">CSI Schedule</h3>
         <p>The <b>CSI schedule</b> tab re-presents the same budget as a MasterFormat schedule of values: sorted by
           division number, grouped under Division 00–48 headings with a subtotal per division, showing the full
@@ -2165,11 +2386,12 @@ th.sortable.sorted{color:var(--ink-900)}
       <p class="wel-lead">This is where a multifamily project gets priced: build the budget,
         check the returns, and send out the report.</p>
       <ul class="wel-list">
+        <li><b>Projects</b> &mdash; one project per ID, with every budget and analysis that belongs to it.</li>
         <li><b>Budgets</b> &mdash; a schedule of values priced from the published library, with a saved version every time the numbers change.</li>
         <li><b>Investment Analysis</b> &mdash; returns for a budget you have already built.</li>
         <li><b>Exports</b> &mdash; a branded PDF report and an Excel workbook, straight from the budget.</li>
       </ul>
-      <p class="wel-note">Your settings and pinned work save to your account, so they follow you to any signed-in browser.</p>
+      <p class="wel-note">Your settings and favorites save to your account, so they follow you to any signed-in browser.</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:22px">
         <button class="btn btn-ghost" onclick="closeWelcome();go('help')">Open the Guide</button>
         <button class="btn btn-primary" id="welcomeGo" onclick="closeWelcome()">Get Started</button>
@@ -2203,6 +2425,27 @@ th.sortable.sorted{color:var(--ink-900)}
      Blank are the implemented paths (the existing creation logic, untouched);
      the other project types are visible but disabled so the UI is already
      structured for them. Custom templates come from the template system. -->
+<!-- Guard-rail override. The reason is mandatory on purpose: an override without
+     one is a disabled check, and this one prints on every export. -->
+<div id="ackDlg" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:62;align-items:center;justify-content:center;padding:20px 14px"
+  onclick="if(event.target===this)closeAckDialog()">
+  <div class="card mod-sheet" style="width:520px;max-width:94vw;margin:0" role="dialog" aria-modal="true" aria-labelledby="ackTitle">
+    <div class="card-hd"><h2 class="mod-title" id="ackTitle">Override Guard Rail</h2>
+      <button class="btn-x" onclick="closeAckDialog()" aria-label="Close override">×</button></div>
+    <div class="card-bd">
+      <div class="set-lab" id="ackRail">—</div>
+      <p class="note" id="ackDetail" style="margin-top:0"></p>
+      <label class="fld"><span class="lab">Why is this budget outside the guard rail?</span>
+        <textarea id="ackReason" rows="3" maxlength="300" placeholder="e.g. Ground lease covers taxes and insurance, so they are not in the operating budget"></textarea></label>
+      <p class="note">This is recorded on the budget with your name and the date, shown on the summary, and printed on the PDF and the Excel workbook. Bringing the value back into range clears it automatically.</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+        <button class="btn btn-ghost" onclick="closeAckDialog()">Cancel</button>
+        <button class="btn btn-dark" onclick="confirmAck()">Record Override</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="newBudgetModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:60;align-items:center;justify-content:center;padding:20px 14px"
   onclick="if(event.target===this)closeNewBudget()">
   <div class="card mod-sheet" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="newBudgetTitle">
@@ -2335,9 +2578,21 @@ th.sortable.sorted{color:var(--ink-900)}
 
       <div class="set-lab">Views</div>
       <div class="set-note" style="margin:0 0 8px">Three options per section — a comfortable list, a
-        compact list, or cards — chosen separately for budgets and analyses. The same toggles sit above
-        each list.</div>
-      <div class="set-note" style="margin:0 0 4px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase">Project Budgets</div>
+        compact list, or cards — chosen separately for projects, budgets and analyses. The same toggles
+        sit above each list.</div>
+      <div class="set-note" style="margin:0 0 4px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase">Projects</div>
+      <div class="set-choice" role="group" aria-label="Projects View">
+        <button data-projectview-pick="comfortable" onclick="chooseSetting('projectView','comfortable')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+          Comfortable<span class="tick">✓</span></button>
+        <button data-projectview-pick="compact" onclick="chooseSetting('projectView','compact')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          Compact<span class="tick">✓</span></button>
+        <button data-projectview-pick="cards" onclick="chooseSetting('projectView','cards')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+          Cards<span class="tick">✓</span></button>
+      </div>
+      <div class="set-note" style="margin:10px 0 4px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase">Project Budgets</div>
       <div class="set-choice" role="group" aria-label="Project Budgets View">
         <button data-budgetview-pick="comfortable" onclick="chooseSetting('budgetView','comfortable')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
@@ -2601,6 +2856,7 @@ function applyUserSettings(){
 /* Per-section views: 'comfortable' | 'compact' | 'cards'. */
 function budgetView(){const v=usSettings().budgetView;return ['compact','cards'].includes(v)?v:'comfortable';}
 function analysisView(){const v=usSettings().analysisView;return ['compact','cards'].includes(v)?v:'comfortable';}
+function projectView(){const v=usSettings().projectView;return ['compact','cards'].includes(v)?v:'comfortable';}
 /* Named accents use the curated CSS scales; a #rrggbb custom accent derives
    its scale from the picked color (HSL ramps, light and dark variants) and
    applies it as inline tokens. Theme changes re-run this, so a custom accent
@@ -2671,6 +2927,7 @@ function chooseSetting(key,value){
   if(key==='analysisView'&&currentPage==='analyses'&&window.FSInvestmentUI){
     FSInvestmentUI.renderList();
   }
+  if(key==='projectView'&&currentPage==='projects'&&window.FSProjects)FSProjects.render(false);
   // Home shows relative times and status chips, so a format change repaints it.
   if((key==='timeFormat'||key==='analysisView'||key==='budgetView')
      &&currentPage==='home'&&window.FSHome){
@@ -2851,6 +3108,7 @@ function paintSettingsUI(){
   mark('[data-timefmt-pick]',s.timeFormat||'12h');
   mark('[data-budgetview-pick]',budgetView());
   mark('[data-analysisview-pick]',analysisView());
+  mark('[data-projectview-pick]',projectView());
   const re=document.getElementById('setRememberExport');
   if(re)re.checked=!!s.rememberExport;
 }
@@ -2931,7 +3189,19 @@ window.addEventListener('afterprint',()=>{
 });
 const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>ESC_MAP[c]);
-const ID_RX=/^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
+/* Budget ids. The plain form is a project's base budget; the -NN suffix is an
+   ALTERNATE budget under the same project (BD-0001, BD-0001-02, BD-0001-03 …).
+   Stripping the suffix gives the project id, which is what dbo.Projects is
+   keyed by — that is what makes "one project per ID" true.
+   This regex lives in four files that change together: app/index.html,
+   api/budget/index.js, api/budget-versions/index.js, test/mock-api.js. */
+const ID_RX=/^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/;
+const PROJECT_ID_RX=/^(OP|BD|AS|TST)-\d{4}$/;
+function projectKeyOf(id){
+  const s=String(id||'').toUpperCase();
+  return /^(OP|BD|AS|TST)-\d{4}-\d{2}$/.test(s)?s.slice(0,-3):s;
+}
+function isAlternate(id){return /^(OP|BD|AS|TST)-\d{4}-\d{2}$/.test(String(id||'').toUpperCase());}
 const isTest=id=>/^TST-/.test(id||'');
 /* Stable per-line identity. Array positions shift whenever a line is inserted,
    moved between groups or batch-deleted, so anything that has to outlive a
@@ -2969,8 +3239,17 @@ async function api(path,opts={}){
   }
   setApiHealth(true);
   if(r.status===403)throw new Error('Not authorized (pricing_admin role required)');
-  if(!r.ok)throw new Error('API '+r.status+': '+await r.text());
   const ct=r.headers.get('content-type')||'';
+  if(!r.ok){
+    // A structured refusal (a guard-rail 422, a project 400) carries a message
+    // worth showing. Keep it on the error so callers can react to the SHAPE,
+    // not parse a string.
+    let body=null;
+    if(ct.includes('json')){try{body=await r.json();}catch(_){}}
+    const err=new Error((body&&body.message)||('API '+r.status+': '+(body?JSON.stringify(body):await r.text())));
+    err.status=r.status;err.body=body;
+    throw err;
+  }
   return ct.includes('json')?await r.json():null;
 }
 function setApiHealth(ok,msg){
@@ -3040,6 +3319,22 @@ async function initAuth(){
     const fab=document.getElementById('fbFab');
     if(fab&&principal)fab.style.display='';
   }
+  if(window.FSProjects)FSProjects.init({
+    esc:esc, usd:usd, fmtDay:fmtDay,
+    api:api, toast:toast,
+    openBudget:openBudget,
+    // The Projects list has the same three views every other list offers, and
+    // stores the choice through the same per-account preference mechanism.
+    projectView:projectView,
+    setSetting:(k,v)=>chooseSetting(k,v),
+    go:go, navigate:h=>{location.hash=h;},
+    currentPage:()=>currentPage,
+    // An alternate starts as a copy of the budget it is an alternative to.
+    duplicateBudget:duplicateBudgetAs,
+    // Converting a project changes what the dashboard reports, so its cache
+    // has to let go of the numbers it is holding.
+    dashboardInvalidate:()=>{if(window.FSDashboard&&FSDashboard.invalidate)FSDashboard.invalidate();}
+  });
   if(window.FSHome)FSHome.init({
     esc:esc, usd:usd, fmtDay:fmtDay,
     api:api, toast:toast,
@@ -3053,7 +3348,15 @@ async function initAuth(){
     // Same precedence the avatar uses: the Settings display name wins,
     // otherwise the platform name claim, otherwise a humanised sign-in local part.
     displayName:()=>(typeof US!=='undefined'&&US.profile&&US.profile.displayName)
-      ||(principal?principalName(principal):'')
+      ||(principal?principalName(principal):''),
+    // The star is one affordance on several pages; whichever one is showing
+    // repaints so the filled/outline state never goes stale behind the user.
+    favoritesChanged:()=>{
+      if(currentPage==='project'&&window.FSProjects)FSProjects.show(FSProjects.currentId());
+      else if(currentPage==='projects'&&window.FSProjects)FSProjects.render();
+      else if(currentPage==='budgets')renderBudgetsPage();
+      else if(currentPage==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
+    }
   });
   renderProfile();
 }
@@ -3338,6 +3641,15 @@ const DEFAULT_OTHER=[
  {label:'Valet trash',rate:25,count:0,auto:true},
  {label:'Misc',rate:15,count:0,auto:true},
 ];
+/* The full multifamily operating-expense schedule. OFFLINE FALLBACK ONLY — the
+   live schedule ships in the budget template's published version document, the
+   same relationship DEFAULT_PRICING has to the pricing library.
+
+   The first six rows are the service expenses the suite has always carried.
+   They total roughly 9% of income on their own, which is not an OPEX picture:
+   the rows after them are what make the 35–55% guard rail meaningful and what
+   the investment analysis derives its expense ratio from. Rates here are
+   starting points a real budget replaces, not house numbers. */
 const DEFAULT_EXPENSES=[
  {label:'City of Waller water & sewer (≈$40–60/unit)',per:'unit',rate:60,count:0,auto:true},
  {label:'Ezee Fiber',per:'unit',rate:40,count:0,auto:true},
@@ -3345,6 +3657,16 @@ const DEFAULT_EXPENSES=[
  {label:'Ally Waste valet trash service',per:'unit',rate:15,count:0,auto:true},
  {label:'City of Waller dumpster — 1 cu yd, 2×/wk pickup',per:'fixed',rate:383,count:1,auto:false},
  {label:'Admin / processing costs',per:'unit',rate:10,count:0,auto:true},
+ {label:'Property Taxes',per:'pctIncome',rate:12,count:0,auto:false},
+ {label:'Property Insurance',per:'unit',rate:65,count:0,auto:true},
+ {label:'Property Management Fee',per:'pctIncome',rate:4,count:0,auto:false},
+ {label:'On-Site Payroll',per:'unit',rate:95,count:0,auto:true},
+ {label:'Repairs & Maintenance',per:'unit',rate:55,count:0,auto:true},
+ {label:'Turnover / Make-Ready',per:'unit',rate:30,count:0,auto:true},
+ {label:'Marketing & Leasing',per:'unit',rate:22,count:0,auto:true},
+ {label:'General & Administrative',per:'unit',rate:18,count:0,auto:true},
+ {label:'Landscaping & Amenity Upkeep',per:'unit',rate:20,count:0,auto:true},
+ {label:'Replacement Reserves',per:'unit',rate:25,count:0,auto:true},
 ];
 
 /* ============ STATE ============ */
@@ -3471,7 +3793,14 @@ function blankDoc(kind){
     lines:bare?[]:pricing.lines.map(l=>({...l,lineId:newLineId(),qty:l.basis==='ls'?1:0,auto:l.basis!=='ls',baseUnit:l.unit})),
     companies:bare?[]:[{name:'Finishes Solutions LLC',pct:12}],
     contingency:bare?{mode:'pct',val:0}:{mode:'psf',val:2},
-    projectCosts:bare?{land:0,dev:0,mkt:0,cls:0}:{land:1200000,dev:200000,mkt:75000,cls:0},
+    projectCosts:bare
+      ?{land:0,dev:{mode:'amt',val:0},mkt:{mode:'amt',val:0},cls:{mode:'amt',val:0}}
+      :{land:1200000,dev:{mode:'amt',val:200000},mkt:{mode:'amt',val:75000},cls:{mode:'amt',val:0}},
+    // A new budget is born on the full expense schedule, so the 35-55% guard
+    // rail blocks it. Budgets created before this stay at version 1 and are
+    // warned rather than blocked until they are updated from the template.
+    opexSchemaVersion:bare?1:FSGuardrails.OPEX_SCHEMA_FULL,
+    guardrailAcks:[],
     pricingVersion:pricing.version,status:'Draft',
     created:new Date().toISOString(),updated:new Date().toISOString()};
 }
@@ -3480,6 +3809,18 @@ function migrate(d){ // tolerate older saves
   d.other=d.other??JSON.parse(JSON.stringify(DEFAULT_OTHER));
   d.expenses=d.expenses??JSON.parse(JSON.stringify(DEFAULT_EXPENSES));
   d.projectCosts=d.projectCosts??{land:0,dev:0,mkt:0,cls:0};
+  // Developer fee / marketing / closing became {mode,val}. A bare number is a
+  // pre-migration save and means dollars — lift it once here rather than
+  // guarding at every read.
+  ['dev','mkt','cls'].forEach(k=>{
+    const v=d.projectCosts[k];
+    if(!v||typeof v!=='object')d.projectCosts[k]={mode:'amt',val:nz(v)};
+    else d.projectCosts[k]={mode:v.mode==='pct'?'pct':'amt',val:nz(v.val)};
+  });
+  d.opexSchemaVersion=nz(d.opexSchemaVersion)||1;
+  d.guardrailAcks=Array.isArray(d.guardrailAcks)
+    ? d.guardrailAcks.filter(a=>a&&typeof a.id==='string'&&typeof a.reason==='string')
+    : [];
   // Repair numerics on load rather than only defending at the point of use, so an
   // older document is fixed once instead of every render.
   d.units.forEach(u=>{u.bd=nz(u.bd);u.bth=u.bth??1;u.sf=nz(u.sf);u.count=nz(u.count);u.rent=nz(u.rent);});
@@ -3488,7 +3829,8 @@ function migrate(d){ // tolerate older saves
   (d.companies||[]).forEach(c=>{c.pct=nz(c.pct);});
   d.resSF=nz(d.resSF);d.amenSF=nz(d.amenSF);d.siteSF=nz(d.siteSF);
   if(d.contingency)d.contingency.val=nz(d.contingency.val);
-  ['land','dev','mkt','cls'].forEach(k=>{d.projectCosts[k]=nz(d.projectCosts[k]);});
+  d.projectCosts.land=nz(d.projectCosts.land);
+  ['dev','mkt','cls'].forEach(k=>{d.projectCosts[k].val=nz(d.projectCosts[k].val);});
   // Budgets saved before edit-tracking existed have no baseline, so seed it from the
   // current rate: nothing is retroactively claimed to be a manual edit.
   // Older saves predate stable line IDs; mint one per line so selection, code
@@ -3522,14 +3864,14 @@ function editReason(it){
 /* ============ NAV + HASH ROUTING ============
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
-const PAGE_SLUG={home:'home',budgets:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+const PAGE_SLUG={home:'home',projects:'projects',project:'project',budgets:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
 /* Human names for the pages, for anything a person reads: today the subject
    line of a feedback email, which is more use as "Project Budgets" than as
    "budgets". */
-const PAGE_LABEL={home:'Home',budgets:'Project Budgets',input:'Budget Inputs',budget:'Budget Detail',
+const PAGE_LABEL={home:'Home',projects:'Projects',project:'Project Detail',budgets:'Project Budgets',input:'Budget Inputs',budget:'Budget Detail',
   csi:'CSI Schedule',analyses:'Investment Analysis',analysis:'Investment Analysis Editor',
   pricing:'Pricing Library',help:'How to Use',dashboard:'Analytics',admin:'Admin',version:'Version'};
-const SLUG_PAGE={home:'home',budgets:'budgets',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+const SLUG_PAGE={home:'home',projects:'projects',project:'project',budgets:'budgets',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
 const DOC_PAGES=['input','budget','csi'];
 
 function hashFor(p){
@@ -3539,6 +3881,8 @@ function hashFor(p){
   // resolved by the investment module, never by openBudget().
   if(p==='analysis'&&window.FSInvestmentUI&&FSInvestmentUI.currentId())
     return '#/analysis/'+FSInvestmentUI.currentId();
+  if(p==='project'&&window.FSProjects&&FSProjects.currentId())
+    return '#/project/'+FSProjects.currentId();
   return '#/'+s;
 }
 function syncHash(p){const h=hashFor(p);if(location.hash!==h)location.hash=h;}
@@ -3558,7 +3902,7 @@ function go(p){
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
   // Nested pages light their parent tab: the whole budget workflow keeps
   // Budgets lit, and the analysis editor keeps Investment Analysis lit.
-  var NAV_PARENT={analysis:'analyses',input:'budgets',budget:'budgets',csi:'budgets'};
+  var NAV_PARENT={analysis:'analyses',input:'budgets',budget:'budgets',csi:'budgets',project:'projects'};
   const nb=document.getElementById('nav-'+(NAV_PARENT[p]||p));
   if(nb)nb.classList.add('on');
   var MORE_PAGES=['help','dashboard','admin','version','pricing'];
@@ -3567,6 +3911,7 @@ function go(p){
   renderSaveState();
   if(p==='home')renderHome();
   if(p==='budgets')renderBudgetsPage();
+  if(p==='projects'&&window.FSProjects)FSProjects.render(true);
   if(DOC_PAGES.includes(p))paintWorkflowPills(p);
   if(p==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
   if(p==='pricing'){renderPricing();renderCatalog();}
@@ -3594,6 +3939,14 @@ async function routeFromHash(){
     return;
   }
   const id=(seg[1]||'').toUpperCase();
+  // A project route carries a project id — never an alternate suffix, and
+  // never fed to openBudget().
+  if(p==='project'){
+    if(!id||!PROJECT_ID_RX.test(id)){go('projects');return;}
+    if(currentPage==='project'&&window.FSProjects&&FSProjects.currentId()===id)return;
+    if(window.FSProjects)await FSProjects.show(id);
+    return;
+  }
   if(p===currentPage&&(!id||(doc&&doc.projectId===id)))return;   // already where the hash points
   if(DOC_PAGES.includes(p)){
     if(id&&ID_RX.test(id)&&(!doc||doc.projectId!==id)){await openBudget(id,p);return;}
@@ -3734,6 +4087,13 @@ async function refreshBudgetSurfaces(){
   index=(await sGet('budgets-index'))||[];
   paintBudgets();
   if(window.FSHome){FSHome.invalidate();if(currentPage==='home')FSHome.show();}
+  // Saving a budget can CREATE its project, so a cached project list is stale
+  // the moment the save lands. Drop it; the page refetches when next opened.
+  if(window.FSProjects){
+    FSProjects.invalidate();
+    if(currentPage==='projects')FSProjects.render(true);
+    else if(currentPage==='project')FSProjects.show(FSProjects.currentId(),true);
+  }
 }
 function homeRows(){
   const q=homeView.q.trim().toLowerCase();
@@ -4142,6 +4502,27 @@ function duplicateTemplate(){createTemplate();}
 
 /* New budgets clone the template's current published version. Opening an existing
    budget never does this — a saved budget owns its own document. */
+/* Duplicate a budget under a new id. Used by the Projects page to create an
+   alternate (BD-0001 → BD-0001-02): the alternate starts as a copy, because
+   an alternate is the same project priced a different way, not a blank sheet.
+   The copy is left OPEN AND UNSAVED so nothing is written until the user
+   decides it is worth keeping — and so the guard rails get their say first. */
+async function duplicateBudgetAs(fromId,newId){
+  if(!ID_RX.test(newId)){toast('Invalid budget ID.');return;}
+  await openBudget(fromId,'input');
+  if(!doc||doc.projectId!==fromId){toast('Could not open '+fromId+' to copy.');return;}
+  doc.projectId=newId;
+  doc.name=(doc.name||fromId)+' — Alternate';
+  doc.status='Draft';
+  doc.created=new Date().toISOString();
+  // A copy is not the original's history: it starts its own.
+  delete doc.templateVersionId;
+  fillForms();
+  markDirty();
+  go('input');
+  toast('Alternate '+newId+' started from '+fromId+'. Review it and Save to keep it.');
+}
+
 async function newBudgetFromTemplate(key){
   if(!key)return;
   if(!confirmDiscard())return;
@@ -4194,12 +4575,12 @@ async function openBudget(pid,page){
    shared element positioned from the trigger, which keeps "only one open" true
    by construction and survives paintHome() rebuilding every row. */
 let rowMenuTrigger=null,versionsReturn=null,versionsPid=null;
-/* The pin label reads as the action it performs, so it flips per row — hence
-   a function rather than a constant list. */
+/* The favorite label reads as the action it performs, so it flips per row —
+   hence a function rather than a constant list. */
 function rowActions(pid){
-  const pinned=window.FSHome&&FSHome.isPinned('budget',pid);
+  const fav=window.FSHome&&FSHome.isFavorite('budget',pid);
   return [{act:'edit',label:'Edit'},
-          {act:'pin',label:pinned?'Unpin From Home':'Pin to Home'},
+          {act:'fav',label:fav?'Remove From Favorites':'Add to Favorites'},
           {act:'reprice',label:'Update Pricing'},
           {act:'versions',label:'Versions'},
           {act:'sep'},{act:'delete',label:'Delete',danger:true}];
@@ -4234,9 +4615,11 @@ function rowMenuAction(act){
   const pid=document.getElementById('rowMenu').dataset.pid,t=rowMenuTrigger;
   versionsReturn=t;
   closeRowMenu(act==='delete');            // the other two navigate away from the row
-  if(act==='pin'){
-    const on=window.FSHome&&FSHome.togglePin('budget',pid);
-    toast(on?('Pinned '+pid+' to Home.'):('Unpinned '+pid+' from Home.'));
+  if(act==='fav'){
+    // FSHome words the toast and, through favoritesChanged, repaints whichever
+    // page is showing — this menu now opens from the project page too.
+    if(window.FSHome)FSHome.toggleFavorite('budget',pid);
+    if(currentPage==='budgets')renderBudgetsPage();
     return;
   }
   if(act==='edit')openBudget(pid);
@@ -4346,10 +4729,49 @@ function fillForms(){
   document.getElementById('pSiteAc').value=doc.siteSF?+((doc.siteSF)/SQFT_PER_ACRE).toFixed(3):0;
   document.getElementById('cVal').value=doc.contingency.val;
   document.getElementById('pcLand').value=doc.projectCosts.land;
-  document.getElementById('pcDev').value=doc.projectCosts.dev;
-  document.getElementById('pcMkt').value=doc.projectCosts.mkt;
-  document.getElementById('pcCls').value=doc.projectCosts.cls;
+  ['dev','mkt','cls'].forEach(k=>{
+    document.getElementById('pc'+k[0].toUpperCase()+k.slice(1)).value=feeOf(k).val;
+    paintFeeMode(k);
+  });
   setCMode(doc.contingency.mode,true);
+}
+/* `nz()` for the fee OBJECT. An old document can carry an absent
+   projectCosts.dev, and `undefined.mode` is a TypeError exactly as absent
+   arithmetic is $NaN — so every read goes through here and repairs in place,
+   the same way migrate() does on load. */
+function feeOf(k){
+  const pc=doc.projectCosts||(doc.projectCosts={land:0});
+  const v=pc[k];
+  if(!v||typeof v!=='object')pc[k]={mode:'amt',val:nz(v)};
+  return pc[k];
+}
+function setFeeVal(k,v){feeOf(k).val=nz(v);touch();}
+
+/* The $ / % toggle. Switching basis clears the value rather than reinterpreting
+   it: $200,000 and 200,000% are not the same intent, and silently carrying the
+   number across would be a very expensive typo. */
+function setFeeMode(k,m){
+  const f=feeOf(k);
+  if(f.mode===m)return;
+  f.mode=m;f.val=0;
+  const el=document.getElementById('pc'+k[0].toUpperCase()+k.slice(1));
+  el.value=0;el.step=m==='pct'?'0.25':'5000';
+  paintFeeMode(k);
+  touch();
+}
+function paintFeeMode(k){
+  const f=feeOf(k),cap='pc'+k[0].toUpperCase()+k.slice(1);
+  document.querySelectorAll('[data-feemode^="'+k+'."]').forEach(b=>
+    b.classList.toggle('on',b.dataset.feemode===k+'.'+f.mode));
+  const el=document.getElementById(cap);
+  if(el)el.step=f.mode==='pct'?'0.25':'5000';
+  const note=document.getElementById(cap+'Note');
+  if(note){
+    const p=parts();
+    note.textContent=f.mode==='pct'
+      ? nz(f.val)+'% of total project cost = '+usd(p.fee[k])
+      : '';
+  }
 }
 function pullForms(){
   doc.projectId=document.getElementById('pId').value.trim().toUpperCase();
@@ -4394,6 +4816,15 @@ function scopeSum(sc){
   if(!scopeActive(sc))return 0;
   return doc.lines.filter(l=>l.scope===sc).reduce((s,it)=>s+lineQty(it)*nz(it.unit),0);
 }
+/* Developer fee, marketing and closing costs are each EITHER a dollar amount or
+   a percentage — {mode:'amt'|'pct',val} — following the shape doc.contingency
+   already uses. A bare number is a pre-migration document and reads as dollars.
+   MIRROR OF api/shared/budget-calc.js; suite-09 compares the two. */
+const FEE_FLOOR=0.05;
+function feeMode(v){return v&&typeof v==='object'&&v.mode==='pct'?'pct':'amt';}
+function feeVal(v){return v&&typeof v==='object'?nz(v.val):nz(v);}
+function feeRate(v){return feeMode(v)==='pct'?feeVal(v)/100:0;}
+function feeFixed(v){return feeMode(v)==='pct'?0:feeVal(v);}
 function parts(){
   const res=scopeSum('res'),amen=scopeSum('amen'),soft=scopeSum('soft');
   const hard=res+amen;
@@ -4403,9 +4834,22 @@ function parts(){
     :c.mode==='psf'?(nz(doc.resSF)+nz(doc.amenSF))*nz(c.val):nz(c.val);
   const contract=hard+profit+cont;
   const pc=doc.projectCosts;
-  const fees=nz(pc.dev)+nz(pc.mkt)+nz(pc.cls);
-  const project=contract+soft+nz(pc.land)+fees;
-  return {res,amen,soft,hard,profit,cont,contract,fees,project};
+  /* "A percentage of the total project cost" is circular — the developer fee is
+     itself part of that total. Solved in closed form rather than by iteration:
+     project = (base + fixedFees) / (1 - f). So a 3% fee really is 3% of the
+     number printed on the summary line. The divisor floors at FEE_FLOOR so a
+     budget the feeSum rail is already refusing still renders a finite number
+     instead of $Infinity. */
+  const base=contract+soft+nz(pc.land);
+  const rate=feeRate(pc.dev)+feeRate(pc.mkt)+feeRate(pc.cls);
+  const fixed=feeFixed(pc.dev)+feeFixed(pc.mkt)+feeFixed(pc.cls);
+  const project=(base+fixed)/Math.max(1-rate,FEE_FLOOR);
+  const fee={dev:feeFixed(pc.dev)+feeRate(pc.dev)*project,
+             mkt:feeFixed(pc.mkt)+feeRate(pc.mkt)*project,
+             cls:feeFixed(pc.cls)+feeRate(pc.cls)*project,
+             pctRate:rate>0||feeMode(pc.dev)==='pct'||feeMode(pc.mkt)==='pct'||feeMode(pc.cls)==='pct'?rate:null};
+  const fees=fee.dev+fee.mkt+fee.cls;
+  return {res,amen,soft,hard,profit,cont,contract,fee,fees,project};
 }
 /* Two different efficiencies, easy to confuse:
      building efficiency = leasable unit SF ÷ residential buildable SF  (how much of the
@@ -4449,29 +4893,42 @@ function renderSiteMetrics(){
   const st=document.getElementById('mSiteEffTile');
   if(st)st.classList.toggle('warn',m.siteEff!==null&&m.siteEff>1);
 }
+/* One expense row's monthly cost. A 'pctIncome' row (management fee, often
+   taxes) is a share of rent + other income — NOT circular, because income does
+   not depend on expenses. MIRROR OF api/shared/budget-calc.js. */
+function expenseMonthly(e,incomeMo){
+  const tu=totUnits();
+  if(e.per==='pctIncome')return nz(incomeMo)*nz(e.rate)/100;
+  return nz(e.rate)*(e.per==='fixed'?(nz(e.count)||1):(e.auto?tu:nz(e.count)));
+}
 function grossIncome(){
   const tu=totUnits();
   const rent=doc.units.reduce((s,u)=>s+u.rent*u.count,0);
   const other=doc.other.reduce((s,o)=>s+o.rate*(o.auto?tu:o.count),0);
-  const exp=doc.expenses.reduce((s,e)=>s+e.rate*(e.per==='fixed'?(e.count||1):(e.auto?tu:e.count)),0);
+  const incomeMo=rent+other;
+  const exp=doc.expenses.reduce((s,e)=>s+expenseMonthly(e,incomeMo),0);
   const netOther=other-exp;
-  return {rentMo:rent,otherMo:other,expMo:exp,netOtherMo:netOther,grossYr:12*(rent+other),netYr:12*(rent+netOther)};
+  return {rentMo:rent,otherMo:other,expMo:exp,netOtherMo:netOther,incomeMo,grossYr:12*(rent+other),netYr:12*(rent+netOther)};
 }
 
 /* ============ RENDER: EXPENSES ============ */
 function renderExpenses(){
   const b=document.getElementById('expBody');b.innerHTML='';
-  const tu=totUnits(),g=null;
+  const tu=totUnits(),incomeMo=grossIncome().incomeMo;
   doc.expenses.forEach((e,i)=>{
+    const pct=e.per==='pctIncome';
     const cnt=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-    const mo=e.rate*cnt;
+    const mo=expenseMonthly(e,incomeMo);
     b.insertAdjacentHTML('beforeend',`<tr>
       <td><input type="text" data-k="exp.${i}.label" value="${esc(e.label)}" oninput="doc.expenses[${i}].label=this.value;markDirty()"></td>
-      <td><select data-k="exp.${i}.per" onchange="doc.expenses[${i}].per=this.value;if(this.value==='fixed'){doc.expenses[${i}].auto=false;doc.expenses[${i}].count=doc.expenses[${i}].count||1}else{doc.expenses[${i}].auto=true}touch()" style="width:96px;font-size:12px;padding:5px 8px">
+      <td><select data-k="exp.${i}.per" onchange="setExpenseBasis(${i},this.value)" style="width:110px;font-size:12px;padding:5px 8px">
         <option value="unit" ${e.per==='unit'?'selected':''}>Per Unit</option>
-        <option value="fixed" ${e.per==='fixed'?'selected':''}>Fixed / Mo</option></select></td>
-      <td class="r"><input type="number" data-k="exp.${i}.rate" value="${e.rate}" min="0" step="1" style="width:80px" onchange="doc.expenses[${i}].rate=+this.value;touch()"></td>
-      <td class="r"><span class="autodot${e.auto&&e.per!=='fixed'?' on':''}" title="${e.auto&&e.per!=='fixed'?'Counts every unit automatically':'Manual count'}"></span><input type="number" data-k="exp.${i}.count" value="${cnt}" min="0" style="width:70px" onchange="doc.expenses[${i}].count=+this.value;doc.expenses[${i}].auto=false;touch()"></td>
+        <option value="fixed" ${e.per==='fixed'?'selected':''}>Fixed / Mo</option>
+        <option value="pctIncome" ${pct?'selected':''}>% of Income</option></select></td>
+      <td class="r"><input type="number" data-k="exp.${i}.rate" value="${e.rate}" min="0" step="${pct?'0.25':'1'}" style="width:80px" onchange="doc.expenses[${i}].rate=+this.value;touch()"></td>
+      <td class="r">${pct
+        ? '<span class="mut" style="font-size:12px">% of income</span>'
+        : `<span class="autodot${e.auto&&e.per!=='fixed'?' on':''}" title="${e.auto&&e.per!=='fixed'?'Counts every unit automatically':'Manual count'}"></span><input type="number" data-k="exp.${i}.count" value="${cnt}" min="0" style="width:70px" onchange="doc.expenses[${i}].count=+this.value;doc.expenses[${i}].auto=false;touch()">`}</td>
       <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
       <td class="no-print"><button class="btn-x" title="Remove expense" onclick="doc.expenses.splice(${i},1);touch()">×</button></td></tr>`);
   });
@@ -4482,6 +4939,37 @@ function renderExpenses(){
   document.getElementById('nYr').textContent=usd(gi.netOtherMo*12);
 }
 function addExpense(){doc.expenses.push({label:'New expense',per:'unit',rate:0,count:0,auto:true});touch();}
+/* Switching basis rewrites the fields that basis actually uses, so a row never
+   carries a count that means nothing or a rate read in the wrong unit. */
+function setExpenseBasis(i,v){
+  const e=doc.expenses[i];
+  e.per=v;
+  if(v==='fixed'){e.auto=false;e.count=e.count||1;}
+  else if(v==='pctIncome'){e.auto=false;e.count=0;}
+  else{e.auto=true;}
+  touch();
+}
+/* The template's expense schedule, appended to a budget that predates it. Only
+   categories the budget is MISSING are added, at $0 — nothing already entered
+   is touched, and nothing is guessed on the user's behalf. */
+function updateExpenseSchedule(){
+  if(!doc)return;
+  const have=new Set(doc.expenses.map(e=>String(e.label||'').trim().toLowerCase()));
+  const add=(templateExpenseSchedule()||[]).filter(e=>!have.has(String(e.label||'').trim().toLowerCase()));
+  doc.expenses=doc.expenses.concat(add.map(e=>({...e,rate:0})));
+  doc.opexSchemaVersion=FSGuardrails.OPEX_SCHEMA_FULL;
+  touch();
+  toast(add.length
+    ? 'Added '+add.length+' expense '+(add.length===1?'category':'categories')+' at $0 — fill in the real numbers.'
+    : 'Every template expense category is already on this budget.');
+}
+/* The schedule comes from the active template when one is loaded, and falls
+   back to the offline constant otherwise — same relationship DEFAULT_PRICING
+   has to the pricing library. */
+function templateExpenseSchedule(){
+  const t=pricing&&pricing.expenses;
+  return Array.isArray(t)&&t.length?t:DEFAULT_EXPENSES;
+}
 
 /* ============ RENDER: UNITS ============ */
 function renderUnits(){
@@ -4955,7 +5443,12 @@ function renderSummary(){
   document.getElementById('rSoft').textContent=usd(p.soft);
   document.getElementById('rLand').textContent=usd(doc.projectCosts.land);
   document.getElementById('rFees').textContent=usd(p.fees);
+  document.getElementById('rFeesLab').textContent=p.fee.pctRate===null
+    ?'Developer Fee · Marketing · Closing'
+    :'Developer Fee · Marketing · Closing ('+(100*p.fee.pctRate).toFixed(2).replace(/\.?0+$/,'')+'% of total)';
   document.getElementById('rProject').textContent=usd(p.project);
+  ['dev','mkt','cls'].forEach(paintFeeMode);
+  renderGuardrails();
   document.getElementById('mMargin').textContent='Margin '+(p.contract?(100*p.profit/p.contract).toFixed(1)+'%':'—');
   document.getElementById('mYield').textContent='Yield (net inc) '+(p.project?(100*g.netYr/p.project).toFixed(1)+'%':'—');
   document.getElementById('mPricing').textContent='Pricing '+doc.pricingVersion+(pricingFromApi?'':' · built-in fallback');
@@ -4984,6 +5477,106 @@ function renderSummary(){
   const stale=pricing&&doc.pricingVersion!==pricing.version&&!staleDismissed.has(doc.projectId);
   document.getElementById('staleBanner').style.display=stale?'flex':'none';
   if(stale){document.getElementById('staleFrom').textContent=doc.pricingVersion;document.getElementById('staleTo').textContent=pricing.version;}
+}
+
+/* ============ GUARD RAILS ============
+   The rail arithmetic lives in guardrails.js, which the API requires as a
+   byte-identical copy — the browser never owns a threshold or a formula, only
+   the presentation. The policy travels with the budget template (doc.guardrails)
+   so publishing a template publishes the rails. */
+/* " (3% of total project cost)" — appended to a fee label wherever the number
+   alone would hide that it is a rate, which is every export. */
+function feeBasisNote(k){
+  const f=feeOf(k);
+  return feeMode(f)==='pct'?' ('+nz(f.val)+'% of total project cost)':'';
+}
+function guardrails(){
+  if(!doc)return {rails:[],breaches:[],blocking:0,warnings:0,status:'ok'};
+  const p=parts();
+  return FSGuardrails.evaluate({doc,parts:p,gross:grossIncome(),fee:p.fee});
+}
+function renderGuardrails(){
+  const host=document.getElementById('grBody');
+  if(!host||!doc)return;
+  const r=guardrails();
+  // Marking rides on data-gr, mirroring data-k: it survives re-render and never
+  // needs a DOM query by position.
+  document.querySelectorAll('[data-gr]').forEach(el=>el.classList.remove('gr-bad','gr-warn'));
+  r.breaches.forEach(b=>document.querySelectorAll('[data-gr="'+b.path+'"]')
+    .forEach(el=>el.classList.add(b.severity==='error'?'gr-bad':'gr-warn')));
+
+  const pill=document.getElementById('mGuardrails');
+  if(pill){
+    pill.textContent=r.blocking?'Guard Rails · '+r.blocking+' blocking'
+      :r.warnings?'Guard Rails · '+r.warnings+' to review'
+      :r.rails.length?'Guard Rails · clear':'Guard Rails —';
+    pill.className='badge gr-pill no-print'+(r.blocking?' bad':r.warnings?' warn':r.rails.length?' ok':'');
+  }
+  document.getElementById('grHeadline').textContent=r.rails.length
+    ?r.rails.length+' rail'+(r.rails.length===1?'':'s')+' evaluated · '+r.breaches.length+' outside range'
+    :'Nothing to judge yet — enter units, rates and costs';
+
+  if(!r.rails.length){
+    host.innerHTML='<div class="note">A rail is only evaluated once the numbers it divides exist. Enter the unit mix, the pricing lines and the project costs and the rails appear here — a half-built budget is never blocked.</div>';
+    return;
+  }
+  const stale=r.breaches.some(b=>b.staleSchedule);
+  const row=b=>`<tr class="${b.ok?'':(b.severity==='error'?'gr-r-bad':'gr-r-warn')}">
+      <td>${esc(b.label)}${b.acked?' <span class="badge warn" title="'+esc(b.ackReason)+'">Overridden</span>':''}
+        <div class="gr-measures">${esc(b.measures)}</div></td>
+      <td class="calc r">${esc(b.display)}</td>
+      <td class="calc r mut">${esc(b.range)}</td>
+      <td class="r">${b.ok?'<span class="badge ok">In range</span>'
+        :b.severity==='error'?'<span class="badge bad">Blocking</span>'
+        :'<span class="badge warn">Review</span>'}</td>
+      <td class="no-print r">${b.ok||b.acked?''
+        :`<button class="btn btn-ghost btn-sm" onclick="openAckDialog('${esc(b.id)}')">Override…</button>`}</td>
+    </tr>`;
+  host.innerHTML=
+    (r.blocking?`<div class="gr-alert bad"><b>${r.blocking} guard rail${r.blocking===1?'':'s'} block${r.blocking===1?'s':''} this save.</b>
+        Bring the value back into range, or override it with a reason — an override is recorded on the budget and printed on every export.</div>`:'')
+    +(stale?`<div class="gr-alert warn"><b>This budget predates the full expense schedule.</b>
+        Its operating expenses cover services only, so the 35–55% rail reports but does not block yet.
+        <button class="btn btn-ghost btn-sm" onclick="updateExpenseSchedule()">Update Expense Schedule</button></div>`:'')
+    +`<div style="overflow-x:auto"><table class="tbl gr-tbl">
+      <thead><tr><th style="width:42%">Rail</th><th class="r">Actual</th><th class="r">Guard Rail</th><th class="r">State</th><th class="no-print"></th></tr></thead>
+      <tbody>${r.rails.map(row).join('')}</tbody></table></div>`
+    +`<div class="note" style="margin-top:10px">Thresholds ship with the budget template, so publishing a template version publishes the rails. A rail whose denominator is zero is not evaluated and never blocks.</div>`;
+}
+/* An override needs a reason, and the reason is the point: it rides into the
+   budget summary and every export so the decision is never invisible. Gated to
+   director / super_admin — a rail anyone can wave through is not a rail. */
+function canAckGuardrail(){
+  return US.appRole==='director'||US.appRole==='super_admin';
+}
+function openAckDialog(id){
+  if(!canAckGuardrail()){
+    toast('Overriding a guard rail needs the director or super admin role.');return;
+  }
+  const b=guardrails().breaches.find(x=>x.id===id);
+  if(!b)return;
+  document.getElementById('ackRail').textContent=b.label;
+  document.getElementById('ackDetail').textContent=b.message;
+  document.getElementById('ackReason').value='';
+  document.getElementById('ackDlg').dataset.rail=id;
+  document.getElementById('ackDlg').style.display='flex';
+  setTimeout(()=>document.getElementById('ackReason').focus(),30);
+}
+function confirmAck(){
+  const id=document.getElementById('ackDlg').dataset.rail;
+  const reason=document.getElementById('ackReason').value.trim();
+  if(!reason){toast('Give a reason — an override without one is just a disabled check.');return;}
+  doc.guardrailAcks=(doc.guardrailAcks||[]).filter(a=>a.id!==id);
+  doc.guardrailAcks.push({id,reason:reason.slice(0,300),
+    byId:US.userId||null,byName:US.displayName||US.userDetails||null,at:new Date().toISOString()});
+  closeAckDialog();
+  touch();
+  toast('Override recorded — it prints on every export of this budget.');
+}
+function closeAckDialog(){document.getElementById('ackDlg').style.display='none';}
+function removeAck(id){
+  doc.guardrailAcks=(doc.guardrailAcks||[]).filter(a=>a.id!==id);
+  touch();
 }
 
 function recalc(){
@@ -5021,16 +5614,42 @@ async function saveBudget(show){
   if(templateEdit)return publishTemplate();
   pullForms();
   if(!validateId()){toast('Valid project ID required to save');go('input');document.getElementById('pId').focus();return;}
+  // Guard rails refuse the save before anything is serialized. The endpoint
+  // re-evaluates from the submitted document and answers 422, so a client that
+  // skipped this check still cannot write — this is the courteous half.
+  const gr=guardrails();
+  const kept=FSGuardrails.pruneAcks(doc,gr);
+  if(kept.length!==(doc.guardrailAcks||[]).length)doc.guardrailAcks=kept;
+  if(gr.blocking){
+    go('budget');
+    renderGuardrails();
+    document.getElementById('sec-guardrails').scrollIntoView({block:'start'});
+    toast(gr.blocking+' guard rail'+(gr.blocking===1?'':'s')+' blocking — fix the value or record an override.');
+    return;
+  }
   saving=true;renderSaveState();
   doc.updated=new Date().toISOString();
   const p=parts();
   const meta={projectId:doc.projectId,name:doc.name,type:doc.type,status:doc.status,
-    contractSum:p.contract,projectCost:p.project,updated:doc.updated};
+    contractSum:p.contract,projectCost:p.project,updated:doc.updated,
+    guardrailStatus:gr.status,guardrailBreachCount:gr.breaches.length};
   try{
     await api('budget/'+encodeURIComponent(doc.projectId),{method:'PUT',body:JSON.stringify({meta,doc})});
     saving=false;markSaved();
     if(show)toast('Saved '+doc.projectId);
-  }catch(e){saving=false;renderSaveState();toast('Save failed: '+e.message);}
+  }catch(e){
+    saving=false;renderSaveState();
+    // The endpoint re-evaluates the rails independently. Reaching here means
+    // the browser and the server disagreed — surface the server's verdict and
+    // repaint the card so the user sees the same thing the endpoint saw.
+    if(e.status===422&&e.body&&e.body.error==='guardrail_breach'){
+      go('budget');renderGuardrails();
+      document.getElementById('sec-guardrails').scrollIntoView({block:'start'});
+      toast(e.message);
+      return;
+    }
+    toast('Save failed: '+e.message);
+  }
 }
 function setStatus(v){doc.status=v;markDirty();}
 /* The stale-pricing banner is dismissible per budget (in memory — it returns
@@ -5229,7 +5848,9 @@ function buildReport(s){
       +'<div style="height:10px"></div>'
       +rptRow('Soft Costs',usd(p.soft),'sub')
       +rptRow('Land',usd(doc.projectCosts.land),'sub')
-      +rptRow('Developer Fee · Marketing · Closing',usd(p.fees),'sub')
+      +rptRow('Developer Fee'+feeBasisNote('dev'),usd(p.fee.dev),'sub')
+      +rptRow('Marketing / Brokerage'+feeBasisNote('mkt'),usd(p.fee.mkt),'sub')
+      +rptRow('Closing Costs'+feeBasisNote('cls'),usd(p.fee.cls),'sub')
       +rptRow('Total Project Cost',usd(p.project),'grand')
       +'</div><div><div class="eyebrow" style="margin-bottom:6px">SOV rollup — construction contract</div><table class="rpt-tbl"><tbody>';
     ['res','amen'].filter(scopeActive).forEach(sc=>{
@@ -5243,6 +5864,20 @@ function buildReport(s){
     if(p.cont>0)h+='<tr><td>99.03 Contingency</td><td class="r mono">'+usd(p.cont)+'</td><td class="r mono muted">'+(p.contract?(100*p.cont/p.contract).toFixed(1):'0.0')+'%</td></tr>';
     h+='<tr class="tot"><td>Contract Sum</td><td class="r mono">'+usd(p.contract)+'</td><td class="r mono">100%</td></tr>';
     h+='</tbody></table></div></div></section>';
+    /* Guard rails ride into the report whenever anything is out of range or has
+       been overridden. Built from the data model, never the DOM — a collapsed
+       card or a filtered list must not change what an export contains. */
+    const gr=guardrails();
+    if(gr.breaches.length){
+      h+='<section class="rpt-sec"><h2>Guard Rails</h2><table class="rpt-tbl full"><thead><tr>'
+        +'<th>Rail</th><th class="r">Actual</th><th class="r">Guard Rail</th><th>State</th></tr></thead><tbody>';
+      gr.breaches.forEach(b=>{
+        h+='<tr><td>'+esc(b.label)+' <span class="muted">('+esc(b.measures)+')</span></td>'
+          +'<td class="r mono">'+esc(b.display)+'</td><td class="r mono muted">'+esc(b.range)+'</td>'
+          +'<td>'+(b.acked?'Override — '+esc(b.ackReason):b.severity==='error'?'Outside guard rail':'Review')+'</td></tr>';
+      });
+      h+='</tbody></table></section>';
+    }
   }
 
   if(s.units&&doc.units.length){
@@ -5394,7 +6029,9 @@ function buildBudgetFsdoc(s){
       kv('Contract Sum (Construction)',p.contract,'money',true),
       kv('Soft Costs',p.soft,'money'),
       kv('Land',doc.projectCosts.land,'money'),
-      kv('Developer Fee · Marketing · Closing',p.fees,'money'),
+      kv('Developer Fee'+feeBasisNote('dev'),p.fee.dev,'money'),
+      kv('Marketing / Brokerage'+feeBasisNote('mkt'),p.fee.mkt,'money'),
+      kv('Closing Costs'+feeBasisNote('cls'),p.fee.cls,'money'),
       kv('Total Project Cost',p.project,'money',true)
     ].filter(Boolean)});
     blocks1.push({kind:'group',label:'SOV ROLLUP — CONSTRUCTION CONTRACT'});
@@ -5568,7 +6205,9 @@ function legacyBudgetPdfDoc(s){
       kv('Contract Sum (Construction)',p.contract,'money',true),
       kv('Soft Costs',p.soft,'money'),
       kv('Land',doc.projectCosts.land,'money'),
-      kv('Developer Fee · Marketing · Closing',p.fees,'money'),
+      kv('Developer Fee'+feeBasisNote('dev'),p.fee.dev,'money'),
+      kv('Marketing / Brokerage'+feeBasisNote('mkt'),p.fee.mkt,'money'),
+      kv('Closing Costs'+feeBasisNote('cls'),p.fee.cls,'money'),
       kv('Total Project Cost',p.project,'money',true)
     ].filter(Boolean)});
     blocks1.push({kind:'group',label:'SOV ROLLUP — CONSTRUCTION CONTRACT'});
@@ -5955,10 +6594,20 @@ async function exportExcel(){
     ws.addRow([]);
     head('TOTAL PROJECT COST');
     kv('Soft Costs',p.soft,MONEY);kv('Land',doc.projectCosts.land,MONEY);
-    kv('Developer Fee',doc.projectCosts.dev,MONEY);kv('Marketing / Brokerage',doc.projectCosts.mkt,MONEY);
-    kv('Closing Costs',doc.projectCosts.cls,MONEY);
+    kv('Developer Fee'+feeBasisNote('dev'),p.fee.dev,MONEY);
+    kv('Marketing / Brokerage'+feeBasisNote('mkt'),p.fee.mkt,MONEY);
+    kv('Closing Costs'+feeBasisNote('cls'),p.fee.cls,MONEY);
     totalRow(ws,'TOTAL PROJECT COST',p.project,3);
     ws.addRow([]);
+    // Guard rails are part of the record, not screen furniture: an override is
+    // a decision someone made and every export has to carry it.
+    const gx=guardrails();
+    if(gx.rails.length){
+      head('GUARD RAILS');
+      gx.rails.forEach(r=>kv(r.label+' ('+r.measures+')',
+        r.display+' · guard rail '+r.range+' · '+(r.ok?'in range':r.acked?'OVERRIDDEN — '+r.ackReason:r.severity==='error'?'BLOCKING':'review'),'@'));
+      ws.addRow([]);
+    }
     head('METRICS');
     kv('Contract $/SF',tsf?p.contract/tsf:0,MONEY2);kv('Project $/SF',tsf?p.project/tsf:0,MONEY2);
     kv('Cost per Unit',tu?p.project/tu:0,MONEY);
@@ -6080,7 +6729,10 @@ async function exportExcel(){
     [['Construction Hard Cost',p.hard],['Profit',p.profit],['Contingency (99.03)',p.cont]]
       .forEach(([k,v])=>styleBody(ws.addRow([k,v,pc(v)]),f));
     totalRow(ws,'CONTRACT SUM (CONSTRUCTION)',p.contract,3);
-    [['Soft Costs',p.soft],['Land',doc.projectCosts.land],['Developer Fee + Marketing + Closing',p.fees]]
+    [['Soft Costs',p.soft],['Land',doc.projectCosts.land],
+     ['Developer Fee'+feeBasisNote('dev'),p.fee.dev],
+     ['Marketing / Brokerage'+feeBasisNote('mkt'),p.fee.mkt],
+     ['Closing Costs'+feeBasisNote('cls'),p.fee.cls]]
       .forEach(([k,v])=>styleBody(ws.addRow([k,v,pc(v)]),f));
     totalRow(ws,'TOTAL PROJECT COST',p.project,3);
   }
@@ -6355,6 +7007,7 @@ function endBoot(){
       // Per-account settings surface for the module: Home view mode,
       // remembered export options, and client-reported activity events.
       analysisView:analysisView,
+      currentPage:()=>currentPage,
       statusChip:statusChip,
       normStatus:normStatus,
       exportDefaults:exportDefaultsFor,

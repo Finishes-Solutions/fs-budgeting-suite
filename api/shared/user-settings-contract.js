@@ -15,6 +15,7 @@ const ACCENTS = ['green', 'blue', 'violet', 'graphite', 'red', 'orange'];
 // view at two densities; cards is the card view — and each SECTION keeps its
 // own choice, so budgets can be a list while analyses are cards. (This
 // replaced the earlier homeView + tableDensity pair — sanitize maps them.)
+// Projects joined budgets and analyses here: three sections, three choices.
 const LIST_VIEWS = ['comfortable', 'compact', 'cards'];
 // Theme packs are alternate visual PRESENTATIONS of the same product — paint
 // only, scoped in CSS to html[data-skin=<pack>]. 'default' is the Finishes
@@ -23,12 +24,16 @@ const LIST_VIEWS = ['comfortable', 'compact', 'cards'];
 // seeing one without its setting being rewritten.
 const THEME_PACKS = ['default', 'ramp'];
 const HEX_RX = /^#[0-9a-fA-F]{6}$/;
-// Pinned records on Home. Two lists of ids — budget project ids and analysis
-// GUIDs — so a pin follows the account to any signed-in browser. Bounded on
-// both count and id length: this document is stored per user and read on every
-// bootstrap, and an unbounded list would let one account bloat it.
-const PIN_MAX = 50;
-const PIN_ID_MAX = 64;
+// Favorited records. Three lists of ids — budget ids, analysis GUIDs and
+// project ids — so a favorite follows the account to any signed-in browser.
+// Bounded on both count and id length: this document is stored per user and
+// read on every bootstrap, and an unbounded list would let one account bloat it.
+//
+// This was `pinned` (budgets + analyses only). sanitizeSettings() lifts a
+// stored legacy document, the same way it already lifts homeView/tableDensity
+// into budgetView — so nothing anyone had starred is lost and no migration runs.
+const FAV_MAX = 50;
+const FAV_ID_MAX = 64;
 
 const DEFAULT_SETTINGS = {
   theme: 'light',
@@ -38,13 +43,14 @@ const DEFAULT_SETTINGS = {
   avatarColor: null,          // null = the app default (accent-colored)
   budgetView: 'comfortable',
   analysisView: 'comfortable',
+  projectView: 'comfortable',
   // The first-run welcome has been dismissed. Per ACCOUNT, not per browser, so
   // a returning user is not welcomed again on a second machine, and it rides
   // the settings document the client already loads at boot.
   welcomeSeen: false,
   rememberExport: false,
   exportOptions: {},          // { budget: {..bools}, analysis: {..bools} }
-  pinned: { budget: [], analysis: [] }
+  favorites: { budget: [], analysis: [], project: [] }
 };
 
 function pickEnum(v, allowed, dflt) { return allowed.includes(v) ? v : dflt; }
@@ -66,8 +72,8 @@ function cleanBoolMap(v) {
   return out;
 }
 
-// A pin list: strings only, trimmed, de-duplicated, order preserved (most
-// recently pinned first), and capped. Anything else is dropped rather than
+// A favorites list: strings only, trimmed, de-duplicated, order preserved (most
+// recently favorited first), and capped. Anything else is dropped rather than
 // stored, so the document a client gets back is always safe to render.
 function cleanIdList(v) {
   const out = [];
@@ -76,10 +82,10 @@ function cleanIdList(v) {
     for (const raw of v) {
       if (typeof raw !== 'string') continue;
       const id = raw.trim();
-      if (!id || id.length > PIN_ID_MAX || seen[id]) continue;
+      if (!id || id.length > FAV_ID_MAX || seen[id]) continue;
       seen[id] = 1;
       out.push(id);
-      if (out.length >= PIN_MAX) break;
+      if (out.length >= FAV_MAX) break;
     }
   }
   return out;
@@ -89,7 +95,9 @@ function sanitizeSettings(input) {
   const s = input && typeof input === 'object' && !Array.isArray(input) ? input : {};
   const ex = s.exportOptions && typeof s.exportOptions === 'object' && !Array.isArray(s.exportOptions)
     ? s.exportOptions : {};
-  const pin = s.pinned && typeof s.pinned === 'object' && !Array.isArray(s.pinned) ? s.pinned : {};
+  // `favorites` wins; a legacy `pinned` document is read when it does not exist.
+  const favSrc = s.favorites && typeof s.favorites === 'object' && !Array.isArray(s.favorites) ? s.favorites
+    : (s.pinned && typeof s.pinned === 'object' && !Array.isArray(s.pinned) ? s.pinned : {});
   return {
     theme: pickEnum(s.theme, THEMES, DEFAULT_SETTINGS.theme),
     themePack: pickEnum(s.themePack, THEME_PACKS, DEFAULT_SETTINGS.themePack),
@@ -100,10 +108,12 @@ function sanitizeSettings(input) {
     avatarColor: typeof s.avatarColor === 'string' && HEX_RX.test(s.avatarColor) ? s.avatarColor : null,
     budgetView: LIST_VIEWS.includes(s.budgetView) ? s.budgetView : legacyView(s),
     analysisView: LIST_VIEWS.includes(s.analysisView) ? s.analysisView : legacyView(s),
+    projectView: LIST_VIEWS.includes(s.projectView) ? s.projectView : legacyView(s),
     welcomeSeen: s.welcomeSeen === true,
     rememberExport: s.rememberExport === true,
     exportOptions: { budget: cleanBoolMap(ex.budget), analysis: cleanBoolMap(ex.analysis) },
-    pinned: { budget: cleanIdList(pin.budget), analysis: cleanIdList(pin.analysis) }
+    favorites: { budget: cleanIdList(favSrc.budget), analysis: cleanIdList(favSrc.analysis),
+                 project: cleanIdList(favSrc.project) }
   };
 }
 

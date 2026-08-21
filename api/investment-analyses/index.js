@@ -10,13 +10,14 @@
 // no expense ratio, no exit cap).
 const { getPool, sql } = require('../shared/db');
 const { getPrincipal } = require('../shared/auth');
-const { parts, grossIncome, totUnits, nz } = require('../shared/budget-calc');
+const { projectFromBudget, currentPurchaseMonth } = require('../shared/investment/from-budget');
 const { GUID_RX, jsonRes } = require('../shared/investment-persistence');
 const { ensureUser } = require('../shared/users');
 const { features } = require('../shared/schema');
+const { projectKeyOf } = require('../shared/projects');
 const D = require('../shared/investment/defaults');
 
-const ID_RX = /^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
+const ID_RX = /^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/;
 const FULL_VISIBILITY_ROLES = new Set(['director', 'super_admin']);
 
 module.exports = async function (context, req) {
@@ -51,6 +52,8 @@ module.exports = async function (context, req) {
     const r = await rq.query(
       `SELECT a.AnalysisId, a.ProjectId, a.Name, a.Status, a.CurrentVersionNumber,
               a.SourceBudgetVersionId, bv.VersionNumber AS SourceBudgetVersionNumber,
+              (SELECT MAX(v2.VersionNumber) FROM dbo.BudgetVersions AS v2
+                WHERE v2.ProjectId = a.ProjectId) AS BudgetCurrentVersionNumber,
               a.PurchasePrice, a.Year1NOI, a.InitialEquity, a.FinalYearEquityIRR,
               a.OptimalHoldingYear, a.CalculationVersion,
               a.CreatedById, a.CreatedByName, a.CreatedAt, a.UpdatedAt,
@@ -64,6 +67,12 @@ module.exports = async function (context, req) {
       analysisId: x.AnalysisId.toLowerCase(), projectId: x.ProjectId, name: x.Name,
       status: x.Status, currentVersionNumber: x.CurrentVersionNumber,
       sourceBudgetVersionNumber: x.SourceBudgetVersionNumber,
+      // The budget's CURRENT version, so the list can flag an analysis whose
+      // source has moved on. Reporting it is all this does — nothing
+      // recalculates on its own.
+      budgetCurrentVersionNumber: x.BudgetCurrentVersionNumber || null,
+      budgetDrift: !!(x.BudgetCurrentVersionNumber && x.SourceBudgetVersionNumber
+                      && x.BudgetCurrentVersionNumber > x.SourceBudgetVersionNumber),
       purchasePrice: x.PurchasePrice === null ? null : +x.PurchasePrice,
       year1NOI: x.Year1NOI === null ? null : +x.Year1NOI,
       initialEquity: x.InitialEquity === null ? null : +x.InitialEquity,
@@ -111,10 +120,11 @@ module.exports = async function (context, req) {
 
     // Server-derived suggestions from the immutable version document. Gross
     // scheduled rent, never the budget's Net Income/Yr; project cost as a
-    // labeled, editable suggestion; service expenses only as supporting data.
-    const p = parts(doc), gi = grossIncome(doc), tu = totUnits(doc);
-    const siteSF = nz(doc.siteSF), bldgSF = nz(doc.resSF) + nz(doc.amenSF);
-    const round2 = x => Math.round(x * 100) / 100;
+    // labeled, editable suggestion; the expense ratio derived against the same
+    // Gross Operating Income the engine multiplies. Building SF, never site SF
+    // — see api/shared/investment/from-budget.js for why that distinction is
+    // load-bearing.
+    const proj = projectFromBudget(doc, v, { projectId, vacancy: D.vacancy });
     input = {
       schemaVersion: 1,
       analysisName: typeof body.analysisName === 'string' && body.analysisName.trim()
@@ -124,46 +134,27 @@ module.exports = async function (context, req) {
         budgetVersionId: v.Id,
         budgetVersionNumber: v.VersionNumber,
         importedAt: new Date().toISOString(),
-        fieldOrigins: {
-          'property.name': 'Budget name',
-          'property.address': 'Budget address',
-          'property.size': siteSF > 0 ? 'Budget Site SF' : 'Budget Residential + Amenity SF',
-          'property.unitCount': 'Budget unit mix',
-          'acquisition.basis': 'Budget Total Project Cost',
-          'income.year1PotentialIncome': 'Budget unit mix — gross scheduled rent × 12',
-          'income.otherIncome': 'Budget other-income rows × 12'
-        },
-        support: {
-          contractSum: round2(p.contract),
-          projectCost: round2(p.project),
-          annualServiceExpenses: round2(12 * gi.expMo),
-          serviceExpenseRows: (doc.expenses || []).map(e => ({
-            label: e.label, annualAmount: round2(12 * nz(e.rate) *
-              (e.per === 'fixed' ? (nz(e.count) || 1) : (e.auto ? tu : nz(e.count)))) })),
-          unitMix: (doc.units || []).map(u => ({ label: u.label, count: nz(u.count), rent: nz(u.rent) }))
-        }
+        syncedAt: new Date().toISOString(),
+        fieldOrigins: proj.fieldOrigins,
+        support: proj.support
       },
       property: {
-        name: doc.name || v.Name || projectId,
-        address: doc.address || '',
-        size: { unit: 'squareFeet', value: siteSF > 0 ? siteSF : bldgSF },
-        unitCount: tu || null,
-        purchaseMonth: null                       // the user must choose — never invented
+        name: proj.imported.property.name,
+        address: proj.imported.property.address,
+        size: proj.imported.property.size,
+        unitCount: proj.imported.property.unitCount,
+        purchaseMonth: currentPurchaseMonth()     // defaults to the current month; changed on step 1
       },
       projection: { years: 5, taxMode: 'beforeTax' },
-      acquisition: { basis: { mode: 'purchasePrice', value: round2(p.project) }, costPercent: D.acquisitionCostPercent },
+      acquisition: { basis: proj.imported.acquisition.basis, costPercent: D.acquisitionCostPercent },
       income: {
         mode: 'aggregate',
-        year1PotentialIncome: round2(12 * gi.rentMo),
+        year1PotentialIncome: proj.imported.income.year1PotentialIncome,
         growth: { mode: 'constant', value: D.incomeGrowth },
-        otherIncome: (doc.other || []).map(o => ({
-          label: o.label || 'Other Income',
-          year1Amount: round2(12 * nz(o.rate) * (o.auto ? tu : nz(o.count))),
-          growth: { mode: 'constant', value: D.otherIncomeGrowth }
-        }))
+        otherIncome: proj.imported.income.otherIncome
       },
       vacancy: { mode: 'constant', value: D.vacancy },
-      expenses: { mode: 'percentOfGOI', value: null },   // imported rows are NOT complete OPEX
+      expenses: proj.imported.expenses,
       capitalExpenses: [],
       financing: { loans: [] },
       disposition: { exitCapRate: { mode: 'constant', value: null }, sellingCostPercent: D.sellingCostPercent },
@@ -175,7 +166,7 @@ module.exports = async function (context, req) {
     // no schema change.
     input.source.originalValues = {};
     for (const op of Object.keys(input.source.fieldOrigins)) {
-      const val = op.split('.').reduce((v, k) => (v === null || v === undefined ? v : v[k]), input);
+      const val = op.split('.').reduce((val2, k) => (val2 === null || val2 === undefined ? val2 : val2[k]), input);
       input.source.originalValues[op] = val === undefined ? null : JSON.parse(JSON.stringify(val));
     }
   } else if (body.mode === 'standalone') {
@@ -185,7 +176,7 @@ module.exports = async function (context, req) {
     if (!name) { context.res = jsonRes(400, { error: 'bad_request', message: 'analysisName is required.' }); return; }
     input = Object.assign({
       schemaVersion: 1,
-      property: { name: name, address: '', size: { unit: 'squareFeet', value: null }, purchaseMonth: null },
+      property: { name: name, address: '', size: { unit: 'squareFeet', value: null }, purchaseMonth: currentPurchaseMonth() },
       projection: { years: 5, taxMode: 'beforeTax' },
       acquisition: { basis: { mode: 'purchasePrice', value: null }, costPercent: D.acquisitionCostPercent },
       income: { mode: 'aggregate', year1PotentialIncome: null, growth: { mode: 'constant', value: D.incomeGrowth }, otherIncome: [] },
@@ -201,8 +192,15 @@ module.exports = async function (context, req) {
     return;
   }
 
+  // ProjectKey arrives with sql/migrate_projects_and_guardrails.sql; naming it
+  // before that runs would fail every creation.
+  const analysisFeatures = await features(pool);
+  const pkCol = analysisFeatures.analysesProjectKey ? ', ProjectKey' : '';
+  const pkVal = analysisFeatures.analysesProjectKey ? ', @pkey' : '';
+
   const r = await pool.request()
     .input('pid', sql.VarChar(16), projectId)
+    .input('pkey', sql.VarChar(16), projectId ? projectKeyOf(projectId) : null)
     .input('name', sql.NVarChar(200), input.analysisName)
     .input('sbv', sql.BigInt, sourceBudgetVersionId)
     .input('input', sql.NVarChar(sql.MAX), JSON.stringify(input))
@@ -211,10 +209,10 @@ module.exports = async function (context, req) {
     .input('uname', sql.NVarChar(200), userName)
     .query(`INSERT INTO dbo.InvestmentAnalyses
               (ProjectId, Name, SourceBudgetVersionId, InputDoc, NormalizedInputDoc, ResultDoc,
-               ContentHash, CalculationVersion, CreatedById, CreatedByName)
+               ContentHash, CalculationVersion, CreatedById, CreatedByName${pkCol})
             OUTPUT INSERTED.AnalysisId
             VALUES (@pid, @name, @sbv, @input, N'{}', N'{}',
-                    REPLICATE('0', 64), @calc, @uid, @uname);`);
+                    REPLICATE('0', 64), @calc, @uid, @uname${pkVal});`);
   const analysisId = r.recordset[0].AnalysisId.toLowerCase();
   context.res = jsonRes(201, {
     ok: true, analysisId, input,

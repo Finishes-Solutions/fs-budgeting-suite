@@ -4,7 +4,7 @@
 // against the live page's parts()/grossIncome() on a real document.
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { nz, totUnits, lineQty, scopeSum, scopeActive, parts, grossIncome } =
+const { nz, totUnits, lineQty, scopeSum, scopeActive, parts, grossIncome, expenseMonthly } =
   require('../api/shared/budget-calc');
 
 // A small but complete document exercising every arithmetic branch.
@@ -94,11 +94,62 @@ test('grossIncome: rent, other (auto and manual), fixed and per-unit expenses', 
 
 test('absent properties coerce to zero, never NaN (old documents)', () => {
   const p = parts({ projectId: 'TST-0002' });
-  for (const k of Object.keys(p)) assert.ok(Number.isFinite(p[k]), k + ' must be finite');
+  // parts().fee is the resolved {dev,mkt,cls,pctRate} block, not a number;
+  // pctRate is deliberately null when nothing is on a percentage.
+  for (const k of Object.keys(p)) {
+    if (k === 'fee') continue;
+    assert.ok(Number.isFinite(p[k]), k + ' must be finite');
+  }
+  for (const k of ['dev', 'mkt', 'cls']) assert.ok(Number.isFinite(p.fee[k]), 'fee.' + k + ' must be finite');
+  assert.equal(p.fee.pctRate, null);
   const g = grossIncome({ projectId: 'TST-0002' });
   for (const k of Object.keys(g)) assert.ok(Number.isFinite(g[k]), k + ' must be finite');
   assert.equal(totUnits({}), 0);
   assert.equal(scopeSum({ lines: [{ scope: 'res', auto: false, unit: 10 }] }, 'res'), 0);
   assert.equal(nz('abc'), 0);
   assert.equal(nz('12.5'), 12.5);
+});
+
+test('percentage fees resolve against the FINAL total project cost', () => {
+  const base = { lines: [{ scope: 'res', basis: 'ls', auto: false, qty: 1, unit: 1000000 }],
+                 companies: [], contingency: { mode: 'amt', val: 0 } };
+
+  // A bare number is a pre-migration document and reads as dollars.
+  const legacy = parts({ ...base, projectCosts: { land: 100000, dev: 200000, mkt: 75000, cls: 0 } });
+  assert.equal(legacy.project, 1375000);
+  assert.equal(legacy.fees, 275000);
+  assert.equal(legacy.fee.pctRate, null);
+
+  // 3% dev + 1% closing means 3% and 1% OF THE PRINTED TOTAL, not of a
+  // smaller pre-fee base — the closed-form solve project = (base+fixed)/(1-f).
+  const mixed = parts({ ...base,
+    projectCosts: { land: 100000, dev: { mode: 'pct', val: 3 },
+                    mkt: { mode: 'amt', val: 75000 }, cls: { mode: 'pct', val: 1 } } });
+  assert.ok(Math.abs(mixed.fee.dev / mixed.project - 0.03) < 1e-12, 'dev fee is 3% of the total');
+  assert.ok(Math.abs(mixed.fee.cls / mixed.project - 0.01) < 1e-12, 'closing is 1% of the total');
+  assert.equal(mixed.fee.mkt, 75000);
+  assert.ok(Math.abs((1000000 + 100000 + mixed.fees) - mixed.project) < 1e-6,
+    'contract + soft + land + fees reconciles to the total');
+  assert.ok(Math.abs(mixed.fee.pctRate - 0.04) < 1e-12);
+
+  // Rates that sum past the floor still render a finite number; the feeSum
+  // guard rail is what refuses the save.
+  const absurd = parts({ ...base,
+    projectCosts: { land: 0, dev: { mode: 'pct', val: 99 }, mkt: { mode: 'amt', val: 0 }, cls: { mode: 'amt', val: 0 } } });
+  assert.ok(Number.isFinite(absurd.project), 'an over-100% fee rate must not print Infinity');
+});
+
+test('percent-of-income expenses are charged off rent + other income', () => {
+  const doc = {
+    units: [{ sf: 800, count: 10, rent: 1500 }],
+    other: [{ rate: 50, count: 0, auto: true }],
+    expenses: [{ per: 'pctIncome', rate: 4 }, { per: 'unit', rate: 60, auto: true }]
+  };
+  const g = grossIncome(doc);
+  const incomeMo = 10 * 1500 + 10 * 50;      // 15,500
+  assert.equal(g.rentMo, 15000);
+  assert.equal(g.otherMo, 500);
+  assert.equal(g.expMo, incomeMo * 0.04 + 10 * 60);
+  assert.equal(expenseMonthly(doc, doc.expenses[0], incomeMo), incomeMo * 0.04);
+  assert.equal(expenseMonthly(doc, doc.expenses[1], incomeMo), 600);
 });

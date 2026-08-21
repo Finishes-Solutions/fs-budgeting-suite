@@ -2,6 +2,7 @@ const { getPool, sql } = require('../shared/db');
 const { getPrincipal } = require('../shared/auth');
 const { ensureUser } = require('../shared/users');
 const { features } = require('../shared/schema');
+const { listProjects, getProject, jsonRes } = require('../shared/projects');
 
 const FULL_VISIBILITY_ROLES = new Set(['director', 'super_admin']);
 
@@ -28,6 +29,31 @@ module.exports = async function (context, req) {
   // filtering then would hide budgets that used to be visible. Leave it off.
   const canSeeAll = !f.usersAppRole || swaSuper || FULL_VISIBILITY_ROLES.has(appRole);
 
+  // ---- project scopes.
+  // A staticwebapp.config.json route rule matches paths, not query strings, so
+  // it cannot see ?scope=. Everything below is gated by the same signed-in
+  // principal and the same ownership rule as the budget list itself — that
+  // in-function check is the real gate here, not defence in depth.
+  const scope = String((req.query && req.query.scope) || '');
+  if (scope === 'projects' || scope === 'project') {
+    if (!principal && !process.env.FS_ALLOW_ANON) {
+      context.res = jsonRes(401, { error: 'unauthenticated', message: 'Sign in to view projects.' });
+      return;
+    }
+    if (scope === 'projects') {
+      context.res = jsonRes(200, await listProjects(pool,
+        { ownerId: (f.budgetsCreatedBy && !canSeeAll && userId) ? userId : null }));
+      return;
+    }
+    const one = await getProject(pool, (req.query.id || '').toUpperCase());
+    if (one.available && !one.project) {
+      context.res = jsonRes(404, { error: 'not_found', message: 'Project not found.' });
+      return;
+    }
+    context.res = jsonRes(200, one);
+    return;
+  }
+
   const rq = pool.request();
   let where = 'b.IsDeleted = 0';
   // Filter by owner only when the column exists to filter on. NULL is allowed
@@ -48,11 +74,19 @@ module.exports = async function (context, req) {
   const avatarJoin = (f.budgetsCreatedBy && f.usersSettingsDoc)
     ? 'LEFT JOIN dbo.Users AS u ON u.UserId = b.CreatedById'
     : '';
+  // Both arrive with sql/migrate_projects_and_guardrails.sql; before it runs
+  // the list is exactly what it has always been.
+  const projectKeyCol = f.budgetsProjectKey ? 'b.ProjectKey' : 'CAST(NULL AS VARCHAR(16)) AS ProjectKey';
+  const guardrailCols = f.budgetsGuardrail
+    ? 'b.GuardrailStatus, b.GuardrailBreachCount'
+    : 'CAST(NULL AS VARCHAR(10)) AS GuardrailStatus, CAST(NULL AS INT) AS GuardrailBreachCount';
 
   const r = await rq.query(
     `SELECT b.ProjectId, b.Name, b.Type, b.Status, b.ContractSum, b.ProjectCost, b.UpdatedAt,
             ${ownerCols}
             JSON_VALUE(b.Doc, '$.address') AS Address,
+            ${projectKeyCol},
+            ${guardrailCols},
             ${avatarCol}
      FROM dbo.Budgets AS b
      ${avatarJoin}
@@ -65,6 +99,9 @@ module.exports = async function (context, req) {
     contractSum: Number(x.ContractSum), projectCost: Number(x.ProjectCost),
     createdById: x.CreatedById || null, createdByName: x.CreatedByName || null,
     createdByAvatar: x.CreatedByAvatar || null,
+    projectKey: x.ProjectKey || null,
+    guardrailStatus: x.GuardrailStatus || null,
+    guardrailBreachCount: x.GuardrailBreachCount === null ? null : Number(x.GuardrailBreachCount),
     updated: x.UpdatedAt.toISOString()
   }));
   context.res = { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(list) };

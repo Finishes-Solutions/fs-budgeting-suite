@@ -288,9 +288,12 @@ test('the welcome flag defaults to unseen and only a real true dismisses it', ()
 });
 
 test('dismissing the welcome disturbs no other stored setting', () => {
+  // The legacy `pinned` document still comes in and is lifted to `favorites`,
+  // so a stored star survives a welcome dismissal as well as a rename.
   const s = contract.sanitizeSettings({ welcomeSeen: true, accentColor: 'blue',
     themePack: 'ramp', pinned: { budget: ['OP-1001'], analysis: [] } });
   assert.strictEqual(s.accentColor, 'blue');
   assert.strictEqual(s.themePack, 'ramp');
-  assert.deepStrictEqual(s.pinned.budget, ['OP-1001']);
+  assert.deepStrictEqual(s.favorites.budget, ['OP-1001']);
+  assert.strictEqual(s.welcomeSeen, true);
 });

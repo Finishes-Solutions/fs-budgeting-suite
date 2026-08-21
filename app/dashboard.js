@@ -58,13 +58,36 @@ function eventLabel(ev){
   return map[ev]||ev;
 }
 
+/* Two vocabularies share this map. Budgets and analyses answer "is this
+   document finished" (Draft · In Review · Completed · Cancelled); projects
+   answer "where is this deal" (Lead → … → Converted to Project). The stale
+   names the map used to carry — In Progress, Approved, Signature Needed — were
+   never statuses this app sets, and are gone. */
 var STATUS_COLORS={
-  'Draft':'#6B7280','In Progress':'#2B579A','Completed':'#16803C',
-  'Approved':'#16803C','On Hold':'#8A6116','Cancelled':'#C43C3C',
-  'Signature Needed':'#7C3AED'
+  'Draft':'#6B7280','In Review':'#8A6116','Completed':'#16803C','Cancelled':'#C43C3C',
+  'Lead':'#6B7280','Qualified':'#4D5457','Budgeting':'#2B579A','Proposal Sent':'#8A6116',
+  'Awarded':'#1F9249','Converted to Project':'#006527','On Hold':'#8A6116','Lost':'#C43C3C'
 };
 
 function statusColor(s){ return STATUS_COLORS[s]||'#6B7280'; }
+
+/* Converted projects — the work that actually became work. Both amounts are
+   the snapshots taken at conversion, so this row does not move when someone
+   edits a budget afterwards; the tiles say so, because a number nobody can
+   explain is a number nobody trusts. */
+function projectKPIs(){
+  var p=data&&data.projects;
+  if(!p||!p.available)return '';
+  // Two tiles, not three: the converted COUNT is context for the money rather
+  // than a headline of its own, so it rides in the sub-line. A third tile
+  // pushed the tile grid onto another row for a number nobody reads first.
+  // The sub-lines stay to ONE line each: a wrapped sub costs more height than
+  // the tile it was folded into saved.
+  return '<div class="dash-kpi"><div class="k">Converted Contract Amount</div><div class="v">'+money(p.convertedContractAmount)+'</div>'
+    +'<div class="sub">'+num(p.converted)+' of '+num(p.total)+' converted</div></div>'
+    +'<div class="dash-kpi"><div class="k">Converted Project Amount</div><div class="v">'+money(p.convertedProjectAmount)+'</div>'
+    +'<div class="sub">Captured at conversion</div></div>';
+}
 
 function renderKPIs(el){
   if(!data){el.innerHTML='<div class="dash-loading">Loading dashboard data...</div>';return;}
@@ -78,9 +101,13 @@ function renderKPIs(el){
     +'<div class="sub">Across all active budgets</div></div>'
     +'<div class="dash-kpi"><div class="k">Active Analyses</div><div class="v">'+num(a.active)+'</div>'
     +'<div class="sub">'+num(a.total)+' total created</div></div>'
-    +'<div class="dash-kpi"><div class="k">Avg Purchase Price</div><div class="v">'+money(a.avgPurchasePrice)+'</div></div>'
-    +'<div class="dash-kpi"><div class="k">Avg Year 1 NOI</div><div class="v">'+money(a.avgYear1NOI)+'</div></div>'
-    +'<div class="dash-kpi"><div class="k">Avg Equity IRR</div><div class="v">'+pct(a.avgIRR)+'</div></div>'
+    +projectKPIs()
+    // The three averages carry no sub-line of their own, but they still emit
+    // the element: an empty .sub is what keeps every card's number on the same
+    // baseline as its neighbours.
+    +'<div class="dash-kpi"><div class="k">Avg Purchase Price</div><div class="v">'+money(a.avgPurchasePrice)+'</div><div class="sub"></div></div>'
+    +'<div class="dash-kpi"><div class="k">Avg Year 1 NOI</div><div class="v">'+money(a.avgYear1NOI)+'</div><div class="sub"></div></div>'
+    +'<div class="dash-kpi"><div class="k">Avg Equity IRR</div><div class="v">'+pct(a.avgIRR)+'</div><div class="sub"></div></div>'
     +'<div class="dash-kpi"><div class="k">Registered Users</div><div class="v">'+num(u.total)+'</div>'
     +'<div class="sub">'+num(u.totalLogins)+' total logins</div></div>';
 }
@@ -101,9 +128,51 @@ function barHTML(breakdown, total){
 function renderBreakdowns(el){
   if(!data){el.innerHTML='';return;}
   var b=data.budgets, a=data.analyses;
+  var pj=data.projects;
   el.innerHTML=
     '<div class="dash-card"><h3>Budget Status</h3>'+donutHTML(b.statusBreakdown)+'</div>'
-    +'<div class="dash-card"><h3>Analysis Status</h3>'+donutHTML(a.statusBreakdown)+'</div>';
+    +'<div class="dash-card"><h3>Analysis Status</h3>'+donutHTML(a.statusBreakdown)+'</div>'
+    +(pj&&pj.available ? pipelineHTML(pj) : '');
+}
+
+/* The pipeline as a single proportional bar spanning both donut columns: a
+   distribution, read left to right in PIPELINE order — the shape of a pipeline
+   is the information, and sorting it by count destroys that. Stages with
+   nothing in them are dropped from the bar (a zero-width segment is not a
+   fact anyone can see) but the order of the rest is preserved. */
+function pipelineHTML(p){
+  var rows=pipelineRows(p).filter(function(r){return r.count>0;});
+  var total=rows.reduce(function(s,r){return s+r.count;},0);
+  if(!total) return '<div class="dash-card dash-span"><h3>Project Pipeline</h3>'
+    +'<div class="dash-empty-inline">No projects yet.</div></div>';
+  // The legend rides on the title line rather than under the bar: it costs a
+  // whole row otherwise, and this card is buying its height from a neighbour.
+  return '<div class="dash-card dash-span">'
+    +'<div class="dash-pipe-hd"><h3>Project Pipeline</h3>'
+    +'<div class="dash-legend dash-legend-h">'
+    +rows.map(function(r){
+      return '<span class="dash-lg-row"><span class="dash-lg-dot" style="background:'+statusColor(r.status)+'"></span>'
+        +'<span class="dash-lg-name">'+esc(r.status)+'</span>'
+        +'<span class="dash-lg-val">'+num(r.count)+'</span></span>';
+    }).join('')
+    +'</div></div>'
+    +'<div class="dash-pipe">'
+    +rows.map(function(r){
+      return '<span class="dash-pipe-seg" style="flex:'+r.count+';background:'+statusColor(r.status)+'"'
+        +' title="'+esc(r.status)+': '+num(r.count)+'"></span>';
+    }).join('')
+    +'</div></div>';
+}
+
+/* The pipeline in its real order rather than sorted by count — the shape of a
+   pipeline is the information, and re-ordering destroys it. donutHTML renders
+   segments in the order it is given, so the ring and its legend both read Lead
+   first and Lost last. Using the same primitive as the two breakdowns beside it
+   is not only consistent: a taller bespoke chart pushed the whole visual half
+   of the dashboard past one screen, which suite-16 pins. */
+function pipelineRows(p){
+  var by={};(p.statusBreakdown||[]).forEach(function(r){by[r.status]=r.count;});
+  return (p.statuses||[]).map(function(s){return {status:s,count:by[s]||0};});
 }
 
 /* ================= charts =================
@@ -673,6 +742,9 @@ function refresh(){
 
 window.FSDashboard={
   init:function(a){ adapter=a||{}; },
+  // Converting a project changes what the KPIs report, so the cache lets go
+  // rather than showing yesterday's backlog until someone hits Refresh.
+  invalidate:function(){ data=null; activityData=null; },
   render:function(){ if(!data&&!loading)loadData(); else renderDashboard(); },
   refresh:refresh,
   viewMore:viewMore,

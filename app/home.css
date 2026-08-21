@@ -18,57 +18,67 @@
 #page-home .hm-link:hover{color:var(--ink-900)}
 #page-home .hm-link:focus-visible{outline:none;box-shadow:var(--focus)}
 
-/* ---- record cards ---- */
+/* ---- record cards ----
+   The card block is shared with the Projects index (its Card view) and the
+   project page's Favorites strip, so its selectors name those pages too.
+   Everything else in this file stays home-only. */
 /* The grid stretches every card in a row to the tallest, and each card is a
    flex column whose summary block is pushed down with margin-top:auto. That
    is what keeps the amount, the status chip and the timestamp on the same
    line across a row no matter how long a title runs. min() on the track keeps
    a 232px card from overflowing a narrower container. */
-#page-home .hm-cards{display:grid;
+#page-home .hm-cards,#page-projects .hm-cards,#page-project .hm-cards{display:grid;
   grid-template-columns:repeat(auto-fill,minmax(min(232px,100%),1fr));gap:12px}
 /* The card and its pin are siblings, not nested buttons. The wrapper is the
    grid item, so the card still stretches to the row height. */
-#page-home .hm-card-wrap{position:relative;display:flex;min-width:0}
-#page-home .hm-card{flex:1;display:flex;flex-direction:column;gap:10px;text-align:left;
+#page-home .hm-card-wrap,#page-projects .hm-card-wrap,#page-project .hm-card-wrap{position:relative;display:flex;min-width:0}
+#page-home .hm-card,#page-projects .hm-card,#page-project .hm-card{flex:1;display:flex;flex-direction:column;gap:10px;text-align:left;
   background:var(--white);border:1px solid var(--ink-150);border-radius:var(--rm);
   box-shadow:var(--sh);padding:13px 15px;cursor:pointer;font-family:var(--fb);
   min-width:0;overflow:hidden;
   transition:border-color .12s,box-shadow .12s,transform .12s}
-#page-home .hm-card:hover{border-color:var(--ink-300);transform:translateY(-1px)}
-#page-home .hm-card:focus-visible{outline:none;box-shadow:var(--focus)}
-#page-home .hm-card-hd{display:flex;flex-direction:column;gap:6px;min-width:0}
-#page-home .hm-card-top{display:flex;align-items:center;gap:7px;min-width:0}
-#page-home .hm-kind{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+#page-home .hm-card:hover,#page-projects .hm-card:hover,#page-project .hm-card:hover{border-color:var(--ink-300);transform:translateY(-1px)}
+#page-home .hm-card:focus-visible,#page-projects .hm-card:focus-visible,#page-project .hm-card:focus-visible{outline:none;box-shadow:var(--focus)}
+#page-home .hm-card-hd,#page-projects .hm-card-hd,#page-project .hm-card-hd{display:flex;flex-direction:column;gap:6px;min-width:0}
+#page-home .hm-card-top,#page-projects .hm-card-top,#page-project .hm-card-top{display:flex;align-items:center;gap:7px;min-width:0}
+#page-home .hm-kind,#page-projects .hm-kind,#page-project .hm-kind{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
   border-radius:3px;padding:2px 5px;font-weight:500;flex:none}
-#page-home .hm-kind-budget{background:var(--green-50);color:var(--green-700)}
-#page-home .hm-kind-analysis{background:#EAF1FB;color:#2B579A}
-#page-home .hm-id{font-size:11.5px;color:var(--ink-400);min-width:0;flex:0 1 auto;
+#page-home .hm-kind-budget,#page-projects .hm-kind-budget,#page-project .hm-kind-budget{background:var(--green-50);color:var(--green-700)}
+#page-home .hm-kind-analysis,#page-projects .hm-kind-analysis,#page-project .hm-kind-analysis{background:#EAF1FB;color:#2B579A}
+#page-home .hm-id,#page-projects .hm-id,#page-project .hm-id{font-size:11.5px;color:var(--ink-400);min-width:0;flex:0 1 auto;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* The pin: a real button over the card's top-right corner. The header row
+/* The star: a real button over the card's top-right corner. The header row
    reserves the space it occupies (below), so it never lands on the id or a
-   title however long they run. */
-#page-home .hm-pin{position:absolute;top:9px;right:9px;z-index:1;
-  display:inline-flex;align-items:center;justify-content:center;
+   title however long they run. Unscoped on purpose — the same affordance is
+   reused on the budget and analysis lists, the project page, and both editor
+   headers, so it must not be trapped inside #page-home. */
+.hm-star{display:inline-flex;align-items:center;justify-content:center;
   width:24px;height:24px;padding:0;border:1px solid transparent;border-radius:6px;
-  background:none;cursor:pointer;color:var(--green-700);line-height:0;
+  background:none;cursor:pointer;color:var(--ink-400);line-height:0;
   transition:background .12s,border-color .12s,color .12s}
-#page-home .hm-pin:hover{background:var(--ink-100);border-color:var(--ink-200);color:var(--ink-700)}
-#page-home .hm-pin:active{background:var(--ink-150)}
-#page-home .hm-pin:focus-visible{outline:none;box-shadow:var(--focus)}
-/* Only the pinned card needs the gap, so an unpinned one keeps its full width
-   for the record id. */
-#page-home .hm-card-wrap.is-pinned .hm-card-top{padding-right:26px}
-#page-home .hm-card-name{font-size:13.5px;font-weight:600;color:var(--ink-900);line-height:1.35;
+.hm-star:hover{background:var(--ink-100);border-color:var(--ink-200);color:var(--warn)}
+.hm-star:active{background:var(--ink-150)}
+.hm-star:focus-visible{outline:none;box-shadow:var(--focus)}
+.hm-star.is-on{color:var(--warn)}
+/* Only the star that overlays a CARD is positioned; the same button also
+   appears in the project tables as an ordinary cell, where absolute
+   positioning would lift it out of its row. */
+#page-home .hm-star,#page-projects .hm-card-wrap>.hm-star,
+#page-project .hm-card-wrap>.hm-star{position:absolute;top:9px;right:9px;z-index:1}
+/* Only the favorited card needs the gap, so an unfavorited one keeps its full
+   width for the record id. */
+#page-home .hm-card-wrap.is-fav .hm-card-top,#page-projects .hm-card-wrap.is-fav .hm-card-top,#page-project .hm-card-wrap.is-fav .hm-card-top{padding-right:26px}
+#page-home .hm-card-name,#page-projects .hm-card-name,#page-project .hm-card-name{font-size:13.5px;font-weight:600;color:var(--ink-900);line-height:1.35;
   min-height:2.7em;overflow-wrap:anywhere;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#page-home .hm-card-sum{margin-top:auto;display:flex;flex-direction:column;gap:6px;min-width:0}
-#page-home .hm-card-money{display:flex;justify-content:space-between;align-items:baseline;
+#page-home .hm-card-sum,#page-projects .hm-card-sum,#page-project .hm-card-sum{margin-top:auto;display:flex;flex-direction:column;gap:6px;min-width:0}
+#page-home .hm-card-money,#page-projects .hm-card-money,#page-project .hm-card-money{display:flex;justify-content:space-between;align-items:baseline;
   gap:8px;font-size:11.5px;color:var(--ink-500)}
-#page-home .hm-card-money .k{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#page-home .hm-card-money .v{font-size:12.5px;color:var(--ink-800);flex:none;white-space:nowrap}
-#page-home .hm-card-ft{display:flex;align-items:center;justify-content:space-between;gap:8px;
+#page-home .hm-card-money .k,#page-projects .hm-card-money .k,#page-project .hm-card-money .k{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#page-home .hm-card-money .v,#page-projects .hm-card-money .v,#page-project .hm-card-money .v{font-size:12.5px;color:var(--ink-800);flex:none;white-space:nowrap}
+#page-home .hm-card-ft,#page-projects .hm-card-ft,#page-project .hm-card-ft{display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding-top:8px;border-top:1px solid var(--ink-100)}
-#page-home .hm-when{font-size:11px;color:var(--ink-400);text-align:right;min-width:0;
+#page-home .hm-when,#page-projects .hm-when,#page-project .hm-when{font-size:11px;color:var(--ink-400);text-align:right;min-width:0;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ---- needs attention ---- */
@@ -101,9 +111,9 @@
 
 /* ---- states ---- */
 #page-home .hm-loading{text-align:center;padding:52px;color:var(--ink-500);font-size:14px}
-#page-home .hm-empty{border:1px dashed var(--ink-200);border-radius:var(--rm);
+#page-home .hm-empty,#page-projects .hm-empty,#page-project .hm-empty{border:1px dashed var(--ink-200);border-radius:var(--rm);
   padding:28px;text-align:center;color:var(--ink-500);font-size:13px}
-#page-home .hm-empty-big{font-size:15px;font-weight:600;color:var(--ink-800);margin-bottom:5px}
+#page-home .hm-empty-big,#page-projects .hm-empty-big,#page-project .hm-empty-big{font-size:15px;font-weight:600;color:var(--ink-800);margin-bottom:5px}
 
 @media(max-width:640px){
   #page-home .hm-greet{font-size:22px}

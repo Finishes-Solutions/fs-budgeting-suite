@@ -8,13 +8,15 @@ const APP = process.env.APP_DIR || require('path').join(__dirname,'..','app');
 // The real module, not a copy: summary money is derived from the doc exactly as
 // api/budget/index.js derives it, so a client-supplied meta.contractSum is
 // ignored here too and parity cannot drift.
-const { parts } = require('../api/shared/budget-calc');
+const { parts, parts: bcParts, grossIncome: bcGross } = require('../api/shared/budget-calc');
 // The investment routes run the REAL engine and hash convention, so preview,
 // save-recomputation, and no-op detection behave byte-for-byte like Azure.
 const bc = require('../api/shared/budget-calc');
 const { calculateInvestmentAnalysis } = require('../api/shared/investment/calculate');
 const INV_C = require('../api/shared/investment/constants');
 const INV_D = require('../api/shared/investment/defaults');
+const fromBudget = require('../api/shared/investment/from-budget');
+const FSGuardrails = require('../api/shared/guardrails');
 const crypto = require('crypto');
 // Per-user settings validation: the REAL contract module (dependency-free).
 const usc = require('../api/shared/user-settings-contract');
@@ -44,6 +46,15 @@ const invSummary = a => {
     analysisId: a.id, projectId: a.projectId, name: a.name, status: a.status,
     currentVersionNumber: a.currentVersionNumber,
     sourceBudgetVersionNumber: a.sourceBudgetVersionNumber,
+    budgetCurrentVersionNumber: (function () {
+      const br = a.projectId ? budgets.get(a.projectId) : null;
+      return br && !br.deleted ? br.versions.length : null;
+    })(),
+    budgetDrift: (function () {
+      const br = a.projectId ? budgets.get(a.projectId) : null;
+      const cur = br && !br.deleted ? br.versions.length : null;
+      return !!(cur && a.sourceBudgetVersionNumber && cur > a.sourceBudgetVersionNumber);
+    })(),
     purchasePrice: a.result ? a.result.summary.purchasePrice : null,
     year1NOI: a.result ? a.result.summary.year1NOI : null,
     initialEquity: a.result ? a.result.summary.initialEquity : null,
@@ -62,6 +73,56 @@ const NO_API = process.env.NO_API === '1';
 // Mirrors the real API: deletion is a soft flag that keeps history, and a
 // meaningful save appends an immutable version.
 const budgets = new Map();
+/* dbo.Projects stand-in. Behaviour-parallel with api/shared/projects.js: one
+   project per ID, created the first time a budget is saved against it, and
+   Converted to Project snapshots the primary budget's money. */
+const projects = new Map();
+const PROJECT_STATUSES = ['Lead', 'Qualified', 'Budgeting', 'Proposal Sent', 'Awarded',
+                          'Converted to Project', 'On Hold', 'Lost'];
+const CONVERTED = 'Converted to Project';
+const projectKeyOf = id => {
+  const v = String(id || '').toUpperCase();
+  return /^(OP|BD|AS|TST)-\d{4}-\d{2}$/.test(v) ? v.slice(0, -3) : v;
+};
+function ensureProject(budgetId, seed) {
+  const key = projectKeyOf(budgetId);
+  if (!/^(OP|BD|AS|TST)-\d{4}$/.test(key)) return null;
+  if (!projects.has(key)) {
+    const now = new Date().toISOString();
+    projects.set(key, { projectId: key, name: (seed && seed.name) || key,
+      address: (seed && seed.address) || '', type: (seed && seed.type) || 'Multifamily',
+      status: 'Lead', primaryBudgetId: budgetId, convertedAt: null,
+      contractAmount: null, projectAmount: null, notes: '',
+      createdById: principal.clientPrincipal.userId,
+      createdByName: principal.clientPrincipal.userDetails,
+      createdAt: now, updated: now });
+  }
+  return key;
+}
+function projectBudgets(key) {
+  return [...budgets.values()].filter(r => !r.deleted && projectKeyOf(r.meta.projectId) === key)
+    .sort((a, z) => a.meta.projectId.length - z.meta.projectId.length
+      || a.meta.projectId.localeCompare(z.meta.projectId));
+}
+function projectAnalyses(key) {
+  return [...invAnalyses.values()].filter(a => !a.deleted && a.projectId && projectKeyOf(a.projectId) === key)
+    .sort((x, y) => y.updatedAt.localeCompare(x.updatedAt));
+}
+function shapeProject(p) {
+  const bs = projectBudgets(p.projectId);
+  const primary = bs.find(b => b.meta.projectId === p.primaryBudgetId) || bs[0] || null;
+  return Object.assign({}, p, {
+    budgetCount: bs.length, analysisCount: projectAnalyses(p.projectId).length,
+    liveContractSum: primary ? +primary.meta.contractSum || 0 : 0,
+    liveProjectCost: primary ? +primary.meta.projectCost || 0 : 0,
+    breachCount: bs.filter(b => b.guardrailStatus === 'breach').length
+  });
+}
+// The same evaluation the browser and the real endpoint run, off one module.
+function evalGuardrails(doc) {
+  const gp = bcParts(doc);
+  return FSGuardrails.evaluate({ doc, parts: gp, gross: bcGross(doc), fee: gp.fee });
+}
 
 // Same canonicalization the API uses to decide whether a save changed anything
 // (sorted keys, `updated` excluded), so no-op saves create no version here either.
@@ -149,8 +210,26 @@ pushVersion('multifamily', {doc:{
          {label:'Townhome (1,200)',bd:2,bth:2.5,sf:1200,count:14,rent:1500}],
   other:[{label:'Utilities billback',rate:77,count:0,auto:true},
          {label:'Parking (reserved spaces)',rate:25,count:15,auto:false}],
+  // The full operating-expense schedule, as sql/publish_multifamily_opex_template.sql
+  // publishes it: services PLUS taxes, insurance, management, payroll, R&M,
+  // turnover, marketing, G&A, landscaping and reserves. Against this unit mix
+  // it lands around 46% of income — inside the 35-55% guard rail, which is the
+  // whole reason the schedule and the rail shipped together. Seeding the OLD
+  // six rows here would make every new-budget suite a warned budget and hide
+  // the state the deployed app is actually in.
   expenses:[{label:'Water & sewer',per:'unit',rate:60,count:0,auto:true},
-            {label:'Valet trash',per:'unit',rate:15,count:0,auto:true}],
+            {label:'Valet trash',per:'unit',rate:15,count:0,auto:true},
+            {label:'Property Taxes',per:'pctIncome',rate:12,count:0,auto:false},
+            {label:'Property Insurance',per:'unit',rate:65,count:0,auto:true},
+            {label:'Property Management Fee',per:'pctIncome',rate:4,count:0,auto:false},
+            {label:'On-Site Payroll',per:'unit',rate:95,count:0,auto:true},
+            {label:'Repairs & Maintenance',per:'unit',rate:55,count:0,auto:true},
+            {label:'Turnover / Make-Ready',per:'unit',rate:30,count:0,auto:true},
+            {label:'Marketing & Leasing',per:'unit',rate:22,count:0,auto:true},
+            {label:'General & Administrative',per:'unit',rate:18,count:0,auto:true},
+            {label:'Landscaping & Amenity Upkeep',per:'unit',rate:20,count:0,auto:true},
+            {label:'Replacement Reserves',per:'unit',rate:25,count:0,auto:true}],
+  opexSchemaVersion:2,
   lines: pricing.lines.map(l => ({...l, lineId:'tpl-'+Math.random().toString(36).slice(2,10),
     qty: l.basis==='ls'?1:0, auto: l.basis!=='ls', baseUnit:l.unit})),
   companies:[{name:'Finishes Solutions LLC',pct:12}],
@@ -167,6 +246,10 @@ const json = (res, code, body) => {
 http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   const p = u.pathname;
+  // Request-level query bag. The project and re-sync scopes read it, and a
+  // route rule cannot see a query string — so, as in the real API, the
+  // in-handler check is the gate.
+  const q = u.searchParams;
 
   if (NO_API && (p === '/.auth/me' || p.startsWith('/api/'))) { res.writeHead(500); return res.end('offline'); }
 
@@ -283,7 +366,32 @@ http.createServer((req, res) => {
     const nois = analysisList.map(a => a.result && a.result.summary ? a.result.summary.year1NOI : null).filter(x => x != null);
     const irrs = analysisList.map(a => a.result && a.result.summary ? a.result.summary.finalYearEquityIRR : null).filter(x => x != null);
     const avg = arr => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null;
+    // Projects. The converted totals read the SNAPSHOT columns, never a live
+    // join — the same rule the real query follows, so reported backlog does not
+    // move when a budget is edited after conversion.
+    const projectList = [...projects.values()].filter(x => !x.isDeleted && !x.projectId.startsWith('TST-'));
+    const pStatus = {};
+    projectList.forEach(x => { const st = x.status || 'Lead'; pStatus[st] = (pStatus[st] || 0) + 1; });
+    const convertedList = projectList.filter(x => x.status === CONVERTED);
+    const lostCount = projectList.filter(x => x.status === 'Lost').length;
+    const decided = projectList.length - lostCount;
+    const byMonth = {};
+    convertedList.forEach(x => {
+      const m = String(x.convertedAt || '').slice(0, 7);
+      const e = byMonth[m] || (byMonth[m] = { month: m, count: 0, contractAmount: 0, projectAmount: 0 });
+      e.count++; e.contractAmount += x.contractAmount || 0; e.projectAmount += x.projectAmount || 0;
+    });
+
     return json(res, 200, {
+      projects: {
+        available: true, statuses: PROJECT_STATUSES,
+        total: projectList.length, converted: convertedList.length, lost: lostCount,
+        convertedContractAmount: convertedList.reduce((t, x) => t + (x.contractAmount || 0), 0),
+        convertedProjectAmount: convertedList.reduce((t, x) => t + (x.projectAmount || 0), 0),
+        conversionRate: decided > 0 ? convertedList.length / decided : null,
+        statusBreakdown: Object.entries(pStatus).map(([status, count]) => ({ status, count })),
+        convertedByMonth: Object.values(byMonth).sort((a, z) => a.month.localeCompare(z.month))
+      },
       budgets: {
         total: budgets.size, active: budgetList.length,
         deleted: [...budgets.values()].filter(b => b.deleted).length,
@@ -491,13 +599,47 @@ http.createServer((req, res) => {
   }
 
   if (p === '/api/budgets') {
+    // ?scope=projects / ?scope=project — behaviour-parallel with
+    // api/shared/projects.js. In the mock the migration has always run, so
+    // `available` is always true; the not-migrated shape is covered by
+    // test/schema-probe.test.js against the real probe instead.
+    const scope = String(q.get('scope') || '');
+    if (scope === 'projects') {
+      return json(res, 200, { available: true, statuses: PROJECT_STATUSES,
+        projects: [...projects.values()].map(shapeProject)
+          .sort((a, z) => String(z.updated).localeCompare(String(a.updated))) });
+    }
+    if (scope === 'project') {
+      const key = String(q.get('id') || '').toUpperCase();
+      const pr = projects.get(key);
+      if (!pr) return json(res, 404, { error: 'not_found', message: 'Project not found.' });
+      const bs = projectBudgets(key);
+      return json(res, 200, {
+        available: true, statuses: PROJECT_STATUSES, project: shapeProject(pr),
+        budgets: bs.map(b => ({
+          projectId: b.meta.projectId, name: b.meta.name, type: b.meta.type, status: b.meta.status,
+          address: b.doc.address || '',
+          contractSum: +b.meta.contractSum || 0, projectCost: +b.meta.projectCost || 0,
+          isAlternate: b.meta.projectId !== key,
+          isPrimary: b.meta.projectId === pr.primaryBudgetId,
+          guardrailStatus: b.guardrailStatus || null,
+          guardrailBreachCount: b.guardrailBreachCount === undefined ? null : b.guardrailBreachCount,
+          createdById: b.createdById || null, createdByName: b.createdByName || null,
+          updated: b.meta.updated })),
+        analyses: projectAnalyses(key).map(invSummary)
+      });
+    }
+
     return json(res, 200, [...budgets.values()].filter(x => !x.deleted)
       .map(x => {
         const uid = x.createdById || null;
         const u = uid ? mockUsers.get(uid) : null;
         return { ...x.meta, address: (x.doc && x.doc.address) || '',
           createdById: uid, createdByName: x.createdByName || null,
-          createdByAvatar: u && u.settings ? (u.settings.avatarColor || null) : null };
+          createdByAvatar: u && u.settings ? (u.settings.avatarColor || null) : null,
+          projectKey: x.projectKey || null,
+          guardrailStatus: x.guardrailStatus || null,
+          guardrailBreachCount: x.guardrailBreachCount === undefined ? null : x.guardrailBreachCount };
       }));
   }
 
@@ -506,7 +648,33 @@ http.createServer((req, res) => {
     const seg = rest.split('/');
     const id = (seg[0] || '').toUpperCase();
     // Must stay in step with ID_RX in api/budget/index.js and app/index.html.
-    if (!/^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/.test(id)) { res.writeHead(400); return res.end('Invalid project ID'); }
+    if (!/^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/.test(id)) { res.writeHead(400); return res.end('Invalid project ID'); }
+    // ?scope=project — project metadata and status. Converting SNAPSHOTS the
+    // primary budget's money, exactly as api/shared/projects.js does.
+    if (req.method === 'PUT' && String(q.get('scope') || '') === 'project') {
+      let pb = ''; req.on('data', c => pb += c);
+      return req.on('end', () => {
+        const body = JSON.parse(pb || '{}');
+        const pr = projects.get(id);
+        if (!pr) return json(res, 404, { error: 'not_found', message: 'Project not found.' });
+        if (body.status !== undefined && !PROJECT_STATUSES.includes(body.status))
+          return json(res, 400, { error: 'bad_request',
+            message: 'status must be one of: ' + PROJECT_STATUSES.join(', ') });
+        const converting = body.status === CONVERTED && pr.status !== CONVERTED;
+        ['name', 'address', 'type', 'notes', 'primaryBudgetId', 'status'].forEach(k => {
+          if (body[k] !== undefined) pr[k] = body[k];
+        });
+        if (converting) {
+          const shaped = shapeProject(pr);
+          pr.convertedAt = new Date().toISOString();
+          pr.contractAmount = shaped.liveContractSum;
+          pr.projectAmount = shaped.liveProjectCost;
+        }
+        pr.updated = new Date().toISOString();
+        return json(res, 200, { ok: true, converted: converting, project: shapeProject(pr) });
+      });
+    }
+
     const rec = budgets.get(id);
     const live = rec && !rec.deleted ? rec : null;
 
@@ -549,8 +717,25 @@ http.createServer((req, res) => {
         live.meta.updated = live.doc.updated = new Date().toISOString();
         return json(res, 200, { ok: true, status: body.status });
       }
-      const { meta, doc } = body;
+      // A malformed body must answer 400, exactly as api/budget/index.js does.
+      // Throwing here would kill the whole mock and cascade into every suite
+      // that runs after it — which is precisely how a five-minute mistake costs
+      // an hour of misread failures.
+      const { meta, doc } = body || {};
+      if (!doc || !meta) { res.writeHead(400); return res.end('Body must be { meta, doc }'); }
       if ((doc.projectId || '').toUpperCase() !== id) { res.writeHead(400); return res.end('id mismatch'); }
+      // Behaviour-parallel with api/budget/index.js: the rails are re-evaluated
+      // from the SUBMITTED document and refuse the write, never trusting a
+      // client-supplied verdict.
+      const rails = evalGuardrails(doc);
+      if (rails.blocking) {
+        return json(res, 422, { error: 'guardrail_breach',
+          message: rails.blocking + ' guard rail' + (rails.blocking === 1 ? '' : 's')
+            + ' outside range. Correct the value, or record an override with a reason.',
+          breaches: rails.breaches.filter(x => x.severity === 'error').map(x => ({
+            id: x.id, label: x.label, actual: x.actual, display: x.display,
+            min: x.min, max: x.max, range: x.range, message: x.message })) });
+      }
       const calc = parts(doc);
       // The real API reads UpdatedAt off the row, so `updated` is always
       // present on the list. Seeded values are kept; only a missing one is
@@ -560,8 +745,11 @@ http.createServer((req, res) => {
       meta.projectCost = Math.round(calc.project * 100) / 100;
       const prev = budgets.get(id) || { versions: [] };
       const entry = { meta, doc, deleted: false, versions: prev.versions,
+        guardrailStatus: rails.status, guardrailBreachCount: rails.breaches.length,
+        projectKey: projectKeyOf(id),
         createdById: (prev && prev.createdById) || principal.clientPrincipal.userId,
         createdByName: (prev && prev.createdByName) || principal.clientPrincipal.userDetails };  // PUT restores
+      ensureProject(id, { name: meta.name || doc.name, address: doc.address, type: meta.type || doc.type });
       const last = entry.versions[entry.versions.length - 1];
       let versionCreated = false;
       if (!last || canonical(last.doc) !== canonical(doc)) {
@@ -599,7 +787,7 @@ http.createServer((req, res) => {
     if (req.method === 'GET') {
       const q = new URL(req.url, 'http://x').searchParams;
       const pid = (q.get('projectId') || '').toUpperCase();
-      if (pid && !/^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/.test(pid))
+      if (pid && !/^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/.test(pid))
         return json(res, 400, { error: 'bad_request', message: 'Invalid project ID filter.' });
       return json(res, 200, [...invAnalyses.values()]
         .filter(a => !a.deleted && (!pid || a.projectId === pid))
@@ -619,38 +807,28 @@ http.createServer((req, res) => {
         const v = live ? live.versions[vn - 1] : null;
         if (!v) { return json(res, 404, { error: 'not_found', message: 'Budget version not found.' }); }
         sourceBudgetVersionNumber = vn;
-        const doc = v.doc, p2 = bc.parts(doc), gi = bc.grossIncome(doc), tu = bc.totUnits(doc);
-        const siteSF = bc.nz(doc.siteSF), bldgSF = bc.nz(doc.resSF) + bc.nz(doc.amenSF);
-        const round2 = x => Math.round(x * 100) / 100;
+        // Behaviour-parallel with api/investment-analyses/index.js: the SAME
+        // projection module, so the mock cannot drift from the real prefill.
+        const doc = v.doc;
+        const proj = fromBudget.projectFromBudget(doc, { Id: vn, VersionNumber: vn, Name: v.meta.name },
+          { projectId, vacancy: INV_D.vacancy });
         input = {
           schemaVersion: 1,
           analysisName: (body.analysisName || (v.meta.name + ' — Investment Analysis')).slice(0, 200),
           source: { projectId, budgetVersionId: vn, budgetVersionNumber: vn,
-            importedAt: new Date().toISOString(),
-            fieldOrigins: {
-              'property.name': 'Budget name', 'property.address': 'Budget address',
-              'property.size': siteSF > 0 ? 'Budget Site SF' : 'Budget Residential + Amenity SF',
-              'property.unitCount': 'Budget unit mix',
-              'acquisition.basis': 'Budget Total Project Cost',
-              'income.year1PotentialIncome': 'Budget unit mix — gross scheduled rent × 12',
-              'income.otherIncome': 'Budget other-income rows × 12' },
-            support: { contractSum: round2(p2.contract), projectCost: round2(p2.project),
-              annualServiceExpenses: round2(12 * gi.expMo),
-              serviceExpenseRows: (doc.expenses || []).map(e => ({ label: e.label,
-                annualAmount: round2(12 * bc.nz(e.rate) * (e.per === 'fixed' ? (bc.nz(e.count) || 1) : (e.auto ? tu : bc.nz(e.count)))) })),
-              unitMix: (doc.units || []).map(u => ({ label: u.label, count: bc.nz(u.count), rent: bc.nz(u.rent) })) } },
-          property: { name: doc.name || projectId, address: doc.address || '',
-            size: { unit: 'squareFeet', value: siteSF > 0 ? siteSF : bldgSF },
-            unitCount: tu || null, purchaseMonth: null },
+            importedAt: new Date().toISOString(), syncedAt: new Date().toISOString(),
+            fieldOrigins: proj.fieldOrigins, support: proj.support },
+          property: { name: proj.imported.property.name, address: proj.imported.property.address,
+            size: proj.imported.property.size,
+            unitCount: proj.imported.property.unitCount, purchaseMonth: fromBudget.currentPurchaseMonth() },
           projection: { years: 5, taxMode: 'beforeTax' },
-          acquisition: { basis: { mode: 'purchasePrice', value: round2(p2.project) }, costPercent: INV_D.acquisitionCostPercent },
-          income: { mode: 'aggregate', year1PotentialIncome: round2(12 * gi.rentMo),
+          acquisition: { basis: proj.imported.acquisition.basis, costPercent: INV_D.acquisitionCostPercent },
+          income: { mode: 'aggregate',
+            year1PotentialIncome: proj.imported.income.year1PotentialIncome,
             growth: { mode: 'constant', value: INV_D.incomeGrowth },
-            otherIncome: (doc.other || []).map(o => ({ label: o.label || 'Other Income',
-              year1Amount: round2(12 * bc.nz(o.rate) * (o.auto ? tu : bc.nz(o.count))),
-              growth: { mode: 'constant', value: INV_D.otherIncomeGrowth } })) },
+            otherIncome: proj.imported.income.otherIncome },
           vacancy: { mode: 'constant', value: INV_D.vacancy },
-          expenses: { mode: 'percentOfGOI', value: null },
+          expenses: proj.imported.expenses,
           capitalExpenses: [],
           financing: { loans: [] },
           disposition: { exitCapRate: { mode: 'constant', value: null }, sellingCostPercent: INV_D.sellingCostPercent },
@@ -668,12 +846,12 @@ http.createServer((req, res) => {
         if (!name) return json(res, 400, { error: 'bad_request', message: 'analysisName is required.' });
         input = Object.assign({
           schemaVersion: 1,
-          property: { name, address: '', size: { unit: 'squareFeet', value: null }, purchaseMonth: null },
+          property: { name, address: '', size: { unit: 'squareFeet', value: null }, purchaseMonth: fromBudget.currentPurchaseMonth() },
           projection: { years: 5, taxMode: 'beforeTax' },
           acquisition: { basis: { mode: 'purchasePrice', value: null }, costPercent: INV_D.acquisitionCostPercent },
           income: { mode: 'aggregate', year1PotentialIncome: null, growth: { mode: 'constant', value: INV_D.incomeGrowth }, otherIncome: [] },
           vacancy: { mode: 'constant', value: INV_D.vacancy },
-          expenses: { mode: 'percentOfGOI', value: null },
+          expenses: { mode: 'percentOfGOI', value: null, override: false, derivedFrom: null },
           capitalExpenses: [],
           financing: { loans: [] },
           disposition: { exitCapRate: { mode: 'constant', value: null }, sellingCostPercent: INV_D.sellingCostPercent },
@@ -701,6 +879,50 @@ http.createServer((req, res) => {
     if (!GUID_RX.test(id)) return json(res, 400, { error: 'bad_request', message: 'Invalid analysis ID.' });
     const a = invAnalyses.get(id);
     const live = a && !a.deleted ? a : null;
+
+    /* PUT ?scope=resync — refresh ONLY the imported fields from the budget's
+       current version, leaving what the user typed alone. Behaviour-parallel
+       with api/investment-analysis/index.js, off the same projection module. */
+    if (req.method === 'PUT' && String(q.get('scope') || '') === 'resync') {
+      if (!live) return json(res, 404, { error: 'not_found', message: 'Not found' });
+      if (!live.projectId) return json(res, 400, { error: 'not_linked',
+        message: 'This analysis is standalone — there is no budget to re-sync from.' });
+      const br = budgets.get(live.projectId);
+      const bl = br && !br.deleted ? br : null;
+      const vn = bl ? bl.versions.length : 0;
+      const v = bl ? bl.versions[vn - 1] : null;
+      if (!v) return json(res, 404, { error: 'not_found', message: 'Budget version not found.' });
+      const input = live.input;
+      const vac = input.vacancy && Number.isFinite(+input.vacancy.value) ? +input.vacancy.value : undefined;
+      const proj = fromBudget.projectFromBudget(v.doc,
+        { Id: vn, VersionNumber: vn, Name: v.meta.name }, { projectId: live.projectId, vacancy: vac });
+      input.property = Object.assign({}, input.property, {
+        name: proj.imported.property.name, address: proj.imported.property.address,
+        size: proj.imported.property.size, unitCount: proj.imported.property.unitCount });
+      input.acquisition = Object.assign({}, input.acquisition, { basis: proj.imported.acquisition.basis });
+      input.income = Object.assign({}, input.income, {
+        year1PotentialIncome: proj.imported.income.year1PotentialIncome,
+        otherIncome: proj.imported.income.otherIncome });
+      const overridden = !!(input.expenses && input.expenses.override);
+      input.expenses = overridden
+        ? Object.assign({}, input.expenses, { derivedFrom: proj.imported.expenses.derivedFrom })
+        : proj.imported.expenses;
+      input.source = Object.assign({}, input.source || {}, {
+        projectId: live.projectId, budgetVersionId: vn, budgetVersionNumber: vn,
+        syncedAt: new Date().toISOString(),
+        fieldOrigins: proj.fieldOrigins, support: proj.support,
+        // originalValues is NOT rewritten — the From Budget badges compare
+        // against the original import forever.
+        originalValues: (input.source && input.source.originalValues) || {},
+        importedAt: (input.source && input.source.importedAt) || new Date().toISOString() });
+      live.sourceBudgetVersionNumber = vn;
+      live.updatedAt = new Date().toISOString();
+      return json(res, 200, { ok: true, input, expensesOverridden: overridden,
+        source: { projectId: live.projectId, budgetVersionId: vn, budgetVersionNumber: vn,
+                  budgetCurrentVersionNumber: vn, drift: false },
+        message: 'Re-synced from budget ' + live.projectId + ' v' + vn
+          + '. Recalculate and save to fold the new numbers into a version.' });
+    }
 
     // Server-rendered exports — the SAME shared renderer module the real
     // function uses, so suites assert the genuine file bytes.
@@ -810,9 +1032,16 @@ http.createServer((req, res) => {
       if (!live) return json(res, 404, { error: 'not_found', message: 'Not found' });
       return json(res, 200, { analysisId: id, projectId: live.projectId, name: live.name,
         status: live.status, currentVersionNumber: live.currentVersionNumber,
-        source: live.sourceBudgetVersionNumber ? { projectId: live.projectId,
-          budgetVersionId: live.sourceBudgetVersionNumber,
-          budgetVersionNumber: live.sourceBudgetVersionNumber } : null,
+        source: live.sourceBudgetVersionNumber ? (function () {
+          // The budget's CURRENT version, so the client can offer a re-sync.
+          const br = budgets.get(live.projectId);
+          const cur = br && !br.deleted ? br.versions.length : null;
+          return { projectId: live.projectId,
+            budgetVersionId: live.sourceBudgetVersionNumber,
+            budgetVersionNumber: live.sourceBudgetVersionNumber,
+            budgetCurrentVersionNumber: cur,
+            drift: !!(cur && cur > live.sourceBudgetVersionNumber) };
+        })() : null,
         input: live.input, result: live.result,
         inputSchemaVersion: 1, calculationVersion: INV_C.CALCULATION_VERSION,
         createdAt: live.createdAt, updatedAt: live.updatedAt });

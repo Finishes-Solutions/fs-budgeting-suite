@@ -294,8 +294,11 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     /Welcome to the Budgeting Suite/.test(await p.locator('#welcomeTitle').textContent())
     &&(await p.locator('#welcomeModal .card-bd').textContent()).trim().length<700);
  const welTxt=await p.locator('#welcomeModal').textContent();
- ok('the three things it can do are named',
-    ['Budgets','Investment Analysis','Exports'].every(x=>welTxt.includes(x)), welTxt.slice(0,120));
+ // Projects joined the list when it became a top-level tab: a welcome that
+ // describes the app has to describe the app that shipped.
+ ok('the four things it can do are named',
+    ['Projects','Budgets','Investment Analysis','Exports'].every(x=>welTxt.includes(x)),
+    welTxt.slice(0,160));
  // A first-run account meets a loaded app, not the cold-start overlay: the
  // welcome opens at the END of boot, after Home has painted behind it.
  ok('the app has finished loading behind it',
