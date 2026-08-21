@@ -81,9 +81,13 @@ async function render(force) {
 
   var ps = list.projects || [];
   if (!ps.length) {
+    // The old copy said a project appears the first time a budget is saved
+    // against its ID. It does not any more: a budget id cannot name a project,
+    // so the first move is Create Project.
     host.innerHTML = '<div class="card"><div class="card-bd"><div class="hm-empty">'
-      + '<b>No projects yet.</b><br>A project appears here the first time a budget is saved against its ID. '
-      + 'Every budget belongs to exactly one project.</div></div></div>';
+      + '<b>No projects yet.</b><br>Create one with <b>+ Create Project</b> above. '
+      + 'A project is the parent: its budgets and investment analyses hang off it, '
+      + 'and every budget belongs to exactly one.</div></div></div>';
     return;
   }
 
@@ -249,7 +253,8 @@ function paintDetail() {
   if (!detail || !detail.available) { host.innerHTML = notMigratedCard(); return; }
   if (!detail.project) {
     host.innerHTML = '<div class="card"><div class="card-bd"><div class="hm-empty">'
-      + '<b>No project with that ID.</b><br>Projects are created the first time a budget is saved against an ID.'
+      + '<b>No project with that ID.</b><br>Project IDs look like <span class="mono">OP-0001</span>. '
+      + 'Create one with + Create Project on the Projects tab.'
       + '</div></div></div>';
     return;
   }

@@ -76,8 +76,10 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   ok('Create enables once all three required fields are in',
      await p.locator('#npCreate').isEnabled());
   await p.click('#npCreate');
-  await p.waitForTimeout(900);
-  ok('creating the project opens it', /#\/project\/OP-0900/.test(p.url()), p.url());
+  const opened = await p.waitForURL(/#\/project\/OP-0900/, { timeout: 15000 })
+    .then(() => true).catch(() => false);
+  await p.waitForTimeout(400);
+  ok('creating the project opens it', opened && /#\/project\/OP-0900/.test(p.url()), p.url());
   ok('and the heading shows the project ID, not a budget ID',
      /^OP-0900 — Riverbend Phase 1/.test((await p.locator('#projectTitle').textContent()).trim()),
      (await p.locator('#projectTitle').textContent()).trim());
@@ -111,7 +113,8 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
 
   // ================= comment 8 — prefill and required size =================
   await p.evaluate(() => FSProjects.open('OP-0900'));
-  await p.waitForTimeout(700);
+  await p.waitForSelector('#page-project button:has-text("+ New Budget")', { timeout: 15000 });
+  await p.waitForTimeout(300);
   await p.click('#page-project button:has-text("+ New Budget")');
   await p.waitForTimeout(700);
   ok('creating a budget from a project preselects that project',
@@ -178,7 +181,8 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   await p.evaluate(() => go('projects'));
   await p.waitForTimeout(400);
   await p.evaluate(() => FSProjects.open('OP-0900'));
-  await p.waitForTimeout(700);
+  await p.waitForSelector('#page-project button:has-text("+ New Budget")', { timeout: 15000 });
+  await p.waitForTimeout(300);
   await p.click('#page-project button:has-text("+ New Budget")');
   await p.waitForTimeout(600);
   await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")');
@@ -224,7 +228,8 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
 
   // ================= comments 1 and 2 — Make Primary =================
   await p.evaluate(() => FSProjects.open('OP-0900'));
-  await p.waitForTimeout(800);
+  await p.waitForSelector('#projectBody .pj-stats', { timeout: 15000 });
+  await p.waitForTimeout(400);
   await p.click('#page-project button:has-text("+ Add Alternate Budget")');
   await p.waitForTimeout(800);
   // make the alternate visibly more expensive, so "which budget" is provable
@@ -233,7 +238,8 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   await p.click('button[data-save-btn]');
   await p.waitForTimeout(1000);
   await p.evaluate(() => FSProjects.open('OP-0900'));
-  await p.waitForTimeout(900);
+  await p.waitForSelector('#projectBody .pj-stats', { timeout: 15000 });
+  await p.waitForTimeout(400);
 
   ok('the summary card is named Total Project Cost (Primary)',
      /Total Project Cost \(Primary\)/.test(await p.locator('#projectBody .pj-stats').textContent()),
@@ -299,7 +305,8 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
 
   // ================= comments 3 and 4 — the analysis picker =================
   await p.evaluate(() => FSProjects.open('OP-0900'));
-  await p.waitForTimeout(900);
+  await p.waitForSelector('#projectBody .pj-stats', { timeout: 15000 });
+  await p.waitForTimeout(400);
   await p.click('#page-project button:has-text("+ Add Investment Analysis")');
   await p.waitForTimeout(600);
   ok('the Add Investment Analysis picker is a centered dialog',
@@ -333,7 +340,8 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
 
   // ================= project row menu, favorites and delete =================
   await p.evaluate(() => go('projects'));
-  await p.waitForTimeout(700);
+  await p.waitForSelector('#projectsBody .pj-tbl-index', { timeout: 15000 });
+  await p.waitForTimeout(300);
   ok('project rows carry a ⋮ menu instead of an Open arrow',
      (await p.locator('#projectsBody .pj-tbl-index .rowmenu-btn').count()) > 0
      && (await p.locator('#projectsBody .pj-go').count()) === 0);
@@ -389,7 +397,8 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   await p.evaluate(() => go('projects'));
   await p.waitForTimeout(500);
   await p.evaluate(() => FSProjects.open('OP-0900'));
-  await p.waitForTimeout(900);
+  await p.waitForSelector('#projectBody .pj-stats', { timeout: 15000 });
+  await p.waitForTimeout(400);
   await p.click('#page-project button:has-text("+ Add Investment Analysis")');
   await p.waitForTimeout(600);
   if (await p.locator('#invPickModal').isVisible()) {

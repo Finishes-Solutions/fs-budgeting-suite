@@ -1554,7 +1554,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <a href="#help-quickstart">Quick Start</a>
       <a href="#help-firstproject">Your First Project</a>
       <a href="#help-projects">Projects</a>
-      <a href="#help-ids">Project IDs</a>
+      <a href="#help-ids">Project and Budget IDs</a>
       <a href="#help-inputs">Inputs Reference</a>
       <a href="#help-budget">The Budget Page</a>
       <a href="#help-guardrails">Guard Rails</a>
@@ -1731,11 +1731,17 @@ th.sortable.sorted{color:var(--ink-900)}
         <h3 id="help-projects">Projects</h3>
         <p>The <b>Projects</b> tab is the parent view. One project per ID, and everything that belongs to it hangs
           off its page: the budgets, the investment analyses built from them, and whatever you have starred.</p>
-        <p>A project is created automatically the first time a budget is saved against its ID — there is nothing to
-          set up. From a project page you can:</p>
+        <p>Create one with <span class="kbd">+ Create Project</span> on the Projects tab: an ID, a name and an
+          address. A project has no type of its own — each of its budgets carries one, so a single property can
+          hold a Multifamily budget and a Commercial budget at the same time. From a project page you can:</p>
         <ul>
+          <li><b>Add a budget</b> — <span class="kbd">+ New Budget</span> asks which template to start from, then
+            which project it belongs to, and carries that project's name and address across.</li>
           <li><b>Add an alternate budget</b> — a copy of the base budget under a suffixed ID (<span class="mono">BD-0001-02</span>),
             for pricing the same project a different way. It opens unsaved so you can change it before keeping it.</li>
+          <li><b>Choose the primary budget</b> — <b>Make Primary</b> in a budget row's three-dot menu. Exactly one
+            budget is primary, and <b>Total Project Cost (Primary)</b> reports that budget alone; an alternate is
+            another way of pricing the same work, so it is never added in.</li>
           <li><b>Move it through the pipeline</b> — Lead, Qualified, Budgeting, Proposal Sent, Awarded, and finally
             <b>Converted to Project</b>, with On Hold and Lost for everything else.</li>
           <li><b>See what you starred</b> — the Favorites strip shows only the budget and analysis you starred on
@@ -1744,28 +1750,36 @@ th.sortable.sorted{color:var(--ink-900)}
             Investment Analyses card. With one budget on the project it links to that budget without asking;
             with several it asks which one, offering only this project's budgets.</li>
           <li><b>Act on a row</b> — the <b>three-dot menu</b> at the end of each budget row carries the same
-            Edit, Versions, Update Pricing and favorite actions as the Budgets tab; each analysis row carries
-            the analysis menu (Open, Versions, Duplicate, Delete and its favorite toggle).</li>
+            Edit, Versions, Update Pricing and favorite actions as the Budgets tab, plus Make Primary; each
+            analysis row carries the analysis menu (Open, Versions, Duplicate, Delete and its favorite toggle).
+            Project rows on the Projects tab carry their own menu: Open, Favorite and <b>Delete Project</b>.</li>
         </ul>
+        <div class="callout warn"><b>Deleting a project takes its children with it.</b> Delete Project flags the
+          project, its budgets and its investment analyses as deleted in one step, and says how many before it
+          does. Nothing is destroyed — every saved version is kept, and an administrator can restore it.</div>
         <div class="callout"><b>Converting captures the numbers.</b> Moving a project to <b>Converted to Project</b>
           records the contract and total project amounts from its primary budget <i>at that moment</i>. They stop
           moving when the budget is edited afterwards, which is what makes the Analytics totals a stable record of
           work won rather than a figure that drifts.</div>
 
-        <h3 id="help-ids">Project IDs</h3>
-        <p>The ID is the primary key for the budget, in the database and in every downstream system. It cannot be
-          changed by renaming later without creating a second record, so get it right at the start.</p>
+        <h3 id="help-ids">Project and Budget IDs</h3>
+        <p>These are <b>two separate namespaces</b>, and keeping them apart is the point. A project has its own ID;
+          a budget has its own ID and says which project it belongs to. Neither is ever derived from the other.</p>
         <table class="tbl"><tbody>
-          <tr><td>OP-####</td><td>Operations project — four digits, e.g. <code>OP-0001</code>.</td></tr>
-          <tr><td>BD-####</td><td>Business Development pursuit — four digits, e.g. <code>BD-0001</code>.</td></tr>
-          <tr><td>AS-####</td><td>Assessment — four digits, e.g. <code>AS-0001</code>.</td></tr>
+          <tr><td>OP-####</td><td><b>Project</b> ID — four digits, e.g. <code>OP-0001</code>. This is the only
+            shape a project ID takes, and it must be unique.</td></tr>
+          <tr><td>BD-####</td><td><b>Budget</b> ID — four digits, e.g. <code>BD-0001</code>. New budgets are
+            created under this prefix.</td></tr>
+          <tr><td>OP-#### / AS-#### / TST-####</td><td>Older <b>budget</b> IDs. They still open and save; nothing
+            was renamed.</td></tr>
           <tr><td>TST-####</td><td>Test budget. Use <code>TST-9999</code> when checking a preview build.</td></tr>
-          <tr><td>…-##</td><td>An <b>alternate budget</b> under the same project — <code>BD-0001-02</code>,
+          <tr><td>…-##</td><td>An <b>alternate budget</b> of the budget it copies — <code>BD-0001-02</code>,
             <code>BD-0001-03</code>. Created from the project page, never typed by hand.</td></tr>
         </tbody></table>
-        <p>Strip the alternate suffix and you have the <b>project</b> ID, which is what the Projects tab is keyed
-          by. <code>BD-0001</code> and <code>BD-0001-02</code> are two budgets on one project; there is never more
-          than one project per ID.</p>
+        <p><code>BD-0001</code> and <code>BD-0001-02</code> are two budgets, both belonging to one project such as
+          <code>OP-0007</code>. The suffix numbers alternates of a budget and nothing else — it is not how the
+          project is found. An ID is the primary key in the database and in every downstream system, so it cannot
+          be corrected by renaming later without creating a second record: get it right at the start.</p>
         <div class="callout warn"><b>Test budgets are real rows.</b> Preview builds share the production database,
           so a <code>TST-</code> budget is written to the same tables as live projects. It is flagged with a Test
           badge everywhere it appears — delete it when you are finished.</div>
