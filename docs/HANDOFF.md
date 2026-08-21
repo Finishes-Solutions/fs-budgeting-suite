@@ -519,14 +519,25 @@ update selectors alongside label changes.
   `DEFAULT_PRICING` in `app/index.html` and expect it to matter — it is the offline
   fallback only (docs/DATA_CONTRACT.md, "Single source of truth").
 
-**Pending, needs a database admin**
+**Database state — both scripts have run (2026-08-21)**
 
-- **`sql/migrate_projects_and_guardrails.sql` has not been run.** Until it does,
-  the Projects tab says so plainly and every other page works exactly as before
-  — `api/shared/schema.js` probes for `Projects.ProjectId`, `Budgets.ProjectKey`,
-  `InvestmentAnalyses.ProjectKey` and the guard-rail columns, and every read path
-  falls back. Guard rails still evaluate and still block without it; only the
-  stored summary of them is skipped.
+- `sql/migrate_projects_and_guardrails.sql` — all eight verification rows PASS.
+  Five projects backfilled from the existing budgets, zero unlinked budgets,
+  zero unlinked analyses, zero orphans, both foreign keys in place.
+- `sql/publish_multifamily_opex_template.sql` — all four PASS. The multifamily
+  template is now **v3**, carrying `opexSchemaVersion: 2` and all sixteen
+  expense rows; v2 is retained, because publishing is append-only.
+
+  Consequence worth knowing: budgets created from **v3 onward** are judged by
+  the 35–55% expense rail and **blocked** when they fall outside it. Every
+  budget that predates v3 sits at `opexSchemaVersion: 1` and is **warned**, not
+  blocked, until someone runs *Update Expense Schedule* on it from the Guard
+  Rails card.
+
+  The rates in v3 are the ones this release proposed, not a reviewed house
+  standard. They land the template at 46.2% of income against its own unit mix.
+  Whoever owns the underwriting standard should review them and republish —
+  editing the script and re-running it publishes v4; nothing is overwritten.
 
 **Housekeeping**
 
