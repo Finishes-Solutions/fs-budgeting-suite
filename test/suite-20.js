@@ -46,8 +46,20 @@ async function nbFinish(p,project,id,name){
  ok('an empty budget has nothing to judge', emptyRails.rails.length===0,
     JSON.stringify(emptyRails.rails.map(r=>r.id)));
  ok('and therefore cannot be blocked', emptyRails.blocking===0);
+ // Guard rails and the SIZE rule answer different questions. The rails have
+ // nothing to judge on an empty budget and correctly do not block it; the size
+ // rule refuses it anyway, because an analysis built from a sizeless budget
+ // could never calculate. Both are true at once, and the save is refused for
+ // the second reason, not the first.
  await p.click('.page.on button[data-save-btn]'); await p.waitForTimeout(900);
- ok('an empty budget saves', /^Saved /.test(await p.locator('#saveState').textContent()),
+ ok('but an empty budget still cannot be saved without a size',
+    /unsaved/i.test(await p.locator('#saveState').textContent())
+      && await p.locator('#pSizeErr').isVisible(),
+    await p.locator('#saveState').textContent());
+ await p.fill('#pSF','40000'); await p.waitForTimeout(300);
+ await p.click('.page.on button[data-save-btn]'); await p.waitForTimeout(1000);
+ ok('and saves once it has one, still unblocked by the rails',
+    /^Saved /.test(await p.locator('#saveState').textContent()),
     await p.locator('#saveState').textContent());
 
  // ---------- 2. the multifamily template lands inside the rails ----------
