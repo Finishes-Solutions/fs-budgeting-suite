@@ -14,7 +14,21 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('Ctrl+S with no budget gives guidance',
     /Open or create a budget first/.test(await p.locator('#toast').textContent()));
 
+ // A budget belongs to a project, so the parent is made first and chosen in
+ // step 2 of the dialog — a budget id can no longer imply one.
+ await p.evaluate(async a=>{
+   await fetch('/api/budget/'+a.p+'?scope=project',{method:'PUT',
+     headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({create:true,name:a.n,address:'1 Test Way'})});
+ },{p:'OP-0901',n:'Shortcut Save'});
  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
+ await p.waitForTimeout(700);
+ await p.selectOption('#nbProject','OP-0901');
+ await p.fill('#nbId','TST-9996');
+ await p.fill('#nbName','Shortcut Save');
+ await p.click('#nbCreate');
+ await p.waitForTimeout(700);
+
  await p.fill('#pId','TST-9996'); await p.fill('#pName','Shortcut Save');
  await p.waitForTimeout(200);
  ok('dirty before save', /unsaved/i.test(await p.locator('#saveState').textContent()));

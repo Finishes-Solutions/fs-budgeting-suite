@@ -8,7 +8,21 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const errs=[]; p.on('pageerror',e=>errs.push(e.message));
  await p.goto('http://127.0.0.1:8100/index.html',{waitUntil:'networkidle'});
  await p.waitForTimeout(400);
+ // A budget belongs to a project, so the parent is made first and chosen in
+ // step 2 of the dialog — a budget id can no longer imply one.
+ await p.evaluate(async a=>{
+   await fetch('/api/budget/'+a.p+'?scope=project',{method:'PUT',
+     headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({create:true,name:a.n,address:'1 Test Way'})});
+ },{p:'OP-1001',n:'Undo Test'});
  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
+ await p.waitForTimeout(700);
+ await p.selectOption('#nbProject','OP-1001');
+ await p.fill('#nbId','TST-9994');
+ await p.fill('#nbName','Undo Test');
+ await p.click('#nbCreate');
+ await p.waitForTimeout(700);
+
  await p.fill('#pId','TST-9994');
  await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
 

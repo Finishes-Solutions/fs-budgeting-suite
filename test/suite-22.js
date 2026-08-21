@@ -102,6 +102,12 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   await p.waitForTimeout(300);
   ok('Escape closes the dialog', !(await p.locator('#newProjectModal').isVisible()));
   ok('and the page scrolls again', await p.evaluate(() => getComputedStyle(document.body).overflow !== 'hidden'));
+  ok('and focus returns to the control that opened it',
+     await p.evaluate(() => {
+       const a = document.activeElement;
+       return !!a && /Create Project/.test(a.textContent || '');
+     }),
+     await p.evaluate(() => (document.activeElement && document.activeElement.textContent || '').trim().slice(0, 40)));
 
   // ================= comment 8 — prefill and required size =================
   await p.evaluate(() => FSProjects.open('OP-0900'));
