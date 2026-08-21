@@ -1,46 +1,53 @@
-/* ============================================================================
-   Migration — Projects, budget alternates, and guard-rail summaries
-   ----------------------------------------------------------------------------
-   Target : Azure SQL, the single fs-bd-budget database that serves EVERY
-            environment including production.
-   Run by : a database admin, in the Azure portal Query Editor.
-   When   : any time. The deploy that needs these columns tolerates their
-            absence (api/shared/schema.js probes for them), so running this
-            before OR after the release is safe. Nothing here is destructive.
-
-   Idempotent: every statement is existence-guarded, so re-running is a no-op.
-   Wrapped in one transaction with XACT_ABORT ON — a failure rolls the whole
-   thing back rather than leaving the schema half-migrated.
-
-   Statements that reference a column this same batch adds go through
-   sp_executesql, because SQL Server binds column names when it compiles the
-   batch, not when it runs the statement.
-
-   WHAT IT DOES
-     1. dbo.Projects            — the new parent. Its primary key is what
-                                  enforces "one project per ID".
-     2. Budgets.ProjectKey      — which project a budget belongs to.
-     3. InvestmentAnalyses.ProjectKey — the same, for the roll-up.
-     4. Guard-rail summary columns on Budgets and BudgetVersions.
-     5. Widened ID check so a project can carry alternate budgets
-        (BD-0001, BD-0001-02, BD-0001-03 …).
-     6. Backfill: one project per distinct suffix-stripped budget id, with the
-        budget's own name/address/type and a conservatively mapped status.
-
-   WHAT IT DOES NOT DO
-     Nothing is re-keyed. dbo.Budgets keeps ProjectId as its primary key, and
-     the SovLines / BudgetVersions / InvestmentAnalyses foreign keys are
-     untouched. No row is deleted and no existing column changes type.
-
-   Sections: PREFLIGHT (read-only) → MIGRATION → VERIFICATION.
-   ============================================================================ */
+-- ============================================================================
+--  Migration — Projects, budget alternates, and guard-rail summaries
+--
+--  NOTE ON COMMENT STYLE, and it is not cosmetic: this file uses only `--`
+--  line comments, like every other migration here. SQL Server treats a `--`
+--  INSIDE a block comment as a line comment running to end of line, so a
+--  closing marker sitting on a line of dashes gets swallowed and the whole
+--  batch fails with "Missing end comment mark". Do not reintroduce block
+--  comments in these scripts.
+--  ----------------------------------------------------------------------------
+--  Target : Azure SQL, the single fs-bd-budget database that serves EVERY
+--           environment including production.
+--  Run by : a database admin, in the Azure portal Query Editor.
+--  When   : any time. The deploy that needs these columns tolerates their
+--           absence (api/shared/schema.js probes for them), so running this
+--           before OR after the release is safe. Nothing here is destructive.
+--
+--  Idempotent: every statement is existence-guarded, so re-running is a no-op.
+--  Wrapped in one transaction with XACT_ABORT ON — a failure rolls the whole
+--  thing back rather than leaving the schema half-migrated.
+--
+--  Statements that reference a column this same batch adds go through
+--  sp_executesql, because SQL Server binds column names when it compiles the
+--  batch, not when it runs the statement.
+--
+--  WHAT IT DOES
+--    1. dbo.Projects            — the new parent. Its primary key is what
+--                                 enforces "one project per ID".
+--    2. Budgets.ProjectKey      — which project a budget belongs to.
+--    3. InvestmentAnalyses.ProjectKey — the same, for the roll-up.
+--    4. Guard-rail summary columns on Budgets and BudgetVersions.
+--    5. Widened ID check so a project can carry alternate budgets
+--       (BD-0001, BD-0001-02, BD-0001-03 …).
+--    6. Backfill: one project per distinct suffix-stripped budget id, with the
+--       budget's own name/address/type and a conservatively mapped status.
+--
+--  WHAT IT DOES NOT DO
+--    Nothing is re-keyed. dbo.Budgets keeps ProjectId as its primary key, and
+--    the SovLines / BudgetVersions / InvestmentAnalyses foreign keys are
+--    untouched. No row is deleted and no existing column changes type.
+--
+--  Sections: PREFLIGHT (read-only) → MIGRATION → VERIFICATION.
+--  ============================================================================
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
-/* ---------------------------------------------------------------------------
-   1 · PREFLIGHT — read-only. Run this on its own first and read the output.
-   --------------------------------------------------------------------------- */
+-- ---------------------------------------------------------------------------
+--  1 · PREFLIGHT — read-only. Run this on its own first and read the output.
+--  ---------------------------------------------------------------------------
 PRINT '=== PREFLIGHT ===';
 
 SELECT 'Budgets (active)'          AS Item, COUNT(*) AS N FROM dbo.Budgets WHERE IsDeleted = 0
@@ -70,9 +77,9 @@ WHERE ProjectId NOT LIKE '[A-Z][A-Z]-[0-9][0-9][0-9][0-9]'
   AND ProjectId NOT LIKE '[A-Z][A-Z]-[0-9][0-9][0-9][0-9]-[0-9][0-9]'
   AND ProjectId NOT LIKE '[A-Z][A-Z][A-Z]-[0-9][0-9][0-9][0-9]-[0-9][0-9]';
 
-/* ---------------------------------------------------------------------------
-   2 · MIGRATION
-   --------------------------------------------------------------------------- */
+-- ---------------------------------------------------------------------------
+--  2 · MIGRATION
+--  ---------------------------------------------------------------------------
 BEGIN TRANSACTION;
 BEGIN TRY
 
@@ -271,10 +278,10 @@ BEGIN CATCH
   THROW;
 END CATCH;
 
-/* ---------------------------------------------------------------------------
-   3 · VERIFICATION — one result set, because the portal exports only one.
-       Every row must read PASS.
-   --------------------------------------------------------------------------- */
+-- ---------------------------------------------------------------------------
+--  3 · VERIFICATION — one result set, because the portal exports only one.
+--      Every row must read PASS.
+--  ---------------------------------------------------------------------------
 SELECT Check_ AS [Check], Detail, CASE WHEN Pass = 1 THEN 'PASS' ELSE 'FAIL' END AS Result
 FROM (
   SELECT 1 AS Ord, 'dbo.Projects exists' AS Check_,

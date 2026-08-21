@@ -1,59 +1,59 @@
-/* ============================================================================
-   Publish the multifamily template's FULL operating-expense schedule
-   ----------------------------------------------------------------------------
-   Target : Azure SQL, the single fs-bd-budget database.
-   Run by : a database admin, in the Azure portal Query Editor.
-   When   : AFTER the release that ships the guard rails, and after
-            sql/migrate_projects_and_guardrails.sql. Order does not strictly
-            matter, but running this before the deploy would give new budgets a
-            schedule the deployed code does not yet know how to price
-            (`pctIncome` rows would contribute nothing until the code lands).
-
-   WHY THIS EXISTS
-     A new budget's expense rows come from the multifamily TEMPLATE, not from
-     the application constants — docs/DATA_CONTRACT.md, "Single source of truth
-     for new-budget defaults". The template published today carries six service
-     expenses (water, fiber, communications, valet trash, a dumpster, admin)
-     which total roughly 9% of gross income: utilities and trash, but no
-     property taxes, insurance, management fee, payroll, R&M, turnover,
-     marketing, G&A or reserves.
-
-     That is not an operating-expense picture, and it is why the 35–55% guard
-     rail and the derived investment-analysis expense ratio could not ship
-     against it. This script publishes a new template VERSION carrying the full
-     schedule, so every budget created after it starts inside the rail.
-
-   WHAT IT DOES
-     Reads the template's current version document, appends the missing expense
-     categories, stamps opexSchemaVersion = 2, demotes the current version and
-     inserts the new one. Publishing is append-only: the existing version is
-     never modified, and every budget already created from it keeps its exact
-     provenance.
-
-   WHAT IT DOES NOT DO
-     It does not touch a single existing budget. Those keep their own rows and
-     stay on opexSchemaVersion 1, which means the 35–55% rail WARNS them rather
-     than blocking — they are updated one at a time from the budget page's
-     Guard Rails card ("Update Expense Schedule"), by someone who knows the
-     property.
-
-   THE RATES ARE STARTING POINTS, NOT HOUSE NUMBERS.
-     They are chosen so the template lands at roughly 46% of income against its
-     own unit mix — inside the rail, and in the range a stabilised multifamily
-     asset actually runs at. Whoever owns the underwriting standard should
-     review them and republish. Editing this script and re-running it publishes
-     another version; nothing is overwritten.
-
-   Idempotent: re-running when the current version already carries the schedule
-   prints a notice and changes nothing.
-   ============================================================================ */
+-- ============================================================================
+--  Publish the multifamily template's FULL operating-expense schedule
+--  ----------------------------------------------------------------------------
+--  Target : Azure SQL, the single fs-bd-budget database.
+--  Run by : a database admin, in the Azure portal Query Editor.
+--  When   : AFTER the release that ships the guard rails, and after
+--           sql/migrate_projects_and_guardrails.sql. Order does not strictly
+--           matter, but running this before the deploy would give new budgets a
+--           schedule the deployed code does not yet know how to price
+--           (`pctIncome` rows would contribute nothing until the code lands).
+--
+--  WHY THIS EXISTS
+--    A new budget's expense rows come from the multifamily TEMPLATE, not from
+--    the application constants — docs/DATA_CONTRACT.md, "Single source of truth
+--    for new-budget defaults". The template published today carries six service
+--    expenses (water, fiber, communications, valet trash, a dumpster, admin)
+--    which total roughly 9% of gross income: utilities and trash, but no
+--    property taxes, insurance, management fee, payroll, R&M, turnover,
+--    marketing, G&A or reserves.
+--
+--    That is not an operating-expense picture, and it is why the 35–55% guard
+--    rail and the derived investment-analysis expense ratio could not ship
+--    against it. This script publishes a new template VERSION carrying the full
+--    schedule, so every budget created after it starts inside the rail.
+--
+--  WHAT IT DOES
+--    Reads the template's current version document, appends the missing expense
+--    categories, stamps opexSchemaVersion = 2, demotes the current version and
+--    inserts the new one. Publishing is append-only: the existing version is
+--    never modified, and every budget already created from it keeps its exact
+--    provenance.
+--
+--  WHAT IT DOES NOT DO
+--    It does not touch a single existing budget. Those keep their own rows and
+--    stay on opexSchemaVersion 1, which means the 35–55% rail WARNS them rather
+--    than blocking — they are updated one at a time from the budget page's
+--    Guard Rails card ("Update Expense Schedule"), by someone who knows the
+--    property.
+--
+--  THE RATES ARE STARTING POINTS, NOT HOUSE NUMBERS.
+--    They are chosen so the template lands at roughly 46% of income against its
+--    own unit mix — inside the rail, and in the range a stabilised multifamily
+--    asset actually runs at. Whoever owns the underwriting standard should
+--    review them and republish. Editing this script and re-running it publishes
+--    another version; nothing is overwritten.
+--
+--  Idempotent: re-running when the current version already carries the schedule
+--  prints a notice and changes nothing.
+--  ============================================================================
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
-/* ---------------------------------------------------------------------------
-   1 · PREFLIGHT — read-only.
-   --------------------------------------------------------------------------- */
+-- ---------------------------------------------------------------------------
+--  1 · PREFLIGHT — read-only.
+--  ---------------------------------------------------------------------------
 PRINT '=== PREFLIGHT ===';
 
 SELECT v.TemplateKey, v.VersionNumber, v.IsCurrent, v.PricingVersion,
@@ -64,9 +64,9 @@ FROM dbo.BudgetTemplateVersions AS v
 WHERE v.TemplateKey = 'multifamily'
 ORDER BY v.VersionNumber DESC;
 
-/* ---------------------------------------------------------------------------
-   2 · PUBLISH
-   --------------------------------------------------------------------------- */
+-- ---------------------------------------------------------------------------
+--  2 · PUBLISH
+--  ---------------------------------------------------------------------------
 BEGIN TRANSACTION;
 BEGIN TRY
 
@@ -86,14 +86,14 @@ BEGIN TRY
     RETURN;
   END
 
-  /* The categories to add, as a JSON array. `pctIncome` is the third expense
-     basis: a share of rent + other income, which is how management fees and
-     often property taxes are actually quoted. It is NOT circular — income does
-     not depend on expenses — so it is a straight computation in both
-     app/index.html and api/shared/budget-calc.js.
-
-     Only rows the template does not already carry are appended, matched by
-     label, so re-running after a partial edit cannot duplicate a category. */
+  -- The categories to add, as a JSON array. `pctIncome` is the third expense
+  --    basis: a share of rent + other income, which is how management fees and
+  --    often property taxes are actually quoted. It is NOT circular — income does
+  --    not depend on expenses — so it is a straight computation in both
+  --    app/index.html and api/shared/budget-calc.js.
+  --
+  --    Only rows the template does not already carry are appended, matched by
+  --    label, so re-running after a partial edit cannot duplicate a category.
   DECLARE @additions NVARCHAR(MAX) = N'[
     {"label":"Property Taxes","per":"pctIncome","rate":12,"count":0,"auto":false},
     {"label":"Property Insurance","per":"unit","rate":65,"count":0,"auto":true},
@@ -169,9 +169,9 @@ BEGIN CATCH
   THROW;
 END CATCH;
 
-/* ---------------------------------------------------------------------------
-   3 · VERIFICATION — one result set. Every row must read PASS.
-   --------------------------------------------------------------------------- */
+-- ---------------------------------------------------------------------------
+--  3 · VERIFICATION — one result set. Every row must read PASS.
+--  ---------------------------------------------------------------------------
 SELECT Check_ AS [Check], Detail, CASE WHEN Pass = 1 THEN 'PASS' ELSE 'FAIL' END AS Result
 FROM (
   SELECT 1 AS Ord, 'Current version carries the schedule' AS Check_,
