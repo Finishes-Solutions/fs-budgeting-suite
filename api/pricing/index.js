@@ -8,7 +8,13 @@ module.exports = async function (context, req) {
     const r = await pool.request().query(
       'SELECT TOP 1 Doc FROM dbo.PricingLibrary WHERE IsCurrent = 1 ORDER BY Effective DESC');
     if (!r.recordset.length) { context.res = { status: 404, body: 'No pricing library published' }; return; }
-    context.res = { headers: { 'Content-Type': 'application/json' }, body: r.recordset[0].Doc };
+    // no-store, and it is not belt and braces: a budget created moments after
+    // a publish must be born on the version that was just published. A cached
+    // response here is the difference between a new budget being current and
+    // it opening with an "update to current pricing" banner it has no business
+    // showing.
+    context.res = { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      body: r.recordset[0].Doc };
     return;
   }
 

@@ -14,7 +14,9 @@ const { projectFromBudget, currentPurchaseMonth } = require('../shared/investmen
 const { GUID_RX, jsonRes } = require('../shared/investment-persistence');
 const { ensureUser } = require('../shared/users');
 const { features } = require('../shared/schema');
-const { projectKeyOf } = require('../shared/projects');
+// A budget's project is a stored link now, never something derived from its
+// id — see api/shared/projects.js. The analysis reads that link so it rolls up
+// to the same project the budget belongs to.
 const D = require('../shared/investment/defaults');
 
 const ID_RX = /^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/;
@@ -89,7 +91,7 @@ module.exports = async function (context, req) {
   const body = req.body || {};
   const userName = principal ? (principal.userDetails || null) : null;
 
-  let input, projectId = null, sourceBudgetVersionId = null;
+  let input, projectId = null, sourceBudgetVersionId = null, projectKey = null;
 
   if (body.mode === 'fromBudget') {
     projectId = (body.projectId || '').toUpperCase();
@@ -105,14 +107,27 @@ module.exports = async function (context, req) {
     }
     // The join makes cross-project forgery impossible: the version must belong
     // to the named project, and the project must not be soft-deleted.
+    // The project columns come along for the ride: the analysis's Property
+    // Name and Address are the PROJECT's, not the budget id. That is the whole
+    // point of a budget being tied to a project — an analysis built from one
+    // should never end up named "BD-2108".
+    const pjFeat = await features(pool);
+    const pjCols = pjFeat.budgetsProjectKey && pjFeat.projectsTable
+      ? 'b.ProjectKey, pj.Name AS ProjectName, pj.Address AS ProjectAddress'
+      : `CAST(NULL AS VARCHAR(16)) AS ProjectKey, CAST(NULL AS NVARCHAR(200)) AS ProjectName,
+         CAST(NULL AS NVARCHAR(300)) AS ProjectAddress`;
+    const pjJoin = pjFeat.budgetsProjectKey && pjFeat.projectsTable
+      ? 'LEFT JOIN dbo.Projects AS pj ON pj.ProjectId = b.ProjectKey' : '';
     const r = await rq.query(
-      `SELECT v.Id, v.VersionNumber, v.Doc, v.Name, v.ContractSum, v.ProjectCost
+      `SELECT v.Id, v.VersionNumber, v.Doc, v.Name, v.ContractSum, v.ProjectCost, ${pjCols}
        FROM dbo.BudgetVersions AS v
        JOIN dbo.Budgets AS b ON b.ProjectId = v.ProjectId AND b.IsDeleted = 0
+       ${pjJoin}
        WHERE v.ProjectId = @pid AND ${versionFilter}`);
     if (!r.recordset.length) { context.res = jsonRes(404, { error: 'not_found', message: 'Budget version not found.' }); return; }
     const v = r.recordset[0];
     sourceBudgetVersionId = v.Id;
+    projectKey = v.ProjectKey || null;
 
     let doc;
     try { doc = JSON.parse(v.Doc); } catch (_) { doc = null; }
@@ -124,7 +139,8 @@ module.exports = async function (context, req) {
     // Gross Operating Income the engine multiplies. Building SF, never site SF
     // — see api/shared/investment/from-budget.js for why that distinction is
     // load-bearing.
-    const proj = projectFromBudget(doc, v, { projectId, vacancy: D.vacancy });
+    const proj = projectFromBudget(doc, v, { projectId, vacancy: D.vacancy,
+      projectName: v.ProjectName || '', projectAddress: v.ProjectAddress || '' });
     input = {
       schemaVersion: 1,
       analysisName: typeof body.analysisName === 'string' && body.analysisName.trim()
@@ -200,7 +216,7 @@ module.exports = async function (context, req) {
 
   const r = await pool.request()
     .input('pid', sql.VarChar(16), projectId)
-    .input('pkey', sql.VarChar(16), projectId ? projectKeyOf(projectId) : null)
+    .input('pkey', sql.VarChar(16), projectKey)
     .input('name', sql.NVarChar(200), input.analysisName)
     .input('sbv', sql.BigInt, sourceBudgetVersionId)
     .input('input', sql.NVarChar(sql.MAX), JSON.stringify(input))

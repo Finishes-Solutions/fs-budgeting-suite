@@ -69,11 +69,12 @@ CREATE INDEX IX_BudgetTemplateVersions_Template_VersionDesc
   ON dbo.BudgetTemplateVersions (TemplateKey, VersionNumber DESC);
 
 -- Projects — the parent of budgets and investment analyses. Its primary key is
--- what enforces "one project per ID". A project carries a base budget plus any
--- number of alternates (BD-0001, BD-0001-02, BD-0001-03 …), which is why the
--- budget id format below allows a two-digit suffix.
+-- what enforces "one project per ID", and that ID is OP-#### — a namespace of
+-- its own, never borrowed from a budget. A project carries a base budget plus
+-- any number of alternates (BD-0001, BD-0001-02, BD-0001-03 …), which is why
+-- the budget id format below allows a two-digit suffix.
 CREATE TABLE dbo.Projects (
-    ProjectId       VARCHAR(16)    NOT NULL,
+    ProjectId       VARCHAR(16)    NOT NULL,   -- OP-####
     Name            NVARCHAR(200)  NOT NULL CONSTRAINT DF_Projects_Name     DEFAULT (N''),
     Address         NVARCHAR(300)  NOT NULL CONSTRAINT DF_Projects_Address  DEFAULT (N''),
     Type            NVARCHAR(50)   NOT NULL CONSTRAINT DF_Projects_Type     DEFAULT (N'Multifamily'),
@@ -96,9 +97,11 @@ CREATE TABLE dbo.Projects (
     IsDeleted       BIT            NOT NULL CONSTRAINT DF_Projects_IsDeleted DEFAULT (0),
     DeletedAt       DATETIME2      NULL,
     CONSTRAINT PK_Projects PRIMARY KEY (ProjectId),
+    -- A project id is its OWN namespace: OP-####, never a budget id. See
+    -- sql/migrate_project_op_ids.sql and sql/widen_project_op_ids.sql for the
+    -- migration that brought an existing database to this end state.
     CONSTRAINT CK_Projects_IdFormat CHECK (
-      ProjectId LIKE '[A-Z][A-Z]-[0-9][0-9][0-9][0-9]'
-      OR ProjectId LIKE '[A-Z][A-Z][A-Z]-[0-9][0-9][0-9][0-9]')
+      ProjectId LIKE 'OP-[0-9][0-9][0-9][0-9]' AND LEN(ProjectId) = 7)
 );
 CREATE INDEX IX_Projects_Status_Updated ON dbo.Projects (Status, UpdatedAt DESC) WHERE IsDeleted = 0;
 CREATE INDEX IX_Projects_Converted ON dbo.Projects (ConvertedAt DESC)

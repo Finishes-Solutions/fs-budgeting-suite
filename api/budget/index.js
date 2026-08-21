@@ -5,7 +5,9 @@ const { sovRows, writeSovLines, insertVersion } = require('../shared/versioning'
 const { parts, grossIncome } = require('../shared/budget-calc');
 const { features } = require('../shared/schema');
 const FSGuardrails = require('../shared/guardrails');
-const { updateProject, ensureProject, projectKeyOf, PROJECT_ID_RX } = require('../shared/projects');
+const P = require('../shared/projects');
+const { updateProject, createProject, deleteProject, linkBudgetToProject,
+        PROJECT_ID_RX } = P;
 
 // TST-#### are throwaway test budgets used to exercise preview environments against
 // this same database. They are real rows; sql/cleanup_test_budgets.sql purges them and
@@ -18,20 +20,53 @@ module.exports = async function (context, req) {
   const id = (context.bindingData.id || '').toUpperCase();
   const pool = await getPool();
 
-  // ---- PUT /api/budget/{id}?scope=project — project metadata and status.
-  // A route rule matches paths, not query strings, so it cannot see this
-  // scope: the signed-in check here is the real gate, not defence in depth.
-  if (req.method === 'PUT' && String((req.query && req.query.scope) || '') === 'project') {
+  // ---- ?scope=project — the project surface, on an endpoint that already
+  // deploys. A route rule matches paths, not query strings, so it cannot see
+  // this scope: the signed-in check here is the real gate, not defence in
+  // depth.
+  //
+  //   PUT    + {create:true}      create a project
+  //   PUT                         metadata, status, Make Primary
+  //   DELETE                      soft-delete, cascading to its children
+  if (String((req.query && req.query.scope) || '') === 'project'
+      && (req.method === 'PUT' || req.method === 'DELETE')) {
     const principal = getPrincipal(req);
     if (!principal && !process.env.FS_ALLOW_ANON) {
       context.res = { status: 401, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'unauthenticated', message: 'Sign in to change a project.' }) };
       return;
     }
+    // The project id namespace, and the message the New Project form shows
+    // against its own field.
     if (!PROJECT_ID_RX.test(id)) {
-      context.res = { status: 400, body: 'Invalid project ID (OP-#### / BD-#### / AS-#### / TST-####)' }; return;
+      context.res = { status: 400, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'bad_project_id', field: 'projectId',
+                               message: 'Use the format OP-####.' }) };
+      return;
+    }
+    if (req.method === 'DELETE') { context.res = await deleteProject(pool, id, principal); return; }
+    if (req.body && req.body.create === true) {
+      context.res = await createProject(pool, id, req.body, principal);
+      return;
     }
     context.res = await updateProject(pool, id, req.body, principal);
+    return;
+  }
+
+  // ---- GET /api/budget/{id}?scope=next-budget-id — the lowest free BD-####.
+  // Lives here rather than on /api/budgets so the New Budget flow can ask for
+  // one without pulling the whole index. The {id} segment is ignored; the
+  // route needs a segment and the id namespace check below would reject a
+  // placeholder, so this is answered before it.
+  if (req.method === 'GET' && String((req.query && req.query.scope) || '') === 'next-budget-id') {
+    const principal = getPrincipal(req);
+    if (!principal && !process.env.FS_ALLOW_ANON) {
+      context.res = { status: 401, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'unauthenticated', message: 'Sign in first.' }) };
+      return;
+    }
+    context.res = { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      body: JSON.stringify({ budgetId: await P.nextBudgetId(pool) }) };
     return;
   }
 
@@ -87,6 +122,46 @@ module.exports = async function (context, req) {
   if (!doc || !meta) { context.res = { status: 400, body: 'Body must be { meta, doc }' }; return; }
   if ((doc.projectId || '').toUpperCase() !== id) { context.res = { status: 400, body: 'Body projectId must match route' }; return; }
 
+  // Building square footage is REQUIRED and must be greater than zero.
+  //
+  // This is the authoritative half of the check, and it exists because of what
+  // happens downstream: an investment analysis imports the building size from
+  // the budget, and a budget saved with no size produced an analysis that
+  // could never calculate. Refusing the empty budget at the source is the fix;
+  // the form refuses it first as a courtesy.
+  //
+  // resSF + amenSF is the BUILDING, which is exactly what the analysis
+  // imports — site area is land and has never counted toward it.
+  {
+    const bldgSF = (Number(doc.resSF) || 0) + (Number(doc.amenSF) || 0);
+    if (!(bldgSF > 0)) {
+      context.res = { status: 422, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'size_required', field: 'resSF',
+          message: 'Square footage is required — enter a building size greater than zero before saving.' }) };
+      return;
+    }
+  }
+
+  // Which project this budget belongs to. A budget id can no longer name a
+  // project, so the link has to be stated: the client sends it, and it is
+  // checked against a real project row. It is only REQUIRED on a create —
+  // budgets saved before sql/migrate_project_op_ids.sql already carry their
+  // ProjectKey and must keep saving without one being resent.
+  const wantsCreate = req.body.create === true;
+  const projectKey = meta.projectKey ? String(meta.projectKey).toUpperCase() : null;
+  if (projectKey && !PROJECT_ID_RX.test(projectKey)) {
+    context.res = { status: 400, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'bad_project_id', field: 'projectKey',
+        message: 'A budget belongs to a project whose ID looks like OP-####.' }) };
+    return;
+  }
+  if (wantsCreate && !projectKey) {
+    context.res = { status: 400, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'project_required', field: 'projectKey',
+        message: 'Choose the project this budget belongs to.' }) };
+    return;
+  }
+
   // Guard rails, re-evaluated from the SUBMITTED DOCUMENT — never from a
   // client-supplied verdict. The browser refuses the save first as a courtesy;
   // this is the gate. A rail whose denominator is zero is not evaluated, so a
@@ -128,29 +203,39 @@ module.exports = async function (context, req) {
   // Version numbers are serialized by the locks below and enforced by
   // UQ_BudgetVersions_Version. A duplicate can still surface if two saves race
   // in the window before the lock is taken, so retry once rather than 500.
+  //
+  // On a CREATE the save refuses to land on an id that is already taken.
+  // Without this a brand-new budget typed against an existing id silently
+  // replaced that budget and versioned the replacement as its next revision —
+  // the original survived only in history. The check happens inside the save
+  // transaction, under the lock that already serialises first-saves, so two
+  // concurrent creates cannot both win.
   let result;
   for (let attempt = 0; ; attempt++) {
     try { result = await save(); break; }
     catch (e) {
+      if (e && e.fsBudgetIdTaken) {
+        context.res = { status: 409, headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ error: 'budget_id_taken', field: 'projectId',
+            message: 'Budget ' + id + ' already exists. Choose another Budget ID.',
+            suggestion: await P.nextBudgetId(pool) }) };
+        return;
+      }
       if (attempt === 0 && DUP_KEY.has(e.number)) continue;
       throw e;
     }
   }
-  // A budget always belongs to a project. Creating the parent (and stamping the
-  // link) is best effort and outside the save transaction on purpose: a project
-  // row that cannot be written must never cost someone their budget.
-  if (schemaFeatures.projectsTable && schemaFeatures.budgetsProjectKey) {
+  // Stamp which project this budget belongs to. Only when the client said —
+  // a save that does not mention a project leaves the existing link alone,
+  // which is what every edit of an existing budget does.
+  if (projectKey && schemaFeatures.projectsTable && schemaFeatures.budgetsProjectKey) {
     try {
-      await ensureProject(pool, id, { name: meta.name || doc.name, address: doc.address,
-                                      type: meta.type || doc.type, userId, userName });
-      await pool.request()
-        .input('id', sql.VarChar(16), id)
-        .input('pk', sql.VarChar(16), projectKeyOf(id))
-        .query('UPDATE dbo.Budgets SET ProjectKey = @pk WHERE ProjectId = @id AND ProjectKey IS NULL');
+      await linkBudgetToProject(pool, id, projectKey);
     } catch (e) { context.log && context.log.warn && context.log.warn('project link skipped: ' + e.message); }
   }
 
-  context.res = { status: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(result) };
+  context.res = { status: 200, headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign({ projectKey: projectKey || null }, result)) };
   // Best-effort audit trail — recordActivity never throws.
   if (result.versionCreated)
     await require('../shared/users').recordActivity(pool, principal, 'budget_save', 'budget', id,
@@ -167,6 +252,16 @@ module.exports = async function (context, req) {
                        TemplateKey, TemplateVersionId, Doc, IsDeleted
                 FROM dbo.Budgets WITH (UPDLOCK, HOLDLOCK) WHERE ProjectId = @id`);
       const existing = cur.recordset[0] || null;
+
+      // A create must not land on an occupied id. A soft-deleted row is still
+      // occupied: restoring it is what an ordinary save does, and doing it
+      // silently under a "new budget" would be just as surprising.
+      if (wantsCreate && existing) {
+        await tx.rollback();
+        const err = new Error('Budget ' + id + ' already exists');
+        err.fsBudgetIdTaken = true;
+        throw err;
+      }
 
       const top = await new sql.Request(tx).input('id', sql.VarChar(16), id)
         .query(`SELECT TOP 1 VersionNumber, ContentHash, Doc
@@ -267,6 +362,11 @@ module.exports = async function (context, req) {
 
       await tx.commit();
       return { ok: true, versionNumber, versionCreated };
-    } catch (e) { await tx.rollback(); throw e; }
+    } catch (e) {
+      // The id-taken path rolls back before throwing, so a second rollback
+      // here would fail on a transaction that is already gone.
+      if (!e || !e.fsBudgetIdTaken) { try { await tx.rollback(); } catch (_) { /* already rolled back */ } }
+      throw e;
+    }
   }
 };

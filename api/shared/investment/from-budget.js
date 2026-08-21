@@ -59,8 +59,12 @@ function projectFromBudget(doc, v, opts) {
 
   const imported = {
     property: {
-      name: doc.name || v.Name || projectId,
-      address: doc.address || '',
+      // The PROJECT's name first, because that is what the property is
+      // actually called. The budget's own name is the fallback, and the id is
+      // the last resort — an analysis called "BD-2108" is a symptom of a
+      // budget that was never tied to a project, not a name.
+      name: doc.name || opts.projectName || v.Name || projectId,
+      address: doc.address || opts.projectAddress || '',
       // Rule 1. The building, never the land.
       size: { unit: 'squareFeet', value: bldgSF },
       unitCount: tu || null

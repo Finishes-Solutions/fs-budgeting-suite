@@ -73,6 +73,11 @@
 --    dbo.ProjectIdMap and restores the JSON columns from the section-2 backup
 --    tables. Azure SQL point-in-time restore remains the outer safety net.
 --
+--  FOLLOW-UP, REQUIRED: this script mints THREE-digit ids (OP-001). The
+--  product rule is four digits, so sql/widen_project_op_ids.sql must be run
+--  straight afterwards; it pads every id to OP-0001 and keeps dbo.ProjectIdMap
+--  in step. A fresh database runs both, in that order.
+--
 --  Sections: 1 PREFLIGHT (read-only) -> 2 BACKUP -> 3 FORWARD MIGRATION ->
 --            4 DATA BACKFILL -> 5 CONSTRAINTS/INDEXES -> 6 VERIFICATION.
 -- ============================================================================

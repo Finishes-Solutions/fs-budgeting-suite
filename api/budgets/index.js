@@ -2,7 +2,7 @@ const { getPool, sql } = require('../shared/db');
 const { getPrincipal } = require('../shared/auth');
 const { ensureUser } = require('../shared/users');
 const { features } = require('../shared/schema');
-const { listProjects, getProject, jsonRes } = require('../shared/projects');
+const { listProjects, getProject, nextProjectId, jsonRes } = require('../shared/projects');
 
 const FULL_VISIBILITY_ROLES = new Set(['director', 'super_admin']);
 
@@ -35,9 +35,16 @@ module.exports = async function (context, req) {
   // principal and the same ownership rule as the budget list itself — that
   // in-function check is the real gate here, not defence in depth.
   const scope = String((req.query && req.query.scope) || '');
-  if (scope === 'projects' || scope === 'project') {
+  if (scope === 'projects' || scope === 'project' || scope === 'next-project-id') {
     if (!principal && !process.env.FS_ALLOW_ANON) {
       context.res = jsonRes(401, { error: 'unauthenticated', message: 'Sign in to view projects.' });
+      return;
+    }
+    // What the New Project dialog offers as a starting point. Only a
+    // suggestion: the field stays editable and the server still enforces both
+    // the OP-### shape and uniqueness on the create itself.
+    if (scope === 'next-project-id') {
+      context.res = jsonRes(200, { projectId: await nextProjectId(pool) });
       return;
     }
     if (scope === 'projects') {
