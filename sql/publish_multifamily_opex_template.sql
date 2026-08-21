@@ -79,12 +79,18 @@ BEGIN TRY
   IF @curId IS NULL
     THROW 50010, 'No current multifamily template version. Run sql/migrate_budget_history_and_templates.sql first.', 1;
 
+  -- A flag rather than RETURN: RETURN exits the whole batch, which would skip
+  -- the verification section below — and on a re-run that section is the only
+  -- output worth reading.
+  DECLARE @alreadyDone BIT = 0;
   IF TRY_CONVERT(INT, JSON_VALUE(@doc, '$.opexSchemaVersion')) >= 2
   BEGIN
     PRINT 'The current multifamily template already carries the full expense schedule — nothing to do.';
-    COMMIT TRANSACTION;
-    RETURN;
+    SET @alreadyDone = 1;
   END
+
+  IF @alreadyDone = 0
+  BEGIN
 
   -- The categories to add, as a JSON array. `pctIncome` is the third expense
   --    basis: a share of rent + other income, which is how management fees and
@@ -108,23 +114,34 @@ BEGIN TRY
 
   -- Rebuild the expenses array: everything already there, then whatever is
   -- genuinely missing. Existing rows keep their rates untouched.
+  --
+  -- Built with STRING_AGG rather than FOR XML PATH + STUFF. The STUFF offset
+  -- arithmetic inserted a separator on top of one that was already there and
+  -- produced [{...},,{...}] — the ISJSON guard below caught it, but the lesson
+  -- is that the construction was unreadable enough to hide the fault. STRING_AGG
+  -- puts the separator BETWEEN elements and nowhere else, and CONCAT_WS drops a
+  -- NULL side, so a template carrying no expenses at all still composes.
+  --
+  -- WITHIN GROUP (ORDER BY the array index) keeps the rows in the order the
+  -- template stored them: STRING_AGG has no inherent order, and expense order
+  -- is what the user sees on the budget page.
+  DECLARE @existingRows NVARCHAR(MAX) = (
+    SELECT STRING_AGG(CAST(e.value AS NVARCHAR(MAX)), N',')
+             WITHIN GROUP (ORDER BY CAST(e.[key] AS INT))
+    FROM OPENJSON(@doc, '$.expenses') AS e);
+
+  DECLARE @missingRows NVARCHAR(MAX) = (
+    SELECT STRING_AGG(CAST(a.value AS NVARCHAR(MAX)), N',')
+             WITHIN GROUP (ORDER BY CAST(a.[key] AS INT))
+    FROM OPENJSON(@additions) AS a
+    WHERE NOT EXISTS (
+      SELECT 1 FROM OPENJSON(@doc, '$.expenses') AS e2
+      WHERE LOWER(LTRIM(RTRIM(JSON_VALUE(e2.value, '$.label'))))
+          = LOWER(LTRIM(RTRIM(JSON_VALUE(a.value, '$.label'))))));
+
   DECLARE @expenses NVARCHAR(MAX) =
-    N'[' +
-    ISNULL(STUFF((
-      SELECT N',' + e.value
-      FROM OPENJSON(@doc, '$.expenses') AS e
-      FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, N''), N'') +
-    ISNULL(STUFF((
-      SELECT N',' + a.value
-      FROM OPENJSON(@additions) AS a
-      WHERE NOT EXISTS (
-        SELECT 1 FROM OPENJSON(@doc, '$.expenses') AS e2
-        WHERE LOWER(LTRIM(RTRIM(JSON_VALUE(e2.value, '$.label'))))
-            = LOWER(LTRIM(RTRIM(JSON_VALUE(a.value, '$.label')))))
-      FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'),
-      1, CASE WHEN EXISTS (SELECT 1 FROM OPENJSON(@doc, '$.expenses')) THEN 0 ELSE 1 END,
-      CASE WHEN EXISTS (SELECT 1 FROM OPENJSON(@doc, '$.expenses')) THEN N',' ELSE N'' END), N'') +
-    N']';
+    N'[' + ISNULL(CONCAT_WS(N',', NULLIF(@existingRows, N''),
+                                  NULLIF(@missingRows, N'')), N'') + N']';
 
   IF ISJSON(@expenses) <> 1
     THROW 50011, 'Composed expense schedule is not valid JSON — aborting.', 1;
@@ -161,6 +178,8 @@ BEGIN TRY
   UPDATE dbo.BudgetTemplates SET UpdatedAt = SYSUTCDATETIME() WHERE TemplateKey = 'multifamily';
 
   PRINT CONCAT('Published multifamily template v', @curNo + 1, ' with the full expense schedule.');
+  END
+
   COMMIT TRANSACTION;
 END TRY
 BEGIN CATCH
@@ -181,13 +200,35 @@ FROM (
   FROM dbo.BudgetTemplateVersions AS v
   WHERE v.TemplateKey = 'multifamily' AND v.IsCurrent = 1
   UNION ALL
+  -- By NAME, not by a row count: a count of 16 says nothing about WHICH rows
+  -- landed, and would pass just as happily on sixteen copies of the wrong one.
   SELECT 2, 'Every expense category present',
          CONCAT((SELECT COUNT(*) FROM dbo.BudgetTemplateVersions AS v2
                  CROSS APPLY OPENJSON(v2.Doc, '$.expenses')
-                 WHERE v2.TemplateKey = 'multifamily' AND v2.IsCurrent = 1), ' rows'),
-         CASE WHEN (SELECT COUNT(*) FROM dbo.BudgetTemplateVersions AS v3
-                    CROSS APPLY OPENJSON(v3.Doc, '$.expenses')
-                    WHERE v3.TemplateKey = 'multifamily' AND v3.IsCurrent = 1) >= 16 THEN 1 ELSE 0 END
+                 WHERE v2.TemplateKey = 'multifamily' AND v2.IsCurrent = 1),
+                ' rows; missing: ',
+                ISNULL((SELECT STRING_AGG(r.label, ', ') FROM (VALUES
+                    ('Property Taxes'),('Property Insurance'),('Property Management Fee'),
+                    ('On-Site Payroll'),('Repairs & Maintenance'),('Turnover / Make-Ready'),
+                    ('Marketing & Leasing'),('General & Administrative'),
+                    ('Landscaping & Amenity Upkeep'),('Replacement Reserves')) AS r(label)
+                  WHERE NOT EXISTS (
+                    SELECT 1 FROM dbo.BudgetTemplateVersions AS vx
+                    CROSS APPLY OPENJSON(vx.Doc, '$.expenses') AS ex
+                    WHERE vx.TemplateKey = 'multifamily' AND vx.IsCurrent = 1
+                      AND LOWER(LTRIM(RTRIM(JSON_VALUE(ex.value, '$.label')))) = LOWER(r.label))),
+                  'none')),
+         CASE WHEN NOT EXISTS (SELECT 1 FROM (VALUES
+                    ('Property Taxes'),('Property Insurance'),('Property Management Fee'),
+                    ('On-Site Payroll'),('Repairs & Maintenance'),('Turnover / Make-Ready'),
+                    ('Marketing & Leasing'),('General & Administrative'),
+                    ('Landscaping & Amenity Upkeep'),('Replacement Reserves')) AS r(label)
+                  WHERE NOT EXISTS (
+                    SELECT 1 FROM dbo.BudgetTemplateVersions AS vy
+                    CROSS APPLY OPENJSON(vy.Doc, '$.expenses') AS ey
+                    WHERE vy.TemplateKey = 'multifamily' AND vy.IsCurrent = 1
+                      AND LOWER(LTRIM(RTRIM(JSON_VALUE(ey.value, '$.label')))) = LOWER(r.label)))
+              THEN 1 ELSE 0 END
   UNION ALL
   SELECT 3, 'Exactly one current version',
          CONCAT((SELECT COUNT(*) FROM dbo.BudgetTemplateVersions
