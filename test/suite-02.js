@@ -357,8 +357,9 @@ const BASE = 'http://127.0.0.1:8100';
      await p.locator('#profileMenu .rowmenu-item:has-text("Sign Out")').isVisible());
   await p.keyboard.press('Escape'); await p.waitForTimeout(150);
   ok('Escape closes the account menu', !(await p.locator('#profileMenu').isVisible()));
-  ok('Sign Out targets the SWA logout route',
-     /^\/\.auth\/logout\?post_logout_redirect_uri=/.test(await p.evaluate(() => logoutUrl())),
+  ok('Sign Out targets the SWA logout route, and lands on the sign-in screen',
+     (await p.evaluate(() => logoutUrl()))
+       === '/.auth/logout?post_logout_redirect_uri=' + encodeURIComponent('/login.html'),
      await p.evaluate(() => logoutUrl()));
   // A dirty budget must not be discarded silently by signing out.
   const stayed = await p.evaluate(async () => {

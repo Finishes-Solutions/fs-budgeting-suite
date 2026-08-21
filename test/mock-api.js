@@ -535,11 +535,15 @@ http.createServer((req, res) => {
       }
       return json(res, 405, { error: 'method_not_allowed' });
     }
+    // welcomeSeen is seeded TRUE here, unlike a real first sign-in: every suite
+    // boots a fresh mock, and a first-run welcome would sit over the page and
+    // swallow the first click in all of them. Suite 15 turns it off explicitly
+    // to exercise the first-run path, which is the only place it is under test.
     if (!mockUsers.has(uid)) mockUsers.set(uid, {
       userDetails: principal.clientPrincipal.userDetails, displayName: null,
       email: principal.clientPrincipal.userDetails,   // locked to the sign-in account
       phone: null, appRole: 'super_admin',
-      settings: {}, firstSeenAt: new Date().toISOString(),
+      settings: { welcomeSeen: true }, firstSeenAt: new Date().toISOString(),
       lastSeenAt: new Date(0).toISOString(), loginCount: 0 });
     const u = mockUsers.get(uid);
     const resp = () => json(res, 200, {

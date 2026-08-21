@@ -438,6 +438,16 @@ html[data-theme=dark] .wf-steps button.flag{background:#2a2317;border-color:#4d4
    because `.card-hd h2` (0,1,1) out-specifies a bare `.mod-title` (0,1,0) and
    would otherwise hold every dialog title at the 15px section-header scale. */
 .card-hd .mod-title{margin:0;font-size:19px;font-weight:800;letter-spacing:-.015em}
+/* First-run welcome. Deliberately plain: three lines about what the tool is,
+   set in the same dialog shell as every other sheet, so it reads as part of
+   the app rather than as an ad in front of it. */
+.wel-lead{margin:0 0 16px;font-size:14px;color:var(--ink-700);line-height:1.6}
+.wel-list{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.wel-list li{position:relative;padding-left:16px;font-size:13.5px;color:var(--ink-700);line-height:1.55}
+.wel-list li:before{content:'';position:absolute;left:0;top:8px;width:6px;height:6px;
+  border-radius:50%;background:var(--green-600)}
+.wel-list b{color:var(--ink-900);font-weight:700}
+.wel-note{margin:18px 0 0;font-size:12.5px;color:var(--ink-500)}
 .grid{display:grid;gap:14px}.g5{grid-template-columns:repeat(5,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
 @media(max-width:900px){.g4,.g5{grid-template-columns:1fr 1fr}}
 
@@ -833,7 +843,7 @@ th.sortable.sorted{color:var(--ink-900)}
     --green-600:#0a7a36!important;--green-500:#1f9249!important;--green-200:#c2e3d0!important;
     --green-100:#e2f1e8!important;--green-50:#f1f8f4!important}
   .no-print,.banner,.toast,#exportModal,#pickModal,#versionsModal,#rowMenu,#bootScreen,
-  #profileMenu{display:none!important}
+  #welcomeModal,#profileMenu{display:none!important}
   /* direct children only — the report has its own <header> and must not be hidden */
   body.printing > header,body.printing > main{display:none!important}
   body.printing #printDoc{display:block}
@@ -2362,6 +2372,34 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
 </div>
 
+<!-- ================= WELCOME (FIRST RUN) =================
+     Shown once, to a genuinely new account, after Home has painted. What it
+     says is a summary, not a tour: the guide is one click away for the rest.
+     Dismissal writes `welcomeSeen` to the account settings, so it follows the
+     user rather than the browser. -->
+<div id="welcomeModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:70;align-items:center;justify-content:center;padding:20px 14px"
+  onclick="if(event.target===this)closeWelcome()">
+  <div class="card mod-sheet" style="width:480px;max-width:94vw;margin:0" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+    <div class="card-hd"><h2 class="mod-title" id="welcomeTitle">Welcome to the Budgeting Suite</h2>
+      <button class="btn-x" onclick="closeWelcome()" aria-label="Close welcome">&times;</button></div>
+    <div class="card-bd" style="padding:20px 26px 24px">
+      <p class="wel-lead">This is where a multifamily project gets priced: build the budget,
+        check the returns, and send out the report.</p>
+      <ul class="wel-list">
+        <li><b>Projects</b> &mdash; one project per ID, with every budget and analysis that belongs to it.</li>
+        <li><b>Budgets</b> &mdash; a schedule of values priced from the published library, with a saved version every time the numbers change.</li>
+        <li><b>Investment Analysis</b> &mdash; returns for a budget you have already built.</li>
+        <li><b>Exports</b> &mdash; a branded PDF report and an Excel workbook, straight from the budget.</li>
+      </ul>
+      <p class="wel-note">Your settings and favorites save to your account, so they follow you to any signed-in browser.</p>
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:22px">
+        <button class="btn btn-ghost" onclick="closeWelcome();go('help')">Open the Guide</button>
+        <button class="btn btn-primary" id="welcomeGo" onclick="closeWelcome()">Get Started</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ================= COLD-START SCREEN ================= -->
 <div id="bootScreen" role="status" aria-live="polite">
   <div class="boot-card">
@@ -2921,6 +2959,33 @@ async function saveProfile(){
     toast('Profile saved to your account.');
   }catch(e){toast('Could not save your profile — '+e.message);}
 }
+/* ---- first-run welcome ----
+   One short introduction, once per ACCOUNT. Both gates come from what boot has
+   already loaded, so this costs no extra request: a first session
+   (`loginCount` 1) and a welcome not yet dismissed. The login gate is what
+   keeps an established account — whose stored settings simply predate the
+   flag — from being interrupted by it. With no settings at all (signed out, or
+   the API down) nothing shows: an offline boot is not evidence of a first run. */
+function maybeShowWelcome(){
+  if(!principal||!US.settings)return;
+  if(US.settings.welcomeSeen===true)return;
+  if(Number(US.loginCount||0)>1)return;
+  showWelcome();
+}
+function showWelcome(){
+  const m=document.getElementById('welcomeModal');if(!m)return;
+  m.style.display='flex';
+  const b=document.getElementById('welcomeGo');if(b)b.focus();
+}
+/* Closing IS the dismissal, whichever way it is closed — button, ×, backdrop,
+   or Escape. chooseSetting rides the same debounced save every preference
+   uses, so the flag reaches the account without a save button of its own. */
+function closeWelcome(){
+  const m=document.getElementById('welcomeModal');if(!m)return;
+  if(m.style.display==='none')return;
+  m.style.display='none';
+  if(US.settings&&US.settings.welcomeSeen!==true)chooseSetting('welcomeSeen',true);
+}
 /* ---- Admin: user role management (super_admin only) ---- */
 const ADMIN_ROLES=['user','manager','director','super_admin'];
 const ROLE_LABELS={user:'User',manager:'Manager',director:'Director',super_admin:'Super Admin'};
@@ -3161,6 +3226,17 @@ async function api(path,opts={}){
     r=await fetch('/api/'+path,{headers:{'Content-Type':'application/json'},...opts});
   }catch(e){setApiHealth(false,'Cannot reach the server — check your connection, then reload.');throw new Error('Network error: '+e.message);}
   if(r.status>=500){const t=await r.text();setApiHealth(false,'The server returned '+r.status+' on /api/'+path+'. Saves will fail until this clears.');throw new Error('API '+r.status+': '+t);}
+  /* A session that has expired is answered by the platform, not by our
+     Functions: the 401 override in staticwebapp.config.json turns it into a
+     302 to the sign-in screen, so what lands here is a 200 of HTML. Left
+     alone that parses as `null` and reads to the caller like an empty success.
+     Deliberately NOT an automatic redirect — whatever is on screen may be
+     unsaved, so the user decides when to leave it. */
+  if(r.redirected&&/\/login\.html(\?|#|$)/.test(r.url)){
+    setApiHealth(false,'Your session has ended. Sign in again to keep working — '
+      +'open '+location.origin+'/login.html in another tab, then reload this page.');
+    throw new Error('Session expired: sign in again');
+  }
   setApiHealth(true);
   if(r.status===403)throw new Error('Not authorized (pricing_admin role required)');
   const ct=r.headers.get('content-type')||'';
@@ -3357,11 +3433,12 @@ function closeProfile(refocus){
 }
 
 /* Ending the session is a full navigation to the SWA logout route, which clears
-   the auth cookie and returns to the app — the app then redirects to sign-in,
-   where the account picker appears (prompt=select_account in
-   staticwebapp.config.json) so a different account can be chosen. */
+   the auth cookie and returns to the sign-in screen, where the account picker
+   appears (prompt=select_account in staticwebapp.config.json) so a different
+   account can be chosen. It names /login.html rather than '/' only to save a
+   hop: '/' would 401 and the override would land on the same page. */
 function logoutUrl(){
-  return '/.auth/logout?post_logout_redirect_uri='+encodeURIComponent('/');
+  return '/.auth/logout?post_logout_redirect_uri='+encodeURIComponent('/login.html');
 }
 async function logout(){
   closeProfile(false);
@@ -6696,7 +6773,7 @@ function wireDelegates(){
     c.addEventListener('change',()=>rememberExportOptions('budget',sel())));
   mountBudgetsList('budgets','budgetsHost');
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();closeNewBudget();closeStatusMenu();
+    if(e.key==='Escape'){closeExport();closePick();palClose();closeSettings();closeNewBudget();closeWelcome();closeStatusMenu();
       if(window.FSFeedback)FSFeedback.close();return;}
     // Cmd/Ctrl+K opens the global search palette from anywhere in the app.
     if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();palToggle();return;}
@@ -6951,6 +7028,7 @@ function endBoot(){
     await routeFromHash();
     if(!location.hash)syncHash(currentPage);
     renderSaveState();
+    maybeShowWelcome();   // last: a first-run account meets a painted app, not an empty one
   }finally{
     // Whatever happened — including the API being down — the app must become
     // usable rather than sitting behind the overlay forever. The offline banner

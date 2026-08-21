@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign In · Budgeting Suite</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<!-- The ONLY page in this app that anonymous visitors may load
+     (app/staticwebapp.config.json allows /login.html; everything else is
+     `authenticated` and its 401 override redirects here). So it is standalone
+     on purpose: it cannot read the account's theme or accent — those live
+     behind the very sign-in this page is asking for — and it must not import
+     anything from index.html. Inline CSS + inline JS, no build step, like the
+     rest of the frontend. -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --green-700:#006527;--green-600:#0a7a36;
+  --ink-950:#0b0d0c;--ink-900:#16191a;--ink-800:#23282a;--ink-500:#6b7174;
+  --ink-400:#939a9d;--ink-200:#dde1e2;--ink-100:#f1f3f3;--ink-50:#f8f9f9;--white:#fff;
+  --danger:#b42318;
+  --fb:'Montserrat',system-ui,sans-serif;--fm:'IBM Plex Mono',ui-monospace,monospace;
+  --r:4px;--rm:6px;
+  --page:var(--ink-50);--card:var(--white);--bd:var(--ink-200);
+  --tx:var(--ink-800);--tx-dim:var(--ink-500);--mark:var(--ink-900);
+  --sh:0 1px 2px rgba(11,13,12,.06),0 10px 30px rgba(11,13,12,.08);
+}
+/* The account's stored theme is unreachable before sign-in, so the OS
+   preference is the only signal this page has. */
+@media (prefers-color-scheme:dark){
+  :root{--page:#0f1211;--card:#181c1b;--bd:#2b3130;--tx:#e6e9e8;--tx-dim:#9aa1a0;
+    --mark:#fff;--sh:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.45)}
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:var(--fb);background:var(--page);color:var(--tx);
+  font-size:14px;line-height:1.5;display:flex;align-items:center;justify-content:center;padding:24px}
+.wrap{width:100%;max-width:392px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--rm);
+  box-shadow:var(--sh);padding:38px 34px 30px;text-align:center}
+.mark{display:block;width:196px;max-width:70%;height:auto;margin:0 auto 26px;color:var(--mark)}
+/* The lockup above already says whose product this is, so the heading says
+   only which one. */
+h1{font-size:19px;font-weight:700;letter-spacing:-.01em;margin:0 0 22px;color:var(--tx)}
+/* Microsoft's sign-in button spec: their four-square mark, unaltered, on a
+   plain dark or light field with "Sign in with Microsoft" beside it. */
+.ms{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
+  padding:13px 16px;border:1px solid var(--ink-900);border-radius:var(--r);
+  background:var(--ink-900);color:#fff;font-family:var(--fb);font-size:14px;font-weight:600;
+  text-decoration:none;cursor:pointer;transition:background .15s,box-shadow .15s}
+.ms:hover{background:var(--ink-800)}
+.ms:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(10,122,54,.42)}
+@media (prefers-color-scheme:dark){
+  .ms{background:#fff;border-color:#fff;color:var(--ink-950)}
+  .ms:hover{background:#e6e9e8}
+}
+.ms svg{flex:none}
+.note{margin:20px 0 0;font-size:12px;color:var(--tx-dim);line-height:1.6}
+.note a{color:var(--green-600);text-decoration:none}
+.note a:hover{text-decoration:underline}
+.err{display:none;margin:0 0 18px;padding:10px 12px;border:1px solid var(--danger);
+  border-radius:var(--r);background:rgba(180,35,24,.07);color:var(--danger);
+  font-size:12.5px;text-align:left}
+.err.on{display:block}
+.foot{margin:18px 0 0;font-family:var(--fm);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-400);text-align:center}
+@media (max-width:420px){.card{padding:30px 22px 24px}}
+@media (prefers-reduced-motion:reduce){.ms{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <svg class="mark" role="img" aria-label="Finishes Solutions" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 670.0673081342">
+      <text fill="currentColor" font-family="Montserrat,system-ui,sans-serif" font-weight="600" font-size="92" letter-spacing="5.5" transform="translate(140.7182617188 537.5135498047)"><tspan x="0" y="0">SOLUTIONS LLC.</tspan></text>
+      <g>
+        <path fill="currentColor" d="M149.5814622898,352.3594972241v-164.3800998846c0-51.6518807928,25.220408846-77.7834068264,75.9613181266-77.7834068264h86.8967222145v44.6662813634h-87.5050007892c-19.7513749115,0-30.0812058273,10.9354040879-30.0812058273,33.1171254631v25.5232682697h115.7640554843v41.9303284516h-115.7640554843v96.9265031632h-45.2718337246Z"></path>
+        <path fill="currentColor" d="M336.4919059001,102.4492156364h44.9690783548v35.2447373678h-44.9690783548v-35.2447373678ZM336.4919059001,174.4607915369h44.9690783548v176.2292641304h-44.9690783548v-176.2292641304Z"></path>
+        <path fill="currentColor" d="M391.3279207735,174.4600423485h64.728590285c37.0695939026,0,55.6071378782,18.5348385729,55.6071378782,55.2989300814v120.9304172922h-44.9745307817v-127.0077506121c0-6.9884296969-3.641471997-10.6353124992-10.6326070965-10.6353124992h-64.728590285v-38.5862842623Z"></path>
+        <path fill="currentColor" d="M530.3203971161,102.4492156364h44.9690367332v35.2447373678h-44.9690367332v-35.2447373678ZM530.3203971161,174.4607915369h44.9690367332v176.2292641304h-44.9690367332v-176.2292641304Z"></path>
+        <path fill="currentColor" d="M699.253315104,243.1269081144c36.7667552896,0,50.1298628709,17.0154844321,50.1298628709,52.2629688241,0,37.0669301215-13.3631075813,55.2989300814-50.7409509022,55.2989300814h-89.9380734664v-38.8917034132h86.2911906641c6.9910934779,0,10.6380595234-4.5579791792,10.6380595234-15.4961302913,0-11.240906482-3.6469660455-14.8878725274-10.6380595234-14.8878725274h-36.1558337446c-36.4613361387,0-50.1353569194-16.709982038-50.1353569194-51.651964036,0-37.0723409268,13.6740207807-55.3015938625,50.7408676591-55.3015938625h84.474575202v38.8917034132h-80.8276091565c-6.9883464537,0-10.6299016938,4.5553153981-10.6299016938,15.4961302913,0,11.240906482,3.6415552401,14.2795315204,10.6299016938,14.2795315204h36.1613277931Z"></path>
+        <path fill="currentColor" d="M783.3979976662,350.6889735063V102.4481334753h44.9690367332v72.0115759005h53.7768289164c36.7640915085,0,55.3015938625,18.5348385729,55.3015938625,55.3016771057v120.9275870248h-44.6662813633v-127.007667369c0-6.9884296968-3.6468828023-10.6353957423-10.6353124992-10.6353957423h-53.7768289164v137.6430631113h-44.9690367332Z"></path>
+        <path fill="currentColor" d="M1029.7927541568,350.6889735063c-37.3724325156,0-55.598938427-18.5347553297-55.598938427-55.3015938625v-68.6647014438c0-34.6392266281,18.2265059114-52.2629688241,55.2961830572-52.2629688241h49.5297629366c36.75859746,0,55.2961830572,17.623742196,55.2961830572,52.2629688241v6.3774249087c0,31.9060207406-18.5375855971,48.3132474088-55.2961830572,48.3132474088h-59.8596562848v20.0513624462c0,6.9911767211,3.6469660455,10.6353957423,10.6326487181,10.6353957423h91.1546722373v38.5888648002h-91.1546722373ZM1029.4899987869,213.045910395c-6.9911767211,0-10.3298933482,2.4331975419-10.3298933482,7.5966874607v28.8673957022h59.8596562848c6.9856826726,0,10.3298101051-3.3414636514,10.3298101051-10.3325571293v-18.5348385729c0-5.1634899188-3.3441274325-7.5966874607-10.3298101051-7.5966874607h-49.5297629366Z"></path>
+        <path fill="currentColor" d="M1249.1510482305,243.1269081144c36.7667552896,0,50.1297796278,17.0154844321,50.1297796278,52.2629688241,0,37.0669301215-13.3630243381,55.2989300814-50.7408676591,55.2989300814h-89.9380734664v-38.8917034132h86.2911906641c6.9910934779,0,10.6380595234-4.5579791792,10.6380595234-15.4961302913,0-11.240906482-3.6469660455-14.8878725274-10.6380595234-14.8878725274h-36.1558337446c-36.4613361387,0-50.1353569194-16.709982038-50.1353569194-51.651964036,0-37.0723409268,13.6740207807-55.3015938625,50.7408676591-55.3015938625h84.4744919588v38.8917034132h-80.8275259133c-6.9883464537,0-10.6299016938,4.5553153981-10.6299016938,15.4961302913,0,11.240906482,3.6415552401,14.2795315204,10.6299016938,14.2795315204h36.1613277931Z"></path>
+        <rect fill="currentColor" x="149.6218144112" y="376.8461384329" width="1149.6596793923" height="46.6138383148"></rect>
+      </g>
+    </svg>
+    <h1>Budgeting Suite</h1>
+    <p class="err" id="err" role="alert"></p>
+    <a class="ms" id="signin" href="/.auth/login/aad">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+        <rect x="0" y="0" width="8.5" height="8.5" fill="#f25022"/>
+        <rect x="9.5" y="0" width="8.5" height="8.5" fill="#7fba00"/>
+        <rect x="0" y="9.5" width="8.5" height="8.5" fill="#00a4ef"/>
+        <rect x="9.5" y="9.5" width="8.5" height="8.5" fill="#ffb900"/>
+      </svg>
+      Sign in with Microsoft
+    </a>
+    <p class="note">Access is limited to Finishes Solutions accounts.<br>
+      Trouble signing in? <a href="mailto:matthews@finishessolutions.com">Ask for access</a>.</p>
+  </div>
+  <p class="foot">Building a Future Together</p>
+</div>
+<script>
+(function(){
+  /* Where to land after Entra returns. The app is hash-routed, so a deep link
+     is a fragment — the server never sees it, but a browser carries the
+     fragment across a 302 to a target that has none, which is how the 401
+     redirect lands one here. Only our own hash shapes are accepted, so the
+     value handed to post_login_redirect_uri can never point off-site. */
+  function target(){
+    var h=location.hash||'';
+    return /^#[\w/#?=&.,-]*$/.test(h)?'/'+h:'/';
+  }
+  var a=document.getElementById('signin');
+  a.href='/.auth/login/aad?post_login_redirect_uri='+encodeURIComponent(target());
+
+  /* Entra hands failures back as a query string. Say what happened rather than
+     leaving the same button with no explanation of why it did nothing. */
+  var q=new URLSearchParams(location.search);
+  var e=q.get('error')||q.get('error_description')||q.get('message');
+  if(e){
+    var box=document.getElementById('err');
+    box.textContent='Sign-in did not complete: '+e+'. Try again, or ask for access if this keeps happening.';
+    box.className='err on';                 // textContent, so a provider message is never markup
+  }
+
+  /* Somebody already signed in has no business sitting on this page — a stale
+     tab, a bookmark, or the back button after signing in. Send them to the app.
+     A failure here means no session, which is exactly what this page is for. */
+  fetch('/.auth/me',{headers:{'Cache-Control':'no-cache'}})
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(j){ if(j&&j.clientPrincipal)location.replace(target()); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

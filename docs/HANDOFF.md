@@ -118,6 +118,25 @@ which is why the history has merge commits on both sides.
 
 - Custom Entra provider configured in `staticwebapp.config.json`, reading
   `AAD_CLIENT_ID` / `AAD_CLIENT_SECRET` from SWA application settings.
+- **`app/login.html` is the sign-in screen** and the only route that allows the
+  `anonymous` role (`/favicon.ico`, which it links, is the one other). An
+  unauthenticated request no longer bounces straight to Microsoft: the `401`
+  override redirects to `/login.html`, whose single button is
+  `/.auth/login/aad?post_login_redirect_uri=…`. Three things keep it working:
+  the anonymous route must sit **above** the `/*` rule (below it the page would
+  itself 401 and the override would send the visitor back — a loop), the page
+  must load **nothing** from the app (any `src`/`href` into the app is a 401 for
+  a visitor with no session), and the post-login target is built only from this
+  app's own `#/…` hash. `test/auth-routes.test.js` asserts all three.
+- The page is standalone by necessity — it cannot read the account's theme or
+  accent, because those live behind the sign-in it is asking for, so it follows
+  the OS `prefers-color-scheme` and nothing else.
+- **Sign-out already lands there**: `/.auth/logout?post_logout_redirect_uri=/`
+  returns to `/`, which 401s, which redirects to the login screen.
+- A deep link is a hash (`#/budget/OP-1234`), which the server never sees. The
+  browser carries a fragment across the 302 to a target that has none, so the
+  login page reads whatever survived and hands it back as the post-login target.
+  Best-effort by design: worst case the user lands on Home.
 - **Application settings are per-environment.** Production and staging each need the
   pair set. The same client ID/secret works for both — the difference is the redirect
   URI, which is per-hostname.

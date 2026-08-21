@@ -1,5 +1,7 @@
 {
   "routes": [
+    { "route": "/login.html", "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/favicon.ico", "allowedRoles": ["anonymous", "authenticated"] },
     { "route": "/api/analytics", "allowedRoles": ["super_admin"] },
     { "route": "/api/pricing", "methods": ["PUT"], "allowedRoles": ["pricing_admin", "super_admin"] },
     { "route": "/api/templates", "methods": ["POST", "PUT", "PATCH"], "allowedRoles": ["pricing_admin", "super_admin"] },
@@ -8,7 +10,7 @@
     { "route": "/*", "allowedRoles": ["authenticated"] }
   ],
   "responseOverrides": {
-    "401": { "redirect": "/.auth/login/aad?post_login_redirect_uri=.referrer", "statusCode": 302 }
+    "401": { "redirect": "/login.html", "statusCode": 302 }
   },
   "auth": {
     "identityProviders": {
