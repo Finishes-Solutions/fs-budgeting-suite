@@ -290,11 +290,11 @@
     if (wasOpen) return;
     const m = invMenuEl();
     m.dataset.aid = analysisId;          // never interpolated into markup
-    // The pin label reads as the action it performs, so it flips per row.
-    const pinned = window.FSHome && FSHome.isPinned('analysis', analysisId);
+    // The favorite label reads as the action it performs, so it flips per row.
+    const fav = window.FSHome && FSHome.isFavorite('analysis', analysisId);
     const items = [
       ['open', 'Open Analysis'],
-      ['pin', pinned ? 'Unpin From Home' : 'Pin to Home'],
+      ['fav', fav ? 'Remove From Favorites' : 'Add to Favorites'],
       ['versions', 'Versions'], ['duplicate', 'Duplicate'],
       ['sep'], ['delete', 'Delete Analysis', 'danger']
     ];
@@ -320,9 +320,9 @@
   function invRowMenuAction(act) {
     const aid = el('invRowMenu').dataset.aid;
     closeInvRowMenu(act === 'delete');
-    if (act === 'pin') {
-      const on = window.FSHome && FSHome.togglePin('analysis', aid);
-      A.toast(on ? 'Pinned this analysis to Home.' : 'Unpinned this analysis from Home.');
+    if (act === 'fav') {
+      if (window.FSHome) FSHome.toggleFavorite('analysis', aid);   // FSHome words the toast
+      renderList();
       return;
     }
     if (act === 'open') location.hash = '#/analysis/' + aid;
@@ -512,6 +512,89 @@
       'Completed': 'st-done', 'Cancelled': 'st-cancel' }[n] || 'st-draft';
     return `<span class="st-chip ${cls}" style="pointer-events:none">${esc(n)}</span>`;
   }
+  /* ---------- budget-derived expense ratio ----------
+     The number is computed server-side from the budget version and stored with
+     its provenance, so the UI only reads it. Turning Override on is a decision
+     the analysis then carries visibly — on the editor, in the list, and in
+     every export. */
+  function derivedExpenses() {
+    const e = st.input && st.input.expenses;
+    return e && e.derivedFrom && typeof e.derivedFrom === 'object' ? e.derivedFrom : null;
+  }
+  function expensesOverridden() {
+    return !!(st.input && st.input.expenses && st.input.expenses.override && derivedExpenses());
+  }
+  function expBadge() {
+    const d = derivedExpenses();
+    if (!d) return '';
+    return expensesOverridden()
+      ? ` <span class="inv-origin inv-origin-warn" title="This no longer matches budget ${esc(d.projectId)} v${esc(d.budgetVersionNumber)}">Overridden</span>`
+      : ` <span class="inv-origin" title="Derived from budget ${esc(d.projectId)} v${esc(d.budgetVersionNumber)}">From Budget</span>`;
+  }
+  function expDerivedNote() {
+    const d = derivedExpenses();
+    if (!d) return '';
+    const base = usd(d.annualOpex) + ' of operating expenses ÷ ' + usd(d.goi)
+      + ' gross operating income (' + usd(d.grossIncomeYr) + ' less ' + pctf(d.vacancy, 1) + ' vacancy)';
+    // A source budget that is itself outside the 35–55% rail cannot produce a
+    // trustworthy ratio, and saying so here is the whole point of the rail.
+    const ratio = d.goi > 0 ? d.annualOpex / d.goi : null;
+    const bad = ratio !== null && (ratio < 0.35 || ratio > 0.55);
+    return esc(base) + (bad
+      ? '<br><b class="inv-warn-text">Budget ' + esc(d.projectId) + ' is at ' + pctf(ratio, 1)
+        + ' — outside the 35–55% guard rail'
+        + (nz(d.opexSchemaVersion) < 2 ? ' and predates the full expense schedule' : '')
+        + '. This analysis will misstate NOI until the budget is corrected.</b>'
+      : '');
+  }
+  function expenseOverrideControl() {
+    if (!derivedExpenses()) return '';
+    return `<label class="chk" style="margin-bottom:10px"><input type="checkbox" id="invExpOverride"
+        data-k="inv.expOverride" ${expensesOverridden() ? 'checked' : ''}
+        onchange="FSInvestmentUI.setExpenseOverride(this.checked)">
+        Override the budget\u2019s expense ratio</label>`;
+  }
+  function setExpenseOverride(on) {
+    if (!st.input || !st.input.expenses) return;
+    const d = derivedExpenses();
+    st.input.expenses.override = !!on;
+    // Turning the override back off restores the budget's number rather than
+    // leaving whatever was typed sitting there looking derived.
+    if (!on && d) {
+      st.input.expenses.mode = 'percentOfGOI';
+      st.input.expenses.value = d.goi > 0 ? Math.round((d.annualOpex / d.goi) * 10000) / 10000 : null;
+    }
+    markDirty();
+    renderEditor();
+  }
+
+  /* ---------- budget drift ----------
+     The analysis pins a budget version. When the budget moves past it we SAY so
+     and offer the re-sync; nothing recalculates on its own, because a saved
+     analysis is never quietly restated. */
+  function driftBadge() {
+    const s2 = st.source;
+    if (!s2 || !s2.drift) return '';
+    return ` <button class="inv-drift" onclick="FSInvestmentUI.resync()"
+      title="Re-import size, purchase price, income and the expense ratio from budget v${esc(s2.budgetCurrentVersionNumber)}">
+      Budget updated to v${esc(s2.budgetCurrentVersionNumber)} — Re-sync</button>`;
+  }
+  async function resync() {
+    if (!st.id) return;
+    if (st.dirty && !confirm('Re-syncing replaces the imported values with the budget\u2019s current ones. Unsaved edits to those fields will be lost. Continue?')) return;
+    try {
+      const r = await A.api('investment-analysis/' + st.id + '?scope=resync', { method: 'PUT', body: '{}' });
+      st.input = r.input;
+      st.source = r.source;
+      st.dirty = true; st.stale = true; st.result = null;
+      snapshotOrigins();
+      renderEditor();
+      A.toast(r.message + (r.expensesOverridden ? ' The expense override was kept.' : ''));
+    } catch (e) {
+      A.toast('Could not re-sync — ' + e.message);
+    }
+  }
+
   /* The source budget, as a real link to its Inputs page rather than plain
      text. The id comes from the analysis's own source record, never a
      constant, so it always points at the budget this analysis was cut from. */
@@ -579,6 +662,9 @@
     const inp = st.input;
     const loan = (inp.financing && inp.financing.loans && inp.financing.loans[0]) || null;
     const dollarExp = inp.expenses && inp.expenses.mode === 'annualDollar';
+    // Derived-and-locked by default; the Override checkbox is the only way to
+    // type into it, and turning it on is visible everywhere the analysis is.
+    const expLocked = !!derivedExpenses() && !(inp.expenses && inp.expenses.override);
     host.innerHTML = `
       <div class="page-title">
         <div><button class="btn-back" onclick="FSInvestmentUI.backToList()"
@@ -587,6 +673,7 @@
           <div class="sub">${st.source
             ? 'From Budget ' + sourceBudgetLink(st.source.projectId)
               + ' <span class="inv-vsub">v' + esc(st.source.budgetVersionNumber) + '</span>'
+              + driftBadge()
             : 'Standalone Analysis'}</div></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
           <span id="invStatusHost"></span>
@@ -659,17 +746,22 @@
 
       <div class="inv-step ${st.step === 3 ? 'on' : ''}" data-steppane="3">
         <h2>Vacancy &amp; Expenses</h2>
-        <p class="hint">Enter the property's complete operating expenses.${st.source ? ' The budget’s service-expense rows below are a partial reference only — they are not a full OPEX picture and are never applied automatically.' : ''}</p>
+        <p class="hint">${derivedExpenses()
+          ? 'The expense ratio comes from the budget — its operating expenses divided by gross operating income, after vacancy. Override it only if this property is genuinely priced differently from the budget.'
+          : 'Enter the property\u2019s complete operating expenses.'}</p>
+        ${expenseOverrideControl()}
         <div class="inv-grid">
           <label class="fld"><span class="lab">Vacancy / Credit Loss %</span>
             <input type="number" min="0" step="any" data-f="vacancy.value" data-k="inv.vacancy" value="${toPct(inp.vacancy.value)}"></label>
           <label class="fld"><span class="lab">Expense Mode</span>
-            <select data-f="expenses.mode" data-k="inv.expMode">
+            <select data-f="expenses.mode" data-k="inv.expMode" ${expLocked ? 'disabled' : ''}>
               <option value="percentOfGOI" ${!dollarExp ? 'selected' : ''}>% of GOI</option>
               <option value="annualDollar" ${dollarExp ? 'selected' : ''}>Annual $ Amount</option>
             </select></label>
-          <label class="fld"><span class="lab" id="invExpLab">${dollarExp ? 'Year-1 Operating Expenses $' : 'Operating Expenses % of GOI'}</span>
-            <input type="number" min="0" step="any" data-f="expenses.value" data-k="inv.expValue" value="${inp.expenses.value === null ? '' : (dollarExp ? inp.expenses.value : toPct(inp.expenses.value))}"></label>
+          <label class="fld"><span class="lab" id="invExpLab">${dollarExp ? 'Year-1 Operating Expenses $' : 'Operating Expenses % of GOI'}${expBadge()}</span>
+            <input type="number" min="0" step="any" data-f="expenses.value" data-k="inv.expValue" ${expLocked ? 'readonly' : ''}
+              value="${inp.expenses.value === null ? '' : (dollarExp ? inp.expenses.value : toPct(inp.expenses.value))}">
+            <span class="inv-derived" id="invExpDerived">${expDerivedNote()}</span></label>
           <label class="fld" id="invExpGrowthFld" style="${dollarExp ? '' : 'display:none'}"><span class="lab">Expense Growth %</span>
             <input type="number" step="any" data-f="expenses.growth.value" data-k="inv.expGrowth" value="${toPct(inp.expenses.growth ? inp.expenses.growth.value : 0.03)}"></label>
         </div>
@@ -969,13 +1061,17 @@
     const ex = el('invExpSupport');
     if (ex) {
       if (sup && sup.serviceExpenseRows && sup.serviceExpenseRows.length) {
-        ex.innerHTML = `<h2 style="margin-top:16px;font-size:13px">Budget Service Expenses (reference only)</h2>
-          <div class="inv-warnings">These rows come from the construction budget's service-expense list. They are a
-            <b>partial</b> reference — real property OPEX (taxes, insurance, management, maintenance, utilities)
-            is usually much larger. They are never applied automatically.</div>
+        const stale = nz(sup.opexSchemaVersion) < 2;
+        ex.innerHTML = `<h2 style="margin-top:16px;font-size:13px">Budget Operating Expenses</h2>
+          <div class="inv-warnings">${stale
+            ? `These rows come from the budget's old service-expense list — utilities and trash, but no taxes,
+               insurance, management or payroll. They are a <b>partial</b> picture, and the ratio derived from them
+               is correspondingly low. Update the budget's expense schedule from its template to fix it at source.`
+            : `The expense ratio above is derived from these rows. They are the budget's complete operating
+               expense schedule, which is what the 35–55% guard rail keeps honest.`}</div>
           <table class="inv-table" style="max-width:420px"><tbody>
           ${sup.serviceExpenseRows.map(r => `<tr><td>${esc(r.label)}</td><td class="r mono">${usd(r.annualAmount)}/yr</td></tr>`).join('')}
-          <tr class="tot"><td>Total imported service expenses</td><td class="r mono">${usd(sup.annualServiceExpenses)}/yr</td></tr>
+          <tr class="tot"><td>Total budget operating expenses</td><td class="r mono">${usd(sup.annualServiceExpenses)}/yr</td></tr>
           </tbody></table>`;
       } else ex.innerHTML = '';
     }
@@ -1574,7 +1670,7 @@
   window.FSInvestmentUI = {
     init(adapter) { A = adapter; },
     renderList, renderListInto, open, createFromBudget, createStandalone,
-    openSourceBudget, backToList,
+    openSourceBudget, backToList, resync, setExpenseOverride,
     createStandaloneFromModal, createBlank, openProjectPicker, softDelete,
     calculate, save, reload, duplicate, showVersions, viewVersion, goStep, undo, redo,
     openExport, emailSoon, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,

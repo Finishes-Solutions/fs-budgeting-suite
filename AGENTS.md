@@ -39,7 +39,16 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
    staging database. A migration is live everywhere the moment it runs, so schema
    changes must be backward-compatible with the code currently deployed, and
    migrations are paired with prompt releases.
-5. **Exports build from the data model, never the DOM.** The PDF report and Excel
+5. **Guard rails block the save, in two places, from one file.**
+   `app/guardrails.js` and `api/shared/guardrails.js` are **byte-identical**;
+   `test/guardrails.test.js` fails the build if they drift. `evaluate()` is pure
+   and takes already-computed `parts()`/`grossIncome()` — it never recomputes
+   them, because a third copy of that arithmetic is a third thing to keep in
+   parity. Two rules are load-bearing and must not be "simplified" away: a rail
+   whose denominator is zero is **not evaluated** (or a blank budget could never
+   be saved), and `opexRatio` blocks only when `doc.opexSchemaVersion >= 2` (or
+   release day would make every existing budget unsaveable at once).
+6. **Exports build from the data model, never the DOM.** The PDF report and Excel
    workbook are composed from `parts()`, `csiSchedule()`, `grossIncome()`, and the
    document itself. Screen state (collapsed groups, filters, scroll) must never
    change what an export contains.
@@ -51,6 +60,8 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | `app/index.html` | The budget frontend — HTML + inline CSS + inline JS, no build step |
 | `app/investment-analysis.js` / `.css` | The Investment Analysis workflow — external no-build IIFE behind `window.FSInvestmentUI`, wired through an adapter |
 | `app/theme-ramp.css` | The Editorial theme pack — presentation only, every rule scoped to `html[data-skin=ramp]`, loaded after the inline sheet |
+| `app/guardrails.js` / `api/shared/guardrails.js` | Budget guard rails — **byte-identical** UMD pair, enforced by `test/guardrails.test.js` |
+| `app/projects.js` | The Projects tab — one project per ID, with its budgets and analyses |
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement (first auth gate) |
 | `app/vendor/exceljs.min.js` | ExcelJS 4.4.0, vendored — see [Single sources of truth](#single-sources-of-truth) |
 | `app/assets/` | Logos + favicon set; regenerate with `tools/make-favicons.py`, don't hand-edit |
@@ -61,7 +72,8 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | `api/templates/` | Budget templates: list, read, versions, create, publish, activate |
 | `api/investment-*/` | Investment analyses: list/create, CRUD + 409 concurrency, versions, stateless preview |
 | `api/shared/investment/` | The server-only before-tax calculation engine (fixture-proven; see Testing) |
-| `api/shared/` | `auth.js` (principal + roles), `db.js` (pool + cold-start retry), `canonical.js` (canonical JSON + hashing), `sov.js` (SOV projection), `versioning.js` (version writes) |
+| `api/shared/` | `auth.js` (principal + roles), `db.js` (pool + cold-start retry), `canonical.js` (canonical JSON + hashing), `sov.js` (SOV projection), `versioning.js` (version writes), `projects.js` (the Projects aggregate), `guardrails.js` (rail evaluator) |
+| `api/shared/investment/from-budget.js` | The budget→analysis projection, shared by creation AND re-sync so the two cannot derive differently |
 | `sql/` | Idempotent schema + migration + views, seeds, and admin-run scripts |
 | `test/` | Ten Playwright suites, `node:test` logic tests, and `mock-api.js` (a local stand-in for the SWA API) |
 | `docs/` | Build guide, data contract, handoff, roadmap, naming |
@@ -165,6 +177,17 @@ custom provider for sign-in.
   guard with `nz()`.
 - **`touch()` / `markDirty()` / `recalc()`** are the change pipeline — call
   `touch()` after mutating the document; don't invent parallel dirty tracking.
+- **`data-gr` is the guard-rail equivalent of `data-k`.** A rail marks its
+  driving input by `data-gr="<railId path>"`, which survives re-render; never
+  mark a field by DOM position.
+- **Fees are `{mode:'amt'|'pct', val}`, like `doc.contingency`.** A percentage is
+  a share of the FINAL total project cost, which is circular, so `parts()` solves
+  it in closed form: `project = (contract + soft + land + fixedFees) / (1 − f)`.
+  The divisor floors at `FEE_FLOOR` so a budget the `feeSum` rail is already
+  refusing still renders a finite number instead of `$Infinity`. A bare number is
+  a pre-migration document and means dollars; `migrate()` lifts it once.
+- **Expenses have a third basis, `pctIncome`** — a share of rent + other income.
+  Not circular: income does not depend on expenses.
 - **Theme packs are paint only.** A pack (Settings → Theme Pack, super_admin)
   is an alternate appearance of the same product: it may remap tokens and
   restyle primitives, never move a route, label, control, calculation or
@@ -183,6 +206,27 @@ custom provider for sign-in.
   to one column, and the tab bar scrolls horizontally. Never reintroduce a
   width-based feature gate; suite-06 pins the fully-capable behavior.
 
+## Projects
+
+- **`dbo.Projects` is the parent, and its primary key is the "one project per
+  ID" guarantee.** Budgets and analyses link to it by `ProjectKey` — the budget
+  id with any `-NN` alternate suffix stripped.
+- **The project surface is query scopes on endpoints that already deploy**
+  (`GET /api/budgets?scope=projects`, `?scope=project&id=…`,
+  `PUT /api/budget/{id}?scope=project`), for the same reason role management is:
+  a new `api/<name>/` folder is not reliably picked up by the deployed host.
+  A route rule matches paths, not query strings, so the in-function check on
+  these scopes is the **only** gate and must be written as the real gate.
+- **Project statuses are their own vocabulary** — Lead → Qualified → Budgeting
+  → Proposal Sent → Awarded → **Converted to Project**, plus On Hold and Lost.
+  Budget and analysis statuses (Draft / In Review / Completed / Cancelled) are
+  unchanged: they answer "is this document finished", which is a different
+  question from "where is this deal".
+- **Converting SNAPSHOTS the money.** `ContractAmount` / `ProjectAmount` are
+  captured from the primary budget at the moment of conversion and never move
+  again. A budget edited afterwards must not restate reported backlog, which is
+  why the analytics totals read those columns and not a live join.
+
 ## Auth & security
 
 - **Two gates on every privileged route:** an SWA route rule in
@@ -195,7 +239,12 @@ custom provider for sign-in.
 - **`ID_RX` lives in four files that change together:**
   `app/index.html`, `api/budget/index.js`, `api/budget-versions/index.js`, and
   `test/mock-api.js` — all must accept exactly
-  `OP-####`, `BD-####`, `AS-####`, `TST-####`. `TST-` ids are test data:
+  `OP-####`, `BD-####`, `AS-####`, `TST-####`, **plus an optional `-NN` suffix**
+  (`BD-0001-02`). The plain form is a project's base budget; the suffix is an
+  ALTERNATE budget under the same project. Stripping the suffix gives the
+  project id, which is what `dbo.Projects` is keyed by — that is what makes
+  "one project per ID" true, and it is why many-budgets-per-project needed no
+  re-keying of `dbo.Budgets`, its three foreign keys, or any route. `TST-` ids are test data:
   excluded from views (`sql/views.sql`) and purgeable by the cleanup script.
 - **From the client principal, store only `userId` and `userDetails`.** Don't
   persist claims or tokens.
@@ -215,6 +264,17 @@ custom provider for sign-in.
   documents must go through it, or unchanged saves will spawn versions. Never
   change its defaults — budget hashing depends on them byte-for-byte; the
   investment module wraps it rather than modifying it.
+- **The budget→analysis projection lives in one module.**
+  `api/shared/investment/from-budget.js` is used by creation AND by
+  `PUT /api/investment-analysis/{id}?scope=resync`; if they derived separately,
+  re-syncing would quietly change numbers that were never wrong. Three rules in
+  it were each got wrong once: property size is the **building**
+  (`resSF + amenSF`), never `siteSF` (which is land and prices nothing); purchase
+  price is Total Project Cost recomputed from the version document; and the
+  expense ratio is derived against **Gross Operating Income** — after vacancy —
+  because that is what the engine's `percentOfGOI` mode multiplies.
+  Deriving the ratio does **not** move `CALCULATION_VERSION`: the arithmetic is
+  unchanged, only where the input came from is new.
 - **The investment engine is server-only and version-stamped**
   (`api/shared/investment/`, `before-tax-1.1.0`). The browser posts
   assumptions and renders returned results; saves recalculate server-side and
@@ -245,9 +305,14 @@ custom provider for sign-in.
   change without its mock change will pass locally and lie.
 - Pure logic (canonical JSON, hashing, SOV projection, calculations) goes in
   `test/*.test.js` under `node:test` — no browser required.
-- New features come with tests in the same commit. Fourteen suites exist
-  (`suite-01` … `suite-14`; 11–14 are the investment-analysis suites); extend
-  the closest one rather than starting a fifteenth for a small feature.
+- New features come with tests in the same commit. Twenty-one suites exist
+  (`suite-01` … `suite-21`; 11–14 are the investment-analysis suites, 20 is guard
+  rails, 21 is Projects); extend the closest one rather than starting a
+  twenty-second for a small feature.
+- **Playwright's bundled browser build can outrun the one installed.** If a
+  suite aborts with "Executable doesn't exist at …chromium_headless_shell-<n>",
+  point `CHROMIUM_PATH` at the chrome binary that IS installed rather than
+  downloading another.
 
 ## Style
 

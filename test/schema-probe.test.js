@@ -72,8 +72,48 @@ test('a failing probe degrades to all-absent rather than throwing', async () => 
   const f = await schema.features(poolThrowing(new Error('permission denied on sys.columns')));
   assert.deepStrictEqual(f, {
     usersAppRole: false, usersSettingsDoc: false,
-    budgetsCreatedBy: false, analysesCreatedBy: false, feedbackTable: false
+    budgetsCreatedBy: false, analysesCreatedBy: false, feedbackTable: false,
+    budgetsGuardrail: false, budgetsProjectKey: false, analysesProjectKey: false,
+    projectsTable: false
   });
+});
+
+test('projects and guard rails read as absent before their migration runs', async () => {
+  fresh();
+  // The shape a database has TODAY: roles and ownership migrated, projects not.
+  // Every project and guard-rail read path must fall back to today's behaviour,
+  // because a deploy lands before its migration.
+  const f = await schema.features(poolReturning([
+    col('Users', 'AppRole'), col('Users', 'SettingsDoc'),
+    col('Budgets', 'CreatedById'), col('Budgets', 'CreatedByName'),
+    col('InvestmentAnalyses', 'CreatedById'), col('Feedback', 'FeedbackId')
+  ]));
+  assert.strictEqual(f.budgetsCreatedBy, true, 'the already-run migration still reads as done');
+  assert.strictEqual(f.projectsTable, false);
+  assert.strictEqual(f.budgetsProjectKey, false);
+  assert.strictEqual(f.analysesProjectKey, false);
+  assert.strictEqual(f.budgetsGuardrail, false);
+});
+
+test('a half-applied guard-rail migration counts as not migrated', async () => {
+  fresh();
+  // Naming GuardrailBreachCount when only GuardrailStatus exists would fail
+  // every save — both columns or neither.
+  const f = await schema.features(poolReturning([col('Budgets', 'GuardrailStatus')]));
+  assert.strictEqual(f.budgetsGuardrail, false);
+});
+
+test('the full projects migration lights up every project read path', async () => {
+  fresh();
+  const f = await schema.features(poolReturning([
+    col('Projects', 'ProjectId'), col('Budgets', 'ProjectKey'),
+    col('InvestmentAnalyses', 'ProjectKey'),
+    col('Budgets', 'GuardrailStatus'), col('Budgets', 'GuardrailBreachCount')
+  ]));
+  assert.strictEqual(f.projectsTable, true);
+  assert.strictEqual(f.budgetsProjectKey, true);
+  assert.strictEqual(f.analysesProjectKey, true);
+  assert.strictEqual(f.budgetsGuardrail, true);
 });
 
 test('the probe is cached, so it does not run per request', async () => {

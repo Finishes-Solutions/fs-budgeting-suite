@@ -51,11 +51,27 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('Year-1 potential income = gross unit rent × 12', pre.pri===480000, String(pre.pri));
  // project cost: 4,000,000 + 5% profit + land 800,000 = 5,000,000
  ok('purchase price suggests total project cost', pre.price===5000000, String(pre.price));
- ok('size prefers Site SF when present', pre.size===120000, String(pre.size));
+ // The BUILDING, never the site. doc.siteSF is land — importing it as property
+ // size made every $/SF figure a price per square foot of dirt.
+ ok('size is the building, not the site', pre.size===50000, String(pre.size));
+ ok('and the site area is carried separately as land',
+    (await p.evaluate(()=>FSInvestmentUI._state?FSInvestmentUI._state().input.source.support.landSquareFeet:null))===120000
+      || (await p.evaluate(async()=>{
+           const r=await fetch('/api/investment-analysis/'+location.hash.split('/').pop());
+           const j=await r.json();
+           return j.input.source.support.landSquareFeet;})) ===120000);
  ok('unit count imported', pre.units===25);
  ok('property name and address imported', pre.name==='Import Source'&&pre.addr==='11 Origin Ave');
  ok('purchase month is NOT invented', pre.month==='');
- ok('expense ratio is NOT prefilled from service expenses', pre.exp==='');
+ // Derived from the budget against GOI — 7,800 OPEX ÷ (499,800 × 0.9) = 1.73%.
+ // Visibly low, which is exactly what the 35–55% guard rail exists to catch;
+ // the number is reported honestly rather than invented.
+ ok('expense ratio is derived from the budget', pre.exp==='1.73', pre.exp);
+ ok('and the field is locked until overridden',
+    await p.evaluate(()=>document.querySelector('[data-f="expenses.value"]').hasAttribute('readonly')));
+ ok('badged as coming from the budget',
+    /From Budget/.test(await p.locator('#invExpLab').textContent()),
+    await p.locator('#invExpLab').textContent());
  ok('exit cap is NOT invented', pre.cap==='');
 
  // other income rows imported as annual suggestions: Parking 50×25×12=15,000 · Signage 200×2×12=4,800
@@ -73,8 +89,21 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // service expenses appear only as a warned partial reference: 10×25×12 + 400×12 = 7,800
  await p.click('#invSteps button[data-step="3"]');
  const expTxt=await p.locator('#invExpSupport').textContent();
- ok('service expenses shown as partial reference with warning',
-    /partial/i.test(expTxt)&&/never applied automatically/i.test(expTxt)&&/7,800/.test(expTxt));
+ ok('budget expenses shown with their total',
+    /partial/i.test(expTxt)&&/7,800/.test(expTxt), expTxt.slice(0,120));
+ ok('and the derived ratio shows the arithmetic it came from',
+    /449,820/.test(await p.locator('#invExpDerived').textContent()),
+    await p.locator('#invExpDerived').textContent());
+ ok('with the source budget flagged as outside the guard rail',
+    /guard rail/i.test(await p.locator('#invExpDerived').textContent()));
+
+ // ---- the override is the only way to type into it, and it is visible
+ await p.check('#invExpOverride'); await p.waitForTimeout(300);
+ ok('overriding unlocks the field',
+    !(await p.evaluate(()=>document.querySelector('[data-f="expenses.value"]').hasAttribute('readonly'))));
+ ok('and the badge changes to say so',
+    /Overridden/.test(await p.locator('#invExpLab').textContent()),
+    await p.locator('#invExpLab').textContent());
 
  // origin badges on imported fields
  await p.click('#invSteps button[data-step="1"]');
@@ -141,6 +170,34 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     JSON.stringify(after.source));
  ok('analysis input unchanged by the budget edit',
     after.input.acquisition.basis.value===5000000);
+
+ // ---- drift is REPORTED, never applied on its own
+ ok('the analysis knows the budget has moved past it',
+    after.source.drift===true && after.source.budgetCurrentVersionNumber===2,
+    JSON.stringify(after.source));
+ await p.goto('http://127.0.0.1:8100/index.html#/analysis/'+aid,{waitUntil:'networkidle'});
+ await p.waitForTimeout(900);
+ ok('and offers the re-sync in the header',
+    (await p.locator('.inv-drift').count())===1,
+    await p.locator('#page-analysis .page-title .sub').textContent());
+
+ await p.locator('.inv-drift').click(); await p.waitForTimeout(1200);
+ const resynced=await p.evaluate(async id=>await (await fetch('/api/investment-analysis/'+id)).json(),aid);
+ ok('re-syncing pulls the new purchase price',
+    resynced.input.acquisition.basis.value>5000000,
+    String(resynced.input.acquisition.basis.value));
+ ok('and re-pins to the current budget version',
+    resynced.source.budgetVersionNumber===2 && resynced.source.drift===false,
+    JSON.stringify(resynced.source));
+ ok('an explicit expense override survives the re-sync',
+    resynced.input.expenses.override===true && resynced.input.expenses.value===0.33,
+    JSON.stringify(resynced.input.expenses));
+ ok('but its provenance refreshes so the warning can name what it no longer matches',
+    resynced.input.expenses.derivedFrom
+      && resynced.input.expenses.derivedFrom.budgetVersionNumber===2,
+    JSON.stringify(resynced.input.expenses.derivedFrom));
+ ok('the saved version is NOT restated by a re-sync',
+    resynced.currentVersionNumber===1, String(resynced.currentVersionNumber));
 
  // ---- Home-page creation: ONE button, the shared modal
  await p.click('#nav-home'); await p.waitForTimeout(600);

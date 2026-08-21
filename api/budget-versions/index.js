@@ -6,7 +6,7 @@
 // Restore, rollback, compare and version deletion are deliberately not offered.
 const { getPool, sql } = require('../shared/db');
 
-const ID_RX = /^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
+const ID_RX = /^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/;
 
 module.exports = async function (context, req) {
   const id = (context.bindingData.id || '').toUpperCase();

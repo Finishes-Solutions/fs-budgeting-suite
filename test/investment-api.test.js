@@ -55,11 +55,33 @@ test('seed a budget and create an analysis from its exact version', async () => 
   const pre = created.body.input;
   assert.equal(pre.income.year1PotentialIncome, 12 * 30 * 1000, 'gross rent x12, never net income');
   assert.equal(pre.acquisition.basis.value, 3500000, 'project cost suggested as purchase price');
-  assert.equal(pre.property.size.value, 80000, 'falls back to res+amen SF when siteSF is 0');
+  assert.equal(pre.property.size.value, 80000, 'property size is the BUILDING, res + amen SF');
   assert.equal(pre.property.purchaseMonth, null, 'no invented purchase month');
-  assert.equal(pre.expenses.value, null, 'service expenses are NOT prefilled as complete OPEX');
-  assert.equal(pre.source.support.annualServiceExpenses, 12 * 10 * 30, 'they appear as support data');
+  assert.ok(pre.source.fieldOrigins['property.size'].includes('Residential + Amenity'),
+    'the origin says which measurement it is');
+  assert.equal(pre.source.support.annualServiceExpenses, 12 * 10 * 30, 'expenses appear as support data');
   assert.ok(pre.source.fieldOrigins['acquisition.basis'].includes('Total Project Cost'));
+
+  // The expense ratio is DERIVED from the budget, against the same Gross
+  // Operating Income the engine multiplies — after vacancy, not gross income.
+  const opex = 12 * 10 * 30;                       // $10/unit/mo × 30 units × 12
+  const gross = 12 * 30 * 1000;                    // rent only; this budget has no other income
+  const goi = gross * (1 - 0.10);                  // the default vacancy
+  assert.ok(Math.abs(pre.expenses.value - opex / goi) < 1e-4, 'expense ratio derived from the budget');
+  assert.equal(pre.expenses.override, false, 'derived, not overridden');
+  assert.equal(pre.expenses.derivedFrom.projectId, 'TST-7101');
+  assert.equal(pre.expenses.derivedFrom.budgetVersionNumber, 1);
+  assert.equal(pre.expenses.derivedFrom.annualOpex, opex);
+  assert.equal(pre.expenses.derivedFrom.grossIncomeYr, gross);
+  assert.equal(pre.expenses.derivedFrom.vacancy, 0.10);
+  // This budget's rows are ~3.7% of income, which the 35-55% guard rail is
+  // exactly what catches. The derivation still reports it honestly rather than
+  // inventing a plausible number.
+  assert.ok(pre.expenses.value < 0.05, 'a service-only budget derives a visibly low ratio');
+  assert.equal(pre.source.support.opexSchemaVersion, 1, 'and says the schedule is the old one');
+  assert.equal(pre.source.support.landSquareFeet, null, 'site SF is carried as land, not as size');
+  assert.equal(pre.source.support.buildingSquareFeet, 80000);
+  assert.equal(pre.source.support.rentableSquareFeet, 30 * 700);
 
   const missing = await api('/api/investment-analyses', { method: 'POST',
     body: { mode: 'fromBudget', projectId: 'TST-7101', budgetVersionNumber: 99 } });

@@ -44,20 +44,23 @@
 #page-home .hm-kind-analysis{background:#EAF1FB;color:#2B579A}
 #page-home .hm-id{font-size:11.5px;color:var(--ink-400);min-width:0;flex:0 1 auto;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* The pin: a real button over the card's top-right corner. The header row
+/* The star: a real button over the card's top-right corner. The header row
    reserves the space it occupies (below), so it never lands on the id or a
-   title however long they run. */
-#page-home .hm-pin{position:absolute;top:9px;right:9px;z-index:1;
-  display:inline-flex;align-items:center;justify-content:center;
+   title however long they run. Unscoped on purpose — the same affordance is
+   reused on the budget and analysis lists, the project page, and both editor
+   headers, so it must not be trapped inside #page-home. */
+.hm-star{display:inline-flex;align-items:center;justify-content:center;
   width:24px;height:24px;padding:0;border:1px solid transparent;border-radius:6px;
-  background:none;cursor:pointer;color:var(--green-700);line-height:0;
+  background:none;cursor:pointer;color:var(--ink-400);line-height:0;
   transition:background .12s,border-color .12s,color .12s}
-#page-home .hm-pin:hover{background:var(--ink-100);border-color:var(--ink-200);color:var(--ink-700)}
-#page-home .hm-pin:active{background:var(--ink-150)}
-#page-home .hm-pin:focus-visible{outline:none;box-shadow:var(--focus)}
-/* Only the pinned card needs the gap, so an unpinned one keeps its full width
-   for the record id. */
-#page-home .hm-card-wrap.is-pinned .hm-card-top{padding-right:26px}
+.hm-star:hover{background:var(--ink-100);border-color:var(--ink-200);color:var(--warn)}
+.hm-star:active{background:var(--ink-150)}
+.hm-star:focus-visible{outline:none;box-shadow:var(--focus)}
+.hm-star.is-on{color:var(--warn)}
+#page-home .hm-star{position:absolute;top:9px;right:9px;z-index:1}
+/* Only the favorited card needs the gap, so an unfavorited one keeps its full
+   width for the record id. */
+#page-home .hm-card-wrap.is-fav .hm-card-top{padding-right:26px}
 #page-home .hm-card-name{font-size:13.5px;font-weight:600;color:var(--ink-900);line-height:1.35;
   min-height:2.7em;overflow-wrap:anywhere;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}

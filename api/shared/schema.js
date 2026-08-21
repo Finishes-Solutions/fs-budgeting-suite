@@ -25,15 +25,19 @@ async function probe(pool) {
     `SELECT o.name AS TableName, c.name AS ColumnName
      FROM sys.columns AS c
      JOIN sys.objects AS o ON o.object_id = c.object_id
-     WHERE o.name IN ('Users', 'Budgets', 'InvestmentAnalyses', 'Feedback')`);
+     WHERE o.name IN ('Users', 'Budgets', 'InvestmentAnalyses', 'Feedback', 'Projects')`);
   const has = new Set(r.recordset.map(x => x.TableName + '.' + x.ColumnName));
   return {
     usersAppRole:      has.has('Users.AppRole'),
     usersSettingsDoc:  has.has('Users.SettingsDoc'),
     budgetsCreatedBy:  has.has('Budgets.CreatedById') && has.has('Budgets.CreatedByName'),
     analysesCreatedBy: has.has('InvestmentAnalyses.CreatedById'),
+    budgetsGuardrail:  has.has('Budgets.GuardrailStatus') && has.has('Budgets.GuardrailBreachCount'),
+    budgetsProjectKey: has.has('Budgets.ProjectKey'),
+    analysesProjectKey: has.has('InvestmentAnalyses.ProjectKey'),
     // A whole table rather than a column: any column of it proves it exists.
-    feedbackTable:     has.has('Feedback.FeedbackId')
+    feedbackTable:     has.has('Feedback.FeedbackId'),
+    projectsTable:     has.has('Projects.ProjectId')
   };
 }
 
@@ -48,7 +52,9 @@ async function features(pool) {
     .then(f => { cache = f; cachedAt = Date.now(); return f; })
     .catch(() => ({
       usersAppRole: false, usersSettingsDoc: false,
-      budgetsCreatedBy: false, analysesCreatedBy: false, feedbackTable: false
+      budgetsCreatedBy: false, analysesCreatedBy: false, feedbackTable: false,
+      budgetsGuardrail: false, budgetsProjectKey: false, analysesProjectKey: false,
+      projectsTable: false
     }))
     .finally(() => { inflight = null; });
   return inflight;

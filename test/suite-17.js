@@ -1,6 +1,6 @@
-// Suite 17 — unified navigation: the four-item primary nav with Pricing
-// Library under More, the dedicated Budgets page, the shared workflow pills on
-// the budget pages, Back buttons, the linked-budget icon on an analysis, and
+// Suite 17 — unified navigation: the five-item primary nav with Pricing
+// Library under More, the Projects and Budgets pages, the shared workflow pills
+// on the budget pages, Back buttons, the linked-budget icon on an analysis, and
 // the budget status chip.
 const { chromium } = require('playwright');
 const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:''}`);
@@ -29,13 +29,22 @@ const BASE='http://127.0.0.1:8100';
      body:JSON.stringify({mode:'fromBudget',projectId:'BD-8101',analysisName:'Cedar Yard Deal'})});
  });
 
- // ---------- 1. the primary nav is exactly four items ----------
+ // ---------- 1. the primary nav is exactly five items ----------
+ // Projects sits ahead of Budgets: a budget belongs to a project, so the
+ // parent reads first.
  const navItems=await p.evaluate(()=>[...document.querySelectorAll('nav > button')].map(b=>b.textContent.trim()));
- ok('the primary nav is Home, Budgets, Investment Analysis and More',
-    JSON.stringify(navItems)===JSON.stringify(['Home','Budgets','Investment Analysis']),
+ ok('the primary nav is Home, Projects, Budgets, Investment Analysis and More',
+    JSON.stringify(navItems)===JSON.stringify(['Home','Projects','Budgets','Investment Analysis']),
     JSON.stringify(navItems));
- ok('More is present as the fourth item',
+ ok('More is present as the fifth item',
     await p.evaluate(()=>!!document.getElementById('nav-more-btn')));
+ ok('the project detail page lights the Projects tab, not its own',
+    await p.evaluate(()=>{
+      go('project');
+      return document.getElementById('nav-projects').classList.contains('on')
+        && !document.getElementById('nav-budgets').classList.contains('on');
+    }));
+ await p.evaluate(()=>go('home')); await p.waitForTimeout(200);
  ok('Inputs, Budget and CSI Schedule are gone from the global nav',
     await p.evaluate(()=>!document.getElementById('nav-input')
       &&!document.getElementById('nav-csi')));

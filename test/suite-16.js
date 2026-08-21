@@ -46,6 +46,22 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the dashboard page is showing',
     await p.evaluate(()=>document.getElementById('page-dashboard').classList.contains('on')));
  ok('KPI tiles render', (await p.locator('#dashKpis .dash-kpi').count())>0);
+ // Converted projects are what the dashboard is asked for: the money that
+ // became real work. Both tiles read the SNAPSHOT columns, so the figure does
+ // not move when a budget is edited after conversion.
+ const kpiText=await p.locator('#dashKpis').textContent();
+ ok('converted-project totals are reported',
+    /Converted Contract Amount/.test(kpiText) && /Converted Project Amount/.test(kpiText),
+    kpiText.replace(/\s+/g,' ').slice(0,200));
+ ok('and they say the figure was captured, not tracked',
+    /Captured at conversion/.test(kpiText));
+ ok('the project pipeline is charted in its real order, not sorted by count',
+    await p.evaluate(()=>{
+      const labs=[...document.querySelectorAll('.dash-funnel-row .fn-lab')].map(e=>e.textContent.trim());
+      return JSON.stringify(labs)===JSON.stringify(['Lead','Qualified','Budgeting','Proposal Sent',
+        'Awarded','Converted to Project','On Hold','Lost']);
+    }),
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('.dash-funnel-row .fn-lab')].map(e=>e.textContent.trim()))));
 
  // ---- design-system parity: the sections are the app's card shell, and the
  // activity table is the shared .tbl, not a bespoke one

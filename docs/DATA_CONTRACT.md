@@ -201,3 +201,113 @@ Five current rows per calculated analysis and five immutable rows per version
 carry the reporting columns (`DECIMAL(19,4)` money, `DECIMAL(19,10)` ratios).
 `ResultDoc` remains the full-precision authority they must reconcile with —
 `sql/verify_investment_analyses.sql` checks exactly that.
+
+---
+
+# Projects, guard rails and derived underwriting (added 2026-08)
+
+## `dbo.Projects` is the parent, and one project per ID is a primary key
+
+A budget belongs to exactly one project. `dbo.Projects.ProjectId` is the
+primary key, and that constraint *is* the "one project per ID" guarantee —
+nothing in application code has to defend it.
+
+A project can carry more than one budget. That is reached with a **namespaced
+budget id** rather than a surrogate key: `BD-0001` is the project's base
+budget, `BD-0001-02` and `BD-0001-03` are alternates, and `ProjectKey` is the
+id with the suffix stripped. Consequences worth knowing before changing it:
+
+- `dbo.Budgets` keeps `ProjectId` as its primary key. `SovLines`,
+  `BudgetVersions` and `InvestmentAnalyses` keep their existing foreign keys.
+  No row was re-keyed and no route changed.
+- `ID_RX` widened to `^(OP|BD|AS|TST)-\d{4}(-\d{2})?$` in the four files that
+  change together (`app/index.html`, `api/budget/index.js`,
+  `api/budget-versions/index.js`, `test/mock-api.js`).
+- **A budget's identity encodes its project.** Moving a budget to a different
+  project means giving it a new id, not editing a column. That is the one thing
+  a surrogate key would have bought.
+
+`InvestmentAnalyses` keeps `ProjectId` (the exact budget it was built from —
+still true, still useful) and gains `ProjectKey` (the project it rolls up to).
+Both are written; neither replaces the other.
+
+## Converting a project captures money; it does not track it
+
+`Status = 'Converted to Project'` stamps `ConvertedAt` and copies the primary
+budget's `ContractSum` / `ProjectCost` into `ContractAmount` / `ProjectAmount`.
+Those columns are a **snapshot** and never move again.
+
+This is deliberate and the analytics dashboard depends on it: reported backlog
+must not change because somebody edited a budget after the deal was booked.
+Anything reporting converted totals reads those two columns — never a live join
+to `dbo.Budgets`.
+
+## Guard rails are a document property, not a screen state
+
+`app/guardrails.js` and `api/shared/guardrails.js` are byte-identical, and
+`evaluate()` is pure over already-computed `parts()` / `grossIncome()`.
+
+- **Thresholds ship in the budget template's published version document**
+  (`doc.guardrails`), so publishing a template publishes the policy. The
+  `DEFAULT_POLICY` constant is the offline fallback only — the same
+  relationship `DEFAULT_PRICING` has to the pricing library.
+- **A rail whose denominator is zero is not evaluated.** It is not a pass and
+  not a breach; it is absent. Without this, block-on-save would make it
+  impossible to create a budget.
+- **`opexRatio` blocks only at `doc.opexSchemaVersion >= 2`** — a budget on the
+  old service-expense rows is warned, not blocked, because every budget that
+  predates this release sits at roughly 9% of income. Flipping it is a change
+  to the template's policy, not a code change.
+- **An override is a record, not a mute.** `doc.guardrailAcks` entries carry a
+  mandatory reason plus who and when, downgrade that rail to a warning, print on
+  the PDF and the Excel workbook, and are pruned automatically once the value is
+  back in range.
+- `Budgets.GuardrailStatus` / `GuardrailBreachCount` (and the same pair on
+  `BudgetVersions`) are a queryable summary of the last save. `ResultDoc`-style
+  authority stays with the rails themselves; the columns are for lists.
+
+## Project costs: percentage or fixed
+
+`doc.projectCosts.dev` / `.mkt` / `.cls` are `{mode:'amt'|'pct', val}`, the
+shape `doc.contingency` already used. A bare number is a pre-migration document
+and means dollars; `migrate()` lifts it once on load.
+
+A percentage is a share of the **final total project cost** — the number on the
+summary line, fees included. That is circular by definition, so `parts()`
+solves it rather than approximating:
+
+```
+base    = contract + soft costs + land
+f       = the summed percentage rates
+project = (base + fixedFees) / (1 − f)
+fee_i   = fixed_i + f_i × project
+```
+
+So a 3% developer fee really is 3% of the printed total. The divisor floors at
+`FEE_FLOOR` (0.05) so a budget the `feeSum` rail is already refusing still
+renders a finite number instead of `$Infinity`.
+
+## The analysis expense ratio is derived, and says so
+
+`api/shared/investment/from-budget.js` is the single projection from a budget
+version into an analysis input, used by creation **and** by
+`PUT /api/investment-analysis/{id}?scope=resync`. Three rules in it:
+
+1. **Property size is the building** (`resSF + amenSF`), never `doc.siteSF`.
+   Site SF is land; it prices nothing and it is carried separately as
+   `source.support.landSquareFeet`.
+2. **Purchase price is Total Project Cost**, recomputed from the version
+   document rather than trusted from a stored column.
+3. **The expense ratio is derived against Gross Operating Income** — after
+   vacancy, other income included — because that is what the engine's
+   `percentOfGOI` mode multiplies:
+   `derived = annualBudgetOpex / (budgetGrossIncomeYr × (1 − vacancy))`.
+
+`expenses.derivedFrom` records the project, the budget version, and the two
+figures the ratio came from. `expenses.override` is the user turning it off,
+and it is visible on the editor, in the list, and in every export.
+
+**Deriving the ratio does not move `CALCULATION_VERSION`.** The arithmetic is
+byte-identical; only the provenance of one input is new. A saved analysis is
+still never silently recalculated: the budget's current version number is
+reported so the client can *offer* a re-sync, and the user chooses.

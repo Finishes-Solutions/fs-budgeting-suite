@@ -2,20 +2,40 @@ const { getPool, sql } = require('../shared/db');
 const { getPrincipal } = require('../shared/auth');
 const { contentHash, contentEquals, parseDoc } = require('../shared/canonical');
 const { sovRows, writeSovLines, insertVersion } = require('../shared/versioning');
-const { parts } = require('../shared/budget-calc');
+const { parts, grossIncome } = require('../shared/budget-calc');
 const { features } = require('../shared/schema');
+const FSGuardrails = require('../shared/guardrails');
+const { updateProject, ensureProject, projectKeyOf, PROJECT_ID_RX } = require('../shared/projects');
 
 // TST-#### are throwaway test budgets used to exercise preview environments against
 // this same database. They are real rows; sql/cleanup_test_budgets.sql purges them and
 // the lender package excludes them (see docs/DATA_CONTRACT.md).
-const ID_RX = /^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/;
+const ID_RX = /^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/;
 
 const DUP_KEY = new Set([2627, 2601]);   // unique constraint / unique index violation
 
 module.exports = async function (context, req) {
   const id = (context.bindingData.id || '').toUpperCase();
-  if (!ID_RX.test(id)) { context.res = { status: 400, body: 'Invalid project ID (OP-#### / BD-#### / AS-#### / TST-####)' }; return; }
   const pool = await getPool();
+
+  // ---- PUT /api/budget/{id}?scope=project — project metadata and status.
+  // A route rule matches paths, not query strings, so it cannot see this
+  // scope: the signed-in check here is the real gate, not defence in depth.
+  if (req.method === 'PUT' && String((req.query && req.query.scope) || '') === 'project') {
+    const principal = getPrincipal(req);
+    if (!principal && !process.env.FS_ALLOW_ANON) {
+      context.res = { status: 401, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'unauthenticated', message: 'Sign in to change a project.' }) };
+      return;
+    }
+    if (!PROJECT_ID_RX.test(id)) {
+      context.res = { status: 400, body: 'Invalid project ID (OP-#### / BD-#### / AS-#### / TST-####)' }; return;
+    }
+    context.res = await updateProject(pool, id, req.body, principal);
+    return;
+  }
+
+  if (!ID_RX.test(id)) { context.res = { status: 400, body: 'Invalid project ID (OP-#### / BD-#### / AS-#### / TST-####)' }; return; }
 
   if (req.method === 'GET') {
     // Soft-deleted budgets are invisible to the app; the row and its history stay.
@@ -67,6 +87,26 @@ module.exports = async function (context, req) {
   if (!doc || !meta) { context.res = { status: 400, body: 'Body must be { meta, doc }' }; return; }
   if ((doc.projectId || '').toUpperCase() !== id) { context.res = { status: 400, body: 'Body projectId must match route' }; return; }
 
+  // Guard rails, re-evaluated from the SUBMITTED DOCUMENT — never from a
+  // client-supplied verdict. The browser refuses the save first as a courtesy;
+  // this is the gate. A rail whose denominator is zero is not evaluated, so a
+  // half-built budget is never blocked, and an acknowledgement recorded on the
+  // document downgrades a blocking rail to a warning.
+  {
+    const gp = parts(doc);
+    const gr = FSGuardrails.evaluate({ doc, parts: gp, gross: grossIncome(doc), fee: gp.fee });
+    if (gr.blocking) {
+      context.res = { status: 422, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'guardrail_breach',
+          message: gr.blocking + ' guard rail' + (gr.blocking === 1 ? '' : 's')
+            + ' outside range. Correct the value, or record an override with a reason.',
+          breaches: gr.breaches.filter(b => b.severity === 'error')
+            .map(b => ({ id: b.id, label: b.label, actual: b.actual, display: b.display,
+                         min: b.min, max: b.max, range: b.range, message: b.message })) }) };
+      return;
+    }
+  }
+
   const principal = getPrincipal(req);
   // Only the two identity fields are stored — never roles, tokens or headers.
   // Both are nullable so local development without a principal still saves.
@@ -78,6 +118,12 @@ module.exports = async function (context, req) {
   const schemaFeatures = await features(pool);
   const ownerInsertCols = schemaFeatures.budgetsCreatedBy ? ', CreatedById, CreatedByName' : '';
   const ownerInsertVals = schemaFeatures.budgetsCreatedBy ? ', @cuid, @cuname' : '';
+  // Guard-rail columns arrive with sql/migrate_projects_and_guardrails.sql.
+  // Until it runs, the rails still evaluate and still block — only the stored
+  // summary of them is skipped, so the list simply shows no rail indicator.
+  const grSet = schemaFeatures.budgetsGuardrail ? ', GuardrailStatus=@grst, GuardrailBreachCount=@grn' : '';
+  const grInsertCols = schemaFeatures.budgetsGuardrail ? ', GuardrailStatus, GuardrailBreachCount' : '';
+  const grInsertVals = schemaFeatures.budgetsGuardrail ? ', @grst, @grn' : '';
 
   // Version numbers are serialized by the locks below and enforced by
   // UQ_BudgetVersions_Version. A duplicate can still surface if two saves race
@@ -90,6 +136,20 @@ module.exports = async function (context, req) {
       throw e;
     }
   }
+  // A budget always belongs to a project. Creating the parent (and stamping the
+  // link) is best effort and outside the save transaction on purpose: a project
+  // row that cannot be written must never cost someone their budget.
+  if (schemaFeatures.projectsTable && schemaFeatures.budgetsProjectKey) {
+    try {
+      await ensureProject(pool, id, { name: meta.name || doc.name, address: doc.address,
+                                      type: meta.type || doc.type, userId, userName });
+      await pool.request()
+        .input('id', sql.VarChar(16), id)
+        .input('pk', sql.VarChar(16), projectKeyOf(id))
+        .query('UPDATE dbo.Budgets SET ProjectKey = @pk WHERE ProjectId = @id AND ProjectKey IS NULL');
+    } catch (e) { context.log && context.log.warn && context.log.warn('project link skipped: ' + e.message); }
+  }
+
   context.res = { status: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(result) };
   // Best-effort audit trail — recordActivity never throws.
   if (result.versionCreated)
@@ -148,6 +208,7 @@ module.exports = async function (context, req) {
       const calc = parts(doc);
       const contractSum = Math.round(calc.contract * 100) / 100;
       const projectCost = Math.round(calc.project * 100) / 100;
+      const rails = FSGuardrails.evaluate({ doc, parts: calc, gross: grossIncome(doc), fee: calc.fee });
 
       // Saving a soft-deleted ProjectId restores it: recreate means recover.
       await new sql.Request(tx)
@@ -163,17 +224,19 @@ module.exports = async function (context, req) {
         .input('doc', sql.NVarChar(sql.MAX), docJson)
         .input('cuid', sql.NVarChar(128), userId)
         .input('cuname', sql.NVarChar(200), userName)
+        .input('grst', sql.VarChar(10), rails.status)
+        .input('grn', sql.Int, rails.breaches.length)
         .query(`MERGE dbo.Budgets AS t
                 USING (SELECT @id AS ProjectId) AS s ON t.ProjectId = s.ProjectId
                 WHEN MATCHED THEN UPDATE SET Name=@name, Type=@type, Status=@status,
                   ContractSum=@cs, ProjectCost=@pc, PricingVersion=@pv, Doc=@doc,
                   TemplateKey=@tk, TemplateVersionId=@tv,
-                  IsDeleted=0, DeletedAt=NULL, UpdatedAt=SYSUTCDATETIME()
+                  IsDeleted=0, DeletedAt=NULL, UpdatedAt=SYSUTCDATETIME()${grSet}
                 WHEN NOT MATCHED THEN INSERT (ProjectId, Name, Type, Status, ContractSum,
                   ProjectCost, PricingVersion, Doc, TemplateKey, TemplateVersionId
-                  ${ownerInsertCols})
+                  ${ownerInsertCols}${grInsertCols})
                   VALUES (@id, @name, @type, @status, @cs, @pc, @pv, @doc, @tk, @tv
-                  ${ownerInsertVals});`);
+                  ${ownerInsertVals}${grInsertVals});`);
 
       await writeSovLines(tx, id, sovRows(doc));
 

@@ -306,8 +306,8 @@ const BASE = 'http://127.0.0.1:8100';
   await p.click('#budgetsBody tr:has-text("TST-9999") .rowmenu-btn');
   await p.waitForTimeout(200);
   ok('Row menu opens', await p.locator('#rowMenu').isVisible());
-  ok('Row menu offers Edit, Pin, Update Pricing, Versions and Delete',
-     (await p.locator('#rowMenu .rowmenu-item').allTextContents()).join('|') === 'Edit|Pin to Home|Update Pricing|Versions|Delete',
+  ok('Row menu offers Edit, Favorites, Update Pricing, Versions and Delete',
+     (await p.locator('#rowMenu .rowmenu-item').allTextContents()).join('|') === 'Edit|Add to Favorites|Update Pricing|Versions|Delete',
      (await p.locator('#rowMenu .rowmenu-item').allTextContents()).join('|'));
   ok('Trigger reports expanded state',
      await p.locator('#budgetsBody tr:has-text("TST-9999") .rowmenu-btn').getAttribute('aria-expanded') === 'true');
@@ -395,8 +395,8 @@ const BASE = 'http://127.0.0.1:8100';
   await iaRow.locator('.rowmenu-btn').click();
   await p.waitForTimeout(200);
   const menuItems = await p.locator('#invRowMenu .rowmenu-item').allTextContents();
-  ok('three-dot menu offers Open, Pin, Versions, Duplicate, Delete',
-     JSON.stringify(menuItems) === JSON.stringify(['Open Analysis', 'Pin to Home', 'Versions', 'Duplicate', 'Delete Analysis']),
+  ok('three-dot menu offers Open, Favorites, Versions, Duplicate, Delete',
+     JSON.stringify(menuItems) === JSON.stringify(['Open Analysis', 'Add to Favorites', 'Versions', 'Duplicate', 'Delete Analysis']),
      menuItems.join(','));
   await p.locator('#invRowMenu .rowmenu-item', { hasText: 'Versions' }).click();
   await p.waitForTimeout(500);

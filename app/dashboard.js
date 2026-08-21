@@ -58,13 +58,34 @@ function eventLabel(ev){
   return map[ev]||ev;
 }
 
+/* Two vocabularies share this map. Budgets and analyses answer "is this
+   document finished" (Draft · In Review · Completed · Cancelled); projects
+   answer "where is this deal" (Lead → … → Converted to Project). The stale
+   names the map used to carry — In Progress, Approved, Signature Needed — were
+   never statuses this app sets, and are gone. */
 var STATUS_COLORS={
-  'Draft':'#6B7280','In Progress':'#2B579A','Completed':'#16803C',
-  'Approved':'#16803C','On Hold':'#8A6116','Cancelled':'#C43C3C',
-  'Signature Needed':'#7C3AED'
+  'Draft':'#6B7280','In Review':'#8A6116','Completed':'#16803C','Cancelled':'#C43C3C',
+  'Lead':'#6B7280','Qualified':'#4D5457','Budgeting':'#2B579A','Proposal Sent':'#8A6116',
+  'Awarded':'#1F9249','Converted to Project':'#006527','On Hold':'#8A6116','Lost':'#C43C3C'
 };
 
 function statusColor(s){ return STATUS_COLORS[s]||'#6B7280'; }
+
+/* Converted projects — the work that actually became work. Both amounts are
+   the snapshots taken at conversion, so this row does not move when someone
+   edits a budget afterwards; the tiles say so, because a number nobody can
+   explain is a number nobody trusts. */
+function projectKPIs(){
+  var p=data&&data.projects;
+  if(!p||!p.available)return '';
+  return '<div class="dash-kpi"><div class="k">Converted Projects</div><div class="v">'+num(p.converted)+'</div>'
+    +'<div class="sub">'+num(p.total)+' projects · '
+    +(p.conversionRate===null?'no decisions yet':pct(p.conversionRate)+' of decided')+'</div></div>'
+    +'<div class="dash-kpi"><div class="k">Converted Contract Amount</div><div class="v">'+money(p.convertedContractAmount)+'</div>'
+    +'<div class="sub">Captured at conversion</div></div>'
+    +'<div class="dash-kpi"><div class="k">Converted Project Amount</div><div class="v">'+money(p.convertedProjectAmount)+'</div>'
+    +'<div class="sub">Captured at conversion</div></div>';
+}
 
 function renderKPIs(el){
   if(!data){el.innerHTML='<div class="dash-loading">Loading dashboard data...</div>';return;}
@@ -78,6 +99,7 @@ function renderKPIs(el){
     +'<div class="sub">Across all active budgets</div></div>'
     +'<div class="dash-kpi"><div class="k">Active Analyses</div><div class="v">'+num(a.active)+'</div>'
     +'<div class="sub">'+num(a.total)+' total created</div></div>'
+    +projectKPIs()
     +'<div class="dash-kpi"><div class="k">Avg Purchase Price</div><div class="v">'+money(a.avgPurchasePrice)+'</div></div>'
     +'<div class="dash-kpi"><div class="k">Avg Year 1 NOI</div><div class="v">'+money(a.avgYear1NOI)+'</div></div>'
     +'<div class="dash-kpi"><div class="k">Avg Equity IRR</div><div class="v">'+pct(a.avgIRR)+'</div></div>'
@@ -101,9 +123,30 @@ function barHTML(breakdown, total){
 function renderBreakdowns(el){
   if(!data){el.innerHTML='';return;}
   var b=data.budgets, a=data.analyses;
+  var pj=data.projects;
   el.innerHTML=
     '<div class="dash-card"><h3>Budget Status</h3>'+donutHTML(b.statusBreakdown)+'</div>'
-    +'<div class="dash-card"><h3>Analysis Status</h3>'+donutHTML(a.statusBreakdown)+'</div>';
+    +'<div class="dash-card"><h3>Analysis Status</h3>'+donutHTML(a.statusBreakdown)+'</div>'
+    +(pj&&pj.available
+      ? '<div class="dash-card"><h3>Project Pipeline</h3>'+funnelHTML(pj)+'</div>'
+      : '');
+}
+
+/* The pipeline in its real order rather than sorted by count — the shape of a
+   funnel is the information, and re-ordering destroys it. A stage with nothing
+   in it still gets a row, because an empty stage is a fact too. */
+function funnelHTML(p){
+  var by={};(p.statusBreakdown||[]).forEach(function(r){by[r.status]=r.count;});
+  var max=Math.max.apply(null,(p.statuses||[]).map(function(s){return by[s]||0;}).concat([1]));
+  return '<div class="dash-funnel">'
+    +(p.statuses||[]).map(function(s){
+      var n=by[s]||0;
+      return '<div class="dash-funnel-row"><span class="fn-lab">'+esc(s)+'</span>'
+        +'<span class="fn-bar"><span class="fn-fill" style="width:'+(100*n/max).toFixed(1)+'%;'
+        +'background:'+statusColor(s)+'"></span></span>'
+        +'<span class="fn-n">'+num(n)+'</span></div>';
+    }).join('')
+    +'</div>';
 }
 
 /* ================= charts =================
@@ -673,6 +716,9 @@ function refresh(){
 
 window.FSDashboard={
   init:function(a){ adapter=a||{}; },
+  // Converting a project changes what the KPIs report, so the cache lets go
+  // rather than showing yesterday's backlog until someone hits Refresh.
+  invalidate:function(){ data=null; activityData=null; },
   render:function(){ if(!data&&!loading)loadData(); else renderDashboard(); },
   refresh:refresh,
   viewMore:viewMore,

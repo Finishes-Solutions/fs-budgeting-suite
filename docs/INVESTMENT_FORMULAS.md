@@ -366,3 +366,90 @@ any `NaN`/`Infinity` to `null`.
 | `annual[].propertyIRR`, `effectiveLoanRate`, `equityIRR`, `leverageImpact`; `summary.optimalHoldingYear`, `optimalHoldingYield`, `finalYearEquityIRR`, `finalYearEquityMultiple` | `returns.js` | 10 |
 | `sensitivity[]` | `sensitivity.js` | 11 |
 | `warnings[]` | `calculate.js` | 12 |
+
+---
+
+## Budget-derived operating expense ratio (added 2026-08)
+
+**Source module:** `api/shared/investment/from-budget.js` → `deriveExpenseRatio()`
+
+When an analysis is created from a budget — or re-synced with
+`PUT /api/investment-analysis/{id}?scope=resync` — the operating expense
+percentage is derived rather than typed.
+
+```
+annualBudgetOpex     = 12 × grossIncome(budgetDoc).expMo
+budgetGrossIncomeYr  = 12 × (rent + other income)          per month, from the budget
+GOI                  = budgetGrossIncomeYr × (1 − vacancy)
+derived              = annualBudgetOpex / GOI
+```
+
+`vacancy` is **the analysis's own assumption**, not the organisation default,
+whenever one is already set — which is why a re-sync re-derives rather than
+copying the creation-time number.
+
+### Why GOI and not gross income
+
+`api/shared/investment/operating.js` applies `expenses.mode === 'percentOfGOI'`
+against **Gross Operating Income**: effective rental income after vacancy, plus
+other income. Deriving against gross scheduled income instead would understate
+the ratio by exactly the vacancy factor — a 45% expense load would arrive as
+40.5% at 10% vacancy, and NOI would be overstated all the way down the
+projection.
+
+### What is recorded
+
+`normalizedInput.expenses` carries, alongside `mode` and `value`:
+
+| Field | Meaning |
+|---|---|
+| `derivedFrom.projectId` | the budget it came from |
+| `derivedFrom.budgetVersionNumber` | the exact immutable version |
+| `derivedFrom.annualOpex` | the numerator |
+| `derivedFrom.grossIncomeYr` | the budget's gross income |
+| `derivedFrom.vacancy` | the vacancy the GOI was computed at |
+| `derivedFrom.goi` | the denominator |
+| `derivedFrom.opexSchemaVersion` | 1 = service rows only, 2 = full schedule |
+| `override` | the user took manual control; the value no longer tracks the budget |
+
+### What did NOT change
+
+`CALCULATION_VERSION` stays `before-tax-1.1.0`. Every formula in this document
+is untouched — the engine receives a number in the same field it always did,
+and only the provenance of that number is new. Bumping the version string here
+would orphan every saved analysis from its engine for no arithmetic reason.
+
+### The honesty clause
+
+A budget whose expense rows total ~9% of income (every budget created before
+the full OPEX schedule) produces a derived ratio of ~9%, and the analysis says
+so at the point of use rather than quietly under-loading the projection:
+
+> Budget BD-0001 is at 9.3% — outside the 35–55% guard rail and predates the
+> full expense schedule. This analysis will misstate NOI until the budget is
+> corrected.
+
+That is the whole reason the 35–55% guard rail and the derived ratio shipped
+together.
+
+## Property size and purchase price on import (corrected 2026-08)
+
+**Source module:** `api/shared/investment/from-budget.js` → `projectFromBudget()`
+
+| Analysis field | Budget source |
+|---|---|
+| `property.size` | `resSF + amenSF` — the **building** |
+| `acquisition.basis.value` | `parts(doc).project` — Total Project Cost |
+| `income.year1PotentialIncome` | `12 × grossIncome(doc).rentMo` — gross scheduled rent |
+| `source.support.landSquareFeet` | `doc.siteSF` — the land, kept as a site measure |
+| `source.support.rentableSquareFeet` | `Σ(unit.sf × unit.count)` |
+
+**Previously** `property.size` preferred `doc.siteSF` and only fell back to the
+building. `siteSF` is the land area — `app/index.html` says so itself: *"Site SF
+is land, so it prices nothing; it only feeds these measures."* Importing it as
+property size made every price-per-square-foot figure in the analysis and its
+exports a price per square foot of dirt. It looked correct on any budget where
+Site SF was left at zero, which is why it survived.
+
+Existing analyses are **not** auto-repaired: silently changing a saved number is
+what the data contract forbids. They are told, and the user re-syncs.

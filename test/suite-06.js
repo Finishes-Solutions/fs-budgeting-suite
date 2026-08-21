@@ -168,7 +168,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await m.click('#budgetsBody tr .rowmenu-btn'); await m.waitForTimeout(300);
  ok('The row menu offers the full action set on a phone',
     (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|')
-      === 'Edit|Pin to Home|Update Pricing|Versions|Delete',
+      === 'Edit|Add to Favorites|Update Pricing|Versions|Delete',
     (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|'));
  await m.keyboard.press('Escape'); await m.waitForTimeout(150);
 
