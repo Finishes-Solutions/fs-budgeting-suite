@@ -149,6 +149,9 @@
 .inv-warn-text{color:var(--warn);font-weight:600}
 .inv-origin-warn{color:var(--warn);background:#fdf6e8}
 .inv-step input[readonly]{background:var(--ink-50);color:var(--ink-700);cursor:not-allowed}
+/* A select has no readonly, so a locked one is disabled — and has to READ the
+   same as a locked input, not like a browser default. */
+.inv-step select:disabled{background:var(--ink-50);color:var(--ink-700);cursor:not-allowed;opacity:1}
 .inv-drift{font-family:var(--fm);font-size:10.5px;letter-spacing:.04em;margin-left:8px;
   border:1px solid #e6d3ae;background:#fdf6e8;color:var(--warn);border-radius:999px;
   padding:2px 10px;cursor:pointer}
@@ -160,3 +163,27 @@ html[data-theme=dark] .inv-origin-warn,html[data-theme=dark] .inv-drift{backgrou
   white-space:nowrap;border-radius:999px;padding:1px 7px;
   border:1px solid #e6d3ae;background:#fdf6e8;color:var(--warn);cursor:default}
 html[data-theme=dark] .inv-drift-dot{background:#2a2317;border-color:#4d4026}
+
+/* ---- step-card header: the title block and the card's ⋮ menu ----
+   The menu is the deliberate way past a lock, so it sits where the card's
+   own actions belong — top right, clear of the fields. */
+.inv-step-hd{display:flex;align-items:flex-start;gap:14px;justify-content:space-between}
+.inv-step-hd-t{min-width:0;flex:1}
+.inv-step-hd .rowmenu-btn{flex:none;margin-top:-2px}
+.inv-step-hd h2{margin-bottom:4px}
+
+/* A note that belongs to the grid but not to any one cell: it takes a row of
+   its own so the fields above it stay on one line and stay aligned. */
+.inv-grid .inv-grid-full{grid-column:1/-1;margin-top:-4px}
+
+/* ---- named validation ----
+   Each flagged assumption says which one it is and which step it lives on,
+   and the step button jumps there. */
+.inv-errlist{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.inv-errlist li{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;line-height:1.5}
+.inv-errjump{flex:none;font-family:var(--fm);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  border:1px solid #E0C98F;background:var(--white);color:#6E4E12;border-radius:999px;
+  padding:2px 9px;cursor:pointer;transition:background .12s,border-color .12s}
+.inv-errjump:hover{background:#F6E9CE;border-color:#C9A94F}
+.inv-errjump:focus-visible{outline:none;box-shadow:var(--focus)}
+html[data-theme=dark] .inv-errjump{background:#2a2317;border-color:#4d4026;color:#E8C97A}

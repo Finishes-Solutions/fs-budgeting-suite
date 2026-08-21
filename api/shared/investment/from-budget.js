@@ -129,4 +129,11 @@ function projectFromBudget(doc, v, opts) {
   return { imported, support, fieldOrigins, derived };
 }
 
-module.exports = { projectFromBudget, deriveExpenseRatio, round2, round4 };
+/* A new analysis starts in the month it is created — the overwhelmingly common
+   answer, and one the user can change on step 1. It is set at CREATION only:
+   an analysis that already carries a month (or was created before this
+   default existed) is never rewritten, because a saved assumption is the
+   user's, not ours. */
+function currentPurchaseMonth() { return new Date().toISOString().slice(0, 7); }
+
+module.exports = { projectFromBudget, deriveExpenseRatio, currentPurchaseMonth, round2, round4 };

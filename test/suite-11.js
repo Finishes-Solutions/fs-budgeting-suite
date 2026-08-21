@@ -37,16 +37,23 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.waitForTimeout(900);
  ok('editor opens on a GUID route', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
 
+ // Several of these fields now RENDER with a $, commas or a unit suffix. The
+ // decoration is display only, so the suite strips it back off — and asserts
+ // separately, below, that the decoration is actually there.
+ const raw=s=>+String(s).replace(/[^0-9.-]/g,'');
  const pre=await p.evaluate(()=>({
-   pri:+document.querySelector('[data-f="income.year1PotentialIncome"]').value,
-   price:+document.querySelector('[data-f="acquisition.basis.value"]').value,
-   size:+document.querySelector('[data-f="property.size.value"]').value,
+   priTxt:document.querySelector('[data-f="income.year1PotentialIncome"]').value,
+   priceTxt:document.querySelector('[data-f="acquisition.basis.value"]').value,
+   sizeTxt:document.querySelector('[data-f="property.size.value"]').value,
+   costPctTxt:document.querySelector('[data-f="acquisition.costPercent"]').value,
+   growthTxt:document.querySelector('[data-f="income.growth.value"]').value,
    units:+document.querySelector('[data-f="property.unitCount"]').value,
    month:document.querySelector('[data-f="property.purchaseMonth"]').value,
    exp:document.querySelector('[data-f="expenses.value"]').value,
    cap:document.querySelector('[data-f="disposition.exitCapRate.value"]').value,
    name:document.querySelector('[data-f="property.name"]').value,
    addr:document.querySelector('[data-f="property.address"]').value}));
+ pre.pri=raw(pre.priTxt); pre.price=raw(pre.priceTxt); pre.size=raw(pre.sizeTxt);
  // gross scheduled rent: (20×1500 + 5×2000) × 12 = 480,000 — never the budget's net figure
  ok('Year-1 potential income = gross unit rent × 12', pre.pri===480000, String(pre.pri));
  // project cost: 4,000,000 + 5% profit + land 800,000 = 5,000,000
@@ -62,7 +69,31 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
            return j.input.source.support.landSquareFeet;})) ===120000);
  ok('unit count imported', pre.units===25);
  ok('property name and address imported', pre.name==='Import Source'&&pre.addr==='11 Origin Ave');
- ok('purchase month is NOT invented', pre.month==='');
+ // A new analysis opens in the month it was created — the common answer, and
+ // one step 1 can change. It is set at CREATION, never written over a saved one.
+ ok('purchase month defaults to the current month',
+    pre.month===new Date().toISOString().slice(0,7), pre.month);
+
+ // ---- the review's number formatting: decoration on screen, numbers underneath
+ ok('purchase price reads as money', /^\$5,000,000$/.test(pre.priceTxt), pre.priceTxt);
+ ok('size value carries commas and its unit', /^50,000 SF$/.test(pre.sizeTxt), pre.sizeTxt);
+ ok('acquisition costs read as 0.00%', /^\d+\.\d{2}%$/.test(pre.costPctTxt), pre.costPctTxt);
+ ok('year-1 potential income reads as money', /^\$480,000$/.test(pre.priTxt), pre.priTxt);
+ ok('income growth reads as 0.00%', /^\d+\.\d{2}%$/.test(pre.growthTxt), pre.growthTxt);
+ ok('and the stored values are still plain numbers',
+    await p.evaluate(async()=>{
+      const j=await (await fetch('/api/investment-analysis/'+location.hash.split('/').pop())).json();
+      return typeof j.input.acquisition.basis.value==='number'
+        && typeof j.input.property.size.value==='number'
+        && typeof j.input.acquisition.costPercent==='number';}));
+
+ // ---- budget-derived fields are locked until the card's menu says otherwise
+ ok('imported property fields are read-only by default',
+    await p.evaluate(()=>['property.name','property.address','property.size.value','acquisition.basis.value']
+      .every(f=>document.querySelector('[data-f="'+f+'"]').hasAttribute('readonly'))));
+ ok('and the fields that are the user\u2019s stay editable',
+    await p.evaluate(()=>!document.querySelector('[data-f="acquisition.costPercent"]').hasAttribute('readonly')
+      && !document.querySelector('[data-f="property.purchaseMonth"]').hasAttribute('readonly')));
  // Derived from the budget against GOI — 7,800 OPEX ÷ (499,800 × 0.9) = 1.73%.
  // Visibly low, which is exactly what the 35–55% guard rail exists to catch;
  // the number is reported honestly rather than invented.
@@ -76,12 +107,30 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // other income rows imported as annual suggestions: Parking 50×25×12=15,000 · Signage 200×2×12=4,800
  await p.click('#invSteps button[data-step="2"]');
- const other=await p.evaluate(()=>[...document.querySelectorAll('#invOtherRows tbody tr')].map(tr=>({
-   label:tr.querySelector('input[type="text"]').value,
-   amount:+tr.querySelector('input[type="number"]').value})));
+ const other=await p.evaluate(()=>[...document.querySelectorAll('#invOtherRows tbody tr')].map(tr=>{
+   const ins=[...tr.querySelectorAll('input')];
+   return {label:ins[0].value, amount:+String(ins[1].value).replace(/[^0-9.-]/g,''),
+           lockedLabel:ins[0].hasAttribute('readonly'), lockedAmount:ins[1].hasAttribute('readonly'),
+           growthEditable:!ins[2].hasAttribute('readonly')};
+ }));
  ok('other-income rows imported ×12 with labels',
     other.length===2&&other[0].label==='Parking'&&other[0].amount===15000
     &&other[1].label==='Signage'&&other[1].amount===4800, JSON.stringify(other));
+ // Budget-derived other income is the budget's to state; only the growth rate
+ // is the underwriter's, so the lock covers labels, amounts, Add and Remove.
+ ok('imported other-income rows are read-only except their growth rate',
+    other.every(r=>r.lockedLabel&&r.lockedAmount&&r.growthEditable), JSON.stringify(other));
+ ok('and there is no Add Other Income while they come from the budget',
+    (await p.locator('#page-analysis button:has-text("+ Add Other Income")').count())===0);
+ ok('nor a per-row remove button',
+    (await p.locator('#invOtherRows .btn-x').count())===0);
+
+ // ---- the Unit & Other Income summary, after the reconciliation
+ const sumTxt=(await p.locator('#invIncomeSummary').textContent()).replace(/\u00a0/g,' ');
+ ok('a Unit & Other Income table shows how the total is built',
+    /Unit Income/.test(sumTxt)&&/Other Income/.test(sumTxt)&&/Total Income/.test(sumTxt), sumTxt.slice(0,120));
+ ok('and its total is unit income plus other income',
+    /\$480,000/.test(sumTxt)&&/\$19,800/.test(sumTxt)&&/\$499,800/.test(sumTxt), sumTxt.slice(0,200));
  ok('unit-mix support table reconciles rent to income',
     /40,000\/mo scheduled rent × 12 = \$480,000/.test((await p.locator('#invUnitMix').textContent()).replace(/ /g,' ')),
     (await p.locator('#invUnitMix .inv-provenance').textContent()));
@@ -97,8 +146,30 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('with the source budget flagged as outside the guard rail',
     /guard rail/i.test(await p.locator('#invExpDerived').textContent()));
 
- // ---- the override is the only way to type into it, and it is visible
- await p.check('#invExpOverride'); await p.waitForTimeout(300);
+ // Vacancy, Expense Mode and the ratio share one row, aligned on their inputs.
+ const vBox=await p.locator('[data-f="vacancy.value"]').boundingBox();
+ const mBox=await p.locator('[data-f="expenses.mode"]').boundingBox();
+ const eBox=await p.locator('[data-f="expenses.value"]').boundingBox();
+ // A select renders a couple of pixels taller than a text input, so the row is
+ // aligned on the BOTTOM edge — which is what .inv-grid .fld does.
+ const bot=b2=>b2.y+b2.height;
+ ok('vacancy, expense mode and the ratio sit on one aligned row',
+    Math.abs(bot(vBox)-bot(mBox))<2&&Math.abs(bot(vBox)-bot(eBox))<2,
+    JSON.stringify({v:bot(vBox),m:bot(mBox),e:bot(eBox)}));
+ ok('the expense total row is named and bold',
+    await p.evaluate(()=>{
+      const tr=[...document.querySelectorAll('#invExpSupport tr.tot')][0];
+      return !!tr && /Total Operating Expenses/.test(tr.textContent)
+        && tr.querySelectorAll('b').length===2;}));
+
+ // ---- the override moved from a bare checkbox to the card's ⋮ menu
+ ok('the standalone override checkbox is gone',
+    (await p.locator('#invExpOverride').count())===0);
+ await p.click('#page-analysis [data-steppane="3"] [data-step-menu]'); await p.waitForTimeout(200);
+ ok('the card menu offers Override Budget Inputs',
+    /Override Budget Inputs/.test(await p.locator('#invStepMenu').textContent()),
+    await p.locator('#invStepMenu').textContent());
+ await p.locator('#invStepMenu .rowmenu-item').first().click(); await p.waitForTimeout(400);
  ok('overriding unlocks the field',
     !(await p.evaluate(()=>document.querySelector('[data-f="expenses.value"]').hasAttribute('readonly'))));
  ok('and the badge changes to say so',
@@ -109,6 +180,18 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#invSteps button[data-step="1"]');
  ok('origin badges mark imported values', (await p.locator('.inv-origin').count())>=4,
     (await p.locator('.inv-origin').count())+' badges');
+
+ // ---- unlocking is deliberate, and changes nothing on its own
+ const beforeUnlock=await p.locator('[data-f="property.name"]').inputValue();
+ await p.click('#page-analysis [data-steppane="1"] [data-step-menu]'); await p.waitForTimeout(200);
+ ok('the Source & Property menu offers Override Budget Inputs',
+    /Override Budget Inputs/.test(await p.locator('#invStepMenu').textContent()),
+    await p.locator('#invStepMenu').textContent());
+ await p.locator('#invStepMenu .rowmenu-item').first().click(); await p.waitForTimeout(400);
+ ok('overriding unlocks the imported property fields',
+    await p.evaluate(()=>!document.querySelector('[data-f="property.name"]').hasAttribute('readonly')));
+ ok('and does not change the imported value',
+    (await p.locator('[data-f="property.name"]').inputValue())===beforeUnlock);
 
  // ---- the badge follows the value: editing away hides it, reverting restores
  const nameBadge=p.locator('[data-origin="property.name"]');
@@ -140,6 +223,11 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#invSaveBtn'); await p.waitForTimeout(900);
  await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(800);
  await p.click('#invSteps button[data-step="1"]'); await p.waitForTimeout(200);
+ // An override is a decision about the edit being made now, so a reload relocks.
+ ok('a reload relocks the budget-derived fields',
+    await p.evaluate(()=>document.querySelector('[data-f="property.name"]').hasAttribute('readonly')));
+ await p.click('#page-analysis [data-steppane="1"] [data-step-menu]'); await p.waitForTimeout(200);
+ await p.locator('#invStepMenu .rowmenu-item').first().click(); await p.waitForTimeout(400);
  ok('after save + reload the edited field still shows no badge',
     !(await p.locator('[data-origin="property.name"]').isVisible()));
  await p.fill('[data-f="property.name"]',origName);

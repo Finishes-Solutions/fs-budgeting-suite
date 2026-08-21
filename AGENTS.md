@@ -75,7 +75,7 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | `api/shared/` | `auth.js` (principal + roles), `db.js` (pool + cold-start retry), `canonical.js` (canonical JSON + hashing), `sov.js` (SOV projection), `versioning.js` (version writes), `projects.js` (the Projects aggregate), `guardrails.js` (rail evaluator) |
 | `api/shared/investment/from-budget.js` | The budget→analysis projection, shared by creation AND re-sync so the two cannot derive differently |
 | `sql/` | Idempotent schema + migration + views, seeds, and admin-run scripts |
-| `test/` | Ten Playwright suites, `node:test` logic tests, and `mock-api.js` (a local stand-in for the SWA API) |
+| `test/` | Twenty-one Playwright suites, `node:test` logic tests, and `mock-api.js` (a local stand-in for the SWA API) |
 | `docs/` | Build guide, data contract, handoff, roadmap, naming |
 
 Stack: Azure Static Web Apps (Standard) → SWA-managed Azure Functions (Node 18,
@@ -188,6 +188,29 @@ custom provider for sign-in.
   a pre-migration document and means dollars; `migrate()` lifts it once.
 - **Expenses have a third basis, `pctIncome`** — a share of rent + other income.
   Not circular: income does not depend on expenses.
+- **A formatted input is DECORATION over a number.** A few investment-analysis
+  fields render as `type="text"` so they can carry a `$`, thousands separators,
+  a `%` or a unit suffix (`207,000 SF`). The value in `st.input` stays a plain
+  number: `parseNum()` strips the decoration on every read, `FORMATTED` repaints
+  the field from the stored number after every committed change, and nothing
+  that calculates, validates, saves or exports ever sees a formatted string.
+  Never widen the set by making a field `type="text"` without adding it to
+  `FORMATTED` and routing its `onFieldChange` case through `parseNum()`.
+- **Square feet and acres share one canonical area.** Changing Size Unit
+  CONVERTS the value, through `st.sizeSF` (square feet) rather than through the
+  displayed figure — which is what makes SF → acres → SF land back on the
+  number you started with. `units` is not an area: it takes the unit count and
+  leaves the canonical area alone for the trip back.
+- **Budget-derived analysis inputs are read-only by default.** Anything named in
+  `input.source.fieldOrigins` (and anything beneath it — `property.size` covers
+  the unit and the value) locks, as does imported other income, where only the
+  growth rate stays editable. The Source & Property and Vacancy & Expenses cards
+  each carry a `⋮` menu whose **Override Budget Inputs** is the only way past
+  the lock; unlocking never rewrites a value, and the source lock re-arms on
+  every load because an override is a decision about the edit being made now.
+  The expense-ratio override is different: it is a persisted property of the
+  analysis (`input.expenses.override`), because the analysis carries it into
+  every export.
 - **Theme packs are paint only.** A pack (Settings → Theme Pack, super_admin)
   is an alternate appearance of the same product: it may remap tokens and
   restyle primitives, never move a route, label, control, calculation or
@@ -226,6 +249,15 @@ custom provider for sign-in.
   captured from the primary budget at the moment of conversion and never move
   again. A budget edited afterwards must not restate reported backlog, which is
   why the analytics totals read those columns and not a live join.
+- **The project page borrows the app's row menus rather than growing its own.**
+  Budget rows open `openRowMenu()` from `index.html` (Edit · Favorite · Update
+  Pricing · Versions · Delete); analysis rows open
+  `FSInvestmentUI.openInvRowMenu()`. Both repaint through
+  `FSHome.toggleFavorite()` → the adapter's `favoritesChanged`, which already
+  knows which page is showing — don't add a second repaint path.
+- **Projects is the third `*View` section.** `projectView` sits beside
+  `budgetView` and `analysisView` in `api/shared/user-settings-contract.js`;
+  the toolbar control and the Settings row both go through `chooseSetting`.
 
 ## Auth & security
 

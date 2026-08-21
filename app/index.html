@@ -409,6 +409,13 @@ main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 .wf-steps button[disabled]{opacity:.45;cursor:not-allowed}
 .wf-steps button[disabled]:hover{background:var(--white);border-color:var(--ink-200);color:var(--ink-700)}
 .wf-steps .n{font-family:var(--fm);font-size:11px;opacity:.65;margin-right:6px}
+/* A step whose assumptions are flagged wears the same amber as the warning
+   banner that names them, so the banner and the pills read as one thing. */
+.wf-steps button.flag{border-color:#EAD9B0;background:#FBF3E4;color:#6E4E12}
+.wf-steps button.flag:hover{background:#F6E9CE;border-color:#DFC98F;color:#5A400E}
+.wf-steps button.on.flag{background:#8A6116;border-color:#8A6116;color:#fff}
+.wf-steps button.on.flag:hover{background:#8A6116;border-color:#8A6116;color:#fff}
+html[data-theme=dark] .wf-steps button.flag{background:#2a2317;border-color:#4d4026;color:#E8C97A}
 /* completed steps carry a green dot (owner preference: dot, not a check mark) */
 .wf-steps button.done::after,.wf-steps a.done::after{content:'';display:inline-block;width:7px;height:7px;
   border-radius:50%;background:var(--green-700);margin-left:7px;vertical-align:middle}
@@ -632,6 +639,42 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
    The row is clickable, so it needs to look it; the star and the status chip
    inside it stop propagation, which is why they are real buttons and not
    decorated spans. */
+/* ---- project stat cards ----
+   Four headline numbers as real cards: a labelled surface with the figure
+   anchored to the bottom of the card, so the numbers line up across the row
+   however long a label runs. */
+.pj-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.pj-stat{display:flex;flex-direction:column;background:var(--white);border:1px solid var(--ink-150);
+  border-radius:var(--rm);box-shadow:var(--sh);padding:15px 17px;min-height:104px}
+.pj-stat-k{font-family:var(--fm);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-500);font-weight:500}
+.pj-stat-v{font-family:var(--fm);font-size:23px;font-weight:600;color:var(--ink-950);
+  line-height:1.15;margin-top:auto;overflow-wrap:anywhere}
+.pj-stat-sub{font-size:11.5px;color:var(--ink-500);min-height:1.35em;margin-top:3px}
+@media(max-width:1040px){.pj-stats{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.pj-stats{grid-template-columns:1fr}.pj-stat{min-height:0}}
+
+/* The right-hand side of a projects card header: the view control, the count,
+   and any action button, wrapping rather than colliding on narrow screens. */
+.pj-hd-r{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+
+/* Declared column widths so the identity columns stop stealing room from the
+   money columns, and the three project tables line up with one another. */
+.pj-tbl-index th:nth-child(2){width:13%}
+.pj-tbl-index th:nth-child(3){width:26%}
+.pj-tbl-index th:nth-child(4){width:13%}
+.pj-tbl-index th:nth-child(5),.pj-tbl-index th:nth-child(6){width:14%}
+.pj-tbl-index th:nth-child(7),.pj-tbl-index th:nth-child(8){width:7%}
+.pj-tbl-budgets th:nth-child(2){width:15%}
+.pj-tbl-budgets th:nth-child(3){width:24%}
+.pj-tbl-budgets th:nth-child(4){width:11%}
+.pj-tbl-budgets th:nth-child(5){width:13%}
+.pj-tbl-budgets th:nth-child(6),.pj-tbl-budgets th:nth-child(7){width:15%}
+.pj-tbl-analyses th:nth-child(2){width:32%}
+.pj-tbl-analyses th:nth-child(3){width:15%}
+.pj-tbl-analyses th:nth-child(4){width:11%}
+.pj-tbl-analyses th:nth-child(5),.pj-tbl-analyses th:nth-child(6){width:15%}
+.pj-tbl th.no-print{width:44px}
 .pj-tbl tr.pj-row{cursor:pointer}
 .pj-tbl tr.pj-row:hover td{background:var(--ink-50)}
 .pj-tbl td{vertical-align:middle}
@@ -1535,8 +1578,8 @@ th.sortable.sorted{color:var(--ink-900)}
             rainbow swatch for any custom color.</li>
           <li><b>Time Format</b> — 12-hour (8:52 PM) or 24-hour (20:52) for every timestamp.</li>
           <li><b>Views</b> — three options per section: a Comfortable list, a Compact list, or Cards —
-            chosen separately for Project Budgets and Investment Analyses (a roomy budget list next to
-            analysis cards is fine). The same three-way icon toggle sits above each list.</li>
+            chosen separately for Projects, Project Budgets and Investment Analyses (a roomy budget list
+            next to analysis cards is fine). The same three-way icon toggle sits above each list.</li>
           <li><b>Exports</b> — the <b>Remember Export Settings</b> toggle: on, the sections and options
             you pick in the export popups (budget and analysis separately) become your defaults
             everywhere you sign in; off, every export starts from the standard defaults.</li>
@@ -1623,13 +1666,15 @@ th.sortable.sorted{color:var(--ink-900)}
           12), and total project cost as a suggested purchase price — each imported value shows a green
           <b>From Budget</b> badge.</div></div>
         <div class="step"><div class="n">9</div><div class="t">Walk the six steps:
-          <br><b>Step 1 — Source &amp; Property:</b> Set Purchase Month to the target closing date. The
-          address, unit count, and square footage carry over from the budget.
+          <br><b>Step 1 — Source &amp; Property:</b> Purchase Month starts at the current month — change it to
+          the target closing date. The address, unit count, and square footage carry over from the budget and
+          are <b>locked</b>; the card's three-dot menu has <b>Override Budget Inputs</b> when one genuinely
+          needs to differ.
           <br><b>Step 2 — Income:</b> Gross Scheduled Rent is pre-filled from the unit mix. Add any
           additional income lines.
-          <br><b>Step 3 — Vacancy &amp; Expenses:</b> Set a vacancy rate (e.g. 5%) and enter the full
-          operating expenses — insurance, taxes, management, maintenance, and the service expenses the
-          budget suggested.
+          <br><b>Step 3 — Vacancy &amp; Expenses:</b> Set a vacancy rate (e.g. 5%). The operating expense
+          ratio is derived from the budget's own expense schedule; that card's three-dot menu has
+          <b>Override Budget Inputs</b> if this property is genuinely priced differently.
           <br><b>Step 4 — Mortgage:</b> Choose <b>Amortizing Mortgage</b> and enter the loan amount,
           interest rate (e.g. 6.5%), and 30-year term. Or choose <b>All Cash</b> for an unleveraged view.
           <br><b>Step 5 — Disposition:</b> Set the Exit Cap Rate (e.g. 5.75%) and selling costs (e.g. 2%).
@@ -1656,6 +1701,12 @@ th.sortable.sorted{color:var(--ink-900)}
             <b>Converted to Project</b>, with On Hold and Lost for everything else.</li>
           <li><b>See what you starred</b> — the Favorites strip shows only the budget and analysis you starred on
             this project, rather than everything that exists.</li>
+          <li><b>Add an investment analysis</b> — <span class="kbd">+ Add Investment Analysis</span> on the
+            Investment Analyses card. With one budget on the project it links to that budget without asking;
+            with several it asks which one, offering only this project's budgets.</li>
+          <li><b>Act on a row</b> — the <b>three-dot menu</b> at the end of each budget row carries the same
+            Edit, Versions, Update Pricing and favorite actions as the Budgets tab; each analysis row carries
+            the analysis menu (Open, Versions, Duplicate, Delete and its favorite toggle).</li>
         </ul>
         <div class="callout"><b>Converting captures the numbers.</b> Moving a project to <b>Converted to Project</b>
           records the contract and total project amounts from its primary budget <i>at that moment</i>. They stop
@@ -2489,9 +2540,21 @@ th.sortable.sorted{color:var(--ink-900)}
 
       <div class="set-lab">Views</div>
       <div class="set-note" style="margin:0 0 8px">Three options per section — a comfortable list, a
-        compact list, or cards — chosen separately for budgets and analyses. The same toggles sit above
-        each list.</div>
-      <div class="set-note" style="margin:0 0 4px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase">Project Budgets</div>
+        compact list, or cards — chosen separately for projects, budgets and analyses. The same toggles
+        sit above each list.</div>
+      <div class="set-note" style="margin:0 0 4px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase">Projects</div>
+      <div class="set-choice" role="group" aria-label="Projects View">
+        <button data-projectview-pick="comfortable" onclick="chooseSetting('projectView','comfortable')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+          Comfortable<span class="tick">✓</span></button>
+        <button data-projectview-pick="compact" onclick="chooseSetting('projectView','compact')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          Compact<span class="tick">✓</span></button>
+        <button data-projectview-pick="cards" onclick="chooseSetting('projectView','cards')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+          Cards<span class="tick">✓</span></button>
+      </div>
+      <div class="set-note" style="margin:10px 0 4px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase">Project Budgets</div>
       <div class="set-choice" role="group" aria-label="Project Budgets View">
         <button data-budgetview-pick="comfortable" onclick="chooseSetting('budgetView','comfortable')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
@@ -2755,6 +2818,7 @@ function applyUserSettings(){
 /* Per-section views: 'comfortable' | 'compact' | 'cards'. */
 function budgetView(){const v=usSettings().budgetView;return ['compact','cards'].includes(v)?v:'comfortable';}
 function analysisView(){const v=usSettings().analysisView;return ['compact','cards'].includes(v)?v:'comfortable';}
+function projectView(){const v=usSettings().projectView;return ['compact','cards'].includes(v)?v:'comfortable';}
 /* Named accents use the curated CSS scales; a #rrggbb custom accent derives
    its scale from the picked color (HSL ramps, light and dark variants) and
    applies it as inline tokens. Theme changes re-run this, so a custom accent
@@ -2825,6 +2889,7 @@ function chooseSetting(key,value){
   if(key==='analysisView'&&currentPage==='analyses'&&window.FSInvestmentUI){
     FSInvestmentUI.renderList();
   }
+  if(key==='projectView'&&currentPage==='projects'&&window.FSProjects)FSProjects.render(false);
   // Home shows relative times and status chips, so a format change repaints it.
   if((key==='timeFormat'||key==='analysisView'||key==='budgetView')
      &&currentPage==='home'&&window.FSHome){
@@ -2978,6 +3043,7 @@ function paintSettingsUI(){
   mark('[data-timefmt-pick]',s.timeFormat||'12h');
   mark('[data-budgetview-pick]',budgetView());
   mark('[data-analysisview-pick]',analysisView());
+  mark('[data-projectview-pick]',projectView());
   const re=document.getElementById('setRememberExport');
   if(re)re.checked=!!s.rememberExport;
 }
@@ -3181,6 +3247,10 @@ async function initAuth(){
     esc:esc, usd:usd, fmtDay:fmtDay,
     api:api, toast:toast,
     openBudget:openBudget,
+    // The Projects list has the same three views every other list offers, and
+    // stores the choice through the same per-account preference mechanism.
+    projectView:projectView,
+    setSetting:(k,v)=>chooseSetting(k,v),
     go:go, navigate:h=>{location.hash=h;},
     currentPage:()=>currentPage,
     // An alternate starts as a copy of the budget it is an alternative to.
@@ -4469,8 +4539,10 @@ function rowMenuAction(act){
   versionsReturn=t;
   closeRowMenu(act==='delete');            // the other two navigate away from the row
   if(act==='fav'){
-    if(window.FSHome)FSHome.toggleFavorite('budget',pid);   // FSHome words the toast
-    renderBudgetsPage();
+    // FSHome words the toast and, through favoritesChanged, repaints whichever
+    // page is showing — this menu now opens from the project page too.
+    if(window.FSHome)FSHome.toggleFavorite('budget',pid);
+    if(currentPage==='budgets')renderBudgetsPage();
     return;
   }
   if(act==='edit')openBudget(pid);
@@ -6858,6 +6930,7 @@ function endBoot(){
       // Per-account settings surface for the module: Home view mode,
       // remembered export options, and client-reported activity events.
       analysisView:analysisView,
+      currentPage:()=>currentPage,
       statusChip:statusChip,
       normStatus:normStatus,
       exportDefaults:exportDefaultsFor,

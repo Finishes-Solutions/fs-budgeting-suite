@@ -96,6 +96,57 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('and it appears under the project',
     /Harbour Underwriting/.test(await p.locator('#projectBody').textContent()));
 
+ // ---------- 5b. the page as the review asked for it ----------
+ // Four headline numbers as real cards, carrying the number and nothing that
+ // merely restates their own label.
+ ok('the four project metrics are cards',
+    (await p.locator('#projectBody .pj-stat').count())===4,
+    String(await p.locator('#projectBody .pj-stat').count()));
+ ok('and they have dropped the restating sub-lines',
+    !/Live, from the primary budget|All within guard rails|Linked to this project/
+      .test(await p.locator('#projectBody').textContent()));
+ ok('the metadata line capitalises and pluralises its counts',
+    /2 Budgets/.test(await p.locator('#projectSub').textContent())
+      && /1 Analysis/.test(await p.locator('#projectSub').textContent()),
+    await p.locator('#projectSub').textContent());
+
+ // Budget ID and Budget Name are two columns, not one stacked cell.
+ const bHead=await p.evaluate(()=>[...document.querySelectorAll('#projectBody .pj-tbl-budgets thead th')]
+   .map(t=>t.textContent.trim()));
+ ok('the Budgets table splits the id from the name',
+    bHead.includes('Budget ID')&&bHead.includes('Budget Name'), bHead.join('|'));
+
+ // Open → is gone from both tables; the shared ⋮ row menus replace it.
+ ok('neither table still ends in a bare Open link',
+    (await p.locator('#projectBody .pj-go').count())===0);
+ await p.locator('#projectBody .pj-tbl-budgets .rowmenu-btn').first().click();
+ await p.waitForTimeout(250);
+ const bMenu=await p.locator('#rowMenu').textContent();
+ ok('a budget row opens the same menu the Budgets tab uses',
+    /Edit/.test(bMenu)&&/Versions/.test(bMenu)&&/Update Pricing/.test(bMenu)
+      &&/Favorites/.test(bMenu), bMenu);
+ await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+ ok('Escape closes it', await p.evaluate(()=>document.getElementById('rowMenu').style.display==='none'));
+
+ await p.locator('#projectBody .pj-tbl-analyses .rowmenu-btn').first().click();
+ await p.waitForTimeout(250);
+ const aMenu=await p.locator('#invRowMenu').textContent();
+ ok('an analysis row opens the analysis menu',
+    /Open Analysis/.test(aMenu)&&/Versions/.test(aMenu)&&/Favorites/.test(aMenu), aMenu);
+ await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+
+ // Add Investment Analysis: two budgets here, so it must ASK which one.
+ ok('the analyses card carries an Add Investment Analysis button',
+    await p.locator('#projectBody button:has-text("+ Add Investment Analysis")').isVisible());
+ await p.click('#projectBody button:has-text("+ Add Investment Analysis")');
+ await p.waitForTimeout(400);
+ ok('with two budgets it asks which one', await p.locator('#pjBudgetPick').isVisible());
+ const pickTxt=await p.locator('#pjBudgetPick').textContent();
+ ok('and offers only this project\u2019s budgets',
+    /TST-7301/.test(pickTxt)&&!/TST-9911|BD-0001/.test(pickTxt), pickTxt.slice(0,200));
+ await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+ ok('Escape closes the picker', (await p.locator('#pjBudgetPick').count())===0);
+
  // ---------- 6. the star toggles, and the strip follows ----------
  ok('no Favorites strip before anything is starred',
     !/Favorites/.test(await p.locator('#projectBody').textContent()));
@@ -156,6 +207,36 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // ---------- 8. the index reports converted totals ----------
  await p.click('#nav-projects'); await p.waitForTimeout(1000);
+ ok('the index metrics are cards too',
+    (await p.locator('#projectsBody .pj-stat').count())===4,
+    String(await p.locator('#projectsBody .pj-stat').count()));
+ ok('and only the one number that needs context keeps a sub-line',
+    !/still in pipeline|Snapshot taken at conversion/.test(await p.locator('#projectsBody').textContent())
+      && /% of all projects/.test(await p.locator('#projectsBody').textContent()));
+ const pHead=await p.evaluate(()=>[...document.querySelectorAll('#projectsBody thead th')]
+   .map(t=>t.textContent.trim()));
+ ok('the index splits Project ID from Project Name',
+    pHead.includes('Project ID')&&pHead.includes('Project Name'), pHead.join('|'));
+
+ // The same three views every other list offers, stored with the account.
+ ok('a view selector sits beside the count',
+    (await p.locator('#projectsBody [data-projectview-pick]').count())===3);
+ await p.click('#projectsBody [data-projectview-pick="cards"]'); await p.waitForTimeout(600);
+ ok('Card view renders cards instead of rows',
+    (await p.locator('#projectsBody .hm-card').count())>0
+      && (await p.locator('#projectsBody table').count())===0,
+    String(await p.locator('#projectsBody .hm-card').count()));
+ await p.waitForTimeout(1200);        // the settings save is debounced, like every preference
+ ok('and the choice is stored on the account',
+    (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json()).settings.projectView))==='cards');
+ await p.click('#projectsBody [data-projectview-pick="compact"]'); await p.waitForTimeout(600);
+ ok('Compact view is the list at the compact density',
+    await p.evaluate(()=>{
+      const w=document.querySelector('#projectsBody .pj-tbl-index');
+      return !!w && w.closest('[data-density]').getAttribute('data-density')==='compact';
+    }));
+ await p.click('#projectsBody [data-projectview-pick="comfortable"]'); await p.waitForTimeout(600);
+
  ok('the index counts converted projects',
     /Converted to Project/.test(await p.locator('#projectsBody').textContent()));
  ok('and reports the captured contract amount',

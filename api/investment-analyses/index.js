@@ -10,7 +10,7 @@
 // no expense ratio, no exit cap).
 const { getPool, sql } = require('../shared/db');
 const { getPrincipal } = require('../shared/auth');
-const { projectFromBudget } = require('../shared/investment/from-budget');
+const { projectFromBudget, currentPurchaseMonth } = require('../shared/investment/from-budget');
 const { GUID_RX, jsonRes } = require('../shared/investment-persistence');
 const { ensureUser } = require('../shared/users');
 const { features } = require('../shared/schema');
@@ -143,7 +143,7 @@ module.exports = async function (context, req) {
         address: proj.imported.property.address,
         size: proj.imported.property.size,
         unitCount: proj.imported.property.unitCount,
-        purchaseMonth: null                       // the user must choose — never invented
+        purchaseMonth: currentPurchaseMonth()     // defaults to the current month; changed on step 1
       },
       projection: { years: 5, taxMode: 'beforeTax' },
       acquisition: { basis: proj.imported.acquisition.basis, costPercent: D.acquisitionCostPercent },
@@ -176,7 +176,7 @@ module.exports = async function (context, req) {
     if (!name) { context.res = jsonRes(400, { error: 'bad_request', message: 'analysisName is required.' }); return; }
     input = Object.assign({
       schemaVersion: 1,
-      property: { name: name, address: '', size: { unit: 'squareFeet', value: null }, purchaseMonth: null },
+      property: { name: name, address: '', size: { unit: 'squareFeet', value: null }, purchaseMonth: currentPurchaseMonth() },
       projection: { years: 5, taxMode: 'beforeTax' },
       acquisition: { basis: { mode: 'purchasePrice', value: null }, costPercent: D.acquisitionCostPercent },
       income: { mode: 'aggregate', year1PotentialIncome: null, growth: { mode: 'constant', value: D.incomeGrowth }, otherIncome: [] },

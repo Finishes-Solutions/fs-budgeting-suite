@@ -816,7 +816,7 @@ http.createServer((req, res) => {
             fieldOrigins: proj.fieldOrigins, support: proj.support },
           property: { name: proj.imported.property.name, address: proj.imported.property.address,
             size: proj.imported.property.size,
-            unitCount: proj.imported.property.unitCount, purchaseMonth: null },
+            unitCount: proj.imported.property.unitCount, purchaseMonth: fromBudget.currentPurchaseMonth() },
           projection: { years: 5, taxMode: 'beforeTax' },
           acquisition: { basis: proj.imported.acquisition.basis, costPercent: INV_D.acquisitionCostPercent },
           income: { mode: 'aggregate',
@@ -842,7 +842,7 @@ http.createServer((req, res) => {
         if (!name) return json(res, 400, { error: 'bad_request', message: 'analysisName is required.' });
         input = Object.assign({
           schemaVersion: 1,
-          property: { name, address: '', size: { unit: 'squareFeet', value: null }, purchaseMonth: null },
+          property: { name, address: '', size: { unit: 'squareFeet', value: null }, purchaseMonth: fromBudget.currentPurchaseMonth() },
           projection: { years: 5, taxMode: 'beforeTax' },
           acquisition: { basis: { mode: 'purchasePrice', value: null }, costPercent: INV_D.acquisitionCostPercent },
           income: { mode: 'aggregate', year1PotentialIncome: null, growth: { mode: 'constant', value: INV_D.incomeGrowth }, otherIncome: [] },

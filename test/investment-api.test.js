@@ -56,7 +56,11 @@ test('seed a budget and create an analysis from its exact version', async () => 
   assert.equal(pre.income.year1PotentialIncome, 12 * 30 * 1000, 'gross rent x12, never net income');
   assert.equal(pre.acquisition.basis.value, 3500000, 'project cost suggested as purchase price');
   assert.equal(pre.property.size.value, 80000, 'property size is the BUILDING, res + amen SF');
-  assert.equal(pre.property.purchaseMonth, null, 'no invented purchase month');
+  // Creation defaults the month to the one it happens in — the common answer,
+  // and one step 1 can change. It is set at CREATION only; a saved month is
+  // never written over.
+  assert.equal(pre.property.purchaseMonth, new Date().toISOString().slice(0, 7),
+    'purchase month defaults to the current month');
   assert.ok(pre.source.fieldOrigins['property.size'].includes('Residential + Amenity'),
     'the origin says which measurement it is');
   assert.equal(pre.source.support.annualServiceExpenses, 12 * 10 * 30, 'expenses appear as support data');

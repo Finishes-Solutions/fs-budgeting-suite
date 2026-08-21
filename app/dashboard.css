@@ -2,23 +2,35 @@
    cannot collide with the main stylesheet or investment-analysis.css.
    Uses the app's card/tbl system for consistency. */
 
-/* Compact tiles: eight of them fit two rows instead of three, which is most of
-   the height the dashboard used to spend before the first chart. */
-#page-dashboard .dash-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px;margin:16px 0}
-#page-dashboard .dash-kpi{background:var(--white);border:1px solid var(--ink-200);border-radius:8px;padding:11px 13px}
+/* Four cards to a row, so ten metrics read as 4 · 4 · 2 rather than a seven-up
+   row and a ragged three. Every card is a flex column of the same height, and
+   the value + sub-line block is pushed to the bottom with margin-top:auto —
+   which is what puts the numbers on one line across the row however long a
+   label wraps. renderKPIs always emits a .sub (empty when a metric has none)
+   so the bottom block is the same two rows on every card. */
+#page-dashboard .dash-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+#page-dashboard .dash-kpi{display:flex;flex-direction:column;background:var(--white);
+  border:1px solid var(--ink-200);border-radius:8px;padding:13px 15px;min-height:96px}
 #page-dashboard .dash-kpi .k{font-family:var(--fm);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500);font-weight:500;margin-bottom:2px}
-#page-dashboard .dash-kpi .v{font-family:var(--fm);font-size:18px;font-weight:600;color:var(--ink-900);line-height:1.2}
-#page-dashboard .dash-kpi .sub{font-size:11px;color:var(--ink-500);margin-top:1px}
+#page-dashboard .dash-kpi .v{font-family:var(--fm);font-size:20px;font-weight:600;color:var(--ink-900);line-height:1.2;margin-top:auto}
+#page-dashboard .dash-kpi .sub{font-size:11px;color:var(--ink-500);margin-top:2px;
+  height:15px;line-height:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Two halves under the full-width activity chart. The children drop their own
    margin so the grid gap is the only spacing, and the row carries the same
    20px gap below it that every .card does — without it the next card sat
-   flush against this one. */
+   flush against this one. Both halves are the same height: the shorter card
+   STRETCHES and spreads its own contents rather than ending early and leaving
+   a ragged bottom edge. */
 #page-dashboard .dash-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;
-  align-items:start;margin-bottom:20px}
-#page-dashboard .dash-cols>.card{margin-bottom:0}
-/* The two donuts sit side by side within their half. */
-#page-dashboard .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  align-items:stretch;margin-bottom:20px}
+#page-dashboard .dash-cols>.card{margin-bottom:0;display:flex;flex-direction:column}
+#page-dashboard .dash-cols>.card>.card-bd{flex:1;display:flex;flex-direction:column}
+/* The two donuts sit side by side within their half; align-content spaces the
+   donut row and the pipeline strip apart over whatever height the row gives
+   this card, rather than padding the card out with empty space. */
+#page-dashboard .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;
+  flex:1;align-content:space-between}
 /* The project pipeline spans both donut columns and sits BELOW them. Three
    donuts side by side in this half-width card truncated their own legends, and
    wrapping the third onto its own row pushed the visual half of the dashboard
@@ -128,13 +140,16 @@
 #page-dashboard .dash-filters input[type=date]{width:145px;padding:6px 10px;font-size:13px}
 #page-dashboard .dash-filter-sep{font-size:12.5px;color:var(--ink-500)}
 
+@media(max-width:1180px){
+  #page-dashboard .dash-kpis{grid-template-columns:repeat(3,1fr)}
+}
 @media(max-width:980px){
   #page-dashboard .dash-cols{grid-template-columns:1fr}
   #page-dashboard .dash-rank-nm{width:120px}
 }
 @media(max-width:760px){
   #page-dashboard .dash-grid{grid-template-columns:1fr}
-  #page-dashboard .dash-kpis{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  #page-dashboard .dash-kpis{grid-template-columns:repeat(2,1fr)}
   /* Too little room for a name and a bar both; the bar carries the shape and
      the id still says which project it is. */
   #page-dashboard .dash-rank-nm{display:none}

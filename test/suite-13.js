@@ -60,7 +60,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.waitForTimeout(800);
  const aid2=p.url().match(/analysis\/([0-9a-f-]{36})/)[1];
  ok('duplicate opens a new analysis', aid2!==aid, aid2);
- ok('duplicate carries the assumptions', (await p.locator('[data-f="acquisition.basis.value"]').inputValue())==='1500000');
+ // The price field renders as money; the assumption it carries is the number.
+ ok('duplicate carries the assumptions',
+    (await p.locator('[data-f="acquisition.basis.value"]').inputValue())==='$1,500,000',
+    await p.locator('[data-f="acquisition.basis.value"]').inputValue());
  ok('duplicate name marks the copy', /\(Copy\)/.test(await p.locator('#invTitle').textContent()));
  const dupVersions=await p.evaluate(async id=>
    (await (await fetch('/api/investment-analysis/'+id+'/versions')).json()).versions.length,aid2);

@@ -15,6 +15,7 @@ const ACCENTS = ['green', 'blue', 'violet', 'graphite', 'red', 'orange'];
 // view at two densities; cards is the card view — and each SECTION keeps its
 // own choice, so budgets can be a list while analyses are cards. (This
 // replaced the earlier homeView + tableDensity pair — sanitize maps them.)
+// Projects joined budgets and analyses here: three sections, three choices.
 const LIST_VIEWS = ['comfortable', 'compact', 'cards'];
 // Theme packs are alternate visual PRESENTATIONS of the same product — paint
 // only, scoped in CSS to html[data-skin=<pack>]. 'default' is the Finishes
@@ -42,6 +43,7 @@ const DEFAULT_SETTINGS = {
   avatarColor: null,          // null = the app default (accent-colored)
   budgetView: 'comfortable',
   analysisView: 'comfortable',
+  projectView: 'comfortable',
   rememberExport: false,
   exportOptions: {},          // { budget: {..bools}, analysis: {..bools} }
   favorites: { budget: [], analysis: [], project: [] }
@@ -102,6 +104,7 @@ function sanitizeSettings(input) {
     avatarColor: typeof s.avatarColor === 'string' && HEX_RX.test(s.avatarColor) ? s.avatarColor : null,
     budgetView: LIST_VIEWS.includes(s.budgetView) ? s.budgetView : legacyView(s),
     analysisView: LIST_VIEWS.includes(s.analysisView) ? s.analysisView : legacyView(s),
+    projectView: LIST_VIEWS.includes(s.projectView) ? s.projectView : legacyView(s),
     rememberExport: s.rememberExport === true,
     exportOptions: { budget: cleanBoolMap(ex.budget), analysis: cleanBoolMap(ex.analysis) },
     favorites: { budget: cleanIdList(favSrc.budget), analysis: cleanIdList(favSrc.analysis),

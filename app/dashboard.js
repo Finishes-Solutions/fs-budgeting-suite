@@ -102,9 +102,12 @@ function renderKPIs(el){
     +'<div class="dash-kpi"><div class="k">Active Analyses</div><div class="v">'+num(a.active)+'</div>'
     +'<div class="sub">'+num(a.total)+' total created</div></div>'
     +projectKPIs()
-    +'<div class="dash-kpi"><div class="k">Avg Purchase Price</div><div class="v">'+money(a.avgPurchasePrice)+'</div></div>'
-    +'<div class="dash-kpi"><div class="k">Avg Year 1 NOI</div><div class="v">'+money(a.avgYear1NOI)+'</div></div>'
-    +'<div class="dash-kpi"><div class="k">Avg Equity IRR</div><div class="v">'+pct(a.avgIRR)+'</div></div>'
+    // The three averages carry no sub-line of their own, but they still emit
+    // the element: an empty .sub is what keeps every card's number on the same
+    // baseline as its neighbours.
+    +'<div class="dash-kpi"><div class="k">Avg Purchase Price</div><div class="v">'+money(a.avgPurchasePrice)+'</div><div class="sub"></div></div>'
+    +'<div class="dash-kpi"><div class="k">Avg Year 1 NOI</div><div class="v">'+money(a.avgYear1NOI)+'</div><div class="sub"></div></div>'
+    +'<div class="dash-kpi"><div class="k">Avg Equity IRR</div><div class="v">'+pct(a.avgIRR)+'</div><div class="sub"></div></div>'
     +'<div class="dash-kpi"><div class="k">Registered Users</div><div class="v">'+num(u.total)+'</div>'
     +'<div class="sub">'+num(u.totalLogins)+' total logins</div></div>';
 }
