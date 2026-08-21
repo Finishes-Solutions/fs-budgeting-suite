@@ -24,7 +24,21 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.setViewportSize({width:1400,height:1000});
 
  // --- OP id now four digits
+ // A budget belongs to a project, so the parent is made first and chosen in
+ // step 2 — a budget id can no longer imply one.
+ await p.evaluate(async a=>{
+   await fetch('/api/budget/'+a.p+'?scope=project',{method:'PUT',
+     headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({create:true,name:a.n,address:'1 Test Way'})});
+ },{p:'OP-0601',n:'Validation Test'});
  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(300);
+ await p.waitForTimeout(600);
+ await p.selectOption('#nbProject','OP-0601');
+ await p.fill('#nbId','BD-0601');
+ await p.fill('#nbName','Validation Test');
+ await p.click('#nbCreate');
+ await p.waitForTimeout(600);
+
  const bad=async v=>{await p.fill('#pId',v);await p.locator('#pName').click();
    return await p.locator('#pId').evaluate(e=>e.classList.contains('err'));};
  ok('OP-001 (3 digits) now rejected', await bad('OP-001'));
@@ -32,10 +46,16 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('BD-0001 still accepted', !(await bad('BD-0001')));
  ok('AS-0001 still accepted', !(await bad('AS-0001')));
  ok('TST-9999 still accepted', !(await bad('TST-9999')));
- ok('inline error text says OP-####',
-    /OP-####/.test(await p.locator('#pIdErr').textContent()));
- ok('ID format hint says OP-0001',
-    /OP-0001/.test(await p.locator('#page-input .card-hd .eyebrow').first().textContent()));
+ // The field is the BUDGET namespace. New budgets are minted BD-####; the
+ // legacy prefixes are still accepted so an older budget can be opened and
+ // saved, and the copy says which is which.
+ ok('inline error text names the budget format',
+    /BD-####/.test(await p.locator('#pIdErr').textContent()),
+    (await p.locator('#pIdErr').textContent()).trim());
+ ok('and the hint keeps the two namespaces apart',
+    /Budget IDs are BD-####/.test(await p.locator('#page-input .card-hd .eyebrow').first().textContent())
+      && /projects are OP-####/.test(await p.locator('#page-input .card-hd .eyebrow').first().textContent()),
+    (await p.locator('#page-input .card-hd .eyebrow').first().textContent()).trim());
 
  // --- auto dot no longer shifts the numbers
  await p.fill('#pId','TST-9999');
@@ -168,7 +188,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await m.click('#budgetsBody tr .rowmenu-btn'); await m.waitForTimeout(300);
  ok('The row menu offers the full action set on a phone',
     (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|')
-      === 'Edit|Add to Favorites|Update Pricing|Versions|Delete',
+      === 'Edit|Add to Favorites|Update Pricing|Versions|Delete Budget',
     (await m.locator('#rowMenu .rowmenu-item').allTextContents()).join('|'));
  await m.keyboard.press('Escape'); await m.waitForTimeout(150);
 

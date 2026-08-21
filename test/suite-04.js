@@ -16,7 +16,21 @@ const PASS='Basalt-Meridian-8538-27D5B4';
  ok('passphrase itself is not in page source', !src.includes(PASS));
  ok('only the digest is present', src.includes('52e20e96fd28257e018abac67cd8e1f4863b1cac1fdfb6cb0a96c963b9437548'));
 
+ // A budget belongs to a project, so the parent is made first and chosen in
+ // step 2 — a budget id can no longer imply one.
+ await p.evaluate(async a=>{
+   await fetch('/api/budget/'+a.p+'?scope=project',{method:'PUT',
+     headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({create:true,name:a.n,address:'1 Test Way'})});
+ },{p:'OP-0401',n:'Edit Flag Test'});
  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
+ await p.waitForTimeout(600);
+ await p.selectOption('#nbProject','OP-0401');
+ await p.fill('#nbId','BD-0401');
+ await p.fill('#nbName','Edit Flag Test');
+ await p.click('#nbCreate');
+ await p.waitForTimeout(600);
+
  await p.fill('#pId','TST-9999'); await p.fill('#pName','Edit Flag Test');
  await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
 

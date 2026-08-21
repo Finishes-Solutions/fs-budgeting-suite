@@ -3418,16 +3418,23 @@ async function refreshPricing(){
   return pricing;
 }
 /* Stamping the current version alone would be a lie — the document would claim
-   v3 while holding v2 rates — so every line the current library still carries
-   is re-rated first, and baseUnit moves with it so the budget does not open
-   flagged as manually re-priced. */
+   v3 while holding v2 rates — so the lines are brought to the current library
+   before the version is stamped.
+
+   But only the lines that are still AT their library rate. `baseUnit` is the
+   rate a line was born with, so `unit !== baseUnit` means someone deliberately
+   priced that line differently — in a template, that is the whole point of
+   publishing one. Those keep their rate; baseUnit still moves, so the
+   re-priced flag keeps meaning "differs from the current library" rather than
+   "differed from a library nobody uses any more". */
 function stampCurrentPricing(d){
   const map={};
   (pricing.lines||[]).forEach(l=>{map[l.scope+'|'+l.code+'|'+l.desc]=l;});
   (d.lines||[]).forEach(it=>{
     const m=map[it.scope+'|'+it.code+'|'+it.desc];
-    if(!m)return;
-    it.unit=m.unit;it.baseUnit=m.unit;
+    if(!m)return;                                   // hand-added line: no library rate to take
+    if(nz(it.unit)===nz(it.baseUnit))it.unit=m.unit; // at the baseline: refresh it
+    it.baseUnit=m.unit;
   });
   d.pricingVersion=pricing.version;
   return d;
@@ -4966,10 +4973,10 @@ async function duplicateBudgetAs(fromId,newId,projectKey){
   toast('Alternate '+newId+' started from '+fromId+'. Review it and Save to keep it.');
 }
 
-/* Builds `doc` from a published template. Returns false when it could not,
-   having already said so — the caller is mid-creation and must not carry on
-   as though a document exists. The discard prompt is the caller's: this runs
-   after the user has committed to creating something. */
+/* Builds `doc` from a published template, and always leaves one behind: if the
+   template cannot be read it falls back to the built-in defaults and says so,
+   rather than handing the caller a half-created budget. The discard prompt is
+   the caller's — this runs after the user has committed to creating something. */
 async function applyTemplateBudget(key){
   let t=null;
   try{t=await api('templates/'+encodeURIComponent(key));}catch(e){}
