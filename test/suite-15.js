@@ -27,7 +27,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // ---- boot bootstrap: account row + counted login + activity
  const u0=await p.evaluate(async()=>await (await fetch('/api/user-settings')).json());
- ok('boot creates the account row and counts one login', u0.loginCount===1, JSON.stringify({login:u0.loginCount}));
+ // The mock seeds an ESTABLISHED account (25 sessions, already welcomed) so a
+ // welcome never sits over another suite's first click; boot adds this one.
+ ok('boot creates the account row and counts one login', u0.loginCount===26, JSON.stringify({login:u0.loginCount}));
  ok('boot login lands in the activity log',
     (await p.evaluate(async()=>(await (await fetch('/api/user-activity')).json()).events))
       .some(e=>e.eventType==='login'));
@@ -242,7 +244,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       &&usSettings().budgetView==='cards'&&usSettings().analysisView==='cards'
       &&(window.__fsTimeFormat||'')==='24h'));
  ok('a quick return visit is not another login',
-    (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json()).loginCount))===1);
+    (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json()).loginCount))===u0.loginCount);
  await p.evaluate(()=>go('budgets')); await p.waitForTimeout(700);
  await p.click('#page-budgets .hcard'); await p.waitForTimeout(700);
  await p.click('#page-budget button:has-text("Export")'); await p.waitForTimeout(300);
@@ -280,16 +282,20 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     /Cancelled/.test(await p.locator('#invStatusHost').textContent())
     &&(await p.evaluate(async()=>(await (await fetch('/api/investment-analyses')).json())[0].status))==='Cancelled');
 
- // ---- first run: the welcome, and the sign-in screen behind it.
- // The mock seeds welcomeSeen TRUE (a first-run overlay would sit in front of
- // every other suite's first click), so turning it off is what makes this
- // account look genuinely new.
+ // ---- the welcome, and the sign-in screen behind it.
+ // The mock seeds an established, already-welcomed account (a welcome would sit
+ // in front of every other suite's first click), so winding the seen version
+ // back to 0 is what makes this account one that has never seen this welcome.
  await p.evaluate(()=>go('home')); await p.waitForTimeout(400);
  await p.evaluate(async()=>{await fetch('/api/user-settings',{method:'PUT',
    headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({settings:{welcomeSeen:false}})});});
+   body:JSON.stringify({settings:{welcomeSeenVersion:0}})});});
  await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(900);
- ok('a first-run account is welcomed', await p.locator('#welcomeModal').isVisible());
+ // 26 sessions in — far past the opening window — and it still shows, because
+ // this account has never seen THIS welcome. That is what carries it to every
+ // account that was already in the system.
+ ok('an account that has never seen this welcome gets it, however long it has been here',
+    await p.locator('#welcomeModal').isVisible());
  ok('the welcome is a summary, not a tour',
     /Welcome to the Budgeting Suite/.test(await p.locator('#welcomeTitle').textContent())
     &&(await p.locator('#welcomeModal .card-bd').textContent()).trim().length<700);
@@ -306,23 +312,34 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     &&await p.locator('#page-home').isVisible());
  await p.click('#welcomeModal button:has-text("Get Started")'); await p.waitForTimeout(900);
  ok('dismissing it puts the user on Home', await p.locator('#welcomeModal').isHidden());
- ok('dismissal saves to the ACCOUNT, not the browser',
+ ok('dismissal records the VERSION on the account, not the browser',
     (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json())
-      .settings.welcomeSeen))===true);
+      .settings.welcomeSeenVersion))===1);
  await p.evaluate(()=>localStorage.clear());
  await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(900);
- ok('a welcomed account is never welcomed again, even in a cleared browser',
+ ok('and it is not shown again, even in a cleared browser',
     await p.locator('#welcomeModal').isHidden());
- ok('an established account is not interrupted by it',
-    await p.evaluate(()=>{
-      // loginCount > 1 is an account that has been here before: its stored
-      // settings simply predate the flag, which is not a first run.
-      US.loginCount=6; US.settings.welcomeSeen=false;
-      maybeShowWelcome();
-      const shown=document.getElementById('welcomeModal').style.display==='flex';
-      US.loginCount=1; US.settings.welcomeSeen=true;
-      return !shown;
-    }));
+
+ // ---- the two gates, driven directly. Restores what it changes, so the rest
+ // of the suite runs against the account it started with.
+ const welGate=async(loginCount,seenVersion)=>await p.evaluate(([lc,sv])=>{
+   const was=[US.loginCount,US.settings.welcomeSeenVersion];
+   US.loginCount=lc; US.settings.welcomeSeenVersion=sv;
+   document.getElementById('welcomeModal').style.display='none';
+   maybeShowWelcome();
+   const shown=document.getElementById('welcomeModal').style.display==='flex';
+   document.getElementById('welcomeModal').style.display='none';
+   US.loginCount=was[0]; US.settings.welcomeSeenVersion=was[1];
+   return shown;
+ },[loginCount,seenVersion]);
+ // The opening window: the first five sessions each get it, dismissed or not.
+ ok('every one of the first five sessions gets the welcome',
+    (await Promise.all([1,2,3,4,5].map(n=>welGate(n,1)))).every(Boolean));
+ ok('the sixth does not, once it has been seen', (await welGate(6,1))===false);
+ ok('but an account past the window that has NOT seen it still does',
+    (await welGate(6,0))===true);
+ ok('and a long-established one is left alone once it has',
+    (await welGate(400,1))===false);
  ok('it can still be opened on demand',
     await p.evaluate(()=>{showWelcome();
       return document.getElementById('welcomeModal').style.display==='flex';}));

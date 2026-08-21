@@ -2417,6 +2417,7 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
   <div class="rowmenu-sep"></div>
   <button class="rowmenu-item" role="menuitem" onclick="openSettings()">Settings</button>
+  <button class="rowmenu-item" role="menuitem" onclick="switchAccount()">Switch Account</button>
   <button class="rowmenu-item" role="menuitem" onclick="logout()">Sign Out</button>
 </div>
 
@@ -2959,17 +2960,28 @@ async function saveProfile(){
     toast('Profile saved to your account.');
   }catch(e){toast('Could not save your profile — '+e.message);}
 }
-/* ---- first-run welcome ----
-   One short introduction, once per ACCOUNT. Both gates come from what boot has
-   already loaded, so this costs no extra request: a first session
-   (`loginCount` 1) and a welcome not yet dismissed. The login gate is what
-   keeps an established account — whose stored settings simply predate the
-   flag — from being interrupted by it. With no settings at all (signed out, or
-   the API down) nothing shows: an offline boot is not evidence of a first run. */
+/* ---- the welcome ----
+   Two ways it opens, both off what boot has already loaded, so it costs no
+   extra request:
+
+     · the OPENING WINDOW — the first five sessions of an account each get it.
+       One pass over three bullets is not how anyone learns a tool, and it is
+       dismissible every time.
+     · NEVER SEEN THIS ONE — an account past that window that has not seen the
+       current welcome gets it once. That is what carries it to every account
+       already in the system when this shipped, and what makes bumping
+       WELCOME_VERSION re-introduce a changed welcome to everyone.
+
+   With no settings at all (signed out, or the API down) nothing shows: an
+   offline boot is not evidence of anything. */
+const WELCOME_VERSION=1;   // bump to show a CHANGED welcome to every account once more
+const WELCOME_LOGINS=5;    // sessions from the start of an account that always get it
+function welcomeSeenVersion(){return Number((US.settings&&US.settings.welcomeSeenVersion)||0);}
 function maybeShowWelcome(){
   if(!principal||!US.settings)return;
-  if(US.settings.welcomeSeen===true)return;
-  if(Number(US.loginCount||0)>1)return;
+  const seen=welcomeSeenVersion()>=WELCOME_VERSION;
+  const opening=Number(US.loginCount||0)<=WELCOME_LOGINS;
+  if(seen&&!opening)return;
   showWelcome();
 }
 function showWelcome(){
@@ -2979,12 +2991,15 @@ function showWelcome(){
 }
 /* Closing IS the dismissal, whichever way it is closed — button, ×, backdrop,
    or Escape. chooseSetting rides the same debounced save every preference
-   uses, so the flag reaches the account without a save button of its own. */
+   uses, so the version reaches the account without a save button of its own.
+   Inside the opening window this changes nothing visible — the next session
+   still gets the welcome — but it is what ends it on session six. */
 function closeWelcome(){
   const m=document.getElementById('welcomeModal');if(!m)return;
   if(m.style.display==='none')return;
   m.style.display='none';
-  if(US.settings&&US.settings.welcomeSeen!==true)chooseSetting('welcomeSeen',true);
+  if(US.settings&&welcomeSeenVersion()<WELCOME_VERSION)
+    chooseSetting('welcomeSeenVersion',WELCOME_VERSION);
 }
 /* ---- Admin: user role management (super_admin only) ---- */
 const ADMIN_ROLES=['user','manager','director','super_admin'];
@@ -3433,14 +3448,35 @@ function closeProfile(refocus){
 }
 
 /* Ending the session is a full navigation to the SWA logout route, which clears
-   the auth cookie and returns to the sign-in screen, where the account picker
-   appears (prompt=select_account in staticwebapp.config.json) so a different
-   account can be chosen. It names /login.html rather than '/' only to save a
-   hop: '/' would 401 and the override would land on the same page. */
+   the auth cookie and returns to the sign-in screen. It names /login.html rather
+   than '/' only to save a hop: '/' would 401 and the override would land on the
+   same page.
+
+   SWA federates this to Entra's end-session endpoint — that is what the
+   /.auth/logout/aad/callback in the custom registration is for — so Microsoft
+   ends its own session too. When the browser holds more than one Microsoft
+   session, Entra asks WHICH account is signing out before it comes back. There
+   is no way to skip that from here: the parameter that suppresses it
+   (`logout_hint`) is Entra's, and SWA builds the end-session request itself.
+   Switching accounts does not need a sign-out at all — see switchAccount(). */
 function logoutUrl(){
   return '/.auth/logout?post_logout_redirect_uri='+encodeURIComponent('/login.html');
 }
-async function logout(){
+/* Signing in again REPLACES the session, so changing account is one navigation
+   to the provider and nothing else: prompt=select_account (set in
+   staticwebapp.config.json) means Microsoft opens on the account picker, and
+   the account picked owns the session from then on. No sign-out, so Entra's
+   "which account are you signing out of" page never appears.
+
+   This is a SWITCH, not a way out: it leaves the previous session in place
+   until the new one lands, so it is the wrong control for walking away from a
+   shared machine. Sign Out remains that, and remains a real sign-out. */
+function switchAccountUrl(){
+  return '/.auth/login/aad?post_login_redirect_uri='+encodeURIComponent(location.origin+'/');
+}
+/* Both paths leave the app the same way: confirm unsaved work, drop anything
+   this browser is holding, then navigate. Only the destination differs. */
+async function leaveSession(url){
   closeProfile(false);
   if(!confirmDiscard())return;
   dirty=false;                       // already asked — do not let beforeunload ask again
@@ -3451,8 +3487,10 @@ async function logout(){
   try{
     if(window.caches&&caches.keys)await Promise.all((await caches.keys()).map(k=>caches.delete(k)));
   }catch(_){}
-  location.replace(logoutUrl());
+  location.replace(url);
 }
+function logout(){return leaveSession(logoutUrl());}
+function switchAccount(){return leaveSession(switchAccountUrl());}
 
 /* ============ CSI MASTERFORMAT CATALOG ============
    All divisions (00–48; 15–20, 24, 29–30, 36–39, 47, 49 reserved) with Level-2

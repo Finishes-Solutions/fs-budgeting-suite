@@ -535,16 +535,20 @@ http.createServer((req, res) => {
       }
       return json(res, 405, { error: 'method_not_allowed' });
     }
-    // welcomeSeen is seeded TRUE here, unlike a real first sign-in: every suite
-    // boots a fresh mock, and a first-run welcome would sit over the page and
-    // swallow the first click in all of them. Suite 15 turns it off explicitly
-    // to exercise the first-run path, which is the only place it is under test.
+    // The seeded account is deliberately an ESTABLISHED, already-welcomed one:
+    // past the opening five sessions and carrying the current welcome version.
+    // Every suite boots a fresh mock, and a welcome would sit over the page and
+    // swallow the first click in all of them. The version is the contract's
+    // ceiling rather than the client's constant, because the mock has no way to
+    // read a number that lives in index.html — "has seen every welcome there
+    // will ever be" is exactly what this seed means. Suite 15 winds both back
+    // to exercise the real paths, which is the only place they are under test.
     if (!mockUsers.has(uid)) mockUsers.set(uid, {
       userDetails: principal.clientPrincipal.userDetails, displayName: null,
       email: principal.clientPrincipal.userDetails,   // locked to the sign-in account
       phone: null, appRole: 'super_admin',
-      settings: { welcomeSeen: true }, firstSeenAt: new Date().toISOString(),
-      lastSeenAt: new Date(0).toISOString(), loginCount: 0 });
+      settings: { welcomeSeenVersion: 1000 }, firstSeenAt: new Date().toISOString(),
+      lastSeenAt: new Date(0).toISOString(), loginCount: 25 });
     const u = mockUsers.get(uid);
     const resp = () => json(res, 200, {
       userDetails: u.userDetails, displayName: u.displayName, email: u.email, phone: u.phone,

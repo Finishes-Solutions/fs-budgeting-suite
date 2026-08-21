@@ -355,12 +355,43 @@ const BASE = 'http://127.0.0.1:8100';
      await p.locator('#pmName').textContent());
   ok('Sign Out lives in the account menu',
      await p.locator('#profileMenu .rowmenu-item:has-text("Sign Out")').isVisible());
+  // Switching accounts sits beside it, and before it: changing account is the
+  // common errand, ending the session is the deliberate one.
+  ok('Switch Account sits beside it, ahead of Sign Out',
+     await p.evaluate(() => {
+       const items = [...document.querySelectorAll('#profileMenu .rowmenu-item')].map(b => b.textContent.trim());
+       return items.includes('Switch Account')
+         && items.indexOf('Switch Account') < items.indexOf('Sign Out');
+     }),
+     await p.evaluate(() => [...document.querySelectorAll('#profileMenu .rowmenu-item')]
+       .map(b => b.textContent.trim()).join(' | ')));
   await p.keyboard.press('Escape'); await p.waitForTimeout(150);
   ok('Escape closes the account menu', !(await p.locator('#profileMenu').isVisible()));
   ok('Sign Out targets the SWA logout route, and lands on the sign-in screen',
      (await p.evaluate(() => logoutUrl()))
        === '/.auth/logout?post_logout_redirect_uri=' + encodeURIComponent('/login.html'),
      await p.evaluate(() => logoutUrl()));
+  // Switching accounts is a sign-IN, not a sign-out: signing in replaces the
+  // session, so Entra's "which account are you signing out of" page — which SWA
+  // always federates a real sign-out through — never comes into it.
+  ok('and it goes straight to the provider rather than through a sign-out',
+     await p.evaluate(() => switchAccountUrl().startsWith('/.auth/login/aad?post_login_redirect_uri=')
+       && !/logout/.test(switchAccountUrl())),
+     await p.evaluate(() => switchAccountUrl()));
+  ok('its return target is this origin, never an off-site URL',
+     await p.evaluate(() => decodeURIComponent(switchAccountUrl().split('post_login_redirect_uri=')[1])
+       === location.origin + '/'),
+     await p.evaluate(() => switchAccountUrl()));
+  // Both leave through one guard, so neither can drop unsaved work silently.
+  ok('Switch Account is blocked by unsaved changes too',
+     await p.evaluate(async () => {
+       const c = window.confirm; window.confirm = () => false;
+       dirty = true;
+       await switchAccount();
+       const here = location.pathname;
+       window.confirm = c; dirty = false;
+       return here.includes('index.html') || here.startsWith('/');
+     }));
   // A dirty budget must not be discarded silently by signing out.
   const stayed = await p.evaluate(async () => {
     const c = window.confirm; window.confirm = () => false;

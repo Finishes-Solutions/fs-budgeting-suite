@@ -44,10 +44,16 @@ const DEFAULT_SETTINGS = {
   budgetView: 'comfortable',
   analysisView: 'comfortable',
   projectView: 'comfortable',
-  // The first-run welcome has been dismissed. Per ACCOUNT, not per browser, so
-  // a returning user is not welcomed again on a second machine, and it rides
+  // Which welcome this account has already seen. Per ACCOUNT, not per browser,
+  // so a returning user is not welcomed again on a second machine, and it rides
   // the settings document the client already loads at boot.
-  welcomeSeen: false,
+  //
+  // A VERSION rather than a boolean, so a changed welcome can be re-introduced
+  // to everyone exactly once by bumping WELCOME_VERSION in index.html. That is
+  // also why the boolean `welcomeSeen` this replaced is NOT lifted: an account
+  // that dismissed the old one has still never seen the current one, and the
+  // point of the version is that it gets shown.
+  welcomeSeenVersion: 0,
   rememberExport: false,
   exportOptions: {},          // { budget: {..bools}, analysis: {..bools} }
   favorites: { budget: [], analysis: [], project: [] }
@@ -60,6 +66,15 @@ function legacyView(s) {
   if (LIST_VIEWS.includes(s.listView)) return s.listView;   // brief intermediate shape
   if (s.homeView === 'cards') return 'cards';
   return s.tableDensity === 'compact' ? 'compact' : 'comfortable';
+}
+
+// A stored version is an integer in a plausible range. Anything else reads as
+// "seen nothing", which shows the welcome rather than suppressing it — the safe
+// direction for a value that decides whether an introduction appears at all.
+const WELCOME_VERSION_MAX = 1000;
+function cleanVersion(v) {
+  const n = typeof v === 'number' && Number.isInteger(v) ? v : 0;
+  return n < 0 ? 0 : (n > WELCOME_VERSION_MAX ? WELCOME_VERSION_MAX : n);
 }
 
 function cleanBoolMap(v) {
@@ -109,7 +124,7 @@ function sanitizeSettings(input) {
     budgetView: LIST_VIEWS.includes(s.budgetView) ? s.budgetView : legacyView(s),
     analysisView: LIST_VIEWS.includes(s.analysisView) ? s.analysisView : legacyView(s),
     projectView: LIST_VIEWS.includes(s.projectView) ? s.projectView : legacyView(s),
-    welcomeSeen: s.welcomeSeen === true,
+    welcomeSeenVersion: cleanVersion(s.welcomeSeenVersion),
     rememberExport: s.rememberExport === true,
     exportOptions: { budget: cleanBoolMap(ex.budget), analysis: cleanBoolMap(ex.analysis) },
     favorites: { budget: cleanIdList(favSrc.budget), analysis: cleanIdList(favSrc.analysis),

@@ -118,6 +118,16 @@ which is why the history has merge commits on both sides.
 
 - Custom Entra provider configured in `staticwebapp.config.json`, reading
   `AAD_CLIENT_ID` / `AAD_CLIENT_SECRET` from SWA application settings.
+- **Signing out federates; switching accounts does not.** `/.auth/logout` clears
+  the SWA cookie *and* sends the browser to Entra's end-session endpoint, which
+  is why a browser holding several Microsoft sessions is asked which account is
+  signing out. There is no supported way to skip that from the app: the
+  `logout_hint` parameter that suppresses it belongs to Entra and SWA composes
+  the end-session request itself. **Switch Account** in the account menu sidesteps
+  the question entirely by not signing out — it navigates to
+  `/.auth/login/aad`, `prompt=select_account` opens the picker, and the account
+  chosen replaces the session. Use it for changing account; Sign Out is still
+  the only thing that ends one.
 - **`app/login.html` is the sign-in screen** and the only route that allows the
   `anonymous` role (`/favicon.ico`, which it links, is the one other). An
   unauthenticated request no longer bounces straight to Microsoft: the `401`

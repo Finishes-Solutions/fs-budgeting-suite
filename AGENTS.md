@@ -212,12 +212,28 @@ custom provider for sign-in.
   The expense-ratio override is different: it is a persisted property of the
   analysis (`input.expenses.override`), because the analysis carries it into
   every export.
-- **The first-run welcome is settings-driven, not browser-driven.** It opens
-  from what boot already loaded — `welcomeSeen` in the account settings and
-  `loginCount` — so it costs no extra request, follows the account to any
-  browser, and never fires on an established account whose stored settings
-  simply predate the flag. No settings (signed out, or the API down) means no
-  welcome: an offline boot is not evidence of a first run.
+- **The welcome is settings-driven, not browser-driven, and versioned.** It
+  opens from what boot already loaded — `welcomeSeenVersion` in the account
+  settings and `loginCount` — so it costs no extra request and follows the
+  account to any browser. Two gates, either of which opens it: the first
+  `WELCOME_LOGINS` (5) sessions of an account, and *never having seen the
+  current* `WELCOME_VERSION`. The version is what carries a changed welcome to
+  everyone exactly once — bump it and every account sees the new one — and it
+  is why the boolean `welcomeSeen` it replaced is **not** lifted by the
+  contract: an account that dismissed the old welcome has still never seen this
+  one. A junk stored version reads as 0, which SHOWS the welcome; that
+  direction is deliberate. No settings (signed out, or the API down) means no
+  welcome: an offline boot is not evidence of anything.
+- **Sign Out and Switch Account are different operations.** `/.auth/logout`
+  ends the session for real, and SWA federates it to Entra's end-session
+  endpoint (that is what `/.auth/logout/aad/callback` in the custom
+  registration is for), so Entra may ask which account is signing out. That
+  page cannot be suppressed from this app — `logout_hint` is Entra's parameter
+  and SWA builds the request. `switchAccount()` therefore does **not** sign
+  out: it goes straight to `/.auth/login/aad`, where `prompt=select_account`
+  opens the picker and the account chosen replaces the session. Never
+  reimplement Sign Out on top of it — a switch leaves the old session live
+  until the new one lands, which is exactly wrong for walking away.
 - **Theme packs are paint only.** A pack (Settings → Theme Pack, super_admin)
   is an alternate appearance of the same product: it may remap tokens and
   restyle primitives, never move a route, label, control, calculation or
