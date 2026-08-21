@@ -78,11 +78,13 @@ function statusColor(s){ return STATUS_COLORS[s]||'#6B7280'; }
 function projectKPIs(){
   var p=data&&data.projects;
   if(!p||!p.available)return '';
-  return '<div class="dash-kpi"><div class="k">Converted Projects</div><div class="v">'+num(p.converted)+'</div>'
-    +'<div class="sub">'+num(p.total)+' projects · '
-    +(p.conversionRate===null?'no decisions yet':pct(p.conversionRate)+' of decided')+'</div></div>'
-    +'<div class="dash-kpi"><div class="k">Converted Contract Amount</div><div class="v">'+money(p.convertedContractAmount)+'</div>'
-    +'<div class="sub">Captured at conversion</div></div>'
+  // Two tiles, not three: the converted COUNT is context for the money rather
+  // than a headline of its own, so it rides in the sub-line. A third tile
+  // pushed the tile grid onto another row for a number nobody reads first.
+  // The sub-lines stay to ONE line each: a wrapped sub costs more height than
+  // the tile it was folded into saved.
+  return '<div class="dash-kpi"><div class="k">Converted Contract Amount</div><div class="v">'+money(p.convertedContractAmount)+'</div>'
+    +'<div class="sub">'+num(p.converted)+' of '+num(p.total)+' converted</div></div>'
     +'<div class="dash-kpi"><div class="k">Converted Project Amount</div><div class="v">'+money(p.convertedProjectAmount)+'</div>'
     +'<div class="sub">Captured at conversion</div></div>';
 }
@@ -128,25 +130,19 @@ function renderBreakdowns(el){
     '<div class="dash-card"><h3>Budget Status</h3>'+donutHTML(b.statusBreakdown)+'</div>'
     +'<div class="dash-card"><h3>Analysis Status</h3>'+donutHTML(a.statusBreakdown)+'</div>'
     +(pj&&pj.available
-      ? '<div class="dash-card"><h3>Project Pipeline</h3>'+funnelHTML(pj)+'</div>'
+      ? '<div class="dash-card"><h3>Project Pipeline</h3>'+donutHTML(pipelineRows(pj))+'</div>'
       : '');
 }
 
 /* The pipeline in its real order rather than sorted by count — the shape of a
-   funnel is the information, and re-ordering destroys it. A stage with nothing
-   in it still gets a row, because an empty stage is a fact too. */
-function funnelHTML(p){
+   pipeline is the information, and re-ordering destroys it. donutHTML renders
+   segments in the order it is given, so the ring and its legend both read Lead
+   first and Lost last. Using the same primitive as the two breakdowns beside it
+   is not only consistent: a taller bespoke chart pushed the whole visual half
+   of the dashboard past one screen, which suite-16 pins. */
+function pipelineRows(p){
   var by={};(p.statusBreakdown||[]).forEach(function(r){by[r.status]=r.count;});
-  var max=Math.max.apply(null,(p.statuses||[]).map(function(s){return by[s]||0;}).concat([1]));
-  return '<div class="dash-funnel">'
-    +(p.statuses||[]).map(function(s){
-      var n=by[s]||0;
-      return '<div class="dash-funnel-row"><span class="fn-lab">'+esc(s)+'</span>'
-        +'<span class="fn-bar"><span class="fn-fill" style="width:'+(100*n/max).toFixed(1)+'%;'
-        +'background:'+statusColor(s)+'"></span></span>'
-        +'<span class="fn-n">'+num(n)+'</span></div>';
-    }).join('')
-    +'</div>';
+  return (p.statuses||[]).map(function(s){return {status:s,count:by[s]||0};});
 }
 
 /* ================= charts =================

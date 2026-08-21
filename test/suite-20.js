@@ -178,5 +178,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await b.close();
 }catch(e){ R.push('ABORTED: '+e.message); }
 console.log(R.join('\n'));
+// The house summary line every other suite prints, so a run log reads the same
+// way whichever suite produced it.
+console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
 process.exit(R.some(x=>x.startsWith('FAIL')||x.startsWith('ABORTED'))?1:0);
 })();

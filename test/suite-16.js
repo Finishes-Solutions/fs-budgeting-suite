@@ -55,13 +55,30 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     kpiText.replace(/\s+/g,' ').slice(0,200));
  ok('and they say the figure was captured, not tracked',
     /Captured at conversion/.test(kpiText));
- ok('the project pipeline is charted in its real order, not sorted by count',
+ // The pipeline is the third breakdown, drawn with the same donut primitive as
+ // the two beside it — and in PIPELINE order, not sorted by count: the shape of
+ // a pipeline is the information.
+ ok('the project pipeline is charted alongside the two status breakdowns',
+    (await p.locator('#dashBreakdowns .dash-card').count())===3,
+    String(await p.locator('#dashBreakdowns .dash-card').count()));
+ ok('and reads in pipeline order, not sorted by count',
     await p.evaluate(()=>{
-      const labs=[...document.querySelectorAll('.dash-funnel-row .fn-lab')].map(e=>e.textContent.trim());
-      return JSON.stringify(labs)===JSON.stringify(['Lead','Qualified','Budgeting','Proposal Sent',
-        'Awarded','Converted to Project','On Hold','Lost']);
+      const card=[...document.querySelectorAll('#dashBreakdowns .dash-card')]
+        .find(c=>/Project Pipeline/.test(c.querySelector('h3').textContent));
+      if(!card)return false;
+      const labs=[...card.querySelectorAll('.dash-lg-name')].map(e=>e.textContent.trim());
+      const order=['Lead','Qualified','Budgeting','Proposal Sent','Awarded',
+                   'Converted to Project','On Hold','Lost'];
+      // Only stages with a count are drawn; whichever appear must still be in
+      // pipeline order relative to each other.
+      const idx=labs.map(l=>order.indexOf(l));
+      return labs.length>0 && idx.every(i=>i>=0)
+        && idx.every((v,i)=>i===0||v>idx[i-1]);
     }),
-    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('.dash-funnel-row .fn-lab')].map(e=>e.textContent.trim()))));
+    JSON.stringify(await p.evaluate(()=>{
+      const card=[...document.querySelectorAll('#dashBreakdowns .dash-card')]
+        .find(c=>/Project Pipeline/.test(c.querySelector('h3').textContent));
+      return card?[...card.querySelectorAll('.dash-lg-name')].map(e=>e.textContent.trim()):null;})));
 
  // ---- design-system parity: the sections are the app's card shell, and the
  // activity table is the shared .tbl, not a bespoke one
