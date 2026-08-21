@@ -50,7 +50,7 @@ module.exports = async function (context, req) {
 
     const [rows, counted, people] = await Promise.all([
       dataRq.query(
-        `SELECT ua.EventType, ua.EntityType, ua.EntityId, ua.CreatedAt, ua.UserId,
+        `SELECT ua.EventType, ua.EntityType, ua.EntityId, ua.DetailDoc, ua.CreatedAt, ua.UserId,
                 u.DisplayName, u.Email
          FROM dbo.UserActivity AS ua
          LEFT JOIN dbo.Users AS u ON u.UserId = ua.UserId
@@ -65,6 +65,9 @@ module.exports = async function (context, req) {
     context.res = jsonRes(200, {
       events: rows.recordset.map(x => ({
         eventType: x.EventType, entityType: x.EntityType, entityId: x.EntityId,
+        // The structured context each event carries. Without it the admin log
+        // could only ever say what KIND of thing happened, never what changed.
+        detail: parseDetail(x.DetailDoc),
         createdAt: x.CreatedAt, userId: x.UserId,
         userName: x.DisplayName || x.Email || 'Unknown'
       })),
@@ -106,7 +109,7 @@ module.exports = async function (context, req) {
         FROM dbo.Users`),
 
       pool.request().query(`
-        SELECT TOP 50 ua.EventType, ua.EntityType, ua.EntityId, ua.CreatedAt,
+        SELECT TOP 50 ua.EventType, ua.EntityType, ua.EntityId, ua.DetailDoc, ua.CreatedAt,
                u.DisplayName, u.Email
         FROM dbo.UserActivity ua
         LEFT JOIN dbo.Users u ON u.UserId = ua.UserId
@@ -249,6 +252,7 @@ module.exports = async function (context, req) {
     },
     recentActivity: recentActivity.recordset.map(r => ({
       eventType: r.EventType, entityType: r.EntityType, entityId: r.EntityId,
+      detail: parseDetail(r.DetailDoc),
       createdAt: r.CreatedAt, userName: r.DisplayName || r.Email || 'Unknown'
     })),
     // Day is a DATE; send the plain YYYY-MM-DD so the client charts calendar
@@ -268,3 +272,11 @@ module.exports = async function (context, req) {
     }))
   });
 };
+
+// A detail document that cannot be read is an absent detail, never a 500: the
+// activity log is a report about other work and must not be the thing that
+// breaks the dashboard.
+function parseDetail(doc) {
+  if (!doc) return null;
+  try { return JSON.parse(doc); } catch (e) { return null; }
+}

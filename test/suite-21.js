@@ -19,38 +19,56 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the Projects tab lights up',
     await p.locator('#nav-projects').evaluate(e=>e.classList.contains('on')));
 
- // ---------- 2. saving a budget creates its project ----------
- await p.click('#nav-budgets'); await p.waitForTimeout(400);
- await p.evaluate(()=>go('budgets')); await p.waitForTimeout(400);
- await p.click('.page.on button:has-text("+ New Budget")');
- await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")');
+ // ---------- 2. a project is created explicitly; a budget belongs to it ----------
+ // A budget id can no longer name a project, so saving one does not conjure
+ // its parent. The project is made first, with its own OP-#### identity.
+ await p.click('#page-projects button:has-text("+ Create Project")');
  await p.waitForTimeout(500);
- await p.fill('#pId','TST-7301'); await p.fill('#pName','Harbour Point');
- await p.fill('#pAddr','5 Dock Road');
- await p.waitForTimeout(300);
- await p.click('.page.on button[data-save-btn]'); await p.waitForTimeout(1000);
+ await p.fill('#npId','OP-7301');
+ await p.fill('#npName','Harbour Point');
+ await p.fill('#npAddress','5 Dock Road');
+ await p.click('#npCreate'); await p.waitForTimeout(1000);
+
+ await p.click('#nav-projects'); await p.waitForTimeout(900);
+ ok('the project is listed under its OP-#### id',
+    /OP-7301/.test(await p.locator('#projectsBody').textContent()),
+    (await p.locator('#projectsBody').textContent()).slice(0,160));
+ ok('and no budget id is showing in the PROJECT ID column',
+    !/BD-|TST-/.test(await p.evaluate(()=>[...document.querySelectorAll('#projectsBody .pj-id')]
+      .map(e=>e.textContent).join(' '))),
+    await p.evaluate(()=>[...document.querySelectorAll('#projectsBody .pj-id')].map(e=>e.textContent).join(' ')));
+ const list=await p.evaluate(()=>FSProjects._list());
+ ok('exactly one project per ID',
+    list.projects.filter(x=>x.projectId==='OP-7301').length===1,
+    JSON.stringify(list.projects.map(x=>x.projectId)));
+ ok('it starts in the pipeline, not converted',
+    list.projects.find(x=>x.projectId==='OP-7301').status==='Lead');
+
+ // its first budget, created from the project so the name and address carry
+ await p.click('#projectsBody tr:has-text("OP-7301")'); await p.waitForTimeout(900);
+ await p.click('#page-project button:has-text("+ New Budget")');
+ await p.waitForTimeout(700);
+ await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")');
+ await p.waitForTimeout(800);
+ await p.fill('#nbId','BD-7301');
+ await p.click('#nbCreate'); await p.waitForTimeout(800);
+ ok('the budget carries the project name and address across',
+    (await p.inputValue('#pName'))==='Harbour Point'
+      && (await p.inputValue('#pAddr'))==='5 Dock Road',
+    await p.inputValue('#pName')+' | '+await p.inputValue('#pAddr'));
+ await p.click('.page.on button[data-save-btn]'); await p.waitForTimeout(1200);
  ok('the budget saved', /^Saved /.test(await p.locator('#saveState').textContent()),
     await p.locator('#saveState').textContent());
 
- await p.click('#nav-projects'); await p.waitForTimeout(900);
- ok('a project row appeared for it',
-    /TST-7301/.test(await p.locator('#projectsBody').textContent()),
-    (await p.locator('#projectsBody').textContent()).slice(0,160));
- const list=await p.evaluate(()=>FSProjects._list());
- ok('exactly one project per ID',
-    list.projects.filter(x=>x.projectId==='TST-7301').length===1,
-    JSON.stringify(list.projects.map(x=>x.projectId)));
- ok('it starts in the pipeline, not converted',
-    list.projects.find(x=>x.projectId==='TST-7301').status==='Lead');
-
  // ---------- 3. the detail page shows what belongs to it ----------
- await p.click('#projectsBody tr:has-text("TST-7301")'); await p.waitForTimeout(900);
- ok('the project route carries its id', /#\/project\/TST-7301$/.test(p.url()), p.url());
- ok('the title names the project',
-    /TST-7301/.test(await p.locator('#projectTitle').textContent()),
+ await p.click('#nav-projects'); await p.waitForTimeout(700);
+ await p.click('#projectsBody tr:has-text("OP-7301")'); await p.waitForTimeout(900);
+ ok('the project route carries its id', /#\/project\/OP-7301$/.test(p.url()), p.url());
+ ok('the title names the project by its OP id, never a budget id',
+    /^OP-7301 — Harbour Point/.test((await p.locator('#projectTitle').textContent()).trim()),
     await p.locator('#projectTitle').textContent());
- ok('its budget is listed',
-    /TST-7301/.test(await p.locator('#projectBody').textContent()));
+ ok('its budget is listed under its own BD id',
+    /BD-7301/.test(await p.locator('#projectBody').textContent()));
  ok('the budget is marked primary',
     /Primary/.test(await p.locator('#projectBody').textContent()));
  ok('guard-rail state is reported per budget',
@@ -60,7 +78,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#projectBody button:has-text("+ Add Alternate Budget")');
  await p.waitForTimeout(1200);
  ok('the alternate takes a namespaced id',
-    (await p.inputValue('#pId'))==='TST-7301-02', await p.inputValue('#pId'));
+    (await p.inputValue('#pId'))==='BD-7301-02', await p.inputValue('#pId'));
  ok('it starts as a copy, not a blank sheet',
     (await p.evaluate(()=>doc.lines.length))>0,
     String(await p.evaluate(()=>doc.lines.length)));
@@ -72,27 +90,27 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     /^Saved /.test(await p.locator('#saveState').textContent()),
     await p.locator('#saveState').textContent());
 
- await p.evaluate(()=>FSProjects.show('TST-7301',true)); await p.waitForTimeout(1000);
+ await p.evaluate(()=>FSProjects.show('OP-7301',true)); await p.waitForTimeout(1000);
  const det=await p.evaluate(()=>FSProjects._detail());
  ok('both budgets hang off the one project', det.budgets.length===2,
     JSON.stringify(det.budgets.map(x=>x.projectId)));
  ok('the alternate is labelled as one',
-    det.budgets.some(x=>x.projectId==='TST-7301-02'&&x.isAlternate));
+    det.budgets.some(x=>x.projectId==='BD-7301-02'&&x.isAlternate));
  ok('and the base is still the primary',
-    det.budgets.some(x=>x.projectId==='TST-7301'&&x.isPrimary));
+    det.budgets.some(x=>x.projectId==='BD-7301'&&x.isPrimary));
  ok('there is still exactly one project',
     (await p.evaluate(async()=>(await (await fetch('/api/budgets?scope=projects')).json())
-      .projects.filter(x=>x.projectId==='TST-7301').length))===1);
+      .projects.filter(x=>x.projectId==='OP-7301').length))===1);
 
  // ---------- 5. an analysis rolls up to the project ----------
  const made=await p.evaluate(async()=>{
    const r=await fetch('/api/investment-analyses',{method:'POST',
      headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({mode:'fromBudget',projectId:'TST-7301',analysisName:'Harbour Underwriting'})});
+     body:JSON.stringify({mode:'fromBudget',projectId:'BD-7301',analysisName:'Harbour Underwriting'})});
    return r.status;
  });
  ok('an analysis can be created from the budget', made===201, String(made));
- await p.evaluate(()=>FSProjects.show('TST-7301',true)); await p.waitForTimeout(1000);
+ await p.evaluate(()=>FSProjects.show('OP-7301',true)); await p.waitForTimeout(1000);
  ok('and it appears under the project',
     /Harbour Underwriting/.test(await p.locator('#projectBody').textContent()));
 
@@ -140,12 +158,12 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     await p.locator('#projectBody button:has-text("+ Add Investment Analysis")').isVisible());
  await p.click('#projectBody button:has-text("+ Add Investment Analysis")');
  await p.waitForTimeout(400);
- ok('with two budgets it asks which one', await p.locator('#pjBudgetPick').isVisible());
- const pickTxt=await p.locator('#pjBudgetPick').textContent();
+ ok('with two budgets it asks which one', await p.locator('#invPickModal').isVisible());
+ const pickTxt=await p.locator('#invPickModal').textContent();
  ok('and offers only this project\u2019s budgets',
-    /TST-7301/.test(pickTxt)&&!/TST-9911|BD-0001/.test(pickTxt), pickTxt.slice(0,200));
+    /BD-7301/.test(pickTxt)&&!/TST-9911|BD-0001\b/.test(pickTxt), pickTxt.slice(0,200));
  await p.keyboard.press('Escape'); await p.waitForTimeout(300);
- ok('Escape closes the picker', (await p.locator('#pjBudgetPick').count())===0);
+ ok('Escape closes the picker', !(await p.locator('#invPickModal').isVisible()));
 
  // ---------- 6. the star toggles, and the strip follows ----------
  ok('no Favorites strip before anything is starred',
@@ -191,12 +209,12 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // The snapshot must NOT follow a later budget edit — that is the whole point.
  await p.evaluate(async()=>{
-   const doc2=await (await fetch('/api/budget/TST-7301')).json();
+   const doc2=await (await fetch('/api/budget/BD-7301')).json();
    doc2.projectCosts.land=(doc2.projectCosts.land||0)+5000000;
-   await fetch('/api/budget/TST-7301',{method:'PUT',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({meta:{projectId:'TST-7301',name:'Harbour Point',status:'Draft'},doc:doc2})});
+   await fetch('/api/budget/BD-7301',{method:'PUT',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({meta:{projectId:'BD-7301',name:'Harbour Point',status:'Draft'},doc:doc2})});
  });
- await p.evaluate(()=>FSProjects.show('TST-7301',true)); await p.waitForTimeout(1000);
+ await p.evaluate(()=>FSProjects.show('OP-7301',true)); await p.waitForTimeout(1000);
  const after=await p.evaluate(()=>FSProjects._detail().project);
  ok('editing the budget afterwards does not restate the snapshot',
     Math.abs(after.contractAmount-conv.contractAmount)<0.01,
@@ -243,9 +261,25 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     /Converted Contract Amount/.test(await p.locator('#projectsBody').textContent()));
 
  // ---------- 9. a project id is not a budget id ----------
- const bad=await p.evaluate(async()=>
-   (await fetch('/api/budgets?scope=project&id=TST-7301-02')).status);
- ok('an alternate id is not a project id', bad===404, String(bad));
+ // Two namespaces, and the API refuses to confuse them in either direction.
+ const asProject=await p.evaluate(async()=>{
+   const out={};
+   for(const id of ['BD-7301','BD-7301-02','TST-7301']){
+     out[id]=(await fetch('/api/budgets?scope=project&id='+id)).status;
+   }
+   return out;
+ });
+ ok('a budget id is not a project id', Object.values(asProject).every(s2=>s2===404),
+    JSON.stringify(asProject));
+ const asBudget=await p.evaluate(async()=>(await fetch('/api/budget/OP-7301')).status);
+ ok('and a project id is not a budget id', asBudget===404, String(asBudget));
+ const shapes=await p.evaluate(async()=>{
+   const d=await (await fetch('/api/budgets?scope=project&id=OP-7301')).json();
+   return {project:d.project.projectId, budgets:d.budgets.map(x=>x.projectId)};
+ });
+ ok('the project reports an OP-#### id and its budgets report BD- ids',
+    /^OP-\d{4}$/.test(shapes.project) && shapes.budgets.every(x=>/^BD-\d{4}(-\d{2})?$/.test(x)),
+    JSON.stringify(shapes));
 
  ok('No uncaught JS errors', errs.length===0, errs.join(' | '));
  await b.close();

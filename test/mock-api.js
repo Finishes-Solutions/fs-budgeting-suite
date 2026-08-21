@@ -73,51 +73,103 @@ const NO_API = process.env.NO_API === '1';
 // Mirrors the real API: deletion is a soft flag that keeps history, and a
 // meaningful save appends an immutable version.
 const budgets = new Map();
-/* dbo.Projects stand-in. Behaviour-parallel with api/shared/projects.js: one
-   project per ID, created the first time a budget is saved against it, and
-   Converted to Project snapshots the primary budget's money. */
+/* dbo.Projects stand-in. Behaviour-parallel with api/shared/projects.js.
+   A project id is OP-#### and is the project's OWN identity — never derived
+   from a budget id. A budget says which project it belongs to by carrying
+   projectKey, stamped when it is saved. */
 const projects = new Map();
 const PROJECT_STATUSES = ['Lead', 'Qualified', 'Budgeting', 'Proposal Sent', 'Awarded',
                           'Converted to Project', 'On Hold', 'Lost'];
 const CONVERTED = 'Converted to Project';
-const projectKeyOf = id => {
+const PROJECT_ID_RX = /^OP-\d{4}$/;
+// A budget id with its alternate suffix stripped: the BASE BUDGET, used only
+// to number alternates. It is not, and must not become, a project id.
+const budgetBaseOf = id => {
   const v = String(id || '').toUpperCase();
   return /^(OP|BD|AS|TST)-\d{4}-\d{2}$/.test(v) ? v.slice(0, -3) : v;
 };
-function ensureProject(budgetId, seed) {
-  const key = projectKeyOf(budgetId);
-  if (!/^(OP|BD|AS|TST)-\d{4}$/.test(key)) return null;
-  if (!projects.has(key)) {
-    const now = new Date().toISOString();
-    projects.set(key, { projectId: key, name: (seed && seed.name) || key,
-      address: (seed && seed.address) || '', type: (seed && seed.type) || 'Multifamily',
-      status: 'Lead', primaryBudgetId: budgetId, convertedAt: null,
-      contractAmount: null, projectAmount: null, notes: '',
-      createdById: principal.clientPrincipal.userId,
-      createdByName: principal.clientPrincipal.userDetails,
-      createdAt: now, updated: now });
+function nextProjectId() {
+  for (let i = 1; i <= 9999; i++) {
+    const id = 'OP-' + String(i).padStart(4, '0');
+    if (!projects.has(id)) return id;
   }
-  return key;
+  return null;
+}
+function nextBudgetId() {
+  for (let i = 1; i <= 9999; i++) {
+    const id = 'BD-' + String(i).padStart(4, '0');
+    if (!budgets.has(id)) return id;
+  }
+  return null;
 }
 function projectBudgets(key) {
-  return [...budgets.values()].filter(r => !r.deleted && projectKeyOf(r.meta.projectId) === key)
+  return [...budgets.values()].filter(r => !r.deleted && r.projectKey === key)
     .sort((a, z) => a.meta.projectId.length - z.meta.projectId.length
       || a.meta.projectId.localeCompare(z.meta.projectId));
 }
 function projectAnalyses(key) {
-  return [...invAnalyses.values()].filter(a => !a.deleted && a.projectId && projectKeyOf(a.projectId) === key)
+  return [...invAnalyses.values()].filter(a => !a.deleted && a.projectKey === key)
     .sort((x, y) => y.updatedAt.localeCompare(x.updatedAt));
 }
 function shapeProject(p) {
   const bs = projectBudgets(p.projectId);
+  // PRIMARY ONLY, never a sum across alternates — the same rule the real
+  // queries apply, with the same tie-break when no primary is set.
   const primary = bs.find(b => b.meta.projectId === p.primaryBudgetId) || bs[0] || null;
-  return Object.assign({}, p, {
+  const types = [...new Set(bs.map(b => b.meta.type).filter(Boolean))].sort();
+  const out = Object.assign({}, p, {
+    // A project has no type of its own: it reports what its budgets are.
+    budgetTypes: types.join(', '),
     budgetCount: bs.length, analysisCount: projectAnalyses(p.projectId).length,
     liveContractSum: primary ? +primary.meta.contractSum || 0 : 0,
     liveProjectCost: primary ? +primary.meta.projectCost || 0 : 0,
     breachCount: bs.filter(b => b.guardrailStatus === 'breach').length
   });
+  delete out.type;
+  return out;
 }
+/* The activity diff, mirroring api/user-settings/index.js. Names are looked up
+   here for the same reason they are there: an id is not what a person reads. */
+function entityName(kind, id) {
+  if (kind === 'budget') { const b = budgets.get(String(id).toUpperCase()); return b ? (b.meta.name || null) : null; }
+  if (kind === 'project') { const p = projects.get(String(id).toUpperCase()); return p ? (p.name || null) : null; }
+  if (kind === 'analysis') { const a = invAnalyses.get(String(id).toLowerCase()); return a ? (a.name || null) : null; }
+  return null;
+}
+function act(eventType, entityType, entityId, detail, userId) {
+  mockActivity.unshift({ eventType, entityType, entityId, detail: detail || null,
+    userId: userId || principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
+}
+function logSettingsDiff(uid, before, after, body, beforeProfile, prof) {
+  const sent = body.settings && typeof body.settings === 'object' ? body.settings : null;
+  if (sent && (sent.favorites !== undefined || sent.pinned !== undefined)) {
+    for (const kind of ['budget', 'project', 'analysis']) {
+      const was = new Set((before.favorites && before.favorites[kind]) || []);
+      const now = new Set((after.favorites && after.favorites[kind]) || []);
+      for (const id of now) if (!was.has(id)) act('favorite_add', kind, id, { name: entityName(kind, id) }, uid);
+      for (const id of was) if (!now.has(id)) act('favorite_remove', kind, id, { name: entityName(kind, id) }, uid);
+    }
+  }
+  const fields = ['displayName', 'phone'].filter(k => prof[k] !== undefined
+    && (beforeProfile[k] || null) !== (prof[k] || null));
+  if (fields.length) act('profile_update', 'user', uid,
+    { fields: fields.map(k => ({ key: k, from: beforeProfile[k], to: prof[k] || null })) }, uid);
+  if (sent) {
+    const scalar = v => (v === null || ['string', 'number', 'boolean'].includes(typeof v) ? v : undefined);
+    const changed = [];
+    for (const key of Object.keys(sent)) {
+      if (key === 'favorites' || key === 'pinned') continue;
+      const from = scalar(before[key]), to = scalar(after[key]);
+      if (from === undefined && to === undefined) {
+        if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) changed.push({ key });
+        continue;
+      }
+      if (from !== to) changed.push({ key, from: from === undefined ? null : from, to: to === undefined ? null : to });
+    }
+    if (changed.length) act('settings_update', null, null, { changed }, uid);
+  }
+}
+
 // The same evaluation the browser and the real endpoint run, off one module.
 function evalGuardrails(doc) {
   const gp = bcParts(doc);
@@ -347,6 +399,7 @@ http.createServer((req, res) => {
       return json(res, 200, {
         events: filtered.slice(offset, offset + limit).map(r => ({
           eventType: r.eventType, entityType: r.entityType, entityId: r.entityId,
+          detail: r.detail || null,
           createdAt: r.createdAt,
           userName: principal.clientPrincipal.userDetails,
           userId: r.userId || principal.clientPrincipal.userId
@@ -408,6 +461,7 @@ http.createServer((req, res) => {
       users: { total: mockUsers.size || 1, totalLogins: 1, lastActive: new Date().toISOString() },
       recentActivity: mockActivity.slice(0, 50).map(r => ({
         eventType: r.eventType, entityType: r.entityType, entityId: r.entityId,
+        detail: r.detail || null,
         createdAt: r.createdAt, userName: principal.clientPrincipal.userDetails
       })),
       // Same six series the real query builds, from the same two sources:
@@ -575,11 +629,15 @@ http.createServer((req, res) => {
       return req.on('end', () => {
         const body = b ? JSON.parse(b) : {};
         const prof = usc.sanitizeProfile(body);
+        const beforeProfile = { displayName: u.displayName || null, phone: u.phone || null };
+        const before = usc.sanitizeSettings(u.settings);
         for (const k of ['displayName', 'phone']) if (prof[k] !== undefined) u[k] = prof[k] || null;
         if (body.settings !== undefined)
           u.settings = usc.sanitizeSettings(Object.assign({}, usc.sanitizeSettings(u.settings), body.settings));
-        mockActivity.unshift({ eventType: 'settings_update', entityType: null, entityId: null,
-          detail: { changed: Object.keys(body.settings || {}) }, userId: uid, createdAt: new Date().toISOString() });
+        // Granular activity, behaviour-parallel with api/user-settings/index.js:
+        // one row per favorite that actually moved, naming the record, instead
+        // of one blunt "Updated settings".
+        logSettingsDiff(uid, before, usc.sanitizeSettings(u.settings), body, beforeProfile, prof);
         return resp();
       });
     }
@@ -608,6 +666,7 @@ http.createServer((req, res) => {
     // `available` is always true; the not-migrated shape is covered by
     // test/schema-probe.test.js against the real probe instead.
     const scope = String(q.get('scope') || '');
+    if (scope === 'next-project-id') return json(res, 200, { projectId: nextProjectId() });
     if (scope === 'projects') {
       return json(res, 200, { available: true, statuses: PROJECT_STATUSES,
         projects: [...projects.values()].map(shapeProject)
@@ -624,8 +683,12 @@ http.createServer((req, res) => {
           projectId: b.meta.projectId, name: b.meta.name, type: b.meta.type, status: b.meta.status,
           address: b.doc.address || '',
           contractSum: +b.meta.contractSum || 0, projectCost: +b.meta.projectCost || 0,
-          isAlternate: b.meta.projectId !== key,
-          isPrimary: b.meta.projectId === pr.primaryBudgetId,
+          // An alternate is a budget carrying the -NN suffix. It is no longer
+          // "an id that differs from the project's": those are different
+          // namespaces now, so they always differ.
+          isAlternate: budgetBaseOf(b.meta.projectId) !== b.meta.projectId,
+          isPrimary: b.meta.projectId === (bs.find(x => x.meta.projectId === pr.primaryBudgetId)
+            ? pr.primaryBudgetId : (bs[0] ? bs[0].meta.projectId : null)),
           guardrailStatus: b.guardrailStatus || null,
           guardrailBreachCount: b.guardrailBreachCount === undefined ? null : b.guardrailBreachCount,
           createdById: b.createdById || null, createdByName: b.createdByName || null,
@@ -651,23 +714,85 @@ http.createServer((req, res) => {
     const rest = decodeURIComponent(p.slice('/api/budget/'.length));
     const seg = rest.split('/');
     const id = (seg[0] || '').toUpperCase();
-    // Must stay in step with ID_RX in api/budget/index.js and app/index.html.
-    if (!/^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/.test(id)) { res.writeHead(400); return res.end('Invalid project ID'); }
-    // ?scope=project — project metadata and status. Converting SNAPSHOTS the
-    // primary budget's money, exactly as api/shared/projects.js does.
-    if (req.method === 'PUT' && String(q.get('scope') || '') === 'project') {
+    const bScope = String(q.get('scope') || '');
+    // The next free BD-####, answered before the id check because the {id}
+    // segment is only a placeholder on this scope.
+    if (req.method === 'GET' && bScope === 'next-budget-id')
+      return json(res, 200, { budgetId: nextBudgetId() });
+
+    // ?scope=project — create, update (including Make Primary) and soft
+    // delete, behaviour-parallel with api/shared/projects.js.
+    if (bScope === 'project' && (req.method === 'PUT' || req.method === 'DELETE')) {
+      if (!PROJECT_ID_RX.test(id)) return json(res, 400,
+        { error: 'bad_project_id', field: 'projectId', message: 'Use the format OP-####.' });
+
+      if (req.method === 'DELETE') {
+        const pr = projects.get(id);
+        if (!pr || pr.deleted) return json(res, 404, { error: 'not_found', message: 'Project not found.' });
+        // Cascading, and all at once: a project flagged deleted while its
+        // budgets were still live would keep being counted.
+        const bs = projectBudgets(id), as = projectAnalyses(id);
+        bs.forEach(b => { b.deleted = true; });
+        as.forEach(a => { a.deleted = true; });
+        pr.deleted = true;
+        projects.delete(id);
+        act('project_delete', 'project', id, { name: pr.name || null,
+          budgetsDeleted: bs.length, analysesDeleted: as.length });
+        return json(res, 200, { ok: true, projectId: id, name: pr.name || '',
+          budgetsDeleted: bs.length, analysesDeleted: as.length });
+      }
+
       let pb = ''; req.on('data', c => pb += c);
       return req.on('end', () => {
         const body = JSON.parse(pb || '{}');
+
+        if (body.create === true) {
+          if (projects.has(id)) return json(res, 409,
+            { error: 'project_id_taken', field: 'projectId', message: 'Project ID must be unique.' });
+          const name = String(body.name || '').trim(), address = String(body.address || '').trim();
+          if (!name) return json(res, 400, { error: 'bad_request', field: 'name', message: 'Project Name is required.' });
+          if (!address) return json(res, 400, { error: 'bad_request', field: 'address', message: 'Address is required.' });
+          const now = new Date().toISOString();
+          // No type: it belongs to each budget, not to the project.
+          projects.set(id, { projectId: id, name, address, status: 'Lead',
+            primaryBudgetId: null, convertedAt: null, contractAmount: null,
+            projectAmount: null, notes: String(body.notes || ''),
+            createdById: principal.clientPrincipal.userId,
+            createdByName: principal.clientPrincipal.userDetails,
+            createdAt: now, updated: now });
+          act('project_create', 'project', id, { name, address });
+          return json(res, 201, { ok: true, created: true, project: shapeProject(projects.get(id)) });
+        }
+
         const pr = projects.get(id);
         if (!pr) return json(res, 404, { error: 'not_found', message: 'Project not found.' });
         if (body.status !== undefined && !PROJECT_STATUSES.includes(body.status))
           return json(res, 400, { error: 'bad_request',
             message: 'status must be one of: ' + PROJECT_STATUSES.join(', ') });
+        // Make Primary: the budget must be a LIVE budget of THIS project, which
+        // is a lookup against projectKey, not a string operation on the id.
+        if (body.primaryBudgetId !== undefined && body.primaryBudgetId !== null) {
+          const bid = String(body.primaryBudgetId).toUpperCase();
+          const owns = projectBudgets(id).some(b => b.meta.projectId === bid);
+          if (!owns) return json(res, 400, { error: 'bad_request',
+            message: 'The primary budget must be a live budget on this project.' });
+          body.primaryBudgetId = bid;
+        }
         const converting = body.status === CONVERTED && pr.status !== CONVERTED;
-        ['name', 'address', 'type', 'notes', 'primaryBudgetId', 'status'].forEach(k => {
+        const wasStatus = pr.status, wasPrimary = pr.primaryBudgetId;
+        // `type` is deliberately not accepted: a project has no type.
+        ['name', 'address', 'notes', 'primaryBudgetId', 'status'].forEach(k => {
           if (body[k] !== undefined) pr[k] = body[k];
         });
+        if (body.primaryBudgetId !== undefined && body.primaryBudgetId !== wasPrimary)
+          act('budget_primary', 'project', id, { name: pr.name || null, from: wasPrimary || null, to: pr.primaryBudgetId });
+        if (converting) act('project_convert', 'project', id, { name: pr.name || null,
+          contractAmount: shapeProject(pr).liveContractSum, projectAmount: shapeProject(pr).liveProjectCost });
+        else if (body.status !== undefined && body.status !== wasStatus)
+          act('project_status', 'project', id, { name: pr.name || null, from: wasStatus, to: body.status });
+        const metaKeys = ['name', 'address', 'notes'].filter(k => body[k] !== undefined);
+        if (metaKeys.length) act('project_update', 'project', id,
+          { name: pr.name || null, fields: metaKeys.map(k => ({ key: k, to: String(body[k]).slice(0, 200) })) });
         if (converting) {
           const shaped = shapeProject(pr);
           pr.convertedAt = new Date().toISOString();
@@ -678,6 +803,9 @@ http.createServer((req, res) => {
         return json(res, 200, { ok: true, converted: converting, project: shapeProject(pr) });
       });
     }
+
+    // Must stay in step with ID_RX in api/budget/index.js and app/index.html.
+    if (!/^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/.test(id)) { res.writeHead(400); return res.end('Invalid project ID'); }
 
     const rec = budgets.get(id);
     const live = rec && !rec.deleted ? rec : null;
@@ -707,6 +835,9 @@ http.createServer((req, res) => {
     if (req.method === 'DELETE') {
       if (!rec) { res.writeHead(404); return res.end('Not found'); }
       rec.deleted = true;
+      act('budget_delete', 'budget', id, { name: rec.meta.name || null,
+        projectKey: rec.projectKey || null,
+        contractSum: +rec.meta.contractSum || 0, projectCost: +rec.meta.projectCost || 0 });
       res.writeHead(204); return res.end();
     }
     let b = ''; req.on('data', c => b += c);
@@ -717,8 +848,12 @@ http.createServer((req, res) => {
         if (!['Draft', 'In Review', 'Completed', 'Cancelled'].includes(body.status))
           { res.writeHead(400); return res.end('bad status'); }
         if (!live) { res.writeHead(404); return res.end('Not found'); }
+        const wasStatus = live.meta.status;
         live.meta.status = body.status; live.doc.status = body.status;
         live.meta.updated = live.doc.updated = new Date().toISOString();
+        if (wasStatus !== body.status) act('budget_status', 'budget', id,
+          { name: live.meta.name || null, projectKey: live.projectKey || null,
+            from: wasStatus, to: body.status });
         return json(res, 200, { ok: true, status: body.status });
       }
       // A malformed body must answer 400, exactly as api/budget/index.js does.
@@ -728,6 +863,32 @@ http.createServer((req, res) => {
       const { meta, doc } = body || {};
       if (!doc || !meta) { res.writeHead(400); return res.end('Body must be { meta, doc }'); }
       if ((doc.projectId || '').toUpperCase() !== id) { res.writeHead(400); return res.end('id mismatch'); }
+      // Building square footage is required and must be greater than zero —
+      // the analysis imports it, and a sizeless budget produced an analysis
+      // that could never calculate. resSF + amenSF is the BUILDING; site area
+      // is land and has never counted toward it.
+      if (!((+doc.resSF || 0) + (+doc.amenSF || 0) > 0)) {
+        return json(res, 422, { error: 'size_required', field: 'resSF',
+          message: 'Square footage is required — enter a building size greater than zero before saving.' });
+      }
+      const wantsCreate = body.create === true;
+      const wantsKey = meta.projectKey ? String(meta.projectKey).toUpperCase() : null;
+      if (wantsKey && !PROJECT_ID_RX.test(wantsKey)) {
+        return json(res, 400, { error: 'bad_project_id', field: 'projectKey',
+          message: 'A budget belongs to a project whose ID looks like OP-####.' });
+      }
+      if (wantsCreate && !wantsKey) {
+        return json(res, 400, { error: 'project_required', field: 'projectKey',
+          message: 'Choose the project this budget belongs to.' });
+      }
+      // A create must not land on an occupied id. Without this, a new budget
+      // typed against an existing id replaced that budget and versioned the
+      // replacement as its next revision.
+      if (wantsCreate && budgets.has(id)) {
+        return json(res, 409, { error: 'budget_id_taken', field: 'projectId',
+          message: 'Budget ' + id + ' already exists. Choose another Budget ID.',
+          suggestion: nextBudgetId() });
+      }
       // Behaviour-parallel with api/budget/index.js: the rails are re-evaluated
       // from the SUBMITTED document and refuse the write, never trusting a
       // client-supplied verdict.
@@ -748,12 +909,40 @@ http.createServer((req, res) => {
       meta.contractSum = Math.round(calc.contract * 100) / 100;
       meta.projectCost = Math.round(calc.project * 100) / 100;
       const prev = budgets.get(id) || { versions: [] };
+      // Which fields moved, for the log. A summary — the version snapshot is
+      // the full record, and an audit row that tries to be one is unreadable.
+      const changedFields = [];
+      if (prev.meta) {
+        const was = prev.meta, wasDoc = prev.doc || {};
+        const cmp = (key, a, z) => { if (a !== z) changedFields.push({ key, from: a, to: z }); };
+        cmp('name', was.name || null, meta.name || null);
+        cmp('status', was.status || null, meta.status || null);
+        cmp('type', was.type || null, meta.type || null);
+        cmp('contractSum', +was.contractSum || 0, +meta.contractSum || 0);
+        cmp('projectCost', +was.projectCost || 0, +meta.projectCost || 0);
+        cmp('pricingVersion', wasDoc.pricingVersion || null, doc.pricingVersion || null);
+        cmp('residentialSF', +wasDoc.resSF || 0, +doc.resSF || 0);
+        cmp('amenitySF', +wasDoc.amenSF || 0, +doc.amenSF || 0);
+        cmp('siteSF', +wasDoc.siteSF || 0, +doc.siteSF || 0);
+        const units = d => (d.units || []).reduce((a2, u) => a2 + (+u.count || 0), 0);
+        cmp('unitCount', units(wasDoc), units(doc));
+        cmp('lineItems', (wasDoc.lines || []).length, (doc.lines || []).length);
+      }
+      // The project link is stated, never derived — and a save that does not
+      // mention a project leaves the existing link alone, which is what every
+      // edit of an older budget does.
+      const linked = wantsKey && projects.has(wantsKey) ? wantsKey : (prev.projectKey || null);
       const entry = { meta, doc, deleted: false, versions: prev.versions,
         guardrailStatus: rails.status, guardrailBreachCount: rails.breaches.length,
-        projectKey: projectKeyOf(id),
+        projectKey: linked,
         createdById: (prev && prev.createdById) || principal.clientPrincipal.userId,
         createdByName: (prev && prev.createdByName) || principal.clientPrincipal.userDetails };  // PUT restores
-      ensureProject(id, { name: meta.name || doc.name, address: doc.address, type: meta.type || doc.type });
+      // A project with no primary adopts the first budget saved onto it.
+      if (linked && projects.has(linked)) {
+        const pr = projects.get(linked);
+        if (!pr.primaryBudgetId) pr.primaryBudgetId = id;
+        pr.updated = new Date().toISOString();
+      }
       const last = entry.versions[entry.versions.length - 1];
       let versionCreated = false;
       if (!last || canonical(last.doc) !== canonical(doc)) {
@@ -767,10 +956,14 @@ http.createServer((req, res) => {
         versionCreated = true;
       }
       budgets.set(id, entry);
-      if (versionCreated) mockActivity.unshift({ eventType: 'budget_save', entityType: 'budget',
-        entityId: id, detail: { versionNumber: entry.versions.length },
-        userId: principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
-      json(res, 200, { ok: true, versionNumber: entry.versions.length, versionCreated });
+      if (versionCreated) act(wantsCreate ? 'budget_create' : 'budget_save', 'budget', id, {
+        name: meta.name || null, projectKey: linked, status: meta.status || null,
+        versionNumber: entry.versions.length,
+        contractSum: meta.contractSum, projectCost: meta.projectCost,
+        pricingVersion: doc.pricingVersion || null,
+        changed: changedFields.length ? changedFields : null
+      });
+      json(res, 200, { ok: true, projectKey: linked, versionNumber: entry.versions.length, versionCreated });
     });
   }
 
@@ -801,7 +994,7 @@ http.createServer((req, res) => {
     let b = ''; req.on('data', c => b += c);
     return req.on('end', () => {
       const body = JSON.parse(b || '{}');
-      let input, projectId = null, sourceBudgetVersionNumber = null;
+      let input, projectId = null, sourceBudgetVersionNumber = null, projectKey = null;
       if (body.mode === 'fromBudget') {
         projectId = (body.projectId || '').toUpperCase();
         const rec = budgets.get(projectId);
@@ -814,8 +1007,14 @@ http.createServer((req, res) => {
         // Behaviour-parallel with api/investment-analyses/index.js: the SAME
         // projection module, so the mock cannot drift from the real prefill.
         const doc = v.doc;
+        // The analysis rolls up to the project the BUDGET belongs to, and
+        // takes that project's name and address — an analysis called after a
+        // budget id is a symptom of a budget with no project.
+        projectKey = live.projectKey || null;
+        const pr = projectKey ? projects.get(projectKey) : null;
         const proj = fromBudget.projectFromBudget(doc, { Id: vn, VersionNumber: vn, Name: v.meta.name },
-          { projectId, vacancy: INV_D.vacancy });
+          { projectId, vacancy: INV_D.vacancy,
+            projectName: pr ? pr.name : '', projectAddress: pr ? pr.address : '' });
         input = {
           schemaVersion: 1,
           analysisName: (body.analysisName || (v.meta.name + ' — Investment Analysis')).slice(0, 200),
@@ -866,7 +1065,7 @@ http.createServer((req, res) => {
       }
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
-      invAnalyses.set(id, { id, projectId, name: input.analysisName, status: 'Draft',
+      invAnalyses.set(id, { id, projectId, projectKey, name: input.analysisName, status: 'Draft',
         sourceBudgetVersionNumber, input, result: null, currentVersionNumber: 0,
         deleted: false, versions: [], createdAt: now, updatedAt: now,
         createdById: principal.clientPrincipal.userId,
@@ -1054,6 +1253,8 @@ http.createServer((req, res) => {
       if (!a) return json(res, 404, { error: 'not_found', message: 'Not found' });
       if (a.deleted) return json(res, 404, { error: 'not_found', message: 'Not found' });
       a.deleted = true; a.deletedAt = new Date().toISOString();
+      act('analysis_delete', 'analysis', a.id,
+        { name: a.name || null, budgetId: a.projectId || null, projectKey: a.projectKey || null });
       res.writeHead(204); return res.end();
     }
     // PUT — recalculate server-side, ignore client results, 409 on stale saves
@@ -1102,9 +1303,11 @@ http.createServer((req, res) => {
       a.input = input; a.result = result; a.contentHash = hash;
       a.deleted = false; a.deletedAt = null;
       a.updatedAt = new Date().toISOString();
-      if (!unchanged) mockActivity.unshift({ eventType: 'analysis_save', entityType: 'analysis',
-        entityId: id, detail: { versionNumber: a.currentVersionNumber },
-        userId: principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
+      if (!unchanged) act('analysis_save', 'analysis', id, {
+        name: a.name || null, budgetId: a.projectId || null, projectKey: a.projectKey || null,
+        versionNumber: a.currentVersionNumber,
+        purchasePrice: a.result && a.result.summary ? a.result.summary.purchasePrice : null,
+        year1NOI: a.result && a.result.summary ? a.result.summary.year1NOI : null });
       return json(res, 200, { ok: true, versionNumber: a.currentVersionNumber,
         versionCreated: !unchanged, result });
     });

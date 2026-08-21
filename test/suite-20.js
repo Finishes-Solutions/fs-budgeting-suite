@@ -8,6 +8,23 @@
 // refuses independently, and that an override is visible afterwards.
 const { chromium } = require('playwright');
 const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:''}`);
+/* Budgets belong to a project now — saving one no longer conjures its parent,
+   because a budget id cannot name a project. The suite makes the parent it
+   needs, then completes step 2 of the New Budget dialog. */
+async function nbSeedProject(p,id,name){
+  await p.evaluate(async a=>{
+    await fetch('/api/budget/'+a.id+'?scope=project',{method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({create:true,name:a.name,address:'1 Test Way'})});
+  },{id,name});
+}
+async function nbFinish(p,project,id,name){
+  await p.selectOption('#nbProject',project);
+  await p.fill('#nbId',id);
+  await p.fill('#nbName',name);
+  await p.click('#nbCreate');
+  await p.waitForTimeout(500);
+}
 (async()=>{ try{
  const b=await chromium.launch({executablePath: process.env.CHROMIUM_PATH || undefined});
  const p=await b.newPage({viewport:{width:1400,height:1000}});
@@ -18,9 +35,11 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // ---------- 1. a brand-new budget is never blocked ----------
  await p.evaluate(()=>go('budgets')); await p.waitForTimeout(400);
+ await nbSeedProject(p,'OP-7200','Guard Rail Project');
  await p.click('.page.on button:has-text("+ New Budget")');
  await p.click('#newBudgetModal .tpl-row:has-text("Blank Budget")');
- await p.waitForTimeout(400);
+ await p.waitForTimeout(500);
+ await nbFinish(p,'OP-7200','BD-7201','Empty Shell');
  await p.fill('#pId','TST-7201'); await p.fill('#pName','Empty Shell');
  await p.waitForTimeout(300);
  const emptyRails=await p.evaluate(()=>guardrails());
@@ -35,7 +54,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.evaluate(()=>go('budgets')); await p.waitForTimeout(400);
  await p.click('.page.on button:has-text("+ New Budget")');
  await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")');
- await p.waitForTimeout(500);
+ await p.waitForTimeout(600);
+ await nbFinish(p,'OP-7200','BD-7202','Rail Tower');
  await p.fill('#pId','TST-7202'); await p.fill('#pName','Rail Tower');
  await p.waitForTimeout(400);
  const tpl=await p.evaluate(()=>guardrails());

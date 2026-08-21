@@ -45,6 +45,8 @@
   border-radius:3px;padding:2px 5px;font-weight:500;flex:none}
 #page-home .hm-kind-budget,#page-projects .hm-kind-budget,#page-project .hm-kind-budget{background:var(--green-50);color:var(--green-700)}
 #page-home .hm-kind-analysis,#page-projects .hm-kind-analysis,#page-project .hm-kind-analysis{background:#EAF1FB;color:#2B579A}
+/* A project reads as a third kind, not as a budget wearing a different word. */
+#page-home .hm-kind-project,#page-projects .hm-kind-project,#page-project .hm-kind-project{background:var(--ink-100);color:var(--ink-700)}
 #page-home .hm-id,#page-projects .hm-id,#page-project .hm-id{font-size:11.5px;color:var(--ink-400);min-width:0;flex:0 1 auto;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* The star: a real button over the card's top-right corner. The header row

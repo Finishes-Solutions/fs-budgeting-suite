@@ -48,14 +48,102 @@ function fmtDate(iso){
 
 function eventLabel(ev){
   var map={
-    login:'Login',budget_save:'Budget Save',budget_delete:'Budget Delete',
-    budget_restore:'Budget Restore',analysis_save:'Analysis Save',
+    login:'Login',budget_create:'Budget Created',budget_save:'Budget Save',
+    budget_delete:'Budget Delete',budget_restore:'Budget Restore',
+    budget_status:'Budget Status',budget_primary:'Primary Budget Changed',
+    analysis_save:'Analysis Save',
     analysis_delete:'Analysis Delete',analysis_restore:'Analysis Restore',
+    project_create:'Project Created',project_update:'Project Updated',
+    project_status:'Project Status',project_convert:'Project Converted',
+    project_delete:'Project Deleted',
+    favorite_add:'Favorited',favorite_remove:'Unfavorited',
     export_pdf:'PDF Export',export_xlsx:'Excel Export',export_csv:'CSV Export',
     export_print:'Print',settings_update:'Settings Update',
+    profile_update:'Profile Updated',
     pricing_publish:'Pricing Publish'
   };
   return map[ev]||ev;
+}
+
+/* The activity log used to be able to say only WHAT KIND of thing happened.
+   Every event now carries a structured detail document, and this turns it
+   into the sentence a person actually wants: which budget, which project,
+   which field, from what to what.
+
+   Deliberately tolerant — an event written before its shape existed, or by a
+   future version, renders as much as it can rather than as "[object Object]".
+   Kept in step with the same function in app/home.js: one vocabulary, two
+   places it is read. */
+function usdish(n){
+  return '$'+Math.round(Number(n)||0).toLocaleString('en-US');
+}
+function fieldPhrase(f){
+  var k=f&&f.key?String(f.key):'';
+  var pretty=k.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/^./,function(c){return c.toUpperCase();});
+  if(f && f.from!==undefined && f.to!==undefined && f.from!==null)
+    return pretty+' '+String(f.from)+' → '+String(f.to);
+  if(f && f.to!==undefined && f.to!==null) return pretty+' → '+String(f.to);
+  return pretty;
+}
+function eventDetail(r){
+  var d=r&&r.detail;
+  if(!d||typeof d!=='object') return '';
+  var name=d.name?String(d.name):'';
+  var bits=[];
+  switch(r.eventType){
+    case 'favorite_add': case 'favorite_remove':
+      return name?name:'';
+    case 'budget_create': case 'budget_save':
+      if(name) bits.push(name);
+      if(d.projectKey) bits.push('on '+d.projectKey);
+      if(d.versionNumber) bits.push('v'+d.versionNumber);
+      if(Array.isArray(d.changed)&&d.changed.length)
+        bits.push(d.changed.map(fieldPhrase).join('; '));
+      else if(r.eventType==='budget_create')
+        bits.push(usdish(d.projectCost)+' total project');
+      return bits.join(' · ');
+    case 'budget_status':
+      return (name?name+' — ':'')+String(d.from)+' → '+String(d.to);
+    case 'budget_delete':
+      if(name) bits.push(name);
+      if(d.projectKey) bits.push('on '+d.projectKey);
+      if(d.projectCost!==undefined&&d.projectCost!==null) bits.push(usdish(d.projectCost)+' total project');
+      return bits.join(' · ');
+    case 'budget_primary':
+      return (name?name+' — ':'')+(d.from||'none')+' → '+(d.to||'none');
+    case 'project_create':
+      return [name,d.address].filter(Boolean).join(' · ');
+    case 'project_status':
+      return (name?name+' — ':'')+String(d.from)+' → '+String(d.to);
+    case 'project_convert':
+      return (name?name+' — ':'')+'captured '+usdish(d.contractAmount)+' contract, '
+        +usdish(d.projectAmount)+' project';
+    case 'project_update':
+      return (name?name+' — ':'')+(Array.isArray(d.fields)?d.fields.map(fieldPhrase).join('; '):'');
+    case 'project_delete':
+      return (name?name+' — ':'')+d.budgetsDeleted+' budget'+(d.budgetsDeleted===1?'':'s')
+        +' and '+d.analysesDeleted+' analys'+(d.analysesDeleted===1?'is':'es')+' with it';
+    case 'analysis_save':
+      if(name) bits.push(name);
+      if(d.budgetId) bits.push('from '+d.budgetId);
+      if(d.versionNumber) bits.push('v'+d.versionNumber);
+      return bits.join(' · ');
+    case 'analysis_delete':
+      if(name) bits.push(name);
+      if(d.budgetId) bits.push('from '+d.budgetId);
+      return bits.join(' · ');
+    case 'profile_update':
+      return Array.isArray(d.fields)?d.fields.map(fieldPhrase).join('; '):'';
+    case 'settings_update':
+      if(!Array.isArray(d.changed)) return '';
+      // The pre-granular shape was a bare list of key names.
+      return d.changed.map(function(c){
+        return typeof c==='string'?c.replace(/([a-z])([A-Z])/g,'$1 $2'):fieldPhrase(c);
+      }).join('; ');
+    default:
+      if(name) return name;
+      return '';
+  }
 }
 
 /* Two vocabularies share this map. Budgets and analyses answer "is this
@@ -496,9 +584,11 @@ function renderActivity(){
 
   var html='';
   events.forEach(function(r){
+    var det=eventDetail(r);
     html+='<tr><td style="padding-left:22px">'+esc(r.userName)+'</td>'
       +'<td>'+esc(eventLabel(r.eventType))+'</td>'
       +'<td class="mono">'+(r.entityId?esc((r.entityType||'')+' '+r.entityId):'<span style="color:var(--ink-400)">--</span>')+'</td>'
+      +'<td class="act-detail">'+(det?esc(det):'<span style="color:var(--ink-400)">--</span>')+'</td>'
       +'<td class="mono r" style="padding-right:22px">'+esc(activityPage==='all'?fmtDate(r.createdAt):relTime(r.createdAt))+'</td></tr>';
   });
   body.innerHTML=html;
@@ -638,9 +728,11 @@ async function exportCSV(){
       if(all.length>=d.total) break;
       offset+=batch;
     }
-    var csv='User,Event,Entity Type,Entity ID,Timestamp\r\n';
+    // Details rides in the export too: an audit trail that is only complete
+    // on screen is not an audit trail.
+    var csv='User,Event,Entity Type,Entity ID,Details,Timestamp\r\n';
     all.forEach(function(e){
-      csv+='"'+csvSafe(e.userName)+'","'+csvSafe(eventLabel(e.eventType))+'","'+csvSafe(e.entityType||'')+'","'+csvSafe(e.entityId||'')+'","'+csvSafe(e.createdAt||'')+'"\r\n';
+      csv+='"'+csvSafe(e.userName)+'","'+csvSafe(eventLabel(e.eventType))+'","'+csvSafe(e.entityType||'')+'","'+csvSafe(e.entityId||'')+'","'+csvSafe(eventDetail(e))+'","'+csvSafe(e.createdAt||'')+'"\r\n';
     });
     var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
     var url=URL.createObjectURL(blob);
@@ -678,6 +770,7 @@ function exportPDF(){
   var log=rows.map(function(r){
     return '<tr><td>'+esc(r.userName)+'</td><td>'+esc(eventLabel(r.eventType))+'</td>'
       +'<td class="mono">'+(r.entityId?esc((r.entityType||'')+' '+r.entityId):'--')+'</td>'
+      +'<td>'+esc(eventDetail(r)||'--')+'</td>'
       +'<td class="mono r">'+esc(fmtDate(r.createdAt))+'</td></tr>';
   }).join('');
 
@@ -727,7 +820,7 @@ function exportPDF(){
 
     +'<h2 class="dpdf-h">Activity Log</h2>'
     +(log
-      ? '<table class="dpdf-tbl"><thead><tr><th>User</th><th>Event</th><th>Entity</th><th class="r">When</th></tr></thead>'
+      ? '<table class="dpdf-tbl"><thead><tr><th>User</th><th>Event</th><th>Entity</th><th>Details</th><th class="r">When</th></tr></thead>'
         +'<tbody>'+log+'</tbody></table>'
         +'<div class="dpdf-note">Showing the '+rows.length+' most recent entries. '
         +'Use Export CSV on the dashboard for the complete, filtered log.</div>'

@@ -29,6 +29,10 @@
 var A = {};                  // adapter, supplied by index.html
 var budgets = [];
 var analyses = [];
+/* Projects, so a favorited project can actually be shown here. Home used to
+   fetch budgets and analyses only, which is why starring a project stored the
+   favorite correctly and then nothing appeared. */
+var projects = [];
 var events = [];
 var loaded = false;
 var loading = false;
@@ -200,13 +204,62 @@ function pickGreeting() {
 /* ================= data ================= */
 
 var EVENT_LABEL = {
-  login: 'Signed in', budget_save: 'Saved budget', budget_delete: 'Deleted budget',
-  budget_restore: 'Restored budget', analysis_save: 'Saved analysis',
+  login: 'Signed in',
+  budget_create: 'Created budget', budget_save: 'Saved budget',
+  budget_delete: 'Deleted budget', budget_restore: 'Restored budget',
+  budget_status: 'Changed budget status', budget_primary: 'Changed primary budget',
+  analysis_save: 'Saved analysis',
   analysis_delete: 'Deleted analysis', analysis_restore: 'Restored analysis',
+  project_create: 'Created project', project_update: 'Updated project',
+  project_status: 'Changed project status', project_convert: 'Converted project',
+  project_delete: 'Deleted project',
+  favorite_add: 'Favorited', favorite_remove: 'Unfavorited',
   export_pdf: 'Exported PDF', export_xlsx: 'Exported Excel', export_csv: 'Exported CSV',
-  export_print: 'Printed', settings_update: 'Updated settings', pricing_publish: 'Published pricing'
+  export_print: 'Printed', settings_update: 'Updated settings',
+  profile_update: 'Updated profile', pricing_publish: 'Published pricing'
 };
 function eventLabel(e) { return EVENT_LABEL[e] || e; }
+
+/* What the event was actually about, in words. "Updated settings" told nobody
+   anything; every event now carries a structured detail document and this is
+   the readable half of it. Kept in step with eventDetail() in
+   app/dashboard.js — one vocabulary, two places it is read — and deliberately
+   tolerant, so an event written before its shape existed still renders. */
+function fieldPhrase(f) {
+  var k = f && f.key ? String(f.key) : '';
+  var pretty = k.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, function (c) { return c.toUpperCase(); });
+  if (f && f.from !== undefined && f.to !== undefined && f.from !== null)
+    return pretty + ' ' + String(f.from) + ' → ' + String(f.to);
+  if (f && f.to !== undefined && f.to !== null) return pretty + ' → ' + String(f.to);
+  return pretty;
+}
+function eventDetail(e) {
+  var d = e && e.detail;
+  if (!d || typeof d !== 'object') return '';
+  var name = d.name ? String(d.name) : '';
+  switch (e.eventType) {
+    case 'favorite_add': case 'favorite_remove':
+      return name;
+    case 'budget_create': case 'budget_save': case 'analysis_save':
+      return [name, Array.isArray(d.changed) && d.changed.length
+        ? d.changed.map(fieldPhrase).join('; ') : ''].filter(Boolean).join(' — ');
+    case 'budget_status': case 'project_status': case 'budget_primary':
+      return (name ? name + ' — ' : '') + (d.from || 'none') + ' → ' + (d.to || 'none');
+    case 'project_delete':
+      return (name ? name + ' — ' : '') + d.budgetsDeleted + ' budget'
+        + (d.budgetsDeleted === 1 ? '' : 's') + ', ' + d.analysesDeleted + ' analys'
+        + (d.analysesDeleted === 1 ? 'is' : 'es');
+    case 'project_update': case 'profile_update':
+      return (name ? name + ' — ' : '')
+        + (Array.isArray(d.fields) ? d.fields.map(fieldPhrase).join('; ') : '');
+    case 'settings_update':
+      return Array.isArray(d.changed) ? d.changed.map(function (c) {
+        return typeof c === 'string' ? c.replace(/([a-z])([A-Z])/g, '$1 $2') : fieldPhrase(c);
+      }).join('; ') : '';
+    default:
+      return name;
+  }
+}
 
 function relTime(iso) {
   if (!iso) return '';
@@ -229,7 +282,12 @@ async function load() {
     A.api('investment-analyses').catch(function () { return null; }),
     // Activity is a bonus, never a blocker: without it Home falls back to
     // global recency, which is still useful.
-    A.api('user-activity').catch(function () { return null; })
+    A.api('user-activity').catch(function () { return null; }),
+    // Projects, because a project can be favorited like anything else and
+    // Home had no project data at all — which is exactly why starring one
+    // did nothing here. Tolerant of the pre-migration {available:false}
+    // shape, the same way the Projects page is.
+    A.api('budgets?scope=projects').catch(function () { return null; })
   ]);
   if (results[0] === null && results[1] === null) {
     loadError = 'Could not reach the server.';
@@ -239,6 +297,7 @@ async function load() {
     analyses = results[1] || [];
   }
   events = (results[2] && results[2].events) || [];
+  projects = (results[3] && results[3].projects) || [];
   if (!adopted) { adopted = true; adoptLocalFavorites(); }
   loading = false; loaded = true;
 }
@@ -248,19 +307,22 @@ async function load() {
    With no activity yet (a fresh account, or events not recorded for these
    records) it falls back to most-recently-updated, which is still sensible. */
 function recentItems(limit) {
-  var byBudget = {}, byAnalysis = {};
+  var byBudget = {}, byAnalysis = {}, byProject = {};
   budgets.forEach(function (b) { byBudget[String(b.projectId).toUpperCase()] = b; });
   analyses.forEach(function (a) { byAnalysis[String(a.analysisId).toLowerCase()] = a; });
+  projects.forEach(function (x) { byProject[String(x.projectId).toUpperCase()] = x; });
 
   var out = [], seen = {};
   events.forEach(function (ev) {
     if (!ev.entityId || !ev.entityType) return;
-    var kind = ev.entityType === 'budget' ? 'budget' : ev.entityType === 'analysis' ? 'analysis' : null;
+    var kind = ev.entityType === 'budget' ? 'budget'
+      : ev.entityType === 'analysis' ? 'analysis'
+      : ev.entityType === 'project' ? 'project' : null;
     if (!kind) return;
     var key = kind + ':' + ev.entityId;
     if (seen[key]) return;
-    var rec = kind === 'budget'
-      ? byBudget[String(ev.entityId).toUpperCase()]
+    var rec = kind === 'budget' ? byBudget[String(ev.entityId).toUpperCase()]
+      : kind === 'project' ? byProject[String(ev.entityId).toUpperCase()]
       : byAnalysis[String(ev.entityId).toLowerCase()];
     if (!rec) return;                       // deleted, or not visible to this role
     seen[key] = 1;
@@ -347,6 +409,10 @@ function favoriteItems() {
     var rec = analyses.filter(function (a) { return String(a.analysisId) === id; })[0];
     if (rec) out.push({ kind: 'analysis', rec: rec });
   });
+  p.project.forEach(function (id) {
+    var rec = projects.filter(function (x) { return String(x.projectId) === id; })[0];
+    if (rec) out.push({ kind: 'project', rec: rec });
+  });
   return out;
 }
 
@@ -357,26 +423,42 @@ function favoriteItems() {
    Status is changed on the record itself or from either index list. */
 var STATUS_CLS = { 'Draft': 'st-draft', 'In Review': 'st-review',
                    'Completed': 'st-done', 'Cancelled': 'st-cancel' };
+function projectChipStatic(status) {
+  var n = PROJECT_STATUS_CLS[status] ? status : 'Lead';
+  return '<span class="st-chip ' + PROJECT_STATUS_CLS[n]
+    + '" style="pointer-events:none">' + esc(n) + '</span>';
+}
 function statusChipStatic(status) {
   var n = window.normStatus ? window.normStatus(status) : (status || 'Draft');
   return '<span class="st-chip ' + (STATUS_CLS[n] || 'st-draft')
     + '" style="pointer-events:none">' + esc(n) + '</span>';
 }
 
-function recordId(kind, rec) { return kind === 'budget' ? rec.projectId : rec.analysisId; }
-/* Budgets and analyses spell their timestamp differently; both indexes carry
-   one, so the card footer never has to invent a value. */
-function recordUpdated(kind, rec) {
-  return kind === 'budget' ? rec.updated : (rec.updatedAt || rec.updated);
+function recordId(kind, rec) {
+  return kind === 'project' ? rec.projectId
+    : kind === 'budget' ? rec.projectId : rec.analysisId;
 }
+/* The three indexes spell their timestamp differently; each carries one, so
+   the card footer never has to invent a value. */
+function recordUpdated(kind, rec) {
+  return kind === 'budget' || kind === 'project' ? rec.updated : (rec.updatedAt || rec.updated);
+}
+var UNTITLED = { budget: 'Untitled budget', analysis: 'Untitled analysis', project: 'Untitled project' };
 function recordName(kind, rec) {
-  var n = rec.name || '';
-  return n || (kind === 'budget' ? 'Untitled budget' : 'Untitled analysis');
+  return rec.name || UNTITLED[kind] || 'Untitled';
 }
 function openAttr(kind, rec) {
   var id = String(recordId(kind, rec)).replace(/'/g, '');
+  if (kind === 'project') return `FSHome.openProject('${esc(id)}')`;
   return kind === 'budget' ? `FSHome.openBudget('${esc(id)}')` : `FSHome.openAnalysis('${esc(id)}')`;
 }
+/* A project runs the deal pipeline, not the budget statuses, so its chip has
+   its own vocabulary. Sharing one map would have painted "Awarded" as a Draft. */
+var PROJECT_STATUS_CLS = {
+  'Lead': 'st-draft', 'Qualified': 'st-draft', 'Budgeting': 'st-review',
+  'Proposal Sent': 'st-review', 'Awarded': 'st-done',
+  'Converted to Project': 'st-converted', 'On Hold': 'st-hold', 'Lost': 'st-cancel'
+};
 
 /* The star sits at the top right of the card and TOGGLES. It cannot live inside
    the card: the card is a <button> and a nested <button> is invalid HTML that
@@ -408,25 +490,30 @@ function starButton(kind, id, name, on) {
    grows with the title; the summary block (amount, rule, status, timestamp)
    is pushed to the bottom with margin-top:auto, so a two-line title never
    drags the footer out of line with the card beside it. */
+var KIND_LABEL = { budget: 'Budget', analysis: 'Analysis', project: 'Project' };
 function itemCard(kind, rec, meta, favorited) {
   var id = recordId(kind, rec);
-  var money = kind === 'budget'
-    ? usd(rec.projectCost || rec.contractSum || 0)
-    : usd(rec.purchasePrice || 0);
-  var moneyLab = kind === 'budget' ? 'Total Project' : 'Purchase Price';
+  var money = kind === 'project'
+    ? usd(rec.status === 'Converted to Project' && rec.contractAmount !== null
+        ? rec.contractAmount : rec.liveContractSum)
+    : kind === 'budget'
+      ? usd(rec.projectCost || rec.contractSum || 0)
+      : usd(rec.purchasePrice || 0);
+  var moneyLab = kind === 'project' ? 'Contract Sum'
+    : kind === 'budget' ? 'Total Project' : 'Purchase Price';
   var star = starButton(kind, id, recordName(kind, rec), favorited);
   return `<div class="hm-card-wrap${favorited ? ' is-fav' : ''}">
     <button class="hm-card" onclick="${openAttr(kind, rec)}">
       <div class="hm-card-hd">
         <div class="hm-card-top">
-          <span class="hm-kind hm-kind-${kind}">${kind === 'budget' ? 'Budget' : 'Analysis'}</span>
-          <span class="hm-id mono">${esc(kind === 'budget' ? id : (rec.projectId || 'Standalone'))}</span>
+          <span class="hm-kind hm-kind-${kind}">${KIND_LABEL[kind] || kind}</span>
+          <span class="hm-id mono">${esc(kind === 'analysis' ? (rec.projectId || 'Standalone') : id)}</span>
         </div>
         <div class="hm-card-name">${esc(recordName(kind, rec))}</div>
       </div>
       <div class="hm-card-sum">
         <div class="hm-card-money"><span class="k">${moneyLab}</span><span class="v mono">${money}</span></div>
-        <div class="hm-card-ft">${statusChipStatic(rec.status)}
+        <div class="hm-card-ft">${kind === 'project' ? projectChipStatic(rec.status) : statusChipStatic(rec.status)}
           <span class="hm-when">${esc(meta || '')}</span></div>
       </div>
     </button>${star}
@@ -520,10 +607,13 @@ function render() {
   var acts = events.slice(0, 8);
   if (acts.length) {
     html += section('Your Activity', '<div class="hm-log">' + acts.map(function (e) {
-      var what = e.entityId ? esc(String(e.entityId)) : '';
+      // The record's NAME, with its id as the fallback: "Riverbend Phase 1"
+      // is what someone is looking for, not BD-0002.
+      var det = eventDetail(e);
+      var what = det || (e.entityId ? String(e.entityId) : '');
       return `<div class="hm-log-row">
         <span class="hm-log-ev">${esc(eventLabel(e.eventType))}</span>
-        <span class="hm-log-what mono">${what}</span>
+        <span class="hm-log-what${det ? '' : ' mono'}" title="${esc(e.entityId || '')}">${esc(what)}</span>
         <span class="hm-log-when">${esc(relTime(e.createdAt))}</span>
       </div>`;
     }).join('') + '</div>');
@@ -562,6 +652,9 @@ window.FSHome = {
   openBudget: function (id) { if (A.openBudget) A.openBudget(id); },
   openAnalysis: function (id) {
     if (window.FSInvestmentUI) { location.hash = '#/analysis/' + String(id).toLowerCase(); }
+  },
+  openProject: function (id) {
+    if (window.FSProjects) FSProjects.open(String(id).toUpperCase());
   },
   // exposed for the suites
   _attention: function () { return attentionItems(); },

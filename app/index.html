@@ -708,6 +708,10 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .pj-go{font-family:var(--fm);font-size:11px;color:var(--ink-400);white-space:nowrap}
 .pj-tbl tr.pj-row:hover .pj-go{color:var(--green-700)}
 .pj-card-menu{position:absolute;top:9px;right:37px;z-index:1}
+/* The activity log's Details column carries a sentence, not a token, so it
+   wraps and takes the slack rather than forcing the table wider than the page. */
+#dashActivityTable td.act-detail{white-space:normal;color:var(--ink-600);font-size:12px;
+  max-width:420px;line-height:1.45}
 #page-project .page-title #projectStar .hm-star{position:static}
 
 /* ---- guard rails ----
@@ -2249,7 +2253,7 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
     <div class="card-bd" style="padding:0;overflow-x:auto">
       <table class="tbl" id="dashActivityTable"><thead><tr>
-        <th style="padding-left:22px">User</th><th>Event</th><th>Entity</th><th class="r" style="padding-right:22px">When</th>
+        <th style="padding-left:22px">User</th><th>Event</th><th>Entity</th><th>Details</th><th class="r" style="padding-right:22px">When</th>
       </tr></thead><tbody id="dashActivityBody"></tbody></table>
       <div id="dashActivityEmpty" style="display:none;text-align:center;padding:28px;color:var(--ink-500);font-size:13px">No activity found</div>
     </div>
@@ -3315,19 +3319,28 @@ function nbShowStep(n){
 }
 function nbBack(){nbShowStep(1);document.querySelector('#nbStep1 .tpl-row').focus();}
 
+/* Offline, the project list cannot be read at all. Requiring a project then
+   would leave the New Budget dialog with an empty select and no way forward —
+   and offline the budget cannot be saved anyway, so no un-parented budget can
+   reach the database. The requirement holds where it can be enforced. */
+let nbProjectsFailed=false;
 async function loadNbProjects(){
   try{
     const r=await api('budgets?scope=projects');
     nbProjects=(r&&r.projects)||[];
-  }catch(e){nbProjects=[];}
+    nbProjectsFailed=false;
+  }catch(e){nbProjects=[];nbProjectsFailed=true;}
   paintNbProjects();
 }
 function paintNbProjects(){
   const sel=document.getElementById('nbProject');
   if(!sel)return;
   const chosen=nbPreset||sel.value||'';
-  sel.innerHTML='<option value="">Choose a project…</option>'
+  const head=nbProjectsFailed?'Not available offline — link it later'
+    :nbProjects.length?'Choose a project…':'No projects yet — create one first';
+  sel.innerHTML=`<option value="">${esc(head)}</option>`
     +nbProjects.map(p=>`<option value="${esc(p.projectId)}">${esc(p.projectId)} — ${esc(p.name||'Untitled')}</option>`).join('');
+  sel.disabled=nbProjectsFailed;
   if(chosen)sel.value=chosen;
   // Opened from a project page: that IS the project, so it is shown rather
   // than re-asked. Still a real select, so the choice is visible and, if the
@@ -3359,14 +3372,17 @@ function nbValidate(show){
   document.getElementById('nbId').value=idv;
   const name=(document.getElementById('nbName').value||'').trim();
   const proj=document.getElementById('nbProject').value;
+  // A project is required whenever one can be chosen. It cannot be, offline.
+  const needProject=!nbProjectsFailed;
   let ok=true;
-  ok=nbFieldErr('nbProject',!proj&&show?'Choose the project this budget belongs to.':'')&&ok;
+  ok=nbFieldErr('nbProject',needProject&&!proj&&show?'Choose the project this budget belongs to.':'')&&ok;
   ok=nbFieldErr('nbId',idv&&!ID_RX.test(idv)?'Use a budget ID like BD-0001.'
       :(!idv&&show?'Budget ID is required.':''))&&ok;
   ok=nbFieldErr('nbName',!name&&show?'Budget Name is required.':'')&&ok;
+  const done=(!needProject||!!proj)&&ID_RX.test(idv)&&!!name;
   const btn=document.getElementById('nbCreate');
-  if(btn)btn.disabled=!(proj&&ID_RX.test(idv)&&name);
-  return !!(proj&&ID_RX.test(idv)&&name)&&ok;
+  if(btn)btn.disabled=!done;
+  return done&&ok;
 }
 async function pickNewBudget(key){
   nbTemplateKey=key;
@@ -3385,7 +3401,7 @@ async function pickNewBudget(key){
   try{
     const r=await api('budget/BD-0000?scope=next-budget-id');
     if(r&&r.budgetId&&!document.getElementById('nbId').value)document.getElementById('nbId').value=r.budgetId;
-  }catch(e){/* type one instead */}
+  }catch(e){/* offline: type one instead */}
   nbValidate();
   document.getElementById('nbProject').focus();
 }

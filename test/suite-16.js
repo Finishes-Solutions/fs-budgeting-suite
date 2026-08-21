@@ -15,13 +15,24 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // Seed a budget plus enough client events that the log crosses the 30-row
  // summary cut, so View All has something to page into.
  await p.evaluate(async()=>{
+   // Projects are created explicitly now — saving a budget no longer conjures
+   // one, because a budget id cannot name a project. The pipeline chart reads
+   // projects, so the seed makes them.
+   const mk=(id,name,status)=>fetch('/api/budget/'+id+'?scope=project',{method:'PUT',
+     headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({create:true,name,address:'1 Dashboard Way'})})
+     .then(()=>status?fetch('/api/budget/'+id+'?scope=project',{method:'PUT',
+       headers:{'Content-Type':'application/json'},body:JSON.stringify({status})}):null);
+   await mk('OP-9601','Northgate Flats','Qualified');
+   await mk('OP-9602','Harbor Row','Awarded');
    const doc={projectId:'TST-9960',name:'Dashboard Test',status:'Draft',resSF:1000,amenSF:0,
      units:[],other:[],expenses:[],
      lines:[{lineId:'s1',scope:'res',grp:'General',code:'',desc:'Shell',basis:'ls',auto:true,qty:0,unit:1500000}],
      companies:[],contingency:{mode:'fixed',val:0},projectCosts:{land:0,dev:0,mkt:0,cls:0},
      pricingVersion:'2026.08-v2',updated:new Date().toISOString()};
    await fetch('/api/budget/TST-9960',{method:'PUT',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({meta:{projectId:'TST-9960',name:'Dashboard Test',status:'Draft'},doc})});
+     body:JSON.stringify({meta:{projectId:'TST-9960',name:'Dashboard Test',status:'Draft',
+       projectKey:'OP-9601'},doc})});
    // The analytics aggregates deliberately exclude TST-% ids, so the status
    // and value charts need at least one real budget to have anything to plot.
    for(const [pid,nm,st,rate] of [['BD-7001','Northgate Flats','Draft',2400000],
@@ -29,7 +40,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
      const d=Object.assign({},doc,{projectId:pid,name:nm,status:st,
        lines:[{lineId:'s1',scope:'res',grp:'General',code:'',desc:'Shell',basis:'ls',auto:true,qty:0,unit:rate}]});
      await fetch('/api/budget/'+pid,{method:'PUT',headers:{'Content-Type':'application/json'},
-       body:JSON.stringify({meta:{projectId:pid,name:nm,status:st},doc:d})});
+       body:JSON.stringify({meta:{projectId:pid,name:nm,status:st,
+         projectKey:pid==='BD-7001'?'OP-9601':'OP-9602'},doc:d})});
    }
    // one analysis too, so the budget and analysis avatars can be compared
    await fetch('/api/investment-analyses',{method:'POST',headers:{'Content-Type':'application/json'},

@@ -34,6 +34,8 @@
 
 const { sql } = require('./db');
 const { features } = require('./schema');
+// Activity is best-effort and never throws — see api/shared/users.js.
+const { recordActivity } = require('./users');
 
 const PROJECT_ID_RX = /^OP-\d{4}$/;
 const BUDGET_ID_RX = /^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/;
@@ -138,6 +140,8 @@ async function createProject(pool, projectId, body, principal) {
     throw e;
   }
   const after = await getProject(pool, key);
+  await recordActivity(pool, principal, 'project_create', 'project', key,
+    { name: name, address: address });
   return jsonRes(201, { ok: true, created: true, project: after.project });
 }
 
@@ -185,6 +189,8 @@ async function deleteProject(pool, projectId, principal) {
     try { await tx.rollback(); } catch (_) { /* the failure below is the real one */ }
     throw e;
   }
+  await recordActivity(pool, principal, 'project_delete', 'project', key,
+    { name: cur.recordset[0].Name || null, budgetsDeleted: budgets, analysesDeleted: analyses });
   return jsonRes(200, { ok: true, projectId: key, name: cur.recordset[0].Name || '',
                         budgetsDeleted: budgets, analysesDeleted: analyses });
 }
@@ -381,7 +387,7 @@ async function updateProject(pool, projectId, body, principal) {
     return jsonRes(400, { error: 'bad_request', message: 'status must be one of: ' + PROJECT_STATUSES.join(', ') });
 
   const cur = await pool.request().input('pid', sql.VarChar(16), key)
-    .query(`SELECT p.Status, p.PrimaryBudgetId, p.ConvertedAt,
+    .query(`SELECT p.Status, p.PrimaryBudgetId, p.ConvertedAt, p.Name,
                    (SELECT TOP 1 b.ContractSum FROM dbo.Budgets AS b
                      WHERE b.ProjectKey = p.ProjectId AND b.IsDeleted = 0
                        AND b.ProjectId = ISNULL(p.PrimaryBudgetId, b.ProjectId)
@@ -432,6 +438,30 @@ async function updateProject(pool, projectId, body, principal) {
 
   await rq.query(`UPDATE dbo.Projects SET ${sets.join(', ')} WHERE ProjectId = @pid AND IsDeleted = 0`);
   const after = await getProject(pool, key);
+
+  // One event per KIND of change, each naming the project it happened to and
+  // what actually moved. "Updated settings" told nobody anything; these say
+  // which project, which field, from what, to what.
+  const pname = after.project ? after.project.name : null;
+  if (body.primaryBudgetId !== undefined && body.primaryBudgetId !== row.PrimaryBudgetId) {
+    await recordActivity(pool, principal, 'budget_primary', 'project', key,
+      { name: pname, from: row.PrimaryBudgetId || null, to: body.primaryBudgetId || null });
+  }
+  if (converting) {
+    await recordActivity(pool, principal, 'project_convert', 'project', key, {
+      name: pname,
+      contractAmount: row.ContractSum === null ? null : Number(row.ContractSum),
+      projectAmount: row.ProjectCost === null ? null : Number(row.ProjectCost)
+    });
+  } else if (body.status !== undefined && body.status !== row.Status) {
+    await recordActivity(pool, principal, 'project_status', 'project', key,
+      { name: pname, from: row.Status, to: body.status });
+  }
+  const meta = ['name', 'address', 'notes'].filter(k => body[k] !== undefined);
+  if (meta.length) {
+    await recordActivity(pool, principal, 'project_update', 'project', key,
+      { name: pname, fields: meta.map(k => ({ key: k, to: String(body[k]).slice(0, 200) })) });
+  }
   return jsonRes(200, { ok: true, converted: converting, project: after.project });
 }
 

@@ -36,8 +36,15 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // calculating with missing assumptions surfaces field-keyed errors
  await p.click('#invCalcBtn'); await p.waitForTimeout(500);
+ // The banner names the FIELD and the step. It no longer carries a count
+ // sentence above the detail — the amber flag already means "needs attention",
+ // and restating it was the flag explaining itself.
  ok('missing assumptions are rejected with highlighted fields',
-    (await p.locator('.inv-err').count())>0 && /need attention/.test(await p.locator('#invErrSummary').textContent()));
+    (await p.locator('.inv-err').count())>0
+    && (await p.locator('#invErrSummary .inv-errlist li').count())>0);
+ ok('and the banner does not restate the count above the detail',
+    !/assumptions? need/i.test(await p.locator('#invErrSummary').textContent()),
+    (await p.locator('#invErrSummary').textContent()).replace(/\s+/g,' ').slice(0,120));
 
  // ---- the banner NAMES what is wrong and where it lives ----
  // "1 assumption needs attention" on its own sends you hunting through six

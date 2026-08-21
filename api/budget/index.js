@@ -87,11 +87,22 @@ module.exports = async function (context, req) {
     // same ProjectId restores it. Hard removal is sql/purge_deleted_budgets.sql,
     // run by an admin — the app never destroys a budget.
     const r = await pool.request().input('id', sql.VarChar(16), id)
-      .query(`UPDATE dbo.Budgets SET IsDeleted = 1, DeletedAt = SYSUTCDATETIME()
+      .query(`SELECT TOP 1 Name, ProjectKey, ContractSum, ProjectCost FROM dbo.Budgets WHERE ProjectId = @id;
+              UPDATE dbo.Budgets SET IsDeleted = 1, DeletedAt = SYSUTCDATETIME()
               WHERE ProjectId = @id AND IsDeleted = 0;
               SELECT COUNT(*) AS Found FROM dbo.Budgets WHERE ProjectId = @id;`);
-    if (!r.recordset[0].Found) { context.res = { status: 404, body: 'Not found' }; return; }
+    const before = (r.recordsets[0] || [])[0] || null;
+    if (!(r.recordsets[1] || [])[0] || !r.recordsets[1][0].Found) {
+      context.res = { status: 404, body: 'Not found' }; return;
+    }
     context.res = { status: 204 };
+    // The log said nothing at all about a deletion until now, which made the
+    // one action people most want to trace the one it could not.
+    await require('../shared/users').recordActivity(pool, getPrincipal(req),
+      'budget_delete', 'budget', id,
+      before ? { name: before.Name || null, projectKey: before.ProjectKey || null,
+                 contractSum: before.ContractSum === null ? null : Number(before.ContractSum),
+                 projectCost: before.ProjectCost === null ? null : Number(before.ProjectCost) } : null);
     return;
   }
 
@@ -105,13 +116,23 @@ module.exports = async function (context, req) {
     }
     const r = await pool.request().input('id', sql.VarChar(16), id)
       .input('st', sql.NVarChar(30), req.body.status)
-      .query(`UPDATE dbo.Budgets SET Status=@st, Doc=JSON_MODIFY(Doc,'$.status',@st),
+      .query(`SELECT TOP 1 Status AS Was, Name, ProjectKey FROM dbo.Budgets
+                WHERE ProjectId=@id AND IsDeleted=0;
+              UPDATE dbo.Budgets SET Status=@st, Doc=JSON_MODIFY(Doc,'$.status',@st),
                 UpdatedAt=SYSUTCDATETIME()
               WHERE ProjectId=@id AND IsDeleted=0;
               SELECT @@ROWCOUNT AS N;`);
-    if (!r.recordset[0].N) { context.res = { status: 404, body: 'Not found' }; return; }
+    const was = (r.recordsets[0] || [])[0] || null;
+    if (!(r.recordsets[1] || [])[0] || !r.recordsets[1][0].N) { context.res = { status: 404, body: 'Not found' }; return; }
     context.res = { status: 200, headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ok: true, status: req.body.status }) };
+    // A status change is a decision, and it recorded nothing before this.
+    if (was && was.Was !== req.body.status) {
+      await require('../shared/users').recordActivity(pool, getPrincipal(req),
+        'budget_status', 'budget', id,
+        { name: was.Name || null, projectKey: was.ProjectKey || null,
+          from: was.Was, to: req.body.status });
+    }
     return;
   }
 
@@ -237,9 +258,23 @@ module.exports = async function (context, req) {
   context.res = { status: 200, headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(Object.assign({ projectKey: projectKey || null }, result)) };
   // Best-effort audit trail — recordActivity never throws.
-  if (result.versionCreated)
-    await require('../shared/users').recordActivity(pool, principal, 'budget_save', 'budget', id,
-      { versionNumber: result.versionNumber });
+  //
+  // Detail enough to answer "what changed, on what, by whom" from the log
+  // alone: which project the budget belongs to, what it is called, the money
+  // as saved, and whether this was the budget coming into existence.
+  if (result.versionCreated) {
+    await require('../shared/users').recordActivity(pool, principal,
+      wantsCreate ? 'budget_create' : 'budget_save', 'budget', id, {
+        name: meta.name || null,
+        projectKey: projectKey || null,
+        status: meta.status || null,
+        versionNumber: result.versionNumber,
+        contractSum: result.contractSum,
+        projectCost: result.projectCost,
+        pricingVersion: doc.pricingVersion || null,
+        changed: result.changedFields || null
+      });
+  }
 
   async function save() {
     const tx = new sql.Transaction(pool);
@@ -344,6 +379,31 @@ module.exports = async function (context, req) {
         latest.ContentHash === incomingHash ||
         contentEquals(parseDoc(latest.Doc), doc));
 
+      // WHICH fields moved, for the activity log. A summary, deliberately:
+      // the version snapshot is the full record, and an audit row that tries
+      // to be one is unreadable. Compared against what was actually stored,
+      // so it reports the change rather than the submission.
+      const prev = existing ? parseDoc(existing.Doc) : null;
+      const changed = [];
+      if (existing) {
+        const num = v => (v === null || v === undefined ? null : Math.round(Number(v) * 100) / 100);
+        const cmp = (key, was, now) => { if (was !== now) changed.push({ key, from: was, to: now }); };
+        cmp('name', existing.Name || null, meta.name || null);
+        cmp('status', existing.Status || null, meta.status || null);
+        cmp('type', existing.Type || null, meta.type || null);
+        cmp('contractSum', num(existing.ContractSum), num(contractSum));
+        cmp('projectCost', num(existing.ProjectCost), num(projectCost));
+        cmp('pricingVersion', existing.PricingVersion || null, doc.pricingVersion || null);
+        if (prev) {
+          cmp('residentialSF', Number(prev.resSF) || 0, Number(doc.resSF) || 0);
+          cmp('amenitySF', Number(prev.amenSF) || 0, Number(doc.amenSF) || 0);
+          cmp('siteSF', Number(prev.siteSF) || 0, Number(doc.siteSF) || 0);
+          const units = d => (d.units || []).reduce((a, u) => a + (Number(u.count) || 0), 0);
+          cmp('unitCount', units(prev), units(doc));
+          cmp('lineItems', (prev.lines || []).length, (doc.lines || []).length);
+        }
+      }
+
       let versionNumber = maxVersion, versionCreated = false;
       if (!unchanged) {
         versionNumber = maxVersion + 1;
@@ -361,7 +421,8 @@ module.exports = async function (context, req) {
       }
 
       await tx.commit();
-      return { ok: true, versionNumber, versionCreated };
+      return { ok: true, versionNumber, versionCreated,
+               contractSum, projectCost, changedFields: changed };
     } catch (e) {
       // The id-taken path rolls back before throwing, so a second rollback
       // here would fail on a transaction that is already gone.

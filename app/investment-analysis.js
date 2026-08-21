@@ -2100,6 +2100,8 @@
     },
     currentId: () => st.id,
     isDirty: () => st.dirty,
+    // exposed for the suites, like the _-prefixed helpers above
+    _state: () => st,
     confirmLeave() {
       if (!st.dirty) return true;
       return confirm('This analysis has unsaved changes that will be lost.\n\nLeave without saving?');

@@ -62,11 +62,19 @@ module.exports = async function (context, req) {
 
   if (req.method === 'DELETE') {
     const r = await pool.request().input('id', sql.UniqueIdentifier, id)
-      .query(`UPDATE dbo.InvestmentAnalyses SET IsDeleted = 1, DeletedAt = SYSUTCDATETIME()
+      .query(`SELECT TOP 1 Name, ProjectId, ProjectKey FROM dbo.InvestmentAnalyses WHERE AnalysisId = @id;
+              UPDATE dbo.InvestmentAnalyses SET IsDeleted = 1, DeletedAt = SYSUTCDATETIME()
               WHERE AnalysisId = @id AND IsDeleted = 0;
               SELECT COUNT(*) AS Found FROM dbo.InvestmentAnalyses WHERE AnalysisId = @id;`);
-    if (!r.recordset[0].Found) { context.res = jsonRes(404, { error: 'not_found', message: 'Not found' }); return; }
+    const before = (r.recordsets[0] || [])[0] || null;
+    if (!(r.recordsets[1] || [])[0] || !r.recordsets[1][0].Found) {
+      context.res = jsonRes(404, { error: 'not_found', message: 'Not found' }); return;
+    }
     context.res = { status: 204 };
+    // Deleting an analysis recorded nothing before this.
+    await require('../shared/users').recordActivity(pool, principal, 'analysis_delete', 'analysis', id,
+      before ? { name: before.Name || null, budgetId: before.ProjectId || null,
+                 projectKey: before.ProjectKey || null } : null);
     return;
   }
 
@@ -198,15 +206,21 @@ module.exports = async function (context, req) {
   context.res = jsonRes(200, out);
   // Best-effort audit trail — recordActivity never throws.
   if (out.versionCreated)
-    await require('../shared/users').recordActivity(pool, principal, 'analysis_save', 'analysis', id,
-      { versionNumber: out.versionNumber });
+    await require('../shared/users').recordActivity(pool, principal, 'analysis_save', 'analysis', id, {
+      name: out.name || null,
+      budgetId: out.projectId || null,
+      projectKey: out.projectKey || null,
+      versionNumber: out.versionNumber,
+      purchasePrice: out.purchasePrice === undefined ? null : out.purchasePrice,
+      year1NOI: out.year1NOI === undefined ? null : out.year1NOI
+    });
 
   async function save() {
     const tx = new sql.Transaction(pool);
     await tx.begin();
     try {
       const cur = await new sql.Request(tx).input('id', sql.UniqueIdentifier, id)
-        .query(`SELECT AnalysisId, ProjectId, SourceBudgetVersionId, CurrentVersionNumber,
+        .query(`SELECT AnalysisId, ProjectId, ProjectKey, SourceBudgetVersionId, CurrentVersionNumber,
                        ContentHash, IsDeleted
                 FROM dbo.InvestmentAnalyses WITH (UPDLOCK, HOLDLOCK) WHERE AnalysisId = @id`);
       if (!cur.recordset.length) {
@@ -284,7 +298,14 @@ module.exports = async function (context, req) {
       }
 
       await tx.commit();
-      return { ok: true, versionNumber, versionCreated: !unchanged, result };
+      // The identity and the headline numbers travel back so the audit row can
+      // name what was saved without a second read.
+      return { ok: true, versionNumber, versionCreated: !unchanged, result,
+               name: result.normalizedInput.analysisName,
+               projectId: a.ProjectId || null,
+               projectKey: a.ProjectKey || null,
+               purchasePrice: sum ? sum.purchasePrice : null,
+               year1NOI: sum ? sum.year1NOI : null };
     } catch (e) { await tx.rollback(); throw e; }
   }
 };
