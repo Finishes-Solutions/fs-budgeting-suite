@@ -129,7 +129,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     await p.evaluate(()=>fsRender.validate(guideFsdoc()).errors.join('; ')));
  const gDoc=await p.evaluate(()=>JSON.stringify(guideFsdoc(true)));
  ok('guide fsdoc carries every section heading including sample project',
-    ['WHAT THIS IS','QUICK START','YOUR FIRST PROJECT','PROJECT IDS','INPUTS REFERENCE','THE BUDGET PAGE',
+    // The guide is generated from the Help DOM, so a heading rename shows up
+    // here. "Project and Budget IDs", because there are two namespaces now.
+    ['WHAT THIS IS','QUICK START','YOUR FIRST PROJECT','PROJECT AND BUDGET IDS','INPUTS REFERENCE','THE BUDGET PAGE',
      'CSI SCHEDULE','PRICING LIBRARY AND VERSIONING','INVESTMENT ANALYSIS','EXPORTS','WHO CAN DO WHAT',
      'TROUBLESHOOTING'].every(h=>gDoc.includes(h)));
  const gDocNoSample=await p.evaluate(()=>JSON.stringify(guideFsdoc(false)));
