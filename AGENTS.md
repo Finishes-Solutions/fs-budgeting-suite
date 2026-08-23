@@ -62,6 +62,7 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | `app/investment-analysis.js` / `.css` | The Investment Analysis workflow — external no-build IIFE behind `window.FSInvestmentUI`, wired through an adapter |
 | `app/theme-ramp.css` | The Editorial theme pack — presentation only, every rule scoped to `html[data-skin=ramp]`, loaded after the inline sheet |
 | `app/guardrails.js` / `api/shared/guardrails.js` | Budget guard rails — **byte-identical** UMD pair, enforced by `test/guardrails.test.js` |
+| `CHANGELOG.md` | What changed and what to run — updated with every change that ships |
 | `app/projects.js` | The Projects tab — one project per ID, with its budgets and analyses |
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement (first auth gate) |
 | `app/vendor/exceljs.min.js` | ExcelJS 4.4.0, vendored — see [Single sources of truth](#single-sources-of-truth) |
@@ -319,6 +320,21 @@ custom provider for sign-in.
 - **Projects is the third `*View` section.** `projectView` sits beside
   `budgetView` and `analysisView` in `api/shared/user-settings-contract.js`;
   the toolbar control and the Settings row both go through `chooseSetting`.
+
+## The changelog
+
+- **`CHANGELOG.md` is part of every change that reaches `staging`.** Not a
+  release chore done afterwards — a change without an entry is not finished,
+  because the entry is the only place a person can find out what moved and what
+  they have to do about it.
+- **Write it in the user's language.** "The Projects button creates a project",
+  not "refactored openNewBudget". A refactor nobody can see belongs in the
+  commit message; this file is for what someone will notice.
+- **Two callouts earn their own heading**, because they are the ones that bite:
+  **Migration required** (the SQL files, in run order) and **Breaking**
+  (behaviour someone relied on that is deliberately gone).
+- **Add to Unreleased as you work**, and move the block under a dated heading
+  when it ships. Never rewrite a shipped entry — correct it with a new one.
 
 ## Activity log
 

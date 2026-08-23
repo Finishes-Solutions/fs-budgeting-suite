@@ -590,6 +590,24 @@ update selectors alongside label changes.
   end state, so only an EXISTING database needs the two migrations, in that
   order.
 
+  **Applied 2026-08-22.** The seven projects are now `OP-0001` … `OP-0007`,
+  each keeping its primary budget and its children:
+
+  | Project | Was keyed as | Name | Status | Primary budget |
+  | --- | --- | --- | --- | --- |
+  | OP-0001 | BD-0001 | — | Lead | BD-0001 |
+  | OP-0002 | BD-0002 | — | Budgeting | BD-0002 |
+  | OP-0003 | BD-2519 | Greenville Townhomes | Awarded | BD-2519 |
+  | OP-0004 | TST-9999 | Greenville Townhomes | Awarded | TST-9999 |
+  | OP-0005 | BD-4821 | Jones Rd Apartments | Proposal Sent | BD-4821 |
+  | OP-0006 | BD-9999 | Test Project 3 | Lead | BD-9999 |
+  | OP-0007 | BD-2108 | BD-2108 | Lead | BD-2108 |
+
+  Note the budget ids: they were NOT renamed, and several keep prefixes that
+  are no longer minted (`TST-`, and `BD-` numbers unrelated to their project's
+  `OP-` number). That is deliberate — renaming a budget would cascade into
+  SovLines, BudgetVersions and every analysis's provenance for no gain.
+
   Consequence worth knowing: budgets created from **v3 onward** are judged by
   the 35–55% expense rail and **blocked** when they fall outside it. Every
   budget that predates v3 sits at `opexSchemaVersion: 1` and is **warned**, not
@@ -639,6 +657,10 @@ update selectors alongside label changes.
 
 ## 9 · House style for changes here
 
+- **Update `CHANGELOG.md`.** Every change that reaches `staging` gets an entry,
+  written for a person: what they will notice, what breaks, and which SQL has to
+  run. It is the first file to read when something behaves differently from
+  yesterday, and the only one that answers "do I need to run anything".
 - **Title Case** for interface labels, buttons, tab names and headings: capitalize
   important words; keep *a, an, the, and, but, or, for, nor, at, by, in, of, on, per,
   to, up, via* lowercase unless first or last. Preserve brand names, product names and
