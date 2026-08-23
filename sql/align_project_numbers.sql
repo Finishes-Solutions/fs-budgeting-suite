@@ -77,8 +77,11 @@ SELECT p.ProjectId,
 FROM dbo.Projects AS p
 ORDER BY p.ProjectId;
 
--- 1b - GATES. Every row must read PASS before section 2 is run.
-SELECT Check_ AS [Check], Detail, CASE WHEN Pass = 1 THEN 'PASS' ELSE 'FAIL - STOP' END AS Result
+-- 1b - GATES. Informative when the file is run whole (the portal runs one
+--      batch, so nothing can pause here): section 2 re-checks all of these
+--      itself — a taken destination or missing source is SKIPPED and
+--      reported, and an unknown foreign key is a hard THROW.
+SELECT Check_ AS [Check], Detail, CASE WHEN Pass = 1 THEN 'PASS' ELSE 'CHECK - section 2 will skip or stop' END AS Result
 FROM (
   SELECT 1 AS Ord, 'The four projects this script moves are present' AS Check_,
          CAST(COUNT(*) AS NVARCHAR(20)) + ' of 4 found' AS Detail,
@@ -128,8 +131,47 @@ BEGIN TRY
     ('OP-0006','OP-9999'),
     ('OP-0007','OP-2108');
 
+  -- 2.1b - The map enforces its own gates. The preflight gates are read-only,
+  --        and the portal runs this file as ONE batch — so a human never gets
+  --        to stop between sections, and trusting them to was how a taken
+  --        destination reached the UPDATE and violated PK_Projects. Any move
+  --        whose source is gone or whose destination is occupied (soft-deleted
+  --        rows included: the primary key spans them) is SKIPPED and reported,
+  --        and the rest proceed.
+  DECLARE @skipped TABLE (OldId VARCHAR(16), NewId VARCHAR(16), Reason NVARCHAR(60));
+  INSERT INTO @skipped (OldId, NewId, Reason)
+  SELECT m.OldId, m.NewId,
+         CASE WHEN NOT EXISTS (SELECT 1 FROM dbo.Projects p WHERE p.ProjectId = m.OldId)
+              THEN N'source project no longer exists'
+              ELSE N'destination number already taken' END
+  FROM @map AS m
+  WHERE NOT EXISTS (SELECT 1 FROM dbo.Projects p WHERE p.ProjectId = m.OldId)
+     OR EXISTS (SELECT 1 FROM dbo.Projects p WHERE p.ProjectId = m.NewId);
+
+  DELETE m FROM @map AS m
+  WHERE EXISTS (SELECT 1 FROM @skipped s WHERE s.OldId = m.OldId);
+
+  SELECT N'SKIPPED — not moved' AS Notice, OldId, NewId, Reason FROM @skipped;
+
+  -- To free a number held by a THROWAWAY project (e.g. one created while
+  -- trying the Create Project dialog — the app's Delete Project is a soft
+  -- delete, so the id stays reserved), remove it first and re-run. Safe and
+  -- complete only for a project with no budgets and no analyses:
+  --
+  --   DELETE p FROM dbo.Projects AS p
+  --    WHERE p.ProjectId = 'OP-9999'
+  --      AND NOT EXISTS (SELECT 1 FROM dbo.Budgets b WHERE b.ProjectKey = p.ProjectId)
+  --      AND NOT EXISTS (SELECT 1 FROM dbo.InvestmentAnalyses a WHERE a.ProjectKey = p.ProjectId);
+
   -- 2.2 - Drop the foreign keys: a parent key cannot move while children still
-  --       point at it. Re-added in 2.6 once every child has moved.
+  --       point at it. Re-added in 2.6 once every child has moved. An FK this
+  --       script does not know about would leave orphans, so that one is a
+  --       hard stop rather than a skip.
+  IF EXISTS (SELECT 1 FROM sys.foreign_keys
+             WHERE referenced_object_id = OBJECT_ID('dbo.Projects')
+               AND name NOT IN ('FK_Budgets_Project', 'FK_InvestmentAnalyses_Project'))
+    THROW 50003, 'An unknown foreign key references dbo.Projects. Stop and investigate.', 1;
+
   IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Budgets_Project')
     ALTER TABLE dbo.Budgets DROP CONSTRAINT FK_Budgets_Project;
   IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_InvestmentAnalyses_Project')
@@ -215,16 +257,25 @@ FROM (
          CAST(COUNT(*) AS NVARCHAR(20)) + ' duplicated', CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END
   FROM (SELECT ProjectId FROM dbo.Projects GROUP BY ProjectId HAVING COUNT(*) > 1) AS d
   UNION ALL
-  -- The point of the whole script.
-  SELECT 3, 'Every project shares its primary budget''s number',
-         CAST(COUNT(*) AS NVARCHAR(20)) + ' still mismatched (TST-9999 on OP-0004 is the known exception)',
-         CASE WHEN COUNT(*) <= 1 THEN 1 ELSE 0 END
-  FROM dbo.Projects
-  WHERE PrimaryBudgetId IS NOT NULL
-    AND RIGHT(ProjectId, 4) <> RIGHT(
-          CASE WHEN PrimaryBudgetId LIKE '%-[0-9][0-9]'
-               THEN LEFT(PrimaryBudgetId, LEN(PrimaryBudgetId) - 3)
-               ELSE PrimaryBudgetId END, 4)
+  -- The point of the whole script. A mismatch is acceptable ONLY when the
+  -- wanted number is already another project's — TST-9999 on OP-0004 losing
+  -- 9999 to the real BD-9999 project, or a move the guard skipped because its
+  -- destination was occupied. A mismatch whose number is FREE means the
+  -- alignment missed something, and that fails.
+  SELECT 3, 'Every project that CAN share its budget''s number does',
+         CAST(COUNT(*) AS NVARCHAR(20)) + ' fixable mismatches remain' AS Detail,
+         CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END
+  FROM dbo.Projects AS p
+  WHERE p.PrimaryBudgetId IS NOT NULL
+    AND RIGHT(p.ProjectId, 4) <> RIGHT(
+          CASE WHEN p.PrimaryBudgetId LIKE '%-[0-9][0-9]'
+               THEN LEFT(p.PrimaryBudgetId, LEN(p.PrimaryBudgetId) - 3)
+               ELSE p.PrimaryBudgetId END, 4)
+    AND NOT EXISTS (SELECT 1 FROM dbo.Projects AS q
+                    WHERE q.ProjectId = 'OP-' + RIGHT(
+                            CASE WHEN p.PrimaryBudgetId LIKE '%-[0-9][0-9]'
+                                 THEN LEFT(p.PrimaryBudgetId, LEN(p.PrimaryBudgetId) - 3)
+                                 ELSE p.PrimaryBudgetId END, 4))
   UNION ALL
   SELECT 4, 'No budget id was renamed',
          CAST(COUNT(*) AS NVARCHAR(20)) + ' differ from the pre-migration snapshot',
@@ -276,7 +327,14 @@ FROM (
 ORDER BY Ord;
 
 -- The project index in its final shape, beside the budgets it now matches.
-SELECT p.ProjectId, p.PrimaryBudgetId, m.OldProjectId AS OriginallyKeyedAs,
+SELECT p.ProjectId, p.PrimaryBudgetId,
+       CASE WHEN p.PrimaryBudgetId IS NULL THEN 'no budget yet'
+            WHEN RIGHT(p.ProjectId, 4) = RIGHT(
+                   CASE WHEN p.PrimaryBudgetId LIKE '%-[0-9][0-9]'
+                        THEN LEFT(p.PrimaryBudgetId, LEN(p.PrimaryBudgetId) - 3)
+                        ELSE p.PrimaryBudgetId END, 4) THEN 'matches'
+            ELSE 'mismatched' END AS State,
+       m.OldProjectId AS OriginallyKeyedAs,
        p.Name, p.Status,
        (SELECT COUNT(*) FROM dbo.Budgets b WHERE b.ProjectKey = p.ProjectId AND b.IsDeleted = 0) AS Budgets,
        (SELECT COUNT(*) FROM dbo.InvestmentAnalyses a WHERE a.ProjectKey = p.ProjectId AND a.IsDeleted = 0) AS Analyses
