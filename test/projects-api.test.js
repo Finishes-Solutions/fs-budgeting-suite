@@ -270,6 +270,34 @@ test('deleting a project that is already gone is a 404, not a silent success', a
   assert.equal(again.status, 404);
 });
 
+test('a deleted project frees its number — for one live project at a time', async () => {
+  // OP-0140 was deleted above. Its number can be used again, deliberately...
+  const reborn = await api('/api/budget/OP-0140?scope=project',
+    { method: 'PUT', body: { create: true, name: 'Second Life', address: '9 Way' } });
+  assert.equal(reborn.status, 201);
+
+  // ...as a FRESH project: nothing of the old one comes back with the number.
+  const got = await api('/api/budgets?scope=project&id=OP-0140');
+  assert.equal(got.body.project.name, 'Second Life');
+  assert.equal(got.body.project.status, 'Lead');
+  assert.equal(got.body.project.primaryBudgetId, null);
+  assert.equal(got.body.budgets.length, 0, 'the old project\'s deleted budgets stay deleted');
+  assert.equal(got.body.analyses.length, 0);
+
+  // ...and while it is live, the number is taken: never two at once.
+  const dup = await api('/api/budget/OP-0140?scope=project',
+    { method: 'PUT', body: { create: true, name: 'Third Life', address: '10 Way' } });
+  assert.equal(dup.status, 409);
+  assert.equal(dup.body.error, 'project_id_taken');
+
+  // the suggestion never steers anyone into a reused number: a DELETED id is
+  // skipped by next-project-id even though typing it would work.
+  const del2 = await api('/api/budget/OP-0140?scope=project', { method: 'DELETE' });
+  assert.equal(del2.status, 200);
+  const sug = await api('/api/budgets?scope=next-project-id');
+  assert.notEqual(sug.body.projectId, 'OP-0140');
+});
+
 // ------------------------------------------------------- analysis inherits
 
 test('an analysis inherits the project name and address, not a budget id', async () => {

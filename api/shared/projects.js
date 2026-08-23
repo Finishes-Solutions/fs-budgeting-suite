@@ -21,7 +21,11 @@
 // IDENTIFIERS — the rule this module exists to enforce:
 //
 //   A PROJECT id is OP-####. Four digits, its own namespace, and the only
-//   thing dbo.Projects is keyed by.
+//   thing dbo.Projects is keyed by. Unique among LIVE projects: deleting a
+//   project frees its number for deliberate reuse (createProject claims the
+//   tombstone), while two live projects with one id stay impossible. A
+//   BUDGET id, by contrast, stays reserved even after deletion — its version
+//   history hangs off it, and reuse would graft new content onto old history.
 //   A BUDGET id is BD-#### (or a legacy OP-/AS-/TST-####), optionally with a
 //   -NN alternate suffix.
 //
@@ -65,9 +69,10 @@ const jsonRes = (status, body) => ({
   body: JSON.stringify(body)
 });
 
-// The lowest OP-#### not already taken, including by a soft-deleted project —
-// a deleted project's id stays reserved, because restoring it must not collide
-// with something minted in the meantime. Returns null when all 9,999 are gone.
+// The lowest OP-#### not taken by ANY row, soft-deleted included. A deleted
+// project's number CAN be reused — typing it into Create Project claims the
+// tombstone — but reuse is a deliberate act, so the suggestion never steers
+// anyone into one by default. Returns null when all 9,999 are gone.
 async function nextProjectId(pool) {
   const f = await features(pool);
   if (!f.projectsTable) return null;
@@ -123,26 +128,56 @@ async function createProject(pool, projectId, body, principal) {
   // A project has NO type. One property can carry a Multifamily budget and a
   // Commercial budget at once, so the type belongs to each budget; the column
   // keeps its default and the app never reads it.
-  try {
-    await pool.request()
-      .input('pid', sql.VarChar(16), key)
-      .input('name', sql.NVarChar(200), name.slice(0, 200))
-      .input('addr', sql.NVarChar(300), address.slice(0, 300))
-      .input('st', sql.NVarChar(40), status)
-      .input('notes', sql.NVarChar(2000), String(body.notes || '').slice(0, 2000))
-      .input('cuid', sql.NVarChar(128), principal ? (principal.userId || null) : null)
-      .input('cuname', sql.NVarChar(200), principal ? (principal.userDetails || null) : null)
-      .query(`INSERT INTO dbo.Projects (ProjectId, Name, Address, Status, Notes, CreatedById, CreatedByName)
-              VALUES (@pid, @name, @addr, @st, @notes, @cuid, @cuname);`);
-  } catch (e) {
-    if (DUP_KEY.has(e.number)) return jsonRes(409, { error: 'project_id_taken',
-      field: 'projectId', message: 'Project ID must be unique.' });
-    throw e;
+  //
+  // An id is unique among LIVE projects, not forever. Deleting a project
+  // frees its number for deliberate reuse: creating over a soft-deleted row
+  // CLAIMS that row and resets it — new name, address, creator and dates, no
+  // primary budget, back to Lead — rather than resurrecting the old project.
+  // The UPDATE below is the atomic claim: its IsDeleted = 1 guard means at
+  // most one of two concurrent creates can win it; the loser falls through to
+  // the INSERT, whose PK violation answers 409. Two live projects with one id
+  // therefore stay impossible, which is the half of the rule that matters.
+  //
+  // Accepted caveat of reuse: the OLD project's soft-deleted budgets and
+  // analyses keep pointing at this id, so an admin restoring one later
+  // attaches it to the NEW project. Reusing a number merges its history —
+  // the activity log carries both lives of the id for the same reason.
+  const withInputs = rq => rq
+    .input('pid', sql.VarChar(16), key)
+    .input('name', sql.NVarChar(200), name.slice(0, 200))
+    .input('addr', sql.NVarChar(300), address.slice(0, 300))
+    .input('st', sql.NVarChar(40), status)
+    .input('notes', sql.NVarChar(2000), String(body.notes || '').slice(0, 2000))
+    .input('cuid', sql.NVarChar(128), principal ? (principal.userId || null) : null)
+    .input('cuname', sql.NVarChar(200), principal ? (principal.userDetails || null) : null);
+
+  const claimed = await withInputs(pool.request())
+    .query(`UPDATE dbo.Projects
+              SET Name = @name, Address = @addr, Status = @st, Notes = @notes,
+                  PrimaryBudgetId = NULL, ConvertedAt = NULL,
+                  ContractAmount = NULL, ProjectAmount = NULL,
+                  CreatedById = @cuid, CreatedByName = @cuname,
+                  CreatedAt = SYSUTCDATETIME(), UpdatedAt = SYSUTCDATETIME(),
+                  IsDeleted = 0, DeletedAt = NULL
+            WHERE ProjectId = @pid AND IsDeleted = 1;
+            SELECT @@ROWCOUNT AS N;`);
+  const reused = !!claimed.recordset[0].N;
+
+  if (!reused) {
+    try {
+      await withInputs(pool.request())
+        .query(`INSERT INTO dbo.Projects (ProjectId, Name, Address, Status, Notes, CreatedById, CreatedByName)
+                VALUES (@pid, @name, @addr, @st, @notes, @cuid, @cuname);`);
+    } catch (e) {
+      if (DUP_KEY.has(e.number)) return jsonRes(409, { error: 'project_id_taken',
+        field: 'projectId', message: 'Project ID must be unique.' });
+      throw e;
+    }
   }
   const after = await getProject(pool, key);
   await recordActivity(pool, principal, 'project_create', 'project', key,
-    { name: name, address: address });
-  return jsonRes(201, { ok: true, created: true, project: after.project });
+    { name: name, address: address, reusedNumber: reused || undefined });
+  return jsonRes(201, { ok: true, created: true, reusedNumber: reused, project: after.project });
 }
 
 // Soft delete, cascading to everything the project owns. One transaction so a

@@ -272,6 +272,14 @@ custom provider for sign-in.
 - **`dbo.Projects` is the parent, and its primary key is the "one project per
   ID" guarantee.** Budgets and analyses link to it by `ProjectKey`, an EXPLICIT
   link stated when the record is created — never derived from an id.
+- **Project numbers are unique among LIVE projects, and only there.** Deleting
+  a project frees its number: `createProject` claims the soft-deleted row with
+  an `IsDeleted = 1`-guarded UPDATE (the atomic claim — at most one concurrent
+  create wins it) and RESETS it, so the number comes back as a fresh project,
+  never as a resurrection. `nextProjectId` still skips tombstones: reuse is a
+  deliberate typed act, never a suggestion. Budget ids are the opposite — a
+  deleted budget's number stays reserved, because BudgetVersions hangs off it
+  and reuse would graft new content onto old history.
 - **A project is created deliberately, and only one way:**
   `PUT /api/budget/{OP-####}?scope=project` with `{create:true}`. Saving a
   budget no longer conjures its parent, because a budget id cannot name one.

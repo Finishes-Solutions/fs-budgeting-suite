@@ -138,6 +138,21 @@ BEGIN TRY
   --        whose source is gone or whose destination is occupied (soft-deleted
   --        rows included: the primary key spans them) is SKIPPED and reported,
   --        and the rest proceed.
+  -- 2.1a - A destination held only by a soft-deleted project with NO budgets
+  --        and NO analyses is a tombstone, not an occupant. Project numbers
+  --        are reusable after deletion (unique among LIVE projects only), and
+  --        deleting a test project in the app is a soft delete — so without
+  --        this, a number freed in the app would still read as taken here.
+  --        Children are counted across deleted rows too, deliberately: the
+  --        foreign keys would block the delete anyway, and a tombstone with
+  --        children is recoverable history, never cleared by this script.
+  DELETE p FROM dbo.Projects AS p
+  JOIN @map AS m ON m.NewId = p.ProjectId
+  WHERE p.IsDeleted = 1
+    AND NOT EXISTS (SELECT 1 FROM dbo.Budgets b WHERE b.ProjectKey = p.ProjectId)
+    AND NOT EXISTS (SELECT 1 FROM dbo.InvestmentAnalyses a WHERE a.ProjectKey = p.ProjectId);
+  PRINT CONCAT('Childless tombstones cleared from destination numbers: ', @@ROWCOUNT);
+
   DECLARE @skipped TABLE (OldId VARCHAR(16), NewId VARCHAR(16), Reason NVARCHAR(60));
   INSERT INTO @skipped (OldId, NewId, Reason)
   SELECT m.OldId, m.NewId,
@@ -153,15 +168,12 @@ BEGIN TRY
 
   SELECT N'SKIPPED — not moved' AS Notice, OldId, NewId, Reason FROM @skipped;
 
-  -- To free a number held by a THROWAWAY project (e.g. one created while
-  -- trying the Create Project dialog — the app's Delete Project is a soft
-  -- delete, so the id stays reserved), remove it first and re-run. Safe and
-  -- complete only for a project with no budgets and no analyses:
-  --
-  --   DELETE p FROM dbo.Projects AS p
-  --    WHERE p.ProjectId = 'OP-9999'
-  --      AND NOT EXISTS (SELECT 1 FROM dbo.Budgets b WHERE b.ProjectKey = p.ProjectId)
-  --      AND NOT EXISTS (SELECT 1 FROM dbo.InvestmentAnalyses a WHERE a.ProjectKey = p.ProjectId);
+  -- A skipped destination that is LIVE, or deleted but still carrying
+  -- budgets/analyses, is left for a person: delete it in the app first (which
+  -- soft-deletes it and its children), re-run this file, and 2.1a clears what
+  -- has become a childless tombstone... unless its children are real history
+  -- worth keeping — in which case the number is genuinely taken, and the
+  -- skip is the right answer.
 
   -- 2.2 - Drop the foreign keys: a parent key cannot move while children still
   --       point at it. Re-added in 2.6 once every child has moved. An FK this

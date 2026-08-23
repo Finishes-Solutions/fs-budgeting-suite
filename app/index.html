@@ -1767,7 +1767,8 @@ th.sortable.sorted{color:var(--ink-900)}
           a budget has its own ID and says which project it belongs to. Neither is ever derived from the other.</p>
         <table class="tbl"><tbody>
           <tr><td>OP-####</td><td><b>Project</b> ID — four digits, e.g. <code>OP-0001</code>. This is the only
-            shape a project ID takes, and it must be unique.</td></tr>
+            shape a project ID takes, and it must be unique <b>among live projects</b>: deleting a project frees
+            its number for a future one, but two live projects never share it.</td></tr>
           <tr><td>BD-####</td><td><b>Budget</b> ID — four digits, e.g. <code>BD-0001</code>. New budgets are
             created under this prefix.</td></tr>
           <tr><td>OP-#### / AS-#### / TST-####</td><td>Older <b>budget</b> IDs. They still open and save; nothing

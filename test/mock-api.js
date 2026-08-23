@@ -126,6 +126,7 @@ function shapeProject(p) {
     breachCount: bs.filter(b => b.guardrailStatus === 'breach').length
   });
   delete out.type;
+  delete out.deleted;
   return out;
 }
 /* The activity diff, mirroring api/user-settings/index.js. Names are looked up
@@ -669,13 +670,13 @@ http.createServer((req, res) => {
     if (scope === 'next-project-id') return json(res, 200, { projectId: nextProjectId() });
     if (scope === 'projects') {
       return json(res, 200, { available: true, statuses: PROJECT_STATUSES,
-        projects: [...projects.values()].map(shapeProject)
+        projects: [...projects.values()].filter(p => !p.deleted).map(shapeProject)
           .sort((a, z) => String(z.updated).localeCompare(String(a.updated))) });
     }
     if (scope === 'project') {
       const key = String(q.get('id') || '').toUpperCase();
       const pr = projects.get(key);
-      if (!pr) return json(res, 404, { error: 'not_found', message: 'Project not found.' });
+      if (!pr || pr.deleted) return json(res, 404, { error: 'not_found', message: 'Project not found.' });
       const bs = projectBudgets(key);
       return json(res, 200, {
         available: true, statuses: PROJECT_STATUSES, project: shapeProject(pr),
@@ -734,8 +735,10 @@ http.createServer((req, res) => {
         const bs = projectBudgets(id), as = projectAnalyses(id);
         bs.forEach(b => { b.deleted = true; });
         as.forEach(a => { a.deleted = true; });
+        // The tombstone stays in the map, exactly as the real row stays in
+        // dbo.Projects: the number reads as deleted everywhere, and comes back
+        // into service only when a create deliberately claims it.
         pr.deleted = true;
-        projects.delete(id);
         act('project_delete', 'project', id, { name: pr.name || null,
           budgetsDeleted: bs.length, analysesDeleted: as.length });
         return json(res, 200, { ok: true, projectId: id, name: pr.name || '',
@@ -747,7 +750,12 @@ http.createServer((req, res) => {
         const body = JSON.parse(pb || '{}');
 
         if (body.create === true) {
-          if (projects.has(id)) return json(res, 409,
+          // Unique among LIVE projects, not forever: a tombstone left by a
+          // delete is claimed and RESET, matching api/shared/projects.js. The
+          // old project's soft-deleted children keep pointing at the id — the
+          // accepted caveat of reusing a number.
+          const prior = projects.get(id);
+          if (prior && !prior.deleted) return json(res, 409,
             { error: 'project_id_taken', field: 'projectId', message: 'Project ID must be unique.' });
           const name = String(body.name || '').trim(), address = String(body.address || '').trim();
           if (!name) return json(res, 400, { error: 'bad_request', field: 'name', message: 'Project Name is required.' });
@@ -760,12 +768,13 @@ http.createServer((req, res) => {
             createdById: principal.clientPrincipal.userId,
             createdByName: principal.clientPrincipal.userDetails,
             createdAt: now, updated: now });
-          act('project_create', 'project', id, { name, address });
+          act('project_create', 'project', id,
+            { name, address, reusedNumber: prior ? true : undefined });
           return json(res, 201, { ok: true, created: true, project: shapeProject(projects.get(id)) });
         }
 
         const pr = projects.get(id);
-        if (!pr) return json(res, 404, { error: 'not_found', message: 'Project not found.' });
+        if (!pr || pr.deleted) return json(res, 404, { error: 'not_found', message: 'Project not found.' });
         if (body.status !== undefined && !PROJECT_STATUSES.includes(body.status))
           return json(res, 400, { error: 'bad_request',
             message: 'status must be one of: ' + PROJECT_STATUSES.join(', ') });
@@ -931,17 +940,18 @@ http.createServer((req, res) => {
       // The project link is stated, never derived — and a save that does not
       // mention a project leaves the existing link alone, which is what every
       // edit of an older budget does.
-      const linked = wantsKey && projects.has(wantsKey) ? wantsKey : (prev.projectKey || null);
+      const liveTarget = wantsKey ? projects.get(wantsKey) : null;
+      const linked = liveTarget && !liveTarget.deleted ? wantsKey : (prev.projectKey || null);
       const entry = { meta, doc, deleted: false, versions: prev.versions,
         guardrailStatus: rails.status, guardrailBreachCount: rails.breaches.length,
         projectKey: linked,
         createdById: (prev && prev.createdById) || principal.clientPrincipal.userId,
         createdByName: (prev && prev.createdByName) || principal.clientPrincipal.userDetails };  // PUT restores
       // A project with no primary adopts the first budget saved onto it.
-      if (linked && projects.has(linked)) {
-        const pr = projects.get(linked);
-        if (!pr.primaryBudgetId) pr.primaryBudgetId = id;
-        pr.updated = new Date().toISOString();
+      const linkedPr = linked ? projects.get(linked) : null;
+      if (linkedPr && !linkedPr.deleted) {
+        if (!linkedPr.primaryBudgetId) linkedPr.primaryBudgetId = id;
+        linkedPr.updated = new Date().toISOString();
       }
       const last = entry.versions[entry.versions.length - 1];
       let versionCreated = false;

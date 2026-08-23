@@ -24,7 +24,24 @@ House rules for writing one:
 
 ## Unreleased
 
-_Nothing yet._
+### Migration required
+
+- `sql/align_project_numbers.sql` — gives each existing project the number its
+  budget already carries (`OP-0005` → `OP-4821`, and so on), so a project and
+  its budgets read as one family. Four projects move; no budget is renamed.
+  A destination number held by a childless deleted project is cleared
+  automatically; one that is live, or deleted with history attached, is
+  skipped and reported rather than fought over.
+
+### Changed
+
+- **A deleted project frees its number.** Project IDs are unique among LIVE
+  projects, not forever: delete `OP-9999` and a new project can be created as
+  `OP-9999` later — a fresh project, starting at Lead with no budgets — while
+  two live projects with one number remain impossible. The suggested next
+  number still skips deleted ones, so reuse only ever happens by typing the
+  number on purpose. Budget IDs keep the stricter rule: a budget's version
+  history hangs off its id, so a deleted budget's number stays reserved.
 
 ---
 
