@@ -169,11 +169,16 @@ BEGIN TRY
   UPDATE u SET SettingsDoc = JSON_MODIFY(u.SettingsDoc, '$.favorites.project', JSON_QUERY(x.NewArr))
   FROM dbo.Users AS u
   CROSS APPLY (
+    -- The map is JOINED, not looked up with a correlated subquery: SQL Server
+    -- refuses "an aggregate function on an expression containing a subquery",
+    -- and STRING_AGG is an aggregate. COALESCE over the outer join is what
+    -- leaves an unmapped id exactly as it is.
     SELECT '[' + ISNULL(STRING_AGG('"' + STRING_ESCAPE(
-             ISNULL((SELECT m.NewId FROM @map AS m WHERE m.OldId = j.value), j.value), 'json') + '"', ',')
+             COALESCE(m.NewId, j.value), 'json') + '"', ',')
              WITHIN GROUP (ORDER BY CAST(j.[key] AS INT)), '') + ']' AS NewArr
     FROM OPENJSON(CASE WHEN ISJSON(u.SettingsDoc) = 1 THEN u.SettingsDoc ELSE N'{}' END,
                   '$.favorites.project') AS j
+    LEFT JOIN @map AS m ON m.OldId = j.value
   ) AS x
   WHERE u.SettingsDoc IS NOT NULL AND ISJSON(u.SettingsDoc) = 1
     AND JSON_QUERY(u.SettingsDoc, '$.favorites.project') IS NOT NULL;
