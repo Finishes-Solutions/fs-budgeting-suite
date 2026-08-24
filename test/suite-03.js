@@ -186,14 +186,28 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const projBefore = await p.evaluate(()=>parts().project);
 
  await p.selectOption('#feeSchedule','tx-waller'); await p.waitForTimeout(600);
- ok('the schedule loads its 17 meter sizes',
-    (await p.locator('#feeMeterTbl tbody tr').count())===17,
-    String(await p.locator('#feeMeterTbl tbody tr').count()));
+ ok('the picker offers all 17 meter sizes',
+    (await p.locator('#feeAddMeter option').count())===18,   // 17 + the placeholder
+    String(await p.locator('#feeAddMeter option').count()));
+ ok('the picker names size, rate and EDU — size alone is ambiguous',
+    (await p.evaluate(()=>[...document.querySelectorAll('#feeAddMeter option')]
+      .map(o=>o.textContent).filter(t=>/^2"/.test(t)).join('|')))
+    ==='2" · 80 gpm · 8 EDU|2" · 100 gpm · 10 EDU',
+    await p.evaluate(()=>[...document.querySelectorAll('#feeAddMeter option')]
+      .map(o=>o.textContent).filter(t=>/^2"/.test(t)).join('|')));
+ ok('no meters are chosen until you add one',
+    (await p.evaluate(()=>doc.impactFees.meters.length))===0);
  ok('the basis defaults to the high side',
     (await p.evaluate(()=>doc.impactFees.basis))==='high');
 
  // 4" @ 250 gpm is the first row that carries a vault, so it exercises the whole row.
- await p.fill('#feeMeterTbl input[data-k="fee.m-4-250.qty"]','2'); await p.waitForTimeout(500);
+ await p.selectOption('#feeAddMeter','m-4-250');
+ await p.click('#feeAddBtn'); await p.waitForTimeout(500);
+ ok('adding a meter puts one row on the table at qty 1',
+    (await p.locator('#feeMeterTbl tbody tr').count())===1
+    &&(await p.evaluate(()=>doc.impactFees.meters[0].qty))===1);
+ const mid = await p.evaluate(()=>doc.impactFees.meters[0].id);
+ await p.fill(`#feeMeterTbl input[data-k="fee.${mid}.qty"]`,'2'); await p.waitForTimeout(500);
  const feeTotal = await p.evaluate(()=>feeResult().total);
  ok('two 4-inch meters price at the published high-side total',
     Math.round(feeTotal*100)/100===Math.round(2*318972.18*100)/100, String(feeTotal));
@@ -223,6 +237,32 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     (await p.evaluate(()=>parts().contract))===(await p.evaluate(()=>parts().contract)));
  ok('total project cost moves with it', projAfter>projBefore,
     projBefore+' -> '+projAfter);
+
+ // Several meters per project is the normal case — domestic, irrigation, fire —
+ // so the same size must be able to appear twice without collapsing into one.
+ await p.selectOption('#feeAddMeter','m-4-250');
+ await p.click('#feeAddBtn'); await p.waitForTimeout(500);
+ ok('the same meter size can be added twice',
+    (await p.evaluate(()=>doc.impactFees.meters.length))===2
+    &&(await p.evaluate(()=>doc.impactFees.meters[0].id))
+      !==(await p.evaluate(()=>doc.impactFees.meters[1].id)));
+ const mid2 = await p.evaluate(()=>doc.impactFees.meters[1].id);
+ await p.fill(`#feeMeterTbl input[data-k="fee.${mid}.label"]`,'Domestic');
+ await p.fill(`#feeMeterTbl input[data-k="fee.${mid2}.label"]`,'Irrigation');
+ await p.waitForTimeout(400);
+ ok('each meter keeps its own label',
+    JSON.stringify(await p.evaluate(()=>doc.impactFees.meters.map(m=>m.label)))
+    ===JSON.stringify(['Domestic','Irrigation']),
+    JSON.stringify(await p.evaluate(()=>doc.impactFees.meters.map(m=>m.label))));
+ ok('three meters in total price as three',
+    Math.round((await p.evaluate(()=>feeResult().total))*100)/100
+      ===Math.round(3*318972.18*100)/100,
+    String(await p.evaluate(()=>feeResult().total)));
+ await p.click(`#feeMeterTbl tr:has(input[data-k="fee.${mid2}.qty"]) button:has-text("Remove")`);
+ await p.waitForTimeout(500);
+ ok('removing one leaves the other untouched',
+    (await p.evaluate(()=>doc.impactFees.meters.length))===1
+    &&(await p.evaluate(()=>doc.impactFees.meters[0].label))==='Domestic');
 
  // Basis is the conservatism knob, and only the adders move with it.
  await p.selectOption('#feeBasis','low'); await p.waitForTimeout(400);

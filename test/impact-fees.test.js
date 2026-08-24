@@ -192,3 +192,46 @@ test('provenance names the jurisdiction, the basis and the version', () => {
   assert.equal(IF.provenance(r), 'City of Waller, TX (high side, v1)');
   assert.equal(IF.provenance(IF.evaluate(null, null, {})), '');
 });
+
+test('the same meter size can be carried twice and does not collapse', () => {
+  // A project served by a domestic meter AND an irrigation meter of the same
+  // size is ordinary. Selections are a list keyed by their own id, so this must
+  // price as two meters — keying by size would silently halve the fee.
+  const r = IF.evaluate(SCHEDULE, { scheduleKey: 'tx-waller', basis: 'high', meters: [
+    { id: 'a', rowId: 'm-2-100', label: 'Domestic',   qty: 1 },
+    { id: 'b', rowId: 'm-2-100', label: 'Irrigation', qty: 1 }
+  ] });
+  assert.equal(r.rows.length, 2);
+  assert.equal(cents(r.total), cents(2 * 122972.50));
+  assert.deepEqual(r.rows.map(x => x.label), ['Domestic', 'Irrigation']);
+  assert.deepEqual(r.rows.map(x => x.id), ['a', 'b']);
+});
+
+test('a mixed set of meters prices as the sum of its rows', () => {
+  // Domestic + irrigation + fire line, three different sizes.
+  const r = IF.evaluate(SCHEDULE, { scheduleKey: 'tx-waller', basis: 'high', meters: [
+    { id: 'a', rowId: 'm-2-100', label: 'Domestic',  qty: 1 },
+    { id: 'b', rowId: 'm-1-25',  label: 'Irrigation', qty: 1 },
+    { id: 'c', rowId: 'm-6-500', label: 'Fire line',  qty: 1 }
+  ] });
+  assert.equal(cents(r.total), cents(122972.50 + 35851.73 + 616276.87));
+});
+
+test('a meter name always carries the rate, because size is ambiguous', () => {
+  const two = SCHEDULE.meters.filter(m => m.size === '2');
+  assert.equal(two.length, 2, 'the schedule really does have two 2-inch rows');
+  assert.deepEqual(two.map(IF.meterName),
+    ['2" \u00b7 80 gpm \u00b7 8 EDU', '2" \u00b7 100 gpm \u00b7 10 EDU']);
+  // And they are genuinely different money — this is why size alone cannot key
+  // a selection or label a dropdown option.
+  assert.notEqual(cents(one('m-2-80', 'high')), cents(one('m-2-100', 'high')));
+});
+
+test('a selection naming a meter the schedule does not have is dropped, not counted', () => {
+  const r = IF.evaluate(SCHEDULE, { scheduleKey: 'tx-waller', basis: 'high', meters: [
+    { id: 'a', rowId: 'm-2-100', qty: 1 },
+    { id: 'b', rowId: 'm-nonexistent', qty: 5 }
+  ] });
+  assert.equal(r.rows.length, 1);
+  assert.equal(cents(r.total), 122972.50);
+});

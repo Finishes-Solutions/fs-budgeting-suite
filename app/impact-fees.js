@@ -93,11 +93,20 @@
     each.total = each.waterImpact + each.sewerImpact + each.meter + each.vault
                + each.waterTap + each.sewerTap;
     return {
+      id: sel.id || null, label: sel.label || '',
       rowId: meter && meter.rowId, size: meter && meter.size,
       gpm: nz(meter && meter.gpm), edu: nz(meter && meter.edu),
       qty: qty, each: each, total: qty * each.total,
       hasVault: !!(meter && meter.vault)
     };
+  }
+
+  /* How one selected meter reads on screen and in the exports. Size alone is
+     ambiguous — 2 inch appears at both 80 and 100 gpm, and the gpm is what sets
+     the EDU multiplier — so the rate is always part of the name. */
+  function meterName(meter) {
+    if (!meter) return '';
+    return meter.size + '" \u00b7 ' + nz(meter.gpm) + ' gpm \u00b7 ' + nz(meter.edu) + ' EDU';
   }
 
   function extraAmount(fee, basis, ctx) {
@@ -120,6 +129,8 @@
     var rows = (Array.isArray(f.meters) ? f.meters : [])
       .filter(function (s) { return s && byId[s.rowId]; })
       .map(function (s) { return rowAmounts(byId[s.rowId], s, basis); });
+    // Duplicates are legitimate here and must not be deduped — see the note on
+    // selection identity above.
 
     var feeById = {};
     ((schedule && Array.isArray(schedule.fees)) ? schedule.fees : [])
@@ -175,7 +186,7 @@
 
   return {
     evaluate: evaluate, rowAmounts: rowAmounts, extraAmount: extraAmount,
-    pick: pick, provenance: provenance,
+    pick: pick, provenance: provenance, meterName: meterName,
     BASES: BASES, BASIS_LABEL: BASIS_LABEL, DEFAULT_BASIS: DEFAULT_BASIS,
     FEE_BASES: ['flat', 'unit', 'acre', 'resSF', 'amenSF', 'bldgSF', 'pctHard']
   };

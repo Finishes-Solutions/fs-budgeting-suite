@@ -1336,10 +1336,20 @@ th.sortable.sorted{color:var(--ink-900)}
   </section>
 
   <section class="card" id="sec-fee-meters">
-    <div class="card-hd"><h2>Meter Schedule</h2>
+    <div class="card-hd"><h2>Meters</h2>
       <span class="eyebrow" id="feeMeterMeta">&mdash;</span></div>
-    <div class="card-bd" style="overflow-x:auto;padding-top:8px">
-      <table class="tbl" id="feeMeterTbl" style="min-width:1040px"></table>
+    <div class="card-bd" style="padding-top:8px">
+      <!-- Size alone does not identify a meter: 2", 3", 4", 6", 8" and 10" each
+           appear twice at different continuous-duty rates, and the rate is what
+           sets the EDU multiplier. The picker always names size, gpm and EDU. -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <select id="feeAddMeter" data-k="fee.addMeter" style="min-width:260px"></select>
+        <button class="btn btn-ghost" id="feeAddBtn" onclick="addFeeMeter()">+ Add Meter</button>
+        <span class="note">Add one row per meter — domestic, irrigation, fire line, or per building.</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="feeMeterTbl" style="min-width:1100px"></table>
+      </div>
     </div>
   </section>
 
@@ -4357,8 +4367,15 @@ function normalizeImpactFees(f){
   return {scheduleKey:f.scheduleKey||null,scheduleName:f.scheduleName||null,
     scheduleVersion:f.scheduleVersion?nz(f.scheduleVersion):null,
     effective:f.effective||null,basis:basis,
+    /* A LIST, not a map keyed by meter size. A project is commonly served by
+       several meters — domestic, irrigation, fire, or one per building — so the
+       same size legitimately appears twice with different labels. Each selection
+       carries its own id; keying by rowId would collapse the fire line into the
+       domestic one and under-price the budget. `id` is backfilled for anything
+       saved before the list existed. */
     meters:(Array.isArray(f.meters)?f.meters:[]).filter(m=>m&&m.rowId).map(m=>({
-      rowId:String(m.rowId),qty:nz(m.qty),
+      id:m.id||newLineId(),rowId:String(m.rowId),label:String(m.label||''),
+      qty:nz(m.qty),
       includeMeter:m.includeMeter!==false,includeVault:m.includeVault!==false,
       includeTaps:m.includeTaps!==false})),
     extras:(Array.isArray(f.extras)?f.extras:[]).filter(x=>x&&x.feeId)
@@ -5048,44 +5065,67 @@ function paintFeesPage(){
 function paintFeeMeters(r){
   const t=document.getElementById('feeMeterTbl');
   const meta=document.getElementById('feeMeterMeta');
+  const add=document.getElementById('feeAddMeter');
+  const f=doc.impactFees;
+
+  // The picker names size, rate and EDU together: size alone is ambiguous —
+  // 2" appears at both 80 and 100 gpm, and the gpm is what sets the multiplier.
+  if(add){
+    const list=(feeDoc&&Array.isArray(feeDoc.meters))?feeDoc.meters:[];
+    add.innerHTML='<option value="">Choose a meter size…</option>'
+      +list.map(m=>`<option value="${esc(m.rowId)}">${esc(FSImpactFees.meterName(m))}</option>`).join('');
+    add.disabled=!list.length;
+  }
+  document.getElementById('feeAddBtn').disabled=!(feeDoc&&feeDoc.meters&&feeDoc.meters.length);
+
   if(!feeDoc||!Array.isArray(feeDoc.meters)||!feeDoc.meters.length){
     t.innerHTML='';
-    meta.textContent=doc.impactFees.scheduleKey?'Schedule unavailable':'Pick a jurisdiction to price meters';
+    meta.textContent=f.scheduleKey?'Schedule unavailable':'Pick a jurisdiction first';
     return;
   }
-  const f=doc.impactFees;
-  const byId={};(f.meters||[]).forEach(m=>{byId[m.rowId]=m;});
-  const rowsById={};r.rows.forEach(x=>{rowsById[x.rowId]=x;});
-  meta.textContent=feeDoc.meters.length+' meter sizes · '+r.rows.filter(x=>x.qty>0).length+' in use';
-  let h='<thead><tr><th>Meter</th><th class="r">GPM</th><th class="r">EDU</th>'
+  if(!r.rows.length){
+    t.innerHTML='<tbody><tr><td class="note" style="padding:14px">'
+      +'No meters yet. Add the ones this project is served by — domestic, irrigation, '
+      +'fire line, or one per building. Each is priced from the city\'s table.</td></tr></tbody>';
+    meta.textContent=feeDoc.meters.length+' sizes available';
+    return;
+  }
+  const units=r.rows.reduce((s,x)=>s+x.qty,0);
+  const edu=r.rows.reduce((s,x)=>s+x.qty*x.edu,0);
+  meta.textContent=units+(units===1?' meter':' meters')+' · '+(+edu.toFixed(2))+' EDU total';
+
+  let h='<thead><tr><th>Meter</th><th>Serves</th><th class="r">EDU</th>'
     +'<th class="r">Qty</th><th class="c">Meter</th><th class="c">Vault</th><th class="c">Taps</th>'
     +'<th class="r">Water Impact</th><th class="r">Sewer Impact</th>'
-    +'<th class="r">Adders</th><th class="r">Row Total</th></tr></thead><tbody>';
-  feeDoc.meters.forEach(m=>{
-    const s=byId[m.rowId]||{qty:0,includeMeter:true,includeVault:true,includeTaps:true};
-    const a=FSImpactFees.rowAmounts(m,Object.assign({},s,{qty:nz(s.qty)||0}),f.basis);
-    const adders=a.each.meter+a.each.vault+a.each.waterTap+a.each.sewerTap;
-    const on=nz(s.qty)>0;
+    +'<th class="r">Adders</th><th class="r">Row Total</th><th></th></tr></thead><tbody>';
+  r.rows.forEach(x=>{
+    const m=feeDoc.meters.find(d=>d.rowId===x.rowId)||{};
+    const sel=feeSel(x.id)||{};
+    const adders=x.each.meter+x.each.vault+x.each.waterTap+x.each.sewerTap;
     const cb=(k,enabled)=>enabled
-      ?`<input type="checkbox" data-k="fee.${esc(m.rowId)}.${k}" ${s[k]!==false?'checked':''}
-          onchange="setFeeInclude('${esc(m.rowId)}','${k}',this.checked)">`
+      ?`<input type="checkbox" data-k="fee.${esc(x.id)}.${k}" ${sel[k]!==false?'checked':''}
+          onchange="setFeeInclude('${esc(x.id)}','${k}',this.checked)">`
       :'<span class="mono" style="color:var(--ink-500)">—</span>';
-    h+=`<tr${on?'':' style="opacity:.55"'}>
-      <td>${esc(m.size)}"</td>
-      <td class="r mono">${num(m.gpm)}</td>
-      <td class="r mono">${nz(m.edu)}</td>
-      <td class="r"><input type="number" class="qtyin" data-k="fee.${esc(m.rowId)}.qty" min="0" step="1"
-          value="${nz(s.qty)}" style="width:74px" oninput="setFeeQty('${esc(m.rowId)}',this.value)"></td>
+    h+=`<tr>
+      <td>${esc(FSImpactFees.meterName(m))}</td>
+      <td><input type="text" data-k="fee.${esc(x.id)}.label" value="${esc(x.label)}"
+          placeholder="Domestic, irrigation…" style="width:100%;min-width:130px"
+          oninput="setFeeMeterLabel('${esc(x.id)}',this.value)"></td>
+      <td class="r mono">${+(x.qty*x.edu).toFixed(2)}</td>
+      <td class="r"><input type="number" class="qtyin" data-k="fee.${esc(x.id)}.qty" min="0" step="1"
+          value="${nz(x.qty)}" oninput="setFeeQty('${esc(x.id)}',this.value)"></td>
       <td class="c">${cb('includeMeter',true)}</td>
-      <td class="c">${cb('includeVault',!!m.vault)}</td>
+      <td class="c">${cb('includeVault',x.hasVault)}</td>
       <td class="c">${cb('includeTaps',true)}</td>
-      <td class="r mono">${usd(a.each.waterImpact)}</td>
-      <td class="r mono">${usd(a.each.sewerImpact)}</td>
-      <td class="r mono">${usd(adders)}</td>
-      <td class="r mono"><b>${usd(a.total)}</b></td></tr>`;
+      <td class="r mono">${usd(x.qty*x.each.waterImpact)}</td>
+      <td class="r mono">${usd(x.qty*x.each.sewerImpact)}</td>
+      <td class="r mono">${usd(x.qty*adders)}</td>
+      <td class="r mono"><b>${usd(x.total)}</b></td>
+      <td class="r"><button class="btn btn-ghost danger" title="Remove this meter"
+          onclick="removeFeeMeter('${esc(x.id)}')">Remove</button></td></tr>`;
   });
   h+=`</tbody><tfoot><tr class="tot"><td colspan="10">Meter fees</td>
-      <td class="r mono"><b>${usd(r.meterTotal)}</b></td></tr></tfoot>`;
+      <td class="r mono"><b>${usd(r.meterTotal)}</b></td><td></td></tr></tfoot>`;
   t.innerHTML=h;
 }
 
@@ -5156,14 +5196,26 @@ function paintFeeRollup(r){
 
 /* ---- mutations. Every one ends at applyImpactFees() + touch(), which is the
    document's change pipeline — don't invent a parallel dirty flag. ---- */
-function feeSel(rowId){
-  const f=doc.impactFees;
-  let s=f.meters.find(m=>m.rowId===rowId);
-  if(!s){s={rowId:rowId,qty:0,includeMeter:true,includeVault:true,includeTaps:true};f.meters.push(s);}
-  return s;
+function feeSel(id){return doc.impactFees.meters.find(m=>m.id===id)||null;}
+/* Add the meter the picker is showing. A repeat of a size already chosen is
+   legitimate — that is the second meter, not a mistake — so it appends rather
+   than finding the existing row. */
+function addFeeMeter(){
+  const sel=document.getElementById('feeAddMeter');
+  const rowId=sel?sel.value:'';
+  if(!rowId){toast('Pick a meter size first');return;}
+  doc.impactFees.meters.push({id:newLineId(),rowId:rowId,label:'',qty:1,
+    includeMeter:true,includeVault:true,includeTaps:true});
+  if(sel)sel.value='';
+  afterFeeChange();
 }
-function setFeeQty(rowId,v){feeSel(rowId).qty=Math.max(0,nz(v));afterFeeChange();}
-function setFeeInclude(rowId,k,on){feeSel(rowId)[k]=!!on;afterFeeChange();}
+function removeFeeMeter(id){
+  doc.impactFees.meters=doc.impactFees.meters.filter(m=>m.id!==id);
+  afterFeeChange();
+}
+function setFeeQty(id,v){const s=feeSel(id);if(s){s.qty=Math.max(0,nz(v));afterFeeChange();}}
+function setFeeInclude(id,k,on){const s=feeSel(id);if(s){s[k]=!!on;afterFeeChange();}}
+function setFeeMeterLabel(id,v){const s=feeSel(id);if(s){s.label=String(v);afterFeeChange(false);}}
 function setFeeBasis(v){
   doc.impactFees.basis=FSImpactFees.BASES.includes(v)?v:FSImpactFees.DEFAULT_BASIS;
   afterFeeChange();

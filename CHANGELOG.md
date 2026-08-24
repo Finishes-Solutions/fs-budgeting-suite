@@ -44,6 +44,15 @@ schedule and carried onto that same soft-cost line.
   work. Each budget picks which side to carry and **defaults to the high side** —
   a fee estimate that comes in under what the city bills is worse than one that
   comes in over. Impact fees themselves are single-valued and do not move.
+- **Pick your meters, don't hunt for them.** Choose a size from the dropdown and
+  it drops into a short list. Add as many as the project is served by — domestic,
+  irrigation, fire line, one per building — and name each in the **Serves**
+  column so the budget says what it is paying for. The same size can appear
+  twice; those are two meters, and they price as two.
+- **The picker always names size, rate and EDU together**, because size alone is
+  ambiguous: 2", 3", 4", 6", 8" and 10" each appear twice in Waller's table at
+  different continuous-duty rates, and the rate is what sets the fee. A 2" at
+  80 gpm and a 2" at 100 gpm differ by more than $22,000.
 - **Per-meter control.** A project tapping an existing stub can switch off the
   meter or the tap work on any row and keep the impact fee, which is what the
   city charges for capacity either way.
