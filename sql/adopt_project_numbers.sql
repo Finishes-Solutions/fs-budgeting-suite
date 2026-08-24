@@ -171,14 +171,19 @@ BEGIN TRY
 
   -- 2.5 - Indexes: the number is only a join key if it is indexed, and the
   --       item number is only trustworthy if two analyses cannot share one.
+  --       The ProjectNumber indexes are NOT filtered: a filtered index's WHERE
+  --       clause may not reference a computed column (SQL Server refuses with
+  --       "Rewrite the filter expression"), so the NULL rows ride along —
+  --       harmless at this size. UX_InvestmentAnalyses_Item CAN filter,
+  --       because ProjectKey and ItemNumber are both real columns.
   IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_Projects_Number')
     EXEC sp_executesql N'CREATE UNIQUE INDEX UX_Projects_Number ON dbo.Projects (ProjectNumber);';
   IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Budgets_ProjectNumber')
     EXEC sp_executesql N'CREATE INDEX IX_Budgets_ProjectNumber ON dbo.Budgets (ProjectNumber)
-      INCLUDE (Name, Status) WHERE ProjectNumber IS NOT NULL;';
+      INCLUDE (Name, Status);';
   IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_InvestmentAnalyses_ProjectNumber')
     EXEC sp_executesql N'CREATE INDEX IX_InvestmentAnalyses_ProjectNumber
-      ON dbo.InvestmentAnalyses (ProjectNumber) WHERE ProjectNumber IS NOT NULL;';
+      ON dbo.InvestmentAnalyses (ProjectNumber);';
   IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_InvestmentAnalyses_Item')
     EXEC sp_executesql N'CREATE UNIQUE INDEX UX_InvestmentAnalyses_Item
       ON dbo.InvestmentAnalyses (ProjectKey, ItemNumber)

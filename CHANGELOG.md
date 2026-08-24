@@ -31,7 +31,10 @@ House rules for writing one:
   indexed, unique column on projects — and on each linked budget and analysis,
   computed from the link — plus per-project item numbers for analyses. Nothing
   is renamed or re-keyed; run before the release that mints `BDG-####-##`
-  budget ids.
+  budget ids. *(Fixed once after a failed run: the two ProjectNumber indexes
+  were filtered on a computed column, which SQL Server refuses — they are now
+  plain indexes. Columns from the first attempt remain and are reused; the
+  script is idempotent, so re-run the whole file.)*
 - `sql/align_project_numbers.sql` — gives each existing project the number its
   budget already carries (`OP-0005` → `OP-4821`, and so on), so a project and
   its budgets read as one family. Four projects move; no budget is renamed.
