@@ -408,8 +408,8 @@ function analysesCard(analyses, budgets) {
         + '<th>Status</th><th class="r">Purchase Price</th><th class="r">Year-1 NOI</th>'
         + '<th class="no-print"></th></tr></thead><tbody>'
         + analyses.map(function (a) {
-          var inaId = A.displayChildId && a.itemNumber
-            ? A.displayChildId('INA', Number(String(p.projectId).slice(-4)), a.itemNumber) : '';
+          var inaId = A.displayChildId && a.itemNumber && detail && detail.project
+            ? A.displayChildId('INA', Number(String(detail.project.projectId).slice(-4)), a.itemNumber) : '';
           return '<tr class="pj-row" onclick="FSProjects.openAnalysis(\'' + esc(a.analysisId) + '\')">'
             + '<td onclick="event.stopPropagation()">' + star('analysis', a.analysisId, a.name) + '</td>'
             + '<td><div class="pj-name">' + esc(a.name || 'Untitled') + '</div>'
