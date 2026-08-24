@@ -389,12 +389,27 @@ custom provider for sign-in.
   **self-contained** — no `<script src>`, no app CSS, nothing that would 401 for
   the very visitor it exists for. `test/auth-routes.test.js` pins both; nothing
   else can, because `test/mock-api.js` serves every path unguarded.
-- **`ID_RX` lives in four files that change together:**
-  `app/index.html`, `api/budget/index.js`, `api/budget-versions/index.js`, and
-  `test/mock-api.js` — all must accept exactly
-  `OP-####`, `BD-####`, `AS-####`, `TST-####`, **plus an optional `-NN` suffix**
-  (`BD-0001-02`). That is the BUDGET namespace; new budgets are minted `BD-`.
-  The plain form is a base budget and the suffix is an alternate of it.
+- **`ID_RX` lives in five files that change together:**
+  `app/index.html`, `api/budget/index.js`, `api/budget-versions/index.js`,
+  `api/investment-analyses/index.js`, and `test/mock-api.js` — all must accept
+  exactly `OP-####`, `BD-####`, `BDG-####`, `AS-####`, `TST-####`, **plus an
+  optional `-NN` suffix**. That is the BUDGET namespace.
+  **New budgets are minted as identifier-model children: `BDG-<project
+  number>-<item>`** (PROJECT_NUMBERS_GUIDE.md), suggested by
+  `nextChildBudgetId()` so a budget carries its project's number by
+  construction — the number still never DERIVES anything; `ProjectKey` remains
+  the link. Item `-01` is the first budget, not an alternate: `isSiblingItem()`
+  (and the matching `isAlternate()` in `app/index.html` / `test/mock-api.js`)
+  reads only a suffix past `01` as a sibling, which also covers legacy
+  alternates since those started at `-02`. Legacy families keep numbering the
+  old way — `addAlternate()` is family-preserving, because `BD-0002` and
+  `BDG-0002-01` claiming to be siblings would be a lie.
+  Analyses stay GUID-keyed and gain a per-project `ItemNumber`; the shown
+  `INA-####-##` is composed by **one** helper, `displayChildId()` in
+  `app/index.html` (identifier guide rule 7), passed through adapters — never
+  stored, never a join key. `ProjectNumber` columns
+  (`sql/adopt_project_numbers.sql`) are probed as `projectsNumber` /
+  `analysesItemNumber` before use.
   `PROJECT_ID_RX` (`^OP-\d{4}$`) is a separate rule in `app/index.html` and
   `api/shared/projects.js` and must never be widened to accept a budget id.
   `TST-` ids are test data: excluded from views (`sql/views.sql`) and purgeable

@@ -9,6 +9,7 @@
 // instead of silently overwriting someone else's version.
 const { getPool, sql } = require('../shared/db');
 const { getPrincipal } = require('../shared/auth');
+const { features } = require('../shared/schema');
 const { calculateInvestmentAnalysis } = require('../shared/investment/calculate');
 const C = require('../shared/investment/constants');
 const { GUID_RX, analysisContentHash, summaryValues, writeAnnualRows,
@@ -24,8 +25,13 @@ module.exports = async function (context, req) {
   const pool = await getPool();
 
   if (req.method === 'GET') {
+    const gf = await features(pool);
+    const idCols = gf.analysesItemNumber && gf.analysesProjectKey
+      ? 'a.ItemNumber, a.ProjectKey,'
+      : 'CAST(NULL AS INT) AS ItemNumber, CAST(NULL AS VARCHAR(16)) AS ProjectKey,';
     const r = await pool.request().input('id', sql.UniqueIdentifier, id)
       .query(`SELECT a.AnalysisId, a.ProjectId, a.Name, a.Status, a.CurrentVersionNumber,
+                     ${idCols}
                      a.SourceBudgetVersionId, bv.VersionNumber AS SourceBudgetVersionNumber,
                      a.InputDoc, a.NormalizedInputDoc, a.ResultDoc,
                      a.InputSchemaVersion, a.CalculationVersion, a.CreatedAt, a.UpdatedAt,
@@ -40,6 +46,8 @@ module.exports = async function (context, req) {
     const result = parse(a.ResultDoc);
     context.res = jsonRes(200, {
       analysisId: a.AnalysisId.toLowerCase(), projectId: a.ProjectId, name: a.Name,
+      projectKey: a.ProjectKey || null,
+      itemNumber: a.ItemNumber === null || a.ItemNumber === undefined ? null : Number(a.ItemNumber),
       status: a.Status, currentVersionNumber: a.CurrentVersionNumber,
       source: a.SourceBudgetVersionId ? {
         projectId: a.ProjectId, budgetVersionId: a.SourceBudgetVersionId,

@@ -74,6 +74,7 @@ test('a failing probe degrades to all-absent rather than throwing', async () => 
     usersAppRole: false, usersSettingsDoc: false,
     budgetsCreatedBy: false, analysesCreatedBy: false, feedbackTable: false,
     budgetsGuardrail: false, budgetsProjectKey: false, analysesProjectKey: false,
+    projectsNumber: false, analysesItemNumber: false,
     projectsTable: false
   });
 });
@@ -114,6 +115,21 @@ test('the full projects migration lights up every project read path', async () =
   assert.strictEqual(f.budgetsProjectKey, true);
   assert.strictEqual(f.analysesProjectKey, true);
   assert.strictEqual(f.budgetsGuardrail, true);
+  // The identifier-model columns are a LATER migration: the project paths
+  // lighting up must not imply item numbers exist.
+  assert.strictEqual(f.projectsNumber, false);
+  assert.strictEqual(f.analysesItemNumber, false);
+});
+
+test('the identifier-model columns light up with their own migration', async () => {
+  fresh();
+  const f = await schema.features(poolReturning([
+    col('Projects', 'ProjectId'), col('Projects', 'ProjectNumber'),
+    col('Budgets', 'ProjectKey'), col('InvestmentAnalyses', 'ProjectKey'),
+    col('InvestmentAnalyses', 'ItemNumber')
+  ]));
+  assert.strictEqual(f.projectsNumber, true);
+  assert.strictEqual(f.analysesItemNumber, true);
 });
 
 test('the probe is cached, so it does not run per request', async () => {

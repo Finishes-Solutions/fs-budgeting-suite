@@ -12,7 +12,7 @@ const { updateProject, createProject, deleteProject, linkBudgetToProject,
 // TST-#### are throwaway test budgets used to exercise preview environments against
 // this same database. They are real rows; sql/cleanup_test_budgets.sql purges them and
 // the lender package excludes them (see docs/DATA_CONTRACT.md).
-const ID_RX = /^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/;
+const ID_RX = /^(OP|BD|BDG|AS|TST)-\d{4}(-\d{2})?$/;
 
 const DUP_KEY = new Set([2627, 2601]);   // unique constraint / unique index violation
 
@@ -65,8 +65,16 @@ module.exports = async function (context, req) {
         body: JSON.stringify({ error: 'unauthenticated', message: 'Sign in first.' }) };
       return;
     }
+    // With a project, the suggestion is the identifier model's child id —
+    // BDG-<number>-<next item> — so a budget carries its project's number by
+    // construction. Without one (offline dialog, no project chosen yet), the
+    // flat lowest-free BD-#### survives as the fallback.
+    const forProject = String((req.query && req.query.project) || '').toUpperCase();
+    const suggested = PROJECT_ID_RX.test(forProject)
+      ? await P.nextChildBudgetId(pool, forProject)
+      : await P.nextBudgetId(pool);
     context.res = { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-      body: JSON.stringify({ budgetId: await P.nextBudgetId(pool) }) };
+      body: JSON.stringify({ budgetId: suggested }) };
     return;
   }
 
@@ -239,7 +247,8 @@ module.exports = async function (context, req) {
         context.res = { status: 409, headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ error: 'budget_id_taken', field: 'projectId',
             message: 'Budget ' + id + ' already exists. Choose another Budget ID.',
-            suggestion: await P.nextBudgetId(pool) }) };
+            suggestion: projectKey ? await P.nextChildBudgetId(pool, projectKey)
+                                   : await P.nextBudgetId(pool) }) };
         return;
       }
       if (attempt === 0 && DUP_KEY.has(e.number)) continue;

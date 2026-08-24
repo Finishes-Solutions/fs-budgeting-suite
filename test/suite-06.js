@@ -46,16 +46,19 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('BD-0001 still accepted', !(await bad('BD-0001')));
  ok('AS-0001 still accepted', !(await bad('AS-0001')));
  ok('TST-9999 still accepted', !(await bad('TST-9999')));
- // The field is the BUDGET namespace. New budgets are minted BD-####; the
- // legacy prefixes are still accepted so an older budget can be opened and
- // saved, and the copy says which is which.
- ok('inline error text names the budget format',
-    /BD-####/.test(await p.locator('#pIdErr').textContent()),
+ // The field is the BUDGET namespace. New budgets are minted under the
+ // identifier model as BDG-####-## children; the legacy prefixes are still
+ // accepted so an older budget can be opened and saved, and the copy says
+ // which is which.
+ ok('inline error text names the budget formats, new model first',
+    /BDG-####-##/.test(await p.locator('#pIdErr').textContent())
+      && /BD-####/.test(await p.locator('#pIdErr').textContent()),
     (await p.locator('#pIdErr').textContent()).trim());
  ok('and the hint keeps the two namespaces apart',
-    /Budget IDs are BD-####/.test(await p.locator('#page-input .card-hd .eyebrow').first().textContent())
+    /Budget IDs are BDG-####-##/.test(await p.locator('#page-input .card-hd .eyebrow').first().textContent())
       && /projects are OP-####/.test(await p.locator('#page-input .card-hd .eyebrow').first().textContent()),
     (await p.locator('#page-input .card-hd .eyebrow').first().textContent()).trim());
+ ok('a BDG child id is accepted by the validator', !(await bad('BDG-0042-01')));
 
  // --- auto dot no longer shifts the numbers
  await p.fill('#pId','TST-9999');

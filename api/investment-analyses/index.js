@@ -19,7 +19,7 @@ const { features } = require('../shared/schema');
 // to the same project the budget belongs to.
 const D = require('../shared/investment/defaults');
 
-const ID_RX = /^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/;
+const ID_RX = /^(OP|BD|BDG|AS|TST)-\d{4}(-\d{2})?$/;
 const FULL_VISIBILITY_ROLES = new Set(['director', 'super_admin']);
 
 module.exports = async function (context, req) {
@@ -44,6 +44,12 @@ module.exports = async function (context, req) {
 
     const projectId = (req.query.projectId || '').toUpperCase();
     if (projectId && !ID_RX.test(projectId)) { context.res = jsonRes(400, { error: 'bad_request', message: 'Invalid project ID filter.' }); return; }
+    // Item numbers and the project link arrive with sql/adopt_project_numbers.sql
+    // and sql/migrate_projects_and_guardrails.sql; before they run, the list is
+    // exactly what it has always been.
+    const listItemCol = f.analysesItemNumber && f.analysesProjectKey
+      ? 'a.ItemNumber, a.ProjectKey,'
+      : 'CAST(NULL AS INT) AS ItemNumber, CAST(NULL AS VARCHAR(16)) AS ProjectKey,';
     const rq = pool.request();
     let where = 'a.IsDeleted = 0';
     if (projectId) { rq.input('pid', sql.VarChar(16), projectId); where += ' AND a.ProjectId = @pid'; }
@@ -53,6 +59,7 @@ module.exports = async function (context, req) {
     }
     const r = await rq.query(
       `SELECT a.AnalysisId, a.ProjectId, a.Name, a.Status, a.CurrentVersionNumber,
+              ${listItemCol}
               a.SourceBudgetVersionId, bv.VersionNumber AS SourceBudgetVersionNumber,
               (SELECT MAX(v2.VersionNumber) FROM dbo.BudgetVersions AS v2
                 WHERE v2.ProjectId = a.ProjectId) AS BudgetCurrentVersionNumber,
@@ -67,6 +74,10 @@ module.exports = async function (context, req) {
        ORDER BY a.UpdatedAt DESC`);
     context.res = jsonRes(200, r.recordset.map(x => ({
       analysisId: x.AnalysisId.toLowerCase(), projectId: x.ProjectId, name: x.Name,
+      // The identifier-model display id (INA-0042-03) is COMPUTED from these
+      // two, in one client helper — never stored, never a join key.
+      projectKey: x.ProjectKey || null,
+      itemNumber: x.ItemNumber === null || x.ItemNumber === undefined ? null : Number(x.ItemNumber),
       status: x.Status, currentVersionNumber: x.CurrentVersionNumber,
       sourceBudgetVersionNumber: x.SourceBudgetVersionNumber,
       // The budget's CURRENT version, so the list can flag an analysis whose
@@ -213,8 +224,19 @@ module.exports = async function (context, req) {
   const analysisFeatures = await features(pool);
   const pkCol = analysisFeatures.analysesProjectKey ? ', ProjectKey' : '';
   const pkVal = analysisFeatures.analysesProjectKey ? ', @pkey' : '';
+  // The item number — INA-0042-03's "03" — is allocated at creation, once,
+  // from the project's current highest, deleted analyses included so a number
+  // is never re-issued. UX_InvestmentAnalyses_Item is the backstop for two
+  // concurrent creations; the loser recomputes once and retries, the same
+  // pattern the budget save uses for version numbers.
+  const wantsItem = analysisFeatures.analysesItemNumber && analysisFeatures.analysesProjectKey && projectKey;
+  const itemCol = wantsItem ? ', ItemNumber' : '';
+  const itemVal = wantsItem
+    ? `, (SELECT ISNULL(MAX(x.ItemNumber), 0) + 1 FROM dbo.InvestmentAnalyses AS x WHERE x.ProjectKey = @pkey)`
+    : '';
+  const INS_DUP = new Set([2627, 2601]);
 
-  const r = await pool.request()
+  const insert = () => pool.request()
     .input('pid', sql.VarChar(16), projectId)
     .input('pkey', sql.VarChar(16), projectKey)
     .input('name', sql.NVarChar(200), input.analysisName)
@@ -225,13 +247,21 @@ module.exports = async function (context, req) {
     .input('uname', sql.NVarChar(200), userName)
     .query(`INSERT INTO dbo.InvestmentAnalyses
               (ProjectId, Name, SourceBudgetVersionId, InputDoc, NormalizedInputDoc, ResultDoc,
-               ContentHash, CalculationVersion, CreatedById, CreatedByName${pkCol})
-            OUTPUT INSERTED.AnalysisId
+               ContentHash, CalculationVersion, CreatedById, CreatedByName${pkCol}${itemCol})
+            OUTPUT INSERTED.AnalysisId${wantsItem ? ', INSERTED.ItemNumber' : ''}
             VALUES (@pid, @name, @sbv, @input, N'{}', N'{}',
-                    REPLICATE('0', 64), @calc, @uid, @uname${pkVal});`);
+                    REPLICATE('0', 64), @calc, @uid, @uname${pkVal}${itemVal});`);
+  let r;
+  try { r = await insert(); }
+  catch (e) {
+    if (!INS_DUP.has(e.number)) throw e;
+    r = await insert();
+  }
   const analysisId = r.recordset[0].AnalysisId.toLowerCase();
+  const itemNumber = wantsItem ? Number(r.recordset[0].ItemNumber) : null;
   context.res = jsonRes(201, {
     ok: true, analysisId, input,
+    projectKey: projectKey || null, itemNumber,
     currentVersionNumber: 0,
     source: input.source ? {
       projectId, budgetVersionId: sourceBudgetVersionId,

@@ -42,7 +42,7 @@ const { features } = require('./schema');
 const { recordActivity } = require('./users');
 
 const PROJECT_ID_RX = /^OP-\d{4}$/;
-const BUDGET_ID_RX = /^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/;
+const BUDGET_ID_RX = /^(OP|BD|BDG|AS|TST)-\d{4}(-\d{2})?$/;
 // The prefix new budgets are minted under. Legacy budgets keep whatever
 // prefix they were created with; nothing renames them.
 const BUDGET_PREFIX = 'BD';
@@ -61,7 +61,15 @@ const CONVERTED = 'Converted to Project';
 // not, produce a project id.
 function budgetBaseOf(id) {
   const s = String(id || '').toUpperCase();
-  return /^(OP|BD|AS|TST)-\d{4}-\d{2}$/.test(s) ? s.slice(0, -3) : s;
+  return /^(OP|BD|BDG|AS|TST)-\d{4}-\d{2}$/.test(s) ? s.slice(0, -3) : s;
+}
+// The item suffix under the identifier model. BDG-0042-01 is ITEM 1 of
+// project 42 — the first budget, not an "alternate" of anything — so only a
+// suffix past 01 reads as a sibling. Legacy alternates start at -02, which is
+// why the same rule covers both eras.
+function isSiblingItem(id) {
+  const m = /-(\d{2})$/.exec(String(id || '').toUpperCase());
+  return !!m && m[1] !== '01';
 }
 
 const jsonRes = (status, body) => ({
@@ -96,6 +104,28 @@ async function nextBudgetId(pool) {
     if (!taken.has(id)) return id;
   }
   return null;
+}
+
+// The next BUDGET id under a project, in the identifier model's child shape:
+// BDG-<project number>-<item>. The item counts BDG budgets on that number,
+// deleted ones included — a budget id stays reserved because its version
+// history hangs off it. Legacy BD-/OP-/AS- budgets on the same project keep
+// their ids and do not consume items. Falls back to the flat BD-#### scan in
+// the (theoretical) 99-item case rather than failing the dialog.
+async function nextChildBudgetId(pool, projectKey) {
+  const key = String(projectKey || '').toUpperCase();
+  if (!PROJECT_ID_RX.test(key)) return null;
+  const digits = key.slice(-4);
+  const r = await pool.request()
+    .input('stem', sql.VarChar(16), 'BDG-' + digits + '-%')
+    .query('SELECT ProjectId FROM dbo.Budgets WHERE ProjectId LIKE @stem');
+  let max = 0;
+  r.recordset.forEach(x => {
+    const m = /^BDG-\d{4}-(\d{2})$/.exec(String(x.ProjectId).toUpperCase());
+    if (m) max = Math.max(max, +m[1]);
+  });
+  if (max >= 99) return nextBudgetId(pool);
+  return 'BDG-' + digits + '-' + String(max + 1).padStart(2, '0');
 }
 
 // Create a project. This is the ONLY way a project comes into existence now:
@@ -306,6 +336,9 @@ async function listProjects(pool, opts) {
 function shapeProject(x) {
   return {
     projectId: x.ProjectId, name: x.Name || '', address: x.Address || '',
+    // The identifier model's actual identity: the NUMBER. Same derivation as
+    // the persisted ProjectNumber column, so the two cannot disagree.
+    projectNumber: Number(String(x.ProjectId).slice(-4)),
     // budgetTypes, not type: see the query above.
     budgetTypes: x.BudgetTypes || '',
     status: x.Status, primaryBudgetId: x.PrimaryBudgetId || null,
@@ -354,6 +387,7 @@ async function getProject(pool, projectId) {
        ORDER BY LEN(b.ProjectId), b.ProjectId`),
     pool.request().input('pid', sql.VarChar(16), key).query(
       `SELECT a.AnalysisId, a.ProjectId, a.Name, a.Status, a.CurrentVersionNumber,
+              ${f.analysesItemNumber ? 'a.ItemNumber,' : 'CAST(NULL AS INT) AS ItemNumber,'}
               a.PurchasePrice, a.Year1NOI, a.InitialEquity, a.FinalYearEquityIRR,
               a.CreatedById, a.CreatedByName, a.UpdatedAt,
               bv.VersionNumber AS SourceBudgetVersionNumber
@@ -385,7 +419,7 @@ async function getProject(pool, projectId) {
       // An alternate is a budget carrying the -NN suffix. It is no longer
       // "an id that differs from the project's", because a budget id and a
       // project id are different namespaces and always differ.
-      isAlternate: budgetBaseOf(x.ProjectId) !== x.ProjectId,
+      isAlternate: isSiblingItem(x.ProjectId),
       isPrimary: x.ProjectId === primaryId,
       guardrailStatus: x.GuardrailStatus || null,
       guardrailBreachCount: x.GuardrailBreachCount === null ? null : Number(x.GuardrailBreachCount),
@@ -394,6 +428,7 @@ async function getProject(pool, projectId) {
     })),
     analyses: analyses.recordset.map(x => ({
       analysisId: x.AnalysisId.toLowerCase(), projectId: x.ProjectId, name: x.Name,
+      itemNumber: x.ItemNumber === null || x.ItemNumber === undefined ? null : Number(x.ItemNumber),
       status: x.Status, currentVersionNumber: x.CurrentVersionNumber,
       sourceBudgetVersionNumber: x.SourceBudgetVersionNumber,
       purchasePrice: x.PurchasePrice === null ? null : Number(x.PurchasePrice),
@@ -502,6 +537,7 @@ async function updateProject(pool, projectId, body, principal) {
 
 module.exports = {
   PROJECT_STATUSES, CONVERTED, PROJECT_ID_RX, BUDGET_ID_RX, BUDGET_PREFIX,
-  budgetBaseOf, nextProjectId, nextBudgetId, createProject, deleteProject,
+  budgetBaseOf, isSiblingItem, nextProjectId, nextBudgetId, nextChildBudgetId,
+  createProject, deleteProject,
   linkBudgetToProject, listProjects, getProject, updateProject, jsonRes
 };

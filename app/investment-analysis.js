@@ -504,6 +504,10 @@
       const r = await A.api('investment-analysis/' + id);
       st.id = r.analysisId; st.input = r.input; st.result = r.result;
       st.status = r.status || 'Draft';
+      // The identifier-model identity: which project's number this analysis
+      // hangs on, and which item it is. Display only — the GUID stays the key.
+      st.projectKey = r.projectKey || null;
+      st.itemNumber = r.itemNumber || null;
       st.source = r.source; st.loadedVersion = r.currentVersionNumber;
       st.dirty = false; st.stale = false; st.busy = ''; st.step = r.result ? 6 : 1;
       st.viewingVersion = null; st.conflict = null; st.errors = {};
@@ -687,6 +691,15 @@
   /* The source budget, as a real link to its Inputs page rather than plain
      text. The id comes from the analysis's own source record, never a
      constant, so it always points at the budget this analysis was cut from. */
+  /* The INA-0042-03 display id, when the analysis carries the identity. It is
+     composed by the app's single displayChildId helper (identifier guide,
+     rule 7) — this only reads state. */
+  function inaDisplay() {
+    if (!A.displayChildId || !st.projectKey || !st.itemNumber) return '';
+    const num = Number(String(st.projectKey).slice(-4));
+    return A.displayChildId('INA', num, st.itemNumber);
+  }
+
   function sourceBudgetLink(projectId) {
     const pid = String(projectId || '');
     if (!pid) return '';
@@ -869,7 +882,7 @@
         <div><button class="btn-back" onclick="FSInvestmentUI.backToList()"
             aria-label="Back to Investment Analyses" title="Back to Investment Analyses">&larr; Back</button>
           <h1 id="invTitle">${esc(inp.analysisName)}</h1>
-          <div class="sub">${st.source
+          <div class="sub">${inaDisplay() ? '<span class="mono">' + esc(inaDisplay()) + '</span> · ' : ''}${st.source
             ? 'From Budget ' + sourceBudgetLink(st.source.projectId)
               + ' <span class="inv-vsub">v' + esc(st.source.budgetVersionNumber) + '</span>'
               + driftBadge()

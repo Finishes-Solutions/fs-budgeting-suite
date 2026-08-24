@@ -44,6 +44,8 @@ const invSummary = a => {
   const u = uid ? mockUsers.get(uid) : null;
   return {
     analysisId: a.id, projectId: a.projectId, name: a.name, status: a.status,
+    projectKey: a.projectKey || null,
+    itemNumber: a.itemNumber === undefined ? null : a.itemNumber,
     currentVersionNumber: a.currentVersionNumber,
     sourceBudgetVersionNumber: a.sourceBudgetVersionNumber,
     budgetCurrentVersionNumber: (function () {
@@ -86,7 +88,13 @@ const PROJECT_ID_RX = /^OP-\d{4}$/;
 // to number alternates. It is not, and must not become, a project id.
 const budgetBaseOf = id => {
   const v = String(id || '').toUpperCase();
-  return /^(OP|BD|AS|TST)-\d{4}-\d{2}$/.test(v) ? v.slice(0, -3) : v;
+  return /^(OP|BD|BDG|AS|TST)-\d{4}-\d{2}$/.test(v) ? v.slice(0, -3) : v;
+};
+// Item 01 is the first budget, not an "alternate"; legacy alternates start at
+// -02, so one rule covers both eras. Kept in step with api/shared/projects.js.
+const isSiblingItem = id => {
+  const m = /-(\d{2})$/.exec(String(id || '').toUpperCase());
+  return !!m && m[1] !== '01';
 };
 function nextProjectId() {
   for (let i = 1; i <= 9999; i++) {
@@ -94,6 +102,19 @@ function nextProjectId() {
     if (!projects.has(id)) return id;
   }
   return null;
+}
+// The identifier model's child id: BDG-<project number>-<next item>, counting
+// deleted budgets too — a budget number is never re-issued. Behaviour-parallel
+// with nextChildBudgetId in api/shared/projects.js.
+function nextChildBudgetId(projectKey) {
+  const digits = String(projectKey).slice(-4);
+  let max = 0;
+  for (const id of budgets.keys()) {
+    const m = new RegExp('^BDG-' + digits + '-(\\d{2})$').exec(id);
+    if (m) max = Math.max(max, +m[1]);
+  }
+  if (max >= 99) return nextBudgetId();
+  return 'BDG-' + digits + '-' + String(max + 1).padStart(2, '0');
 }
 function nextBudgetId() {
   for (let i = 1; i <= 9999; i++) {
@@ -118,6 +139,7 @@ function shapeProject(p) {
   const primary = bs.find(b => b.meta.projectId === p.primaryBudgetId) || bs[0] || null;
   const types = [...new Set(bs.map(b => b.meta.type).filter(Boolean))].sort();
   const out = Object.assign({}, p, {
+    projectNumber: Number(String(p.projectId).slice(-4)),
     // A project has no type of its own: it reports what its budgets are.
     budgetTypes: types.join(', '),
     budgetCount: bs.length, analysisCount: projectAnalyses(p.projectId).length,
@@ -687,7 +709,7 @@ http.createServer((req, res) => {
           // An alternate is a budget carrying the -NN suffix. It is no longer
           // "an id that differs from the project's": those are different
           // namespaces now, so they always differ.
-          isAlternate: budgetBaseOf(b.meta.projectId) !== b.meta.projectId,
+          isAlternate: isSiblingItem(b.meta.projectId),
           isPrimary: b.meta.projectId === (bs.find(x => x.meta.projectId === pr.primaryBudgetId)
             ? pr.primaryBudgetId : (bs[0] ? bs[0].meta.projectId : null)),
           guardrailStatus: b.guardrailStatus || null,
@@ -718,8 +740,11 @@ http.createServer((req, res) => {
     const bScope = String(q.get('scope') || '');
     // The next free BD-####, answered before the id check because the {id}
     // segment is only a placeholder on this scope.
-    if (req.method === 'GET' && bScope === 'next-budget-id')
-      return json(res, 200, { budgetId: nextBudgetId() });
+    if (req.method === 'GET' && bScope === 'next-budget-id') {
+      const forProject = String(q.get('project') || '').toUpperCase();
+      return json(res, 200, { budgetId: PROJECT_ID_RX.test(forProject)
+        ? nextChildBudgetId(forProject) : nextBudgetId() });
+    }
 
     // ?scope=project — create, update (including Make Primary) and soft
     // delete, behaviour-parallel with api/shared/projects.js.
@@ -814,7 +839,7 @@ http.createServer((req, res) => {
     }
 
     // Must stay in step with ID_RX in api/budget/index.js and app/index.html.
-    if (!/^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/.test(id)) { res.writeHead(400); return res.end('Invalid project ID'); }
+    if (!/^(OP|BD|BDG|AS|TST)-\d{4}(-\d{2})?$/.test(id)) { res.writeHead(400); return res.end('Invalid project ID'); }
 
     const rec = budgets.get(id);
     const live = rec && !rec.deleted ? rec : null;
@@ -896,7 +921,7 @@ http.createServer((req, res) => {
       if (wantsCreate && budgets.has(id)) {
         return json(res, 409, { error: 'budget_id_taken', field: 'projectId',
           message: 'Budget ' + id + ' already exists. Choose another Budget ID.',
-          suggestion: nextBudgetId() });
+          suggestion: wantsKey ? nextChildBudgetId(wantsKey) : nextBudgetId() });
       }
       // Behaviour-parallel with api/budget/index.js: the rails are re-evaluated
       // from the SUBMITTED document and refuse the write, never trusting a
@@ -1075,12 +1100,21 @@ http.createServer((req, res) => {
       }
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
-      invAnalyses.set(id, { id, projectId, projectKey, name: input.analysisName, status: 'Draft',
+      // The item number, allocated once at creation from the project's current
+      // highest — deleted analyses included, so a number is never re-issued.
+      let itemNumber = null;
+      if (projectKey) {
+        itemNumber = 1 + [...invAnalyses.values()]
+          .filter(a => a.projectKey === projectKey)
+          .reduce((m, a) => Math.max(m, a.itemNumber || 0), 0);
+      }
+      invAnalyses.set(id, { id, projectId, projectKey, itemNumber, name: input.analysisName, status: 'Draft',
         sourceBudgetVersionNumber, input, result: null, currentVersionNumber: 0,
         deleted: false, versions: [], createdAt: now, updatedAt: now,
         createdById: principal.clientPrincipal.userId,
         createdByName: principal.clientPrincipal.userDetails });
-      return json(res, 201, { ok: true, analysisId: id, input, currentVersionNumber: 0,
+      return json(res, 201, { ok: true, analysisId: id, input,
+        projectKey: projectKey || null, itemNumber, currentVersionNumber: 0,
         source: input.source ? { projectId, budgetVersionId: sourceBudgetVersionNumber,
           budgetVersionNumber: sourceBudgetVersionNumber } : null });
     });
@@ -1244,6 +1278,8 @@ http.createServer((req, res) => {
     if (req.method === 'GET') {
       if (!live) return json(res, 404, { error: 'not_found', message: 'Not found' });
       return json(res, 200, { analysisId: id, projectId: live.projectId, name: live.name,
+        projectKey: live.projectKey || null,
+        itemNumber: live.itemNumber === undefined ? null : live.itemNumber,
         status: live.status, currentVersionNumber: live.currentVersionNumber,
         source: live.sourceBudgetVersionNumber ? (function () {
           // The budget's CURRENT version, so the client can offer a re-sync.

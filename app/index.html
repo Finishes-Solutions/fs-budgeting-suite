@@ -1122,12 +1122,12 @@ th.sortable.sorted{color:var(--ink-900)}
   <div class="wf-steps no-print" data-wf-pills></div>
 
   <section class="card">
-    <div class="card-hd"><h2>Budget</h2><span class="eyebrow">Budget IDs are BD-#### · projects are OP-####</span></div>
+    <div class="card-hd"><h2>Budget</h2><span class="eyebrow">Budget IDs are BDG-####-## (legacy BD-####) · projects are OP-####</span></div>
     <div class="card-bd">
       <div class="grid g4">
         <label class="fld"><span class="lab">Budget ID</span>
           <input type="text" id="pId" placeholder="BD-0001" oninput="validateId();markDirty()" style="font-family:var(--fm);text-transform:uppercase">
-          <div class="fld-err" id="pIdErr" style="display:none">Must match BD-#### (or a legacy OP-/AS-/TST-####)</div></label>
+          <div class="fld-err" id="pIdErr" style="display:none">Must match BDG-####-## or BD-#### (or a legacy OP-/AS-/TST-####)</div></label>
         <label class="fld"><span class="lab">Budget Name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
         <!-- Which project this budget belongs to. Read-only because it is the
@@ -1763,24 +1763,30 @@ th.sortable.sorted{color:var(--ink-900)}
           work won rather than a figure that drifts.</div>
 
         <h3 id="help-ids">Project and Budget IDs</h3>
-        <p>These are <b>two separate namespaces</b>, and keeping them apart is the point. A project has its own ID;
-          a budget has its own ID and says which project it belongs to. Neither is ever derived from the other.</p>
+        <p><b>A project is a number.</b> Everything else — its budgets, its investment analyses — is a labelled
+          attachment to that number. <code>0042</code> is the project; <code>OP-0042</code> is how it reads on
+          screen; <code>BDG-0042-01</code> is its first budget; <code>INA-0042-01</code> is its first investment
+          analysis. The prefix says what kind of record you are looking at; the number says which project it
+          belongs to; the last two digits count the items within it.</p>
         <table class="tbl"><tbody>
-          <tr><td>OP-####</td><td><b>Project</b> ID — four digits, e.g. <code>OP-0001</code>. This is the only
-            shape a project ID takes, and it must be unique <b>among live projects</b>: deleting a project frees
-            its number for a future one, but two live projects never share it.</td></tr>
-          <tr><td>BD-####</td><td><b>Budget</b> ID — four digits, e.g. <code>BD-0001</code>. New budgets are
-            created under this prefix.</td></tr>
-          <tr><td>OP-#### / AS-#### / TST-####</td><td>Older <b>budget</b> IDs. They still open and save; nothing
-            was renamed.</td></tr>
-          <tr><td>TST-####</td><td>Test budget. Use <code>TST-9999</code> when checking a preview build.</td></tr>
-          <tr><td>…-##</td><td>An <b>alternate budget</b> of the budget it copies — <code>BD-0001-02</code>,
-            <code>BD-0001-03</code>. Created from the project page, never typed by hand.</td></tr>
+          <tr><td>OP-####</td><td><b>Project</b> — e.g. <code>OP-0042</code>. Unique <b>among live projects</b>:
+            deleting a project frees its number for a future one, but two live projects never share it.</td></tr>
+          <tr><td>BDG-####-##</td><td><b>Budget</b> — project number + item number, e.g. <code>BDG-0042-01</code>,
+            <code>BDG-0042-02</code>. The ID is suggested automatically from the project you pick, so a budget
+            carries its project's number without anyone lining them up by hand.</td></tr>
+          <tr><td>INA-####-##</td><td><b>Investment analysis</b> — same shape, shown wherever the analysis
+            appears. A display label: the record itself is tracked internally, so this can never collide.</td></tr>
+          <tr><td>BD-#### / OP-#### / AS-####</td><td>Older <b>budget</b> IDs from before the numbering model,
+            including their <code>-02</code>… alternates. They open and save exactly as before; nothing was
+            renamed, and their families keep numbering the old way.</td></tr>
+          <tr><td>TST-####</td><td>Test data. Its own sequence — a test record never consumes a project number.
+            Use <code>TST-9999</code> when checking a preview build.</td></tr>
         </tbody></table>
-        <p><code>BD-0001</code> and <code>BD-0001-02</code> are two budgets, both belonging to one project such as
-          <code>OP-0007</code>. The suffix numbers alternates of a budget and nothing else — it is not how the
-          project is found. An ID is the primary key in the database and in every downstream system, so it cannot
-          be corrected by renaming later without creating a second record: get it right at the start.</p>
+        <p><code>BDG-0042-01</code> and <code>BDG-0042-02</code> are two budgets on project <code>0042</code> —
+          the second is not an "alternate" of the first, just the next item. The number is allocation order, not
+          importance: sort by dates, never by the number. An ID is a database key, so it cannot be corrected by
+          renaming later without creating a second record — which is why new IDs are computed rather than
+          typed.</p>
         <div class="callout warn"><b>Test budgets are real rows.</b> Preview builds share the production database,
           so a <code>TST-</code> budget is written to the same tables as live projects. It is flagged with a Test
           badge everywhere it appears — delete it when you are finished.</div>
@@ -2529,9 +2535,9 @@ th.sortable.sorted{color:var(--ink-900)}
       <div class="set-lab" style="margin-top:16px">Budget</div>
       <div class="set-grid">
         <label class="fld wide"><span class="lab">Budget ID</span>
-          <input type="text" id="nbId" placeholder="BD-0001" autocomplete="off"
+          <input type="text" id="nbId" placeholder="BDG-0042-01" autocomplete="off"
             style="font-family:var(--fm);text-transform:uppercase"
-            aria-describedby="nbIdErr" oninput="nbValidate()">
+            aria-describedby="nbIdErr" oninput="this.dataset.touched='1';nbValidate()">
           <span class="fld-err" id="nbIdErr" style="display:none"></span></label>
         <label class="fld wide"><span class="lab">Budget Name</span>
           <input type="text" id="nbName" placeholder="Phase 1" aria-describedby="nbNameErr" oninput="nbValidate()">
@@ -3374,7 +3380,23 @@ function nbProjectPicked(){
     if(!n.dataset.touched)n.value=p.name||'';
     if(!a.dataset.touched)a.value=p.address||'';
   }
+  nbSuggestId();
   nbValidate();
+}
+/* The suggested Budget ID is the identifier model's child id when a project
+   is chosen — BDG-<project number>-<next item> — so a budget carries its
+   project's number by construction. The field stays editable: TST- test ids
+   are typed on purpose, and offline nothing can be suggested at all. A typed
+   value is never overwritten. */
+async function nbSuggestId(){
+  const f=document.getElementById('nbId');
+  if(f.dataset.touched)return;
+  const proj=document.getElementById('nbProject').value;
+  try{
+    const r=await api('budget/BD-0000?scope=next-budget-id'
+      +(proj?'&project='+encodeURIComponent(proj):''));
+    if(r&&r.budgetId&&!f.dataset.touched){f.value=r.budgetId;nbValidate();}
+  }catch(e){/* offline: type one instead */}
 }
 function nbFieldErr(id,msg){
   const f=document.getElementById(id),e=document.getElementById(id+'Err');
@@ -3391,7 +3413,7 @@ function nbValidate(show){
   const needProject=!nbProjectsFailed;
   let ok=true;
   ok=nbFieldErr('nbProject',needProject&&!proj&&show?'Choose the project this budget belongs to.':'')&&ok;
-  ok=nbFieldErr('nbId',idv&&!ID_RX.test(idv)?'Use a budget ID like BD-0001.'
+  ok=nbFieldErr('nbId',idv&&!ID_RX.test(idv)?'Use a budget ID like BDG-0042-01 (or legacy BD-0001).'
       :(!idv&&show?'Budget ID is required.':''))&&ok;
   ok=nbFieldErr('nbName',!name&&show?'Budget Name is required.':'')&&ok;
   const done=(!needProject||!!proj)&&ID_RX.test(idv)&&!!name;
@@ -3408,15 +3430,11 @@ async function pickNewBudget(key){
   ['nbName','nbAddress'].forEach(id=>{
     document.getElementById(id).oninput=function(){this.dataset.touched='1';nbValidate();};
   });
-  document.getElementById('nbId').value='';
+  const idf=document.getElementById('nbId');
+  idf.value='';delete idf.dataset.touched;
   nbShowStep(2);
   paintNbProjects();
-  // A suggested next free BD-####. Only a suggestion: the field is editable
-  // and the API refuses a duplicate for real.
-  try{
-    const r=await api('budget/BD-0000?scope=next-budget-id');
-    if(r&&r.budgetId&&!document.getElementById('nbId').value)document.getElementById('nbId').value=r.budgetId;
-  }catch(e){/* offline: type one instead */}
+  await nbSuggestId();
   nbValidate();
   document.getElementById('nbProject').focus();
 }
@@ -3612,13 +3630,33 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>ESC_MAP[c]);
    ID_RX lives in four files that change together: app/index.html,
    api/budget/index.js, api/budget-versions/index.js, test/mock-api.js.
    PROJECT_ID_RX likewise pairs with api/shared/projects.js. */
-const ID_RX=/^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/;
+const ID_RX=/^(OP|BD|BDG|AS|TST)-\d{4}(-\d{2})?$/;
 const PROJECT_ID_RX=/^OP-\d{4}$/;
 function budgetBaseOf(id){
   const s=String(id||'').toUpperCase();
-  return /^(OP|BD|AS|TST)-\d{4}-\d{2}$/.test(s)?s.slice(0,-3):s;
+  return /^(OP|BD|BDG|AS|TST)-\d{4}-\d{2}$/.test(s)?s.slice(0,-3):s;
 }
-function isAlternate(id){return /^(OP|BD|AS|TST)-\d{4}-\d{2}$/.test(String(id||'').toUpperCase());}
+/* Under the identifier model BDG-0042-01 is ITEM 1 of project 42 — the first
+   budget, not an "alternate" of anything — so only a suffix past 01 reads as
+   a sibling. Legacy alternates started at -02, so one rule covers both eras. */
+function isAlternate(id){
+  const m=/-(\d{2})$/.exec(String(id||'').toUpperCase());
+  return !!m&&m[1]!=='01';
+}
+/* THE display-id expression — prefix + padded project number + padded item.
+   One function on purpose (identifier guide, rule 7): every INA-0042-03 and
+   BDG-0042-01 shown anywhere is composed here, so the padding cannot fork.
+   Presentation only — never stored, never a join key. */
+function displayChildId(prefix,projectNumber,item){
+  if(projectNumber===null||projectNumber===undefined||!item)return '';
+  return prefix+'-'+String(projectNumber).padStart(4,'0')+'-'+String(item).padStart(2,'0');
+}
+/* A project's number, off its id — the same derivation as the database's
+   persisted ProjectNumber column. */
+function projectNumberOf(projectId){
+  const s=String(projectId||'').toUpperCase();
+  return PROJECT_ID_RX.test(s)?Number(s.slice(-4)):null;
+}
 const isTest=id=>/^TST-/.test(id||'');
 /* Stable per-line identity. Array positions shift whenever a line is inserted,
    moved between groups or batch-deleted, so anything that has to outlive a
@@ -3752,6 +3790,9 @@ async function initAuth(){
     // The shared dialog plumbing, so a popup built in projects.js is centered,
     // dimmed, focus-managed and unmounted on navigation like every other one.
     openDialog:openDialog, closeDialog:closeDialog,
+    // THE display-id expression (identifier guide rule 7) — composed in one
+    // place so INA-0042-03 cannot be padded two ways.
+    displayChildId:displayChildId,
     // Creating a budget from a project starts with that project chosen.
     newBudget:pid=>openNewBudget(pid),
     // An alternate starts as a copy of the budget it is an alternative to.
@@ -7589,6 +7630,7 @@ function endBoot(){
   try{
     if(window.FSInvestmentUI)FSInvestmentUI.init({
       api:invApi,toast,esc,
+      displayChildId:displayChildId,
       navigate:h=>{location.hash=h;},
       // Same print pipeline as the budget's exportPDF(): a purpose-made
       // document in #printDoc, never the app UI.

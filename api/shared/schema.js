@@ -35,6 +35,9 @@ async function probe(pool) {
     budgetsGuardrail:  has.has('Budgets.GuardrailStatus') && has.has('Budgets.GuardrailBreachCount'),
     budgetsProjectKey: has.has('Budgets.ProjectKey'),
     analysesProjectKey: has.has('InvestmentAnalyses.ProjectKey'),
+    // sql/adopt_project_numbers.sql — the identifier model's first step here.
+    projectsNumber: has.has('Projects.ProjectNumber'),
+    analysesItemNumber: has.has('InvestmentAnalyses.ItemNumber'),
     // A whole table rather than a column: any column of it proves it exists.
     feedbackTable:     has.has('Feedback.FeedbackId'),
     projectsTable:     has.has('Projects.ProjectId')
@@ -54,6 +57,7 @@ async function features(pool) {
       usersAppRole: false, usersSettingsDoc: false,
       budgetsCreatedBy: false, analysesCreatedBy: false, feedbackTable: false,
       budgetsGuardrail: false, budgetsProjectKey: false, analysesProjectKey: false,
+      projectsNumber: false, analysesItemNumber: false,
       projectsTable: false
     }))
     .finally(() => { inflight = null; });

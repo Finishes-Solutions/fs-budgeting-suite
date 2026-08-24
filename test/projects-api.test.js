@@ -155,7 +155,8 @@ test('a new budget will not overwrite an existing one', async () => {
   const clash = await saveBudget('BD-0110', 'OP-0110', { name: 'Impostor' });
   assert.equal(clash.status, 409);
   assert.equal(clash.body.error, 'budget_id_taken');
-  assert.match(clash.body.suggestion, /^BD-\d{4}$/);
+  // The offered id is the identifier model's child of the SAME project.
+  assert.equal(clash.body.suggestion, 'BDG-0110-01');
 
   // the original survives, un-versioned by the refused save
   const got = await api('/api/budget/BD-0110');
@@ -318,6 +319,72 @@ test('an analysis inherits the project name and address, not a budget id', async
   // and it rolls up to the same project the budget belongs to
   const pj = await api('/api/budgets?scope=project&id=OP-0150');
   assert.equal(pj.body.analyses.length, 1);
+});
+
+// ------------------------------------------------- the identifier model
+
+test('a budget suggested for a project is that project\'s next child id', async () => {
+  await api('/api/budget/OP-0170?scope=project',
+    { method: 'PUT', body: { create: true, name: 'Child Model', address: '11 Way' } });
+  const first = await api('/api/budget/BD-0000?scope=next-budget-id&project=OP-0170');
+  assert.equal(first.body.budgetId, 'BDG-0170-01', 'the first budget is item 01');
+
+  const made = await saveBudget('BDG-0170-01', 'OP-0170', { name: 'Item One' });
+  assert.equal(made.status, 200);
+
+  const second = await api('/api/budget/BD-0000?scope=next-budget-id&project=OP-0170');
+  assert.equal(second.body.budgetId, 'BDG-0170-02', 'items count up per project');
+
+  // without a project the flat legacy suggestion survives (offline dialog)
+  const flat = await api('/api/budget/BD-0000?scope=next-budget-id');
+  assert.match(flat.body.budgetId, /^BD-\d{4}$/);
+});
+
+test('a deleted child budget keeps its item number reserved', async () => {
+  await api('/api/budget/BDG-0170-01', { method: 'DELETE' });
+  const next = await api('/api/budget/BD-0000?scope=next-budget-id&project=OP-0170');
+  assert.equal(next.body.budgetId, 'BDG-0170-02',
+    'item 01 stays burned — a budget number is never re-issued');
+});
+
+test('item 01 is the first budget, not an alternate of anything', async () => {
+  await saveBudget('BDG-0170-02', 'OP-0170', { name: 'Item Two' });
+  const pj = await api('/api/budgets?scope=project&id=OP-0170');
+  const two = pj.body.budgets.find(b => b.projectId === 'BDG-0170-02');
+  assert.equal(two.isAlternate, true, 'item 02 reads as a sibling');
+  // and a live item 01 would not (proven on a fresh project)
+  await api('/api/budget/OP-0171?scope=project',
+    { method: 'PUT', body: { create: true, name: 'Solo', address: '12 Way' } });
+  await saveBudget('BDG-0171-01', 'OP-0171', { name: 'Only' });
+  const solo = await api('/api/budgets?scope=project&id=OP-0171');
+  assert.equal(solo.body.budgets[0].isAlternate, false);
+});
+
+test('an analysis is numbered within its project — INA-0042-01\'s "01"', async () => {
+  const a1 = await api('/api/investment-analyses',
+    { method: 'POST', body: { mode: 'fromBudget', projectId: 'BDG-0171-01', analysisName: 'First Deal' } });
+  assert.equal(a1.status, 201);
+  assert.equal(a1.body.itemNumber, 1);
+  assert.equal(a1.body.projectKey, 'OP-0171');
+
+  const a2 = await api('/api/investment-analyses',
+    { method: 'POST', body: { mode: 'fromBudget', projectId: 'BDG-0171-01', analysisName: 'Second Deal' } });
+  assert.equal(a2.body.itemNumber, 2);
+
+  // the numbers ride the list and the project detail, for the display id
+  const list = await api('/api/investment-analyses');
+  const got = list.body.find(x => x.analysisId === a2.body.analysisId);
+  assert.equal(got.itemNumber, 2);
+  assert.equal(got.projectKey, 'OP-0171');
+  const pj = await api('/api/budgets?scope=project&id=OP-0171');
+  assert.deepEqual(pj.body.analyses.map(x => x.itemNumber).sort(), [1, 2]);
+});
+
+test('every project payload carries its NUMBER, the machine identity', async () => {
+  const pj = await api('/api/budgets?scope=project&id=OP-0171');
+  assert.equal(pj.body.project.projectNumber, 171);
+  const list = await api('/api/budgets?scope=projects');
+  assert.ok(list.body.projects.every(p => Number.isInteger(p.projectNumber)));
 });
 
 // ------------------------------------------------------------------ audit

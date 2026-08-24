@@ -122,8 +122,8 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
      await p.locator('#nbProject').inputValue());
   await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")');
   await p.waitForTimeout(700);
-  ok('the Budget ID suggested is BD-####, a different namespace',
-     /^BD-\d{4}$/.test(await p.locator('#nbId').inputValue()),
+  ok('the Budget ID suggested is the project\'s first child, BDG-0900-01',
+     (await p.locator('#nbId').inputValue()) === 'BDG-0900-01',
      await p.locator('#nbId').inputValue());
   ok('the project name and address are carried across',
      (await p.locator('#nbName').inputValue()) === 'Riverbend Phase 1'
@@ -406,6 +406,11 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   }
   await p.waitForTimeout(1400);
   ok('an analysis opens from the project', /#\/analysis\//.test(p.url()), p.url());
+  // The identifier model's display id: INA-<project number>-<item>, composed
+  // by the one shared helper and shown beside the source budget.
+  ok('the editor shows the INA display id',
+     /INA-0900-01/.test(await p.locator('#page-analysis .sub, .page.on .sub').first().textContent()),
+     (await p.locator('.page.on .sub').first().textContent()).replace(/\s+/g, ' ').slice(0, 120));
   await p.evaluate(() => FSInvestmentUI.goStep(2));
   await p.waitForTimeout(400);
   ok('the top income field is Year 1 - Potential Income',

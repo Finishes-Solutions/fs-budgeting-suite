@@ -408,9 +408,12 @@ function analysesCard(analyses, budgets) {
         + '<th>Status</th><th class="r">Purchase Price</th><th class="r">Year-1 NOI</th>'
         + '<th class="no-print"></th></tr></thead><tbody>'
         + analyses.map(function (a) {
+          var inaId = A.displayChildId && a.itemNumber
+            ? A.displayChildId('INA', Number(String(p.projectId).slice(-4)), a.itemNumber) : '';
           return '<tr class="pj-row" onclick="FSProjects.openAnalysis(\'' + esc(a.analysisId) + '\')">'
             + '<td onclick="event.stopPropagation()">' + star('analysis', a.analysisId, a.name) + '</td>'
-            + '<td><div class="pj-name">' + esc(a.name || 'Untitled') + '</div></td>'
+            + '<td><div class="pj-name">' + esc(a.name || 'Untitled') + '</div>'
+              + (inaId ? '<div class="pj-addr mono">' + esc(inaId) + '</div>' : '') + '</td>'
             + '<td class="mono" style="font-size:12px">' + esc(a.projectId || 'Standalone')
               + (a.sourceBudgetVersionNumber ? ' <span class="inv-vsub">v' + esc(a.sourceBudgetVersionNumber) + '</span>' : '') + '</td>'
             + '<td><span class="badge">' + esc(a.status || 'Draft') + '</span></td>'
@@ -581,29 +584,42 @@ async function setStatus(projectId, status) {
    and lives in its own namespace. */
 function budgetBaseOf(id) {
   var s = String(id || '').toUpperCase();
-  return /^(OP|BD|AS|TST)-\d{4}-\d{2}$/.test(s) ? s.slice(0, -3) : s;
+  return /^(OP|BD|BDG|AS|TST)-\d{4}-\d{2}$/.test(s) ? s.slice(0, -3) : s;
 }
 
 /* An alternate is the same budget priced a different way, so it starts as a
-   copy rather than a blank sheet, and it belongs to the SAME project. The
-   suffix is numbered from the budget it copies — BD-0002 gives BD-0002-02 —
-   never from the project id, which has no suffixes. */
-function addAlternate() {
+   copy rather than a blank sheet, and it belongs to the SAME project.
+
+   The id stays in the source budget's FAMILY. A BDG budget's siblings are the
+   project's next items — BDG-0042-01 gives BDG-0042-02 — numbered by the
+   server, which also sees deleted ids (a budget number is never re-issued).
+   A legacy budget keeps its -NN suffix loop, because renaming eras mid-family
+   would put BD-0002 and BDG-0002-01 side by side claiming to be siblings. */
+async function addAlternate() {
   if (!detail || !detail.project) return;
   var from = primaryOf(detail.budgets) || (detail.budgets || [])[0];
   if (!from) {
     if (A.toast) A.toast('Create the first budget on this project — an alternate is a copy of one.');
     return;
   }
-  var base = budgetBaseOf(from.projectId);
-  var taken = {};
-  (detail.budgets || []).forEach(function (b) { taken[b.projectId] = 1; });
   var next = null;
-  for (var i = 2; i <= 99; i++) {
-    var cand = base + '-' + (i < 10 ? '0' + i : String(i));
-    if (!taken[cand]) { next = cand; break; }
+  if (/^BDG-/.test(String(from.projectId).toUpperCase())) {
+    try {
+      var r = await A.api('budget/BD-0000?scope=next-budget-id&project='
+        + encodeURIComponent(detail.project.projectId));
+      next = r && r.budgetId;
+    } catch (e) { /* fall through to the toast below */ }
+    if (!next) { if (A.toast) A.toast('Could not number the next budget — try again.'); return; }
+  } else {
+    var base = budgetBaseOf(from.projectId);
+    var taken = {};
+    (detail.budgets || []).forEach(function (b) { taken[b.projectId] = 1; });
+    for (var i = 2; i <= 99; i++) {
+      var cand = base + '-' + (i < 10 ? '0' + i : String(i));
+      if (!taken[cand]) { next = cand; break; }
+    }
+    if (!next) { if (A.toast) A.toast('This budget already has 98 alternates.'); return; }
   }
-  if (!next) { if (A.toast) A.toast('This budget already has 98 alternates.'); return; }
   if (A.duplicateBudget) A.duplicateBudget(from.projectId, next, detail.project.projectId);
 }
 

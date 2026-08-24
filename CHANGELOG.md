@@ -41,6 +41,16 @@ House rules for writing one:
 
 ### Changed
 
+- **The identifier model arrives** (PROJECT_NUMBERS_GUIDE.md). A project is a
+  number; prefixes are labels. New budgets are created as that number's
+  children — `BDG-0042-01`, `BDG-0042-02` — with the ID suggested
+  automatically from the project you pick, and investment analyses show a
+  matching `INA-0042-01` display id. Nothing existing is renamed: legacy
+  `BD-`/`OP-`/`AS-` budgets open, save and keep numbering their alternates
+  the old way, and `TST-` test data keeps its own sequence. Every project
+  payload now carries its bare number, so other systems can join on
+  `ProjectNumber = 42` instead of parsing display strings. The Help guide's
+  ID section is rewritten around the model.
 - **A deleted project frees its number.** Project IDs are unique among LIVE
   projects, not forever: delete `OP-9999` and a new project can be created as
   `OP-9999` later — a fresh project, starting at Lead with no budgets — while
