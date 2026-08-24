@@ -198,67 +198,74 @@ END CATCH;
 --  SECTION 3 - VERIFICATION.  Every row must read PASS. Send this output back.
 -- ###########################################################################
 
-SELECT Check_ AS [Check], Detail, CASE WHEN Pass = 1 THEN 'PASS' ELSE 'FAIL' END AS Result
+-- Wrapped in sp_executesql, and it is not optional: these queries verify
+-- columns created earlier in this same batch, and SQL Server binds column
+-- names when it compiles the batch — a direct reference fails the WHOLE
+-- file with "Invalid column name" before anything runs. Same rule the
+-- header of sql/migrate_projects_and_guardrails.sql records.
+EXEC sp_executesql N'
+SELECT Check_ AS [Check], Detail, CASE WHEN Pass = 1 THEN ''PASS'' ELSE ''FAIL'' END AS Result
 FROM (
-  SELECT 1 AS Ord, 'Every project carries its number' AS Check_,
-         CAST(COUNT(*) AS NVARCHAR(20)) + ' without one' AS Detail,
+  SELECT 1 AS Ord, ''Every project carries its number'' AS Check_,
+         CAST(COUNT(*) AS NVARCHAR(20)) + '' without one'' AS Detail,
          CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END AS Pass
   FROM dbo.Projects WHERE ProjectNumber IS NULL
   UNION ALL
-  SELECT 2, 'Numbers are unique across projects', 'UX_Projects_Number enforces it',
-         CASE WHEN EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_Projects_Number' AND is_unique = 1)
+  SELECT 2, ''Numbers are unique across projects'', ''UX_Projects_Number enforces it'',
+         CASE WHEN EXISTS (SELECT 1 FROM sys.indexes WHERE name = ''UX_Projects_Number'' AND is_unique = 1)
               THEN 1 ELSE 0 END
   UNION ALL
-  SELECT 3, 'Every linked budget carries its project''s number',
-         CAST(COUNT(*) AS NVARCHAR(20)) + ' disagree with their ProjectKey',
+  SELECT 3, ''Every linked budget carries its project''''s number'',
+         CAST(COUNT(*) AS NVARCHAR(20)) + '' disagree with their ProjectKey'',
          CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END
   FROM dbo.Budgets
   WHERE ProjectKey IS NOT NULL
     AND (ProjectNumber IS NULL OR ProjectNumber <> CONVERT(INT, RIGHT(ProjectKey, 4)))
   UNION ALL
-  SELECT 4, 'Every linked analysis carries its project''s number',
-         CAST(COUNT(*) AS NVARCHAR(20)) + ' disagree with their ProjectKey',
+  SELECT 4, ''Every linked analysis carries its project''''s number'',
+         CAST(COUNT(*) AS NVARCHAR(20)) + '' disagree with their ProjectKey'',
          CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END
   FROM dbo.InvestmentAnalyses
   WHERE ProjectKey IS NOT NULL
     AND (ProjectNumber IS NULL OR ProjectNumber <> CONVERT(INT, RIGHT(ProjectKey, 4)))
   UNION ALL
-  SELECT 5, 'Every linked analysis has an item number',
-         CAST(COUNT(*) AS NVARCHAR(20)) + ' without one',
+  SELECT 5, ''Every linked analysis has an item number'',
+         CAST(COUNT(*) AS NVARCHAR(20)) + '' without one'',
          CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END
   FROM dbo.InvestmentAnalyses WHERE ProjectKey IS NOT NULL AND ItemNumber IS NULL
   UNION ALL
   -- Valid at backfill time. A later admin purge of deleted analyses
   -- legitimately leaves gaps (a number is never re-issued), so this check is
   -- about THIS run, not a permanent invariant.
-  SELECT 6, 'Item numbers start at 1 and are dense per project',
-         CAST(COUNT(*) AS NVARCHAR(20)) + ' projects with gaps or a bad start',
+  SELECT 6, ''Item numbers start at 1 and are dense per project'',
+         CAST(COUNT(*) AS NVARCHAR(20)) + '' projects with gaps or a bad start'',
          CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END
   FROM (SELECT ProjectKey FROM dbo.InvestmentAnalyses
         WHERE ProjectKey IS NOT NULL
         GROUP BY ProjectKey
         HAVING MIN(ItemNumber) <> 1 OR MAX(ItemNumber) <> COUNT(*)) AS g
   UNION ALL
-  SELECT 7, 'Two analyses cannot share an item number', 'UX_InvestmentAnalyses_Item enforces it',
-         CASE WHEN EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_InvestmentAnalyses_Item' AND is_unique = 1)
+  SELECT 7, ''Two analyses cannot share an item number'', ''UX_InvestmentAnalyses_Item enforces it'',
+         CASE WHEN EXISTS (SELECT 1 FROM sys.indexes WHERE name = ''UX_InvestmentAnalyses_Item'' AND is_unique = 1)
               THEN 1 ELSE 0 END
   UNION ALL
-  SELECT 8, 'Standalone analyses were left alone',
-         CAST(COUNT(*) AS NVARCHAR(20)) + ' standalone rows given a number or item',
+  SELECT 8, ''Standalone analyses were left alone'',
+         CAST(COUNT(*) AS NVARCHAR(20)) + '' standalone rows given a number or item'',
          CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END
   FROM dbo.InvestmentAnalyses
   WHERE ProjectKey IS NULL AND (ProjectNumber IS NOT NULL OR ItemNumber IS NOT NULL)
   UNION ALL
-  SELECT 9, 'Nothing was renamed',
-         CAST(COUNT(*) AS NVARCHAR(20)) + ' budget ids differ from the earlier snapshot',
+  SELECT 9, ''Nothing was renamed'',
+         CAST(COUNT(*) AS NVARCHAR(20)) + '' budget ids differ from the earlier snapshot'',
          CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END
   FROM dbo.Bak_BudgetProjectKey_OpIds AS s
   WHERE NOT EXISTS (SELECT 1 FROM dbo.Budgets AS b WHERE b.ProjectId = s.ProjectId)
 ) AS v
-ORDER BY Ord;
+ORDER BY Ord;';
 
 -- The number beside everything it threads together — the guide's one-predicate
 -- view, straight off the new columns.
+EXEC sp_executesql N'
 SELECT p.ProjectNumber, p.ProjectId, p.Name,
        (SELECT COUNT(*) FROM dbo.Budgets b
          WHERE b.ProjectNumber = p.ProjectNumber AND b.IsDeleted = 0)            AS Budgets,
@@ -266,4 +273,4 @@ SELECT p.ProjectNumber, p.ProjectId, p.Name,
          WHERE a.ProjectNumber = p.ProjectNumber AND a.IsDeleted = 0)            AS Analyses
 FROM dbo.Projects AS p
 WHERE p.IsDeleted = 0
-ORDER BY p.ProjectNumber;
+ORDER BY p.ProjectNumber;';
