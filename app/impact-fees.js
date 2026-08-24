@@ -154,18 +154,12 @@
     var meterTotal = sum(rows), extrasTotal = sum(extras), manualTotal = sum(manual);
     var derived = meterTotal + extrasTotal + manualTotal;
 
-    /* An override is a record, not a mute — the same shape doc.guardrailAcks
-       uses. It replaces the total while leaving every row on screen, so the
-       number it is overriding stays visible next to it. */
-    var ov = f.override && Number.isFinite(+f.override.amount) ? f.override : null;
-
     return {
       basis: basis, basisLabel: BASIS_LABEL[basis],
       rows: rows, extras: extras, manual: manual,
       meterTotal: meterTotal, extrasTotal: extrasTotal, manualTotal: manualTotal,
       derivedTotal: derived,
-      total: ov ? nz(ov.amount) : derived,
-      override: ov,
+      total: derived,
       hasSchedule: !!(schedule && schedule.scheduleKey),
       scheduleKey: f.scheduleKey || null,
       scheduleName: f.scheduleName || (schedule && schedule.name) || null,
@@ -180,8 +174,7 @@
     if (!result || !result.scheduleName) return '';
     var s = result.scheduleName + ' (' + result.basisLabel;
     if (result.scheduleVersion) s += ', v' + result.scheduleVersion;
-    s += ')';
-    return result.override ? s + ' — overridden' : s;
+    return s + ')';
   }
 
   return {

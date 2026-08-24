@@ -341,7 +341,7 @@ stores `scheduleVersion` and is offered an update; it is never given one.
                 "includeMeter": true, "includeVault": true, "includeTaps": true } ],
   "extras": [ { "feeId": "…", "qty": 1 } ],           // generic fees the schedule publishes
   "manual": [ { "rowId": "…", "label": "…", "amount": 0 } ],
-  "override": null }                                  // {amount, reason, by, at}
+  "excluded": false }                                 // true = this project pays none
 ```
 
 ## The total is MATERIALIZED onto the SOV line — that is the whole design
@@ -369,6 +369,20 @@ Three rules in the derivation, each of which would be a real bug if dropped:
    `eduRates` is carried for display and for the admin editor's fill-down.
 3. **Clearing the jurisdiction restores the line, it does not delete it.** The
    line comes from the template; it goes back to its library `$/SF` basis.
+
+## Three states, not two
+
+`excluded` is not the same as "no jurisdiction picked yet", and collapsing them
+would charge real money to a project that said it pays none:
+
+| State | `scheduleKey` | `excluded` | The `SC-20` line |
+|---|---|---|---|
+| Not selected yet | `null` | `false` | The template's parametric `$/SF` allowance, untouched |
+| **None** | `null` | `true` | Carried at **zero**, described as "none for this project" |
+| Priced | `tx-waller` | `false` | The computed lump sum, with its provenance |
+
+The line is carried at zero rather than deleted: a missing line reads as an
+oversight, a zero line reads as a decision.
 
 ## Meter selections are a LIST, keyed by their own id
 

@@ -285,8 +285,22 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       ===Math.round(2*318972.18*100),
     String(await p.evaluate(()=>doc.lines.find(x=>x.derived==='impactFees').unit)));
 
- // Clearing the jurisdiction restores the line rather than deleting it: the
- // template put it there and a budget without a schedule still has soft fees.
+ // "None" is a decision and must zero the line — NOT fall back to the template's
+ // $7.50/SF allowance, which would charge a project that said it pays nothing.
+ await p.selectOption('#feeSchedule','__none__'); await p.waitForTimeout(600);
+ ok('choosing None zeroes the fee', (await p.evaluate(()=>feeResult().total))===0);
+ const noneLine = await p.evaluate(()=>{const l=doc.lines.find(x=>x.derived==='impactFees');
+   return l?{unit:l.unit,qty:l.qty,basis:l.basis,desc:l.desc}:null;});
+ ok('the soft-cost line is carried at zero, and says so',
+    !!noneLine&&noneLine.unit===0&&noneLine.qty===1&&noneLine.basis==='ls'
+    &&/none for this project/.test(noneLine.desc),
+    JSON.stringify(noneLine));
+ ok('None is remembered on the document, distinctly from "not selected"',
+    (await p.evaluate(()=>doc.impactFees.excluded))===true
+    &&(await p.evaluate(()=>doc.impactFees.scheduleKey))===null);
+
+ // Clearing back to "not selected" restores the line rather than deleting it:
+ // the template put it there and a budget without a schedule still has soft fees.
  await p.selectOption('#feeSchedule',''); await p.waitForTimeout(500);
  const restored = await p.evaluate(()=>{const l=doc.lines.find(x=>x.code==='SC-20'&&x.scope==='soft');
    return l?{derived:l.derived||null,basis:l.basis,auto:l.auto,unit:l.unit,baseUnit:l.baseUnit}:null;});
@@ -296,6 +310,35 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     JSON.stringify(restored));
  ok('and the fee total falls back to zero',
     (await p.evaluate(()=>feeResult().total))===0);
+ ok('there is no Override Total control',
+    (await p.locator('#page-fees button:has-text("Override")').count())===0);
+
+ // The Pricing Library carries the same schedules as published reference rates,
+ // below the cost assumptions table.
+ await p.evaluate(()=>go('pricing')); await p.waitForTimeout(900);
+ ok('the cost assumptions card is type-agnostic with a type picker',
+    (await p.evaluate(()=>{const c=[...document.querySelectorAll('#page-pricing .card-hd h2')]
+       .map(h=>h.textContent.trim()); return JSON.stringify(c);}))
+    .includes('Cost Assumptions Table'),
+    await p.evaluate(()=>[...document.querySelectorAll('#page-pricing .card-hd h2')].map(h=>h.textContent.trim()).join('|')));
+ ok('only Multifamily is selectable; the other types are named but disabled',
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#pricingType option')]
+      .map(o=>o.value+(o.disabled?':off':':on'))))
+    ===JSON.stringify(['multifamily:on','retail:off','industrial:off','office:off',
+                       'mixed-use:off','flex:off','custom:off']),
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#pricingType option')]
+      .map(o=>o.value+(o.disabled?':off':':on')))));
+ ok('the fee schedule table sits below the cost assumptions table',
+    await p.evaluate(()=>{
+      const h=[...document.querySelectorAll('#page-pricing .card-hd h2')].map(x=>x.textContent.trim());
+      return h.indexOf('Impact & Tap Fee Schedules') > h.indexOf('Cost Assumptions Table');
+    }));
+ ok('it lists all 17 meter sizes for the published jurisdiction',
+    (await p.locator('#feeLibTbl tbody tr').count())===17,
+    String(await p.locator('#feeLibTbl tbody tr').count()));
+ ok('and states the per-EDU rates the impact fees come from',
+    /3,689\.91.*water/i.test(await p.locator('#feeLibRates').textContent()),
+    (await p.locator('#feeLibRates').textContent()).slice(0,120));
 
  ok('no JS errors', errs.length===0, errs.join('|'));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

@@ -1560,8 +1560,23 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
 
   <div class="card"><div class="card-hd">
-      <h2>Multifamily Cost Assumptions</h2>
-      <span class="eyebrow" id="pricingMeta">—</span></div>
+      <h2>Cost Assumptions Table</h2>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <!-- One published rate table today. The other property types are named
+             rather than hidden so the shape of the library is visible, and
+             disabled rather than absent so nobody picks one that prices nothing. -->
+        <select id="pricingType" style="width:190px;font-size:12px;padding:6px 8px"
+          aria-label="Property type" onchange="choosePricingType(this.value)">
+          <option value="multifamily" selected>Multifamily</option>
+          <option value="retail" disabled>Retail (soon)</option>
+          <option value="industrial" disabled>Industrial (soon)</option>
+          <option value="office" disabled>Office (soon)</option>
+          <option value="mixed-use" disabled>Mixed-Use (soon)</option>
+          <option value="flex" disabled>Flex (soon)</option>
+          <option value="custom" disabled>Custom (soon)</option>
+        </select>
+        <span class="eyebrow" id="pricingMeta">—</span>
+      </div></div>
     <div class="card-bd" style="overflow-x:auto;padding-top:8px">
       <table class="tbl">
         <thead><tr><th style="width:44%">Line Item</th><th>Basis</th><th class="r">Rate</th><th class="no-print"></th></tr></thead>
@@ -1570,6 +1585,27 @@ th.sortable.sorted{color:var(--ink-900)}
       <div style="margin-top:12px" class="no-print" id="priceAdd" hidden>
         <button class="btn btn-ghost btn-sm" onclick="addPriceLine()">+ Add Blank Line</button>
         <span class="note" style="margin-left:10px">Prefer adding from the CSI catalog below so every line carries a real code.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Impact & tap fees sit here, below the cost assumptions, because they are
+       the same kind of thing: published reference rates a budget is priced from.
+       Read-only — a schedule is published through the API, and a budget picks
+       one on its Impact Fees step. -->
+  <div class="card" id="feeLibCard">
+    <div class="card-hd">
+      <h2>Impact &amp; Tap Fee Schedules</h2>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap" class="no-print">
+        <select id="feeLibSelect" style="width:230px;font-size:12px;padding:6px 8px"
+          aria-label="Jurisdiction" onchange="showFeeLibrary(this.value)"></select>
+        <span class="eyebrow" id="feeLibMeta">—</span>
+      </div>
+    </div>
+    <div class="card-bd" style="padding-top:8px">
+      <div id="feeLibRates" class="note" style="margin-bottom:12px"></div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="feeLibTbl" style="min-width:1080px"></table>
       </div>
     </div>
   </div>
@@ -4354,17 +4390,19 @@ function withFocus(fn){
    existed — and every numeric read below still guards with nz(), because a
    blank input coerces to 0 but an ABSENT property is undefined and prints $NaN. */
 function blankImpactFees(){
+  /* excluded is NOT the same as "no jurisdiction picked yet". Unset means the
+     budget still carries the template's parametric $/SF fee line; excluded means
+     somebody decided this project pays no impact fees, and the line goes to zero.
+     Collapsing the two would silently charge $7.50/SF to a project that said no. */
   return {scheduleKey:null,scheduleName:null,scheduleVersion:null,effective:null,
-    basis:FSImpactFees.DEFAULT_BASIS,meters:[],extras:[],manual:[],override:null};
+    excluded:false,basis:FSImpactFees.DEFAULT_BASIS,meters:[],extras:[],manual:[]};
 }
 function normalizeImpactFees(f){
   const b=blankImpactFees();
   if(!f||typeof f!=='object')return b;
   const basis=FSImpactFees.BASES.includes(f.basis)?f.basis:FSImpactFees.DEFAULT_BASIS;
-  const ov=f.override&&Number.isFinite(+f.override.amount)&&f.override.reason
-    ?{amount:nz(f.override.amount),reason:String(f.override.reason),
-      by:f.override.by||null,at:f.override.at||null}:null;
-  return {scheduleKey:f.scheduleKey||null,scheduleName:f.scheduleName||null,
+  return {excluded:f.excluded===true,
+    scheduleKey:f.scheduleKey||null,scheduleName:f.scheduleName||null,
     scheduleVersion:f.scheduleVersion?nz(f.scheduleVersion):null,
     effective:f.effective||null,basis:basis,
     /* A LIST, not a map keyed by meter size. A project is commonly served by
@@ -4381,8 +4419,7 @@ function normalizeImpactFees(f){
     extras:(Array.isArray(f.extras)?f.extras:[]).filter(x=>x&&x.feeId)
       .map(x=>({feeId:String(x.feeId),qty:x.qty===undefined?1:nz(x.qty)})),
     manual:(Array.isArray(f.manual)?f.manual:[]).filter(m=>m&&m.rowId)
-      .map(m=>({rowId:String(m.rowId),label:String(m.label||'Fee'),amount:nz(m.amount)})),
-    override:ov};
+      .map(m=>({rowId:String(m.rowId),label:String(m.label||'Fee'),amount:nz(m.amount)}))};
 }
 function blankDoc(kind){
   const bare=kind==='blank';
@@ -4543,7 +4580,7 @@ function go(p){
   if(p==='projects'&&window.FSProjects)FSProjects.render(true);
   if(DOC_PAGES.includes(p))paintWorkflowPills(p);
   if(p==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
-  if(p==='pricing'){renderPricing();renderCatalog();}
+  if(p==='pricing'){renderPricing();renderCatalog();renderFeeLibrary();}
   if(p==='dashboard'&&window.FSDashboard)FSDashboard.render();
   if(p==='admin')refreshAdmin();
   if(p==='version')renderVersionPage();
@@ -5030,7 +5067,12 @@ function paintFeesPage(){
   const f=doc.impactFees,r=feeResult();
   // --- jurisdiction picker ---
   const sel=document.getElementById('feeSchedule');
-  const opts=['<option value="">— None —</option>'].concat(feeSchedules.map(s=>
+  /* Three states, not two. "Not selected yet" leaves the template's parametric
+     $/SF fee line alone; "None" is a decision that this project pays no impact
+     fees and zeroes the line. */
+  const opts=['<option value="">— Not selected —</option>',
+    `<option value="__none__" ${f.excluded?'selected':''}>None — no impact fees</option>`]
+    .concat(feeSchedules.map(s=>
     `<option value="${esc(s.scheduleKey)}" ${s.scheduleKey===f.scheduleKey?'selected':''}>${esc(s.name)}</option>`));
   // A schedule a budget was priced from that has since been deactivated is not
   // in the list. Keep it selectable rather than silently switching the budget.
@@ -5039,7 +5081,9 @@ function paintFeesPage(){
   sel.innerHTML=opts.join('');
   document.getElementById('feeBasis').value=f.basis;
   document.getElementById('feeProvenance').textContent=
-    r.hasSchedule?FSImpactFees.provenance(r):'No schedule selected';
+    r.hasSchedule?FSImpactFees.provenance(r)
+      :f.excluded?'No impact fees on this project'
+      :'No schedule selected';
   document.getElementById('feeVersion').textContent=f.scheduleVersion?('v'+f.scheduleVersion):'—';
   document.getElementById('feeScheduleHint').textContent=
     feeSchedulesLoaded
@@ -5175,22 +5219,30 @@ const FEE_BASIS_LABEL={flat:'lump sum',unit:'per unit',acre:'per acre',resSF:'pe
   amenSF:'per amen SF',bldgSF:'per building SF',pctHard:'% of hard cost'};
 
 function paintFeeRollup(r){
-  const p=parts();
+  const f=doc.impactFees,p=parts();
   const softPct=p.soft>0?(100*r.total/p.soft):null;
-  let h=`<div class="sum-row"><span class="k">Meter fees</span><span class="v">${usd(r.meterTotal)}</span></div>
-    <div class="sum-row"><span class="k">Other fees</span><span class="v">${usd(r.extrasTotal+r.manualTotal)}</span></div>`;
-  if(r.override)
-    h+=`<div class="sum-row sub"><span class="k">Calculated total</span><span class="v">${usd(r.derivedTotal)}</span></div>
-        <div class="sum-row sub"><span class="k">Overridden — ${esc(r.override.reason)}</span><span class="v"></span></div>`;
-  h+=`<div class="sum-row tot"><span class="k">Total Impact &amp; Tap Fees</span><span class="v">${usd(r.total)}</span></div>
+  let h='';
+  if(f.excluded){
+    h='<div class="sum-row tot"><span class="k">Total Impact &amp; Tap Fees</span><span class="v">'+usd(0)+'</span></div>'
+      +'<div class="note" style="margin-top:10px">This project is marked as paying <b>no impact fees</b>. '
+      +'The soft-cost line <b>'+esc(FEE_LINE_CODE)+' '+esc(FEE_LINE_DESC)+'</b> is carried at zero rather than '
+      +'at the template\'s per-SF allowance. Pick a jurisdiction above to price them instead.</div>';
+    document.getElementById('feeRollup').innerHTML=h;
+    return;
+  }
+  if(!r.hasSchedule){
+    h='<div class="note">No jurisdiction selected yet, so this budget still carries the template\'s '
+      +'per-SF allowance for impact and tap fees. Pick the jurisdiction above to price them from its '
+      +'published schedule, or choose <b>None</b> if this project pays none.</div>';
+    document.getElementById('feeRollup').innerHTML=h;
+    return;
+  }
+  h=`<div class="sum-row"><span class="k">Meter fees</span><span class="v">${usd(r.meterTotal)}</span></div>
+    <div class="sum-row"><span class="k">Other fees</span><span class="v">${usd(r.extrasTotal+r.manualTotal)}</span></div>
+    <div class="sum-row tot"><span class="k">Total Impact &amp; Tap Fees</span><span class="v">${usd(r.total)}</span></div>
     <div class="note" style="margin-top:10px">Carried on the soft-cost line <b>${esc(FEE_LINE_CODE)} ${esc(FEE_LINE_DESC)}</b>
       as a lump sum${softPct!==null?', '+softPct.toFixed(1)+'% of total soft costs':''}.
-      Soft costs sit outside the construction contract sum and join at total project cost.</div>
-    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">`;
-  h+=r.override
-    ?`<button class="btn btn-ghost" onclick="clearFeeOverride()">Remove Override</button>`
-    :`<button class="btn btn-ghost" onclick="setFeeOverride()">Override Total…</button>`;
-  h+='</div>';
+      Soft costs sit outside the construction contract sum and join at total project cost.</div>`;
   document.getElementById('feeRollup').innerHTML=h;
 }
 
@@ -5244,29 +5296,15 @@ function removeManualFee(rowId){
   doc.impactFees.manual=doc.impactFees.manual.filter(x=>x.rowId!==rowId);
   afterFeeChange();
 }
-/* An override is a record, not a mute: the reason is mandatory and travels into
-   every export, exactly as a guard-rail acknowledgement does. */
-function setFeeOverride(){
-  const r=feeResult();
-  const amt=prompt('Override the impact fee total with what amount?',String(Math.round(r.derivedTotal)));
-  if(amt===null)return;
-  if(!Number.isFinite(+amt)){toast('Enter a number');return;}
-  const why=prompt('Why? This prints on the report and the workbook.','');
-  if(why===null)return;
-  if(!String(why).trim()){toast('An override needs a reason');return;}
-  doc.impactFees.override={amount:nz(amt),reason:String(why).trim(),
-    by:(US&&US.profile&&US.profile.displayName)||US.userDetails||null,at:new Date().toISOString()};
-  afterFeeChange();
-}
-function clearFeeOverride(){doc.impactFees.override=null;afterFeeChange();}
-
 async function chooseFeeSchedule(key){
   const f=doc.impactFees;
-  if(!key){
+  if(!key||key==='__none__'){
+    f.excluded=(key==='__none__');
     f.scheduleKey=null;f.scheduleName=null;f.scheduleVersion=null;f.effective=null;
     f.meters=[];f.extras=[];feeDoc=null;
     afterFeeChange();return;
   }
+  f.excluded=false;
   if(key===f.scheduleKey){paintFeesPage();return;}
   try{
     const r=await api('pricing?scope=fee-schedule&key='+encodeURIComponent(key));
@@ -5323,16 +5361,34 @@ function applyImpactFees(){
   if(f.scheduleKey&&!(feeDoc&&feeDoc.scheduleKey===f.scheduleKey))return;
   const r=feeResult();
   let line=impactFeeLine();
-  // Nothing to carry and no line to restore: leave the document alone.
-  if(!line&&r.total<=0)return;
-  if(!line){
+
+  const ensureLine=()=>{
+    if(line)return line;
     line={lineId:newLineId(),code:FEE_LINE_CODE,grp:FEE_LINE_GRP,scope:'soft',
       desc:FEE_LINE_DESC,basis:'ls',unit:0,baseUnit:0,auto:false,qty:1,custom:true};
     insertLine(line);
+    return line;
+  };
+
+  /* "None" is a decision, and it has to be visible. The line stays on the SOV at
+     zero, saying so, rather than being deleted — a missing line reads as an
+     oversight, and reverting to the template's per-SF allowance would charge a
+     project that explicitly said it pays nothing. */
+  if(f.excluded){
+    line=ensureLine();
+    line.derived='impactFees';
+    line.scope='soft';line.basis='ls';line.auto=false;line.qty=1;line.unit=0;
+    line.desc=FEE_LINE_DESC+' — none for this project';
+    return;
   }
+
+  // Nothing to carry and no line to restore: leave the document alone.
+  if(!line&&r.total<=0)return;
+  line=ensureLine();
+
   if(!r.hasSchedule&&r.total<=0){
-    // The jurisdiction was cleared. Give the line its library basis back rather
-    // than deleting it — deleting would lose a line the template put there.
+    // No jurisdiction picked. Give the line its library basis back rather than
+    // deleting it — deleting would lose a line the template put there.
     if(line.derived){
       delete line.derived;
       line.basis='sf';line.auto=true;line.qty=0;
@@ -5347,6 +5403,94 @@ function applyImpactFees(){
   line.qty=1;
   line.unit=r.total;
   line.desc=FEE_LINE_DESC+' — '+FSImpactFees.provenance(r);
+}
+
+/* ---- Pricing Library: the impact & tap fee schedules ----
+   Read-only here. This page is where a person goes to see what a budget will be
+   priced from, and the fee schedules are exactly that — published reference
+   rates, sitting under the cost assumptions for the same reason. Publishing a
+   schedule is an API call (PUT /api/pricing?scope=fee-schedule); a budget picks
+   one on its Impact Fees step. */
+let feeLibDoc=null,feeLibKey=null;
+
+/* Only one published rate table exists today. The control is here so the
+   library's shape is legible, and every other type is disabled rather than
+   missing — picking one that prices nothing would be worse than not offering it. */
+function choosePricingType(v){
+  if(v!=='multifamily'){
+    const el=document.getElementById('pricingType');
+    if(el)el.value='multifamily';
+    toast('Only the Multifamily table is published today');
+  }
+}
+
+async function renderFeeLibrary(){
+  const sel=document.getElementById('feeLibSelect');
+  if(!sel)return;
+  if(!feeSchedulesLoaded)await loadFeeSchedules();
+  if(!feeSchedules.length){
+    sel.innerHTML='<option value="">None published</option>';
+    document.getElementById('feeLibMeta').textContent =
+      feeSchedulesLoaded?'No jurisdictions published yet':'Could not load fee schedules';
+    document.getElementById('feeLibTbl').innerHTML='';
+    document.getElementById('feeLibRates').textContent='';
+    return;
+  }
+  sel.innerHTML=feeSchedules.map(s=>
+    `<option value="${esc(s.scheduleKey)}" ${s.scheduleKey===feeLibKey?'selected':''}>${esc(s.name)}</option>`).join('');
+  await showFeeLibrary(feeLibKey||feeSchedules[0].scheduleKey);
+}
+
+async function showFeeLibrary(key){
+  if(!key)return;
+  feeLibKey=key;
+  try{
+    const r=await api('pricing?scope=fee-schedule&key='+encodeURIComponent(key));
+    feeLibDoc=r.doc;
+    document.getElementById('feeLibMeta').textContent=
+      'v'+r.versionNumber+(r.effective?' · effective '+r.effective:'')
+      +' · '+(r.doc.meters||[]).length+' meter sizes';
+  }catch(e){
+    feeLibDoc=null;
+    document.getElementById('feeLibMeta').textContent='Could not load that schedule';
+  }
+  paintFeeLibrary();
+}
+
+function paintFeeLibrary(){
+  const t=document.getElementById('feeLibTbl');
+  const rates=document.getElementById('feeLibRates');
+  if(!feeLibDoc||!Array.isArray(feeLibDoc.meters)||!feeLibDoc.meters.length){
+    t.innerHTML='';rates.textContent='';return;
+  }
+  const er=feeLibDoc.eduRates||{};
+  rates.innerHTML='Impact fees are the meter\'s EDU multiplier times the city\'s per-EDU rate — '
+    +'<b>'+usd2(nz(er.water))+'/EDU</b> water, <b>'+usd2(nz(er.sewer))+'/EDU</b> sewer. '
+    +'The low and high columns cover the meter, vault and tap work only; impact fees are single-valued.'
+    +(feeLibDoc.source?' <span class="mono" style="font-size:11px">Source: '+esc(feeLibDoc.source)+'</span>':'');
+
+  let h='<thead><tr><th>Meter Size</th><th class="r">GPM</th><th class="r">EDU</th>'
+    +'<th class="r">Water Impact</th><th class="r">Sewer Impact</th>'
+    +'<th class="r">Meter</th><th class="r">Vault</th><th class="r">Water Tap</th><th class="r">Sewer Tap</th>'
+    +'<th class="r">Total Low</th><th class="r">Total High</th></tr></thead><tbody>';
+  const rng=x=>x?usd(nz(x.low))+' – '+usd(nz(x.high)):'—';
+  feeLibDoc.meters.forEach(m=>{
+    const lo=FSImpactFees.rowAmounts(m,{qty:1},'low').total;
+    const hi=FSImpactFees.rowAmounts(m,{qty:1},'high').total;
+    h+=`<tr>
+      <td>${esc(m.size)}"</td>
+      <td class="r mono">${num(m.gpm)}</td>
+      <td class="r mono">${nz(m.edu)}</td>
+      <td class="r mono">${usd(nz(m.waterImpact))}</td>
+      <td class="r mono">${usd(nz(m.sewerImpact))}</td>
+      <td class="r mono">${rng(m.meter)}</td>
+      <td class="r mono">${rng(m.vault)}</td>
+      <td class="r mono">${rng(m.waterTap)}</td>
+      <td class="r mono">${rng(m.sewerTap)}</td>
+      <td class="r mono">${usd(lo)}</td>
+      <td class="r mono"><b>${usd(hi)}</b></td></tr>`;
+  });
+  t.innerHTML=h+'</tbody>';
 }
 
 /* ============ BUDGET TEMPLATES ============

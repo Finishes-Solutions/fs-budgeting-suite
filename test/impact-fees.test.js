@@ -173,19 +173,6 @@ test('manual one-off fees add on top and need no schedule entry', () => {
   assert.equal(cents(r.manualTotal), 12500);
 });
 
-test('an override replaces the total but keeps the derivation visible', () => {
-  const r = IF.evaluate(SCHEDULE, { scheduleKey: 'tx-waller', basis: 'high',
-    meters: [{ rowId: 'm-4-250', qty: 1 }],
-    override: { amount: 250000, reason: 'City agreed a reduced rate', by: 'Someone', at: '2026-08-24' } });
-  assert.equal(r.total, 250000);
-  assert.equal(cents(r.derivedTotal), 318972.18);
-  assert.equal(r.rows.length, 1, 'the rows still render next to the override');
-  // A malformed override is ignored rather than zeroing the line.
-  const bad = IF.evaluate(SCHEDULE, { scheduleKey: 'tx-waller', basis: 'high',
-    meters: [{ rowId: 'm-4-250', qty: 1 }], override: { reason: 'no amount' } });
-  assert.equal(cents(bad.total), 318972.18);
-});
-
 test('provenance names the jurisdiction, the basis and the version', () => {
   const r = IF.evaluate(SCHEDULE, { scheduleKey: 'tx-waller', scheduleName: 'City of Waller, TX',
     scheduleVersion: 1, basis: 'high', meters: [{ rowId: 'm-4-250', qty: 1 }] });
