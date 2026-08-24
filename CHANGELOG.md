@@ -26,6 +26,12 @@ House rules for writing one:
 
 ### Migration required
 
+- `sql/adopt_project_numbers.sql` — first step toward the company identifier
+  model (PROJECT_NUMBERS_GUIDE.md): surfaces the PROJECT NUMBER as a real,
+  indexed, unique column on projects — and on each linked budget and analysis,
+  computed from the link — plus per-project item numbers for analyses. Nothing
+  is renamed or re-keyed; run before the release that mints `BDG-####-##`
+  budget ids.
 - `sql/align_project_numbers.sql` — gives each existing project the number its
   budget already carries (`OP-0005` → `OP-4821`, and so on), so a project and
   its budgets read as one family. Four projects move; no budget is renamed.
