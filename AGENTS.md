@@ -135,6 +135,16 @@ custom provider for sign-in.
   (batch-compile binding). Each migration has a preflight, the migration, and a
   verification section; `sql/verify_migration.sql` returns a single result set
   because the portal exports only one.
+- **Separate those three sections with `GO`, and never name a NEW table in the
+  preflight.** A batch is compiled statement by statement as it runs, so a
+  statement naming a table that does not exist yet fails with *"Invalid object
+  name"* — even when a `CASE` around it would never have evaluated that branch,
+  and even though the same reference is fine later in the batch that created it.
+  `sql/migrate_impact_fees.sql` shipped once without the separators and died on
+  its own preflight. In a preflight, `OBJECT_ID('dbo.X')` is always safe (the
+  name is a string) and anything reading rows goes through `sp_executesql`.
+  `test/migration-batches.test.js` enforces exactly this for that file and is
+  the model for the next one.
 - **Admin scripts are never deployed or called by the app**:
   `sql/purge_deleted_budgets.sql` (child-first hard purge of soft-deleted budgets)
   and `sql/cleanup_test_budgets.sql` (removes `TST-%` data). They are run by a

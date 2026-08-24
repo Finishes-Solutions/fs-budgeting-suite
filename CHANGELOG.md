@@ -95,6 +95,9 @@ time.
 - `sql/migrate_impact_fees.sql` — creates `dbo.FeeSchedules` and
   `dbo.FeeScheduleVersions` and seeds the City of Waller schedule.
 
+Run it as a whole file — it is three `GO`-separated batches (preflight,
+migration, verification) and they must run in that order.
+
 Purely additive: it creates two new tables and changes nothing that already
 exists, and the deploy tolerates its absence — until it runs, the Impact Fees
 step says "no fee schedules published yet" and every other page behaves exactly
