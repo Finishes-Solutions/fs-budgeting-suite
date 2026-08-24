@@ -608,6 +608,14 @@ update selectors alongside label changes.
   `OP-` number). That is deliberate — renaming a budget would cascade into
   SovLines, BudgetVersions and every analysis's provenance for no gain.
 
+- `sql/align_project_numbers.sql` and `sql/adopt_project_numbers.sql` — the
+  identifier-model pair (PROJECT_NUMBERS_GUIDE.md): projects renumbered to
+  match their budgets, then `ProjectNumber` surfaced as a persisted, unique,
+  indexed column with per-project `ItemNumber` on analyses. **Run state is
+  tracked in CHANGELOG.md** — the app probes for these columns
+  (`projectsNumber`, `analysesItemNumber`) and behaves as before until both
+  the columns and the release are present, so deploy order is safe either way.
+
   Consequence worth knowing: budgets created from **v3 onward** are judged by
   the 35–55% expense rail and **blocked** when they fall outside it. Every
   budget that predates v3 sits at `opexSchemaVersion: 1` and is **warned**, not
