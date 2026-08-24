@@ -45,6 +45,7 @@ the full budget document (unit mix, income, expenses, markups) for narrative sec
 | **Pricing-library version** | `dbo.PricingLibrary.Version` (e.g. `2026.08-v2`) | A published set of line-item rates | No. A budget carries the version it was priced from |
 | **Budget-template version** | `dbo.BudgetTemplateVersions` | An immutable snapshot of the complete defaults a *new* budget starts from | **No — only budgets created after publication** |
 | **Saved budget version** | `dbo.BudgetVersions` | An immutable snapshot of one budget at one save | No. History is read-only |
+| **Fee-schedule version** | `dbo.FeeScheduleVersions` | An immutable published impact/tap fee schedule for one jurisdiction | **No — a budget keeps the version it priced from** |
 | **Lender-package baseline** | future | The frozen doc a quarterly package diffs against (rule 1 above) | No |
 
 Consequences worth stating plainly:
@@ -311,3 +312,92 @@ and it is visible on the editor, in the list, and in every export.
 byte-identical; only the provenance of one input is new. A saved analysis is
 still never silently recalculated: the budget's current version number is
 reported so the client can *offer* a re-sync, and the user chooses.
+
+---
+
+# Impact & tap fees (added 2026-08)
+
+## The fee library is a fifth versioned thing, and it behaves like the others
+
+`dbo.FeeSchedules` (one row per jurisdiction) and `dbo.FeeScheduleVersions`
+(immutable published versions, exactly one current, enforced by a filtered
+unique index on `(ScheduleKey) WHERE IsCurrent = 1`) mirror `dbo.BudgetTemplates`
+/ `dbo.BudgetTemplateVersions` deliberately.
+
+The consequences are the same ones stated above for templates, and they are the
+point: **publishing a schedule never reprices an existing budget.** A budget
+stores `scheduleVersion` and is offered an update; it is never given one.
+
+## The document field
+
+`doc.impactFees` is present on every budget — `blankDoc()` seeds it and
+`migrate()` backfills it, so it is never absent:
+
+```jsonc
+{ "scheduleKey": "tx-waller", "scheduleName": "City of Waller, TX",
+  "scheduleVersion": 1, "effective": "2025-10-15",
+  "basis": "high",                                    // 'low' | 'avg' | 'high'
+  "meters": [ { "rowId": "m-4-250", "qty": 2,
+                "includeMeter": true, "includeVault": true, "includeTaps": true } ],
+  "extras": [ { "feeId": "…", "qty": 1 } ],           // generic fees the schedule publishes
+  "manual": [ { "rowId": "…", "label": "…", "amount": 0 } ],
+  "override": null }                                  // {amount, reason, by, at}
+```
+
+## The total is MATERIALIZED onto the SOV line — that is the whole design
+
+The computed figure is written onto a soft-cost line as a lump sum
+(`basis: 'ls'`, `qty: 1`, `unit: <total>`, `derived: 'impactFees'`), matched by
+its `derived` marker first and its `SC-20` code second — never by array position.
+
+So `SovLines` gains no column, `parts()` gains no term,
+`api/shared/budget-calc.js` gains no knowledge of fee schedules, and the guard
+rails are untouched. **The lender-package read surface is exactly what this
+document already said it is**: one more soft-scope SOV row, with `Basis` =
+lump sum and its provenance in `Descr`.
+
+Three rules in the derivation, each of which would be a real bug if dropped:
+
+1. **A budget priced from a schedule that has not been fetched keeps its saved
+   amount.** Recomputing against a null schedule totals zero, which would
+   silently wipe a six-figure line when someone opens a budget straight to the
+   Budget page or the API is down. The saved line is the authority until a new
+   number can be proven.
+2. **The published per-row amounts are authoritative, not `edu × eduRates`.**
+   Waller's true water rate is ~$3,689.9104; deriving the 330-EDU row from the
+   published, rounded $3,689.91 lands 12 cents under what the city charges.
+   `eduRates` is carried for display and for the admin editor's fill-down.
+3. **Clearing the jurisdiction restores the line, it does not delete it.** The
+   line comes from the template; it goes back to its library `$/SF` basis.
+
+## Derived is not edited
+
+`isEdited()` returns true for a derived line — its rate differs from the library
+baseline and its quantity is off auto — but `editReason()` reports it as
+*"Derived from the impact fee schedule — City of Waller, TX (high side, v1)"*.
+The edits report and the PDF are read by people deciding whether a number was
+tampered with, and "manually edited" would be the wrong answer.
+
+## API
+
+Query scopes on `/api/pricing`, for the same reason the project surface and role
+management are scopes rather than new folders (a new `api/<name>/` folder is not
+reliably picked up by the deployed host):
+
+- `GET /api/pricing?scope=fee-schedules` → `{isAdmin, schedules[]}`. Non-admins
+  see active schedules only.
+- `GET /api/pricing?scope=fee-schedule&key=…[&version=n]` → metadata plus `doc`
+  and `currentVersion`. Resolves deactivated schedules, so a budget priced from
+  one keeps opening.
+- `PUT /api/pricing?scope=fee-schedule` → publish a new immutable version.
+  **admin.**
+
+This endpoint is the one case where a query scope keeps two gates: `PUT
+/api/pricing` is already restricted to `pricing_admin` by a route rule in
+`staticwebapp.config.json` *and* by `hasRole()` inside the function. Reads are
+`authenticated` via `/api/*`.
+
+Every scope tolerates the pending migration: `api/shared/schema.js` probes
+`feeSchedulesTable`, the reads answer with an empty list, and the publish answers
+503 naming the script to run. `/api/pricing` also serves the pricing library that
+every budget depends on, so a fee-schedule query must never be able to fail it.

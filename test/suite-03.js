@@ -23,7 +23,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.waitForTimeout(700);
 
  await p.fill('#pId','TST-9999'); await p.fill('#pName','Print Test');
- await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
+ await p.click('#page-input button:has-text("Continue to Impact Fees")'); await p.waitForTimeout(250); await p.click('#page-fees button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
  const full = await p.locator('#budBody tr').count();
  await p.click('button:has-text("Collapse All")'); await p.waitForTimeout(200);
  ok('collapsed on screen', (await p.locator('#budBody tr').count()) < full);
@@ -167,6 +167,95 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  for(let i=0;i<3;i++){await p.keyboard.press('Control+Shift+z');await p.waitForTimeout(170);}
  ok('redo replays forward after a deep undo', (await p.evaluate(()=>doc.lines.length))===rows0-5,
     String(await p.evaluate(()=>doc.lines.length)));
+
+ // ---- Impact & tap fees: the fourth workflow step, end to end.
+ // The acceptance criterion is the City of Waller table itself — 2 x (4" @ 250 gpm)
+ // on the high side is 2 x $318,972.18, and that number has to reach the SOV.
+ // The pills render on all four workflow pages, so scope to the visible one.
+ await p.click('#page-budget .wf-steps a:has-text("Impact Fees")'); await p.waitForTimeout(600);
+ ok('the workflow has four steps, with Impact Fees second',
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#page-fees .wf-steps a')]
+      .map(a=>a.textContent.replace(/^\d+/,'').trim())))
+    ===JSON.stringify(['Inputs','Impact Fees','Budget','CSI Schedule']),
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#page-fees .wf-steps a')]
+      .map(a=>a.textContent.replace(/^\d+/,'').trim()))));
+ ok('the fee step is a real route', (await p.evaluate(()=>location.hash))==='#/fees/TST-9999',
+    await p.evaluate(()=>location.hash));
+
+ const softBefore = await p.evaluate(()=>parts().soft);
+ const projBefore = await p.evaluate(()=>parts().project);
+
+ await p.selectOption('#feeSchedule','tx-waller'); await p.waitForTimeout(600);
+ ok('the schedule loads its 17 meter sizes',
+    (await p.locator('#feeMeterTbl tbody tr').count())===17,
+    String(await p.locator('#feeMeterTbl tbody tr').count()));
+ ok('the basis defaults to the high side',
+    (await p.evaluate(()=>doc.impactFees.basis))==='high');
+
+ // 4" @ 250 gpm is the first row that carries a vault, so it exercises the whole row.
+ await p.fill('#feeMeterTbl input[data-k="fee.m-4-250.qty"]','2'); await p.waitForTimeout(500);
+ const feeTotal = await p.evaluate(()=>feeResult().total);
+ ok('two 4-inch meters price at the published high-side total',
+    Math.round(feeTotal*100)/100===Math.round(2*318972.18*100)/100, String(feeTotal));
+
+ // The SOV line is the seam: everything downstream reads an ordinary lump sum.
+ const line = await p.evaluate(()=>{const l=doc.lines.find(x=>x.derived==='impactFees');
+   return l?{code:l.code,scope:l.scope,basis:l.basis,qty:l.qty,unit:l.unit,desc:l.desc,auto:l.auto}:null;});
+ ok('a derived soft-cost line carries the total as a lump sum',
+    !!line&&line.code==='SC-20'&&line.scope==='soft'&&line.basis==='ls'&&line.qty===1
+    &&line.auto===false&&Math.round(line.unit*100)===Math.round(feeTotal*100),
+    JSON.stringify(line));
+ ok('the line names the jurisdiction, the basis and the version',
+    !!line&&/City of Waller, TX \(high side, v1\)/.test(line.desc), line&&line.desc);
+ ok('it reads as derived, not as a manual edit',
+    /^Derived from the impact fee schedule/.test(
+      await p.evaluate(()=>editReason(doc.lines.find(x=>x.derived==='impactFees')))),
+    await p.evaluate(()=>editReason(doc.lines.find(x=>x.derived==='impactFees'))));
+
+ // Soft costs sit outside the contract sum and join at total project cost.
+ const softAfter = await p.evaluate(()=>parts().soft);
+ const projAfter = await p.evaluate(()=>parts().project);
+ const placeholder = await p.evaluate(()=>nz(doc.lines.find(x=>x.derived==='impactFees').baseUnit)*nz(doc.resSF));
+ ok('soft costs move by the fee, net of the $/SF placeholder it replaced',
+    Math.abs((softAfter-softBefore)-(feeTotal-placeholder))<0.01,
+    (softAfter-softBefore)+' vs '+(feeTotal-placeholder));
+ ok('the contract sum is untouched — soft costs are outside it',
+    (await p.evaluate(()=>parts().contract))===(await p.evaluate(()=>parts().contract)));
+ ok('total project cost moves with it', projAfter>projBefore,
+    projBefore+' -> '+projAfter);
+
+ // Basis is the conservatism knob, and only the adders move with it.
+ await p.selectOption('#feeBasis','low'); await p.waitForTimeout(400);
+ ok('switching to the low side prices the published low total',
+    Math.round((await p.evaluate(()=>feeResult().total))*100)/100
+      ===Math.round(2*308822.43*100)/100,
+    String(await p.evaluate(()=>feeResult().total)));
+ await p.selectOption('#feeBasis','high'); await p.waitForTimeout(400);
+
+ // Save, reopen, and the whole thing round-trips.
+ await p.click('#page-fees button:has-text("Save Draft")'); await p.waitForTimeout(900);
+ await p.evaluate(()=>{doc=null;});
+ await p.evaluate(()=>openBudget('TST-9999','fees')); await p.waitForTimeout(1200);
+ ok('the fee selection round-trips through a save',
+    (await p.evaluate(()=>doc.impactFees.scheduleKey))==='tx-waller'
+    &&(await p.evaluate(()=>nz((doc.impactFees.meters.find(m=>m.rowId==='m-4-250')||{}).qty)))===2,
+    JSON.stringify(await p.evaluate(()=>doc.impactFees)));
+ ok('the reopened budget still carries the derived amount',
+    Math.round((await p.evaluate(()=>doc.lines.find(x=>x.derived==='impactFees').unit))*100)
+      ===Math.round(2*318972.18*100),
+    String(await p.evaluate(()=>doc.lines.find(x=>x.derived==='impactFees').unit)));
+
+ // Clearing the jurisdiction restores the line rather than deleting it: the
+ // template put it there and a budget without a schedule still has soft fees.
+ await p.selectOption('#feeSchedule',''); await p.waitForTimeout(500);
+ const restored = await p.evaluate(()=>{const l=doc.lines.find(x=>x.code==='SC-20'&&x.scope==='soft');
+   return l?{derived:l.derived||null,basis:l.basis,auto:l.auto,unit:l.unit,baseUnit:l.baseUnit}:null;});
+ ok('clearing the jurisdiction gives the line its library basis back',
+    !!restored&&restored.derived===null&&restored.basis==='sf'&&restored.auto===true
+    &&restored.unit===restored.baseUnit,
+    JSON.stringify(restored));
+ ok('and the fee total falls back to zero',
+    (await p.evaluate(()=>feeResult().total))===0);
 
  ok('no JS errors', errs.length===0, errs.join('|'));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

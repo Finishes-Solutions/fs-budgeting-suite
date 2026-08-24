@@ -62,6 +62,7 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | `app/investment-analysis.js` / `.css` | The Investment Analysis workflow — external no-build IIFE behind `window.FSInvestmentUI`, wired through an adapter |
 | `app/theme-ramp.css` | The Editorial theme pack — presentation only, every rule scoped to `html[data-skin=ramp]`, loaded after the inline sheet |
 | `app/guardrails.js` / `api/shared/guardrails.js` | Budget guard rails — **byte-identical** UMD pair, enforced by `test/guardrails.test.js` |
+| `app/impact-fees.js` | The impact & tap fee calculator — a browser-only UMD module; there is no `api/` twin **on purpose** (see below) |
 | `CHANGELOG.md` | What changed and what to run — updated with every change that ships |
 | `app/projects.js` | The Projects tab — one project per ID, with its budgets and analyses |
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement (first auth gate) |
@@ -70,7 +71,7 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | `api/budget/` | GET / PUT / DELETE one budget; PUT writes the version snapshot |
 | `api/budgets/` | Budget list (excludes soft-deleted) |
 | `api/budget-versions/` | Read-only version history |
-| `api/pricing/` | Pricing library read + publish |
+| `api/pricing/` | Pricing library read + publish, **and** the jurisdiction fee-schedule library on `?scope=fee-schedule(s)` |
 | `api/templates/` | Budget templates: list, read, versions, create, publish, activate |
 | `api/investment-*/` | Investment analyses: list/create, CRUD + 409 concurrency, versions, stateless preview |
 | `api/shared/investment/` | The server-only before-tax calculation engine (fixture-proven; see Testing) |
@@ -88,6 +89,18 @@ custom provider for sign-in.
 
 - **Branch model:** work lands on `staging`; every push deploys the staging
   environment. Production deploys only when a staging→main PR merges.
+- **`feature` and `feature/**` branches deploy to the `feature` named environment**, which is
+  where work in progress goes so staging and production are not carrying it.
+  Unlike a per-PR preview it can sign in, because its hostname is stable and its
+  redirect URI is registered once. All feature branches share the one
+  environment — last push wins. **It isolates code, not data**: one database
+  serves every environment, so use `TST-####` ids there and never run a
+  destructive or non-additive migration from a feature branch. Details and the
+  URL are in `docs/HANDOFF.md` §3.
+- **A third or fourth deploy JOB in the one workflow file is fine; a second FILE
+  is not.** Ground rule 3 is about the filename being the OIDC identity. Adding a
+  job means adding its branch to `on.push.branches` and guarding it on
+  `github.ref_name` so the existing jobs stay mutually exclusive.
 - **Cold start:** the serverless database auto-pauses. `api/shared/db.js` retries
   transient errors (40613 etc.) with backoff for ~60s, and the frontend shows a
   boot screen while the first request wakes the database. Don't "fix" slow first
@@ -188,6 +201,21 @@ custom provider for sign-in.
   The divisor floors at `FEE_FLOOR` so a budget the `feeSum` rail is already
   refusing still renders a finite number instead of `$Infinity`. A bare number is
   a pre-migration document and means dollars; `migrate()` lifts it once.
+- **A derived line's amount is MATERIALIZED, and it is not an edit.** The Impact
+  Fees step computes one number and writes it onto a soft-cost line as a lump sum
+  (`derived:'impactFees'`, `basis:'ls'`, `qty:1`). That is what keeps `parts()`,
+  `csiSchedule()`, the exports, `api/shared/budget-calc.js` and the guard rails
+  ignorant of fee schedules — do not "improve" it into a term in `parts()`, which
+  would be a second implementation to keep in parity. Three rules in
+  `applyImpactFees()` each protect real money: a budget whose schedule has not
+  been fetched **keeps its saved amount** (recomputing against a null schedule
+  totals zero and wipes the line); the schedule's **published per-row amounts**
+  are authoritative, never `edu × eduRates` (Waller's real rate is ~$3,689.9104
+  and the rounded one drifts 12 cents at 330 EDU); and clearing the jurisdiction
+  **restores** the line to its library basis rather than deleting a line the
+  template put there. `isEdited()` is true for it, but `editReason()` says
+  *derived* — the edits report is read to decide whether a figure was tampered
+  with.
 - **Expenses have a third basis, `pctIncome`** — a share of rent + other income.
   Not circular: income does not depend on expenses.
 - **A formatted input is DECORATION over a number.** A few investment-analysis
@@ -434,6 +462,14 @@ custom provider for sign-in.
   images, data bars, and conditional formatting). The exports are deliberately
   chart-free — don't add a charting library; the decision and history are
   recorded in `docs/ROADMAP.md`.
+- **The fee library is query scopes on `/api/pricing`**, for exactly the reason
+  role management and the project surface are: a new `api/<name>/` folder is not
+  reliably picked up by the deployed host. It lands better than most, though —
+  `PUT /api/pricing` is already gated by both a route rule and `hasRole()`, so
+  the publish path keeps two gates rather than one. Reads must tolerate the
+  pending migration (`schema.js` probes `feeSchedulesTable`): this endpoint also
+  serves the pricing library every budget depends on, so a fee-schedule query
+  must never be able to fail it.
 - **Canonical JSON + SHA-256** (`api/shared/canonical.js`) defines "content
   changed": sorted keys, volatile keys (`updated`) excluded. Anything comparing
   documents must go through it, or unchanged saves will spawn versions. Never
@@ -480,6 +516,11 @@ custom provider for sign-in.
   change without its mock change will pass locally and lie.
 - Pure logic (canonical JSON, hashing, SOV projection, calculations) goes in
   `test/*.test.js` under `node:test` — no browser required.
+- **`test/fee-schedules.json` is the City of Waller table**, and
+  `test/impact-fees.test.js` pins all seventeen published low/high totals against
+  it. Those figures come from the city, so a change that moves one is a bug in
+  the calculator until proven otherwise. `test/mock-api.js` seeds the same
+  schedule, so the browser suites price against exactly what the node tests do.
 - New features come with tests in the same commit. Twenty-one suites exist
   (`suite-01` … `suite-21`; 11–14 are the investment-analysis suites, 20 is guard
   rails, 21 is Projects); extend the closest one rather than starting a

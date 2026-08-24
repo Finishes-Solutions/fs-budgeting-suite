@@ -58,9 +58,10 @@ verbatim — nothing compiles, bundles or minifies it, so a syntax error ships.
 ### The model
 
 ```
-push to staging  →  the "staging" named environment (stable URL, test here)
-PR to main       →  a throwaway per-PR preview environment
-push to main     →  production
+push to feature[/**]  →  the "feature" named environment (work in progress, signs in)
+push to staging     →  the "staging" named environment (stable URL, test here)
+PR to main          →  a throwaway per-PR preview environment
+push to main        →  production
 ```
 
 Production is served from the custom domain **`https://budgets.finishessolutions.ai`**
@@ -74,6 +75,29 @@ Its `/.auth/login/aad/callback` is **already registered** as a redirect URI in t
 Entra app registration. It is stable, so it never needs registering again. Per-PR
 preview environments put the PR number in the hostname and therefore *cannot* sign in
 — that is expected; ignore them and test on staging.
+
+Feature URL:
+`https://wonderful-rock-071c8e810-feature.centralus.7.azurestaticapps.net`
+
+Both `feature` and `feature/anything` publish here, so work in progress has somewhere to
+live that is neither staging nor production. It is a NAMED environment, which is
+the whole reason it works where per-PR previews do not: the hostname is stable,
+so its `/.auth/login/aad/callback` can be registered once and people can actually
+sign in. **That registration is a one-time human step** — until it is done the
+page loads blank (see the redirect-URI note further down; it is the usual cause).
+
+Two consequences worth stating before anyone uses it:
+
+- **All feature branches share the one environment.** Last push wins. Coordinate,
+  or push one at a time. One hostname is one redirect URI to register, which is
+  the trade being made.
+- **The database is NOT isolated.** One Azure SQL database serves every
+  environment, production included, so this isolates code and not data. Use
+  `TST-####` budget ids there — `sql/views.sql` excludes `TST-%` from every
+  reporting view and `sql/cleanup_test_budgets.sql` purges them. A `BD-` id typed
+  into the feature environment is a real budget in production's database. For the
+  same reason, a migration run from a feature branch is live everywhere the moment
+  it runs: only additive, backward-compatible SQL belongs there.
 
 ### The one rule that cost six failed deploys
 
@@ -89,8 +113,11 @@ Consequences, all learned the hard way:
 
 - **Do not add a second workflow file** for staging, previews or anything else that
   calls `Azure/static-web-apps-deploy`. It will fail with *"Could not determine the
-  Static Web App from the GitHub OIDC workflow reference."* All three jobs live in the
+  Static Web App from the GitHub OIDC workflow reference."* All four jobs live in the
   one file, guarded by `if:` on `github.ref_name`.
+- **Another deploy JOB in that file is fine** — a second FILE is what cannot work.
+  That is how the staging job was added, and how the `feature/**` job was added
+  after it. Adding one means adding its branch to `on.push.branches` too.
 - **Do not rename the file.** Not for tidiness, not ever.
 - Authentication is **OIDC**, not deployment tokens. Every job needs
   `permissions: id-token: write` plus the two token-fetch steps. The `close_pull_request`
@@ -101,9 +128,11 @@ Consequences, all learned the hard way:
   is unchanged — the per-PR preview environment is not torn down either way; delete
   stale previews in the portal's Environments blade. Do not "fix" this with a
   deployment token.
-- The production and staging jobs are mutually exclusive on `github.ref_name`, so a
-  push to `staging` reports production as `skipped`. Verified — staging pushes cannot
-  reach the live site.
+- The production, staging and feature jobs are mutually exclusive on
+  `github.ref_name`, so a push to `staging` reports production as `skipped`, and a
+  push to `feature/**` reports both of them as skipped. Verified — neither can
+  reach the live site. Check this on the Actions run the first time, rather than
+  trusting it.
 
 ### Working rhythm
 

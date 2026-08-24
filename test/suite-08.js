@@ -26,7 +26,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.waitForTimeout(200);
 
  // --- baseline WITH amenity
- await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
+ await p.click('#page-input button:has-text("Continue to Impact Fees")'); await p.waitForTimeout(250); await p.click('#page-fees button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
  const withAmenContract=await p.locator('#rContract').textContent();
  const withAmenRows=await p.locator('#budBody tr').count();
  ok('amenity scope present when amenity SF > 0',

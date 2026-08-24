@@ -68,6 +68,7 @@ try{
 <link rel="stylesheet" href="home.css">
 <link rel="stylesheet" href="feedback.css">
 <script src="guardrails.js"></script>
+<script src="impact-fees.js"></script>
 <script src="dashboard.js"></script>
 <script src="home.js"></script>
 <script src="projects.js"></script>
@@ -461,8 +462,8 @@ body.modal-open{overflow:hidden}
   border-radius:50%;background:var(--green-600)}
 .wel-list b{color:var(--ink-900);font-weight:700}
 .wel-note{margin:18px 0 0;font-size:12.5px;color:var(--ink-500)}
-.grid{display:grid;gap:14px}.g5{grid-template-columns:repeat(5,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
-@media(max-width:900px){.g4,.g5{grid-template-columns:1fr 1fr}}
+.grid{display:grid;gap:14px}.g5{grid-template-columns:repeat(5,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.g3,.g4,.g5{grid-template-columns:1fr 1fr}}
 
 label.fld{display:block}
 label.fld .lab{display:block;margin-bottom:6px;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
@@ -506,6 +507,7 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
   padding:8px 12px;font-family:inherit;font-size:13px;color:var(--ink-900);cursor:pointer}
 .rowmenu-item:hover,.rowmenu-item:focus-visible{background:var(--ink-100);outline:none}
 .rowmenu-item.danger{color:var(--danger)}
+.btn.danger,.btn-ghost.danger{color:var(--danger)}
 .rowmenu-item.danger:hover,.rowmenu-item.danger:focus-visible{background:#fdf0ee}
 .rowmenu-sep{height:1px;background:var(--ink-150);margin:4px 0}
 
@@ -577,7 +579,7 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
   #page-pricing .tbl{min-width:640px}
   .stats{grid-template-columns:repeat(2,1fr)}
   .stat{padding:14px 16px}
-  .g4,.g5{grid-template-columns:1fr}
+  .g3,.g4,.g5{grid-template-columns:1fr}
   .set-grid{grid-template-columns:1fr}
   .list-toolbar input[type=text]{width:auto;flex:1 1 150px;min-width:0}
   .list-toolbar select.lt-status,.list-toolbar select.lt-group{width:auto;flex:0 1 auto;min-width:0}
@@ -616,6 +618,7 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
    ("Per Amen SF") are clipped once it is the selected value. */
 .tbl select{padding-right:24px}
 .basisin{width:132px;font-size:12px}
+.tbl input.qtyin{width:74px;font-size:12px;text-align:right}
 
 /* Checkboxes are drawn rather than native so they can be rounded and pick up the
    brand green. Native padding from `.tbl input` is reset explicitly. */
@@ -1112,11 +1115,11 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= INPUTS ================= -->
 <div class="page" id="page-input">
   <div class="page-title">
-    <div><button class="btn-back" id="backInputs" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
+    <div><button class="btn-back" id="backInputs" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Inputs</h1><div class="sub">Step 1 of 4 — project, unit mix, income, profit &amp; contingency</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="iStatusHost"></span>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save Draft</button>
-      <button class="btn btn-primary" onclick="toBudget()">Continue to Budget →</button>
+      <button class="btn btn-primary" onclick="toFees()">Continue to Impact Fees →</button>
     </div>
   </div>
   <div class="wf-steps no-print" data-wf-pills></div>
@@ -1292,6 +1295,69 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
   </section>
 
+</div>
+
+<!-- ================= IMPACT FEES ================= -->
+<!-- Step 2 of the budget workflow. The whole page computes ONE number, which is
+     materialized onto a soft-cost line — see applyImpactFees(). Everything here
+     is a real route, so the workflow pills work the same as on every other step. -->
+<div class="page" id="page-fees">
+  <div class="page-title">
+    <div><button class="btn-back" id="backFees" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Impact &amp; Tap Fees</h1>
+      <div class="sub">Step 2 of 4 — the jurisdiction's fee schedule, priced against this project's meters</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
+      <span id="fStatusHost"></span>
+      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save Draft</button>
+      <button class="btn btn-primary" onclick="go('budget')">Continue to Budget &rarr;</button>
+    </div>
+  </div>
+  <div class="wf-steps no-print" data-wf-pills></div>
+
+  <section class="card">
+    <div class="card-hd"><h2>Jurisdiction</h2>
+      <span class="eyebrow" id="feeProvenance">No schedule selected</span></div>
+    <div class="card-bd">
+      <div class="grid g3">
+        <label class="fld"><span class="lab">Fee Schedule</span>
+          <select id="feeSchedule" data-k="fee.schedule" onchange="chooseFeeSchedule(this.value)"></select>
+          <div class="note" id="feeScheduleHint">Published schedules are managed by a pricing admin.</div></label>
+        <label class="fld"><span class="lab">Cost Basis</span>
+          <select id="feeBasis" data-k="fee.basis" onchange="setFeeBasis(this.value)">
+            <option value="high">High Side</option>
+            <option value="avg">Average</option>
+            <option value="low">Low Side</option></select>
+          <div class="note">Impact fees are fixed; this moves the meter, vault and tap work ranges only.</div></label>
+        <div class="fld"><span class="lab">Schedule Version</span>
+          <div class="mono" id="feeVersion" style="padding-top:9px">&mdash;</div>
+          <div class="note" id="feeVersionHint">A budget keeps the version it was priced from.</div></div>
+      </div>
+      <div id="feeUpdateBanner" style="display:none" class="note"></div>
+    </div>
+  </section>
+
+  <section class="card" id="sec-fee-meters">
+    <div class="card-hd"><h2>Meter Schedule</h2>
+      <span class="eyebrow" id="feeMeterMeta">&mdash;</span></div>
+    <div class="card-bd" style="overflow-x:auto;padding-top:8px">
+      <table class="tbl" id="feeMeterTbl" style="min-width:1040px"></table>
+    </div>
+  </section>
+
+  <section class="card" id="sec-fee-other">
+    <div class="card-hd"><h2>Other Fees</h2>
+      <button class="btn btn-ghost" onclick="addManualFee()">Add Manual Fee</button></div>
+    <div class="card-bd" style="overflow-x:auto;padding-top:8px">
+      <table class="tbl" id="feeOtherTbl" style="min-width:720px"></table>
+    </div>
+  </section>
+
+  <section class="card" id="sec-fee-total">
+    <div class="card-hd"><h2>Roll-Up</h2>
+      <span class="eyebrow">Carried as a soft cost, outside the construction contract sum</span></div>
+    <div class="card-bd">
+      <div id="feeRollup"></div>
+    </div>
+  </section>
 </div>
 
 <!-- ================= BUDGET ================= -->
@@ -4273,6 +4339,34 @@ function withFocus(fn){
 /* kind 'blank' starts genuinely from scratch — no unit types, no income or expense lines,
    no scope, no square footage, no markups. Everything is added by hand, which is what you
    want for a project the multifamily template does not describe. */
+/* The Impact Fees step's document field. Two functions rather than one literal
+   because migrate() needs the same repair for a document saved before the step
+   existed — and every numeric read below still guards with nz(), because a
+   blank input coerces to 0 but an ABSENT property is undefined and prints $NaN. */
+function blankImpactFees(){
+  return {scheduleKey:null,scheduleName:null,scheduleVersion:null,effective:null,
+    basis:FSImpactFees.DEFAULT_BASIS,meters:[],extras:[],manual:[],override:null};
+}
+function normalizeImpactFees(f){
+  const b=blankImpactFees();
+  if(!f||typeof f!=='object')return b;
+  const basis=FSImpactFees.BASES.includes(f.basis)?f.basis:FSImpactFees.DEFAULT_BASIS;
+  const ov=f.override&&Number.isFinite(+f.override.amount)&&f.override.reason
+    ?{amount:nz(f.override.amount),reason:String(f.override.reason),
+      by:f.override.by||null,at:f.override.at||null}:null;
+  return {scheduleKey:f.scheduleKey||null,scheduleName:f.scheduleName||null,
+    scheduleVersion:f.scheduleVersion?nz(f.scheduleVersion):null,
+    effective:f.effective||null,basis:basis,
+    meters:(Array.isArray(f.meters)?f.meters:[]).filter(m=>m&&m.rowId).map(m=>({
+      rowId:String(m.rowId),qty:nz(m.qty),
+      includeMeter:m.includeMeter!==false,includeVault:m.includeVault!==false,
+      includeTaps:m.includeTaps!==false})),
+    extras:(Array.isArray(f.extras)?f.extras:[]).filter(x=>x&&x.feeId)
+      .map(x=>({feeId:String(x.feeId),qty:x.qty===undefined?1:nz(x.qty)})),
+    manual:(Array.isArray(f.manual)?f.manual:[]).filter(m=>m&&m.rowId)
+      .map(m=>({rowId:String(m.rowId),label:String(m.label||'Fee'),amount:nz(m.amount)})),
+    override:ov};
+}
 function blankDoc(kind){
   const bare=kind==='blank';
   return {projectId:'',name:'',address:'',type:bare?'Blank':'Multifamily',
@@ -4298,6 +4392,12 @@ function blankDoc(kind){
     // warned rather than blocked until they are updated from the template.
     opexSchemaVersion:bare?1:FSGuardrails.OPEX_SCHEMA_FULL,
     guardrailAcks:[],
+    // The Impact Fees step starts present and empty rather than absent: a budget
+    // with no jurisdiction picked totals zero, which is exactly how every budget
+    // that predates the step behaves. Defaults to the high side deliberately —
+    // a fee estimate under what the city bills is worse than one over, and this
+    // number reaches lenders.
+    impactFees:blankImpactFees(),
     pricingVersion:pricing.version,status:'Draft',
     created:new Date().toISOString(),updated:new Date().toISOString()};
 }
@@ -4315,6 +4415,7 @@ function migrate(d){ // tolerate older saves
     else d.projectCosts[k]={mode:v.mode==='pct'?'pct':'amt',val:nz(v.val)};
   });
   d.opexSchemaVersion=nz(d.opexSchemaVersion)||1;
+  d.impactFees=normalizeImpactFees(d.impactFees);
   d.guardrailAcks=Array.isArray(d.guardrailAcks)
     ? d.guardrailAcks.filter(a=>a&&typeof a.id==='string'&&typeof a.reason==='string')
     : [];
@@ -4348,8 +4449,18 @@ function isEdited(it){
       || (+it.unit)!==(+it.baseUnit)
       || it.edited===true;
 }
+/* A line whose amount comes from the Impact Fees step. It is "edited" by every
+   test above — its rate differs from the library's $/SF placeholder and its
+   quantity is off auto — but calling it a manual edit in the edits report and
+   on the PDF would be actively misleading. It is derived, and from what is the
+   part a lender needs. */
+function isDerived(it){return !!(it&&it.derived);}
 function editedCount(){return doc?doc.lines.filter(isEdited).length:0;}
 function editReason(it){
+  if(isDerived(it)){
+    const p=doc&&doc.impactFees?FSImpactFees.provenance(feeResult()):'';
+    return 'Derived from the impact fee schedule'+(p?' — '+p:'');
+  }
   const r=[];
   if(it.custom)r.push('added by hand');
   if(it.auto===false&&it.basis!=='ls')r.push('quantity overridden');
@@ -4361,15 +4472,15 @@ function editReason(it){
 /* ============ NAV + HASH ROUTING ============
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
-const PAGE_SLUG={home:'home',projects:'projects',project:'project',budgets:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+const PAGE_SLUG={home:'home',projects:'projects',project:'project',budgets:'budgets',input:'inputs',fees:'fees',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
 /* Human names for the pages, for anything a person reads: today the subject
    line of a feedback email, which is more use as "Project Budgets" than as
    "budgets". */
-const PAGE_LABEL={home:'Home',projects:'Projects',project:'Project Detail',budgets:'Project Budgets',input:'Budget Inputs',budget:'Budget Detail',
+const PAGE_LABEL={home:'Home',projects:'Projects',project:'Project Detail',budgets:'Project Budgets',input:'Budget Inputs',fees:'Impact Fees',budget:'Budget Detail',
   csi:'CSI Schedule',analyses:'Investment Analysis',analysis:'Investment Analysis Editor',
   pricing:'Pricing Library',help:'How to Use',dashboard:'Analytics',admin:'Admin',version:'Version'};
-const SLUG_PAGE={home:'home',projects:'projects',project:'project',budgets:'budgets',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
-const DOC_PAGES=['input','budget','csi'];
+const SLUG_PAGE={home:'home',projects:'projects',project:'project',budgets:'budgets',inputs:'input',fees:'fees',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+const DOC_PAGES=['input','fees','budget','csi'];
 
 function hashFor(p){
   const s=PAGE_SLUG[p]||'home';
@@ -4403,7 +4514,7 @@ function go(p){
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
   // Nested pages light their parent tab: the whole budget workflow keeps
   // Budgets lit, and the analysis editor keeps Investment Analysis lit.
-  var NAV_PARENT={analysis:'analyses',input:'budgets',budget:'budgets',csi:'budgets',project:'projects'};
+  var NAV_PARENT={analysis:'analyses',input:'budgets',fees:'budgets',budget:'budgets',csi:'budgets',project:'projects'};
   const nb=document.getElementById('nav-'+(NAV_PARENT[p]||p));
   if(nb)nb.classList.add('on');
   var MORE_PAGES=['help','dashboard','admin','version','pricing'];
@@ -4420,6 +4531,7 @@ function go(p){
   if(p==='admin')refreshAdmin();
   if(p==='version')renderVersionPage();
   if(p==='budget'||p==='input'||p==='csi')recalc();
+  if(p==='fees')renderFeesPage();
   window.scrollTo(0,0);
 }
 
@@ -4560,7 +4672,7 @@ async function renderBudgetsPage(){
 /* The budget workflow pills — the same .wf-steps component the analysis steps
    use. Each pill is a real route, so the current page is both marked `on` and
    given aria-current for assistive tech. */
-const WORKFLOW_STEPS=[{page:'input',label:'Inputs'},{page:'budget',label:'Budget'},{page:'csi',label:'CSI Schedule'}];
+const WORKFLOW_STEPS=[{page:'input',label:'Inputs'},{page:'fees',label:'Impact Fees'},{page:'budget',label:'Budget'},{page:'csi',label:'CSI Schedule'}];
 function workflowPillsHTML(active){
   return WORKFLOW_STEPS.map((s,i)=>
     `<a href="${hashFor(s.page)}" class="${s.page===active?'on':''}"
@@ -4832,6 +4944,359 @@ function homeSort(k){
    own that state rather than scattering the removal across its callers. */
 function enableDocNav(){ /* no global workflow tabs to enable any more */ }
 function disableDocNav(){ /* likewise */ }
+/* ============ IMPACT & TAP FEES ============
+   The Impact Fees step. Everything here feeds ONE number, which applyImpactFees()
+   materializes onto a soft-cost SOV line as a lump sum. That is the whole design:
+   downstream, parts(), csiSchedule(), the exports and api/shared/budget-calc.js
+   see an ordinary soft line and need no knowledge of fee schedules at all.
+
+   The published schedule is a SNAPSHOT, not a live join. A budget stores the
+   version it priced from, and publishing a newer one offers an update rather
+   than silently repricing saved work — the same rule templates and the pricing
+   library already follow (docs/DATA_CONTRACT.md, "Four different versions"). */
+let feeSchedules=[],feeSchedulesLoaded=false,feeSchedulesAdmin=false,feeDoc=null;
+
+/* The soft-cost line the total lands on. Matched by its `derived` marker first
+   and its pricing-library code second, never by array position — lineId is row
+   identity and a template can reorder lines. */
+const FEE_LINE_CODE='SC-20';
+const FEE_LINE_GRP='Soft Costs — Impact & Fees';
+const FEE_LINE_DESC='Water & Sewer Impact & Tap Fees';
+
+async function loadFeeSchedules(){
+  try{
+    const r=await api('pricing?scope=fee-schedules');
+    feeSchedules=r.schedules||[];
+    feeSchedulesAdmin=!!r.isAdmin;
+    feeSchedulesLoaded=true;
+  }catch(e){feeSchedules=[];feeSchedulesLoaded=false;}
+}
+
+/* The context the generic (non-meter) fees price against, so a per-unit or
+   per-acre fee needs no second place to type the unit count. siteMetrics()
+   already owns the SF-to-acres conversion; don't reimplement it here. */
+function feeContext(){
+  const m=siteMetrics();
+  return {units:totUnits(),acres:m.acres,resSF:nz(doc.resSF),amenSF:nz(doc.amenSF),
+    hard:scopeSum('res')+scopeSum('amen')};
+}
+function feeResult(){
+  if(!doc)return FSImpactFees.evaluate(null,null,{});
+  return FSImpactFees.evaluate(feeDoc,doc.impactFees,feeContext());
+}
+
+/* Load the schedule document a budget was priced from. Asks for the exact
+   stored version, not the current one, so opening an old budget shows the
+   numbers it was actually priced with. */
+async function loadFeeDoc(){
+  const f=doc&&doc.impactFees;
+  if(!f||!f.scheduleKey){feeDoc=null;return;}
+  if(feeDoc&&feeDoc.scheduleKey===f.scheduleKey
+     &&feeDoc.__version===f.scheduleVersion)return;
+  try{
+    const q='pricing?scope=fee-schedule&key='+encodeURIComponent(f.scheduleKey)
+      +(f.scheduleVersion?'&version='+encodeURIComponent(f.scheduleVersion):'');
+    const r=await api(q);
+    feeDoc=Object.assign({},r.doc,{__version:r.versionNumber,__current:r.currentVersion});
+  }catch(e){feeDoc=null;}
+}
+
+async function renderFeesPage(){
+  if(!doc)return;
+  if(!feeSchedulesLoaded)await loadFeeSchedules();
+  await loadFeeDoc();
+  paintFeesPage();
+}
+
+function paintFeesPage(){
+  if(!doc)return;
+  const f=doc.impactFees,r=feeResult();
+  // --- jurisdiction picker ---
+  const sel=document.getElementById('feeSchedule');
+  const opts=['<option value="">— None —</option>'].concat(feeSchedules.map(s=>
+    `<option value="${esc(s.scheduleKey)}" ${s.scheduleKey===f.scheduleKey?'selected':''}>${esc(s.name)}</option>`));
+  // A schedule a budget was priced from that has since been deactivated is not
+  // in the list. Keep it selectable rather than silently switching the budget.
+  if(f.scheduleKey&&!feeSchedules.some(s=>s.scheduleKey===f.scheduleKey))
+    opts.push(`<option value="${esc(f.scheduleKey)}" selected>${esc(f.scheduleName||f.scheduleKey)} (unavailable)</option>`);
+  sel.innerHTML=opts.join('');
+  document.getElementById('feeBasis').value=f.basis;
+  document.getElementById('feeProvenance').textContent=
+    r.hasSchedule?FSImpactFees.provenance(r):'No schedule selected';
+  document.getElementById('feeVersion').textContent=f.scheduleVersion?('v'+f.scheduleVersion):'—';
+  document.getElementById('feeScheduleHint').textContent=
+    feeSchedulesLoaded
+      ?(feeSchedules.length?'Published schedules are managed by a pricing admin.'
+                           :'No fee schedules published yet.')
+      :'Could not load fee schedules — the total stays at whatever was last saved.';
+
+  // A newer published version exists: offer it, never take it.
+  const banner=document.getElementById('feeUpdateBanner');
+  const cur=feeDoc&&feeDoc.__current;
+  if(cur&&f.scheduleVersion&&cur>f.scheduleVersion){
+    banner.style.display='';
+    banner.innerHTML='This jurisdiction has published <b>v'+esc(String(cur))+'</b>. '
+      +'This budget is priced from v'+esc(String(f.scheduleVersion))+'. '
+      +'<button class="btn btn-ghost" onclick="updateFeeSchedule()">Update to v'+esc(String(cur))+'</button>';
+  } else banner.style.display='none';
+
+  paintFeeMeters(r);
+  paintFeeOther(r);
+  paintFeeRollup(r);
+}
+
+function paintFeeMeters(r){
+  const t=document.getElementById('feeMeterTbl');
+  const meta=document.getElementById('feeMeterMeta');
+  if(!feeDoc||!Array.isArray(feeDoc.meters)||!feeDoc.meters.length){
+    t.innerHTML='';
+    meta.textContent=doc.impactFees.scheduleKey?'Schedule unavailable':'Pick a jurisdiction to price meters';
+    return;
+  }
+  const f=doc.impactFees;
+  const byId={};(f.meters||[]).forEach(m=>{byId[m.rowId]=m;});
+  const rowsById={};r.rows.forEach(x=>{rowsById[x.rowId]=x;});
+  meta.textContent=feeDoc.meters.length+' meter sizes · '+r.rows.filter(x=>x.qty>0).length+' in use';
+  let h='<thead><tr><th>Meter</th><th class="r">GPM</th><th class="r">EDU</th>'
+    +'<th class="r">Qty</th><th class="c">Meter</th><th class="c">Vault</th><th class="c">Taps</th>'
+    +'<th class="r">Water Impact</th><th class="r">Sewer Impact</th>'
+    +'<th class="r">Adders</th><th class="r">Row Total</th></tr></thead><tbody>';
+  feeDoc.meters.forEach(m=>{
+    const s=byId[m.rowId]||{qty:0,includeMeter:true,includeVault:true,includeTaps:true};
+    const a=FSImpactFees.rowAmounts(m,Object.assign({},s,{qty:nz(s.qty)||0}),f.basis);
+    const adders=a.each.meter+a.each.vault+a.each.waterTap+a.each.sewerTap;
+    const on=nz(s.qty)>0;
+    const cb=(k,enabled)=>enabled
+      ?`<input type="checkbox" data-k="fee.${esc(m.rowId)}.${k}" ${s[k]!==false?'checked':''}
+          onchange="setFeeInclude('${esc(m.rowId)}','${k}',this.checked)">`
+      :'<span class="mono" style="color:var(--ink-500)">—</span>';
+    h+=`<tr${on?'':' style="opacity:.55"'}>
+      <td>${esc(m.size)}"</td>
+      <td class="r mono">${num(m.gpm)}</td>
+      <td class="r mono">${nz(m.edu)}</td>
+      <td class="r"><input type="number" class="qtyin" data-k="fee.${esc(m.rowId)}.qty" min="0" step="1"
+          value="${nz(s.qty)}" style="width:74px" oninput="setFeeQty('${esc(m.rowId)}',this.value)"></td>
+      <td class="c">${cb('includeMeter',true)}</td>
+      <td class="c">${cb('includeVault',!!m.vault)}</td>
+      <td class="c">${cb('includeTaps',true)}</td>
+      <td class="r mono">${usd(a.each.waterImpact)}</td>
+      <td class="r mono">${usd(a.each.sewerImpact)}</td>
+      <td class="r mono">${usd(adders)}</td>
+      <td class="r mono"><b>${usd(a.total)}</b></td></tr>`;
+  });
+  h+=`</tbody><tfoot><tr class="tot"><td colspan="10">Meter fees</td>
+      <td class="r mono"><b>${usd(r.meterTotal)}</b></td></tr></tfoot>`;
+  t.innerHTML=h;
+}
+
+function paintFeeOther(r){
+  const t=document.getElementById('feeOtherTbl');
+  const f=doc.impactFees;
+  const defs=(feeDoc&&Array.isArray(feeDoc.fees))?feeDoc.fees:[];
+  if(!defs.length&&!f.manual.length){
+    t.innerHTML='<tbody><tr><td class="note" style="padding:14px">'
+      +'This schedule carries no fees beyond the meter table. Add a manual fee for anything '
+      +'this project pays that the jurisdiction does not publish.</td></tr></tbody>';
+    return;
+  }
+  const chosen={};(f.extras||[]).forEach(x=>{chosen[x.feeId]=x;});
+  let h='<thead><tr><th>Fee</th><th>Basis</th><th class="r">Qty</th><th class="r">Amount</th>'
+    +'<th class="r">Total</th><th></th></tr></thead><tbody>';
+  defs.forEach(d=>{
+    const picked=!!chosen[d.feeId];
+    const amt=FSImpactFees.pick(d.amount,f.basis);
+    const row=r.extras.find(x=>x.feeId===d.feeId);
+    h+=`<tr${picked?'':' style="opacity:.55"'}>
+      <td><label><input type="checkbox" data-k="fee.x.${esc(d.feeId)}.on" ${picked?'checked':''}
+          onchange="toggleFeeExtra('${esc(d.feeId)}',this.checked)"> ${esc(d.label)}</label></td>
+      <td class="mono" style="font-size:12px;color:var(--ink-500)">${esc(FEE_BASIS_LABEL[d.basis]||d.basis)}</td>
+      <td class="r"><input type="number" class="qtyin" data-k="fee.x.${esc(d.feeId)}.qty" min="0" step="1"
+          value="${picked?nz(chosen[d.feeId].qty):1}" style="width:74px"
+          oninput="setFeeExtraQty('${esc(d.feeId)}',this.value)" ${picked?'':'disabled'}></td>
+      <td class="r mono">${usd2(amt)}</td>
+      <td class="r mono"><b>${usd(row?row.total:0)}</b></td><td></td></tr>`;
+  });
+  (f.manual||[]).forEach(m=>{
+    h+=`<tr><td><input type="text" data-k="fee.m.${esc(m.rowId)}.label" value="${esc(m.label)}"
+          oninput="setManualFee('${esc(m.rowId)}','label',this.value)" style="width:100%"></td>
+      <td class="mono" style="font-size:12px;color:var(--ink-500)">manual</td>
+      <td class="r mono">—</td>
+      <td class="r"><input type="number" data-k="fee.m.${esc(m.rowId)}.amount" step="0.01"
+          value="${nz(m.amount)}" style="width:120px"
+          oninput="setManualFee('${esc(m.rowId)}','amount',this.value)"></td>
+      <td class="r mono"><b>${usd(nz(m.amount))}</b></td>
+      <td class="r"><button class="btn btn-ghost danger" onclick="removeManualFee('${esc(m.rowId)}')">Remove</button></td></tr>`;
+  });
+  h+=`</tbody><tfoot><tr class="tot"><td colspan="4">Other fees</td>
+      <td class="r mono"><b>${usd(r.extrasTotal+r.manualTotal)}</b></td><td></td></tr></tfoot>`;
+  t.innerHTML=h;
+}
+const FEE_BASIS_LABEL={flat:'lump sum',unit:'per unit',acre:'per acre',resSF:'per res SF',
+  amenSF:'per amen SF',bldgSF:'per building SF',pctHard:'% of hard cost'};
+
+function paintFeeRollup(r){
+  const p=parts();
+  const softPct=p.soft>0?(100*r.total/p.soft):null;
+  let h=`<div class="sum-row"><span class="k">Meter fees</span><span class="v">${usd(r.meterTotal)}</span></div>
+    <div class="sum-row"><span class="k">Other fees</span><span class="v">${usd(r.extrasTotal+r.manualTotal)}</span></div>`;
+  if(r.override)
+    h+=`<div class="sum-row sub"><span class="k">Calculated total</span><span class="v">${usd(r.derivedTotal)}</span></div>
+        <div class="sum-row sub"><span class="k">Overridden — ${esc(r.override.reason)}</span><span class="v"></span></div>`;
+  h+=`<div class="sum-row tot"><span class="k">Total Impact &amp; Tap Fees</span><span class="v">${usd(r.total)}</span></div>
+    <div class="note" style="margin-top:10px">Carried on the soft-cost line <b>${esc(FEE_LINE_CODE)} ${esc(FEE_LINE_DESC)}</b>
+      as a lump sum${softPct!==null?', '+softPct.toFixed(1)+'% of total soft costs':''}.
+      Soft costs sit outside the construction contract sum and join at total project cost.</div>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">`;
+  h+=r.override
+    ?`<button class="btn btn-ghost" onclick="clearFeeOverride()">Remove Override</button>`
+    :`<button class="btn btn-ghost" onclick="setFeeOverride()">Override Total…</button>`;
+  h+='</div>';
+  document.getElementById('feeRollup').innerHTML=h;
+}
+
+/* ---- mutations. Every one ends at applyImpactFees() + touch(), which is the
+   document's change pipeline — don't invent a parallel dirty flag. ---- */
+function feeSel(rowId){
+  const f=doc.impactFees;
+  let s=f.meters.find(m=>m.rowId===rowId);
+  if(!s){s={rowId:rowId,qty:0,includeMeter:true,includeVault:true,includeTaps:true};f.meters.push(s);}
+  return s;
+}
+function setFeeQty(rowId,v){feeSel(rowId).qty=Math.max(0,nz(v));afterFeeChange();}
+function setFeeInclude(rowId,k,on){feeSel(rowId)[k]=!!on;afterFeeChange();}
+function setFeeBasis(v){
+  doc.impactFees.basis=FSImpactFees.BASES.includes(v)?v:FSImpactFees.DEFAULT_BASIS;
+  afterFeeChange();
+}
+function toggleFeeExtra(feeId,on){
+  const f=doc.impactFees;
+  if(on){if(!f.extras.some(x=>x.feeId===feeId))f.extras.push({feeId:feeId,qty:1});}
+  else f.extras=f.extras.filter(x=>x.feeId!==feeId);
+  afterFeeChange();
+}
+function setFeeExtraQty(feeId,v){
+  const x=doc.impactFees.extras.find(e=>e.feeId===feeId);
+  if(x){x.qty=Math.max(0,nz(v));afterFeeChange();}
+}
+function addManualFee(){
+  doc.impactFees.manual.push({rowId:newLineId(),label:'New fee',amount:0});
+  afterFeeChange();
+}
+function setManualFee(rowId,k,v){
+  const m=doc.impactFees.manual.find(x=>x.rowId===rowId);
+  if(!m)return;
+  m[k]=k==='amount'?nz(v):String(v);
+  afterFeeChange(k!=='label');
+}
+function removeManualFee(rowId){
+  doc.impactFees.manual=doc.impactFees.manual.filter(x=>x.rowId!==rowId);
+  afterFeeChange();
+}
+/* An override is a record, not a mute: the reason is mandatory and travels into
+   every export, exactly as a guard-rail acknowledgement does. */
+function setFeeOverride(){
+  const r=feeResult();
+  const amt=prompt('Override the impact fee total with what amount?',String(Math.round(r.derivedTotal)));
+  if(amt===null)return;
+  if(!Number.isFinite(+amt)){toast('Enter a number');return;}
+  const why=prompt('Why? This prints on the report and the workbook.','');
+  if(why===null)return;
+  if(!String(why).trim()){toast('An override needs a reason');return;}
+  doc.impactFees.override={amount:nz(amt),reason:String(why).trim(),
+    by:(US&&US.profile&&US.profile.displayName)||US.userDetails||null,at:new Date().toISOString()};
+  afterFeeChange();
+}
+function clearFeeOverride(){doc.impactFees.override=null;afterFeeChange();}
+
+async function chooseFeeSchedule(key){
+  const f=doc.impactFees;
+  if(!key){
+    f.scheduleKey=null;f.scheduleName=null;f.scheduleVersion=null;f.effective=null;
+    f.meters=[];f.extras=[];feeDoc=null;
+    afterFeeChange();return;
+  }
+  if(key===f.scheduleKey){paintFeesPage();return;}
+  try{
+    const r=await api('pricing?scope=fee-schedule&key='+encodeURIComponent(key));
+    feeDoc=Object.assign({},r.doc,{__version:r.versionNumber,__current:r.currentVersion});
+    f.scheduleKey=r.scheduleKey;f.scheduleName=r.name;
+    f.scheduleVersion=r.versionNumber;f.effective=r.effective||null;
+    // Switching jurisdiction cannot carry the old meter selection: rowIds are
+    // per-schedule and a 4-inch row in one city is not the 4-inch row in another.
+    f.meters=[];f.extras=[];
+    afterFeeChange();
+  }catch(e){toast('Could not load that fee schedule');}
+}
+async function updateFeeSchedule(){
+  const f=doc.impactFees;
+  if(!f.scheduleKey)return;
+  try{
+    const r=await api('pricing?scope=fee-schedule&key='+encodeURIComponent(f.scheduleKey));
+    feeDoc=Object.assign({},r.doc,{__version:r.versionNumber,__current:r.currentVersion});
+    f.scheduleVersion=r.versionNumber;f.scheduleName=r.name;f.effective=r.effective||null;
+    // The meter mix is the project's, not the schedule's — keep whatever still
+    // exists in the new version and drop only rows the jurisdiction removed.
+    const ids=new Set((r.doc.meters||[]).map(m=>m.rowId));
+    f.meters=f.meters.filter(m=>ids.has(m.rowId));
+    afterFeeChange();
+    toast('Updated to v'+r.versionNumber);
+  }catch(e){toast('Could not update the fee schedule');}
+}
+
+function afterFeeChange(repaint){
+  applyImpactFees();
+  touch();
+  // withFocus, not a bare repaint: every input here carries a data-k, and this
+  // replaces whole tables' innerHTML — without it the caret jumps out of the
+  // quantity field on every keystroke.
+  if(repaint!==false)withFocus(()=>paintFeesPage());
+}
+
+/* Materialize the total onto the soft-cost line. This is the seam: everything
+   downstream reads an ordinary lump-sum soft line and never learns that a fee
+   schedule exists. */
+function impactFeeLine(){
+  return doc.lines.find(l=>l.derived==='impactFees')
+      || doc.lines.find(l=>l.code===FEE_LINE_CODE&&l.scope==='soft')
+      || null;
+}
+function applyImpactFees(){
+  if(!doc||!doc.impactFees)return;
+  const f=doc.impactFees;
+  /* The saved line is the authority until we can prove a new number. A budget
+     priced from a jurisdiction whose schedule has not been fetched yet (opened
+     straight to the Budget page, or the API is down) must keep the amount it
+     was saved with — recomputing against a null schedule would total zero and
+     silently wipe a six-figure soft-cost line. */
+  if(f.scheduleKey&&!(feeDoc&&feeDoc.scheduleKey===f.scheduleKey))return;
+  const r=feeResult();
+  let line=impactFeeLine();
+  // Nothing to carry and no line to restore: leave the document alone.
+  if(!line&&r.total<=0)return;
+  if(!line){
+    line={lineId:newLineId(),code:FEE_LINE_CODE,grp:FEE_LINE_GRP,scope:'soft',
+      desc:FEE_LINE_DESC,basis:'ls',unit:0,baseUnit:0,auto:false,qty:1,custom:true};
+    insertLine(line);
+  }
+  if(!r.hasSchedule&&r.total<=0){
+    // The jurisdiction was cleared. Give the line its library basis back rather
+    // than deleting it — deleting would lose a line the template put there.
+    if(line.derived){
+      delete line.derived;
+      line.basis='sf';line.auto=true;line.qty=0;
+      line.unit=nz(line.baseUnit);line.desc=FEE_LINE_DESC;
+    }
+    return;
+  }
+  line.derived='impactFees';
+  line.scope='soft';
+  line.basis='ls';
+  line.auto=false;
+  line.qty=1;
+  line.unit=r.total;
+  line.desc=FEE_LINE_DESC+' — '+FSImpactFees.provenance(r);
+}
+
 /* ============ BUDGET TEMPLATES ============
    The template system is the authoritative source of new-budget defaults
    (docs/DATA_CONTRACT.md). A template is edited by loading its document into the
@@ -5095,7 +5560,7 @@ function backFromBudget(){
 function paintBackTargets(){
   const onProject=!!(budgetOrigin&&budgetOrigin.page==='project'&&budgetOrigin.id);
   const label=onProject?('Back to '+budgetOrigin.id):'Back to Budgets';
-  ['backInputs','backBudget','backCsi'].forEach(id=>{
+  ['backInputs','backFees','backBudget','backCsi'].forEach(id=>{
     const b=document.getElementById(id);
     if(!b)return;
     b.setAttribute('aria-label',label);b.setAttribute('title',label);
@@ -5394,6 +5859,13 @@ function toBudget(){
   pullForms();
   if(!validateId()){toast('Enter a valid budget ID (BD-0001)');document.getElementById('pId').focus();return;}
   go('budget');
+}
+/* Inputs now leads to the Impact Fees step. Same validation — the id has to be
+   real before any of the later steps mean anything. */
+function toFees(){
+  pullForms();
+  if(!validateId()){toast('Enter a valid budget ID (BD-0001)');document.getElementById('pId').focus();return;}
+  go('fees');
 }
 
 /* ============ CALC ============ */
@@ -6181,6 +6653,9 @@ function removeAck(id){
 function recalc(){
   if(!doc)return;
   pullForms();
+  // A schedule can carry a %-of-hard-cost fee, so the fee total is not
+  // independent of the rest of the budget. Re-derive before anything renders.
+  applyImpactFees();
   withFocus(()=>{renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();renderSiteMetrics();
     if(currentPage==='csi')renderCsi();});
 }
@@ -6442,6 +6917,15 @@ function exportPDF(){
   setTimeout(()=>{document.body.classList.remove('printing');
     document.getElementById('printDoc').innerHTML='';},600);
 }
+/* The impact-fee provenance line on the printed report. Absent entirely when no
+   jurisdiction was picked — a budget priced without a fee schedule should not
+   grow an empty row claiming otherwise. */
+function impactFeeReportRow(){
+  const r=feeResult();
+  if(!r.hasSchedule&&!r.total)return '';
+  return rptRow('&nbsp;&nbsp;Impact &amp; Tap Fees — '+esc(FSImpactFees.provenance(r)),
+    usd(r.total),'sub');
+}
 function rptRow(k,v,cls){return '<div class="rr '+(cls||'')+'"><span>'+k+'</span><span class="v">'+v+'</span></div>';}
 function buildReport(s){
   const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF,sm=siteMetrics();
@@ -6483,6 +6967,11 @@ function buildReport(s){
       +rptRow('Contract Sum (Construction)',usd(p.contract),'grand')
       +'<div style="height:10px"></div>'
       +rptRow('Soft Costs',usd(p.soft),'sub')
+      /* Impact fees are one line inside soft costs, but they are the line a
+         lender asks about, so the report states where the figure came from.
+         Read from the document, never from the fee page's rendered table —
+         exports build from the data model (AGENTS ground rule 6). */
+      +impactFeeReportRow()
       +rptRow('Land',usd(doc.projectCosts.land),'sub')
       +rptRow('Developer Fee'+feeBasisNote('dev'),usd(p.fee.dev),'sub')
       +rptRow('Marketing / Brokerage'+feeBasisNote('mkt'),usd(p.fee.mkt),'sub')

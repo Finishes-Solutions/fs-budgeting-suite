@@ -210,6 +210,26 @@ function canonical(v) {
 }
 let pricing = JSON.parse(fs.readFileSync(path.join(__dirname, 'pricing.json'), 'utf8'));
 
+// Fee schedules — behavior-parallel with api/pricing/index.js. Seeded with
+// tx-waller, exactly as sql/migrate_impact_fees.sql seeds the real database, so
+// the browser suites price against the same City of Waller table the node tests do.
+// Versions are immutable and exactly one is current, which is what the filtered
+// unique index enforces for real.
+const feeSeed = JSON.parse(fs.readFileSync(path.join(__dirname, 'fee-schedules.json'), 'utf8'));
+const feeSchedules = new Map();
+for (const [key, doc] of Object.entries(feeSeed)) {
+  feeSchedules.set(key, {
+    scheduleKey: key, name: doc.name, jurisdiction: doc.jurisdiction,
+    state: doc.state, description: '', isActive: true,
+    versions: [{ versionNumber: 1, effective: doc.effective, doc,
+                 versionLabel: 'Initial Schedule', changeSummary: null,
+                 createdAt: new Date().toISOString() }]
+  });
+}
+const FEE_KEY_RX = /^[a-z0-9-]{2,64}$/;
+const FEE_BASES = ['flat', 'unit', 'acre', 'resSF', 'amenSF', 'bldgSF', 'pctHard'];
+
+
 const principal = {
   clientPrincipal: {
     identityProvider: 'aad', userId: 'abc123',
@@ -329,6 +349,70 @@ http.createServer((req, res) => {
   if (NO_API && (p === '/.auth/me' || p.startsWith('/api/'))) { res.writeHead(500); return res.end('offline'); }
 
   if (p === '/.auth/me') return json(res, 200, principal);
+
+  if (p === '/api/pricing' && q.get('scope') === 'fee-schedules') {
+    const admin = !req.headers['x-mock-noadmin'];
+    return json(res, 200, { isAdmin: admin, schedules: [...feeSchedules.values()]
+      .filter(s => admin || s.isActive)
+      .map(s => ({ scheduleKey: s.scheduleKey, name: s.name, jurisdiction: s.jurisdiction,
+        state: s.state, description: s.description, isActive: s.isActive,
+        currentVersion: s.versions.length,
+        effective: s.versions[s.versions.length - 1].effective }))
+      .sort((a, b) => a.name.localeCompare(b.name)) });
+  }
+
+  if (p === '/api/pricing' && q.get('scope') === 'fee-schedule') {
+    const key = String(q.get('key') || '').toLowerCase();
+    if (req.method === 'GET') {
+      if (!FEE_KEY_RX.test(key)) return json(res, 400, { error: 'Malformed schedule key' });
+      const s = feeSchedules.get(key);
+      if (!s) return json(res, 404, { error: 'Fee schedule not found' });
+      const want = q.get('version') ? parseInt(q.get('version'), 10) : null;
+      if (q.get('version') && !(want >= 1)) return json(res, 400, { error: 'Malformed version number' });
+      const v = want ? s.versions.find(x => x.versionNumber === want)
+                     : s.versions[s.versions.length - 1];
+      if (!v) return json(res, 404, { error: 'Fee schedule not found' });
+      return json(res, 200, { scheduleKey: s.scheduleKey, name: s.name,
+        jurisdiction: s.jurisdiction, state: s.state, isActive: s.isActive,
+        versionNumber: v.versionNumber, versionLabel: v.versionLabel,
+        currentVersion: s.versions.length, effective: v.effective,
+        changeSummary: v.changeSummary, createdAt: v.createdAt, doc: v.doc });
+    }
+    // Publish. Same two gates as the real thing: the SWA route rule restricts
+    // PUT /api/pricing to pricing_admin, and this check stands in for the
+    // in-function one. Same validation, or the mock would pass and lie.
+    if (req.headers['x-mock-noadmin']) return json(res, 403, { error: 'pricing_admin role required' });
+    let b = ''; req.on('data', c => b += c);
+    return req.on('end', () => {
+      let body; try { body = JSON.parse(b); } catch (e) { return json(res, 400, { error: 'Bad JSON' }); }
+      const doc = body.doc || body;
+      const k = String(doc.scheduleKey || '').toLowerCase();
+      if (!FEE_KEY_RX.test(k)) return json(res, 400, { error: 'scheduleKey must be lowercase letters, digits and hyphens' });
+      if (!doc.name) return json(res, 400, { error: 'name is required' });
+      if (!Array.isArray(doc.meters)) return json(res, 400, { error: 'meters[] is required (it may be empty)' });
+      const ids = new Set();
+      for (const m of doc.meters) {
+        if (!m || !m.rowId) return json(res, 400, { error: 'every meter needs a rowId' });
+        if (ids.has(m.rowId)) return json(res, 400, { error: 'duplicate meter rowId: ' + m.rowId });
+        ids.add(m.rowId);
+        if (!(Number(m.edu) >= 0)) return json(res, 400, { error: 'meter ' + m.rowId + ' needs a numeric edu' });
+      }
+      for (const f of (doc.fees || [])) {
+        if (!f || !f.feeId || !f.label) return json(res, 400, { error: 'every fee needs a feeId and a label' });
+        if (!FEE_BASES.includes(f.basis)) return json(res, 400, { error: 'fee ' + f.feeId + ' has an unknown basis: ' + f.basis });
+      }
+      let s = feeSchedules.get(k);
+      if (!s) { s = { scheduleKey: k, name: doc.name, jurisdiction: doc.jurisdiction || doc.name,
+                      state: doc.state || null, description: '', isActive: true, versions: [] };
+                feeSchedules.set(k, s); }
+      s.name = doc.name; s.jurisdiction = doc.jurisdiction || doc.name; s.state = doc.state || null;
+      const n = s.versions.length + 1;
+      s.versions.push({ versionNumber: n, effective: doc.effective || null, doc,
+        versionLabel: body.versionLabel || null, changeSummary: body.changeSummary || null,
+        createdAt: new Date().toISOString() });
+      json(res, 200, { ok: true, scheduleKey: k, versionNumber: n });
+    });
+  }
 
   if (p === '/api/pricing') {
     if (req.method === 'GET') return json(res, 200, pricing);

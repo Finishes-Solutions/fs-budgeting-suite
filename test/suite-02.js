@@ -82,7 +82,7 @@ const BASE = 'http://127.0.0.1:8100';
   ok('the scrollbar gutter is always reserved (no tab-switch layout shift)',
      await p.evaluate(() => getComputedStyle(document.documentElement).overflowY === 'scroll'));
 
-  await p.click('button:has-text("Continue to Budget")');
+  await p.click('#page-input button:has-text("Continue to Impact Fees")'); await p.waitForTimeout(250); await p.click('#page-fees button:has-text("Continue to Budget")');
   const contract = await p.locator('#rContract').textContent();
   ok('Contract sum computed from published library', /^\$[\d,]+$/.test(contract), contract);
   ok('budget subtitle formats the building SF cleanly',

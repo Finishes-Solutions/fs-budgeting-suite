@@ -95,7 +95,7 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
   ok('D1 text edits keep focus', await lbl.evaluate(e => e === document.activeElement));
 
   // Budget page
-  await p.click('button:has-text("Continue to Budget")');
+  await p.click('#page-input button:has-text("Continue to Impact Fees")'); await p.waitForTimeout(250); await p.click('#page-fees button:has-text("Continue to Budget")');
   ok('Budget page visible', await p.locator('#page-budget').isVisible());
   ok('U4 hash carries project id', p.url().endsWith('#/budget/TST-9999'), p.url());
   ok('TST banner visible', await p.locator('#testBanner').isVisible());

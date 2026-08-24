@@ -22,6 +22,89 @@ House rules for writing one:
 
 ---
 
+## Unreleased
+
+### Impact & tap fees are calculated, not guessed
+
+Every budget used to carry municipal fees as one parametric line — **Water &
+Sewer Impact & Tap Fees at $7.50 per residential square foot**. On a 51,365 SF
+building that is $385,238, and it is a placeholder nobody can defend to a lender.
+
+There is now a fourth step in the budget workflow, between **Inputs** and
+**Budget**: **Impact Fees**. Pick the jurisdiction, enter how many meters of each
+size the project needs, and the real number is computed from the city's published
+schedule and carried onto that same soft-cost line.
+
+- **A fee schedule library.** Jurisdictions are admin-published and versioned,
+  the same way the pricing library and budget templates already are. **City of
+  Waller, TX** ships as the first one, seeded from the city's table: water and
+  sewer impact fees by meter size (EDU based), plus meter, vault, water tap and
+  sewer tap costs.
+- **Low, average or high.** The city publishes a range for meter, vault and tap
+  work. Each budget picks which side to carry and **defaults to the high side** —
+  a fee estimate that comes in under what the city bills is worse than one that
+  comes in over. Impact fees themselves are single-valued and do not move.
+- **Per-meter control.** A project tapping an existing stub can switch off the
+  meter or the tap work on any row and keep the impact fee, which is what the
+  city charges for capacity either way.
+- **It shows its work.** The soft-cost line reads *"Water & Sewer Impact & Tap
+  Fees — City of Waller, TX (high side, v1)"*, the printed report states the same
+  under Soft Costs, and the edited-lines report calls it **derived** rather than
+  manually edited.
+- **Publishing a schedule never reprices saved work.** A budget keeps the version
+  it was priced from. When a jurisdiction publishes a newer one, the Impact Fees
+  step offers **Update to v2** — the same way Update Pricing has always worked.
+- **Override, with a reason.** The total can be replaced by hand, but the reason
+  is required and prints on the report and the workbook, next to the calculated
+  figure it replaced.
+- Other fees a city charges — roadway, park, drainage, plan review — are already
+  expressible (flat, per unit, per acre, per SF, or a share of hard cost), and
+  one-off fees can be typed in per budget. Waller charges none of these today.
+
+Soft costs still sit outside the construction contract sum and still join at
+total project cost. Nothing about the contract sum, the CSI schedule or the
+guard rails changed.
+
+### A `feature` environment for work in progress
+
+Pushing the `feature` branch — or any `feature/…` branch — now deploys to a
+**new named environment you can actually sign in to**:
+
+`https://wonderful-rock-071c8e810-feature.centralus.7.azurestaticapps.net`
+
+Staging and production are untouched by it — the three deploy jobs are mutually
+exclusive on branch name, so a feature push reports both of them as skipped.
+This is what per-PR previews could never be: they put the PR number in the
+hostname, so their sign-in redirect can never be registered.
+
+Two things to know before using it:
+
+1. **A one-time Azure step is needed** before anyone can sign in — the
+   environment's `/.auth/login/aad/callback` has to be added as a redirect URI on
+   the *FS Budgeting Suite* app registration. Until then the page loads blank.
+2. **The database is not isolated.** One Azure SQL database serves every
+   environment including production, so this isolates code, not data. **Use
+   `TST-####` budget ids there** — those are excluded from every reporting view
+   and purged by `sql/cleanup_test_budgets.sql`.
+
+They all publish to the same environment, so the last push wins. Push one at a
+time.
+
+### Migration required
+
+- `sql/migrate_impact_fees.sql` — creates `dbo.FeeSchedules` and
+  `dbo.FeeScheduleVersions` and seeds the City of Waller schedule.
+
+Purely additive: it creates two new tables and changes nothing that already
+exists, and the deploy tolerates its absence — until it runs, the Impact Fees
+step says "no fee schedules published yet" and every other page behaves exactly
+as before. So it can be run before or after the release, and re-running it is a
+no-op. Its verification section recomputes each meter's low and high total from
+what it stored and compares against the figures the city published; every row
+must read PASS.
+
+---
+
 ## 2026-08-24 — The identifier model
 
 A project is a number; prefixes are labels; children carry the number

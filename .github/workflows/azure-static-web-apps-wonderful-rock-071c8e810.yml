@@ -5,18 +5,21 @@ name: Azure Static Web Apps CI/CD
 # cannot authenticate without a deployment token. Keeping both jobs here means staging
 # uses the same proven, token-free auth as production.
 #
-#   push to main     -> production
-#   push to staging  -> the "staging" named environment, at a stable URL
-#   pull request     -> a per-PR preview environment (unchanged)
+#   push to main        -> production
+#   push to staging     -> the "staging" named environment, at a stable URL
+#   push to feature or feature/**  -> the "feature" named environment (work in progress)
+#   pull request        -> a per-PR preview environment (unchanged)
 #
-# The two deploy jobs are mutually exclusive on github.ref_name, so a push to staging can
-# never publish to the live site.
+# The three deploy jobs are mutually exclusive on github.ref_name, so a push to staging or
+# to a feature branch can never publish to the live site.
 
 on:
   push:
     branches:
       - main
       - staging
+      - feature
+      - 'feature/**'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
@@ -94,6 +97,58 @@ jobs:
           api_location: "api"
           output_location: "."
           deployment_environment: staging
+          github_id_token: ${{ steps.idtoken.outputs.result }}
+
+  # Work in progress, on a stable URL you can actually sign in to.
+  #
+  # Per-PR previews put the PR number in the hostname, so their redirect URI can never be
+  # registered in Entra and they cannot sign in. A NAMED environment has a stable hostname,
+  # registered once:
+  #   https://wonderful-rock-071c8e810-feature.centralus.7.azurestaticapps.net
+  #
+  # Both `feature` and `feature/anything` publish to the SAME environment, deliberately:
+  # one hostname is one redirect URI to register. Two feature branches in flight means
+  # last push wins — coordinate, or push one at a time.
+  #
+  # This is a third JOB in this file, which is fine. A second FILE is what cannot work:
+  # Azure resolves the Static Web App from the workflow filename under OIDC (see the header
+  # comment). Do not split this out, and do not add a deployment token.
+  #
+  # THE DATABASE IS NOT ISOLATED. One Azure SQL database serves every environment including
+  # production, so this environment isolates CODE, not DATA. Use TST-#### budget ids only
+  # here — sql/views.sql excludes TST-% and sql/cleanup_test_budgets.sql purges it.
+  build_and_deploy_feature_job:
+    if: github.event_name == 'push' && (github.ref_name == 'feature' || startsWith(github.ref_name, 'feature/'))
+    runs-on: ubuntu-latest
+    name: Build and Deploy Feature
+    permissions:
+       id-token: write
+       contents: read
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          lfs: false
+      - name: Install OIDC Client from Core Package
+        run: npm install @actions/core@1.6.0 @actions/http-client
+      - name: Get Id Token
+        uses: actions/github-script@v6
+        id: idtoken
+        with:
+           script: |
+               const coredemo = require('@actions/core')
+               return await coredemo.getIDToken()
+           result-encoding: string
+      - name: Build And Deploy
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WONDERFUL_ROCK_071C8E810 }}
+          action: "upload"
+          app_location: "./app"
+          api_location: "api"
+          output_location: "."
+          deployment_environment: feature
           github_id_token: ${{ steps.idtoken.outputs.result }}
 
   # Tears down the per-PR preview environment when a pull request closes.

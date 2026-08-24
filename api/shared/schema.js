@@ -25,7 +25,8 @@ async function probe(pool) {
     `SELECT o.name AS TableName, c.name AS ColumnName
      FROM sys.columns AS c
      JOIN sys.objects AS o ON o.object_id = c.object_id
-     WHERE o.name IN ('Users', 'Budgets', 'InvestmentAnalyses', 'Feedback', 'Projects')`);
+     WHERE o.name IN ('Users', 'Budgets', 'InvestmentAnalyses', 'Feedback', 'Projects',
+                      'FeeSchedules', 'FeeScheduleVersions')`);
   const has = new Set(r.recordset.map(x => x.TableName + '.' + x.ColumnName));
   return {
     usersAppRole:      has.has('Users.AppRole'),
@@ -40,7 +41,11 @@ async function probe(pool) {
     analysesItemNumber: has.has('InvestmentAnalyses.ItemNumber'),
     // A whole table rather than a column: any column of it proves it exists.
     feedbackTable:     has.has('Feedback.FeedbackId'),
-    projectsTable:     has.has('Projects.ProjectId')
+    projectsTable:     has.has('Projects.ProjectId'),
+    // sql/migrate_impact_fees.sql — the jurisdiction fee library. Both tables
+    // must be present: the endpoints read the versions through the schedules.
+    feeSchedulesTable: has.has('FeeSchedules.ScheduleKey')
+                       && has.has('FeeScheduleVersions.ScheduleKey')
   };
 }
 
@@ -58,7 +63,7 @@ async function features(pool) {
       budgetsCreatedBy: false, analysesCreatedBy: false, feedbackTable: false,
       budgetsGuardrail: false, budgetsProjectKey: false, analysesProjectKey: false,
       projectsNumber: false, analysesItemNumber: false,
-      projectsTable: false
+      projectsTable: false, feeSchedulesTable: false
     }))
     .finally(() => { inflight = null; });
   return inflight;

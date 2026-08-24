@@ -81,7 +81,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     'height='+Math.round(await cell.evaluate(e=>e.getBoundingClientRect().height)));
 
  // --- budget qty column alignment
- await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
+ await p.click('#page-input button:has-text("Continue to Impact Fees")'); await p.waitForTimeout(250); await p.click('#page-fees button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
  // Qty moved from column 3 to column 4 when the selection checkbox column landed
  const xq=await p.locator('#budBody tr td:nth-child(4) input').evaluateAll(
    els=>els.slice(0,25).map(e=>Math.round(e.getBoundingClientRect().right)));

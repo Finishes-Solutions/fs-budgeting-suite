@@ -5,7 +5,9 @@
 -- migrate_budget_history_and_templates.sql (no-op on this schema except
 -- seeding the multifamily template) → views.sql.
 -- migrate_projects_and_guardrails.sql is likewise a no-op here: this file
--- already describes its end state, including dbo.Projects.
+-- already describes its end state, including dbo.Projects. The same is true of
+-- migrate_impact_fees.sql for the two fee-schedule tables — but that script
+-- also SEEDS the City of Waller schedule, so a fresh install still runs it.
 --
 -- This file is kept in parity with the migration: same objects, same
 -- constraint and index names. A database built from this file plus the seed
@@ -67,6 +69,61 @@ CREATE UNIQUE INDEX UX_BudgetTemplateVersions_Current
   ON dbo.BudgetTemplateVersions (TemplateKey) WHERE IsCurrent = 1;
 CREATE INDEX IX_BudgetTemplateVersions_Template_VersionDesc
   ON dbo.BudgetTemplateVersions (TemplateKey, VersionNumber DESC);
+
+-- ============================================================================
+-- Impact & tap fee schedules — the jurisdiction fee library.
+--
+-- Same two-table shape as budget templates, for the same reasons: a schedule
+-- has a stable identity, its versions are immutable, exactly one is current,
+-- and publishing a new one affects only budgets priced afterwards. A budget
+-- stores the version number it priced from and is never silently reversioned.
+--
+-- Seeded by sql/migrate_impact_fees.sql, which also carries the tx-waller
+-- (City of Waller) schedule. This file describes the same end state.
+-- ============================================================================
+CREATE TABLE dbo.FeeSchedules (
+    ScheduleKey   VARCHAR(64)    NOT NULL,  -- immutable, URL-safe (lowercase letters, digits, hyphens)
+    Name          NVARCHAR(200)  NOT NULL,
+    Jurisdiction  NVARCHAR(200)  NOT NULL CONSTRAINT DF_FeeSchedules_Jurisdiction DEFAULT (N''),
+    StateCode     CHAR(2)        NULL,
+    Description   NVARCHAR(1000) NOT NULL CONSTRAINT DF_FeeSchedules_Description  DEFAULT (N''),
+    IsActive      BIT            NOT NULL CONSTRAINT DF_FeeSchedules_IsActive     DEFAULT (1),
+    CreatedById   NVARCHAR(128)  NULL,      -- SWA principal.userId; NULL for local dev / migration
+    CreatedByName NVARCHAR(200)  NULL,
+    CreatedAt     DATETIME2      NOT NULL CONSTRAINT DF_FeeSchedules_CreatedAt    DEFAULT (SYSUTCDATETIME()),
+    UpdatedAt     DATETIME2      NOT NULL CONSTRAINT DF_FeeSchedules_UpdatedAt    DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT PK_FeeSchedules PRIMARY KEY (ScheduleKey),
+    CONSTRAINT CK_FeeSchedules_KeyFormat CHECK (
+      ScheduleKey <> '' AND ScheduleKey NOT LIKE '%[^a-z0-9-]%' COLLATE Latin1_General_100_BIN2)
+);
+CREATE INDEX IX_FeeSchedules_Active ON dbo.FeeSchedules (IsActive) INCLUDE (Name, Jurisdiction);
+
+-- Immutable published fee-schedule versions. Publishing inserts a new row and
+-- flips IsCurrent atomically; a published Doc is never updated.
+CREATE TABLE dbo.FeeScheduleVersions (
+    Id            INT IDENTITY(1,1) NOT NULL,
+    ScheduleKey   VARCHAR(64)    NOT NULL,
+    VersionNumber INT            NOT NULL,
+    VersionLabel  NVARCHAR(200)  NULL,
+    IsCurrent     BIT            NOT NULL CONSTRAINT DF_FeeScheduleVersions_IsCurrent DEFAULT (0),
+    EffectiveDate DATE           NULL,
+    Doc           NVARCHAR(MAX)  NOT NULL,
+    ChangeSummary NVARCHAR(1000) NULL,
+    CreatedById   NVARCHAR(128)  NULL,
+    CreatedByName NVARCHAR(200)  NULL,
+    CreatedAt     DATETIME2      NOT NULL CONSTRAINT DF_FeeScheduleVersions_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT PK_FeeScheduleVersions PRIMARY KEY (Id),
+    CONSTRAINT FK_FeeScheduleVersions_Schedule FOREIGN KEY (ScheduleKey)
+      REFERENCES dbo.FeeSchedules (ScheduleKey),
+    CONSTRAINT UQ_FeeScheduleVersions_Version UNIQUE (ScheduleKey, VersionNumber),
+    CONSTRAINT CK_FeeScheduleVersions_Doc    CHECK (ISJSON(Doc) = 1),
+    CONSTRAINT CK_FeeScheduleVersions_Number CHECK (VersionNumber >= 1)
+);
+-- at most one current version per schedule
+CREATE UNIQUE INDEX UX_FeeScheduleVersions_Current
+  ON dbo.FeeScheduleVersions (ScheduleKey) WHERE IsCurrent = 1;
+CREATE INDEX IX_FeeScheduleVersions_Schedule_VersionDesc
+  ON dbo.FeeScheduleVersions (ScheduleKey, VersionNumber DESC);
 
 -- Projects — the parent of budgets and investment analyses. Its primary key is
 -- what enforces "one project per ID", and that ID is OP-#### — a namespace of

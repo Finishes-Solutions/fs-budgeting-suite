@@ -1,0 +1,393 @@
+{
+  "tx-waller": {
+    "scheduleKey": "tx-waller",
+    "name": "City of Waller, TX",
+    "jurisdiction": "City of Waller",
+    "state": "TX",
+    "effective": "2025-10-15",
+    "source": "City of Waller impact fee schedule, provided 2025-10-15",
+    "eduRates": {
+      "water": 3689.91,
+      "sewer": 7619.03
+    },
+    "meters": [
+      {
+        "rowId": "m-58-34-10",
+        "size": "5/8 or 3/4",
+        "gpm": 10.0,
+        "edu": 1.0,
+        "waterImpact": 3689.91,
+        "sewerImpact": 7619.03,
+        "meter": {
+          "low": 464.0,
+          "high": 580.0
+        },
+        "waterTap": {
+          "low": 1850.0,
+          "high": 2350.0
+        },
+        "sewerTap": {
+          "low": 1850.0,
+          "high": 2350.0
+        }
+      },
+      {
+        "rowId": "m-34-15",
+        "size": "3/4",
+        "gpm": 15.0,
+        "edu": 1.5,
+        "waterImpact": 5534.87,
+        "sewerImpact": 11428.54,
+        "meter": {
+          "low": 493.0,
+          "high": 616.25
+        },
+        "waterTap": {
+          "low": 1850.0,
+          "high": 2350.0
+        },
+        "sewerTap": {
+          "low": 1850.0,
+          "high": 2350.0
+        }
+      },
+      {
+        "rowId": "m-1-25",
+        "size": "1",
+        "gpm": 25.0,
+        "edu": 2.5,
+        "waterImpact": 9224.78,
+        "sewerImpact": 19047.57,
+        "meter": {
+          "low": 623.5,
+          "high": 779.38
+        },
+        "waterTap": {
+          "low": 2100.0,
+          "high": 3400.0
+        },
+        "sewerTap": {
+          "low": 2100.0,
+          "high": 3400.0
+        }
+      },
+      {
+        "rowId": "m-1p5-50",
+        "size": "1.5",
+        "gpm": 50.0,
+        "edu": 5.0,
+        "waterImpact": 18449.55,
+        "sewerImpact": 38095.13,
+        "meter": {
+          "low": 1986.5,
+          "high": 2483.13
+        },
+        "waterTap": {
+          "low": 2700.0,
+          "high": 3700.0
+        },
+        "sewerTap": {
+          "low": 2700.0,
+          "high": 3700.0
+        }
+      },
+      {
+        "rowId": "m-2-80",
+        "size": "2",
+        "gpm": 80.0,
+        "edu": 8.0,
+        "waterImpact": 29519.28,
+        "sewerImpact": 60952.22,
+        "meter": {
+          "low": 1986.5,
+          "high": 2483.13
+        },
+        "waterTap": {
+          "low": 3000.0,
+          "high": 3700.0
+        },
+        "sewerTap": {
+          "low": 3000.0,
+          "high": 3700.0
+        }
+      },
+      {
+        "rowId": "m-2-100",
+        "size": "2",
+        "gpm": 100.0,
+        "edu": 10.0,
+        "waterImpact": 36899.1,
+        "sewerImpact": 76190.27,
+        "meter": {
+          "low": 1986.5,
+          "high": 2483.13
+        },
+        "waterTap": {
+          "low": 3000.0,
+          "high": 3700.0
+        },
+        "sewerTap": {
+          "low": 3000.0,
+          "high": 3700.0
+        }
+      },
+      {
+        "rowId": "m-3-160",
+        "size": "3",
+        "gpm": 160.0,
+        "edu": 16.0,
+        "waterImpact": 59038.57,
+        "sewerImpact": 121904.43,
+        "meter": {
+          "low": 2755.0,
+          "high": 3443.75
+        },
+        "waterTap": {
+          "low": 3250.0,
+          "high": 4500.0
+        },
+        "sewerTap": {
+          "low": 3250.0,
+          "high": 4500.0
+        }
+      },
+      {
+        "rowId": "m-3-240",
+        "size": "3",
+        "gpm": 240.0,
+        "edu": 24.0,
+        "waterImpact": 88557.85,
+        "sewerImpact": 182856.65,
+        "meter": {
+          "low": 2755.0,
+          "high": 3443.75
+        },
+        "waterTap": {
+          "low": 3250.0,
+          "high": 4500.0
+        },
+        "sewerTap": {
+          "low": 3250.0,
+          "high": 4500.0
+        }
+      },
+      {
+        "rowId": "m-4-250",
+        "size": "4",
+        "gpm": 250.0,
+        "edu": 25.0,
+        "waterImpact": 92247.76,
+        "sewerImpact": 190475.67,
+        "meter": {
+          "low": 3799.0,
+          "high": 4748.75
+        },
+        "vault": {
+          "low": 14500.0,
+          "high": 21000.0
+        },
+        "waterTap": {
+          "low": 3900.0,
+          "high": 5250.0
+        },
+        "sewerTap": {
+          "low": 3900.0,
+          "high": 5250.0
+        }
+      },
+      {
+        "rowId": "m-4-420",
+        "size": "4",
+        "gpm": 420.0,
+        "edu": 42.0,
+        "waterImpact": 154976.24,
+        "sewerImpact": 319999.13,
+        "meter": {
+          "low": 3799.0,
+          "high": 4748.75
+        },
+        "vault": {
+          "low": 14500.0,
+          "high": 21000.0
+        },
+        "waterTap": {
+          "low": 3900.0,
+          "high": 5250.0
+        },
+        "sewerTap": {
+          "low": 3900.0,
+          "high": 5250.0
+        }
+      },
+      {
+        "rowId": "m-6-500",
+        "size": "6",
+        "gpm": 500.0,
+        "edu": 50.0,
+        "waterImpact": 184495.52,
+        "sewerImpact": 380951.35,
+        "meter": {
+          "low": 6264.0,
+          "high": 7830.0
+        },
+        "vault": {
+          "low": 22000.0,
+          "high": 30000.0
+        },
+        "waterTap": {
+          "low": 4600.0,
+          "high": 6500.0
+        },
+        "sewerTap": {
+          "low": 4600.0,
+          "high": 6500.0
+        }
+      },
+      {
+        "rowId": "m-6-920",
+        "size": "6",
+        "gpm": 920.0,
+        "edu": 92.0,
+        "waterImpact": 339471.75,
+        "sewerImpact": 700950.48,
+        "meter": {
+          "low": 6264.0,
+          "high": 7830.0
+        },
+        "vault": {
+          "low": 22000.0,
+          "high": 30000.0
+        },
+        "waterTap": {
+          "low": 4600.0,
+          "high": 6500.0
+        },
+        "sewerTap": {
+          "low": 4600.0,
+          "high": 6500.0
+        }
+      },
+      {
+        "rowId": "m-8-800",
+        "size": "8",
+        "gpm": 800.0,
+        "edu": 80.0,
+        "waterImpact": 295192.83,
+        "sewerImpact": 609522.16,
+        "meter": {
+          "low": 7482.0,
+          "high": 9352.5
+        },
+        "vault": {
+          "low": 35000.0,
+          "high": 46000.0
+        },
+        "waterTap": {
+          "low": 5300.0,
+          "high": 7900.0
+        },
+        "sewerTap": {
+          "low": 5300.0,
+          "high": 7900.0
+        }
+      },
+      {
+        "rowId": "m-8-1600",
+        "size": "8",
+        "gpm": 1600.0,
+        "edu": 160.0,
+        "waterImpact": 590385.66,
+        "sewerImpact": 1219044.32,
+        "meter": {
+          "low": 7482.0,
+          "high": 9352.5
+        },
+        "vault": {
+          "low": 35000.0,
+          "high": 46000.0
+        },
+        "waterTap": {
+          "low": 5300.0,
+          "high": 7900.0
+        },
+        "sewerTap": {
+          "low": 5300.0,
+          "high": 7900.0
+        }
+      },
+      {
+        "rowId": "m-10-1150",
+        "size": "10",
+        "gpm": 1150.0,
+        "edu": 115.0,
+        "waterImpact": 424339.69,
+        "sewerImpact": 876188.1,
+        "meter": {
+          "low": 13920.0,
+          "high": 17400.0
+        },
+        "vault": {
+          "low": 46000.0,
+          "high": 58000.0
+        },
+        "waterTap": {
+          "low": 6250.0,
+          "high": 9000.0
+        },
+        "sewerTap": {
+          "low": 6250.0,
+          "high": 9000.0
+        }
+      },
+      {
+        "rowId": "m-10-2500",
+        "size": "10",
+        "gpm": 2500.0,
+        "edu": 250.0,
+        "waterImpact": 922477.59,
+        "sewerImpact": 1904756.74,
+        "meter": {
+          "low": 13920.0,
+          "high": 17400.0
+        },
+        "vault": {
+          "low": 46000.0,
+          "high": 58000.0
+        },
+        "waterTap": {
+          "low": 6250.0,
+          "high": 9000.0
+        },
+        "sewerTap": {
+          "low": 6250.0,
+          "high": 9000.0
+        }
+      },
+      {
+        "rowId": "m-12-3300",
+        "size": "12",
+        "gpm": 3300.0,
+        "edu": 330.0,
+        "waterImpact": 1217670.42,
+        "sewerImpact": 2514278.9,
+        "meter": {
+          "low": 17870.58,
+          "high": 22338.23
+        },
+        "vault": {
+          "low": 59000.0,
+          "high": 75000.0
+        },
+        "waterTap": {
+          "low": 7800.0,
+          "high": 11500.0
+        },
+        "sewerTap": {
+          "low": 7800.0,
+          "high": 11500.0
+        }
+      }
+    ],
+    "fees": []
+  }
+}

@@ -21,7 +21,8 @@ const MIGRATED = [
   col('Users', 'AppRole'), col('Users', 'SettingsDoc'),
   col('Budgets', 'CreatedById'), col('Budgets', 'CreatedByName'),
   col('InvestmentAnalyses', 'CreatedById'),
-  col('Feedback', 'FeedbackId')
+  col('Feedback', 'FeedbackId'),
+  col('FeeSchedules', 'ScheduleKey'), col('FeeScheduleVersions', 'ScheduleKey')
 ];
 
 // Every case starts from a clean cache, or one test's answer leaks into the next.
@@ -75,7 +76,7 @@ test('a failing probe degrades to all-absent rather than throwing', async () => 
     budgetsCreatedBy: false, analysesCreatedBy: false, feedbackTable: false,
     budgetsGuardrail: false, budgetsProjectKey: false, analysesProjectKey: false,
     projectsNumber: false, analysesItemNumber: false,
-    projectsTable: false
+    projectsTable: false, feeSchedulesTable: false
   });
 });
 
@@ -161,4 +162,31 @@ test('concurrent first calls share a single probe', async () => {
   assert.strictEqual(a.usersAppRole, true);
   assert.deepStrictEqual(a, b);
   assert.deepStrictEqual(b, c);
+});
+
+test('a database without the impact-fee migration reports the fee library absent', async () => {
+  fresh();
+  // The state the release lands in: the deploy is live, sql/migrate_impact_fees.sql
+  // has not been run yet. The fee-schedule scopes must answer with an empty list,
+  // which is what "not on yet" looks like — never a failed request, because
+  // /api/pricing also serves the pricing library every budget depends on.
+  const f = await schema.features(poolReturning(
+    MIGRATED.filter(c => !c.TableName.startsWith('FeeSchedule'))));
+  assert.strictEqual(f.feeSchedulesTable, false);
+  assert.strictEqual(f.usersAppRole, true, 'the other features are unaffected');
+});
+
+test('half the impact-fee migration still reads as absent', async () => {
+  fresh();
+  // Both tables or neither: the read joins versions to schedules, so one without
+  // the other would fail the query the probe exists to prevent.
+  const f = await schema.features(poolReturning(
+    MIGRATED.filter(c => c.TableName !== 'FeeScheduleVersions')));
+  assert.strictEqual(f.feeSchedulesTable, false);
+});
+
+test('a migrated database reports the fee library present', async () => {
+  fresh();
+  const f = await schema.features(poolReturning(MIGRATED));
+  assert.strictEqual(f.feeSchedulesTable, true);
 });
