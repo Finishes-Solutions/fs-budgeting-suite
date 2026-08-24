@@ -511,20 +511,24 @@ update selectors alongside label changes.
   Changing that convention changes what "3% developer fee" means on every
   export, so it is documented in `docs/DATA_CONTRACT.md` rather than left to
   whoever next opens `parts()`.
-- **A project id is `OP-####`; a budget id is `BD-####`.** Two namespaces, and
-  keeping them apart is the point. Project identity used to be *borrowed* from a
+- **A project id is `OP-####`; a NEW budget is minted `BDG-####-##`** with the
+  project's own digits (`BDG-2108-01`, then `-02`). Two namespaces, and keeping
+  them apart is the point. Project identity used to be *borrowed* from a
   budget — the project row for `BD-0002` was literally keyed `'BD-0002'` and
   alternates were attributed by stripping the suffix — which is why the Projects
   list showed `BD-…` in its PROJECT ID column.
   `sql/migrate_project_op_ids.sql` re-keyed the existing rows and
   `sql/widen_project_op_ids.sql` widened them to four digits;
   `dbo.ProjectIdMap` is the permanent record of what moved, and the input to
-  `sql/rollback_project_op_ids.sql`.
-- **`BD-0001-02` is an alternate of BUDGET `BD-0001`,** not of a project. The
-  suffix numbers alternates and nothing else; which project a budget belongs to
-  is `dbo.Budgets.ProjectKey`, an explicit link stated when the budget is
-  created. Moving a budget between projects is now an edited column, not a new
-  id — which is what the old scheme could not do.
+  `sql/rollback_project_op_ids.sql`. Legacy `BD-`/`OP-`/`AS-` budgets are never
+  renamed and keep numbering their alternates the old way.
+- **A `BDG` id's `-01` is its ITEM number, not an alternate marker** — the
+  first budget of project 2108 is `BDG-2108-01`. Only a suffix **other than**
+  `-01` marks an alternate (`isSiblingItem` / `isAlternate`); on legacy
+  `BD-####` any suffix still does. Even so, the digits in a budget id prove
+  nothing: which project a budget belongs to is `dbo.Budgets.ProjectKey`, an
+  explicit link stated when the budget is created. Moving a budget between
+  projects is an edited column, not a new id.
 - **A project is created deliberately.** Saving a budget no longer conjures its
   parent, because a budget id cannot name one. `+ Create Project` on the
   Projects page is the only way in, and it asks for ID, Name and Address — all
@@ -570,7 +574,7 @@ update selectors alongside label changes.
   `DEFAULT_PRICING` in `app/index.html` and expect it to matter — it is the offline
   fallback only (docs/DATA_CONTRACT.md, "Single source of truth").
 
-**Database state — both scripts have run (2026-08-21)**
+**Database state — every script below has run (latest: 2026-08-24)**
 
 - `sql/migrate_projects_and_guardrails.sql` — all eight verification rows PASS.
   Five projects backfilled from the existing budgets, zero unlinked budgets,
@@ -578,6 +582,18 @@ update selectors alongside label changes.
 - `sql/publish_multifamily_opex_template.sql` — all four PASS. The multifamily
   template is now **v3**, carrying `opexSchemaVersion: 2` and all sixteen
   expense rows; v2 is retained, because publishing is append-only.
+
+  Consequence worth knowing: budgets created from **v3 onward** are judged by
+  the 35–55% expense rail and **blocked** when they fall outside it. Every
+  budget that predates v3 sits at `opexSchemaVersion: 1` and is **warned**, not
+  blocked, until someone runs *Update Expense Schedule* on it from the Guard
+  Rails card.
+
+  The rates in v3 are the ones this release proposed, not a reviewed house
+  standard. They land the template at 46.2% of income against its own unit mix.
+  Whoever owns the underwriting standard should review them and republish —
+  editing the script and re-running it publishes v4; nothing is overwritten.
+
 - `sql/migrate_project_op_ids.sql` then `sql/widen_project_op_ids.sql` — the
   seven existing projects were re-keyed from borrowed budget ids to
   `OP-0001` … `OP-0007`. `dbo.ProjectIdMap` records every one of them, and is
@@ -608,24 +624,22 @@ update selectors alongside label changes.
   `OP-` number). That is deliberate — renaming a budget would cascade into
   SovLines, BudgetVersions and every analysis's provenance for no gain.
 
-- `sql/align_project_numbers.sql` and `sql/adopt_project_numbers.sql` — the
+- `sql/align_project_numbers.sql` then `sql/adopt_project_numbers.sql` — the
   identifier-model pair (PROJECT_NUMBERS_GUIDE.md): projects renumbered to
   match their budgets, then `ProjectNumber` surfaced as a persisted, unique,
-  indexed column with per-project `ItemNumber` on analyses. **Run state is
-  tracked in CHANGELOG.md** — the app probes for these columns
-  (`projectsNumber`, `analysesItemNumber`) and behaves as before until both
-  the columns and the release are present, so deploy order is safe either way.
+  indexed column with per-project `ItemNumber` on analyses. The app probes for
+  these columns (`projectsNumber`, `analysesItemNumber`) and behaves as before
+  until both the columns and the release are present, so deploy order is safe
+  either way.
 
-  Consequence worth knowing: budgets created from **v3 onward** are judged by
-  the 35–55% expense rail and **blocked** when they fall outside it. Every
-  budget that predates v3 sits at `opexSchemaVersion: 1` and is **warned**, not
-  blocked, until someone runs *Update Expense Schedule* on it from the Guard
-  Rails card.
-
-  The rates in v3 are the ones this release proposed, not a reviewed house
-  standard. They land the template at 46.2% of income against its own unit mix.
-  Whoever owns the underwriting standard should review them and republish —
-  editing the script and re-running it publishes v4; nothing is overwritten.
+  **Applied 2026-08-24**, all verification rows PASS. Three projects moved —
+  `OP-0003` → `OP-2519`, `OP-0005` → `OP-4821`, `OP-0007` → `OP-2108` — and
+  two mismatches stand deliberately: `OP-0004` keeps test budget `TST-9999`,
+  and `OP-0006` (primary `BD-9999`) could not take 9999 because a live test
+  project already holds `OP-9999` — the script skips rather than collides.
+  Deleting that test project and re-running the align script would move it;
+  nothing depends on it either way. `dbo.ProjectIdMap` tracks the re-keys, so
+  rollback still works from the *current* ids.
 
 **Housekeeping**
 

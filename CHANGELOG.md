@@ -22,25 +22,31 @@ House rules for writing one:
 
 ---
 
-## Unreleased
+## 2026-08-24 — The identifier model
+
+A project is a number; prefixes are labels; children carry the number
+(PROJECT_NUMBERS_GUIDE.md, adopted as far as this suite's legacy keys allow).
 
 ### Migration required
 
-- `sql/adopt_project_numbers.sql` — first step toward the company identifier
-  model (PROJECT_NUMBERS_GUIDE.md): surfaces the PROJECT NUMBER as a real,
-  indexed, unique column on projects — and on each linked budget and analysis,
-  computed from the link — plus per-project item numbers for analyses. Nothing
-  is renamed or re-keyed; run before the release that mints `BDG-####-##`
-  budget ids. *(Fixed once after a failed run: the two ProjectNumber indexes
-  were filtered on a computed column, which SQL Server refuses — they are now
-  plain indexes. Columns from the first attempt remain and are reused; the
-  script is idempotent, so re-run the whole file.)*
+Run align first, then adopt. **Both applied 2026-08-24, all verification rows
+PASS.**
+
 - `sql/align_project_numbers.sql` — gives each existing project the number its
   budget already carries (`OP-0005` → `OP-4821`, and so on), so a project and
-  its budgets read as one family. Four projects move; no budget is renamed.
-  A destination number held by a childless deleted project is cleared
-  automatically; one that is live, or deleted with history attached, is
-  skipped and reported rather than fought over.
+  its budgets read as one family. No budget is renamed. A destination number
+  held by a childless deleted project is cleared automatically; one that is
+  live, or deleted with history attached, is skipped and reported rather than
+  fought over. *(Applied: three projects moved — 2519, 4821, 2108. `OP-0006`
+  wants 9999 but a live test project holds `OP-9999`, so it was skipped, as
+  designed; `OP-0004` keeps test budget `TST-9999`.)*
+- `sql/adopt_project_numbers.sql` — surfaces the PROJECT NUMBER as a real,
+  indexed, unique column on projects — and on each linked budget and analysis,
+  computed from the link — plus per-project item numbers for analyses. Nothing
+  is renamed or re-keyed. *(Fixed once after a failed run: the two
+  ProjectNumber indexes were filtered on a computed column, which SQL Server
+  refuses — they are now plain indexes. The script is idempotent; the re-run
+  completed the migration.)*
 
 ### Changed
 
