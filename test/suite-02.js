@@ -44,7 +44,20 @@ const BASE = 'http://127.0.0.1:8100';
   ok('Escape closes the New Budget modal', !(await p.locator('#newBudgetModal').isVisible()));
 
   // --- create + save a real budget
+  // A budget belongs to a project now, so the parent is made first and chosen
+  // in step 2 of the dialog — a budget id can no longer imply one.
+  await p.evaluate(async () => {
+    await fetch('/api/budget/OP-0201?scope=project', { method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ create: true, name: 'Waller Preview', address: '1 Waller Way' }) });
+  });
   await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
+  await p.waitForTimeout(700);
+  await p.selectOption('#nbProject', 'OP-0201');
+  await p.fill('#nbId', 'TST-9999');
+  await p.fill('#nbName', 'Waller Preview Test');
+  await p.click('#nbCreate');
+  await p.waitForTimeout(700);
   await p.fill('#pId', 'TST-9999');
   await p.fill('#pName', 'Waller Preview Test');
 
@@ -306,8 +319,11 @@ const BASE = 'http://127.0.0.1:8100';
   await p.click('#budgetsBody tr:has-text("TST-9999") .rowmenu-btn');
   await p.waitForTimeout(200);
   ok('Row menu opens', await p.locator('#rowMenu').isVisible());
-  ok('Row menu offers Edit, Pin, Update Pricing, Versions and Delete',
-     (await p.locator('#rowMenu .rowmenu-item').allTextContents()).join('|') === 'Edit|Pin to Home|Update Pricing|Versions|Delete',
+  // Delete names what it deletes, matching Delete Analysis and Delete Project.
+  // Make Primary is absent here: it only means something on a project page,
+  // where the trigger carries the project the row is on.
+  ok('Row menu offers Edit, Favorites, Update Pricing, Versions and Delete Budget',
+     (await p.locator('#rowMenu .rowmenu-item').allTextContents()).join('|') === 'Edit|Add to Favorites|Update Pricing|Versions|Delete Budget',
      (await p.locator('#rowMenu .rowmenu-item').allTextContents()).join('|'));
   ok('Trigger reports expanded state',
      await p.locator('#budgetsBody tr:has-text("TST-9999") .rowmenu-btn').getAttribute('aria-expanded') === 'true');
@@ -355,11 +371,53 @@ const BASE = 'http://127.0.0.1:8100';
      await p.locator('#pmName').textContent());
   ok('Sign Out lives in the account menu',
      await p.locator('#profileMenu .rowmenu-item:has-text("Sign Out")').isVisible());
+  // Switching accounts sits beside it, and before it: changing account is the
+  // common errand, ending the session is the deliberate one.
+  ok('Switch Account sits beside it, ahead of Sign Out',
+     await p.evaluate(() => {
+       const items = [...document.querySelectorAll('#profileMenu .rowmenu-item')].map(b => b.textContent.trim());
+       return items.includes('Switch Account')
+         && items.indexOf('Switch Account') < items.indexOf('Sign Out');
+     }),
+     await p.evaluate(() => [...document.querySelectorAll('#profileMenu .rowmenu-item')]
+       .map(b => b.textContent.trim()).join(' | ')));
   await p.keyboard.press('Escape'); await p.waitForTimeout(150);
   ok('Escape closes the account menu', !(await p.locator('#profileMenu').isVisible()));
-  ok('Sign Out targets the SWA logout route',
-     /^\/\.auth\/logout\?post_logout_redirect_uri=/.test(await p.evaluate(() => logoutUrl())),
+  ok('Sign Out targets the SWA logout route, and lands on the sign-in screen',
+     (await p.evaluate(() => logoutUrl()))
+       === '/.auth/logout?post_logout_redirect_uri=' + encodeURIComponent('/login.html'),
      await p.evaluate(() => logoutUrl()));
+  // Switching accounts has to LOG OUT FIRST. /.auth/login/aad short-circuits
+  // while the SWA session cookie is present — it never reaches Entra, so
+  // prompt=select_account is never sent and the page just reloads as the same
+  // user. The cookie is HttpOnly, so /.auth/logout is the only thing that can
+  // drop it; the login it returns to is what shows the account picker.
+  ok('Switch Account drops the session before going to the provider',
+     await p.evaluate(() => switchAccountUrl().startsWith('/.auth/logout?post_logout_redirect_uri=')),
+     await p.evaluate(() => switchAccountUrl()));
+  ok('and comes back through the provider login, not to the app directly',
+     await p.evaluate(() => {
+       const back = decodeURIComponent(switchAccountUrl().split('post_logout_redirect_uri=')[1]);
+       return back.startsWith('/.auth/login/aad?post_login_redirect_uri=');
+     }),
+     await p.evaluate(() => decodeURIComponent(switchAccountUrl().split('post_logout_redirect_uri=')[1])));
+  ok('its return target is a same-origin path, never an off-site URL',
+     await p.evaluate(() => {
+       const back = decodeURIComponent(switchAccountUrl().split('post_logout_redirect_uri=')[1]);
+       const finalTarget = decodeURIComponent(back.split('post_login_redirect_uri=')[1]);
+       return finalTarget === '/' && !/^https?:/i.test(finalTarget);
+     }),
+     await p.evaluate(() => switchAccountUrl()));
+  // Both leave through one guard, so neither can drop unsaved work silently.
+  ok('Switch Account is blocked by unsaved changes too',
+     await p.evaluate(async () => {
+       const c = window.confirm; window.confirm = () => false;
+       dirty = true;
+       await switchAccount();
+       const here = location.pathname;
+       window.confirm = c; dirty = false;
+       return here.includes('index.html') || here.startsWith('/');
+     }));
   // A dirty budget must not be discarded silently by signing out.
   const stayed = await p.evaluate(async () => {
     const c = window.confirm; window.confirm = () => false;
@@ -395,8 +453,8 @@ const BASE = 'http://127.0.0.1:8100';
   await iaRow.locator('.rowmenu-btn').click();
   await p.waitForTimeout(200);
   const menuItems = await p.locator('#invRowMenu .rowmenu-item').allTextContents();
-  ok('three-dot menu offers Open, Pin, Versions, Duplicate, Delete',
-     JSON.stringify(menuItems) === JSON.stringify(['Open Analysis', 'Pin to Home', 'Versions', 'Duplicate', 'Delete Analysis']),
+  ok('three-dot menu offers Open, Favorites, Versions, Duplicate, Delete',
+     JSON.stringify(menuItems) === JSON.stringify(['Open Analysis', 'Add to Favorites', 'Versions', 'Duplicate', 'Delete Analysis']),
      menuItems.join(','));
   await p.locator('#invRowMenu .rowmenu-item', { hasText: 'Versions' }).click();
   await p.waitForTimeout(500);

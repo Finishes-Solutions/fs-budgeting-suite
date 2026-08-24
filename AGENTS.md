@@ -39,7 +39,16 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
    staging database. A migration is live everywhere the moment it runs, so schema
    changes must be backward-compatible with the code currently deployed, and
    migrations are paired with prompt releases.
-5. **Exports build from the data model, never the DOM.** The PDF report and Excel
+5. **Guard rails block the save, in two places, from one file.**
+   `app/guardrails.js` and `api/shared/guardrails.js` are **byte-identical**;
+   `test/guardrails.test.js` fails the build if they drift. `evaluate()` is pure
+   and takes already-computed `parts()`/`grossIncome()` — it never recomputes
+   them, because a third copy of that arithmetic is a third thing to keep in
+   parity. Two rules are load-bearing and must not be "simplified" away: a rail
+   whose denominator is zero is **not evaluated** (or a blank budget could never
+   be saved), and `opexRatio` blocks only when `doc.opexSchemaVersion >= 2` (or
+   release day would make every existing budget unsaveable at once).
+6. **Exports build from the data model, never the DOM.** The PDF report and Excel
    workbook are composed from `parts()`, `csiSchedule()`, `grossIncome()`, and the
    document itself. Screen state (collapsed groups, filters, scroll) must never
    change what an export contains.
@@ -49,8 +58,12 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | Path | What it is |
 |---|---|
 | `app/index.html` | The budget frontend — HTML + inline CSS + inline JS, no build step |
+| `app/login.html` | The sign-in screen — the ONLY page an anonymous visitor may load, standalone by necessity |
 | `app/investment-analysis.js` / `.css` | The Investment Analysis workflow — external no-build IIFE behind `window.FSInvestmentUI`, wired through an adapter |
 | `app/theme-ramp.css` | The Editorial theme pack — presentation only, every rule scoped to `html[data-skin=ramp]`, loaded after the inline sheet |
+| `app/guardrails.js` / `api/shared/guardrails.js` | Budget guard rails — **byte-identical** UMD pair, enforced by `test/guardrails.test.js` |
+| `CHANGELOG.md` | What changed and what to run — updated with every change that ships |
+| `app/projects.js` | The Projects tab — one project per ID, with its budgets and analyses |
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement (first auth gate) |
 | `app/vendor/exceljs.min.js` | ExcelJS 4.4.0, vendored — see [Single sources of truth](#single-sources-of-truth) |
 | `app/assets/` | Logos + favicon set; regenerate with `tools/make-favicons.py`, don't hand-edit |
@@ -61,9 +74,10 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | `api/templates/` | Budget templates: list, read, versions, create, publish, activate |
 | `api/investment-*/` | Investment analyses: list/create, CRUD + 409 concurrency, versions, stateless preview |
 | `api/shared/investment/` | The server-only before-tax calculation engine (fixture-proven; see Testing) |
-| `api/shared/` | `auth.js` (principal + roles), `db.js` (pool + cold-start retry), `canonical.js` (canonical JSON + hashing), `sov.js` (SOV projection), `versioning.js` (version writes) |
+| `api/shared/` | `auth.js` (principal + roles), `db.js` (pool + cold-start retry), `canonical.js` (canonical JSON + hashing), `sov.js` (SOV projection), `versioning.js` (version writes), `projects.js` (the Projects aggregate), `guardrails.js` (rail evaluator) |
+| `api/shared/investment/from-budget.js` | The budget→analysis projection, shared by creation AND re-sync so the two cannot derive differently |
 | `sql/` | Idempotent schema + migration + views, seeds, and admin-run scripts |
-| `test/` | Ten Playwright suites, `node:test` logic tests, and `mock-api.js` (a local stand-in for the SWA API) |
+| `test/` | Twenty-one Playwright suites, `node:test` logic tests, and `mock-api.js` (a local stand-in for the SWA API) |
 | `docs/` | Build guide, data contract, handoff, roadmap, naming |
 
 Stack: Azure Static Web Apps (Standard) → SWA-managed Azure Functions (Node 18,
@@ -165,6 +179,62 @@ custom provider for sign-in.
   guard with `nz()`.
 - **`touch()` / `markDirty()` / `recalc()`** are the change pipeline — call
   `touch()` after mutating the document; don't invent parallel dirty tracking.
+- **`data-gr` is the guard-rail equivalent of `data-k`.** A rail marks its
+  driving input by `data-gr="<railId path>"`, which survives re-render; never
+  mark a field by DOM position.
+- **Fees are `{mode:'amt'|'pct', val}`, like `doc.contingency`.** A percentage is
+  a share of the FINAL total project cost, which is circular, so `parts()` solves
+  it in closed form: `project = (contract + soft + land + fixedFees) / (1 − f)`.
+  The divisor floors at `FEE_FLOOR` so a budget the `feeSum` rail is already
+  refusing still renders a finite number instead of `$Infinity`. A bare number is
+  a pre-migration document and means dollars; `migrate()` lifts it once.
+- **Expenses have a third basis, `pctIncome`** — a share of rent + other income.
+  Not circular: income does not depend on expenses.
+- **A formatted input is DECORATION over a number.** A few investment-analysis
+  fields render as `type="text"` so they can carry a `$`, thousands separators,
+  a `%` or a unit suffix (`207,000 SF`). The value in `st.input` stays a plain
+  number: `parseNum()` strips the decoration on every read, `FORMATTED` repaints
+  the field from the stored number after every committed change, and nothing
+  that calculates, validates, saves or exports ever sees a formatted string.
+  Never widen the set by making a field `type="text"` without adding it to
+  `FORMATTED` and routing its `onFieldChange` case through `parseNum()`.
+- **Square feet and acres share one canonical area.** Changing Size Unit
+  CONVERTS the value, through `st.sizeSF` (square feet) rather than through the
+  displayed figure — which is what makes SF → acres → SF land back on the
+  number you started with. `units` is not an area: it takes the unit count and
+  leaves the canonical area alone for the trip back.
+- **Budget-derived analysis inputs are read-only by default.** Anything named in
+  `input.source.fieldOrigins` (and anything beneath it — `property.size` covers
+  the unit and the value) locks, as does imported other income, where only the
+  growth rate stays editable. The Source & Property and Vacancy & Expenses cards
+  each carry a `⋮` menu whose **Override Budget Inputs** is the only way past
+  the lock; unlocking never rewrites a value, and the source lock re-arms on
+  every load because an override is a decision about the edit being made now.
+  The expense-ratio override is different: it is a persisted property of the
+  analysis (`input.expenses.override`), because the analysis carries it into
+  every export.
+- **The welcome is settings-driven, not browser-driven, and versioned.** It
+  opens from what boot already loaded — `welcomeSeenVersion` in the account
+  settings and `loginCount` — so it costs no extra request and follows the
+  account to any browser. Two gates, either of which opens it: the first
+  `WELCOME_LOGINS` (5) sessions of an account, and *never having seen the
+  current* `WELCOME_VERSION`. The version is what carries a changed welcome to
+  everyone exactly once — bump it and every account sees the new one — and it
+  is why the boolean `welcomeSeen` it replaced is **not** lifted by the
+  contract: an account that dismissed the old welcome has still never seen this
+  one. A junk stored version reads as 0, which SHOWS the welcome; that
+  direction is deliberate. No settings (signed out, or the API down) means no
+  welcome: an offline boot is not evidence of anything.
+- **Sign Out and Switch Account are different operations.** `/.auth/logout`
+  ends the session for real, and SWA federates it to Entra's end-session
+  endpoint (that is what `/.auth/logout/aad/callback` in the custom
+  registration is for), so Entra may ask which account is signing out. That
+  page cannot be suppressed from this app — `logout_hint` is Entra's parameter
+  and SWA builds the request. `switchAccount()` therefore does **not** sign
+  out: it goes straight to `/.auth/login/aad`, where `prompt=select_account`
+  opens the picker and the account chosen replaces the session. Never
+  reimplement Sign Out on top of it — a switch leaves the old session live
+  until the new one lands, which is exactly wrong for walking away.
 - **Theme packs are paint only.** A pack (Settings → Theme Pack, super_admin)
   is an alternate appearance of the same product: it may remap tokens and
   restyle primitives, never move a route, label, control, calculation or
@@ -183,6 +253,124 @@ custom provider for sign-in.
   to one column, and the tab bar scrolls horizontally. Never reintroduce a
   width-based feature gate; suite-06 pins the fully-capable behavior.
 
+## Projects
+
+- **TWO NAMESPACES, and keeping them apart is the point.** A **project id is
+  `OP-####`** — the project's own identity, matched by `PROJECT_ID_RX` in
+  `app/index.html` and `api/shared/projects.js`, and enforced by
+  `CK_Projects_IdFormat` in the database. A **budget id is `BD-####`** (legacy
+  budgets may carry `OP-`/`AS-`/`TST-`), optionally with a `-NN` alternate
+  suffix. A budget id is never generated, stored, routed, labelled or displayed
+  as a project id.
+  Project identity used to be BORROWED from a budget — `projectKeyOf()` stripped
+  a budget's suffix and called the result a project id, which is why the
+  Projects list showed `BD-…` in its PROJECT ID column.
+  `budgetBaseOf()` is what survives of that function, and it does only what it
+  was ever really doing: numbering a budget's next alternate.
+  `sql/migrate_project_op_ids.sql` + `sql/widen_project_op_ids.sql` re-keyed the
+  existing rows; `dbo.ProjectIdMap` is the permanent record of what moved.
+- **`dbo.Projects` is the parent, and its primary key is the "one project per
+  ID" guarantee.** Budgets and analyses link to it by `ProjectKey`, an EXPLICIT
+  link stated when the record is created — never derived from an id.
+- **Project numbers are unique among LIVE projects, and only there.** Deleting
+  a project frees its number: `createProject` claims the soft-deleted row with
+  an `IsDeleted = 1`-guarded UPDATE (the atomic claim — at most one concurrent
+  create wins it) and RESETS it, so the number comes back as a fresh project,
+  never as a resurrection. `nextProjectId` still skips tombstones: reuse is a
+  deliberate typed act, never a suggestion. Budget ids are the opposite — a
+  deleted budget's number stays reserved, because BudgetVersions hangs off it
+  and reuse would graft new content onto old history.
+- **A project is created deliberately, and only one way:**
+  `PUT /api/budget/{OP-####}?scope=project` with `{create:true}`. Saving a
+  budget no longer conjures its parent, because a budget id cannot name one.
+  A budget save may carry `meta.projectKey` to state its link; a save that
+  does not mention a project leaves the existing link alone.
+- **A project has NO type.** One property can carry a Multifamily budget and a
+  Commercial budget at the same time, so the type belongs to each budget; the
+  project reports `budgetTypes`, the distinct types its budgets actually are.
+  `dbo.Projects.Type` keeps its default and the application never reads it.
+- **Exactly one primary budget, and the project's money is its alone.**
+  `PrimaryBudgetId` is one scalar column, so Make Primary promotes and demotes
+  in the same write — a project cannot pass through a state with none or two.
+  `liveContractSum` / `liveProjectCost` are a `TOP 1` on that budget, never a
+  `SUM` across alternates: an alternate is a different way of pricing the same
+  work, and adding it in double-counts the project.
+- **Deleting a project is a soft delete that cascades**, in one transaction, to
+  its budgets and its analyses — a project flagged deleted while its budgets
+  were still live would keep being counted. Nothing is destroyed; only
+  `sql/purge_deleted_budgets.sql` does that.
+- **The project surface is query scopes on endpoints that already deploy**
+  (`GET /api/budgets?scope=projects`, `?scope=project&id=…`,
+  `?scope=next-project-id`, `PUT`/`DELETE /api/budget/{id}?scope=project`,
+  `GET /api/budget/{id}?scope=next-budget-id`),
+  for the same reason role management is:
+  a new `api/<name>/` folder is not reliably picked up by the deployed host.
+  A route rule matches paths, not query strings, so the in-function check on
+  these scopes is the **only** gate and must be written as the real gate.
+- **Project statuses are their own vocabulary** — Lead → Qualified → Budgeting
+  → Proposal Sent → Awarded → **Converted to Project**, plus On Hold and Lost.
+  Budget and analysis statuses (Draft / In Review / Completed / Cancelled) are
+  unchanged: they answer "is this document finished", which is a different
+  question from "where is this deal".
+- **Converting SNAPSHOTS the money.** `ContractAmount` / `ProjectAmount` are
+  captured from the primary budget at the moment of conversion and never move
+  again. A budget edited afterwards must not restate reported backlog, which is
+  why the analytics totals read those columns and not a live join.
+- **The project page borrows the app's row menus rather than growing its own.**
+  Budget rows open `openRowMenu()` from `index.html` (Edit · **Make Primary**
+  when the row is not already primary · Favorite · Update Pricing · Versions ·
+  Delete Budget); analysis rows open `FSInvestmentUI.openInvRowMenu()`; project
+  rows and cards open `FSProjects.openProjectMenu()` (Open · Favorite · Delete
+  Project). Every destructive item carries `danger`, which is what makes it
+  red — there is no second styling path. Both repaint through
+  `FSHome.toggleFavorite()` → the adapter's `favoritesChanged`, which already
+  knows which page is showing — don't add a second repaint path.
+- **Projects is the third `*View` section.** `projectView` sits beside
+  `budgetView` and `analysisView` in `api/shared/user-settings-contract.js`;
+  the toolbar control and the Settings row both go through `chooseSetting`.
+
+## The changelog
+
+- **`CHANGELOG.md` is part of every change that reaches `staging`.** Not a
+  release chore done afterwards — a change without an entry is not finished,
+  because the entry is the only place a person can find out what moved and what
+  they have to do about it.
+- **Write it in the user's language.** "The Projects button creates a project",
+  not "refactored openNewBudget". A refactor nobody can see belongs in the
+  commit message; this file is for what someone will notice.
+- **Two callouts earn their own heading**, because they are the ones that bite:
+  **Migration required** (the SQL files, in run order) and **Breaking**
+  (behaviour someone relied on that is deliberately gone).
+- **Add to Unreleased as you work**, and move the block under a dated heading
+  when it ships. Never rewrite a shipped entry — correct it with a new one.
+
+## Activity log
+
+- **Every event names WHAT it happened to.** `dbo.UserActivity` already had
+  `EntityType`, `EntityId` and a JSON `DetailDoc`; what was missing was anyone
+  filling them. Favoriting travelled through `PUT /api/user-settings` as a whole
+  settings document and landed as one blunt `settings_update` row with no
+  entity — the log rendered it as "Updated settings" and that was all anyone
+  could learn from it.
+- **The diff happens server-side**, in `api/user-settings/index.js`, where the
+  stored and merged documents are both already in hand. One row per favorite
+  that actually moved (`favorite_add` / `favorite_remove`, typed by
+  budget/project/analysis), `profile_update` with from/to, and `settings_update`
+  only for a preference that genuinely changed. Client-side would be worse: the
+  beacon can be lost, and the settings save is debounced so several toggles
+  arrive as one PUT — the diff still emits one row per id.
+- **A record's NAME is looked up, not taken from the request.** The client's
+  copy can be stale, and the name is the one part of an audit row a person
+  reads. Best-effort: a name that cannot be read is absent, never a failed save.
+- **`eventDetail()` exists twice on purpose** — `app/dashboard.js` (the admin
+  Activity Log, its CSV and its PDF) and `app/home.js` (Your Activity). One
+  vocabulary, two places it is read; they change together. Both are tolerant of
+  an event written before its shape existed, because the pre-granular rows are
+  still in the table and always will be.
+- **Adding an event type means adding its label in both**, and its detail case
+  where the row deserves a sentence. An unlabelled event renders its raw
+  keyword rather than breaking — but shipping that is a bug, not a fallback.
+
 ## Auth & security
 
 - **Two gates on every privileged route:** an SWA route rule in
@@ -192,13 +380,49 @@ custom provider for sign-in.
   route listed as public.
 - **Roles, not email allow-lists.** Authorization is Entra app roles. Never gate
   by email address or domain in code.
-- **`ID_RX` lives in four files that change together:**
-  `app/index.html`, `api/budget/index.js`, `api/budget-versions/index.js`, and
-  `test/mock-api.js` — all must accept exactly
-  `OP-####`, `BD-####`, `AS-####`, `TST-####`. `TST-` ids are test data:
-  excluded from views (`sql/views.sql`) and purgeable by the cleanup script.
+- **`app/login.html` is the only anonymous surface** (plus `/favicon.ico`, which
+  it links). Everything else stays `authenticated`, and the `401` override
+  redirects there instead of straight to `/.auth/login/aad`. Two rules that must
+  not drift: the anonymous route stays **above** the `/*` rule (below it, the
+  login page would demand a session and the override would bounce the visitor
+  back to it — a redirect loop, not a login screen), and the page stays
+  **self-contained** — no `<script src>`, no app CSS, nothing that would 401 for
+  the very visitor it exists for. `test/auth-routes.test.js` pins both; nothing
+  else can, because `test/mock-api.js` serves every path unguarded.
+- **`ID_RX` lives in five files that change together:**
+  `app/index.html`, `api/budget/index.js`, `api/budget-versions/index.js`,
+  `api/investment-analyses/index.js`, and `test/mock-api.js` — all must accept
+  exactly `OP-####`, `BD-####`, `BDG-####`, `AS-####`, `TST-####`, **plus an
+  optional `-NN` suffix**. That is the BUDGET namespace.
+  **New budgets are minted as identifier-model children: `BDG-<project
+  number>-<item>`** (PROJECT_NUMBERS_GUIDE.md), suggested by
+  `nextChildBudgetId()` so a budget carries its project's number by
+  construction — the number still never DERIVES anything; `ProjectKey` remains
+  the link. Item `-01` is the first budget, not an alternate: `isSiblingItem()`
+  (and the matching `isAlternate()` in `app/index.html` / `test/mock-api.js`)
+  reads only a suffix past `01` as a sibling, which also covers legacy
+  alternates since those started at `-02`. Legacy families keep numbering the
+  old way — `addAlternate()` is family-preserving, because `BD-0002` and
+  `BDG-0002-01` claiming to be siblings would be a lie.
+  Analyses stay GUID-keyed and gain a per-project `ItemNumber`; the shown
+  `INA-####-##` is composed by **one** helper, `displayChildId()` in
+  `app/index.html` (identifier guide rule 7), passed through adapters — never
+  stored, never a join key. `ProjectNumber` columns
+  (`sql/adopt_project_numbers.sql`) are probed as `projectsNumber` /
+  `analysesItemNumber` before use.
+  `PROJECT_ID_RX` (`^OP-\d{4}$`) is a separate rule in `app/index.html` and
+  `api/shared/projects.js` and must never be widened to accept a budget id.
+  `TST-` ids are test data: excluded from views (`sql/views.sql`) and purgeable
+  by the cleanup script.
 - **From the client principal, store only `userId` and `userDetails`.** Don't
   persist claims or tokens.
+- **Switch Account has to log out first.** `/.auth/login/aad` short-circuits
+  while the Static Web Apps session cookie is present: it never reaches Entra,
+  so the `prompt=select_account` configured in `staticwebapp.config.json` is
+  never sent and the page just reloads as the same user. The cookie is
+  HttpOnly — nothing in script can clear it — so the control navigates to
+  `/.auth/logout` with a `post_logout_redirect_uri` pointing back at
+  `/.auth/login/aad`. Sign Out is the same drop, landing on `/login.html`.
 
 ## Single sources of truth
 
@@ -215,6 +439,17 @@ custom provider for sign-in.
   documents must go through it, or unchanged saves will spawn versions. Never
   change its defaults — budget hashing depends on them byte-for-byte; the
   investment module wraps it rather than modifying it.
+- **The budget→analysis projection lives in one module.**
+  `api/shared/investment/from-budget.js` is used by creation AND by
+  `PUT /api/investment-analysis/{id}?scope=resync`; if they derived separately,
+  re-syncing would quietly change numbers that were never wrong. Three rules in
+  it were each got wrong once: property size is the **building**
+  (`resSF + amenSF`), never `siteSF` (which is land and prices nothing); purchase
+  price is Total Project Cost recomputed from the version document; and the
+  expense ratio is derived against **Gross Operating Income** — after vacancy —
+  because that is what the engine's `percentOfGOI` mode multiplies.
+  Deriving the ratio does **not** move `CALCULATION_VERSION`: the arithmetic is
+  unchanged, only where the input came from is new.
 - **The investment engine is server-only and version-stamped**
   (`api/shared/investment/`, `before-tax-1.1.0`). The browser posts
   assumptions and renders returned results; saves recalculate server-side and
@@ -245,9 +480,14 @@ custom provider for sign-in.
   change without its mock change will pass locally and lie.
 - Pure logic (canonical JSON, hashing, SOV projection, calculations) goes in
   `test/*.test.js` under `node:test` — no browser required.
-- New features come with tests in the same commit. Fourteen suites exist
-  (`suite-01` … `suite-14`; 11–14 are the investment-analysis suites); extend
-  the closest one rather than starting a fifteenth for a small feature.
+- New features come with tests in the same commit. Twenty-one suites exist
+  (`suite-01` … `suite-21`; 11–14 are the investment-analysis suites, 20 is guard
+  rails, 21 is Projects); extend the closest one rather than starting a
+  twenty-second for a small feature.
+- **Playwright's bundled browser build can outrun the one installed.** If a
+  suite aborts with "Executable doesn't exist at …chromium_headless_shell-<n>",
+  point `CHROMIUM_PATH` at the chrome binary that IS installed rather than
+  downloading another.
 
 ## Style
 

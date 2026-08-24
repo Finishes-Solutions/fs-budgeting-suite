@@ -1,6 +1,16 @@
 const { chromium } = require('playwright');
 const OUT = process.env.OUT_DIR || require('os').tmpdir();
 const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:''}`);
+/* Step 2 of the New Budget dialog: a budget belongs to a project, so the
+   project is chosen rather than implied by whatever gets typed into the ID
+   field later. A null id keeps the suggested next free BD-####. */
+async function nbFinish(p,id,name){
+  await p.selectOption('#nbProject','OP-0501');
+  if(id)await p.fill('#nbId',id);
+  await p.fill('#nbName',name);
+  await p.click('#nbCreate');
+  await p.waitForTimeout(400);
+}
 (async()=>{ try{
  const b=await chromium.launch({executablePath: process.env.CHROMIUM_PATH || undefined});
  const ctx=await b.newContext({viewport:{width:1400,height:1000},acceptDownloads:true});
@@ -14,9 +24,25 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     await p.evaluate(()=>typeof ExcelJS));
  ok('no CDN script tag remains', !(await p.content()).includes('cdnjs.cloudflare.com'));
 
+ // A budget belongs to a project now, and a project is created explicitly —
+ // saving a budget no longer conjures one, because a budget id cannot name a
+ // project. So the suite makes the parent it is going to need.
+ await p.evaluate(async()=>{
+   await fetch('/api/budget/OP-0501?scope=project',{method:'PUT',
+     headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({create:true,name:'Export Test Project',address:'1 Test Way'})});
+ });
+
  // ---- BLANK budget
  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Blank Budget")'));
- await p.waitForTimeout(300);
+ await p.waitForTimeout(400);
+ await p.selectOption('#nbProject','OP-0501');
+ await p.fill('#nbId','BD-0501');
+ await p.fill('#nbName','Blank Budget');
+ await p.click('#nbCreate');
+ await p.waitForTimeout(400);
+ ok('a new budget carries its project', (await p.evaluate(()=>doc.projectKey))==='OP-0501',
+    String(await p.evaluate(()=>doc.projectKey)));
  ok('blank: no unit rows', (await p.locator('#unitBody tr').count())===0);
  ok('blank: no income rows', (await p.locator('#otherBody tr').count())===0);
  ok('blank: no expense rows', (await p.locator('#expBody tr').count())===0);
@@ -55,7 +81,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // ---- CSI view on the multifamily template
  await p.click('#nav-home'); await p.waitForTimeout(200);
- await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(300);
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(400);
+ await nbFinish(p,'BD-0502','Export Multifamily');
  await p.fill('#pId','TST-9998'); await p.fill('#pName','CSI Format Check');
  await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
  await p.click(".page.on [data-wf-pills] a:has-text('CSI Schedule')"); await p.waitForTimeout(500);
@@ -123,6 +150,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // publishing affects only future budgets — existing ones must not move
  await p.click('#nav-home'); await p.waitForTimeout(300);
  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(500);
+ await nbFinish(p,null,'Export Multifamily');
  await p.fill('#pId','TST-4242'); await p.fill('#pName','Before Publish');
  const beforeDoc = await p.evaluate(async () => {
    pullForms();
@@ -164,6 +192,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // a budget created now picks up the new version, with fresh line IDs
  await p.click('#nav-home'); await p.waitForTimeout(300);
  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(500);
+ await nbFinish(p,null,'Export Multifamily');
  const fresh = await p.evaluate(() => ({ver: doc.templateVersionId, rate: doc.lines[0].unit,
                                         ids: doc.lines.slice(0,3).map(l => l.lineId)}));
  ok('A budget created after publication uses the new version', fresh.ver === pub.version,

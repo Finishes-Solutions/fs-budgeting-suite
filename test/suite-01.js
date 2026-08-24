@@ -34,7 +34,8 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
   await p.evaluate(() => go('help')); await p.waitForTimeout(300);
   ok('U4 hash set for help', p.url().endsWith('#/help'), p.url());
   ok('Help page visible', await p.locator('#page-help').isVisible());
-  ok('Help TOC has 13 entries', (await p.locator('#helpToc a').count()) === 13);
+  ok('Help TOC has 15 entries', (await p.locator('#helpToc a').count()) === 15,
+     String(await p.locator('#helpToc a').count()));
   await p.screenshot({ path: OUT + '/help.png', fullPage: false });
 
   // New budget
@@ -44,8 +45,21 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
   // does not auto-wait, so give the fallback a moment to land.
   await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
   await p.waitForTimeout(400);
+  // A budget belongs to a project, so the dialog asks which one. Offline the
+  // list cannot be read at all, so the field says so and stops being required
+  // â€” there is nothing to link to and nothing can be saved anyway.
+  ok('the project step says the list is unavailable offline',
+     await p.locator('#nbProject').isDisabled()
+     && /offline/i.test(await p.locator('#nbProject').textContent()),
+     (await p.locator('#nbProject').textContent()).trim());
+  await p.fill('#nbId','BD-0001');
+  await p.fill('#nbName','Offline Budget');
+  await p.click('#nbCreate');
+  await p.waitForTimeout(400);
   ok('Inputs page after new budget', await p.locator('#page-input').isVisible());
-  ok('U4 hash for inputs', p.url().endsWith('#/inputs'), p.url());
+  // The budget is created WITH its id now â€” it is typed in the dialog rather
+  // than left blank for the Inputs page â€” so the route carries it.
+  ok('U4 hash for inputs', /#\/inputs\/BD-0001$/.test(p.url()), p.url());
 
   // TST id validation
   await p.fill('#pId', 'TST-9999');

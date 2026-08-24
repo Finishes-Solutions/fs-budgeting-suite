@@ -9,10 +9,12 @@
 // instead of silently overwriting someone else's version.
 const { getPool, sql } = require('../shared/db');
 const { getPrincipal } = require('../shared/auth');
+const { features } = require('../shared/schema');
 const { calculateInvestmentAnalysis } = require('../shared/investment/calculate');
 const C = require('../shared/investment/constants');
 const { GUID_RX, analysisContentHash, summaryValues, writeAnnualRows,
         insertAnalysisVersion, jsonRes, validationRes } = require('../shared/investment-persistence');
+const { projectFromBudget } = require('../shared/investment/from-budget');
 
 const DUP_KEY = new Set([2627, 2601]);
 const MAX_BODY = 2 * 1024 * 1024;   // 2 MB — far beyond any real assumption set
@@ -23,11 +25,18 @@ module.exports = async function (context, req) {
   const pool = await getPool();
 
   if (req.method === 'GET') {
+    const gf = await features(pool);
+    const idCols = gf.analysesItemNumber && gf.analysesProjectKey
+      ? 'a.ItemNumber, a.ProjectKey,'
+      : 'CAST(NULL AS INT) AS ItemNumber, CAST(NULL AS VARCHAR(16)) AS ProjectKey,';
     const r = await pool.request().input('id', sql.UniqueIdentifier, id)
       .query(`SELECT a.AnalysisId, a.ProjectId, a.Name, a.Status, a.CurrentVersionNumber,
+                     ${idCols}
                      a.SourceBudgetVersionId, bv.VersionNumber AS SourceBudgetVersionNumber,
                      a.InputDoc, a.NormalizedInputDoc, a.ResultDoc,
-                     a.InputSchemaVersion, a.CalculationVersion, a.CreatedAt, a.UpdatedAt
+                     a.InputSchemaVersion, a.CalculationVersion, a.CreatedAt, a.UpdatedAt,
+                     (SELECT MAX(v2.VersionNumber) FROM dbo.BudgetVersions AS v2
+                       WHERE v2.ProjectId = a.ProjectId) AS BudgetCurrentVersionNumber
               FROM dbo.InvestmentAnalyses AS a
               LEFT JOIN dbo.BudgetVersions AS bv ON bv.Id = a.SourceBudgetVersionId
               WHERE a.AnalysisId = @id AND a.IsDeleted = 0`);
@@ -37,10 +46,18 @@ module.exports = async function (context, req) {
     const result = parse(a.ResultDoc);
     context.res = jsonRes(200, {
       analysisId: a.AnalysisId.toLowerCase(), projectId: a.ProjectId, name: a.Name,
+      projectKey: a.ProjectKey || null,
+      itemNumber: a.ItemNumber === null || a.ItemNumber === undefined ? null : Number(a.ItemNumber),
       status: a.Status, currentVersionNumber: a.CurrentVersionNumber,
       source: a.SourceBudgetVersionId ? {
         projectId: a.ProjectId, budgetVersionId: a.SourceBudgetVersionId,
-        budgetVersionNumber: a.SourceBudgetVersionNumber
+        budgetVersionNumber: a.SourceBudgetVersionNumber,
+        // The budget's CURRENT version, so the client can say "budget updated
+        // to v7 — re-sync". Nothing recalculates on its own: a saved analysis
+        // is never quietly restated (docs/DATA_CONTRACT.md).
+        budgetCurrentVersionNumber: a.BudgetCurrentVersionNumber || null,
+        drift: !!(a.BudgetCurrentVersionNumber && a.SourceBudgetVersionNumber
+                  && a.BudgetCurrentVersionNumber > a.SourceBudgetVersionNumber)
       } : null,
       input: parse(a.InputDoc),
       result: result && result.annual ? result : null,
@@ -53,16 +70,103 @@ module.exports = async function (context, req) {
 
   if (req.method === 'DELETE') {
     const r = await pool.request().input('id', sql.UniqueIdentifier, id)
-      .query(`UPDATE dbo.InvestmentAnalyses SET IsDeleted = 1, DeletedAt = SYSUTCDATETIME()
+      .query(`SELECT TOP 1 Name, ProjectId, ProjectKey FROM dbo.InvestmentAnalyses WHERE AnalysisId = @id;
+              UPDATE dbo.InvestmentAnalyses SET IsDeleted = 1, DeletedAt = SYSUTCDATETIME()
               WHERE AnalysisId = @id AND IsDeleted = 0;
               SELECT COUNT(*) AS Found FROM dbo.InvestmentAnalyses WHERE AnalysisId = @id;`);
-    if (!r.recordset[0].Found) { context.res = jsonRes(404, { error: 'not_found', message: 'Not found' }); return; }
+    const before = (r.recordsets[0] || [])[0] || null;
+    if (!(r.recordsets[1] || [])[0] || !r.recordsets[1][0].Found) {
+      context.res = jsonRes(404, { error: 'not_found', message: 'Not found' }); return;
+    }
     context.res = { status: 204 };
+    // Deleting an analysis recorded nothing before this.
+    await require('../shared/users').recordActivity(pool, principal, 'analysis_delete', 'analysis', id,
+      before ? { name: before.Name || null, budgetId: before.ProjectId || null,
+                 projectKey: before.ProjectKey || null } : null);
     return;
   }
 
   // ---- PUT
   const body = req.body || {};
+
+  /* PUT ?scope=resync — re-read the project's CURRENT budget version and
+     refresh only the imported fields, leaving everything the user typed alone.
+     It is an explicit action, never automatic: a saved analysis is never
+     silently restated, and an old analysis version is never recalculated.
+     Extends a route that already deploys rather than adding a function folder. */
+  if (String((req.query && req.query.scope) || '') === 'resync') {
+    const cur = await pool.request().input('id', sql.UniqueIdentifier, id)
+      .query(`SELECT a.ProjectId, a.InputDoc, a.CurrentVersionNumber
+              FROM dbo.InvestmentAnalyses AS a WHERE a.AnalysisId = @id AND a.IsDeleted = 0`);
+    if (!cur.recordset.length) { context.res = jsonRes(404, { error: 'not_found', message: 'Not found' }); return; }
+    const row = cur.recordset[0];
+    if (!row.ProjectId) {
+      context.res = jsonRes(400, { error: 'not_linked',
+        message: 'This analysis is standalone — there is no budget to re-sync from.' });
+      return;
+    }
+    let input; try { input = JSON.parse(row.InputDoc); } catch (_) { input = null; }
+    if (!input) { context.res = jsonRes(500, { error: 'unreadable', message: 'The stored assumptions could not be read.' }); return; }
+
+    const bv = await pool.request().input('pid', sql.VarChar(16), row.ProjectId)
+      .query(`SELECT TOP 1 v.Id, v.VersionNumber, v.Doc, v.Name
+              FROM dbo.BudgetVersions AS v
+              JOIN dbo.Budgets AS b ON b.ProjectId = v.ProjectId AND b.IsDeleted = 0
+              WHERE v.ProjectId = @pid ORDER BY v.VersionNumber DESC`);
+    if (!bv.recordset.length) { context.res = jsonRes(404, { error: 'not_found', message: 'Budget version not found.' }); return; }
+    const v = bv.recordset[0];
+    let bdoc; try { bdoc = JSON.parse(v.Doc); } catch (_) { bdoc = null; }
+    if (!bdoc) { context.res = jsonRes(500, { error: 'source_unreadable', message: 'The budget version document could not be read.' }); return; }
+
+    // Derived against the vacancy this analysis actually carries, not the
+    // organisation default — the ratio is a share of GOI, and GOI is after
+    // vacancy.
+    const vacancy = input.vacancy && Number.isFinite(+input.vacancy.value) ? +input.vacancy.value : undefined;
+    const proj = projectFromBudget(bdoc, v, { projectId: row.ProjectId, vacancy });
+
+    input.property = Object.assign({}, input.property, {
+      name: proj.imported.property.name,
+      address: proj.imported.property.address,
+      size: proj.imported.property.size,
+      unitCount: proj.imported.property.unitCount
+    });
+    input.acquisition = Object.assign({}, input.acquisition, { basis: proj.imported.acquisition.basis });
+    input.income = Object.assign({}, input.income, {
+      year1PotentialIncome: proj.imported.income.year1PotentialIncome,
+      otherIncome: proj.imported.income.otherIncome
+    });
+    // An explicit override survives a re-sync — the user turned it on knowing
+    // it would stop tracking the budget. Its provenance still refreshes, so the
+    // warning can say what it no longer matches.
+    const overridden = !!(input.expenses && input.expenses.override);
+    input.expenses = overridden
+      ? Object.assign({}, input.expenses, { derivedFrom: proj.imported.expenses.derivedFrom })
+      : proj.imported.expenses;
+
+    input.source = Object.assign({}, input.source || {}, {
+      projectId: row.ProjectId, budgetVersionId: v.Id, budgetVersionNumber: v.VersionNumber,
+      syncedAt: new Date().toISOString(),
+      fieldOrigins: proj.fieldOrigins, support: proj.support,
+      // originalValues is deliberately NOT rewritten: the From Budget badges
+      // compare against the ORIGINAL import forever.
+      originalValues: (input.source && input.source.originalValues) || {},
+      importedAt: (input.source && input.source.importedAt) || new Date().toISOString()
+    });
+
+    await pool.request().input('id', sql.UniqueIdentifier, id)
+      .input('sbv', sql.BigInt, v.Id)
+      .input('input', sql.NVarChar(sql.MAX), JSON.stringify(input))
+      .query(`UPDATE dbo.InvestmentAnalyses
+              SET InputDoc = @input, SourceBudgetVersionId = @sbv, UpdatedAt = SYSUTCDATETIME()
+              WHERE AnalysisId = @id AND IsDeleted = 0`);
+
+    context.res = jsonRes(200, { ok: true, input, expensesOverridden: overridden,
+      source: { projectId: row.ProjectId, budgetVersionId: v.Id, budgetVersionNumber: v.VersionNumber,
+                budgetCurrentVersionNumber: v.VersionNumber, drift: false },
+      message: 'Re-synced from budget ' + row.ProjectId + ' v' + v.VersionNumber
+        + '. Recalculate and save to fold the new numbers into a version.' });
+    return;
+  }
 
   // PUT with { status } only — the quick status change from the lists, cards
   // and editor chip. No calculation, no version, works on incomplete drafts.
@@ -110,15 +214,21 @@ module.exports = async function (context, req) {
   context.res = jsonRes(200, out);
   // Best-effort audit trail — recordActivity never throws.
   if (out.versionCreated)
-    await require('../shared/users').recordActivity(pool, principal, 'analysis_save', 'analysis', id,
-      { versionNumber: out.versionNumber });
+    await require('../shared/users').recordActivity(pool, principal, 'analysis_save', 'analysis', id, {
+      name: out.name || null,
+      budgetId: out.projectId || null,
+      projectKey: out.projectKey || null,
+      versionNumber: out.versionNumber,
+      purchasePrice: out.purchasePrice === undefined ? null : out.purchasePrice,
+      year1NOI: out.year1NOI === undefined ? null : out.year1NOI
+    });
 
   async function save() {
     const tx = new sql.Transaction(pool);
     await tx.begin();
     try {
       const cur = await new sql.Request(tx).input('id', sql.UniqueIdentifier, id)
-        .query(`SELECT AnalysisId, ProjectId, SourceBudgetVersionId, CurrentVersionNumber,
+        .query(`SELECT AnalysisId, ProjectId, ProjectKey, SourceBudgetVersionId, CurrentVersionNumber,
                        ContentHash, IsDeleted
                 FROM dbo.InvestmentAnalyses WITH (UPDLOCK, HOLDLOCK) WHERE AnalysisId = @id`);
       if (!cur.recordset.length) {
@@ -196,7 +306,14 @@ module.exports = async function (context, req) {
       }
 
       await tx.commit();
-      return { ok: true, versionNumber, versionCreated: !unchanged, result };
+      // The identity and the headline numbers travel back so the audit row can
+      // name what was saved without a second read.
+      return { ok: true, versionNumber, versionCreated: !unchanged, result,
+               name: result.normalizedInput.analysisName,
+               projectId: a.ProjectId || null,
+               projectKey: a.ProjectKey || null,
+               purchasePrice: sum ? sum.purchasePrice : null,
+               year1NOI: sum ? sum.year1NOI : null };
     } catch (e) { await tx.rollback(); throw e; }
   }
 };

@@ -56,10 +56,20 @@ function normalize(input) {
       }))
     },
     vacancy: { mode: 'constant', value: input.vacancy.value },
+    // Provenance rides through normalization untouched: the ARITHMETIC is
+    // identical whether the ratio was derived from a budget or typed, so
+    // CALCULATION_VERSION does not move — only where the number came from is
+    // new, and the result document has to record that.
     expenses: input.expenses.mode === 'percentOfGOI'
-      ? { mode: 'percentOfGOI', value: input.expenses.value }
+      ? { mode: 'percentOfGOI', value: input.expenses.value,
+          override: !!input.expenses.override,
+          derivedFrom: input.expenses.derivedFrom && typeof input.expenses.derivedFrom === 'object'
+            ? input.expenses.derivedFrom : null }
       : { mode: 'annualDollar', value: input.expenses.value,
-          growth: { mode: 'constant', value: input.expenses.growth.value } },
+          growth: { mode: 'constant', value: input.expenses.growth.value },
+          override: !!input.expenses.override,
+          derivedFrom: input.expenses.derivedFrom && typeof input.expenses.derivedFrom === 'object'
+            ? input.expenses.derivedFrom : null },
     capitalExpenses: (input.capitalExpenses || []).map(r => ({
       label: r.label.slice(0, C.MAX_TEXT),
       // Pad to the full horizon so year indexing is total, not partial.

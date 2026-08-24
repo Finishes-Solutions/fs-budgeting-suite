@@ -15,13 +15,24 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // Seed a budget plus enough client events that the log crosses the 30-row
  // summary cut, so View All has something to page into.
  await p.evaluate(async()=>{
+   // Projects are created explicitly now — saving a budget no longer conjures
+   // one, because a budget id cannot name a project. The pipeline chart reads
+   // projects, so the seed makes them.
+   const mk=(id,name,status)=>fetch('/api/budget/'+id+'?scope=project',{method:'PUT',
+     headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({create:true,name,address:'1 Dashboard Way'})})
+     .then(()=>status?fetch('/api/budget/'+id+'?scope=project',{method:'PUT',
+       headers:{'Content-Type':'application/json'},body:JSON.stringify({status})}):null);
+   await mk('OP-9601','Northgate Flats','Qualified');
+   await mk('OP-9602','Harbor Row','Awarded');
    const doc={projectId:'TST-9960',name:'Dashboard Test',status:'Draft',resSF:1000,amenSF:0,
      units:[],other:[],expenses:[],
      lines:[{lineId:'s1',scope:'res',grp:'General',code:'',desc:'Shell',basis:'ls',auto:true,qty:0,unit:1500000}],
      companies:[],contingency:{mode:'fixed',val:0},projectCosts:{land:0,dev:0,mkt:0,cls:0},
      pricingVersion:'2026.08-v2',updated:new Date().toISOString()};
    await fetch('/api/budget/TST-9960',{method:'PUT',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({meta:{projectId:'TST-9960',name:'Dashboard Test',status:'Draft'},doc})});
+     body:JSON.stringify({meta:{projectId:'TST-9960',name:'Dashboard Test',status:'Draft',
+       projectKey:'OP-9601'},doc})});
    // The analytics aggregates deliberately exclude TST-% ids, so the status
    // and value charts need at least one real budget to have anything to plot.
    for(const [pid,nm,st,rate] of [['BD-7001','Northgate Flats','Draft',2400000],
@@ -29,7 +40,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
      const d=Object.assign({},doc,{projectId:pid,name:nm,status:st,
        lines:[{lineId:'s1',scope:'res',grp:'General',code:'',desc:'Shell',basis:'ls',auto:true,qty:0,unit:rate}]});
      await fetch('/api/budget/'+pid,{method:'PUT',headers:{'Content-Type':'application/json'},
-       body:JSON.stringify({meta:{projectId:pid,name:nm,status:st},doc:d})});
+       body:JSON.stringify({meta:{projectId:pid,name:nm,status:st,
+         projectKey:pid==='BD-7001'?'OP-9601':'OP-9602'},doc:d})});
    }
    // one analysis too, so the budget and analysis avatars can be compared
    await fetch('/api/investment-analyses',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -46,6 +58,85 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the dashboard page is showing',
     await p.evaluate(()=>document.getElementById('page-dashboard').classList.contains('on')));
  ok('KPI tiles render', (await p.locator('#dashKpis .dash-kpi').count())>0);
+ // ---- the KPI grid: four to a row, so ten metrics read 4 · 4 · 2
+ ok('the KPI grid is four equal cards wide',
+    await p.evaluate(()=>{
+      const cards=[...document.querySelectorAll('#dashKpis .dash-kpi')];
+      if(!cards.length) return false;
+      const r=cards.map(c=>c.getBoundingClientRect());
+      const rows=[...new Set(r.map(x=>Math.round(x.top)))];
+      const first=r.filter(x=>Math.round(x.top)===rows[0]);
+      return first.length===4 && Math.max(...first.map(x=>x.width))-Math.min(...first.map(x=>x.width))<2;
+    }),
+    await p.evaluate(()=>[...document.querySelectorAll('#dashKpis .dash-kpi')]
+      .map(c=>Math.round(c.getBoundingClientRect().width)).join(',')));
+ ok('and it stacks into three rows rather than one long one',
+    await p.evaluate(()=>{
+      const r=[...document.querySelectorAll('#dashKpis .dash-kpi')].map(c=>Math.round(c.getBoundingClientRect().top));
+      return [...new Set(r)].length===3;
+    }),
+    await p.evaluate(()=>[...new Set([...document.querySelectorAll('#dashKpis .dash-kpi')]
+      .map(c=>Math.round(c.getBoundingClientRect().top)))].join(',')));
+ ok('every card in a row is the same height',
+    await p.evaluate(()=>{
+      const r=[...document.querySelectorAll('#dashKpis .dash-kpi')].map(c=>c.getBoundingClientRect());
+      const rows={};
+      r.forEach(x=>{const k=Math.round(x.top);(rows[k]=rows[k]||[]).push(Math.round(x.height));});
+      return Object.values(rows).every(hs=>Math.max(...hs)-Math.min(...hs)<2);
+    }));
+ // The complaint: a card whose label wraps pushed its number out of line with
+ // the rest of the row. The value block is anchored to the bottom instead.
+ ok('the numbers and sub-lines sit on a common baseline across each row',
+    await p.evaluate(()=>{
+      const cards=[...document.querySelectorAll('#dashKpis .dash-kpi')];
+      const rows={};
+      cards.forEach(c=>{
+        const k=Math.round(c.getBoundingClientRect().top);
+        (rows[k]=rows[k]||[]).push(Math.round(c.querySelector('.v').getBoundingClientRect().top));
+      });
+      return Object.values(rows).every(vs=>Math.max(...vs)-Math.min(...vs)<2);
+    }),
+    await p.evaluate(()=>[...document.querySelectorAll('#dashKpis .dash-kpi')]
+      .map(c=>Math.round(c.querySelector('.v').getBoundingClientRect().top)).join(',')));
+ ok('every card carries a sub-line slot, even the ones with nothing to say',
+    (await p.locator('#dashKpis .dash-kpi').count())===(await p.locator('#dashKpis .dash-kpi .sub').count()),
+    (await p.locator('#dashKpis .dash-kpi').count())+' cards, '
+      +(await p.locator('#dashKpis .dash-kpi .sub').count())+' subs');
+ // Converted projects are what the dashboard is asked for: the money that
+ // became real work. Both tiles read the SNAPSHOT columns, so the figure does
+ // not move when a budget is edited after conversion.
+ const kpiText=await p.locator('#dashKpis').textContent();
+ ok('converted-project totals are reported',
+    /Converted Contract Amount/.test(kpiText) && /Converted Project Amount/.test(kpiText),
+    kpiText.replace(/\s+/g,' ').slice(0,200));
+ ok('and they say the figure was captured, not tracked',
+    /Captured at conversion/.test(kpiText));
+ // The pipeline is a proportional strip spanning both donut columns, in the
+ // free vertical space this card has beside its taller neighbour.
+ ok('the project pipeline is charted below the two status breakdowns',
+    (await p.locator('#dashBreakdowns .dash-card.dash-span .dash-pipe-seg').count())>=1,
+    String(await p.locator('#dashBreakdowns .dash-card.dash-span .dash-pipe-seg').count()));
+ ok('and reads in pipeline order, not sorted by count',
+    await p.evaluate(()=>{
+      const card=document.querySelector('#dashBreakdowns .dash-card.dash-span');
+      if(!card)return false;
+      const labs=[...card.querySelectorAll('.dash-lg-name')].map(e=>e.textContent.trim());
+      const order=['Lead','Qualified','Budgeting','Proposal Sent','Awarded',
+                   'Converted to Project','On Hold','Lost'];
+      // Only stages with a count are drawn; whichever appear must still be in
+      // pipeline order relative to each other.
+      const idx=labs.map(l=>order.indexOf(l));
+      return labs.length>0 && idx.every(i=>i>=0)
+        && idx.every((v,i)=>i===0||v>idx[i-1]);
+    }),
+    JSON.stringify(await p.evaluate(()=>{
+      const card=document.querySelector('#dashBreakdowns .dash-card.dash-span');
+      return card?[...card.querySelectorAll('.dash-lg-name')].map(e=>e.textContent.trim()):null;})));
+ ok('no legend name is clipped by the layout',
+    (await p.evaluate(()=>[...document.querySelectorAll('#dashBreakdowns .dash-lg-name')]
+      .filter(e=>e.scrollWidth>e.clientWidth+1).length))===0,
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#dashBreakdowns .dash-lg-name')]
+      .filter(e=>e.scrollWidth>e.clientWidth+1).map(e=>e.textContent.trim()))));
 
  // ---- design-system parity: the sections are the app's card shell, and the
  // activity table is the shared .tbl, not a bespoke one
@@ -252,6 +343,28 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       const cols=document.querySelector('#page-dashboard .dash-cols').getBoundingClientRect();
       return JSON.stringify({trend:Math.round(card.width),cols:Math.round(cols.width)});
     }));
+ // The complaint: Status Breakdown ended early and left a ragged bottom edge
+ // beside the taller card. It stretches and spaces its own contents instead.
+ ok('the two halves end on the same line',
+    await p.evaluate(()=>{
+      const r=[...document.querySelectorAll('#page-dashboard .dash-cols > .card')]
+        .map(c=>c.getBoundingClientRect());
+      return r.length===2 && Math.abs(r[0].bottom-r[1].bottom)<2;
+    }),
+    await p.evaluate(()=>[...document.querySelectorAll('#page-dashboard .dash-cols > .card')]
+      .map(c=>Math.round(c.getBoundingClientRect().bottom)).join(' vs ')));
+ ok('and the shorter one spreads its contents rather than padding the bottom',
+    await p.evaluate(()=>{
+      const card=document.getElementById('dashBreakdowns').closest('.card').getBoundingClientRect();
+      const pipe=document.querySelector('#dashBreakdowns .dash-span');
+      if(!pipe) return true;                       // no projects: nothing to spread
+      return card.bottom-pipe.getBoundingClientRect().bottom<40;
+    }),
+    await p.evaluate(()=>{
+      const card=document.getElementById('dashBreakdowns').closest('.card').getBoundingClientRect();
+      const pipe=document.querySelector('#dashBreakdowns .dash-span');
+      return pipe?Math.round(card.bottom-pipe.getBoundingClientRect().bottom)+'px of slack':'no pipeline';
+    }));
  ok('status breakdown and budgets by value are equal halves of that width',
     await p.evaluate(()=>{
       const cards=[...document.querySelectorAll('#page-dashboard .dash-cols > .card')];
@@ -281,12 +394,15 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // Stacking cost height, but "concise" still has to mean something: the whole
  // visual half of the dashboard — tiles, chart, breakdowns, ranking — stays
- // inside one scroll, with the Activity Log starting just past it.
+ // inside about one scroll, with the Activity Log starting just past it.
+ // The bound was 1000px while the KPIs ran seven-up over two rows. The review
+ // asked for four equal cards to a row, which is three rows of taller cards
+ // and ~130px more — a deliberate trade of density for legibility, not drift.
  ok('the whole chart half of the page stays around one screen',
     await p.evaluate(()=>{
       const top=document.getElementById('dashKpis').getBoundingClientRect().top;
       const bottom=document.getElementById('dashTop').closest('.card').getBoundingClientRect().bottom;
-      return (bottom-top)<=1000;
+      return (bottom-top)<=1180;
     }),
     await p.evaluate(()=>{
       const top=document.getElementById('dashKpis').getBoundingClientRect().top;
@@ -323,7 +439,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     }));
 
  ok('status breakdown renders donut charts',
-    (await p.evaluate(()=>document.querySelectorAll('#dashBreakdowns svg.dash-donut').length))===2);
+    (await p.evaluate(()=>document.querySelectorAll('#dashBreakdowns svg.dash-donut').length))===2,
+    String(await p.evaluate(()=>document.querySelectorAll('#dashBreakdowns svg.dash-donut').length)));
  ok('the donut centre shows the total and its slices sum to it',
     await p.evaluate(()=>{
       const svg=document.querySelector('#dashBreakdowns svg.dash-donut');

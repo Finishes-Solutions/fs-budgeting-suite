@@ -322,9 +322,101 @@ module.exports = async function (context, req) {
            INSERTED.LastSeenAt, INSERTED.LoginCount
     WHERE UserId=@uid;`);
 
-  await U.recordActivity(pool, principal, 'settings_update', null, null, {
-    changed: Object.keys(body.settings || {}).concat(
-      ['displayName', 'phone'].filter(k => profile[k] !== undefined))
-  });
+  // GRANULAR ACTIVITY, and this is where it has to happen.
+  //
+  // Favoriting travels through this endpoint as a whole settings document, so
+  // it used to land as one blunt row — settings_update, no entity, detail
+  // {changed:['favorites']} — which the log rendered as "Updated settings".
+  // The old and new documents are both in hand here, so the diff is free, and
+  // doing it server-side means the log cannot be lost or spoofed by a client
+  // that never sent the beacon.
+  //
+  // The settings save is debounced, so several rapid toggles arrive as one
+  // PUT. Diffing still emits one row per changed id, which is what the log
+  // needs to say.
+  await recordSettingsDiff(pool, principal, stored, merged, body, profile, row);
   context.res = jsonRes(200, U.userResponse(r.recordset[0]));
 };
+
+const FAV_KINDS = ['budget', 'project', 'analysis'];
+
+// Everything that is NOT a favorite or a profile field, reported as
+// {key, from, to} so "Updated settings" finally says which setting and what it
+// became. Values are small scalars by contract; an object setting is reported
+// by name only rather than dumped into the log.
+function scalar(v) {
+  return v === null || ['string', 'number', 'boolean'].includes(typeof v) ? v : undefined;
+}
+
+async function recordSettingsDiff(pool, principal, before, after, body, profile, row) {
+  const sent = body.settings && typeof body.settings === 'object' ? body.settings : null;
+
+  // ---- favorites: one event per id that actually moved, named by entity.
+  if (sent && (sent.favorites !== undefined || sent.pinned !== undefined)) {
+    for (const kind of FAV_KINDS) {
+      const was = new Set((before.favorites && before.favorites[kind]) || []);
+      const now = new Set((after.favorites && after.favorites[kind]) || []);
+      for (const id of now) {
+        if (!was.has(id)) {
+          await U.recordActivity(pool, principal, 'favorite_add', kind, id,
+            { name: await entityName(pool, kind, id) });
+        }
+      }
+      for (const id of was) {
+        if (!now.has(id)) {
+          await U.recordActivity(pool, principal, 'favorite_remove', kind, id,
+            { name: await entityName(pool, kind, id) });
+        }
+      }
+    }
+  }
+
+  // ---- profile fields, with what they were and what they are now.
+  const profileFields = ['displayName', 'phone'].filter(k => profile[k] !== undefined
+    && (row[k[0].toUpperCase() + k.slice(1)] || null) !== (profile[k] || null));
+  if (profileFields.length) {
+    await U.recordActivity(pool, principal, 'profile_update', 'user', principal.userId, {
+      fields: profileFields.map(k => ({ key: k,
+        from: row[k[0].toUpperCase() + k.slice(1)] || null, to: profile[k] || null }))
+    });
+  }
+
+  // ---- everything else, only when it genuinely changed.
+  if (sent) {
+    const changed = [];
+    for (const key of Object.keys(sent)) {
+      if (key === 'favorites' || key === 'pinned') continue;
+      const from = scalar(before[key]), to = scalar(after[key]);
+      if (from === undefined && to === undefined) {
+        // An object setting (exportOptions): report that it moved, not its guts.
+        if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) changed.push({ key });
+        continue;
+      }
+      if (from !== to) changed.push({ key, from: from === undefined ? null : from,
+                                            to: to === undefined ? null : to });
+    }
+    if (changed.length) {
+      await U.recordActivity(pool, principal, 'settings_update', null, null, { changed });
+    }
+  }
+}
+
+// What the record is called, so the log can read "Favorited BD-0002 —
+// Riverbend" rather than an id. Looked up here rather than taken from the
+// request: the client's copy can be stale, and a name is the one part of an
+// audit row a person actually reads. Best-effort — a name that cannot be read
+// is simply absent, never a failed save.
+const NAME_SQL = {
+  budget: 'SELECT TOP 1 Name FROM dbo.Budgets WHERE ProjectId = @id',
+  project: 'SELECT TOP 1 Name FROM dbo.Projects WHERE ProjectId = @id',
+  analysis: 'SELECT TOP 1 Name FROM dbo.InvestmentAnalyses WHERE AnalysisId = TRY_CONVERT(UNIQUEIDENTIFIER, @id)'
+};
+async function entityName(pool, kind, id) {
+  const q = NAME_SQL[kind];
+  if (!q) return null;
+  try {
+    const r = await pool.request().input('id', sql.NVarChar(64), String(id).slice(0, 64)).query(q);
+    return r.recordset.length ? (r.recordset[0].Name || null) : null;
+  } catch (e) { return null; }
+}
+

@@ -8,13 +8,15 @@ const APP = process.env.APP_DIR || require('path').join(__dirname,'..','app');
 // The real module, not a copy: summary money is derived from the doc exactly as
 // api/budget/index.js derives it, so a client-supplied meta.contractSum is
 // ignored here too and parity cannot drift.
-const { parts } = require('../api/shared/budget-calc');
+const { parts, parts: bcParts, grossIncome: bcGross } = require('../api/shared/budget-calc');
 // The investment routes run the REAL engine and hash convention, so preview,
 // save-recomputation, and no-op detection behave byte-for-byte like Azure.
 const bc = require('../api/shared/budget-calc');
 const { calculateInvestmentAnalysis } = require('../api/shared/investment/calculate');
 const INV_C = require('../api/shared/investment/constants');
 const INV_D = require('../api/shared/investment/defaults');
+const fromBudget = require('../api/shared/investment/from-budget');
+const FSGuardrails = require('../api/shared/guardrails');
 const crypto = require('crypto');
 // Per-user settings validation: the REAL contract module (dependency-free).
 const usc = require('../api/shared/user-settings-contract');
@@ -42,8 +44,19 @@ const invSummary = a => {
   const u = uid ? mockUsers.get(uid) : null;
   return {
     analysisId: a.id, projectId: a.projectId, name: a.name, status: a.status,
+    projectKey: a.projectKey || null,
+    itemNumber: a.itemNumber === undefined ? null : a.itemNumber,
     currentVersionNumber: a.currentVersionNumber,
     sourceBudgetVersionNumber: a.sourceBudgetVersionNumber,
+    budgetCurrentVersionNumber: (function () {
+      const br = a.projectId ? budgets.get(a.projectId) : null;
+      return br && !br.deleted ? br.versions.length : null;
+    })(),
+    budgetDrift: (function () {
+      const br = a.projectId ? budgets.get(a.projectId) : null;
+      const cur = br && !br.deleted ? br.versions.length : null;
+      return !!(cur && a.sourceBudgetVersionNumber && cur > a.sourceBudgetVersionNumber);
+    })(),
     purchasePrice: a.result ? a.result.summary.purchasePrice : null,
     year1NOI: a.result ? a.result.summary.year1NOI : null,
     initialEquity: a.result ? a.result.summary.initialEquity : null,
@@ -62,6 +75,129 @@ const NO_API = process.env.NO_API === '1';
 // Mirrors the real API: deletion is a soft flag that keeps history, and a
 // meaningful save appends an immutable version.
 const budgets = new Map();
+/* dbo.Projects stand-in. Behaviour-parallel with api/shared/projects.js.
+   A project id is OP-#### and is the project's OWN identity — never derived
+   from a budget id. A budget says which project it belongs to by carrying
+   projectKey, stamped when it is saved. */
+const projects = new Map();
+const PROJECT_STATUSES = ['Lead', 'Qualified', 'Budgeting', 'Proposal Sent', 'Awarded',
+                          'Converted to Project', 'On Hold', 'Lost'];
+const CONVERTED = 'Converted to Project';
+const PROJECT_ID_RX = /^OP-\d{4}$/;
+// A budget id with its alternate suffix stripped: the BASE BUDGET, used only
+// to number alternates. It is not, and must not become, a project id.
+const budgetBaseOf = id => {
+  const v = String(id || '').toUpperCase();
+  return /^(OP|BD|BDG|AS|TST)-\d{4}-\d{2}$/.test(v) ? v.slice(0, -3) : v;
+};
+// Item 01 is the first budget, not an "alternate"; legacy alternates start at
+// -02, so one rule covers both eras. Kept in step with api/shared/projects.js.
+const isSiblingItem = id => {
+  const m = /-(\d{2})$/.exec(String(id || '').toUpperCase());
+  return !!m && m[1] !== '01';
+};
+function nextProjectId() {
+  for (let i = 1; i <= 9999; i++) {
+    const id = 'OP-' + String(i).padStart(4, '0');
+    if (!projects.has(id)) return id;
+  }
+  return null;
+}
+// The identifier model's child id: BDG-<project number>-<next item>, counting
+// deleted budgets too — a budget number is never re-issued. Behaviour-parallel
+// with nextChildBudgetId in api/shared/projects.js.
+function nextChildBudgetId(projectKey) {
+  const digits = String(projectKey).slice(-4);
+  let max = 0;
+  for (const id of budgets.keys()) {
+    const m = new RegExp('^BDG-' + digits + '-(\\d{2})$').exec(id);
+    if (m) max = Math.max(max, +m[1]);
+  }
+  if (max >= 99) return nextBudgetId();
+  return 'BDG-' + digits + '-' + String(max + 1).padStart(2, '0');
+}
+function nextBudgetId() {
+  for (let i = 1; i <= 9999; i++) {
+    const id = 'BD-' + String(i).padStart(4, '0');
+    if (!budgets.has(id)) return id;
+  }
+  return null;
+}
+function projectBudgets(key) {
+  return [...budgets.values()].filter(r => !r.deleted && r.projectKey === key)
+    .sort((a, z) => a.meta.projectId.length - z.meta.projectId.length
+      || a.meta.projectId.localeCompare(z.meta.projectId));
+}
+function projectAnalyses(key) {
+  return [...invAnalyses.values()].filter(a => !a.deleted && a.projectKey === key)
+    .sort((x, y) => y.updatedAt.localeCompare(x.updatedAt));
+}
+function shapeProject(p) {
+  const bs = projectBudgets(p.projectId);
+  // PRIMARY ONLY, never a sum across alternates — the same rule the real
+  // queries apply, with the same tie-break when no primary is set.
+  const primary = bs.find(b => b.meta.projectId === p.primaryBudgetId) || bs[0] || null;
+  const types = [...new Set(bs.map(b => b.meta.type).filter(Boolean))].sort();
+  const out = Object.assign({}, p, {
+    projectNumber: Number(String(p.projectId).slice(-4)),
+    // A project has no type of its own: it reports what its budgets are.
+    budgetTypes: types.join(', '),
+    budgetCount: bs.length, analysisCount: projectAnalyses(p.projectId).length,
+    liveContractSum: primary ? +primary.meta.contractSum || 0 : 0,
+    liveProjectCost: primary ? +primary.meta.projectCost || 0 : 0,
+    breachCount: bs.filter(b => b.guardrailStatus === 'breach').length
+  });
+  delete out.type;
+  delete out.deleted;
+  return out;
+}
+/* The activity diff, mirroring api/user-settings/index.js. Names are looked up
+   here for the same reason they are there: an id is not what a person reads. */
+function entityName(kind, id) {
+  if (kind === 'budget') { const b = budgets.get(String(id).toUpperCase()); return b ? (b.meta.name || null) : null; }
+  if (kind === 'project') { const p = projects.get(String(id).toUpperCase()); return p ? (p.name || null) : null; }
+  if (kind === 'analysis') { const a = invAnalyses.get(String(id).toLowerCase()); return a ? (a.name || null) : null; }
+  return null;
+}
+function act(eventType, entityType, entityId, detail, userId) {
+  mockActivity.unshift({ eventType, entityType, entityId, detail: detail || null,
+    userId: userId || principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
+}
+function logSettingsDiff(uid, before, after, body, beforeProfile, prof) {
+  const sent = body.settings && typeof body.settings === 'object' ? body.settings : null;
+  if (sent && (sent.favorites !== undefined || sent.pinned !== undefined)) {
+    for (const kind of ['budget', 'project', 'analysis']) {
+      const was = new Set((before.favorites && before.favorites[kind]) || []);
+      const now = new Set((after.favorites && after.favorites[kind]) || []);
+      for (const id of now) if (!was.has(id)) act('favorite_add', kind, id, { name: entityName(kind, id) }, uid);
+      for (const id of was) if (!now.has(id)) act('favorite_remove', kind, id, { name: entityName(kind, id) }, uid);
+    }
+  }
+  const fields = ['displayName', 'phone'].filter(k => prof[k] !== undefined
+    && (beforeProfile[k] || null) !== (prof[k] || null));
+  if (fields.length) act('profile_update', 'user', uid,
+    { fields: fields.map(k => ({ key: k, from: beforeProfile[k], to: prof[k] || null })) }, uid);
+  if (sent) {
+    const scalar = v => (v === null || ['string', 'number', 'boolean'].includes(typeof v) ? v : undefined);
+    const changed = [];
+    for (const key of Object.keys(sent)) {
+      if (key === 'favorites' || key === 'pinned') continue;
+      const from = scalar(before[key]), to = scalar(after[key]);
+      if (from === undefined && to === undefined) {
+        if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) changed.push({ key });
+        continue;
+      }
+      if (from !== to) changed.push({ key, from: from === undefined ? null : from, to: to === undefined ? null : to });
+    }
+    if (changed.length) act('settings_update', null, null, { changed }, uid);
+  }
+}
+
+// The same evaluation the browser and the real endpoint run, off one module.
+function evalGuardrails(doc) {
+  const gp = bcParts(doc);
+  return FSGuardrails.evaluate({ doc, parts: gp, gross: bcGross(doc), fee: gp.fee });
+}
 
 // Same canonicalization the API uses to decide whether a save changed anything
 // (sorted keys, `updated` excluded), so no-op saves create no version here either.
@@ -149,8 +285,26 @@ pushVersion('multifamily', {doc:{
          {label:'Townhome (1,200)',bd:2,bth:2.5,sf:1200,count:14,rent:1500}],
   other:[{label:'Utilities billback',rate:77,count:0,auto:true},
          {label:'Parking (reserved spaces)',rate:25,count:15,auto:false}],
+  // The full operating-expense schedule, as sql/publish_multifamily_opex_template.sql
+  // publishes it: services PLUS taxes, insurance, management, payroll, R&M,
+  // turnover, marketing, G&A, landscaping and reserves. Against this unit mix
+  // it lands around 46% of income — inside the 35-55% guard rail, which is the
+  // whole reason the schedule and the rail shipped together. Seeding the OLD
+  // six rows here would make every new-budget suite a warned budget and hide
+  // the state the deployed app is actually in.
   expenses:[{label:'Water & sewer',per:'unit',rate:60,count:0,auto:true},
-            {label:'Valet trash',per:'unit',rate:15,count:0,auto:true}],
+            {label:'Valet trash',per:'unit',rate:15,count:0,auto:true},
+            {label:'Property Taxes',per:'pctIncome',rate:12,count:0,auto:false},
+            {label:'Property Insurance',per:'unit',rate:65,count:0,auto:true},
+            {label:'Property Management Fee',per:'pctIncome',rate:4,count:0,auto:false},
+            {label:'On-Site Payroll',per:'unit',rate:95,count:0,auto:true},
+            {label:'Repairs & Maintenance',per:'unit',rate:55,count:0,auto:true},
+            {label:'Turnover / Make-Ready',per:'unit',rate:30,count:0,auto:true},
+            {label:'Marketing & Leasing',per:'unit',rate:22,count:0,auto:true},
+            {label:'General & Administrative',per:'unit',rate:18,count:0,auto:true},
+            {label:'Landscaping & Amenity Upkeep',per:'unit',rate:20,count:0,auto:true},
+            {label:'Replacement Reserves',per:'unit',rate:25,count:0,auto:true}],
+  opexSchemaVersion:2,
   lines: pricing.lines.map(l => ({...l, lineId:'tpl-'+Math.random().toString(36).slice(2,10),
     qty: l.basis==='ls'?1:0, auto: l.basis!=='ls', baseUnit:l.unit})),
   companies:[{name:'Finishes Solutions LLC',pct:12}],
@@ -167,6 +321,10 @@ const json = (res, code, body) => {
 http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   const p = u.pathname;
+  // Request-level query bag. The project and re-sync scopes read it, and a
+  // route rule cannot see a query string — so, as in the real API, the
+  // in-handler check is the gate.
+  const q = u.searchParams;
 
   if (NO_API && (p === '/.auth/me' || p.startsWith('/api/'))) { res.writeHead(500); return res.end('offline'); }
 
@@ -264,6 +422,7 @@ http.createServer((req, res) => {
       return json(res, 200, {
         events: filtered.slice(offset, offset + limit).map(r => ({
           eventType: r.eventType, entityType: r.entityType, entityId: r.entityId,
+          detail: r.detail || null,
           createdAt: r.createdAt,
           userName: principal.clientPrincipal.userDetails,
           userId: r.userId || principal.clientPrincipal.userId
@@ -283,7 +442,32 @@ http.createServer((req, res) => {
     const nois = analysisList.map(a => a.result && a.result.summary ? a.result.summary.year1NOI : null).filter(x => x != null);
     const irrs = analysisList.map(a => a.result && a.result.summary ? a.result.summary.finalYearEquityIRR : null).filter(x => x != null);
     const avg = arr => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null;
+    // Projects. The converted totals read the SNAPSHOT columns, never a live
+    // join — the same rule the real query follows, so reported backlog does not
+    // move when a budget is edited after conversion.
+    const projectList = [...projects.values()].filter(x => !x.isDeleted && !x.projectId.startsWith('TST-'));
+    const pStatus = {};
+    projectList.forEach(x => { const st = x.status || 'Lead'; pStatus[st] = (pStatus[st] || 0) + 1; });
+    const convertedList = projectList.filter(x => x.status === CONVERTED);
+    const lostCount = projectList.filter(x => x.status === 'Lost').length;
+    const decided = projectList.length - lostCount;
+    const byMonth = {};
+    convertedList.forEach(x => {
+      const m = String(x.convertedAt || '').slice(0, 7);
+      const e = byMonth[m] || (byMonth[m] = { month: m, count: 0, contractAmount: 0, projectAmount: 0 });
+      e.count++; e.contractAmount += x.contractAmount || 0; e.projectAmount += x.projectAmount || 0;
+    });
+
     return json(res, 200, {
+      projects: {
+        available: true, statuses: PROJECT_STATUSES,
+        total: projectList.length, converted: convertedList.length, lost: lostCount,
+        convertedContractAmount: convertedList.reduce((t, x) => t + (x.contractAmount || 0), 0),
+        convertedProjectAmount: convertedList.reduce((t, x) => t + (x.projectAmount || 0), 0),
+        conversionRate: decided > 0 ? convertedList.length / decided : null,
+        statusBreakdown: Object.entries(pStatus).map(([status, count]) => ({ status, count })),
+        convertedByMonth: Object.values(byMonth).sort((a, z) => a.month.localeCompare(z.month))
+      },
       budgets: {
         total: budgets.size, active: budgetList.length,
         deleted: [...budgets.values()].filter(b => b.deleted).length,
@@ -300,6 +484,7 @@ http.createServer((req, res) => {
       users: { total: mockUsers.size || 1, totalLogins: 1, lastActive: new Date().toISOString() },
       recentActivity: mockActivity.slice(0, 50).map(r => ({
         eventType: r.eventType, entityType: r.entityType, entityId: r.entityId,
+        detail: r.detail || null,
         createdAt: r.createdAt, userName: principal.clientPrincipal.userDetails
       })),
       // Same six series the real query builds, from the same two sources:
@@ -427,12 +612,20 @@ http.createServer((req, res) => {
       }
       return json(res, 405, { error: 'method_not_allowed' });
     }
+    // The seeded account is deliberately an ESTABLISHED, already-welcomed one:
+    // past the opening five sessions and carrying the current welcome version.
+    // Every suite boots a fresh mock, and a welcome would sit over the page and
+    // swallow the first click in all of them. The version is the contract's
+    // ceiling rather than the client's constant, because the mock has no way to
+    // read a number that lives in index.html — "has seen every welcome there
+    // will ever be" is exactly what this seed means. Suite 15 winds both back
+    // to exercise the real paths, which is the only place they are under test.
     if (!mockUsers.has(uid)) mockUsers.set(uid, {
       userDetails: principal.clientPrincipal.userDetails, displayName: null,
       email: principal.clientPrincipal.userDetails,   // locked to the sign-in account
       phone: null, appRole: 'super_admin',
-      settings: {}, firstSeenAt: new Date().toISOString(),
-      lastSeenAt: new Date(0).toISOString(), loginCount: 0 });
+      settings: { welcomeSeenVersion: 1000 }, firstSeenAt: new Date().toISOString(),
+      lastSeenAt: new Date(0).toISOString(), loginCount: 25 });
     const u = mockUsers.get(uid);
     const resp = () => json(res, 200, {
       userDetails: u.userDetails, displayName: u.displayName, email: u.email, phone: u.phone,
@@ -459,11 +652,15 @@ http.createServer((req, res) => {
       return req.on('end', () => {
         const body = b ? JSON.parse(b) : {};
         const prof = usc.sanitizeProfile(body);
+        const beforeProfile = { displayName: u.displayName || null, phone: u.phone || null };
+        const before = usc.sanitizeSettings(u.settings);
         for (const k of ['displayName', 'phone']) if (prof[k] !== undefined) u[k] = prof[k] || null;
         if (body.settings !== undefined)
           u.settings = usc.sanitizeSettings(Object.assign({}, usc.sanitizeSettings(u.settings), body.settings));
-        mockActivity.unshift({ eventType: 'settings_update', entityType: null, entityId: null,
-          detail: { changed: Object.keys(body.settings || {}) }, userId: uid, createdAt: new Date().toISOString() });
+        // Granular activity, behaviour-parallel with api/user-settings/index.js:
+        // one row per favorite that actually moved, naming the record, instead
+        // of one blunt "Updated settings".
+        logSettingsDiff(uid, before, usc.sanitizeSettings(u.settings), body, beforeProfile, prof);
         return resp();
       });
     }
@@ -487,13 +684,52 @@ http.createServer((req, res) => {
   }
 
   if (p === '/api/budgets') {
+    // ?scope=projects / ?scope=project — behaviour-parallel with
+    // api/shared/projects.js. In the mock the migration has always run, so
+    // `available` is always true; the not-migrated shape is covered by
+    // test/schema-probe.test.js against the real probe instead.
+    const scope = String(q.get('scope') || '');
+    if (scope === 'next-project-id') return json(res, 200, { projectId: nextProjectId() });
+    if (scope === 'projects') {
+      return json(res, 200, { available: true, statuses: PROJECT_STATUSES,
+        projects: [...projects.values()].filter(p => !p.deleted).map(shapeProject)
+          .sort((a, z) => String(z.updated).localeCompare(String(a.updated))) });
+    }
+    if (scope === 'project') {
+      const key = String(q.get('id') || '').toUpperCase();
+      const pr = projects.get(key);
+      if (!pr || pr.deleted) return json(res, 404, { error: 'not_found', message: 'Project not found.' });
+      const bs = projectBudgets(key);
+      return json(res, 200, {
+        available: true, statuses: PROJECT_STATUSES, project: shapeProject(pr),
+        budgets: bs.map(b => ({
+          projectId: b.meta.projectId, name: b.meta.name, type: b.meta.type, status: b.meta.status,
+          address: b.doc.address || '',
+          contractSum: +b.meta.contractSum || 0, projectCost: +b.meta.projectCost || 0,
+          // An alternate is a budget carrying the -NN suffix. It is no longer
+          // "an id that differs from the project's": those are different
+          // namespaces now, so they always differ.
+          isAlternate: isSiblingItem(b.meta.projectId),
+          isPrimary: b.meta.projectId === (bs.find(x => x.meta.projectId === pr.primaryBudgetId)
+            ? pr.primaryBudgetId : (bs[0] ? bs[0].meta.projectId : null)),
+          guardrailStatus: b.guardrailStatus || null,
+          guardrailBreachCount: b.guardrailBreachCount === undefined ? null : b.guardrailBreachCount,
+          createdById: b.createdById || null, createdByName: b.createdByName || null,
+          updated: b.meta.updated })),
+        analyses: projectAnalyses(key).map(invSummary)
+      });
+    }
+
     return json(res, 200, [...budgets.values()].filter(x => !x.deleted)
       .map(x => {
         const uid = x.createdById || null;
         const u = uid ? mockUsers.get(uid) : null;
         return { ...x.meta, address: (x.doc && x.doc.address) || '',
           createdById: uid, createdByName: x.createdByName || null,
-          createdByAvatar: u && u.settings ? (u.settings.avatarColor || null) : null };
+          createdByAvatar: u && u.settings ? (u.settings.avatarColor || null) : null,
+          projectKey: x.projectKey || null,
+          guardrailStatus: x.guardrailStatus || null,
+          guardrailBreachCount: x.guardrailBreachCount === undefined ? null : x.guardrailBreachCount };
       }));
   }
 
@@ -501,8 +737,110 @@ http.createServer((req, res) => {
     const rest = decodeURIComponent(p.slice('/api/budget/'.length));
     const seg = rest.split('/');
     const id = (seg[0] || '').toUpperCase();
+    const bScope = String(q.get('scope') || '');
+    // The next free BD-####, answered before the id check because the {id}
+    // segment is only a placeholder on this scope.
+    if (req.method === 'GET' && bScope === 'next-budget-id') {
+      const forProject = String(q.get('project') || '').toUpperCase();
+      return json(res, 200, { budgetId: PROJECT_ID_RX.test(forProject)
+        ? nextChildBudgetId(forProject) : nextBudgetId() });
+    }
+
+    // ?scope=project — create, update (including Make Primary) and soft
+    // delete, behaviour-parallel with api/shared/projects.js.
+    if (bScope === 'project' && (req.method === 'PUT' || req.method === 'DELETE')) {
+      if (!PROJECT_ID_RX.test(id)) return json(res, 400,
+        { error: 'bad_project_id', field: 'projectId', message: 'Use the format OP-####.' });
+
+      if (req.method === 'DELETE') {
+        const pr = projects.get(id);
+        if (!pr || pr.deleted) return json(res, 404, { error: 'not_found', message: 'Project not found.' });
+        // Cascading, and all at once: a project flagged deleted while its
+        // budgets were still live would keep being counted.
+        const bs = projectBudgets(id), as = projectAnalyses(id);
+        bs.forEach(b => { b.deleted = true; });
+        as.forEach(a => { a.deleted = true; });
+        // The tombstone stays in the map, exactly as the real row stays in
+        // dbo.Projects: the number reads as deleted everywhere, and comes back
+        // into service only when a create deliberately claims it.
+        pr.deleted = true;
+        act('project_delete', 'project', id, { name: pr.name || null,
+          budgetsDeleted: bs.length, analysesDeleted: as.length });
+        return json(res, 200, { ok: true, projectId: id, name: pr.name || '',
+          budgetsDeleted: bs.length, analysesDeleted: as.length });
+      }
+
+      let pb = ''; req.on('data', c => pb += c);
+      return req.on('end', () => {
+        const body = JSON.parse(pb || '{}');
+
+        if (body.create === true) {
+          // Unique among LIVE projects, not forever: a tombstone left by a
+          // delete is claimed and RESET, matching api/shared/projects.js. The
+          // old project's soft-deleted children keep pointing at the id — the
+          // accepted caveat of reusing a number.
+          const prior = projects.get(id);
+          if (prior && !prior.deleted) return json(res, 409,
+            { error: 'project_id_taken', field: 'projectId', message: 'Project ID must be unique.' });
+          const name = String(body.name || '').trim(), address = String(body.address || '').trim();
+          if (!name) return json(res, 400, { error: 'bad_request', field: 'name', message: 'Project Name is required.' });
+          if (!address) return json(res, 400, { error: 'bad_request', field: 'address', message: 'Address is required.' });
+          const now = new Date().toISOString();
+          // No type: it belongs to each budget, not to the project.
+          projects.set(id, { projectId: id, name, address, status: 'Lead',
+            primaryBudgetId: null, convertedAt: null, contractAmount: null,
+            projectAmount: null, notes: String(body.notes || ''),
+            createdById: principal.clientPrincipal.userId,
+            createdByName: principal.clientPrincipal.userDetails,
+            createdAt: now, updated: now });
+          act('project_create', 'project', id,
+            { name, address, reusedNumber: prior ? true : undefined });
+          return json(res, 201, { ok: true, created: true, project: shapeProject(projects.get(id)) });
+        }
+
+        const pr = projects.get(id);
+        if (!pr || pr.deleted) return json(res, 404, { error: 'not_found', message: 'Project not found.' });
+        if (body.status !== undefined && !PROJECT_STATUSES.includes(body.status))
+          return json(res, 400, { error: 'bad_request',
+            message: 'status must be one of: ' + PROJECT_STATUSES.join(', ') });
+        // Make Primary: the budget must be a LIVE budget of THIS project, which
+        // is a lookup against projectKey, not a string operation on the id.
+        if (body.primaryBudgetId !== undefined && body.primaryBudgetId !== null) {
+          const bid = String(body.primaryBudgetId).toUpperCase();
+          const owns = projectBudgets(id).some(b => b.meta.projectId === bid);
+          if (!owns) return json(res, 400, { error: 'bad_request',
+            message: 'The primary budget must be a live budget on this project.' });
+          body.primaryBudgetId = bid;
+        }
+        const converting = body.status === CONVERTED && pr.status !== CONVERTED;
+        const wasStatus = pr.status, wasPrimary = pr.primaryBudgetId;
+        // `type` is deliberately not accepted: a project has no type.
+        ['name', 'address', 'notes', 'primaryBudgetId', 'status'].forEach(k => {
+          if (body[k] !== undefined) pr[k] = body[k];
+        });
+        if (body.primaryBudgetId !== undefined && body.primaryBudgetId !== wasPrimary)
+          act('budget_primary', 'project', id, { name: pr.name || null, from: wasPrimary || null, to: pr.primaryBudgetId });
+        if (converting) act('project_convert', 'project', id, { name: pr.name || null,
+          contractAmount: shapeProject(pr).liveContractSum, projectAmount: shapeProject(pr).liveProjectCost });
+        else if (body.status !== undefined && body.status !== wasStatus)
+          act('project_status', 'project', id, { name: pr.name || null, from: wasStatus, to: body.status });
+        const metaKeys = ['name', 'address', 'notes'].filter(k => body[k] !== undefined);
+        if (metaKeys.length) act('project_update', 'project', id,
+          { name: pr.name || null, fields: metaKeys.map(k => ({ key: k, to: String(body[k]).slice(0, 200) })) });
+        if (converting) {
+          const shaped = shapeProject(pr);
+          pr.convertedAt = new Date().toISOString();
+          pr.contractAmount = shaped.liveContractSum;
+          pr.projectAmount = shaped.liveProjectCost;
+        }
+        pr.updated = new Date().toISOString();
+        return json(res, 200, { ok: true, converted: converting, project: shapeProject(pr) });
+      });
+    }
+
     // Must stay in step with ID_RX in api/budget/index.js and app/index.html.
-    if (!/^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/.test(id)) { res.writeHead(400); return res.end('Invalid project ID'); }
+    if (!/^(OP|BD|BDG|AS|TST)-\d{4}(-\d{2})?$/.test(id)) { res.writeHead(400); return res.end('Invalid project ID'); }
+
     const rec = budgets.get(id);
     const live = rec && !rec.deleted ? rec : null;
 
@@ -531,6 +869,9 @@ http.createServer((req, res) => {
     if (req.method === 'DELETE') {
       if (!rec) { res.writeHead(404); return res.end('Not found'); }
       rec.deleted = true;
+      act('budget_delete', 'budget', id, { name: rec.meta.name || null,
+        projectKey: rec.projectKey || null,
+        contractSum: +rec.meta.contractSum || 0, projectCost: +rec.meta.projectCost || 0 });
       res.writeHead(204); return res.end();
     }
     let b = ''; req.on('data', c => b += c);
@@ -541,12 +882,59 @@ http.createServer((req, res) => {
         if (!['Draft', 'In Review', 'Completed', 'Cancelled'].includes(body.status))
           { res.writeHead(400); return res.end('bad status'); }
         if (!live) { res.writeHead(404); return res.end('Not found'); }
+        const wasStatus = live.meta.status;
         live.meta.status = body.status; live.doc.status = body.status;
         live.meta.updated = live.doc.updated = new Date().toISOString();
+        if (wasStatus !== body.status) act('budget_status', 'budget', id,
+          { name: live.meta.name || null, projectKey: live.projectKey || null,
+            from: wasStatus, to: body.status });
         return json(res, 200, { ok: true, status: body.status });
       }
-      const { meta, doc } = body;
+      // A malformed body must answer 400, exactly as api/budget/index.js does.
+      // Throwing here would kill the whole mock and cascade into every suite
+      // that runs after it — which is precisely how a five-minute mistake costs
+      // an hour of misread failures.
+      const { meta, doc } = body || {};
+      if (!doc || !meta) { res.writeHead(400); return res.end('Body must be { meta, doc }'); }
       if ((doc.projectId || '').toUpperCase() !== id) { res.writeHead(400); return res.end('id mismatch'); }
+      // Building square footage is required and must be greater than zero —
+      // the analysis imports it, and a sizeless budget produced an analysis
+      // that could never calculate. resSF + amenSF is the BUILDING; site area
+      // is land and has never counted toward it.
+      if (!((+doc.resSF || 0) + (+doc.amenSF || 0) > 0)) {
+        return json(res, 422, { error: 'size_required', field: 'resSF',
+          message: 'Square footage is required — enter a building size greater than zero before saving.' });
+      }
+      const wantsCreate = body.create === true;
+      const wantsKey = meta.projectKey ? String(meta.projectKey).toUpperCase() : null;
+      if (wantsKey && !PROJECT_ID_RX.test(wantsKey)) {
+        return json(res, 400, { error: 'bad_project_id', field: 'projectKey',
+          message: 'A budget belongs to a project whose ID looks like OP-####.' });
+      }
+      if (wantsCreate && !wantsKey) {
+        return json(res, 400, { error: 'project_required', field: 'projectKey',
+          message: 'Choose the project this budget belongs to.' });
+      }
+      // A create must not land on an occupied id. Without this, a new budget
+      // typed against an existing id replaced that budget and versioned the
+      // replacement as its next revision.
+      if (wantsCreate && budgets.has(id)) {
+        return json(res, 409, { error: 'budget_id_taken', field: 'projectId',
+          message: 'Budget ' + id + ' already exists. Choose another Budget ID.',
+          suggestion: wantsKey ? nextChildBudgetId(wantsKey) : nextBudgetId() });
+      }
+      // Behaviour-parallel with api/budget/index.js: the rails are re-evaluated
+      // from the SUBMITTED document and refuse the write, never trusting a
+      // client-supplied verdict.
+      const rails = evalGuardrails(doc);
+      if (rails.blocking) {
+        return json(res, 422, { error: 'guardrail_breach',
+          message: rails.blocking + ' guard rail' + (rails.blocking === 1 ? '' : 's')
+            + ' outside range. Correct the value, or record an override with a reason.',
+          breaches: rails.breaches.filter(x => x.severity === 'error').map(x => ({
+            id: x.id, label: x.label, actual: x.actual, display: x.display,
+            min: x.min, max: x.max, range: x.range, message: x.message })) });
+      }
       const calc = parts(doc);
       // The real API reads UpdatedAt off the row, so `updated` is always
       // present on the list. Seeded values are kept; only a missing one is
@@ -555,9 +943,41 @@ http.createServer((req, res) => {
       meta.contractSum = Math.round(calc.contract * 100) / 100;
       meta.projectCost = Math.round(calc.project * 100) / 100;
       const prev = budgets.get(id) || { versions: [] };
+      // Which fields moved, for the log. A summary — the version snapshot is
+      // the full record, and an audit row that tries to be one is unreadable.
+      const changedFields = [];
+      if (prev.meta) {
+        const was = prev.meta, wasDoc = prev.doc || {};
+        const cmp = (key, a, z) => { if (a !== z) changedFields.push({ key, from: a, to: z }); };
+        cmp('name', was.name || null, meta.name || null);
+        cmp('status', was.status || null, meta.status || null);
+        cmp('type', was.type || null, meta.type || null);
+        cmp('contractSum', +was.contractSum || 0, +meta.contractSum || 0);
+        cmp('projectCost', +was.projectCost || 0, +meta.projectCost || 0);
+        cmp('pricingVersion', wasDoc.pricingVersion || null, doc.pricingVersion || null);
+        cmp('residentialSF', +wasDoc.resSF || 0, +doc.resSF || 0);
+        cmp('amenitySF', +wasDoc.amenSF || 0, +doc.amenSF || 0);
+        cmp('siteSF', +wasDoc.siteSF || 0, +doc.siteSF || 0);
+        const units = d => (d.units || []).reduce((a2, u) => a2 + (+u.count || 0), 0);
+        cmp('unitCount', units(wasDoc), units(doc));
+        cmp('lineItems', (wasDoc.lines || []).length, (doc.lines || []).length);
+      }
+      // The project link is stated, never derived — and a save that does not
+      // mention a project leaves the existing link alone, which is what every
+      // edit of an older budget does.
+      const liveTarget = wantsKey ? projects.get(wantsKey) : null;
+      const linked = liveTarget && !liveTarget.deleted ? wantsKey : (prev.projectKey || null);
       const entry = { meta, doc, deleted: false, versions: prev.versions,
+        guardrailStatus: rails.status, guardrailBreachCount: rails.breaches.length,
+        projectKey: linked,
         createdById: (prev && prev.createdById) || principal.clientPrincipal.userId,
         createdByName: (prev && prev.createdByName) || principal.clientPrincipal.userDetails };  // PUT restores
+      // A project with no primary adopts the first budget saved onto it.
+      const linkedPr = linked ? projects.get(linked) : null;
+      if (linkedPr && !linkedPr.deleted) {
+        if (!linkedPr.primaryBudgetId) linkedPr.primaryBudgetId = id;
+        linkedPr.updated = new Date().toISOString();
+      }
       const last = entry.versions[entry.versions.length - 1];
       let versionCreated = false;
       if (!last || canonical(last.doc) !== canonical(doc)) {
@@ -571,10 +991,14 @@ http.createServer((req, res) => {
         versionCreated = true;
       }
       budgets.set(id, entry);
-      if (versionCreated) mockActivity.unshift({ eventType: 'budget_save', entityType: 'budget',
-        entityId: id, detail: { versionNumber: entry.versions.length },
-        userId: principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
-      json(res, 200, { ok: true, versionNumber: entry.versions.length, versionCreated });
+      if (versionCreated) act(wantsCreate ? 'budget_create' : 'budget_save', 'budget', id, {
+        name: meta.name || null, projectKey: linked, status: meta.status || null,
+        versionNumber: entry.versions.length,
+        contractSum: meta.contractSum, projectCost: meta.projectCost,
+        pricingVersion: doc.pricingVersion || null,
+        changed: changedFields.length ? changedFields : null
+      });
+      json(res, 200, { ok: true, projectKey: linked, versionNumber: entry.versions.length, versionCreated });
     });
   }
 
@@ -595,7 +1019,7 @@ http.createServer((req, res) => {
     if (req.method === 'GET') {
       const q = new URL(req.url, 'http://x').searchParams;
       const pid = (q.get('projectId') || '').toUpperCase();
-      if (pid && !/^(OP-\d{4}|BD-\d{4}|AS-\d{4}|TST-\d{4})$/.test(pid))
+      if (pid && !/^(OP|BD|AS|TST)-\d{4}(-\d{2})?$/.test(pid))
         return json(res, 400, { error: 'bad_request', message: 'Invalid project ID filter.' });
       return json(res, 200, [...invAnalyses.values()]
         .filter(a => !a.deleted && (!pid || a.projectId === pid))
@@ -605,7 +1029,7 @@ http.createServer((req, res) => {
     let b = ''; req.on('data', c => b += c);
     return req.on('end', () => {
       const body = JSON.parse(b || '{}');
-      let input, projectId = null, sourceBudgetVersionNumber = null;
+      let input, projectId = null, sourceBudgetVersionNumber = null, projectKey = null;
       if (body.mode === 'fromBudget') {
         projectId = (body.projectId || '').toUpperCase();
         const rec = budgets.get(projectId);
@@ -615,38 +1039,34 @@ http.createServer((req, res) => {
         const v = live ? live.versions[vn - 1] : null;
         if (!v) { return json(res, 404, { error: 'not_found', message: 'Budget version not found.' }); }
         sourceBudgetVersionNumber = vn;
-        const doc = v.doc, p2 = bc.parts(doc), gi = bc.grossIncome(doc), tu = bc.totUnits(doc);
-        const siteSF = bc.nz(doc.siteSF), bldgSF = bc.nz(doc.resSF) + bc.nz(doc.amenSF);
-        const round2 = x => Math.round(x * 100) / 100;
+        // Behaviour-parallel with api/investment-analyses/index.js: the SAME
+        // projection module, so the mock cannot drift from the real prefill.
+        const doc = v.doc;
+        // The analysis rolls up to the project the BUDGET belongs to, and
+        // takes that project's name and address — an analysis called after a
+        // budget id is a symptom of a budget with no project.
+        projectKey = live.projectKey || null;
+        const pr = projectKey ? projects.get(projectKey) : null;
+        const proj = fromBudget.projectFromBudget(doc, { Id: vn, VersionNumber: vn, Name: v.meta.name },
+          { projectId, vacancy: INV_D.vacancy,
+            projectName: pr ? pr.name : '', projectAddress: pr ? pr.address : '' });
         input = {
           schemaVersion: 1,
           analysisName: (body.analysisName || (v.meta.name + ' — Investment Analysis')).slice(0, 200),
           source: { projectId, budgetVersionId: vn, budgetVersionNumber: vn,
-            importedAt: new Date().toISOString(),
-            fieldOrigins: {
-              'property.name': 'Budget name', 'property.address': 'Budget address',
-              'property.size': siteSF > 0 ? 'Budget Site SF' : 'Budget Residential + Amenity SF',
-              'property.unitCount': 'Budget unit mix',
-              'acquisition.basis': 'Budget Total Project Cost',
-              'income.year1PotentialIncome': 'Budget unit mix — gross scheduled rent × 12',
-              'income.otherIncome': 'Budget other-income rows × 12' },
-            support: { contractSum: round2(p2.contract), projectCost: round2(p2.project),
-              annualServiceExpenses: round2(12 * gi.expMo),
-              serviceExpenseRows: (doc.expenses || []).map(e => ({ label: e.label,
-                annualAmount: round2(12 * bc.nz(e.rate) * (e.per === 'fixed' ? (bc.nz(e.count) || 1) : (e.auto ? tu : bc.nz(e.count)))) })),
-              unitMix: (doc.units || []).map(u => ({ label: u.label, count: bc.nz(u.count), rent: bc.nz(u.rent) })) } },
-          property: { name: doc.name || projectId, address: doc.address || '',
-            size: { unit: 'squareFeet', value: siteSF > 0 ? siteSF : bldgSF },
-            unitCount: tu || null, purchaseMonth: null },
+            importedAt: new Date().toISOString(), syncedAt: new Date().toISOString(),
+            fieldOrigins: proj.fieldOrigins, support: proj.support },
+          property: { name: proj.imported.property.name, address: proj.imported.property.address,
+            size: proj.imported.property.size,
+            unitCount: proj.imported.property.unitCount, purchaseMonth: fromBudget.currentPurchaseMonth() },
           projection: { years: 5, taxMode: 'beforeTax' },
-          acquisition: { basis: { mode: 'purchasePrice', value: round2(p2.project) }, costPercent: INV_D.acquisitionCostPercent },
-          income: { mode: 'aggregate', year1PotentialIncome: round2(12 * gi.rentMo),
+          acquisition: { basis: proj.imported.acquisition.basis, costPercent: INV_D.acquisitionCostPercent },
+          income: { mode: 'aggregate',
+            year1PotentialIncome: proj.imported.income.year1PotentialIncome,
             growth: { mode: 'constant', value: INV_D.incomeGrowth },
-            otherIncome: (doc.other || []).map(o => ({ label: o.label || 'Other Income',
-              year1Amount: round2(12 * bc.nz(o.rate) * (o.auto ? tu : bc.nz(o.count))),
-              growth: { mode: 'constant', value: INV_D.otherIncomeGrowth } })) },
+            otherIncome: proj.imported.income.otherIncome },
           vacancy: { mode: 'constant', value: INV_D.vacancy },
-          expenses: { mode: 'percentOfGOI', value: null },
+          expenses: proj.imported.expenses,
           capitalExpenses: [],
           financing: { loans: [] },
           disposition: { exitCapRate: { mode: 'constant', value: null }, sellingCostPercent: INV_D.sellingCostPercent },
@@ -664,12 +1084,12 @@ http.createServer((req, res) => {
         if (!name) return json(res, 400, { error: 'bad_request', message: 'analysisName is required.' });
         input = Object.assign({
           schemaVersion: 1,
-          property: { name, address: '', size: { unit: 'squareFeet', value: null }, purchaseMonth: null },
+          property: { name, address: '', size: { unit: 'squareFeet', value: null }, purchaseMonth: fromBudget.currentPurchaseMonth() },
           projection: { years: 5, taxMode: 'beforeTax' },
           acquisition: { basis: { mode: 'purchasePrice', value: null }, costPercent: INV_D.acquisitionCostPercent },
           income: { mode: 'aggregate', year1PotentialIncome: null, growth: { mode: 'constant', value: INV_D.incomeGrowth }, otherIncome: [] },
           vacancy: { mode: 'constant', value: INV_D.vacancy },
-          expenses: { mode: 'percentOfGOI', value: null },
+          expenses: { mode: 'percentOfGOI', value: null, override: false, derivedFrom: null },
           capitalExpenses: [],
           financing: { loans: [] },
           disposition: { exitCapRate: { mode: 'constant', value: null }, sellingCostPercent: INV_D.sellingCostPercent },
@@ -680,12 +1100,21 @@ http.createServer((req, res) => {
       }
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
-      invAnalyses.set(id, { id, projectId, name: input.analysisName, status: 'Draft',
+      // The item number, allocated once at creation from the project's current
+      // highest — deleted analyses included, so a number is never re-issued.
+      let itemNumber = null;
+      if (projectKey) {
+        itemNumber = 1 + [...invAnalyses.values()]
+          .filter(a => a.projectKey === projectKey)
+          .reduce((m, a) => Math.max(m, a.itemNumber || 0), 0);
+      }
+      invAnalyses.set(id, { id, projectId, projectKey, itemNumber, name: input.analysisName, status: 'Draft',
         sourceBudgetVersionNumber, input, result: null, currentVersionNumber: 0,
         deleted: false, versions: [], createdAt: now, updatedAt: now,
         createdById: principal.clientPrincipal.userId,
         createdByName: principal.clientPrincipal.userDetails });
-      return json(res, 201, { ok: true, analysisId: id, input, currentVersionNumber: 0,
+      return json(res, 201, { ok: true, analysisId: id, input,
+        projectKey: projectKey || null, itemNumber, currentVersionNumber: 0,
         source: input.source ? { projectId, budgetVersionId: sourceBudgetVersionNumber,
           budgetVersionNumber: sourceBudgetVersionNumber } : null });
     });
@@ -697,6 +1126,50 @@ http.createServer((req, res) => {
     if (!GUID_RX.test(id)) return json(res, 400, { error: 'bad_request', message: 'Invalid analysis ID.' });
     const a = invAnalyses.get(id);
     const live = a && !a.deleted ? a : null;
+
+    /* PUT ?scope=resync — refresh ONLY the imported fields from the budget's
+       current version, leaving what the user typed alone. Behaviour-parallel
+       with api/investment-analysis/index.js, off the same projection module. */
+    if (req.method === 'PUT' && String(q.get('scope') || '') === 'resync') {
+      if (!live) return json(res, 404, { error: 'not_found', message: 'Not found' });
+      if (!live.projectId) return json(res, 400, { error: 'not_linked',
+        message: 'This analysis is standalone — there is no budget to re-sync from.' });
+      const br = budgets.get(live.projectId);
+      const bl = br && !br.deleted ? br : null;
+      const vn = bl ? bl.versions.length : 0;
+      const v = bl ? bl.versions[vn - 1] : null;
+      if (!v) return json(res, 404, { error: 'not_found', message: 'Budget version not found.' });
+      const input = live.input;
+      const vac = input.vacancy && Number.isFinite(+input.vacancy.value) ? +input.vacancy.value : undefined;
+      const proj = fromBudget.projectFromBudget(v.doc,
+        { Id: vn, VersionNumber: vn, Name: v.meta.name }, { projectId: live.projectId, vacancy: vac });
+      input.property = Object.assign({}, input.property, {
+        name: proj.imported.property.name, address: proj.imported.property.address,
+        size: proj.imported.property.size, unitCount: proj.imported.property.unitCount });
+      input.acquisition = Object.assign({}, input.acquisition, { basis: proj.imported.acquisition.basis });
+      input.income = Object.assign({}, input.income, {
+        year1PotentialIncome: proj.imported.income.year1PotentialIncome,
+        otherIncome: proj.imported.income.otherIncome });
+      const overridden = !!(input.expenses && input.expenses.override);
+      input.expenses = overridden
+        ? Object.assign({}, input.expenses, { derivedFrom: proj.imported.expenses.derivedFrom })
+        : proj.imported.expenses;
+      input.source = Object.assign({}, input.source || {}, {
+        projectId: live.projectId, budgetVersionId: vn, budgetVersionNumber: vn,
+        syncedAt: new Date().toISOString(),
+        fieldOrigins: proj.fieldOrigins, support: proj.support,
+        // originalValues is NOT rewritten — the From Budget badges compare
+        // against the original import forever.
+        originalValues: (input.source && input.source.originalValues) || {},
+        importedAt: (input.source && input.source.importedAt) || new Date().toISOString() });
+      live.sourceBudgetVersionNumber = vn;
+      live.updatedAt = new Date().toISOString();
+      return json(res, 200, { ok: true, input, expensesOverridden: overridden,
+        source: { projectId: live.projectId, budgetVersionId: vn, budgetVersionNumber: vn,
+                  budgetCurrentVersionNumber: vn, drift: false },
+        message: 'Re-synced from budget ' + live.projectId + ' v' + vn
+          + '. Recalculate and save to fold the new numbers into a version.' });
+    }
 
     // Server-rendered exports — the SAME shared renderer module the real
     // function uses, so suites assert the genuine file bytes.
@@ -805,10 +1278,19 @@ http.createServer((req, res) => {
     if (req.method === 'GET') {
       if (!live) return json(res, 404, { error: 'not_found', message: 'Not found' });
       return json(res, 200, { analysisId: id, projectId: live.projectId, name: live.name,
+        projectKey: live.projectKey || null,
+        itemNumber: live.itemNumber === undefined ? null : live.itemNumber,
         status: live.status, currentVersionNumber: live.currentVersionNumber,
-        source: live.sourceBudgetVersionNumber ? { projectId: live.projectId,
-          budgetVersionId: live.sourceBudgetVersionNumber,
-          budgetVersionNumber: live.sourceBudgetVersionNumber } : null,
+        source: live.sourceBudgetVersionNumber ? (function () {
+          // The budget's CURRENT version, so the client can offer a re-sync.
+          const br = budgets.get(live.projectId);
+          const cur = br && !br.deleted ? br.versions.length : null;
+          return { projectId: live.projectId,
+            budgetVersionId: live.sourceBudgetVersionNumber,
+            budgetVersionNumber: live.sourceBudgetVersionNumber,
+            budgetCurrentVersionNumber: cur,
+            drift: !!(cur && cur > live.sourceBudgetVersionNumber) };
+        })() : null,
         input: live.input, result: live.result,
         inputSchemaVersion: 1, calculationVersion: INV_C.CALCULATION_VERSION,
         createdAt: live.createdAt, updatedAt: live.updatedAt });
@@ -817,6 +1299,8 @@ http.createServer((req, res) => {
       if (!a) return json(res, 404, { error: 'not_found', message: 'Not found' });
       if (a.deleted) return json(res, 404, { error: 'not_found', message: 'Not found' });
       a.deleted = true; a.deletedAt = new Date().toISOString();
+      act('analysis_delete', 'analysis', a.id,
+        { name: a.name || null, budgetId: a.projectId || null, projectKey: a.projectKey || null });
       res.writeHead(204); return res.end();
     }
     // PUT — recalculate server-side, ignore client results, 409 on stale saves
@@ -865,9 +1349,11 @@ http.createServer((req, res) => {
       a.input = input; a.result = result; a.contentHash = hash;
       a.deleted = false; a.deletedAt = null;
       a.updatedAt = new Date().toISOString();
-      if (!unchanged) mockActivity.unshift({ eventType: 'analysis_save', entityType: 'analysis',
-        entityId: id, detail: { versionNumber: a.currentVersionNumber },
-        userId: principal.clientPrincipal.userId, createdAt: new Date().toISOString() });
+      if (!unchanged) act('analysis_save', 'analysis', id, {
+        name: a.name || null, budgetId: a.projectId || null, projectKey: a.projectKey || null,
+        versionNumber: a.currentVersionNumber,
+        purchasePrice: a.result && a.result.summary ? a.result.summary.purchasePrice : null,
+        year1NOI: a.result && a.result.summary ? a.result.summary.year1NOI : null });
       return json(res, 200, { ok: true, versionNumber: a.currentVersionNumber,
         versionCreated: !unchanged, result });
     });

@@ -1,4 +1,4 @@
-// Suite 18 — Home as a personal dashboard: rotating greetings, pinning from
+// Suite 18 — Home as a personal dashboard: rotating greetings, favoriting from
 // either row menu, personal recency, the attention queue, and the activity
 // feed. Home must NOT be a third copy of the two index lists.
 const { chromium } = require('playwright');
@@ -128,72 +128,72 @@ const BASE='http://127.0.0.1:8100';
  ok('the feed is capped so Home stays short',
     (await p.locator('#page-home .hm-log-row').count())<=8);
 
- // ---------- 6. pinning from the budget row menu ----------
+ // ---------- 6. favoriting from the budget row menu ----------
  await p.evaluate(()=>go('budgets')); await p.waitForTimeout(800);
  await p.click('#budgetsBody tr:has-text("BD-6003") .rowmenu-btn'); await p.waitForTimeout(250);
  const bItems=await p.locator('#rowMenu .rowmenu-item').allTextContents();
- ok('the budget row menu offers Pin to Home', bItems.includes('Pin to Home'), bItems.join(','));
- await p.click('#rowMenu .rowmenu-item:has-text("Pin to Home")'); await p.waitForTimeout(500);
- ok('pinning persists', await p.evaluate(()=>FSHome.isPinned('budget','BD-6003')));
+ ok('the budget row menu offers Add to Favorites', bItems.includes('Add to Favorites'), bItems.join(','));
+ await p.click('#rowMenu .rowmenu-item:has-text("Add to Favorites")'); await p.waitForTimeout(500);
+ ok('favoriting persists', await p.evaluate(()=>FSHome.isFavorite('budget','BD-6003')));
  await p.evaluate(()=>go('home')); await p.waitForTimeout(800);
- ok('a Pinned section appears on Home', (await sections()).includes('Pinned'),
+ ok('a Favorites section appears on Home', (await sections()).includes('Favorites'),
     JSON.stringify(await sections()));
- ok('the pinned budget is the one pinned',
+ ok('the favorited budget is the one starred',
     /BD-6003/.test(await p.evaluate(()=>{
       const secs=[...document.querySelectorAll('#page-home .hm-sec')];
-      const s=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Pinned');
+      const s=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Favorites');
       return s?s.textContent:'';
     })));
 
- // the menu label flips, and unpinning removes the section
+ // the menu label flips, and un-favoriting removes the section
  await p.evaluate(()=>go('budgets')); await p.waitForTimeout(800);
  await p.click('#budgetsBody tr:has-text("BD-6003") .rowmenu-btn'); await p.waitForTimeout(250);
  const bItems2=await p.locator('#rowMenu .rowmenu-item').allTextContents();
- ok('the menu label flips to Unpin once pinned', bItems2.includes('Unpin From Home'), bItems2.join(','));
- await p.click('#rowMenu .rowmenu-item:has-text("Unpin From Home")'); await p.waitForTimeout(500);
- ok('unpinning clears it', !(await p.evaluate(()=>FSHome.isPinned('budget','BD-6003'))));
+ ok('the menu label flips once favorited', bItems2.includes('Remove From Favorites'), bItems2.join(','));
+ await p.click('#rowMenu .rowmenu-item:has-text("Remove From Favorites")'); await p.waitForTimeout(500);
+ ok('un-favoriting clears it', !(await p.evaluate(()=>FSHome.isFavorite('budget','BD-6003'))));
  await p.evaluate(()=>go('home')); await p.waitForTimeout(800);
- ok('the Pinned section disappears when nothing is pinned',
-    !(await sections()).includes('Pinned'), JSON.stringify(await sections()));
+ ok('the Favorites section disappears when nothing is starred',
+    !(await sections()).includes('Favorites'), JSON.stringify(await sections()));
 
- // ---------- 7. pinning from the analysis row menu ----------
+ // ---------- 7. favoriting from the analysis row menu ----------
  await p.evaluate(()=>go('analyses')); await p.waitForTimeout(900);
  await p.locator('#page-analyses [data-inv-list] tr .rowmenu-btn').first().click();
  await p.waitForTimeout(250);
  const aItems=await p.locator('#invRowMenu .rowmenu-item').allTextContents();
- ok('the analysis row menu offers Pin to Home', aItems.includes('Pin to Home'), aItems.join(','));
- await p.locator('#invRowMenu .rowmenu-item',{hasText:'Pin to Home'}).click(); await p.waitForTimeout(500);
+ ok('the analysis row menu offers Add to Favorites', aItems.includes('Add to Favorites'), aItems.join(','));
+ await p.locator('#invRowMenu .rowmenu-item',{hasText:'Add to Favorites'}).click(); await p.waitForTimeout(500);
  await p.evaluate(()=>go('home')); await p.waitForTimeout(800);
- ok('the pinned analysis shows on Home',
+ ok('the favorited analysis shows on Home',
     await p.evaluate(()=>{
       const secs=[...document.querySelectorAll('#page-home .hm-sec')];
-      const s=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Pinned');
+      const s=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Favorites');
       return !!s && /Analysis/.test(s.textContent);
     }));
 
- // ---------- 8. pins live on the account, not in the browser ----------
+ // ---------- 8. favorites live on the account, not in the browser ----------
  await p.waitForTimeout(1200);            // the settings save is debounced
  const svrPins=await p.evaluate(async()=>{
    const r=await fetch('/api/user-settings');
    const j=await r.json();
-   return (j.settings&&j.settings.pinned)||null;
+   return (j.settings&&j.settings.favorites)||null;
  });
- ok('the pin is written to the account settings document',
+ ok('the favorite is written to the account settings document',
     !!svrPins && Array.isArray(svrPins.analysis) && svrPins.analysis.length===1,
     JSON.stringify(svrPins));
- ok('nothing pin-shaped is left behind in localStorage',
+ ok('nothing star-shaped is left behind in localStorage',
     await p.evaluate(()=>!Object.keys(localStorage).some(k=>/fs-home-pins/.test(k))),
     await p.evaluate(()=>Object.keys(localStorage).filter(k=>/fs-home-pins/.test(k)).join(',')));
  // A different browser is the same account: wipe every local trace and reload.
  await p.evaluate(()=>localStorage.clear());
  await p.reload({waitUntil:'networkidle'});
  await p.waitForTimeout(1400);
- ok('the pin survives a browser with no local state',
-    await p.evaluate(()=>FSHome.isPinned('analysis',
-      ((FSHome._pins&&FSHome._pins().analysis)||[])[0]||'')),
-    JSON.stringify(await p.evaluate(()=>FSHome._pins&&FSHome._pins())));
- ok('the Pinned section renders from the account settings',
-    (await sections()).includes('Pinned'), JSON.stringify(await sections()));
+ ok('the favorite survives a browser with no local state',
+    await p.evaluate(()=>FSHome.isFavorite('analysis',
+      ((FSHome._favorites&&FSHome._favorites().analysis)||[])[0]||'')),
+    JSON.stringify(await p.evaluate(()=>FSHome._favorites&&FSHome._favorites())));
+ ok('the Favorites section renders from the account settings',
+    (await sections()).includes('Favorites'), JSON.stringify(await sections()));
 
  // ---------- 9. greetings vary ----------
  ok('there are many greetings to draw from',
@@ -277,14 +277,14 @@ const BASE='http://127.0.0.1:8100';
     JSON.stringify(rows.map(r=>r.map(c=>c.lines))));
  ok('no card overflows its own box', rows.every(r=>r.every(c=>!c.overflow)));
 
- // The pinned card: an icon, and the same Updated · value every card shows.
+ // The favorited card: a star, and the same Updated · value every card shows.
  const pinCard=async()=>p.evaluate(()=>{
    const secs=[...document.querySelectorAll('#page-home .hm-sec')];
-   const s=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Pinned');
+   const s=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Favorites');
    const c=s&&s.querySelector('.hm-card');
    if(!c) return null;
    const wrap=c.closest('.hm-card-wrap');
-   const pin=wrap&&wrap.querySelector('.hm-pin');
+   const pin=wrap&&wrap.querySelector('.hm-star');
    const card=c.getBoundingClientRect();
    const id=c.querySelector('.hm-id').getBoundingClientRect();
    return {when:c.querySelector('.hm-when').textContent.trim(),
@@ -296,12 +296,13 @@ const BASE='http://127.0.0.1:8100';
            overlaps:!!(pin&&pin.getBoundingClientRect().left<id.right)};
  });
  const pc=await pinCard();
- ok('a pinned card carries a pin icon', !!pc && pc.hasPin && pc.svg, JSON.stringify(pc));
- ok('the pin is a real button, not a button inside a button',
+ ok('a favorited card carries a filled star', !!pc && pc.hasPin && pc.svg, JSON.stringify(pc));
+ ok('the star is a real button, not a button inside a button',
     !!pc && pc.tag==='BUTTON' && !pc.nested, JSON.stringify(pc&&{tag:pc.tag,nested:pc.nested}));
- ok('the pin says what clicking it does',
-    !!pc && /^Unpin .+ from Home$/.test(pc.label||''), pc?pc.label:'none');
- ok('the pin sits in the top right corner and clears the record id',
+ // The star TOGGLES, so its label says which direction this click goes.
+ ok('the star says what clicking it does',
+    !!pc && /^Remove .+ from Favorites$/.test(pc.label||''), pc?pc.label:'none');
+ ok('the star sits in the top right corner and clears the record id',
     !!pc && pc.fromRight>=4 && pc.fromRight<=14 && pc.fromTop>=4 && pc.fromTop<=14 && !pc.overlaps,
     JSON.stringify(pc));
  ok('the pinned card shows its real update time, not the word Pinned',
@@ -309,16 +310,16 @@ const BASE='http://127.0.0.1:8100';
  ok('no card anywhere puts Pinned where the timestamp goes',
     await p.evaluate(()=>[...document.querySelectorAll('#page-home .hm-when')]
       .every(w=>!/^Pinned$/.test(w.textContent.trim()))));
- // Clicking the pin is the way back out: it unpins, says so, and the section
- // goes with it — while the record itself stays exactly where it was.
+ // Clicking the star is the way back out: it un-favorites, says so, and the
+ // section goes with it — while the record itself stays where it was.
  const recentBefore=await p.locator('#page-home .hm-card').count();
- await p.locator('#page-home .hm-sec .hm-pin').first().click();
+ await p.locator('#page-home .hm-sec .hm-star').first().click();
  await p.waitForTimeout(700);
- ok('clicking the pin unpins the record',
-    !(await sections()).includes('Pinned'), JSON.stringify(await sections()));
- ok('and says so', /Unpinned/i.test(await p.locator('#toast').textContent()),
+ ok('clicking the star removes the favorite',
+    !(await sections()).includes('Favorites'), JSON.stringify(await sections()));
+ ok('and says so', /Removed from Favorites/i.test(await p.locator('#toast').textContent()),
     await p.locator('#toast').textContent());
- ok('unpinning does not delete anything — the record is still in Recent',
+ ok('un-favoriting does not delete anything — the record is still in Recent',
     (await p.locator('#page-home .hm-card').count())===recentBefore-1
     && /Riverside|Analysis/.test(await p.locator('#page-home').textContent()),
     (await p.locator('#page-home .hm-card').count())+' cards, was '+recentBefore);
@@ -329,18 +330,18 @@ const BASE='http://127.0.0.1:8100';
       const pin=(j.settings&&j.settings.pinned)||{budget:[],analysis:[]};
       return pin.budget.length===0 && pin.analysis.length===0;
     }),
-    JSON.stringify(await p.evaluate(()=>FSHome._pins())));
+    JSON.stringify(await p.evaluate(()=>FSHome._favorites())));
  // put it back for the checks that follow
  await p.evaluate(()=>{
    const a=(FSHome._recent(6)||[]).filter(x=>x.kind==='analysis')[0];
-   if(a)FSHome.togglePin('analysis',a.rec.analysisId);
+   if(a)FSHome.toggleFavorite('analysis',a.rec.analysisId);
  });
  await p.waitForTimeout(800);
- ok('the same record pinned and recent is marked in both places',
+ ok('the same record favorited and recent is marked in both places',
     await p.evaluate(()=>{
-      // the pin is a sibling of the card, inside the same wrapper
+      // the star is a sibling of the card, inside the same wrapper
       return [...document.querySelectorAll('#page-home .hm-card-wrap')]
-        .filter(w=>w.querySelector('.hm-pin')).length>=1;
+        .filter(w=>w.querySelector('.hm-star')).length>=1;
     }));
 
  // ---------- 12. narrow screens ----------
@@ -352,12 +353,12 @@ const BASE='http://127.0.0.1:8100';
  ok('Home itself does not scroll sideways on a phone',
     await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),
     await p.evaluate(()=>document.documentElement.scrollWidth+' vs '+window.innerWidth));
- ok('the pinned card keeps its icon and timestamp when narrow',
+ ok('the favorited card keeps its star and timestamp when narrow',
     await p.evaluate(()=>{
       const secs=[...document.querySelectorAll('#page-home .hm-sec')];
-      const s=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Pinned');
+      const s=secs.find(x=>x.querySelector('.eyebrow').textContent.trim()==='Favorites');
       const w=s&&s.querySelector('.hm-card-wrap');
-      return !!w && !!w.querySelector('.hm-pin')
+      return !!w && !!w.querySelector('.hm-star')
         && /^Updated · \S/.test(w.querySelector('.hm-when').textContent.trim());
     }));
  await p.setViewportSize({width:1400,height:1000});

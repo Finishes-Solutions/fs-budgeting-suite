@@ -11,20 +11,28 @@
 // so recency is personal (what YOU touched) rather than global (what anyone
 // touched), which is the thing the two index pages structurally cannot show.
 //
-// PINS LIVE ON THE ACCOUNT, in the settings document's `pinned` key
+// FAVORITES LIVE ON THE ACCOUNT, in the settings document's `favorites` key
 // (api/shared/user-settings-contract.js validates and caps it), so they follow
 // the user to any signed-in browser rather than being stranded in one. Writes
 // go through the same debounced settings save every other preference uses.
 //
-// Pins made before that existed were kept in localStorage; adoptLocalPins()
-// below lifts them onto the account once and then clears the local copy, so
-// nobody loses the pins they had already set.
+// This was a pin, and the setting was `pinned`. The contract lifts a stored
+// legacy document, and favorites made while they were browser-local are lifted
+// by adoptLocalFavorites() below — so nobody loses anything they had starred.
+//
+// The star TOGGLES wherever it appears (Home, the lists, a project page, both
+// editors). The old pin only ever un-pinned, which made it impossible to
+// favorite something you were not already looking at on Home.
 (function () {
 'use strict';
 
 var A = {};                  // adapter, supplied by index.html
 var budgets = [];
 var analyses = [];
+/* Projects, so a favorited project can actually be shown here. Home used to
+   fetch budgets and analyses only, which is why starring a project stored the
+   favorite correctly and then nothing appeared. */
+var projects = [];
 var events = [];
 var loaded = false;
 var loading = false;
@@ -36,76 +44,77 @@ function esc(s) { return A.esc ? A.esc(String(s)) : String(s).replace(/&/g, '&am
 function usd(n) { return A.usd ? A.usd(n) : '$' + Math.round(n || 0).toLocaleString('en-US'); }
 function fmtDay(d) { return A.fmtDay ? A.fmtDay(d) : String(d || '').slice(0, 10); }
 
-/* ================= pins ================= */
+/* ================= favorites ================= */
 
-// The pre-account storage key, read once by adoptLocalPins() and then removed.
+// The pre-account storage key, read once by adoptLocalFavorites() and removed.
 function legacyPinKey() {
   var uid = (A.userId && A.userId()) || 'anon';
   return 'fs-home-pins-v1:' + uid;
 }
-function emptyPins() { return { budget: [], analysis: [] }; }
-function normalisePins(v) {
-  if (!v || typeof v !== 'object') return emptyPins();
+var FAV_KINDS = ['budget', 'analysis', 'project'];
+function emptyFavorites() { return { budget: [], analysis: [], project: [] }; }
+function normaliseFavorites(v) {
+  if (!v || typeof v !== 'object') return emptyFavorites();
   var take = function (a) {
     return Array.isArray(a)
       ? a.filter(function (x) { return typeof x === 'string' && x; }).slice(0, 50)
       : [];
   };
-  return { budget: take(v.budget), analysis: take(v.analysis) };
+  return { budget: take(v.budget), analysis: take(v.analysis), project: take(v.project) };
 }
-function pinsRead() {
+function favoritesRead() {
   var s = (A.settings && A.settings()) || {};
-  return normalisePins(s.pinned);
+  // `pinned` is the legacy key; the server contract lifts it too, so this only
+  // matters for a session that has not round-tripped its settings yet.
+  return normaliseFavorites(s.favorites || s.pinned);
 }
-function pinsWrite(p) {
+function favoritesWrite(p) {
   // setSetting stores it and queues the same debounced save every other
   // preference uses; the contract sanitises it again server-side.
-  if (A.setSetting) A.setSetting('pinned', normalisePins(p));
+  if (A.setSetting) A.setSetting('favorites', normaliseFavorites(p));
 }
 
-/* One-time lift of pins made while they were browser-local. Runs only when the
-   account has none, so it can never overwrite pins set on another machine. */
-function adoptLocalPins() {
+/* One-time lift of favorites made while they were browser-local. Runs only when
+   the account has none, so it can never overwrite what was set elsewhere. */
+function adoptLocalFavorites() {
   var key;
   try { key = legacyPinKey(); } catch (e) { return; }
   var local;
   try {
     var raw = localStorage.getItem(key);
     if (!raw) return;
-    local = normalisePins(JSON.parse(raw));
+    local = normaliseFavorites(JSON.parse(raw));
   } catch (e) { return; }
   if (!local.budget.length && !local.analysis.length) {
     try { localStorage.removeItem(key); } catch (e) {}
     return;
   }
-  var acct = pinsRead();
-  if (!acct.budget.length && !acct.analysis.length) pinsWrite(local);
+  var acct = favoritesRead();
+  if (!acct.budget.length && !acct.analysis.length && !acct.project.length) favoritesWrite(local);
   try { localStorage.removeItem(key); } catch (e) {}
 }
-function isPinned(kind, id) {
-  var p = pinsRead();
+function isFavorite(kind, id) {
+  var p = favoritesRead();
   return (p[kind] || []).indexOf(String(id)) !== -1;
 }
-/* The pin on a Home card. Only ever unpins — the icon is only there because
-   the record is pinned — so it says so plainly rather than toggling something
-   the user cannot see the other half of. */
-function unpin(kind, id) {
-  if (!isPinned(kind, id)) return false;
-  togglePin(kind, id);
-  if (A.toast) A.toast('Unpinned from Home.');
+function unfavorite(kind, id) {
+  if (!isFavorite(kind, id)) return false;
+  toggleFavorite(kind, id);
   return true;
 }
 
 // Returns the new state so the caller can word its own toast.
-function togglePin(kind, id) {
-  if (kind !== 'budget' && kind !== 'analysis') return false;
+function toggleFavorite(kind, id) {
+  if (FAV_KINDS.indexOf(kind) === -1) return false;
   id = String(id);
-  var p = pinsRead();
+  var p = favoritesRead();
   var list = p[kind] || (p[kind] = []);
   var i = list.indexOf(id);
   if (i === -1) list.unshift(id); else list.splice(i, 1);
-  pinsWrite(p);
+  favoritesWrite(p);
+  if (A.toast) A.toast(i === -1 ? 'Added to Favorites.' : 'Removed from Favorites.');
   if (A.currentPage && A.currentPage() === 'home') render();
+  if (A.favoritesChanged) A.favoritesChanged(kind, id, i === -1);
   return i === -1;
 }
 
@@ -195,13 +204,62 @@ function pickGreeting() {
 /* ================= data ================= */
 
 var EVENT_LABEL = {
-  login: 'Signed in', budget_save: 'Saved budget', budget_delete: 'Deleted budget',
-  budget_restore: 'Restored budget', analysis_save: 'Saved analysis',
+  login: 'Signed in',
+  budget_create: 'Created budget', budget_save: 'Saved budget',
+  budget_delete: 'Deleted budget', budget_restore: 'Restored budget',
+  budget_status: 'Changed budget status', budget_primary: 'Changed primary budget',
+  analysis_save: 'Saved analysis',
   analysis_delete: 'Deleted analysis', analysis_restore: 'Restored analysis',
+  project_create: 'Created project', project_update: 'Updated project',
+  project_status: 'Changed project status', project_convert: 'Converted project',
+  project_delete: 'Deleted project',
+  favorite_add: 'Favorited', favorite_remove: 'Unfavorited',
   export_pdf: 'Exported PDF', export_xlsx: 'Exported Excel', export_csv: 'Exported CSV',
-  export_print: 'Printed', settings_update: 'Updated settings', pricing_publish: 'Published pricing'
+  export_print: 'Printed', settings_update: 'Updated settings',
+  profile_update: 'Updated profile', pricing_publish: 'Published pricing'
 };
 function eventLabel(e) { return EVENT_LABEL[e] || e; }
+
+/* What the event was actually about, in words. "Updated settings" told nobody
+   anything; every event now carries a structured detail document and this is
+   the readable half of it. Kept in step with eventDetail() in
+   app/dashboard.js — one vocabulary, two places it is read — and deliberately
+   tolerant, so an event written before its shape existed still renders. */
+function fieldPhrase(f) {
+  var k = f && f.key ? String(f.key) : '';
+  var pretty = k.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, function (c) { return c.toUpperCase(); });
+  if (f && f.from !== undefined && f.to !== undefined && f.from !== null)
+    return pretty + ' ' + String(f.from) + ' → ' + String(f.to);
+  if (f && f.to !== undefined && f.to !== null) return pretty + ' → ' + String(f.to);
+  return pretty;
+}
+function eventDetail(e) {
+  var d = e && e.detail;
+  if (!d || typeof d !== 'object') return '';
+  var name = d.name ? String(d.name) : '';
+  switch (e.eventType) {
+    case 'favorite_add': case 'favorite_remove':
+      return name;
+    case 'budget_create': case 'budget_save': case 'analysis_save':
+      return [name, Array.isArray(d.changed) && d.changed.length
+        ? d.changed.map(fieldPhrase).join('; ') : ''].filter(Boolean).join(' — ');
+    case 'budget_status': case 'project_status': case 'budget_primary':
+      return (name ? name + ' — ' : '') + (d.from || 'none') + ' → ' + (d.to || 'none');
+    case 'project_delete':
+      return (name ? name + ' — ' : '') + d.budgetsDeleted + ' budget'
+        + (d.budgetsDeleted === 1 ? '' : 's') + ', ' + d.analysesDeleted + ' analys'
+        + (d.analysesDeleted === 1 ? 'is' : 'es');
+    case 'project_update': case 'profile_update':
+      return (name ? name + ' — ' : '')
+        + (Array.isArray(d.fields) ? d.fields.map(fieldPhrase).join('; ') : '');
+    case 'settings_update':
+      return Array.isArray(d.changed) ? d.changed.map(function (c) {
+        return typeof c === 'string' ? c.replace(/([a-z])([A-Z])/g, '$1 $2') : fieldPhrase(c);
+      }).join('; ') : '';
+    default:
+      return name;
+  }
+}
 
 function relTime(iso) {
   if (!iso) return '';
@@ -224,7 +282,12 @@ async function load() {
     A.api('investment-analyses').catch(function () { return null; }),
     // Activity is a bonus, never a blocker: without it Home falls back to
     // global recency, which is still useful.
-    A.api('user-activity').catch(function () { return null; })
+    A.api('user-activity').catch(function () { return null; }),
+    // Projects, because a project can be favorited like anything else and
+    // Home had no project data at all — which is exactly why starring one
+    // did nothing here. Tolerant of the pre-migration {available:false}
+    // shape, the same way the Projects page is.
+    A.api('budgets?scope=projects').catch(function () { return null; })
   ]);
   if (results[0] === null && results[1] === null) {
     loadError = 'Could not reach the server.';
@@ -234,7 +297,8 @@ async function load() {
     analyses = results[1] || [];
   }
   events = (results[2] && results[2].events) || [];
-  if (!adopted) { adopted = true; adoptLocalPins(); }
+  projects = (results[3] && results[3].projects) || [];
+  if (!adopted) { adopted = true; adoptLocalFavorites(); }
   loading = false; loaded = true;
 }
 
@@ -243,19 +307,22 @@ async function load() {
    With no activity yet (a fresh account, or events not recorded for these
    records) it falls back to most-recently-updated, which is still sensible. */
 function recentItems(limit) {
-  var byBudget = {}, byAnalysis = {};
+  var byBudget = {}, byAnalysis = {}, byProject = {};
   budgets.forEach(function (b) { byBudget[String(b.projectId).toUpperCase()] = b; });
   analyses.forEach(function (a) { byAnalysis[String(a.analysisId).toLowerCase()] = a; });
+  projects.forEach(function (x) { byProject[String(x.projectId).toUpperCase()] = x; });
 
   var out = [], seen = {};
   events.forEach(function (ev) {
     if (!ev.entityId || !ev.entityType) return;
-    var kind = ev.entityType === 'budget' ? 'budget' : ev.entityType === 'analysis' ? 'analysis' : null;
+    var kind = ev.entityType === 'budget' ? 'budget'
+      : ev.entityType === 'analysis' ? 'analysis'
+      : ev.entityType === 'project' ? 'project' : null;
     if (!kind) return;
     var key = kind + ':' + ev.entityId;
     if (seen[key]) return;
-    var rec = kind === 'budget'
-      ? byBudget[String(ev.entityId).toUpperCase()]
+    var rec = kind === 'budget' ? byBudget[String(ev.entityId).toUpperCase()]
+      : kind === 'project' ? byProject[String(ev.entityId).toUpperCase()]
       : byAnalysis[String(ev.entityId).toLowerCase()];
     if (!rec) return;                       // deleted, or not visible to this role
     seen[key] = 1;
@@ -332,8 +399,8 @@ function attentionItems() {
     .sort(function (p, q) { return rank[p.tone] - rank[q.tone]; });
 }
 
-function pinnedItems() {
-  var p = pinsRead(), out = [];
+function favoriteItems() {
+  var p = favoritesRead(), out = [];
   p.budget.forEach(function (id) {
     var rec = budgets.filter(function (b) { return String(b.projectId) === id; })[0];
     if (rec) out.push({ kind: 'budget', rec: rec });
@@ -341,6 +408,10 @@ function pinnedItems() {
   p.analysis.forEach(function (id) {
     var rec = analyses.filter(function (a) { return String(a.analysisId) === id; })[0];
     if (rec) out.push({ kind: 'analysis', rec: rec });
+  });
+  p.project.forEach(function (id) {
+    var rec = projects.filter(function (x) { return String(x.projectId) === id; })[0];
+    if (rec) out.push({ kind: 'project', rec: rec });
   });
   return out;
 }
@@ -352,68 +423,100 @@ function pinnedItems() {
    Status is changed on the record itself or from either index list. */
 var STATUS_CLS = { 'Draft': 'st-draft', 'In Review': 'st-review',
                    'Completed': 'st-done', 'Cancelled': 'st-cancel' };
+function projectChipStatic(status) {
+  var n = PROJECT_STATUS_CLS[status] ? status : 'Lead';
+  return '<span class="st-chip ' + PROJECT_STATUS_CLS[n]
+    + '" style="pointer-events:none">' + esc(n) + '</span>';
+}
 function statusChipStatic(status) {
   var n = window.normStatus ? window.normStatus(status) : (status || 'Draft');
   return '<span class="st-chip ' + (STATUS_CLS[n] || 'st-draft')
     + '" style="pointer-events:none">' + esc(n) + '</span>';
 }
 
-function recordId(kind, rec) { return kind === 'budget' ? rec.projectId : rec.analysisId; }
-/* Budgets and analyses spell their timestamp differently; both indexes carry
-   one, so the card footer never has to invent a value. */
-function recordUpdated(kind, rec) {
-  return kind === 'budget' ? rec.updated : (rec.updatedAt || rec.updated);
+function recordId(kind, rec) {
+  return kind === 'project' ? rec.projectId
+    : kind === 'budget' ? rec.projectId : rec.analysisId;
 }
+/* The three indexes spell their timestamp differently; each carries one, so
+   the card footer never has to invent a value. */
+function recordUpdated(kind, rec) {
+  return kind === 'budget' || kind === 'project' ? rec.updated : (rec.updatedAt || rec.updated);
+}
+var UNTITLED = { budget: 'Untitled budget', analysis: 'Untitled analysis', project: 'Untitled project' };
 function recordName(kind, rec) {
-  var n = rec.name || '';
-  return n || (kind === 'budget' ? 'Untitled budget' : 'Untitled analysis');
+  return rec.name || UNTITLED[kind] || 'Untitled';
 }
 function openAttr(kind, rec) {
   var id = String(recordId(kind, rec)).replace(/'/g, '');
+  if (kind === 'project') return `FSHome.openProject('${esc(id)}')`;
   return kind === 'budget' ? `FSHome.openBudget('${esc(id)}')` : `FSHome.openAnalysis('${esc(id)}')`;
 }
+/* A project runs the deal pipeline, not the budget statuses, so its chip has
+   its own vocabulary. Sharing one map would have painted "Awarded" as a Draft. */
+var PROJECT_STATUS_CLS = {
+  'Lead': 'st-draft', 'Qualified': 'st-draft', 'Budgeting': 'st-review',
+  'Proposal Sent': 'st-review', 'Awarded': 'st-done',
+  'Converted to Project': 'st-converted', 'On Hold': 'st-hold', 'Lost': 'st-cancel'
+};
 
-/* A pinned record is marked with a filled pin at the top right of the card,
-   and clicking it unpins. It cannot live inside the card: the card is a
-   <button> and a nested <button> is invalid HTML that does not reliably
-   receive clicks. So the card and the pin are siblings inside a positioned
-   wrapper — two real buttons, each with its own label — and the header row
-   reserves space on the right so the pin never lands on the id or a title. */
-var PIN_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false">'
-  + '<path fill="currentColor" d="M16 9V4h1a1 1 0 0 0 0-2H7a1 1 0 0 0 0 2h1v5c0 1.66-1.34 3-3 3v2h5.97v7'
-  + 'l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/></svg>';
+/* The star sits at the top right of the card and TOGGLES. It cannot live inside
+   the card: the card is a <button> and a nested <button> is invalid HTML that
+   does not reliably receive clicks. So the card and the star are siblings inside
+   a positioned wrapper — two real buttons, each with its own label — and the
+   header row reserves space on the right so the star never lands on the id or a
+   title. Filled means favorited; outline means not. */
+var STAR_FILLED = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">'
+  + '<path fill="currentColor" d="M12 17.27 6.82 20.4a1 1 0 0 1-1.49-1.08l1.38-5.89-4.57-3.96'
+  + 'A1 1 0 0 1 2.7 7.72l6.02-.52 2.36-5.55a1 1 0 0 1 1.84 0l2.36 5.55 6.02.52a1 1 0 0 1 .56 1.75'
+  + 'l-4.57 3.96 1.38 5.89a1 1 0 0 1-1.49 1.08L12 17.27z"/></svg>';
+var STAR_OUTLINE = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">'
+  + '<path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"'
+  + ' d="M12 17.27 6.82 20.4l1.38-5.89-4.57-3.96 6.02-.52L12 4.48l2.35 5.55 6.02.52-4.57 3.96'
+  + ' 1.38 5.89L12 17.27z"/></svg>';
+/* The star markup, reused by Home, the budget and analysis lists, the project
+   page and both editor headers — one affordance, one behaviour, everywhere. */
+function starButton(kind, id, name, on) {
+  var safeId = String(id).replace(/'/g, '');
+  return '<button class="hm-star' + (on ? ' is-on' : '') + '"'
+    + ' onclick="event.stopPropagation();FSHome.toggleFavorite(\'' + kind + '\',\'' + esc(safeId) + '\')"'
+    + ' aria-pressed="' + (on ? 'true' : 'false') + '"'
+    + ' aria-label="' + (on ? 'Remove ' : 'Add ') + esc(name || id) + (on ? ' from' : ' to') + ' Favorites"'
+    + ' title="' + (on ? 'Remove from Favorites' : 'Add to Favorites') + '">'
+    + (on ? STAR_FILLED : STAR_OUTLINE) + '</button>';
+}
 
 /* One card shape for budgets and analyses alike. The header (type, id, title)
    grows with the title; the summary block (amount, rule, status, timestamp)
    is pushed to the bottom with margin-top:auto, so a two-line title never
    drags the footer out of line with the card beside it. */
-function itemCard(kind, rec, meta, pinned) {
+var KIND_LABEL = { budget: 'Budget', analysis: 'Analysis', project: 'Project' };
+function itemCard(kind, rec, meta, favorited) {
   var id = recordId(kind, rec);
-  var money = kind === 'budget'
-    ? usd(rec.projectCost || rec.contractSum || 0)
-    : usd(rec.purchasePrice || 0);
-  var moneyLab = kind === 'budget' ? 'Total Project' : 'Purchase Price';
-  var safeId = String(id).replace(/'/g, '');
-  var pin = pinned
-    ? `<button class="hm-pin" onclick="FSHome.unpin('${kind}','${esc(safeId)}')"
-         aria-label="Unpin ${esc(recordName(kind, rec))} from Home"
-         title="Unpin from Home">${PIN_SVG}</button>`
-    : '';
-  return `<div class="hm-card-wrap${pinned ? ' is-pinned' : ''}">
+  var money = kind === 'project'
+    ? usd(rec.status === 'Converted to Project' && rec.contractAmount !== null
+        ? rec.contractAmount : rec.liveContractSum)
+    : kind === 'budget'
+      ? usd(rec.projectCost || rec.contractSum || 0)
+      : usd(rec.purchasePrice || 0);
+  var moneyLab = kind === 'project' ? 'Contract Sum'
+    : kind === 'budget' ? 'Total Project' : 'Purchase Price';
+  var star = starButton(kind, id, recordName(kind, rec), favorited);
+  return `<div class="hm-card-wrap${favorited ? ' is-fav' : ''}">
     <button class="hm-card" onclick="${openAttr(kind, rec)}">
       <div class="hm-card-hd">
         <div class="hm-card-top">
-          <span class="hm-kind hm-kind-${kind}">${kind === 'budget' ? 'Budget' : 'Analysis'}</span>
-          <span class="hm-id mono">${esc(kind === 'budget' ? id : (rec.projectId || 'Standalone'))}</span>
+          <span class="hm-kind hm-kind-${kind}">${KIND_LABEL[kind] || kind}</span>
+          <span class="hm-id mono">${esc(kind === 'analysis' ? (rec.projectId || 'Standalone') : id)}</span>
         </div>
         <div class="hm-card-name">${esc(recordName(kind, rec))}</div>
       </div>
       <div class="hm-card-sum">
         <div class="hm-card-money"><span class="k">${moneyLab}</span><span class="v mono">${money}</span></div>
-        <div class="hm-card-ft">${statusChipStatic(rec.status)}
+        <div class="hm-card-ft">${kind === 'project' ? projectChipStatic(rec.status) : statusChipStatic(rec.status)}
           <span class="hm-when">${esc(meta || '')}</span></div>
       </div>
-    </button>${pin}
+    </button>${star}
   </div>`;
 }
 
@@ -455,13 +558,13 @@ function render() {
     return;
   }
 
-  // ---- pinned
-  var pins = pinnedItems();
+  // ---- favorites
+  var pins = favoriteItems();
   if (pins.length) {
-    html += section('Pinned',
+    html += section('Favorites',
       '<div class="hm-cards">' + pins.map(function (x) {
-        // The footer keeps saying what every other card says. The pin icon
-        // carries "this is pinned", so the timestamp is not spent on it.
+        // The footer keeps saying what every other card says. The star icon
+        // carries "this is a favorite", so the timestamp is not spent on it.
         // A record with no timestamp gets no half-written line.
         var w = relTime(recordUpdated(x.kind, x.rec));
         return itemCard(x.kind, x.rec, w ? 'Updated · ' + w : '', true);
@@ -473,7 +576,7 @@ function render() {
   if (rec.length) {
     html += section('Recent', '<div class="hm-cards">' + rec.map(function (x) {
       return itemCard(x.kind, x.rec, x.why + ' · ' + relTime(x.when),
-        isPinned(x.kind, recordId(x.kind, x.rec)));
+        isFavorite(x.kind, recordId(x.kind, x.rec)));
     }).join('') + '</div>');
   } else if (!budgets.length && !analyses.length) {
     html += section('Get Started',
@@ -504,10 +607,13 @@ function render() {
   var acts = events.slice(0, 8);
   if (acts.length) {
     html += section('Your Activity', '<div class="hm-log">' + acts.map(function (e) {
-      var what = e.entityId ? esc(String(e.entityId)) : '';
+      // The record's NAME, with its id as the fallback: "Riverbend Phase 1"
+      // is what someone is looking for, not BD-0002.
+      var det = eventDetail(e);
+      var what = det || (e.entityId ? String(e.entityId) : '');
       return `<div class="hm-log-row">
         <span class="hm-log-ev">${esc(eventLabel(e.eventType))}</span>
-        <span class="hm-log-what mono">${what}</span>
+        <span class="hm-log-what${det ? '' : ' mono'}" title="${esc(e.entityId || '')}">${esc(what)}</span>
         <span class="hm-log-when">${esc(relTime(e.createdAt))}</span>
       </div>`;
     }).join('') + '</div>');
@@ -538,17 +644,22 @@ window.FSHome = {
   show: show,
   render: render,
   invalidate: invalidate,
-  togglePin: togglePin,
-  unpin: unpin,
-  isPinned: isPinned,
+  toggleFavorite: toggleFavorite,
+  unfavorite: unfavorite,
+  isFavorite: isFavorite,
+  starButton: starButton,
+  favorites: favoritesRead,
   openBudget: function (id) { if (A.openBudget) A.openBudget(id); },
   openAnalysis: function (id) {
     if (window.FSInvestmentUI) { location.hash = '#/analysis/' + String(id).toLowerCase(); }
   },
+  openProject: function (id) {
+    if (window.FSProjects) FSProjects.open(String(id).toUpperCase());
+  },
   // exposed for the suites
   _attention: function () { return attentionItems(); },
   _recent: function (n) { return recentItems(n || 6); },
-  _pins: function () { return pinsRead(); },
+  _favorites: function () { return favoritesRead(); },
   _greetingPools: GREET
 };
 })();
@@ -556,11 +667,10 @@ window.FSHome = {
 /* ============================================================
    WHAT THE NEXT PASS NEEDS (API / SQL), and why it is not here
    ============================================================
-   1. Pins per account, not per browser.
-      One entry in api/shared/user-settings-contract.js (a `pinned` key,
-      sanitized as two short string arrays) and pinsRead/pinsWrite swap to the
-      settings document. No SQL: SettingsDoc is already an arbitrary JSON blob,
-      which is exactly why it was built that way.
+   1. ~~Pins per account, not per browser.~~ Done, and since renamed: the
+      setting is `favorites` (budgets, analyses and projects), the icon is a
+      star, and it toggles everywhere rather than only un-pinning from Home.
+      The contract lifts a stored `pinned` document, so nothing was lost.
 
    2. "Running on old pricing" in Needs Attention.
       /api/budgets does not return PricingVersion, so the client cannot tell

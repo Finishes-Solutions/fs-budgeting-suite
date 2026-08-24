@@ -118,6 +118,35 @@ which is why the history has merge commits on both sides.
 
 - Custom Entra provider configured in `staticwebapp.config.json`, reading
   `AAD_CLIENT_ID` / `AAD_CLIENT_SECRET` from SWA application settings.
+- **Signing out federates; switching accounts does not.** `/.auth/logout` clears
+  the SWA cookie *and* sends the browser to Entra's end-session endpoint, which
+  is why a browser holding several Microsoft sessions is asked which account is
+  signing out. There is no supported way to skip that from the app: the
+  `logout_hint` parameter that suppresses it belongs to Entra and SWA composes
+  the end-session request itself. **Switch Account** in the account menu sidesteps
+  the question entirely by not signing out — it navigates to
+  `/.auth/login/aad`, `prompt=select_account` opens the picker, and the account
+  chosen replaces the session. Use it for changing account; Sign Out is still
+  the only thing that ends one.
+- **`app/login.html` is the sign-in screen** and the only route that allows the
+  `anonymous` role (`/favicon.ico`, which it links, is the one other). An
+  unauthenticated request no longer bounces straight to Microsoft: the `401`
+  override redirects to `/login.html`, whose single button is
+  `/.auth/login/aad?post_login_redirect_uri=…`. Three things keep it working:
+  the anonymous route must sit **above** the `/*` rule (below it the page would
+  itself 401 and the override would send the visitor back — a loop), the page
+  must load **nothing** from the app (any `src`/`href` into the app is a 401 for
+  a visitor with no session), and the post-login target is built only from this
+  app's own `#/…` hash. `test/auth-routes.test.js` asserts all three.
+- The page is standalone by necessity — it cannot read the account's theme or
+  accent, because those live behind the sign-in it is asking for, so it follows
+  the OS `prefers-color-scheme` and nothing else.
+- **Sign-out already lands there**: `/.auth/logout?post_logout_redirect_uri=/`
+  returns to `/`, which 401s, which redirects to the login screen.
+- A deep link is a hash (`#/budget/OP-1234`), which the server never sees. The
+  browser carries a fragment across the 302 to a target that has none, so the
+  login page reads whatever survived and hands it back as the post-login target.
+  Best-effort by design: worst case the user lands on Home.
 - **Application settings are per-environment.** Production and staging each need the
   pair set. The same client ID/secret works for both — the difference is the redirect
   URI, which is per-hostname.
@@ -454,6 +483,76 @@ update selectors alongside label changes.
 
 ---
 
+### Guard rails, projects and derived underwriting (added 2026-08)
+
+- **`app/guardrails.js` and `api/shared/guardrails.js` are byte-identical.**
+  `test/guardrails.test.js` fails the build if they drift. Copy one over the
+  other; never "fix" one side.
+- **`evaluate()` never recomputes `parts()` or `grossIncome()`.** It takes them
+  as arguments. There are already exactly two implementations of that
+  arithmetic (the browser CALC block and `api/shared/budget-calc.js`); a third
+  would be a third thing to keep in parity.
+- **Two rules keep block-on-save survivable, and both look removable.**
+  A rail whose denominator is zero is *not evaluated* — a blank budget cannot be
+  blocked. And `opexRatio` blocks only when `doc.opexSchemaVersion >= 2`, because
+  every budget that predates this release sits at ~9% of income and would
+  otherwise become unsaveable the moment the code shipped.
+- **An override is a record.** `doc.guardrailAcks` carries a mandatory reason,
+  who, and when; it downgrades the rail to a warning, prints on the PDF and the
+  Excel workbook, and is pruned automatically once the value is back in range.
+  Gated to `director` / `super_admin` — a rail anyone can wave through is not
+  a rail.
+- **`feeOf(k)` is `nz()` for the fee object.** `doc.projectCosts.dev` can be
+  absent on an old document, and `undefined.mode` is a TypeError exactly as
+  absent arithmetic is `$NaN`. Every read goes through `feeOf()`, which repairs
+  in place. Suite-08 (the strip-every-numeric suite) is what catches this.
+- **A percentage fee is a share of the FINAL total**, solved in closed form
+  (`project = (base + fixedFees) / (1 − f)`), not of a smaller pre-fee base.
+  Changing that convention changes what "3% developer fee" means on every
+  export, so it is documented in `docs/DATA_CONTRACT.md` rather than left to
+  whoever next opens `parts()`.
+- **A project id is `OP-####`; a NEW budget is minted `BDG-####-##`** with the
+  project's own digits (`BDG-2108-01`, then `-02`). Two namespaces, and keeping
+  them apart is the point. Project identity used to be *borrowed* from a
+  budget — the project row for `BD-0002` was literally keyed `'BD-0002'` and
+  alternates were attributed by stripping the suffix — which is why the Projects
+  list showed `BD-…` in its PROJECT ID column.
+  `sql/migrate_project_op_ids.sql` re-keyed the existing rows and
+  `sql/widen_project_op_ids.sql` widened them to four digits;
+  `dbo.ProjectIdMap` is the permanent record of what moved, and the input to
+  `sql/rollback_project_op_ids.sql`. Legacy `BD-`/`OP-`/`AS-` budgets are never
+  renamed and keep numbering their alternates the old way.
+- **A `BDG` id's `-01` is its ITEM number, not an alternate marker** — the
+  first budget of project 2108 is `BDG-2108-01`. Only a suffix **other than**
+  `-01` marks an alternate (`isSiblingItem` / `isAlternate`); on legacy
+  `BD-####` any suffix still does. Even so, the digits in a budget id prove
+  nothing: which project a budget belongs to is `dbo.Budgets.ProjectKey`, an
+  explicit link stated when the budget is created. Moving a budget between
+  projects is an edited column, not a new id.
+- **A project is created deliberately.** Saving a budget no longer conjures its
+  parent, because a budget id cannot name one. `+ Create Project` on the
+  Projects page is the only way in, and it asks for ID, Name and Address — all
+  three required, uniqueness decided by `PK_Projects`, not by a pre-read.
+- **A project has no type.** One property can carry a Multifamily budget and a
+  Commercial budget at once, so type lives on each budget and the project
+  reports the distinct types its budgets are.
+- **Exactly one primary budget, and the project's money is its alone.**
+  `PrimaryBudgetId` is one scalar column, so Make Primary promotes and demotes
+  in a single write. The project's live money is a `TOP 1` on that budget,
+  never a `SUM` across alternates.
+- **Converting a project snapshots its money.** `ContractAmount` /
+  `ProjectAmount` are frozen at conversion so reported backlog does not move
+  when someone edits a budget afterwards. Anything reporting converted totals
+  reads those columns, never a live join.
+- **The project surface is query scopes on endpoints that already deploy.** A
+  route rule matches paths, not query strings, so the in-function check on
+  `?scope=projects` / `?scope=project` / `?scope=next-project-id` /
+  `?scope=next-budget-id` is the *only* gate — same warning that
+  applies to `/api/user-settings?scope=roles`.
+- **`api/shared/investment/from-budget.js` is used by creation AND re-sync.**
+  If they derived separately, re-syncing would quietly change numbers that were
+  never wrong.
+
 ## 8 · Outstanding
 
 **Security, do first**
@@ -474,6 +573,73 @@ update selectors alongside label changes.
 - Publishing a template is the only way to change new-budget defaults. Do not hand-edit
   `DEFAULT_PRICING` in `app/index.html` and expect it to matter — it is the offline
   fallback only (docs/DATA_CONTRACT.md, "Single source of truth").
+
+**Database state — every script below has run (latest: 2026-08-24)**
+
+- `sql/migrate_projects_and_guardrails.sql` — all eight verification rows PASS.
+  Five projects backfilled from the existing budgets, zero unlinked budgets,
+  zero unlinked analyses, zero orphans, both foreign keys in place.
+- `sql/publish_multifamily_opex_template.sql` — all four PASS. The multifamily
+  template is now **v3**, carrying `opexSchemaVersion: 2` and all sixteen
+  expense rows; v2 is retained, because publishing is append-only.
+
+  Consequence worth knowing: budgets created from **v3 onward** are judged by
+  the 35–55% expense rail and **blocked** when they fall outside it. Every
+  budget that predates v3 sits at `opexSchemaVersion: 1` and is **warned**, not
+  blocked, until someone runs *Update Expense Schedule* on it from the Guard
+  Rails card.
+
+  The rates in v3 are the ones this release proposed, not a reviewed house
+  standard. They land the template at 46.2% of income against its own unit mix.
+  Whoever owns the underwriting standard should review them and republish —
+  editing the script and re-running it publishes v4; nothing is overwritten.
+
+- `sql/migrate_project_op_ids.sql` then `sql/widen_project_op_ids.sql` — the
+  seven existing projects were re-keyed from borrowed budget ids to
+  `OP-0001` … `OP-0007`. `dbo.ProjectIdMap` records every one of them, and is
+  what `sql/rollback_project_op_ids.sql` reverses from. The same batch backfilled
+  `PrimaryBudgetId`, rewrote the project ids held inside `Users.SettingsDoc`
+  favourites and `UserActivity`, and added `UX_PricingLibrary_Current` so "the
+  current pricing library" is a database-enforced singleton.
+
+  Run order for a fresh database: `schema.sql` already describes the OP-####
+  end state, so only an EXISTING database needs the two migrations, in that
+  order.
+
+  **Applied 2026-08-22.** The seven projects are now `OP-0001` … `OP-0007`,
+  each keeping its primary budget and its children:
+
+  | Project | Was keyed as | Name | Status | Primary budget |
+  | --- | --- | --- | --- | --- |
+  | OP-0001 | BD-0001 | — | Lead | BD-0001 |
+  | OP-0002 | BD-0002 | — | Budgeting | BD-0002 |
+  | OP-0003 | BD-2519 | Greenville Townhomes | Awarded | BD-2519 |
+  | OP-0004 | TST-9999 | Greenville Townhomes | Awarded | TST-9999 |
+  | OP-0005 | BD-4821 | Jones Rd Apartments | Proposal Sent | BD-4821 |
+  | OP-0006 | BD-9999 | Test Project 3 | Lead | BD-9999 |
+  | OP-0007 | BD-2108 | BD-2108 | Lead | BD-2108 |
+
+  Note the budget ids: they were NOT renamed, and several keep prefixes that
+  are no longer minted (`TST-`, and `BD-` numbers unrelated to their project's
+  `OP-` number). That is deliberate — renaming a budget would cascade into
+  SovLines, BudgetVersions and every analysis's provenance for no gain.
+
+- `sql/align_project_numbers.sql` then `sql/adopt_project_numbers.sql` — the
+  identifier-model pair (PROJECT_NUMBERS_GUIDE.md): projects renumbered to
+  match their budgets, then `ProjectNumber` surfaced as a persisted, unique,
+  indexed column with per-project `ItemNumber` on analyses. The app probes for
+  these columns (`projectsNumber`, `analysesItemNumber`) and behaves as before
+  until both the columns and the release are present, so deploy order is safe
+  either way.
+
+  **Applied 2026-08-24**, all verification rows PASS. Three projects moved —
+  `OP-0003` → `OP-2519`, `OP-0005` → `OP-4821`, `OP-0007` → `OP-2108` — and
+  two mismatches stand deliberately: `OP-0004` keeps test budget `TST-9999`,
+  and `OP-0006` (primary `BD-9999`) could not take 9999 because a live test
+  project already holds `OP-9999` — the script skips rather than collides.
+  Deleting that test project and re-running the align script would move it;
+  nothing depends on it either way. `dbo.ProjectIdMap` tracks the re-keys, so
+  rollback still works from the *current* ids.
 
 **Housekeeping**
 
@@ -513,6 +679,10 @@ update selectors alongside label changes.
 
 ## 9 · House style for changes here
 
+- **Update `CHANGELOG.md`.** Every change that reaches `staging` gets an entry,
+  written for a person: what they will notice, what breaks, and which SQL has to
+  run. It is the first file to read when something behaves differently from
+  yesterday, and the only one that answers "do I need to run anything".
 - **Title Case** for interface labels, buttons, tab names and headings: capitalize
   important words; keep *a, an, the, and, but, or, for, nor, at, by, in, of, on, per,
   to, up, via* lowercase unless first or last. Preserve brand names, product names and

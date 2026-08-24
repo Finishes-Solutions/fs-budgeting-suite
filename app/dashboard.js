@@ -48,23 +48,134 @@ function fmtDate(iso){
 
 function eventLabel(ev){
   var map={
-    login:'Login',budget_save:'Budget Save',budget_delete:'Budget Delete',
-    budget_restore:'Budget Restore',analysis_save:'Analysis Save',
+    login:'Login',budget_create:'Budget Created',budget_save:'Budget Save',
+    budget_delete:'Budget Delete',budget_restore:'Budget Restore',
+    budget_status:'Budget Status',budget_primary:'Primary Budget Changed',
+    analysis_save:'Analysis Save',
     analysis_delete:'Analysis Delete',analysis_restore:'Analysis Restore',
+    project_create:'Project Created',project_update:'Project Updated',
+    project_status:'Project Status',project_convert:'Project Converted',
+    project_delete:'Project Deleted',
+    favorite_add:'Favorited',favorite_remove:'Unfavorited',
     export_pdf:'PDF Export',export_xlsx:'Excel Export',export_csv:'CSV Export',
     export_print:'Print',settings_update:'Settings Update',
+    profile_update:'Profile Updated',
     pricing_publish:'Pricing Publish'
   };
   return map[ev]||ev;
 }
 
+/* The activity log used to be able to say only WHAT KIND of thing happened.
+   Every event now carries a structured detail document, and this turns it
+   into the sentence a person actually wants: which budget, which project,
+   which field, from what to what.
+
+   Deliberately tolerant — an event written before its shape existed, or by a
+   future version, renders as much as it can rather than as "[object Object]".
+   Kept in step with the same function in app/home.js: one vocabulary, two
+   places it is read. */
+function usdish(n){
+  return '$'+Math.round(Number(n)||0).toLocaleString('en-US');
+}
+function fieldPhrase(f){
+  var k=f&&f.key?String(f.key):'';
+  var pretty=k.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/^./,function(c){return c.toUpperCase();});
+  if(f && f.from!==undefined && f.to!==undefined && f.from!==null)
+    return pretty+' '+String(f.from)+' → '+String(f.to);
+  if(f && f.to!==undefined && f.to!==null) return pretty+' → '+String(f.to);
+  return pretty;
+}
+function eventDetail(r){
+  var d=r&&r.detail;
+  if(!d||typeof d!=='object') return '';
+  var name=d.name?String(d.name):'';
+  var bits=[];
+  switch(r.eventType){
+    case 'favorite_add': case 'favorite_remove':
+      return name?name:'';
+    case 'budget_create': case 'budget_save':
+      if(name) bits.push(name);
+      if(d.projectKey) bits.push('on '+d.projectKey);
+      if(d.versionNumber) bits.push('v'+d.versionNumber);
+      if(Array.isArray(d.changed)&&d.changed.length)
+        bits.push(d.changed.map(fieldPhrase).join('; '));
+      else if(r.eventType==='budget_create')
+        bits.push(usdish(d.projectCost)+' total project');
+      return bits.join(' · ');
+    case 'budget_status':
+      return (name?name+' — ':'')+String(d.from)+' → '+String(d.to);
+    case 'budget_delete':
+      if(name) bits.push(name);
+      if(d.projectKey) bits.push('on '+d.projectKey);
+      if(d.projectCost!==undefined&&d.projectCost!==null) bits.push(usdish(d.projectCost)+' total project');
+      return bits.join(' · ');
+    case 'budget_primary':
+      return (name?name+' — ':'')+(d.from||'none')+' → '+(d.to||'none');
+    case 'project_create':
+      return [name,d.address].filter(Boolean).join(' · ');
+    case 'project_status':
+      return (name?name+' — ':'')+String(d.from)+' → '+String(d.to);
+    case 'project_convert':
+      return (name?name+' — ':'')+'captured '+usdish(d.contractAmount)+' contract, '
+        +usdish(d.projectAmount)+' project';
+    case 'project_update':
+      return (name?name+' — ':'')+(Array.isArray(d.fields)?d.fields.map(fieldPhrase).join('; '):'');
+    case 'project_delete':
+      return (name?name+' — ':'')+d.budgetsDeleted+' budget'+(d.budgetsDeleted===1?'':'s')
+        +' and '+d.analysesDeleted+' analys'+(d.analysesDeleted===1?'is':'es')+' with it';
+    case 'analysis_save':
+      if(name) bits.push(name);
+      if(d.budgetId) bits.push('from '+d.budgetId);
+      if(d.versionNumber) bits.push('v'+d.versionNumber);
+      return bits.join(' · ');
+    case 'analysis_delete':
+      if(name) bits.push(name);
+      if(d.budgetId) bits.push('from '+d.budgetId);
+      return bits.join(' · ');
+    case 'profile_update':
+      return Array.isArray(d.fields)?d.fields.map(fieldPhrase).join('; '):'';
+    case 'settings_update':
+      if(!Array.isArray(d.changed)) return '';
+      // The pre-granular shape was a bare list of key names.
+      return d.changed.map(function(c){
+        return typeof c==='string'?c.replace(/([a-z])([A-Z])/g,'$1 $2'):fieldPhrase(c);
+      }).join('; ');
+    default:
+      if(name) return name;
+      return '';
+  }
+}
+
+/* Two vocabularies share this map. Budgets and analyses answer "is this
+   document finished" (Draft · In Review · Completed · Cancelled); projects
+   answer "where is this deal" (Lead → … → Converted to Project). The stale
+   names the map used to carry — In Progress, Approved, Signature Needed — were
+   never statuses this app sets, and are gone. */
 var STATUS_COLORS={
-  'Draft':'#6B7280','In Progress':'#2B579A','Completed':'#16803C',
-  'Approved':'#16803C','On Hold':'#8A6116','Cancelled':'#C43C3C',
-  'Signature Needed':'#7C3AED'
+  'Draft':'#6B7280','In Review':'#8A6116','Completed':'#16803C','Cancelled':'#C43C3C',
+  'Lead':'#6B7280','Qualified':'#4D5457','Budgeting':'#2B579A','Proposal Sent':'#8A6116',
+  'Awarded':'#1F9249','Converted to Project':'#006527','On Hold':'#8A6116','Lost':'#C43C3C'
 };
 
 function statusColor(s){ return STATUS_COLORS[s]||'#6B7280'; }
+
+/* Converted projects — the work that actually became work. Both amounts are
+   the snapshots taken at conversion, so this row does not move when someone
+   edits a budget afterwards; the tiles say so, because a number nobody can
+   explain is a number nobody trusts. */
+function projectKPIs(){
+  var p=data&&data.projects;
+  if(!p||!p.available)return '';
+  // Two tiles, not three: the converted COUNT is context for the money rather
+  // than a headline of its own, so it rides in the sub-line. A third tile
+  // pushed the tile grid onto another row for a number nobody reads first.
+  // The sub-lines stay to ONE line each: a wrapped sub costs more height than
+  // the tile it was folded into saved.
+  return '<div class="dash-kpi"><div class="k">Converted Contract Amount</div><div class="v">'+money(p.convertedContractAmount)+'</div>'
+    +'<div class="sub">'+num(p.converted)+' of '+num(p.total)+' converted</div></div>'
+    +'<div class="dash-kpi"><div class="k">Converted Project Amount</div><div class="v">'+money(p.convertedProjectAmount)+'</div>'
+    +'<div class="sub">Captured at conversion</div></div>';
+}
 
 function renderKPIs(el){
   if(!data){el.innerHTML='<div class="dash-loading">Loading dashboard data...</div>';return;}
@@ -78,9 +189,13 @@ function renderKPIs(el){
     +'<div class="sub">Across all active budgets</div></div>'
     +'<div class="dash-kpi"><div class="k">Active Analyses</div><div class="v">'+num(a.active)+'</div>'
     +'<div class="sub">'+num(a.total)+' total created</div></div>'
-    +'<div class="dash-kpi"><div class="k">Avg Purchase Price</div><div class="v">'+money(a.avgPurchasePrice)+'</div></div>'
-    +'<div class="dash-kpi"><div class="k">Avg Year 1 NOI</div><div class="v">'+money(a.avgYear1NOI)+'</div></div>'
-    +'<div class="dash-kpi"><div class="k">Avg Equity IRR</div><div class="v">'+pct(a.avgIRR)+'</div></div>'
+    +projectKPIs()
+    // The three averages carry no sub-line of their own, but they still emit
+    // the element: an empty .sub is what keeps every card's number on the same
+    // baseline as its neighbours.
+    +'<div class="dash-kpi"><div class="k">Avg Purchase Price</div><div class="v">'+money(a.avgPurchasePrice)+'</div><div class="sub"></div></div>'
+    +'<div class="dash-kpi"><div class="k">Avg Year 1 NOI</div><div class="v">'+money(a.avgYear1NOI)+'</div><div class="sub"></div></div>'
+    +'<div class="dash-kpi"><div class="k">Avg Equity IRR</div><div class="v">'+pct(a.avgIRR)+'</div><div class="sub"></div></div>'
     +'<div class="dash-kpi"><div class="k">Registered Users</div><div class="v">'+num(u.total)+'</div>'
     +'<div class="sub">'+num(u.totalLogins)+' total logins</div></div>';
 }
@@ -101,9 +216,51 @@ function barHTML(breakdown, total){
 function renderBreakdowns(el){
   if(!data){el.innerHTML='';return;}
   var b=data.budgets, a=data.analyses;
+  var pj=data.projects;
   el.innerHTML=
     '<div class="dash-card"><h3>Budget Status</h3>'+donutHTML(b.statusBreakdown)+'</div>'
-    +'<div class="dash-card"><h3>Analysis Status</h3>'+donutHTML(a.statusBreakdown)+'</div>';
+    +'<div class="dash-card"><h3>Analysis Status</h3>'+donutHTML(a.statusBreakdown)+'</div>'
+    +(pj&&pj.available ? pipelineHTML(pj) : '');
+}
+
+/* The pipeline as a single proportional bar spanning both donut columns: a
+   distribution, read left to right in PIPELINE order — the shape of a pipeline
+   is the information, and sorting it by count destroys that. Stages with
+   nothing in them are dropped from the bar (a zero-width segment is not a
+   fact anyone can see) but the order of the rest is preserved. */
+function pipelineHTML(p){
+  var rows=pipelineRows(p).filter(function(r){return r.count>0;});
+  var total=rows.reduce(function(s,r){return s+r.count;},0);
+  if(!total) return '<div class="dash-card dash-span"><h3>Project Pipeline</h3>'
+    +'<div class="dash-empty-inline">No projects yet.</div></div>';
+  // The legend rides on the title line rather than under the bar: it costs a
+  // whole row otherwise, and this card is buying its height from a neighbour.
+  return '<div class="dash-card dash-span">'
+    +'<div class="dash-pipe-hd"><h3>Project Pipeline</h3>'
+    +'<div class="dash-legend dash-legend-h">'
+    +rows.map(function(r){
+      return '<span class="dash-lg-row"><span class="dash-lg-dot" style="background:'+statusColor(r.status)+'"></span>'
+        +'<span class="dash-lg-name">'+esc(r.status)+'</span>'
+        +'<span class="dash-lg-val">'+num(r.count)+'</span></span>';
+    }).join('')
+    +'</div></div>'
+    +'<div class="dash-pipe">'
+    +rows.map(function(r){
+      return '<span class="dash-pipe-seg" style="flex:'+r.count+';background:'+statusColor(r.status)+'"'
+        +' title="'+esc(r.status)+': '+num(r.count)+'"></span>';
+    }).join('')
+    +'</div></div>';
+}
+
+/* The pipeline in its real order rather than sorted by count — the shape of a
+   pipeline is the information, and re-ordering destroys it. donutHTML renders
+   segments in the order it is given, so the ring and its legend both read Lead
+   first and Lost last. Using the same primitive as the two breakdowns beside it
+   is not only consistent: a taller bespoke chart pushed the whole visual half
+   of the dashboard past one screen, which suite-16 pins. */
+function pipelineRows(p){
+  var by={};(p.statusBreakdown||[]).forEach(function(r){by[r.status]=r.count;});
+  return (p.statuses||[]).map(function(s){return {status:s,count:by[s]||0};});
 }
 
 /* ================= charts =================
@@ -427,9 +584,11 @@ function renderActivity(){
 
   var html='';
   events.forEach(function(r){
+    var det=eventDetail(r);
     html+='<tr><td style="padding-left:22px">'+esc(r.userName)+'</td>'
       +'<td>'+esc(eventLabel(r.eventType))+'</td>'
       +'<td class="mono">'+(r.entityId?esc((r.entityType||'')+' '+r.entityId):'<span style="color:var(--ink-400)">--</span>')+'</td>'
+      +'<td class="act-detail">'+(det?esc(det):'<span style="color:var(--ink-400)">--</span>')+'</td>'
       +'<td class="mono r" style="padding-right:22px">'+esc(activityPage==='all'?fmtDate(r.createdAt):relTime(r.createdAt))+'</td></tr>';
   });
   body.innerHTML=html;
@@ -569,9 +728,11 @@ async function exportCSV(){
       if(all.length>=d.total) break;
       offset+=batch;
     }
-    var csv='User,Event,Entity Type,Entity ID,Timestamp\r\n';
+    // Details rides in the export too: an audit trail that is only complete
+    // on screen is not an audit trail.
+    var csv='User,Event,Entity Type,Entity ID,Details,Timestamp\r\n';
     all.forEach(function(e){
-      csv+='"'+csvSafe(e.userName)+'","'+csvSafe(eventLabel(e.eventType))+'","'+csvSafe(e.entityType||'')+'","'+csvSafe(e.entityId||'')+'","'+csvSafe(e.createdAt||'')+'"\r\n';
+      csv+='"'+csvSafe(e.userName)+'","'+csvSafe(eventLabel(e.eventType))+'","'+csvSafe(e.entityType||'')+'","'+csvSafe(e.entityId||'')+'","'+csvSafe(eventDetail(e))+'","'+csvSafe(e.createdAt||'')+'"\r\n';
     });
     var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
     var url=URL.createObjectURL(blob);
@@ -609,6 +770,7 @@ function exportPDF(){
   var log=rows.map(function(r){
     return '<tr><td>'+esc(r.userName)+'</td><td>'+esc(eventLabel(r.eventType))+'</td>'
       +'<td class="mono">'+(r.entityId?esc((r.entityType||'')+' '+r.entityId):'--')+'</td>'
+      +'<td>'+esc(eventDetail(r)||'--')+'</td>'
       +'<td class="mono r">'+esc(fmtDate(r.createdAt))+'</td></tr>';
   }).join('');
 
@@ -658,7 +820,7 @@ function exportPDF(){
 
     +'<h2 class="dpdf-h">Activity Log</h2>'
     +(log
-      ? '<table class="dpdf-tbl"><thead><tr><th>User</th><th>Event</th><th>Entity</th><th class="r">When</th></tr></thead>'
+      ? '<table class="dpdf-tbl"><thead><tr><th>User</th><th>Event</th><th>Entity</th><th>Details</th><th class="r">When</th></tr></thead>'
         +'<tbody>'+log+'</tbody></table>'
         +'<div class="dpdf-note">Showing the '+rows.length+' most recent entries. '
         +'Use Export CSV on the dashboard for the complete, filtered log.</div>'
@@ -673,6 +835,9 @@ function refresh(){
 
 window.FSDashboard={
   init:function(a){ adapter=a||{}; },
+  // Converting a project changes what the KPIs report, so the cache lets go
+  // rather than showing yesterday's backlog until someone hits Refresh.
+  invalidate:function(){ data=null; activityData=null; },
   render:function(){ if(!data&&!loading)loadData(); else renderDashboard(); },
   refresh:refresh,
   viewMore:viewMore,

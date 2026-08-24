@@ -36,8 +36,53 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // calculating with missing assumptions surfaces field-keyed errors
  await p.click('#invCalcBtn'); await p.waitForTimeout(500);
+ // The banner names the FIELD and the step. It no longer carries a count
+ // sentence above the detail — the amber flag already means "needs attention",
+ // and restating it was the flag explaining itself.
  ok('missing assumptions are rejected with highlighted fields',
-    (await p.locator('.inv-err').count())>0 && /need attention/.test(await p.locator('#invErrSummary').textContent()));
+    (await p.locator('.inv-err').count())>0
+    && (await p.locator('#invErrSummary .inv-errlist li').count())>0);
+ ok('and the banner does not restate the count above the detail',
+    !/assumptions? need/i.test(await p.locator('#invErrSummary').textContent()),
+    (await p.locator('#invErrSummary').textContent()).replace(/\s+/g,' ').slice(0,120));
+
+ // ---- the banner NAMES what is wrong and where it lives ----
+ // "1 assumption needs attention" on its own sends you hunting through six
+ // steps; each flagged assumption says which field and which step, and the
+ // step button jumps straight there.
+ const errTxt=await p.locator('#invErrSummary').textContent();
+ ok('each flagged assumption is named',
+    /Purchase Price/.test(errTxt)&&/Exit Cap Rate/.test(errTxt), errTxt.slice(0,240));
+ ok('and says which step it lives on',
+    /Step 1 · Source & Property/.test(errTxt)&&/Step 5 · Disposition/.test(errTxt), errTxt.slice(0,240));
+ ok('the step buttons in the banner jump to that step',
+    (await p.locator('#invErrSummary .inv-errjump').count())>0);
+ const flagged=await p.evaluate(()=>[...document.querySelectorAll('#invSteps button[data-step]')]
+   .filter(b=>b.classList.contains('flag')).map(b=>+b.dataset.step));
+ ok('the step pills carry the same flag',
+    flagged.includes(1)&&flagged.includes(5)&&!flagged.includes(4), JSON.stringify(flagged));
+ ok('and the flag is the warning amber, not the default pill',
+    await p.evaluate(()=>{
+      const b=[...document.querySelectorAll('#invSteps button.flag')].find(x=>!x.classList.contains('on'));
+      return b?getComputedStyle(b).backgroundColor==='rgb(251, 243, 228)':false;
+    }),
+    await p.evaluate(()=>{
+      const b=[...document.querySelectorAll('#invSteps button.flag')].find(x=>!x.classList.contains('on'));
+      return b?getComputedStyle(b).backgroundColor:'none';
+    }));
+ // Answering an assumption clears its flag immediately — a warning that
+ // outlives its cause teaches people to ignore warnings.
+ await p.click('#invSteps button[data-step="5"]'); await p.waitForTimeout(200);
+ await p.fill('[data-f="disposition.exitCapRate.value"]','6.5');
+ await p.locator('[data-f="disposition.exitCapRate.value"]').dispatchEvent('change');
+ await p.waitForTimeout(250);
+ ok('filling a flagged field clears its pill without recalculating',
+    await p.evaluate(()=>!document.querySelector('#invSteps button[data-step="5"]').classList.contains('flag')));
+ ok('and drops it from the banner, leaving the rest',
+    !/Exit Cap Rate/.test(await p.locator('#invErrSummary').textContent())
+      && /Purchase Price/.test(await p.locator('#invErrSummary').textContent()),
+    (await p.locator('#invErrSummary').textContent()).slice(0,200));
+ await p.click('#invSteps button[data-step="1"]'); await p.waitForTimeout(200);
 
  // fill everything (all-cash first)
  await p.fill('[data-f="property.size.value"]','100000');

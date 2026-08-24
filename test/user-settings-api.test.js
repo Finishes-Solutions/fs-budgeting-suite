@@ -275,3 +275,40 @@ test('the pack is additive: it disturbs no other stored setting', () => {
   assert.strictEqual(s.theme, 'dark');
   assert.strictEqual(s.budgetView, 'cards');
 });
+
+// The first-run welcome is a stored preference too: the client shows it from
+// what boot already loaded, so the only thing that can go wrong here is a
+// stored value that is not a strict boolean.
+test('the welcome version defaults to unseen and only a real integer counts', () => {
+  const v = s => contract.sanitizeSettings(s).welcomeSeenVersion;
+  assert.strictEqual(contract.DEFAULT_SETTINGS.welcomeSeenVersion, 0);
+  assert.strictEqual(v({}), 0);
+  assert.strictEqual(v({ welcomeSeenVersion: 1 }), 1);
+  // Anything that is not a plain non-negative integer reads as "seen nothing",
+  // which SHOWS the welcome. A junk value must never be able to suppress it.
+  assert.strictEqual(v({ welcomeSeenVersion: '1' }), 0);
+  assert.strictEqual(v({ welcomeSeenVersion: 1.5 }), 0);
+  assert.strictEqual(v({ welcomeSeenVersion: -3 }), 0);
+  assert.strictEqual(v({ welcomeSeenVersion: null }), 0);
+  // ...and an absurd one is clamped rather than trusted forever.
+  assert.strictEqual(v({ welcomeSeenVersion: 99999 }), 1000);
+});
+
+// The boolean this replaced is deliberately NOT lifted. An account that
+// dismissed the old welcome has still never seen the current one, and the
+// whole point of a version is that it gets shown to everyone once.
+test('a legacy welcomeSeen boolean does not count as having seen this welcome', () => {
+  assert.strictEqual(contract.sanitizeSettings({ welcomeSeen: true }).welcomeSeenVersion, 0);
+  assert.strictEqual(contract.sanitizeSettings({ welcomeSeen: true }).welcomeSeen, undefined);
+});
+
+test('dismissing the welcome disturbs no other stored setting', () => {
+  // The legacy `pinned` document still comes in and is lifted to `favorites`,
+  // so a stored star survives a welcome dismissal as well as a rename.
+  const s = contract.sanitizeSettings({ welcomeSeenVersion: 1, accentColor: 'blue',
+    themePack: 'ramp', pinned: { budget: ['OP-1001'], analysis: [] } });
+  assert.strictEqual(s.accentColor, 'blue');
+  assert.strictEqual(s.themePack, 'ramp');
+  assert.deepStrictEqual(s.favorites.budget, ['OP-1001']);
+  assert.strictEqual(s.welcomeSeenVersion, 1);
+});

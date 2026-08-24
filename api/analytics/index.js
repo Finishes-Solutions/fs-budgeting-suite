@@ -13,6 +13,8 @@
 // route rule cannot see).
 const { getPool, sql } = require('../shared/db');
 const { isSuperAdmin } = require('../shared/auth');
+const { features } = require('../shared/schema');
+const { PROJECT_STATUSES, CONVERTED } = require('../shared/projects');
 
 const jsonRes = (status, body) => ({
   status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
@@ -48,7 +50,7 @@ module.exports = async function (context, req) {
 
     const [rows, counted, people] = await Promise.all([
       dataRq.query(
-        `SELECT ua.EventType, ua.EntityType, ua.EntityId, ua.CreatedAt, ua.UserId,
+        `SELECT ua.EventType, ua.EntityType, ua.EntityId, ua.DetailDoc, ua.CreatedAt, ua.UserId,
                 u.DisplayName, u.Email
          FROM dbo.UserActivity AS ua
          LEFT JOIN dbo.Users AS u ON u.UserId = ua.UserId
@@ -63,6 +65,9 @@ module.exports = async function (context, req) {
     context.res = jsonRes(200, {
       events: rows.recordset.map(x => ({
         eventType: x.EventType, entityType: x.EntityType, entityId: x.EntityId,
+        // The structured context each event carries. Without it the admin log
+        // could only ever say what KIND of thing happened, never what changed.
+        detail: parseDetail(x.DetailDoc),
         createdAt: x.CreatedAt, userId: x.UserId,
         userName: x.DisplayName || x.Email || 'Unknown'
       })),
@@ -104,7 +109,7 @@ module.exports = async function (context, req) {
         FROM dbo.Users`),
 
       pool.request().query(`
-        SELECT TOP 50 ua.EventType, ua.EntityType, ua.EntityId, ua.CreatedAt,
+        SELECT TOP 50 ua.EventType, ua.EntityType, ua.EntityId, ua.DetailDoc, ua.CreatedAt,
                u.DisplayName, u.Email
         FROM dbo.UserActivity ua
         LEFT JOIN dbo.Users u ON u.UserId = ua.UserId
@@ -174,7 +179,62 @@ module.exports = async function (context, req) {
   const a = analyses.recordset[0];
   const u = users.recordset[0];
 
+  /* Projects. Guarded by the probe so the dashboard cannot 500 before
+     sql/migrate_projects_and_guardrails.sql has run — a deploy lands before its
+     migration, and a blank Analytics page is exactly the failure that rule
+     exists to prevent.
+
+     The converted totals come from the SNAPSHOT columns, not from a live join
+     to the budgets: reported backlog must not move when someone edits a budget
+     after the project was already converted. */
+  const pf = await features(pool);
+  let projects = { available: false, statuses: PROJECT_STATUSES };
+  if (pf.projectsTable) {
+    try {
+      const [totals, byStatus, byMonth] = await Promise.all([
+        pool.request().query(`
+          SELECT COUNT(*) AS total,
+                 SUM(CASE WHEN Status = N'${CONVERTED}' THEN 1 ELSE 0 END) AS converted,
+                 SUM(CASE WHEN Status = N'Lost' THEN 1 ELSE 0 END) AS lost,
+                 SUM(CASE WHEN Status = N'${CONVERTED}' THEN ContractAmount ELSE 0 END) AS convertedContractAmount,
+                 SUM(CASE WHEN Status = N'${CONVERTED}' THEN ProjectAmount ELSE 0 END) AS convertedProjectAmount
+          FROM dbo.Projects WHERE IsDeleted = 0 AND ProjectId NOT LIKE 'TST-%'`),
+        pool.request().query(`
+          SELECT Status, COUNT(*) AS cnt FROM dbo.Projects
+          WHERE IsDeleted = 0 AND ProjectId NOT LIKE 'TST-%' GROUP BY Status`),
+        pool.request().query(`
+          SELECT CONVERT(CHAR(7), ConvertedAt, 126) AS Month, COUNT(*) AS cnt,
+                 SUM(ContractAmount) AS contractAmount, SUM(ProjectAmount) AS projectAmount
+          FROM dbo.Projects
+          WHERE IsDeleted = 0 AND ConvertedAt IS NOT NULL AND ProjectId NOT LIKE 'TST-%'
+          GROUP BY CONVERT(CHAR(7), ConvertedAt, 126) ORDER BY Month`)
+      ]);
+      const t = totals.recordset[0];
+      const decided = (t.total || 0) - (t.lost || 0);
+      projects = {
+        available: true,
+        statuses: PROJECT_STATUSES,
+        total: t.total || 0,
+        converted: t.converted || 0,
+        lost: t.lost || 0,
+        convertedContractAmount: Number(t.convertedContractAmount || 0),
+        convertedProjectAmount: Number(t.convertedProjectAmount || 0),
+        conversionRate: decided > 0 ? (t.converted || 0) / decided : null,
+        statusBreakdown: byStatus.recordset.map(r => ({ status: r.Status || 'Lead', count: r.cnt })),
+        convertedByMonth: byMonth.recordset.map(r => ({
+          month: r.Month, count: r.cnt,
+          contractAmount: Number(r.contractAmount || 0),
+          projectAmount: Number(r.projectAmount || 0)
+        }))
+      };
+    } catch (e) {
+      // A projects query that fails must not cost the whole dashboard.
+      context.log && context.log.warn && context.log.warn('projects analytics skipped: ' + e.message);
+    }
+  }
+
   context.res = jsonRes(200, {
+    projects,
     budgets: {
       total: b.total, active: b.active, deleted: b.deleted,
       totalContractSum: b.totalContractSum, totalProjectCost: b.totalProjectCost,
@@ -192,6 +252,7 @@ module.exports = async function (context, req) {
     },
     recentActivity: recentActivity.recordset.map(r => ({
       eventType: r.EventType, entityType: r.EntityType, entityId: r.EntityId,
+      detail: parseDetail(r.DetailDoc),
       createdAt: r.CreatedAt, userName: r.DisplayName || r.Email || 'Unknown'
     })),
     // Day is a DATE; send the plain YYYY-MM-DD so the client charts calendar
@@ -211,3 +272,11 @@ module.exports = async function (context, req) {
     }))
   });
 };
+
+// A detail document that cannot be read is an absent detail, never a 500: the
+// activity log is a report about other work and must not be the thing that
+// breaks the dashboard.
+function parseDetail(doc) {
+  if (!doc) return null;
+  try { return JSON.parse(doc); } catch (e) { return null; }
+}
