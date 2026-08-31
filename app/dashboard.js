@@ -51,6 +51,7 @@ function eventLabel(ev){
     login:'Login',budget_create:'Budget Created',budget_save:'Budget Save',
     budget_delete:'Budget Delete',budget_restore:'Budget Restore',
     budget_status:'Budget Status',budget_primary:'Primary Budget Changed',
+    budget_approve:'Budget Approved',
     analysis_save:'Analysis Save',
     analysis_delete:'Analysis Delete',analysis_restore:'Analysis Restore',
     project_create:'Project Created',project_update:'Project Updated',
@@ -124,6 +125,10 @@ function eventDetail(r){
     case 'project_delete':
       return (name?name+' — ':'')+d.budgetsDeleted+' budget'+(d.budgetsDeleted===1?'':'s')
         +' and '+d.analysesDeleted+' analys'+(d.analysesDeleted===1?'is':'es')+' with it';
+    case 'budget_approve':
+      return (name?name+' — ':'')+(d.cleared?'approval cleared'
+        :'approved version '+(d.versionNumber||'—')
+          +(d.contractsFlagged?' · '+d.contractsFlagged+' contract'+(d.contractsFlagged===1?'':'s')+' to review':''));
     case 'project_entity':
       return (name?name+' — ':'')+'now '+(d.toLegalName||'no entity')
         +(d.contractsFlagged?' · '+d.contractsFlagged+' contract'+(d.contractsFlagged===1?'':'s')+' flagged for review':'');

@@ -114,6 +114,13 @@ module.exports = async function (context, req) {
     return;
   }
 
+  // PUT ?scope=approve — pin (or clear) the approved budget version. A
+  // deliberate director+ act; the in-function role check is the only gate.
+  if (req.method === 'PUT' && String((req.query && req.query.scope) || '') === 'approve') {
+    context.res = await require('../shared/contracts').approveBudget(pool, id, req.body || {}, getPrincipal(req));
+    return;
+  }
+
   // PUT with { status } only — the quick status change from the lists and
   // cards. Updates the row and the stored document in place WITHOUT recording
   // a version; the editor's full { meta, doc } save still versions as before.

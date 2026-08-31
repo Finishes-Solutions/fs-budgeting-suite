@@ -5,6 +5,7 @@
 // Viewing history never touches the current budget: every query here is a SELECT.
 // Restore, rollback, compare and version deletion are deliberately not offered.
 const { getPool, sql } = require('../shared/db');
+const { features } = require('../shared/schema');
 
 const ID_RX = /^(OP|BD|BDG|AS|TST)-\d{4}(-\d{2})?$/;
 
@@ -33,6 +34,7 @@ module.exports = async function (context, req) {
   const maxV = latest.recordset[0].MaxV;
 
   if (versionNumber === null) {
+    const f = await features(pool);
     const r = await pool.request().input('id', sql.VarChar(16), id)
       .query(`SELECT v.VersionNumber, v.CreatedAt, v.CreatedByName, v.ChangeSummary, v.Status,
                      v.ContractSum, v.ProjectCost, v.PricingVersion,
@@ -42,9 +44,20 @@ module.exports = async function (context, req) {
               LEFT JOIN dbo.BudgetTemplateVersions AS tv ON tv.Id = v.TemplateVersionId
               WHERE v.ProjectId = @id
               ORDER BY v.VersionNumber DESC`);
+    // Which version is approved (the pinned allocation contracts are cut from).
+    // Probe-gated: naming ApprovedVersionId before its column exists would fail.
+    let approvedVersionNumber = null;
+    if (f.budgetsApproved) {
+      const av = await pool.request().input('id', sql.VarChar(16), id)
+        .query(`SELECT av.VersionNumber FROM dbo.Budgets AS b
+                JOIN dbo.BudgetVersions AS av ON av.Id = b.ApprovedVersionId
+                WHERE b.ProjectId = @id AND b.IsDeleted = 0`);
+      approvedVersionNumber = av.recordset.length ? av.recordset[0].VersionNumber : null;
+    }
     context.res = {
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ projectId: id, currentVersion: maxV, versions: r.recordset.map(meta) })
+      body: JSON.stringify({ projectId: id, currentVersion: maxV,
+        approvedVersionNumber: approvedVersionNumber, versions: r.recordset.map(meta) })
     };
     return;
   }

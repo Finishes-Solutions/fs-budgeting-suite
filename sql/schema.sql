@@ -163,9 +163,18 @@ CREATE TABLE dbo.Budgets (
     -- queryable summary for the lists, never the authority.
     GuardrailStatus      VARCHAR(10) NULL,   -- ok | warn | breach
     GuardrailBreachCount INT         NULL,
+    -- The approved budget version (sql/migrate_budget_approval.sql). A
+    -- deliberate act pins one immutable BudgetVersions row as the one contracts
+    -- are cut from — distinct from Status, which is a mutable pill. NULL until
+    -- a director approves a version.
+    ApprovedVersionId BIGINT        NULL,
+    ApprovedAt        DATETIME2     NULL,
+    ApprovedById      NVARCHAR(128) NULL,
+    ApprovedByName    NVARCHAR(200) NULL,
     CONSTRAINT FK_Budgets_TemplateKey     FOREIGN KEY (TemplateKey)       REFERENCES dbo.BudgetTemplates (TemplateKey),
     CONSTRAINT FK_Budgets_TemplateVersion FOREIGN KEY (TemplateVersionId) REFERENCES dbo.BudgetTemplateVersions (Id),
     CONSTRAINT FK_Budgets_Project         FOREIGN KEY (ProjectKey)        REFERENCES dbo.Projects (ProjectId),
+    CONSTRAINT FK_Budgets_ApprovedVersion FOREIGN KEY (ApprovedVersionId) REFERENCES dbo.BudgetVersions (Id),
     -- A project's alternates are BD-0001-02, BD-0001-03 …; the base budget
     -- keeps the plain id.
     CONSTRAINT CK_Budgets_IdFormat CHECK (

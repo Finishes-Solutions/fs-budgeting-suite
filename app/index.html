@@ -5458,20 +5458,47 @@ async function openVersions(pid){
     vBody().innerHTML='<div class="note" style="color:var(--danger)">Could not load version history: '+esc(e.message)+'</div>';
   }
 }
+let versionsApproved=null;   // the approved version number, from the last load
+function canApproveBudget(){return US.appRole==='director'||US.appRole==='super_admin';}
 function renderVersionList(data){
   const vs=data.versions||[];
+  versionsApproved=(data.approvedVersionNumber===undefined)?null:data.approvedVersionNumber;
   if(!vs.length){
     vBody().innerHTML='<div class="note">No saved versions yet. Saving this budget records its first version.</div>';return;}
-  vBody().innerHTML=vs.map(v=>`<div class="ver-row${v.isCurrent?' current':''}">
-      <div><div class="ver-num">Version ${v.versionNumber}</div>${v.isCurrent?'<span class="badge ok">Current</span>':''}</div>
+  const canApprove=canApproveBudget();
+  vBody().innerHTML=vs.map(v=>{
+    const isApproved=versionsApproved!=null&&v.versionNumber===versionsApproved;
+    return `<div class="ver-row${v.isCurrent?' current':''}">
+      <div><div class="ver-num">Version ${v.versionNumber}</div>${v.isCurrent?'<span class="badge ok">Current</span>':''}${isApproved?'<span class="badge" style="background:var(--green-600);color:#fff">Approved</span>':''}</div>
       <div><div>${esc(v.changeSummary||'No change summary')}</div>
         <div class="ver-sub">${esc(fmtWhen(v.createdAt))} · ${esc(v.createdByName||'Unknown')} · ${esc(v.status||'—')} · Pricing ${esc(v.pricingVersion||'—')}${v.templateVersion?' · Template v'+esc(v.templateVersion):''}</div></div>
       <div style="text-align:right">
         <div class="calc">${usd(v.contractSum||0)}</div>
         <div class="ver-sub">${usd(v.projectCost||0)} total project</div>
-        <button class="btn btn-ghost btn-sm" data-vn="${v.versionNumber}" style="margin-top:8px">Open</button>
-      </div></div>`).join('');
+        <div style="margin-top:8px;display:flex;gap:6px;justify-content:flex-end">
+        ${canApprove&&v.isCurrent&&!isApproved?`<button class="btn btn-primary btn-sm" data-approve="${v.versionNumber}">Approve</button>`:''}
+        ${canApprove&&isApproved?`<button class="btn btn-ghost btn-sm" data-unapprove="1">Clear Approval</button>`:''}
+        <button class="btn btn-ghost btn-sm" data-vn="${v.versionNumber}">Open</button>
+        </div>
+      </div></div>`;}).join('');
   vBody().querySelectorAll('button[data-vn]').forEach(b=>{b.onclick=()=>openVersionDetail(+b.dataset.vn);});
+  vBody().querySelectorAll('button[data-approve]').forEach(b=>{b.onclick=()=>approveVersion();});
+  vBody().querySelectorAll('button[data-unapprove]').forEach(b=>{b.onclick=()=>approveVersion(true);});
+}
+async function approveVersion(clear){
+  if(!versionsPid)return;
+  if(!clear&&!confirm('Approve the current version of '+versionsPid+'?\n\nContracts are generated from the approved version. If an already-approved version changes, its contracts are flagged for review — never rewritten.'))return;
+  try{
+    const r=await api('budget/'+encodeURIComponent(versionsPid)+'?scope=approve',
+      {method:'PUT',body:JSON.stringify(clear?{clear:true}:{})});
+    toast(clear?'Approval cleared.':'Approved version '+r.approvedVersionNumber
+      +(r.contractsFlagged?' — '+r.contractsFlagged+' contract(s) flagged for review.':'.'));
+    renderVersionList(await api('budget/'+encodeURIComponent(versionsPid)+'/versions'));
+    if(window.FSProjects)FSProjects.invalidate();
+  }catch(e){
+    const pending=/not_migrated|migrate_budget_approval/.test(e.message);
+    toast(pending?'Approval needs sql/migrate_budget_approval.sql to be run first.':'Could not approve — '+e.message);
+  }
 }
 async function openVersionDetail(vn){
   vBody().innerHTML='<div class="note">Loading version '+vn+'…</div>';

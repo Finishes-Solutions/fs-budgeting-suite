@@ -208,6 +208,7 @@ var EVENT_LABEL = {
   budget_create: 'Created budget', budget_save: 'Saved budget',
   budget_delete: 'Deleted budget', budget_restore: 'Restored budget',
   budget_status: 'Changed budget status', budget_primary: 'Changed primary budget',
+  budget_approve: 'Approved budget',
   analysis_save: 'Saved analysis',
   analysis_delete: 'Deleted analysis', analysis_restore: 'Restored analysis',
   project_create: 'Created project', project_update: 'Updated project',
@@ -253,6 +254,8 @@ function eventDetail(e) {
     case 'project_update': case 'profile_update':
       return (name ? name + ' — ' : '')
         + (Array.isArray(d.fields) ? d.fields.map(fieldPhrase).join('; ') : '');
+    case 'budget_approve':
+      return (name ? name + ' — ' : '') + (d.cleared ? 'approval cleared' : 'approved v' + (d.versionNumber || '—'));
     case 'project_entity':
       return (name ? name + ' — ' : '') + 'now ' + (d.toLegalName || 'no entity')
         + (d.contractsFlagged ? ' (' + d.contractsFlagged + ' contract' + (d.contractsFlagged === 1 ? '' : 's') + ' to review)' : '');

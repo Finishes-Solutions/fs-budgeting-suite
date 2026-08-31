@@ -102,6 +102,11 @@ function entityBySlug(name) {
   for (const e of entities.values()) if (e.entityKey === slug) return e;
   return null;
 }
+// Contracts store + the reviewer hook the approval path calls (Phase 7 fills
+// them). Declared here so scope=approve can call the reviewer once it exists.
+const contracts = new Map();
+let nextContractId = 1;
+let reviewContractsAgainstApproved = null;
 const PROJECT_STATUSES = ['Lead', 'Qualified', 'Budgeting', 'Proposal Sent', 'Awarded',
                           'Converted to Project', 'On Hold', 'Lost'];
 const CONVERTED = 'Converted to Project';
@@ -815,6 +820,33 @@ http.createServer((req, res) => {
         ? nextChildBudgetId(forProject) : nextBudgetId() });
     }
 
+    // ?scope=approve — pin (or clear) the approved budget version (director+).
+    if (bScope === 'approve' && req.method === 'PUT') {
+      const roles = principal.clientPrincipal.userRoles;
+      const me = mockUsers.get(principal.clientPrincipal.userId);
+      const isDir = roles.includes('super_admin') || (me && (me.appRole === 'director' || me.appRole === 'super_admin'));
+      if (!isDir) return json(res, 403, { error: 'forbidden', message: 'Approving a budget requires the director or super_admin role.' });
+      const rec = budgets.get(id);
+      if (!rec || rec.deleted) return json(res, 404, { error: 'not_found', message: 'Budget not found.' });
+      let pb = ''; req.on('data', c => pb += c);
+      return req.on('end', () => {
+        const body = pb ? JSON.parse(pb) : {};
+        if (body.clear === true) {
+          rec.approvedVersionNumber = null; rec.approvedAllocKeys = null;
+          act('budget_approve', 'budget', id, { name: rec.meta.name || null, cleared: true });
+          return json(res, 200, { ok: true, approvedVersionNumber: null, cleared: true });
+        }
+        if (!rec.versions.length) return json(res, 400, { error: 'no_version',
+          message: 'Save the budget at least once before approving — there is no version to pin.' });
+        const vnum = rec.versions.length;
+        let contractsFlagged = 0;
+        if (typeof reviewContractsAgainstApproved === 'function') contractsFlagged = reviewContractsAgainstApproved(id, rec.versions[vnum - 1]);
+        rec.approvedVersionNumber = vnum;
+        act('budget_approve', 'budget', id, { name: rec.meta.name || null, versionNumber: vnum, contractsFlagged });
+        return json(res, 200, { ok: true, approvedVersionNumber: vnum, contractsFlagged });
+      });
+    }
+
     // ?scope=project — create, update (including Make Primary) and soft
     // delete, behaviour-parallel with api/shared/projects.js.
     if (bScope === 'project' && (req.method === 'PUT' || req.method === 'DELETE')) {
@@ -959,6 +991,7 @@ http.createServer((req, res) => {
       const maxV = live.versions.length;
       if (seg[2] === undefined || seg[2] === '') {
         return json(res, 200, { projectId: id, currentVersion: maxV,
+          approvedVersionNumber: live.approvedVersionNumber == null ? null : live.approvedVersionNumber,
           versions: live.versions.map(v => vmeta(v, maxV)).reverse() });
       }
       if (!/^\d+$/.test(seg[2])) { res.writeHead(400); return res.end('Version number must be a positive integer'); }

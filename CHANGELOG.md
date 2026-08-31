@@ -37,6 +37,8 @@ each — nothing breaks before they run):
 
 1. `sql/migrate_entities.sql` — the Entity Master (`dbo.Entities`, seeded with
    the six Finishes companies) and `Projects.EntityId`.
+2. `sql/migrate_budget_approval.sql` — the approved-version pointer on
+   `dbo.Budgets`.
 
 ### Added
 
@@ -81,6 +83,13 @@ each — nothing breaks before they run):
   published before this read as schema 1 and behave exactly as before.
 
 Existing budgets, templates, projects and every stored total are unchanged.
+
+- **Budget approval** (Budget Versions dialog, director / super_admin):
+  **Approve** pins the current version as the one contracts are cut from — an
+  explicit, immutable pin, separate from the mutable Status pill. The approved
+  version wears an **Approved** badge; approval can be cleared. Contracts (a
+  later phase) generate only from an approved version, and a change to an
+  approved version flags its contracts for review rather than rewriting them.
 
 Follow-up for an administrator: create Retail / Industrial / Office / Mixed-Use
 / Other Commercial templates (Templates → Duplicate) and set each type's finance

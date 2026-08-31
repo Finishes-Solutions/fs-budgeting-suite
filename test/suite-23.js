@@ -121,6 +121,26 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   ok('a percentage threshold stores as a decimal fraction',
     Math.abs(await p.evaluate(() => doc.guardrails[doc.type].profitMargin.max) - 0.25) < 1e-9);
 
+  // ---------- 9. budget approval pins a version ----------
+  const appr = await p.evaluate(async () => {
+    const res = await fetch('/api/budget/BDG-9301-01?scope=approve', { method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+    return res.json();
+  });
+  ok('approving pins the current version', appr.ok && appr.approvedVersionNumber >= 1, JSON.stringify(appr));
+  const vlist = await p.evaluate(async () => (await fetch('/api/budget/BDG-9301-01/versions')).json());
+  ok('the versions list reports the approved version', vlist.approvedVersionNumber === appr.approvedVersionNumber);
+  await p.evaluate(() => openVersions('BDG-9301-01'));
+  await p.waitForTimeout(500);
+  ok('the versions modal shows an Approved badge',
+    /Approved/.test(await p.locator('#versionsBody').textContent()));
+  const cleared = await p.evaluate(async () => {
+    const res = await fetch('/api/budget/BDG-9301-01?scope=approve', { method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clear: true }) });
+    return res.json();
+  });
+  ok('approval can be cleared', cleared.ok && cleared.approvedVersionNumber === null);
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(R.join('\n'));
   console.log('\n' + R.filter(r => r.startsWith('FAIL')).length + ' failures of ' + R.length);
