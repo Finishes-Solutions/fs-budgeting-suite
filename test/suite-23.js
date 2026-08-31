@@ -141,6 +141,25 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   });
   ok('approval can be cleared', cleared.ok && cleared.approvedVersionNumber === null);
 
+  // ---------- 10. Contracts card generates from the approved version ----------
+  await p.goto('http://127.0.0.1:8100/index.html#/project/OP-9301', { waitUntil: 'networkidle' });
+  await p.waitForTimeout(900);
+  ok('the Contracts card sits below Investment Analyses', await p.evaluate(() => {
+    const secs = [...document.querySelectorAll('#projectBody .card')];
+    const ai = secs.findIndex(s => /Investment Analyses/.test(s.textContent));
+    const ci = secs.findIndex(s => s.id === 'sec-contracts');
+    return ci > ai && ai >= 0;
+  }));
+  // approve the budget, then generate contracts from the card
+  await p.evaluate(async () => { await fetch('/api/budget/BDG-9301-01?scope=approve', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{}' }); });
+  await p.evaluate(() => FSProjects.generateContracts());
+  await p.waitForTimeout(900);
+  const gen = await p.evaluate(async () => (await fetch('/api/budget/BDG-9301-01?scope=contracts')).json());
+  ok('contracts generate from the approved version', gen.contracts.length >= 1 && gen.reconciliation.status === 'Reconciled',
+    JSON.stringify({ n: gen.contracts.length, status: gen.reconciliation && gen.reconciliation.status }));
+  ok('the primary contract is Project Entity → Finishes Solutions',
+    !!gen.contracts.find(c => c.allocationKey === 'finishes-solutions:primary'));
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(R.join('\n'));
   console.log('\n' + R.filter(r => r.startsWith('FAIL')).length + ' failures of ' + R.length);

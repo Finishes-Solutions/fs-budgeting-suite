@@ -718,6 +718,8 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .pj-form-msg{font-size:12px;color:var(--ink-500)}
 .pj-form-err{color:var(--danger)}
 @media(max-width:640px){.pj-form{grid-template-columns:1fr}}
+.ctr-sub{font-size:11px;color:var(--ink-400);margin-top:2px}
+tr.ctr-review{background:var(--amber-50,rgba(245,158,11,.08))}
 /* ---- Financials (bank / splits / waterfall / intercompany) ---- */
 .fin-hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
 .fin-hd h2{margin:0;font-size:16px}
@@ -3975,6 +3977,9 @@ async function initAuth(){
     // The Projects list has the same three views every other list offers, and
     // stores the choice through the same per-account preference mechanism.
     projectView:projectView,
+    // Contract generation and per-contract actions are director+; the card asks
+    // the app for the current role rather than guessing.
+    appRole:()=>US.appRole||'user',
     setSetting:(k,v)=>chooseSetting(k,v),
     go:go, navigate:h=>{location.hash=h;},
     currentPage:()=>currentPage,

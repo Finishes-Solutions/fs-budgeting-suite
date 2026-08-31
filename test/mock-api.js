@@ -17,6 +17,9 @@ const INV_C = require('../api/shared/investment/constants');
 const INV_D = require('../api/shared/investment/defaults');
 const fromBudget = require('../api/shared/investment/from-budget');
 const FSGuardrails = require('../api/shared/guardrails');
+// The derived allocation model — same module the app and the API use, so the
+// mock's contract plan and reconciliation are byte-for-byte identical.
+const FSBudgetFinance = require('../api/shared/budget-finance');
 const crypto = require('crypto');
 // Per-user settings validation: the REAL contract module (dependency-free).
 const usc = require('../api/shared/user-settings-contract');
@@ -102,11 +105,69 @@ function entityBySlug(name) {
   for (const e of entities.values()) if (e.entityKey === slug) return e;
   return null;
 }
-// Contracts store + the reviewer hook the approval path calls (Phase 7 fills
-// them). Declared here so scope=approve can call the reviewer once it exists.
+// Contracts store + the reviewer hook the approval path calls. The plan and
+// reconciliation come from the REAL budget-finance module, so the mock cannot
+// derive contract money differently from the API.
 const contracts = new Map();
 let nextContractId = 1;
-let reviewContractsAgainstApproved = null;
+function entityListForFinance() {
+  return [...entities.values()].map(e => ({ entityKey: e.entityKey, displayName: e.displayName, legalName: e.legalName }));
+}
+function contractPlanForDoc(doc) {
+  const p = parts(doc);
+  const alloc = FSBudgetFinance.allocate({ doc, parts: p, finance: FSBudgetFinance.financeFor(doc), entities: entityListForFinance() });
+  return { plan: FSBudgetFinance.contractPlan(alloc, p), parts: p, alloc };
+}
+function approvedDocOf(rec) {
+  return (rec && rec.approvedVersionNumber != null) ? rec.versions[rec.approvedVersionNumber - 1].doc : null;
+}
+function shapeMockContract(c) {
+  const from = entities.get(c.contractingEntityId), to = entities.get(c.performingEntityId);
+  return { contractId: c.contractId, budgetId: c.budgetId, projectKey: c.projectKey,
+    budgetVersionId: c.budgetVersionId,
+    contractingEntityId: c.contractingEntityId, contractingEntity: from ? from.displayName : null,
+    performingEntityId: c.performingEntityId, performingEntity: to ? to.displayName : null,
+    allocationKey: c.allocationKey, originalAmount: c.originalAmount, currentAmount: c.currentAmount,
+    profitAmount: c.profitAmount == null ? null : c.profitAmount, scope: c.scope || '',
+    effectiveDate: c.effectiveDate || null, status: c.status, reviewNote: c.reviewNote || null,
+    updated: c.updated };
+}
+function mockListContracts(budgetId) {
+  const rec = budgets.get(budgetId);
+  const live = [...contracts.values()].filter(c => !c.deleted && c.budgetId === budgetId);
+  const doc = approvedDocOf(rec);
+  let reconciliation = null;
+  if (doc) {
+    const { plan } = contractPlanForDoc(doc);
+    reconciliation = FSBudgetFinance.reconcile(plan, live.map(c => ({
+      contractId: c.contractId, allocationKey: c.allocationKey, currentAmount: c.currentAmount,
+      performingEntityKey: (entities.get(c.performingEntityId) || {}).entityKey, status: c.status })));
+  }
+  return { available: true, approved: doc ? { versionNumber: rec.approvedVersionNumber } : null,
+    contracts: live.map(shapeMockContract), reconciliation };
+}
+const STREAM_LABEL_MOCK = { primary: 'Construction contract', companyMarkup: 'Construction subcontract',
+  devFee: 'Developer fee', mktFee: 'Marketing / Brokerage', clsFee: 'Closing costs' };
+// The reviewer the approval path calls: flag live contracts whose amount no
+// longer matches the newly approved allocation. Takes the version being pinned.
+let reviewContractsAgainstApproved = function (budgetId, versionObj) {
+  const { plan } = contractPlanForDoc(versionObj.doc);
+  const byKey = {}; plan.rows.forEach(r => { byKey[r.allocationKey] = r; });
+  let flagged = 0;
+  [...contracts.values()].filter(c => !c.deleted && c.budgetId === budgetId
+    && c.status !== 'Void' && c.status !== 'Superseded').forEach(c => {
+    const pr = byKey[c.allocationKey];
+    const expected = pr ? pr.amount : null;
+    if (expected == null || Math.abs(c.currentAmount - expected) >= 1) {
+      c.status = 'Requires Review';
+      c.reviewNote = expected == null ? 'Allocation no longer exists in the approved budget.'
+        : 'Approved allocation ' + expected.toFixed(2) + ' vs contract ' + c.currentAmount.toFixed(2) + '.';
+      c.updated = new Date().toISOString();
+      flagged++;
+    }
+  });
+  return flagged;
+};
 const PROJECT_STATUSES = ['Lead', 'Qualified', 'Budgeting', 'Proposal Sent', 'Awarded',
                           'Converted to Project', 'On Hold', 'Lost'];
 const CONVERTED = 'Converted to Project';
@@ -790,7 +851,14 @@ http.createServer((req, res) => {
           guardrailBreachCount: b.guardrailBreachCount === undefined ? null : b.guardrailBreachCount,
           createdById: b.createdById || null, createdByName: b.createdByName || null,
           updated: b.meta.updated })),
-        analyses: projectAnalyses(key).map(invSummary)
+        analyses: projectAnalyses(key).map(invSummary),
+        contracts: [...contracts.values()].filter(c => !c.deleted && c.projectKey === key && c.status !== 'Superseded')
+          .map(c => ({ contractId: c.contractId, budgetId: c.budgetId, allocationKey: c.allocationKey,
+            contractingEntity: (entities.get(c.contractingEntityId) || {}).displayName || null,
+            performingEntity: (entities.get(c.performingEntityId) || {}).displayName || null,
+            originalAmount: c.originalAmount, currentAmount: c.currentAmount,
+            profitAmount: c.profitAmount == null ? null : c.profitAmount,
+            scope: c.scope || '', status: c.status, reviewNote: c.reviewNote || null, updated: c.updated }))
       });
     }
 
@@ -844,6 +912,84 @@ http.createServer((req, res) => {
         rec.approvedVersionNumber = vnum;
         act('budget_approve', 'budget', id, { name: rec.meta.name || null, versionNumber: vnum, contractsFlagged });
         return json(res, 200, { ok: true, approvedVersionNumber: vnum, contractsFlagged });
+      });
+    }
+
+    // ?scope=contracts (GET list + reconciliation), ?scope=contracts {generate}
+    // (director+), ?scope=contract {contractId, action} — behaviour-parallel
+    // with api/shared/contracts.js, using the same budget-finance module.
+    if (bScope === 'contracts' && req.method === 'GET') {
+      const rec = budgets.get(id);
+      if (!rec || rec.deleted) { res.writeHead(404); return res.end('Not found'); }
+      return json(res, 200, mockListContracts(id));
+    }
+    const isDirector = () => {
+      const roles = principal.clientPrincipal.userRoles;
+      const me = mockUsers.get(principal.clientPrincipal.userId);
+      return roles.includes('super_admin') || (me && (me.appRole === 'director' || me.appRole === 'super_admin'));
+    };
+    if (bScope === 'contracts' && req.method === 'PUT') {
+      if (!isDirector()) return json(res, 403, { error: 'forbidden', message: 'Generating contracts requires the director or super_admin role.' });
+      const rec = budgets.get(id);
+      if (!rec || rec.deleted) return json(res, 404, { error: 'not_found', message: 'Budget not found.' });
+      let pb = ''; req.on('data', c => pb += c);
+      return req.on('end', () => {
+        const body = pb ? JSON.parse(pb) : {};
+        const doc = approvedDocOf(rec);
+        if (!doc) return json(res, 400, { error: 'not_approved', message: 'Approve a budget version before generating contracts.' });
+        const pr = projects.get(rec.projectKey);
+        const projectEntityId = pr && pr.entityId != null ? pr.entityId : null;
+        if (!projectEntityId) return json(res, 400, { error: 'no_project_entity', message: 'Set the Project Entity on the project before generating contracts.' });
+        const { plan } = contractPlanForDoc(doc);
+        // Supersede prior live contracts.
+        [...contracts.values()].filter(c => !c.deleted && c.budgetId === id
+          && (c.status === 'Generated' || c.status === 'Requires Review')).forEach(c => { c.status = 'Superseded'; });
+        const eff = body.effectiveDate ? String(body.effectiveDate).slice(0, 10) : null;
+        let generated = 0;
+        plan.rows.forEach(row => {
+          const fromId = row.contractingEntityKey === '__project_entity__' ? projectEntityId
+            : ((entityBySlug(row.contractingEntityKey) || [...entities.values()].find(e => e.entityKey === row.contractingEntityKey) || {}).entityId);
+          const toEnt = [...entities.values()].find(e => e.entityKey === row.performingEntityKey);
+          if (!fromId || !toEnt) return;
+          const cid = nextContractId++;
+          contracts.set(cid, { contractId: cid, budgetId: id, projectKey: rec.projectKey,
+            budgetVersionId: rec.approvedVersionNumber, projectEntityId,
+            contractingEntityId: fromId, performingEntityId: toEnt.entityId,
+            allocationKey: row.allocationKey, originalAmount: row.amount, currentAmount: row.amount,
+            profitAmount: row.profit == null ? null : row.profit, scope: STREAM_LABEL_MOCK[row.stream] || row.stream,
+            effectiveDate: eff, status: 'Generated', reviewNote: null, deleted: false, updated: new Date().toISOString() });
+          generated++;
+        });
+        act('contract_generate', 'budget', id, { count: generated, versionNumber: rec.approvedVersionNumber });
+        const out = mockListContracts(id);
+        return json(res, 201, { ok: true, generated, contracts: out.contracts, reconciliation: out.reconciliation });
+      });
+    }
+    if (bScope === 'contract' && req.method === 'PUT') {
+      if (!isDirector()) return json(res, 403, { error: 'forbidden', message: 'Changing a contract requires the director or super_admin role.' });
+      const rec = budgets.get(id);
+      if (!rec || rec.deleted) return json(res, 404, { error: 'not_found', message: 'Budget not found.' });
+      let pb = ''; req.on('data', c => pb += c);
+      return req.on('end', () => {
+        const body = pb ? JSON.parse(pb) : {};
+        const c = contracts.get(Number(body.contractId));
+        if (!c || c.deleted || c.budgetId !== id) return json(res, 404, { error: 'not_found', message: 'Contract not found.' });
+        if (body.action === 'void') {
+          c.status = 'Void'; c.updated = new Date().toISOString();
+          act('contract_status', 'budget', id, { contractId: c.contractId, to: 'Void' });
+          return json(res, 200, { ok: true, status: 'Void' });
+        }
+        if (body.action === 'accept') {
+          const doc = approvedDocOf(rec);
+          if (!doc) return json(res, 400, { error: 'not_approved', message: 'No approved version to reconcile against.' });
+          const { plan } = contractPlanForDoc(doc);
+          const pr = plan.rows.find(r => r.allocationKey === c.allocationKey);
+          if (!pr) return json(res, 409, { error: 'no_allocation', message: 'This contract no longer matches any allocation. Void it instead.' });
+          c.currentAmount = pr.amount; c.budgetVersionId = rec.approvedVersionNumber; c.status = 'Generated'; c.reviewNote = null; c.updated = new Date().toISOString();
+          act('contract_status', 'budget', id, { contractId: c.contractId, to: 'Generated', accepted: true });
+          return json(res, 200, { ok: true, status: 'Generated', currentAmount: pr.amount });
+        }
+        return json(res, 400, { error: 'bad_request', message: "action must be 'accept' or 'void'." });
       });
     }
 
@@ -1111,6 +1257,9 @@ http.createServer((req, res) => {
       const entry = { meta, doc, deleted: false, versions: prev.versions,
         guardrailStatus: rails.status, guardrailBreachCount: rails.breaches.length,
         projectKey: linked,
+        // A save updates only the budget's own columns; the approval pointer is
+        // untouched, exactly as the real MERGE leaves ApprovedVersionId alone.
+        approvedVersionNumber: prev ? (prev.approvedVersionNumber == null ? null : prev.approvedVersionNumber) : null,
         createdById: (prev && prev.createdById) || principal.clientPrincipal.userId,
         createdByName: (prev && prev.createdByName) || principal.clientPrincipal.userDetails };  // PUT restores
       // A project with no primary adopts the first budget saved onto it.

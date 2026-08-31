@@ -39,6 +39,7 @@ each — nothing breaks before they run):
    the six Finishes companies) and `Projects.EntityId`.
 2. `sql/migrate_budget_approval.sql` — the approved-version pointer on
    `dbo.Budgets`.
+3. `sql/migrate_contracts.sql` — the `dbo.Contracts` records table.
 
 ### Added
 
@@ -87,9 +88,22 @@ Existing budgets, templates, projects and every stored total are unchanged.
 - **Budget approval** (Budget Versions dialog, director / super_admin):
   **Approve** pins the current version as the one contracts are cut from — an
   explicit, immutable pin, separate from the mutable Status pill. The approved
-  version wears an **Approved** badge; approval can be cleared. Contracts (a
-  later phase) generate only from an approved version, and a change to an
-  approved version flags its contracts for review rather than rewriting them.
+  version wears an **Approved** badge; approval can be cleared.
+- **Contracts** on the project page, below Investment Analyses (director /
+  super_admin generate and manage them). **Generate Contracts** cuts a contract
+  set from the budget's *approved* version — Project Entity → Finishes
+  Solutions, then Finishes Solutions → each participating Finishes company, and
+  the Project Entity → the fee entities — with every amount pulled from the
+  approved allocation, never typed. Each contract is a structured record
+  (contracting and performing entity, amount, budget version, allocation,
+  status); there are no legal-document templates, PDFs or e-signature. Editing
+  the working budget never touches a contract. When a *newly approved* version's
+  allocation differs from an existing contract, that contract is flagged
+  **Requires Review** with the variance — never silently rewritten — and can be
+  accepted to the new amount or voided. Changing a project's entity while it has
+  live contracts also flags them for review. A reconciliation status
+  (Reconciled / Overallocated / Missing Contract / …) ties every contract back
+  to its budget allocation.
 
 Follow-up for an administrator: create Retail / Industrial / Office / Mixed-Use
 / Other Commercial templates (Templates → Duplicate) and set each type's finance

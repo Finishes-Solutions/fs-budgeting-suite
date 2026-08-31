@@ -317,7 +317,91 @@ function paintDetail() {
     + projectInfoCard(p)
     + (favB.length || favA.length ? favoritesCard(favB, favA) : '')
     + budgetsCard(p, budgets)
-    + analysesCard(analyses, budgets);
+    + analysesCard(analyses, budgets)
+    + contractsCard(p, budgets);
+}
+
+/* Contracts — below Investment Analyses, preserving the Budgets → Analyses →
+   Contracts overview order. Contracts are generated from an APPROVED budget
+   version; the button explains what is missing when it cannot. A contract that
+   no longer matches its budget is flagged Requires Review with the variance —
+   never rewritten. Director / super_admin only for the actions. */
+function contractsCard(p, budgets) {
+  var contracts = (detail && detail.contracts) || [];
+  var canManage = A.appRole && (A.appRole() === 'director' || A.appRole() === 'super_admin');
+  // Which budget can generate: one with an approved version and a project entity.
+  var hasEntity = !!(p.entity && p.entity.entityId);
+  var rows = contracts.map(function (c) {
+    var review = c.status === 'Requires Review';
+    return '<tr class="' + (review ? 'ctr-review' : '') + '">'
+      + '<td>' + esc(c.contractingEntity || '—') + ' → ' + esc(c.performingEntity || '—')
+      + '<div class="ctr-sub">' + esc(c.scope || '') + (c.budgetId ? ' · ' + esc(c.budgetId) : '') + '</div></td>'
+      + '<td class="r">' + usd(c.currentAmount) + (c.currentAmount !== c.originalAmount ? '<div class="ctr-sub">was ' + usd(c.originalAmount) + '</div>' : '') + '</td>'
+      + '<td><span class="st-chip ' + (review ? 'st-review' : c.status === 'Void' ? 'st-cancel' : 'st-done') + '">' + esc(c.status) + '</span>'
+      + (review && c.reviewNote ? '<div class="ctr-sub">' + esc(c.reviewNote) + '</div>' : '') + '</td>'
+      + '<td class="no-print r">' + (canManage
+          ? (review ? '<button class="btn btn-ghost btn-sm" onclick="FSProjects.contractAction(' + c.contractId + ',\'accept\')">Accept</button> ' : '')
+            + (c.status !== 'Void' ? '<button class="btn btn-ghost btn-sm" onclick="FSProjects.contractAction(' + c.contractId + ',\'void\')">Void</button>' : '')
+          : '') + '</td></tr>';
+  }).join('');
+  var reviewCount = contracts.filter(function (c) { return c.status === 'Requires Review'; }).length;
+  var head = '<div class="card-hd"><h2>Contracts</h2>'
+    + '<span class="eyebrow">Generated from an approved budget · Project Entity → Finishes Solutions → Finishes companies</span>'
+    + (canManage ? '<button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="FSProjects.generateContracts()">Generate Contracts</button>' : '')
+    + '</div>';
+  var body;
+  if (!contracts.length) {
+    var why = !hasEntity ? 'Set the Project Entity above first, then approve a budget version.'
+      : 'Approve a budget version (Versions → Approve), then Generate Contracts.';
+    body = '<div class="hm-empty"><b>No contracts yet.</b><br>' + esc(why) + '</div>';
+  } else {
+    body = (reviewCount ? '<div class="gr-alert warn" style="margin-bottom:10px"><b>' + reviewCount
+        + ' contract' + (reviewCount === 1 ? '' : 's') + ' need review.</b> An approved budget changed after these were generated — accept the new amount or void.</div>' : '')
+      + '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Contract</th><th class="r">Amount</th><th>Status</th><th class="no-print"></th></tr></thead>'
+      + '<tbody>' + rows + '</tbody></table></div>';
+  }
+  return '<section class="card" id="sec-contracts"><div class="card-bd" style="padding-top:14px">'
+    + head + body + '</div></section>';
+}
+
+async function generateContracts() {
+  if (!detail || !detail.project) return;
+  // Pick a budget with an approved version. The server enforces this too.
+  var budgets = detail.budgets || [];
+  var target = primaryOf(budgets) || budgets[0];
+  if (!target) { if (A.toast) A.toast('Create and approve a budget first.'); return; }
+  if (!confirm('Generate contracts from the approved version of ' + target.projectId + '?\n\n'
+      + 'This supersedes any existing contracts for that budget and cuts new ones from the approved allocation.')) return;
+  try {
+    var r = await A.api('budget/' + encodeURIComponent(target.projectId) + '?scope=contracts',
+      { method: 'PUT', body: JSON.stringify({ generate: true }) });
+    if (A.toast) A.toast(r.generated + ' contract' + (r.generated === 1 ? '' : 's') + ' generated.');
+    await loadDetail(detail.project.projectId, true);
+    paintDetail();
+  } catch (e) {
+    var b = e && e.body;
+    var msg = b && b.error === 'not_approved' ? 'Approve a budget version first (Versions → Approve).'
+      : b && b.error === 'no_project_entity' ? 'Set the Project Entity above first.'
+      : (e && e.message) || 'error';
+    if (A.toast) A.toast('Could not generate contracts — ' + msg);
+  }
+}
+
+async function contractAction(contractId, action) {
+  if (!detail || !detail.project) return;
+  var budgets = detail.budgets || [];
+  var c = (detail.contracts || []).filter(function (x) { return x.contractId === contractId; })[0];
+  if (!c) return;
+  if (action === 'void' && !confirm('Void this contract?')) return;
+  try {
+    await A.api('budget/' + encodeURIComponent(c.budgetId) + '?scope=contract',
+      { method: 'PUT', body: JSON.stringify({ contractId: contractId, action: action }) });
+    if (A.toast) A.toast(action === 'void' ? 'Contract voided.' : 'Contract accepted at the approved amount.');
+    await loadDetail(detail.project.projectId, true);
+    paintDetail();
+  } catch (e) {
+    if (A.toast) A.toast('Could not update the contract — ' + ((e && e.message) || 'error'));
+  }
 }
 
 /* Project Information — the first project-edit surface. Name, Address, Notes and
@@ -859,6 +943,8 @@ window.FSProjects = {
   closeProjectMenu: closeProjectMenu,
   makePrimary: makePrimary,
   saveInfo: saveInfo,
+  generateContracts: generateContracts,
+  contractAction: contractAction,
   addAlternate: addAlternate,
   newBudget: newBudget,
   addAnalysis: addAnalysis,

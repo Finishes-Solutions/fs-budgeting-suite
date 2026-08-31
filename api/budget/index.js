@@ -114,10 +114,27 @@ module.exports = async function (context, req) {
     return;
   }
 
-  // PUT ?scope=approve — pin (or clear) the approved budget version. A
-  // deliberate director+ act; the in-function role check is the only gate.
-  if (req.method === 'PUT' && String((req.query && req.query.scope) || '') === 'approve') {
+  // Contract scopes — approval, generation, listing and per-contract actions.
+  // A route rule cannot see ?scope=, so the in-function role checks in
+  // api/shared/contracts.js are the only gate.
+  const budScope = String((req.query && req.query.scope) || '');
+  if (req.method === 'PUT' && budScope === 'approve') {
     context.res = await require('../shared/contracts').approveBudget(pool, id, req.body || {}, getPrincipal(req));
+    return;
+  }
+  if (req.method === 'GET' && budScope === 'contracts') {
+    const C = require('../shared/contracts');
+    const out = await C.listContracts(pool, id);
+    if (out.notFound) { context.res = { status: 404, body: 'Not found' }; return; }
+    context.res = C.jsonRes(200, out);
+    return;
+  }
+  if (req.method === 'PUT' && budScope === 'contracts') {
+    context.res = await require('../shared/contracts').generateContracts(pool, id, req.body || {}, getPrincipal(req));
+    return;
+  }
+  if (req.method === 'PUT' && budScope === 'contract') {
+    context.res = await require('../shared/contracts').contractAction(pool, id, req.body || {}, getPrincipal(req));
     return;
   }
 

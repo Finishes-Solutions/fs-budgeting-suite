@@ -411,6 +411,30 @@ async function getProject(pool, projectId) {
 
   if (!proj.recordset.length) return { available: true, project: null };
   const p = shapeProject(proj.recordset[0]);
+
+  // The project's contracts (across all its budgets), so the Contracts card
+  // needs no extra round trip. Probe-gated — the table arrives with its own
+  // migration.
+  let contracts = [];
+  if (f.contractsTable) {
+    const cr = await pool.request().input('pid', sql.VarChar(16), key).query(
+      `SELECT c.ContractId, c.BudgetId, c.AllocationKey, c.OriginalAmount, c.CurrentAmount,
+              c.ProfitAmount, c.Scope, c.Status, c.ReviewNote, c.UpdatedAt,
+              cf.DisplayName AS FromName, cp.DisplayName AS ToName
+       FROM dbo.Contracts AS c
+       LEFT JOIN dbo.Entities AS cf ON cf.EntityId = c.ContractingEntityId
+       LEFT JOIN dbo.Entities AS cp ON cp.EntityId = c.PerformingEntityId
+       WHERE c.ProjectKey = @pid AND c.IsDeleted = 0 AND c.Status <> 'Superseded'
+       ORDER BY c.ContractId`);
+    contracts = cr.recordset.map(c => ({
+      contractId: c.ContractId, budgetId: c.BudgetId, allocationKey: c.AllocationKey,
+      contractingEntity: c.FromName || null, performingEntity: c.ToName || null,
+      originalAmount: Number(c.OriginalAmount), currentAmount: Number(c.CurrentAmount),
+      profitAmount: c.ProfitAmount == null ? null : Number(c.ProfitAmount),
+      scope: c.Scope || '', status: c.Status, reviewNote: c.ReviewNote || null,
+      updated: c.UpdatedAt.toISOString()
+    }));
+  }
   // The detail view shows the live money of the PRIMARY budget, which the list
   // query computes in SQL and this one computes here — same rule, one budget,
   // and never a sum across alternates.
@@ -449,7 +473,8 @@ async function getProject(pool, projectId) {
       finalYearEquityIRR: x.FinalYearEquityIRR === null ? null : Number(x.FinalYearEquityIRR),
       createdById: x.CreatedById || null, createdByName: x.CreatedByName || null,
       updated: x.UpdatedAt.toISOString()
-    }))
+    })),
+    contracts: contracts
   };
 }
 

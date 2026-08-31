@@ -268,6 +268,43 @@ CREATE TABLE dbo.BudgetVersionSovLines (
 );
 CREATE INDEX IX_BudgetVersionSovLines_LineKey ON dbo.BudgetVersionSovLines (LineKey) WHERE LineKey IS NOT NULL;
 
+-- Contracts (sql/migrate_contracts.sql). Structured records generated from an
+-- APPROVED budget version's allocation. Amounts trace to the allocation and are
+-- never rewritten on their own — a changed approved version flags its contracts
+-- 'Requires Review'. No templates, documents, e-signature or change orders.
+CREATE TABLE dbo.Contracts (
+    ContractId          INT IDENTITY(1,1) NOT NULL,
+    BudgetId            VARCHAR(16)   NOT NULL,
+    ProjectKey          VARCHAR(16)   NOT NULL,
+    BudgetVersionId     BIGINT        NOT NULL,
+    ProjectEntityId     INT           NOT NULL,
+    ContractingEntityId INT           NOT NULL,
+    PerformingEntityId  INT           NOT NULL,
+    AllocationKey       VARCHAR(80)   NOT NULL,
+    OriginalAmount      DECIMAL(18,2) NOT NULL,
+    CurrentAmount       DECIMAL(18,2) NOT NULL,
+    ProfitAmount        DECIMAL(18,2) NULL,
+    Scope               NVARCHAR(1000) NOT NULL CONSTRAINT DF_Contracts_Scope  DEFAULT (N''),
+    EffectiveDate       DATE          NULL,
+    Status              NVARCHAR(30)  NOT NULL CONSTRAINT DF_Contracts_Status DEFAULT (N'Generated'),
+    ReviewNote          NVARCHAR(1000) NULL,
+    CreatedById         NVARCHAR(128) NULL,
+    CreatedByName       NVARCHAR(200) NULL,
+    CreatedAt           DATETIME2     NOT NULL CONSTRAINT DF_Contracts_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    UpdatedAt           DATETIME2     NOT NULL CONSTRAINT DF_Contracts_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+    IsDeleted           BIT           NOT NULL CONSTRAINT DF_Contracts_IsDeleted DEFAULT (0),
+    DeletedAt           DATETIME2     NULL,
+    CONSTRAINT PK_Contracts PRIMARY KEY (ContractId),
+    CONSTRAINT FK_Contracts_Budget    FOREIGN KEY (BudgetId)        REFERENCES dbo.Budgets (ProjectId),
+    CONSTRAINT FK_Contracts_Project   FOREIGN KEY (ProjectKey)      REFERENCES dbo.Projects (ProjectId),
+    CONSTRAINT FK_Contracts_Version   FOREIGN KEY (BudgetVersionId) REFERENCES dbo.BudgetVersions (Id),
+    CONSTRAINT FK_Contracts_ProjEnt   FOREIGN KEY (ProjectEntityId)     REFERENCES dbo.Entities (EntityId),
+    CONSTRAINT FK_Contracts_FromEnt   FOREIGN KEY (ContractingEntityId) REFERENCES dbo.Entities (EntityId),
+    CONSTRAINT FK_Contracts_ToEnt     FOREIGN KEY (PerformingEntityId)  REFERENCES dbo.Entities (EntityId)
+);
+CREATE INDEX IX_Contracts_Budget  ON dbo.Contracts (BudgetId)   WHERE IsDeleted = 0;
+CREATE INDEX IX_Contracts_Project ON dbo.Contracts (ProjectKey) WHERE IsDeleted = 0;
+
 -- ============================================================================
 -- Investment analyses — a separate underwriting aggregate. Never writes into
 -- SovLines and never changes what the budget tables mean; an analysis links to
