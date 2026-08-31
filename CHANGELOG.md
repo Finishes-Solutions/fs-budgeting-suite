@@ -53,6 +53,24 @@ each — nothing breaks before they run):
   bank-budget uplift and per-entity allocation model that carries from a
   template into its budgets. Existing budgets are unaffected — with no rules a
   budget behaves exactly as before.
+- **Financials step** in the budget workflow (Inputs · Budget · CSI Schedule ·
+  **Financials**), inside the existing budget experience — no new top-level tab.
+  It shows, all derived from the one budget and updating as it changes:
+  - **Bank / Lender Budget** — internal vs bank per category with the dollar and
+    percentage difference, defaulting to a 110% lender target and reconciling to
+    the cent (internal + uplift = bank).
+  - **Profit Allocation by Company** — cost basis, contract value, profit, and
+    both **Markup** (profit ÷ cost) and **Margin** (profit ÷ revenue) so the
+    basis is never ambiguous.
+  - **Profit Waterfall** — total project value through consolidated Finishes
+    profit, viewable in dollars or percentages.
+  - **Intercompany Reconciliation** — entity revenue vs consolidated Finishes
+    revenue, with intercompany transfers eliminated so money moving between
+    Finishes companies is never double-counted.
+- **Executive Financial Summary** on the Budget page: internal cost, bank budget
+  and uplift, the Project Entity → Finishes Solutions contract, each company's
+  allocation, total Finishes profit, consolidated margin and reconciliation
+  status — no manual math.
 
 Existing budgets, templates, projects and every stored total are unchanged.
 

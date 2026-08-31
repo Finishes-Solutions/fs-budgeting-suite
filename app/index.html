@@ -72,6 +72,7 @@ try{
 <script src="dashboard.js"></script>
 <script src="home.js"></script>
 <script src="projects.js"></script>
+<script src="budget-financials.js"></script>
 <script src="feedback.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
@@ -717,6 +718,41 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .pj-form-msg{font-size:12px;color:var(--ink-500)}
 .pj-form-err{color:var(--danger)}
 @media(max-width:640px){.pj-form{grid-template-columns:1fr}}
+/* ---- Financials (bank / splits / waterfall / intercompany) ---- */
+.fin-hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.fin-hd h2{margin:0;font-size:16px}
+.fin-hd .eyebrow{font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500)}
+.fin-scroll{overflow-x:auto}
+.fin-tbl{width:100%;min-width:520px}
+.fin-tbl td,.fin-tbl th{padding:6px 10px}
+.fin-tbl tr.fin-total td{border-top:2px solid var(--ink-200);font-weight:600}
+.fin-note{margin-top:8px;font-size:12px;color:var(--ink-500)}
+.fin-empty{padding:18px;color:var(--ink-400);font-size:13px}
+.fin-two{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+@media(max-width:760px){.fin-two{grid-template-columns:1fr}}
+.fin-recon{display:flex;gap:22px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--ink-150)}
+.fin-recon .k{font-family:var(--fm);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-500);display:block}
+.fin-recon .v{font-family:var(--fm);font-size:16px;font-weight:600;color:var(--ink-950)}
+.fin-layer{background:var(--green-50);border:1px solid var(--green-200);color:var(--green-800);
+  border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:14px}
+.fin-toggle{margin-left:auto;display:inline-flex;border:1px solid var(--ink-200);border-radius:6px;overflow:hidden}
+.fin-toggle button{border:0;background:var(--white);padding:3px 12px;font:inherit;font-size:12px;cursor:pointer;color:var(--ink-600)}
+.fin-toggle button.on{background:var(--ink-900);color:var(--white)}
+.wf-svg{width:100%;min-width:680px;height:auto;font-family:var(--fm)}
+.wf-svg .wf-lab{font-size:11px;fill:var(--ink-700)}
+.wf-svg .wf-val{font-size:11px;fill:var(--ink-600)}
+.wf-svg rect.wf-total{fill:var(--ink-700)}
+.wf-svg rect.wf-pos{fill:var(--green-500)}
+.wf-svg rect.wf-neg{fill:var(--ink-300)}
+/* ---- Executive summary ---- */
+.exec-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 24px}
+@media(max-width:640px){.exec-grid{grid-template-columns:1fr}}
+.exec-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--ink-100);font-size:13px}
+.exec-row .k{color:var(--ink-600)}
+.exec-row .v{font-family:var(--fm);color:var(--ink-950);text-align:right}
+.exec-row.exec-strong .k{font-weight:600;color:var(--ink-900)}
+.exec-row.exec-strong .v{font-weight:600}
+.exec-sub{color:var(--ink-400);font-size:11px;margin-left:6px}
 .pj-card-menu{position:absolute;top:9px;right:37px;z-index:1}
 /* The activity log's Details column carries a sentence, not a token, so it
    wraps and takes the slack rather than forcing the table wider than the page. */
@@ -1407,6 +1443,12 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
   </section>
 
+  <section class="card" id="sec-exec">
+    <div class="card-hd"><h2>Executive Financial Summary</h2>
+      <span class="eyebrow">Internal cost through consolidated Finishes profit — no manual math</span></div>
+    <div class="card-bd"><div id="execBody"></div></div>
+  </section>
+
   <section class="card" id="sec-guardrails">
     <div class="card-hd"><h2>Guard Rails</h2>
       <span class="eyebrow" id="grHeadline">Every ratio this budget is judged on</span></div>
@@ -1456,6 +1498,27 @@ th.sortable.sorted{color:var(--ink-900)}
       </table>
     </div>
   </section>
+</div>
+
+<!-- ================= FINANCIALS =================
+     Derived views over the internal budget: bank/lender budget, profit
+     allocations, waterfall and intercompany reconciliation. All sections are
+     filled by app/budget-financials.js — index.html only carries the shells. -->
+<div class="page" id="page-financials">
+  <div class="page-title">
+    <div><button class="btn-back" id="backFinancials" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Financials</h1>
+      <div class="sub" id="finSub">Bank budget, profit allocation and reconciliation — all derived from this budget.</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
+      <span id="fStatusHost"></span>
+      <button class="btn btn-dark" onclick="openExport()">Export</button>
+    </div>
+  </div>
+  <div class="wf-steps no-print" data-wf-pills></div>
+  <div id="finBanner"></div>
+  <section class="card" id="sec-bank"><div class="card-bd"><div id="bankBody"></div></div></section>
+  <section class="card" id="sec-splits"><div class="card-bd"><div id="splitsBody"></div></div></section>
+  <section class="card" id="sec-waterfall"><div class="card-bd"><div id="waterfallBody"></div></div></section>
+  <section class="card" id="sec-interco"><div class="card-bd"><div id="intercoBody"></div></div></section>
 </div>
 
 <!-- ================= PRICING ================= -->
@@ -3926,6 +3989,16 @@ async function initAuth(){
     // has to let go of the numbers it is holding.
     dashboardInvalidate:()=>{if(window.FSDashboard&&FSDashboard.invalidate)FSDashboard.invalidate();}
   });
+  if(window.FSBudgetFinancials)FSBudgetFinancials.init({
+    esc:esc, usd:usd, usd2:usd2, num:num,
+    // The module renders only — it reads the live doc and the same parts()/
+    // csiSchedule() the rest of the page uses, so its views cannot drift.
+    doc:()=>doc, parts:parts, csiSchedule:csiSchedule, grossIncome:grossIncome,
+    api:api,
+    // Template mode authors finance rules rather than showing derived views;
+    // wired in Phase 5.
+    isTemplateEdit:()=>!!templateEdit
+  });
   if(window.FSHome)FSHome.init({
     esc:esc, usd:usd, fmtDay:fmtDay,
     api:api, toast:toast,
@@ -4507,15 +4580,15 @@ function editReason(it){
 /* ============ NAV + HASH ROUTING ============
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
-const PAGE_SLUG={home:'home',projects:'projects',project:'project',budgets:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+const PAGE_SLUG={home:'home',projects:'projects',project:'project',budgets:'budgets',input:'inputs',budget:'budget',csi:'csi',financials:'financials',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
 /* Human names for the pages, for anything a person reads: today the subject
    line of a feedback email, which is more use as "Project Budgets" than as
    "budgets". */
 const PAGE_LABEL={home:'Home',projects:'Projects',project:'Project Detail',budgets:'Project Budgets',input:'Budget Inputs',budget:'Budget Detail',
-  csi:'CSI Schedule',analyses:'Investment Analysis',analysis:'Investment Analysis Editor',
+  csi:'CSI Schedule',financials:'Financials',analyses:'Investment Analysis',analysis:'Investment Analysis Editor',
   pricing:'Pricing Library',help:'How to Use',dashboard:'Analytics',admin:'Admin',version:'Version'};
-const SLUG_PAGE={home:'home',projects:'projects',project:'project',budgets:'budgets',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
-const DOC_PAGES=['input','budget','csi'];
+const SLUG_PAGE={home:'home',projects:'projects',project:'project',budgets:'budgets',inputs:'input',budget:'budget',csi:'csi',financials:'financials',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+const DOC_PAGES=['input','budget','csi','financials'];
 
 function hashFor(p){
   const s=PAGE_SLUG[p]||'home';
@@ -4549,7 +4622,7 @@ function go(p){
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
   // Nested pages light their parent tab: the whole budget workflow keeps
   // Budgets lit, and the analysis editor keeps Investment Analysis lit.
-  var NAV_PARENT={analysis:'analyses',input:'budgets',budget:'budgets',csi:'budgets',project:'projects'};
+  var NAV_PARENT={analysis:'analyses',input:'budgets',budget:'budgets',csi:'budgets',financials:'budgets',project:'projects'};
   const nb=document.getElementById('nav-'+(NAV_PARENT[p]||p));
   if(nb)nb.classList.add('on');
   var MORE_PAGES=['help','dashboard','admin','version','pricing'];
@@ -4565,7 +4638,7 @@ function go(p){
   if(p==='dashboard'&&window.FSDashboard)FSDashboard.render();
   if(p==='admin')refreshAdmin();
   if(p==='version')renderVersionPage();
-  if(p==='budget'||p==='input'||p==='csi')recalc();
+  if(p==='budget'||p==='input'||p==='csi'||p==='financials')recalc();
   window.scrollTo(0,0);
 }
 
@@ -4706,7 +4779,7 @@ async function renderBudgetsPage(){
 /* The budget workflow pills — the same .wf-steps component the analysis steps
    use. Each pill is a real route, so the current page is both marked `on` and
    given aria-current for assistive tech. */
-const WORKFLOW_STEPS=[{page:'input',label:'Inputs'},{page:'budget',label:'Budget'},{page:'csi',label:'CSI Schedule'}];
+const WORKFLOW_STEPS=[{page:'input',label:'Inputs'},{page:'budget',label:'Budget'},{page:'csi',label:'CSI Schedule'},{page:'financials',label:'Financials'}];
 function workflowPillsHTML(active){
   return WORKFLOW_STEPS.map((s,i)=>
     `<a href="${hashFor(s.page)}" class="${s.page===active?'on':''}"
@@ -6328,7 +6401,9 @@ function recalc(){
   if(!doc)return;
   pullForms();
   withFocus(()=>{renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();renderSiteMetrics();
-    if(currentPage==='csi')renderCsi();});
+    if(window.FSBudgetFinancials)FSBudgetFinancials.renderExec();
+    if(currentPage==='csi')renderCsi();
+    if(currentPage==='financials'&&window.FSBudgetFinancials)FSBudgetFinancials.render();});
 }
 
 /* ============ SAVE ============ */
