@@ -480,9 +480,10 @@ custom provider for sign-in.
   change without its mock change will pass locally and lie.
 - Pure logic (canonical JSON, hashing, SOV projection, calculations) goes in
   `test/*.test.js` under `node:test` — no browser required.
-- New features come with tests in the same commit. Twenty-one suites exist
-  (`suite-01` … `suite-21`; 11–14 are the investment-analysis suites, 20 is guard
-  rails, 21 is Projects); extend the closest one rather than starting a
+- New features come with tests in the same commit. The Playwright suites run
+  `suite-01` … `suite-23` (11–14 are the investment-analysis suites, 20 is guard
+  rails, 21 is Projects, 22 is the identifier-model acceptance suite, 23 is the
+  Financials step + budget approval + contracts); extend the closest one rather than starting a
   twenty-second for a small feature.
 - **Playwright's bundled browser build can outrun the one installed.** If a
   suite aborts with "Executable doesn't exist at …chromium_headless_shell-<n>",

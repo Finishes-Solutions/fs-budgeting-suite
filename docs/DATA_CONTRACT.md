@@ -311,3 +311,72 @@ and it is visible on the editor, in the list, and in every export.
 byte-identical; only the provenance of one input is new. A saved analysis is
 still never silently recalculated: the budget's current version number is
 reported so the client can *offer* a re-sync, and the user chooses.
+
+---
+
+## The derived allocation model (Budgeting Suite Expansion)
+
+The bank/lender budget, the per-company profit split, the profit waterfall,
+intercompany reconciliation and the contract amounts are **all derived from one
+budget** by one module — `app/budget-finance.js`, byte-identical to
+`api/shared/budget-finance.js` (the guardrails pattern; `test/budget-finance.test.js`
+fails the build on drift). It is pure: it takes the numbers `parts()` and
+`csiSchedule()` already produced and **never recomputes them**. There is no
+second set of financial numbers that can drift from the budget — every figure
+traces back to `parts()`.
+
+**`doc.finance` is inherited, not injected.** A budget carries a `finance` block
+(bank uplift + entity allocations) that it inherited from its template at
+creation, exactly as it inherits lines and expenses. `migrate()` normalizes the
+block only when it is present and **never adds it to an old document**, so an
+untouched budget's next save stays a no-op hash. A budget with no `finance`
+falls back to `FSBudgetFinance.DEFAULT_FINANCE` (a 110% lender budget on
+contingency, one Finishes Solutions split) — which is exactly today's behaviour.
+
+**`doc.companies[]` stays authoritative for contract-sum profit.** `parts()`
+(`profit = Σ hard·pct/100`) and the CSI Division-99 markups are unchanged; every
+stored `ContractSum`/`ProjectCost` is identical. The allocation engine only
+*maps* the money `parts()` produced onto Entity Master entities. A
+`companies[i]` row names its entity by `entityKey`, or, absent one, is matched
+by name (so the seeded "Finishes Solutions LLC" lifts onto `finishes-solutions`).
+
+**Markup vs margin is never ambiguous.** Each allocation row carries both
+`markupPct` (profit ÷ cost) and `marginPct` (profit ÷ revenue); the UI shows
+both and labels which the template treats as the headline. A zero cost basis
+yields `null`, never `NaN`.
+
+**Entities are a real record, never free text.** `dbo.Entities` (the Entity
+Master) holds legal entities and the six Finishes operating companies. A project
+references one via `Projects.EntityId`, inherited by its budgets and contracts.
+Master data deactivates (`IsActive`), never deletes.
+
+## Approval and contracts
+
+**Approval is an explicit pin, not a status.** `Budgets.ApprovedVersionId`
+points at one immutable `BudgetVersions` row — the allocation contracts are cut
+from. It is distinct from `Status` (a mutable pill whose status-only PUT records
+no version). Only a director/super_admin sets it (`PUT ?scope=approve`).
+
+**A contract's money traces to a budget version and never moves on its own.** A
+contract (`dbo.Contracts`) is generated from an *approved* version's allocation:
+Project Entity → Finishes Solutions, then Finishes Solutions → each participating
+Finishes company, and the Project Entity → the fee entities. `AllocationKey`
+(`<entityKey>:<stream>`) ties it back to the allocation; `OriginalAmount` never
+changes. Editing the working budget does nothing to a contract. When a *newly
+approved* version's allocation differs, the contract is flagged **Requires
+Review** with the variance — never silently rewritten — and a person accepts the
+new amount or voids it. Reconciliation (`Reconciled` / `Overallocated` /
+`Underallocated` / `Missing Contract` / `Missing Allocation` /
+`Contract–Budget Variance`) is computed, not stored.
+
+**Consolidation eliminates intercompany transfers.** External revenue is what
+the Project Entity pays out of the Finishes group; intercompany revenue is what
+one Finishes company pays another. Consolidated external revenue =
+Σ entity revenue − Σ eliminations, so money moving between related companies is
+never double-counted (Project Entity pays FS $10M, FS subcontracts $7M ⇒ $10M
+consolidated, not $17M).
+
+**Deliberately NOT built** (out of scope): contract-document templates,
+generated PDFs, merge fields, e-signature, amendments, change orders, and a
+version-compare screen. The new financial views are not yet added to the PDF/
+Excel exports — a follow-up.

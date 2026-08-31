@@ -693,3 +693,51 @@ update selectors alongside label changes.
 - Match the surrounding code: no build step, no framework, inline handlers, terse
   helpers. Comments explain *why*, not what.
 - Test on the staging URL before opening the release PR.
+
+---
+
+## Budgeting Suite Expansion — orientation
+
+The Project → Project Entity → Budget → Approved Budget → Bank/Allocation Views
+→ Contracts → Reconciliation workflow. Full contract in
+`docs/DATA_CONTRACT.md` (§"The derived allocation model", §"Approval and
+contracts"); user-facing summary in `CHANGELOG.md` (Unreleased).
+
+Where things live:
+
+- **The one derived model:** `app/budget-finance.js` ↔
+  `api/shared/budget-finance.js` — a byte-identical UMD pair
+  (`test/budget-finance.test.js` enforces it), the single source for bank
+  budget, profit splits, waterfall, intercompany consolidation, the contract
+  plan and reconciliation. Pure; consumes `parts()`/`csiSchedule()`, never
+  recomputes them.
+- **Budget-side views (UI):** `app/budget-financials.js`
+  (`window.FSBudgetFinancials`) — the Financials workflow step and the Executive
+  Summary card. index.html carries only shells + wiring. In template mode it
+  renders the finance-rules form; the Guard Rails card becomes a policy editor
+  (`doc.guardrails`, the hook `policyFor()` already reads).
+- **Entities / approval / contracts (server):** `api/shared/entities.js`,
+  `api/shared/contracts.js`. All new server surface is **query scopes on
+  endpoints that already deploy** (a new `api/<name>/` folder is unreliable):
+  `GET /api/budgets?scope=entities`, `PUT /api/user-settings?scope=entities`,
+  `PUT /api/budget/{id}?scope=approve|contracts|contract`,
+  `GET /api/budget/{id}?scope=contracts`, plus `entityId`/`confirmEntityChange`
+  on `PUT /api/budget/{id}?scope=project`. The in-function role check is the
+  only gate on each.
+- **Contracts/Project Entity (UI):** `app/projects.js` — the Project
+  Information card (first project-edit surface) and the Contracts card, below
+  Investment Analyses.
+
+Migrations (run in order; all probe-gated so a deploy tolerates their absence):
+`sql/migrate_entities.sql`, `sql/migrate_budget_approval.sql`,
+`sql/migrate_contracts.sql`. `api/shared/schema.js` gained `entitiesTable`,
+`projectsEntityId`, `budgetsApproved`, `contractsTable`.
+
+Invariants that bite:
+- `doc.companies[]` stays authoritative for `parts().profit`; the allocation
+  layer only maps streams onto entities. Never make `parts()` read `finance`.
+- `migrate()` normalizes `doc.finance` only when present — never inject it into
+  an old doc (keeps untouched saves no-op hashes).
+- Contracts are cut from the **approved** version and never rewritten by a
+  working-budget edit; a re-approval flags mismatches Requires Review.
+- New finance/contract views are not yet in the PDF/Excel exports — a follow-up.
