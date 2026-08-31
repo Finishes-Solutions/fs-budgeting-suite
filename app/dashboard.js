@@ -55,7 +55,8 @@ function eventLabel(ev){
     analysis_delete:'Analysis Delete',analysis_restore:'Analysis Restore',
     project_create:'Project Created',project_update:'Project Updated',
     project_status:'Project Status',project_convert:'Project Converted',
-    project_delete:'Project Deleted',
+    project_delete:'Project Deleted',project_entity:'Project Entity Changed',
+    entity_create:'Entity Added',entity_update:'Entity Updated',
     favorite_add:'Favorited',favorite_remove:'Unfavorited',
     export_pdf:'PDF Export',export_xlsx:'Excel Export',export_csv:'CSV Export',
     export_print:'Print',settings_update:'Settings Update',
@@ -123,6 +124,11 @@ function eventDetail(r){
     case 'project_delete':
       return (name?name+' — ':'')+d.budgetsDeleted+' budget'+(d.budgetsDeleted===1?'':'s')
         +' and '+d.analysesDeleted+' analys'+(d.analysesDeleted===1?'is':'es')+' with it';
+    case 'project_entity':
+      return (name?name+' — ':'')+'now '+(d.toLegalName||'no entity')
+        +(d.contractsFlagged?' · '+d.contractsFlagged+' contract'+(d.contractsFlagged===1?'':'s')+' flagged for review':'');
+    case 'entity_create': case 'entity_update':
+      return [d.name,d.legalName].filter(Boolean).join(' · ')+(d.isActive===false?' (inactive)':'');
     case 'analysis_save':
       if(name) bits.push(name);
       if(d.budgetId) bits.push('from '+d.budgetId);

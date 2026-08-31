@@ -80,6 +80,28 @@ const budgets = new Map();
    from a budget id. A budget says which project it belongs to by carrying
    projectKey, stamped when it is saved. */
 const projects = new Map();
+// Entity Master — seeded with the six Finishes companies, exactly as
+// sql/migrate_entities.sql does. In the mock the migration has always run.
+const entities = new Map();
+let nextEntityId = 1;
+[['finishes-solutions', 'Finishes Solutions LLC', 'Finishes Solutions'],
+ ['finishes-construction', 'Finishes Construction LLC', 'Finishes Construction'],
+ ['finishes-development', 'Finishes Development LLC', 'Finishes Development'],
+ ['finishes-marketing', 'Finishes Marketing LLC', 'Finishes Marketing'],
+ ['brokerage', 'Finishes Brokerage LLC', 'Brokerage'],
+ ['property-management', 'Finishes Property Management LLC', 'Property Management']
+].forEach(([key, legal, disp]) => {
+  const id = nextEntityId++;
+  entities.set(id, { entityId: id, entityKey: key, legalName: legal, displayName: disp,
+    entityType: 'LLC', address: '', isFinishesCompany: true, isActive: true });
+});
+function entityBySlug(name) {
+  const slug = String(name || '').toLowerCase()
+    .replace(/\bllc\b|\binc\b|\bltd\b|\bl\.l\.c\.?/g, ' ')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  for (const e of entities.values()) if (e.entityKey === slug) return e;
+  return null;
+}
 const PROJECT_STATUSES = ['Lead', 'Qualified', 'Budgeting', 'Proposal Sent', 'Awarded',
                           'Converted to Project', 'On Hold', 'Lost'];
 const CONVERTED = 'Converted to Project';
@@ -145,10 +167,15 @@ function shapeProject(p) {
     budgetCount: bs.length, analysisCount: projectAnalyses(p.projectId).length,
     liveContractSum: primary ? +primary.meta.contractSum || 0 : 0,
     liveProjectCost: primary ? +primary.meta.projectCost || 0 : 0,
-    breachCount: bs.filter(b => b.guardrailStatus === 'breach').length
+    breachCount: bs.filter(b => b.guardrailStatus === 'breach').length,
+    entity: p.entityId ? (function () {
+      const e = entities.get(p.entityId);
+      return e ? { entityId: e.entityId, entityKey: e.entityKey, legalName: e.legalName, displayName: e.displayName } : null;
+    })() : null
   });
   delete out.type;
   delete out.deleted;
+  delete out.entityId;
   return out;
 }
 /* The activity diff, mirroring api/user-settings/index.js. Names are looked up
@@ -157,6 +184,7 @@ function entityName(kind, id) {
   if (kind === 'budget') { const b = budgets.get(String(id).toUpperCase()); return b ? (b.meta.name || null) : null; }
   if (kind === 'project') { const p = projects.get(String(id).toUpperCase()); return p ? (p.name || null) : null; }
   if (kind === 'analysis') { const a = invAnalyses.get(String(id).toLowerCase()); return a ? (a.name || null) : null; }
+  if (kind === 'entity') { const e = entities.get(Number(id)); return e ? (e.displayName || null) : null; }
   return null;
 }
 function act(eventType, entityType, entityId, detail, userId) {
@@ -563,6 +591,40 @@ http.createServer((req, res) => {
       }
       return json(res, 405, { error: 'method_not_allowed' });
     }
+    if (scope === 'entities') {
+      const isAdmin = principal.clientPrincipal.userRoles.includes('super_admin')
+        || principal.clientPrincipal.userRoles.includes('pricing_admin');
+      if (!isAdmin) return json(res, 403, { error: 'forbidden', message: 'Requires super_admin or pricing_admin.' });
+      if (req.method !== 'PUT' && req.method !== 'POST') return json(res, 405, { error: 'method_not_allowed' });
+      let rb = ''; req.on('data', c => rb += c);
+      return req.on('end', () => {
+        const body = rb ? JSON.parse(rb) : {};
+        const legalName = String(body.legalName == null ? '' : body.legalName).trim();
+        const displayName = String(body.displayName == null ? '' : body.displayName).trim() || legalName;
+        if (!legalName) return json(res, 400, { error: 'bad_request', field: 'legalName', message: 'Legal Name is required.' });
+        const entityType = String(body.entityType || 'LLC').trim().slice(0, 50) || 'LLC';
+        const address = String(body.address || '').trim().slice(0, 300);
+        const isActive = body.isActive === undefined ? true : !!body.isActive;
+        if (body.entityId !== undefined && body.entityId !== null && body.entityId !== '') {
+          const eid = Number(body.entityId);
+          const cur = entities.get(eid);
+          if (!cur) return json(res, 404, { error: 'not_found', message: 'Entity not found.' });
+          if (cur.isFinishesCompany && !isActive)
+            return json(res, 400, { error: 'protected_entity', message: 'A Finishes company cannot be deactivated — it participates in contracts.' });
+          Object.assign(cur, { legalName, displayName, entityType, address, isActive });
+          act('entity_update', 'entity', String(eid), { name: displayName, legalName, isActive });
+          return json(res, 200, { ok: true, created: false, entity: { ...cur } });
+        }
+        let base = displayName.toLowerCase().replace(/\bllc\b/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'entity';
+        let key = base, n = 2;
+        while (entityBySlug(key) || [...entities.values()].some(e => e.entityKey === key)) { key = base + '-' + n; n++; }
+        const id = nextEntityId++;
+        const ent = { entityId: id, entityKey: key, legalName, displayName, entityType, address, isFinishesCompany: false, isActive };
+        entities.set(id, ent);
+        act('entity_create', 'entity', String(id), { name: displayName, legalName, isActive });
+        return json(res, 201, { ok: true, created: true, entity: { ...ent } });
+      });
+    }
     if (scope === 'feedback') {
       const isAdmin = principal.clientPrincipal.userRoles.includes('super_admin');
       if (req.method === 'POST') {
@@ -689,6 +751,13 @@ http.createServer((req, res) => {
     // `available` is always true; the not-migrated shape is covered by
     // test/schema-probe.test.js against the real probe instead.
     const scope = String(q.get('scope') || '');
+    if (scope === 'entities') {
+      const includeInactive = String(q.get('all') || '') === '1';
+      return json(res, 200, { available: true,
+        entities: [...entities.values()].filter(e => includeInactive || e.isActive)
+          .sort((a, z) => (z.isFinishesCompany - a.isFinishesCompany) || a.displayName.localeCompare(z.displayName))
+          .map(e => ({ ...e })) });
+    }
     if (scope === 'next-project-id') return json(res, 200, { projectId: nextProjectId() });
     if (scope === 'projects') {
       return json(res, 200, { available: true, statuses: PROJECT_STATUSES,
@@ -812,12 +881,49 @@ http.createServer((req, res) => {
             message: 'The primary budget must be a live budget on this project.' });
           body.primaryBudgetId = bid;
         }
+        // Project Entity — validated against the master; changing it under live
+        // contracts or approved budgets needs confirmEntityChange, then flags
+        // those contracts for review. Behaviour-parallel with updateProject.
+        let entityChange = null;
+        if (body.entityId !== undefined) {
+          const newEntityId = (body.entityId === null || body.entityId === '') ? null : Number(body.entityId);
+          if (newEntityId !== null) {
+            const ent = entities.get(newEntityId);
+            if (!ent) return json(res, 400, { error: 'bad_request', field: 'entityId', message: 'Entity not found.' });
+            if (!ent.isActive) return json(res, 400, { error: 'bad_request', field: 'entityId', message: 'That entity is inactive.' });
+          }
+          const oldEntityId = pr.entityId == null ? null : Number(pr.entityId);
+          if (newEntityId !== oldEntityId) {
+            const liveContracts = (typeof contracts !== 'undefined')
+              ? [...contracts.values()].filter(c => !c.deleted && c.projectKey === id && c.status !== 'Void') : [];
+            const approvedBudgets = projectBudgets(id).filter(b => b.approvedVersionId != null);
+            if ((liveContracts.length > 0 || approvedBudgets.length > 0) && body.confirmEntityChange !== true) {
+              return json(res, 409, { error: 'entity_change_requires_confirmation',
+                message: 'This project has contracts or approved budgets tied to its current entity. Confirm to proceed.',
+                contracts: liveContracts.length, approvedBudgets: approvedBudgets.length,
+                from: oldEntityId, to: newEntityId });
+            }
+            entityChange = { from: oldEntityId, to: newEntityId, contractsFlagged: 0 };
+          }
+        }
         const converting = body.status === CONVERTED && pr.status !== CONVERTED;
         const wasStatus = pr.status, wasPrimary = pr.primaryBudgetId;
         // `type` is deliberately not accepted: a project has no type.
         ['name', 'address', 'notes', 'primaryBudgetId', 'status'].forEach(k => {
           if (body[k] !== undefined) pr[k] = body[k];
         });
+        if (entityChange) {
+          pr.entityId = entityChange.to;
+          if (typeof contracts !== 'undefined') {
+            [...contracts.values()].filter(c => !c.deleted && c.projectKey === id
+              && c.status !== 'Void' && c.status !== 'Superseded').forEach(c => {
+              c.status = 'Requires Review'; c.reviewNote = 'Project Entity changed'; entityChange.contractsFlagged++;
+            });
+          }
+          const ent = entityChange.to != null ? entities.get(entityChange.to) : null;
+          act('project_entity', 'project', id, { name: pr.name || null, from: entityChange.from,
+            to: entityChange.to, toLegalName: ent ? ent.legalName : null, contractsFlagged: entityChange.contractsFlagged });
+        }
         if (body.primaryBudgetId !== undefined && body.primaryBudgetId !== wasPrimary)
           act('budget_primary', 'project', id, { name: pr.name || null, from: wasPrimary || null, to: pr.primaryBudgetId });
         if (converting) act('project_convert', 'project', id, { name: pr.name || null,
@@ -834,7 +940,9 @@ http.createServer((req, res) => {
           pr.projectAmount = shaped.liveProjectCost;
         }
         pr.updated = new Date().toISOString();
-        return json(res, 200, { ok: true, converted: converting, project: shapeProject(pr) });
+        return json(res, 200, { ok: true, converted: converting,
+          entityChanged: !!entityChange, contractsFlagged: entityChange ? entityChange.contractsFlagged : 0,
+          project: shapeProject(pr) });
       });
     }
 

@@ -22,6 +22,42 @@ House rules for writing one:
 
 ---
 
+## Unreleased — Budgeting Suite Expansion
+
+Adds the derived allocation model — one traceable source of truth from which the
+bank/lender budget, per-company profit splits, the profit waterfall,
+intercompany reconciliation and contracts are all derived — plus a structured
+Entity Master and a Project Entity on every project. Delivered in phases; this
+block grows as each ships.
+
+### Migration required
+
+Run in this order, any time (the app tolerates their absence and probes for
+each — nothing breaks before they run):
+
+1. `sql/migrate_entities.sql` — the Entity Master (`dbo.Entities`, seeded with
+   the six Finishes companies) and `Projects.EntityId`.
+
+### Added
+
+- **Entity Master** (Admin → Entity Master, super_admin / pricing_admin): legal
+  entities and the six Finishes operating companies (Finishes Solutions,
+  Construction, Development, Marketing, Brokerage, Property Management), chosen
+  from a real record instead of typed differently on each project.
+- **Project Entity** on every project, set from a new **Project Information**
+  card on the project page (the first place a project's name, address and notes
+  can be edited after creation). Changing the entity when contracts or approved
+  budgets already exist asks for confirmation and flags those contracts for
+  review — it never rewrites them silently.
+- **Finance rules on budgets and templates** (`doc.finance`): a configurable
+  bank-budget uplift and per-entity allocation model that carries from a
+  template into its budgets. Existing budgets are unaffected — with no rules a
+  budget behaves exactly as before.
+
+Existing budgets, templates, projects and every stored total are unchanged.
+
+---
+
 ## 2026-08-24 — The identifier model
 
 A project is a number; prefixes are labels; children carry the number

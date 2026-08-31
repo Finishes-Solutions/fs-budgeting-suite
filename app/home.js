@@ -212,7 +212,8 @@ var EVENT_LABEL = {
   analysis_delete: 'Deleted analysis', analysis_restore: 'Restored analysis',
   project_create: 'Created project', project_update: 'Updated project',
   project_status: 'Changed project status', project_convert: 'Converted project',
-  project_delete: 'Deleted project',
+  project_delete: 'Deleted project', project_entity: 'Changed project entity',
+  entity_create: 'Added entity', entity_update: 'Updated entity',
   favorite_add: 'Favorited', favorite_remove: 'Unfavorited',
   export_pdf: 'Exported PDF', export_xlsx: 'Exported Excel', export_csv: 'Exported CSV',
   export_print: 'Printed', settings_update: 'Updated settings',
@@ -252,6 +253,11 @@ function eventDetail(e) {
     case 'project_update': case 'profile_update':
       return (name ? name + ' — ' : '')
         + (Array.isArray(d.fields) ? d.fields.map(fieldPhrase).join('; ') : '');
+    case 'project_entity':
+      return (name ? name + ' — ' : '') + 'now ' + (d.toLegalName || 'no entity')
+        + (d.contractsFlagged ? ' (' + d.contractsFlagged + ' contract' + (d.contractsFlagged === 1 ? '' : 's') + ' to review)' : '');
+    case 'entity_create': case 'entity_update':
+      return [d.name, d.legalName].filter(Boolean).join(' · ') + (d.isActive === false ? ' (inactive)' : '');
     case 'settings_update':
       return Array.isArray(d.changed) ? d.changed.map(function (c) {
         return typeof c === 'string' ? c.replace(/([a-z])([A-Z])/g, '$1 $2') : fieldPhrase(c);

@@ -31,7 +31,8 @@
 // the user to any signed-in browser. The client keeps a localStorage cache
 // purely so the theme applies before the first network round trip.
 const { getPool, sql } = require('../shared/db');
-const { getPrincipal, isSuperAdmin } = require('../shared/auth');
+const { getPrincipal, isSuperAdmin, hasRole } = require('../shared/auth');
+const { upsertEntity } = require('../shared/entities');
 const U = require('../shared/users');
 const { features } = require('../shared/schema');
 const FB = require('../shared/feedback');
@@ -129,6 +130,40 @@ module.exports = async function (context, req) {
     // nothing. Name the failure so the next report is actionable.
     context.res = jsonRes(500, { error: 'role_update_failed',
       message: 'Role management failed: ' + (e && e.message ? e.message : String(e)) });
+    return;
+   }
+  }
+
+  // ---- Entity Master writes (super_admin, or SWA pricing_admin — the same
+  // "who administers master data" answer as templates). The SWA route rule
+  // cannot see ?scope=, so this in-function check is the real gate.
+  if (String((req.query && req.query.scope) || '') === 'entities') {
+   try {
+    if (!isSuperAdmin(req) && !hasRole(req, 'pricing_admin')) {
+      context.res = jsonRes(403, { error: 'forbidden', message: 'Requires super_admin or pricing_admin.' });
+      return;
+    }
+    if (req.method !== 'PUT' && req.method !== 'POST') {
+      context.res = jsonRes(405, { error: 'method_not_allowed' });
+      return;
+    }
+    let b = req.body || {};
+    if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } }
+    const res = await upsertEntity(pool, b, principal);
+    // recordActivity is best-effort; a failed log must not fail the save.
+    try {
+      const parsed = JSON.parse(res.body);
+      if (parsed && parsed.entity) {
+        await U.recordActivity(pool, principal, parsed.created ? 'entity_create' : 'entity_update',
+          'entity', String(parsed.entity.entityId),
+          { name: parsed.entity.displayName, legalName: parsed.entity.legalName, isActive: parsed.entity.isActive });
+      }
+    } catch (e) { /* logging is best-effort */ }
+    context.res = res;
+    return;
+   } catch (e) {
+    context.res = jsonRes(500, { error: 'entity_update_failed',
+      message: 'Entity update failed: ' + (e && e.message ? e.message : String(e)) });
     return;
    }
   }

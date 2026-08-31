@@ -349,6 +349,11 @@ function shapeProject(x) {
     liveProjectCost: x.LiveProjectCost === null || x.LiveProjectCost === undefined ? 0 : Number(x.LiveProjectCost),
     budgetCount: x.BudgetCount || 0, analysisCount: x.AnalysisCount || 0,
     breachCount: x.BreachCount === null || x.BreachCount === undefined ? null : Number(x.BreachCount),
+    // The project's legal entity, inherited by its budgets and contracts.
+    // Absent (null) pre-migration or when unset. Never a repeated free-text
+    // field — always a reference to an Entity Master row.
+    entity: x.EntityId ? { entityId: Number(x.EntityId), entityKey: x.EntityKey || null,
+      legalName: x.EntityLegalName || null, displayName: x.EntityDisplayName || null } : null,
     createdById: x.CreatedById || null, createdByName: x.CreatedByName || null,
     createdAt: x.CreatedAt ? x.CreatedAt.toISOString() : null,
     updated: x.UpdatedAt ? x.UpdatedAt.toISOString() : null
@@ -366,10 +371,17 @@ async function getProject(pool, projectId) {
     : "CAST(NULL AS VARCHAR(10)) AS GuardrailStatus, CAST(NULL AS INT) AS GuardrailBreachCount";
   const ownerCols = f.budgetsCreatedBy ? 'b.CreatedById, b.CreatedByName'
     : 'CAST(NULL AS NVARCHAR(128)) AS CreatedById, CAST(NULL AS NVARCHAR(200)) AS CreatedByName';
+  // Entity columns only when the Entity Master migration has run — naming
+  // p.EntityId before its column exists would fail the whole request.
+  const entityCols = f.projectsEntityId
+    ? 'e.EntityKey, e.LegalName AS EntityLegalName, e.DisplayName AS EntityDisplayName'
+    : 'CAST(NULL AS INT) AS EntityId, CAST(NULL AS VARCHAR(64)) AS EntityKey, ' +
+      'CAST(NULL AS NVARCHAR(300)) AS EntityLegalName, CAST(NULL AS NVARCHAR(200)) AS EntityDisplayName';
+  const entityJoin = f.projectsEntityId ? 'LEFT JOIN dbo.Entities AS e ON e.EntityId = p.EntityId' : '';
 
   const [proj, budgets, analyses] = await Promise.all([
     pool.request().input('pid', sql.VarChar(16), key).query(
-      `SELECT p.*,
+      `SELECT p.*, ${entityCols},
               (SELECT COUNT(*) FROM dbo.Budgets AS b WHERE b.ProjectKey = p.ProjectId AND b.IsDeleted = 0) AS BudgetCount,
               (SELECT COUNT(*) FROM dbo.InvestmentAnalyses AS a WHERE a.ProjectKey = p.ProjectId AND a.IsDeleted = 0) AS AnalysisCount,
               (SELECT STRING_AGG(t.Type, ', ') WITHIN GROUP (ORDER BY t.Type)
@@ -378,7 +390,7 @@ async function getProject(pool, projectId) {
               CAST(NULL AS INT) AS BreachCount,
               CAST(NULL AS DECIMAL(18,2)) AS LiveContractSum,
               CAST(NULL AS DECIMAL(18,2)) AS LiveProjectCost
-       FROM dbo.Projects AS p WHERE p.ProjectId = @pid AND p.IsDeleted = 0`),
+       FROM dbo.Projects AS p ${entityJoin} WHERE p.ProjectId = @pid AND p.IsDeleted = 0`),
     pool.request().input('pid', sql.VarChar(16), key).query(
       `SELECT b.ProjectId, b.Name, b.Type, b.Status, b.ContractSum, b.ProjectCost, b.UpdatedAt,
               JSON_VALUE(b.Doc, '$.address') AS Address, ${ownerCols}, ${grCols}
@@ -458,6 +470,7 @@ async function updateProject(pool, projectId, body, principal) {
 
   const cur = await pool.request().input('pid', sql.VarChar(16), key)
     .query(`SELECT p.Status, p.PrimaryBudgetId, p.ConvertedAt, p.Name,
+                   ${f.projectsEntityId ? 'p.EntityId,' : 'CAST(NULL AS INT) AS EntityId,'}
                    (SELECT TOP 1 b.ContractSum FROM dbo.Budgets AS b
                      WHERE b.ProjectKey = p.ProjectId AND b.IsDeleted = 0
                        AND b.ProjectId = ISNULL(p.PrimaryBudgetId, b.ProjectId)
@@ -489,9 +502,54 @@ async function updateProject(pool, projectId, body, principal) {
     body.primaryBudgetId = bid;
   }
 
+  // ---- Project Entity ----------------------------------------------------
+  // Changing the entity after contracts or approved budgets exist is a real
+  // decision: the server refuses it without an explicit confirmEntityChange,
+  // answering 409 with the counts so the UI can warn, then flags the affected
+  // contracts for review and records an audit event. Only checked when the
+  // relevant migrations have run (contracts / approval are later phases).
+  let entityChange = null;
+  if (body.entityId !== undefined) {
+    if (!f.projectsEntityId) return jsonRes(503, { error: 'not_migrated',
+      message: 'Project Entity is not available until sql/migrate_entities.sql has run.' });
+    const newEntityId = (body.entityId === null || body.entityId === '') ? null : Number(body.entityId);
+    if (newEntityId !== null && !(Number.isInteger(newEntityId) && newEntityId > 0))
+      return jsonRes(400, { error: 'bad_request', field: 'entityId', message: 'Invalid entity.' });
+    if (newEntityId !== null) {
+      const ent = await pool.request().input('eid', sql.Int, newEntityId)
+        .query('SELECT EntityId, LegalName, IsActive FROM dbo.Entities WHERE EntityId = @eid');
+      if (!ent.recordset.length) return jsonRes(400, { error: 'bad_request', field: 'entityId', message: 'Entity not found.' });
+      if (!ent.recordset[0].IsActive) return jsonRes(400, { error: 'bad_request', field: 'entityId', message: 'That entity is inactive.' });
+    }
+    const oldEntityId = row.EntityId === null || row.EntityId === undefined ? null : Number(row.EntityId);
+    if (newEntityId !== oldEntityId) {
+      let contractCount = 0, approvedCount = 0;
+      if (f.contractsTable) {
+        const cc = await pool.request().input('pid', sql.VarChar(16), key)
+          .query(`SELECT COUNT(*) AS N FROM dbo.Contracts
+                  WHERE ProjectKey = @pid AND IsDeleted = 0 AND Status <> 'Void'`);
+        contractCount = Number(cc.recordset[0].N) || 0;
+      }
+      if (f.budgetsApproved) {
+        const ac = await pool.request().input('pid', sql.VarChar(16), key)
+          .query(`SELECT COUNT(*) AS N FROM dbo.Budgets
+                  WHERE ProjectKey = @pid AND IsDeleted = 0 AND ApprovedVersionId IS NOT NULL`);
+        approvedCount = Number(ac.recordset[0].N) || 0;
+      }
+      if ((contractCount > 0 || approvedCount > 0) && body.confirmEntityChange !== true) {
+        return jsonRes(409, { error: 'entity_change_requires_confirmation',
+          message: 'This project has contracts or approved budgets tied to its current entity. Confirm to proceed.',
+          contracts: contractCount, approvedBudgets: approvedCount,
+          from: oldEntityId, to: newEntityId });
+      }
+      entityChange = { from: oldEntityId, to: newEntityId, contractsFlagged: 0 };
+    }
+  }
+
   const converting = body.status === CONVERTED && row.Status !== CONVERTED;
   const sets = ['UpdatedAt = SYSUTCDATETIME()'];
   const rq = pool.request().input('pid', sql.VarChar(16), key);
+  if (entityChange) { rq.input('eid', sql.Int, entityChange.to); sets.push('EntityId = @eid'); }
 
   if (body.name !== undefined) { rq.input('name', sql.NVarChar(200), String(body.name).slice(0, 200)); sets.push('Name = @name'); }
   if (body.address !== undefined) { rq.input('addr', sql.NVarChar(300), String(body.address).slice(0, 300)); sets.push('Address = @addr'); }
@@ -532,7 +590,27 @@ async function updateProject(pool, projectId, body, principal) {
     await recordActivity(pool, principal, 'project_update', 'project', key,
       { name: pname, fields: meta.map(k => ({ key: k, to: String(body[k]).slice(0, 200) })) });
   }
-  return jsonRes(200, { ok: true, converted: converting, project: after.project });
+  if (entityChange) {
+    // A changed entity invalidates any contract cut against the old one — flag
+    // for review rather than silently rewriting. Never touches contract money.
+    if (f.contractsTable) {
+      const flag = await pool.request().input('pid', sql.VarChar(16), key)
+        .query(`UPDATE dbo.Contracts
+                  SET Status = 'Requires Review', ReviewNote = 'Project Entity changed', UpdatedAt = SYSUTCDATETIME()
+                WHERE ProjectKey = @pid AND IsDeleted = 0 AND Status NOT IN ('Void', 'Superseded');
+                SELECT @@ROWCOUNT AS N;`);
+      entityChange.contractsFlagged = Number((flag.recordset[0] || {}).N) || 0;
+    }
+    await recordActivity(pool, principal, 'project_entity', 'project', key, {
+      name: pname,
+      from: entityChange.from, to: entityChange.to,
+      toLegalName: after.project && after.project.entity ? after.project.entity.legalName : null,
+      contractsFlagged: entityChange.contractsFlagged
+    });
+  }
+  return jsonRes(200, { ok: true, converted: converting,
+    entityChanged: !!entityChange, contractsFlagged: entityChange ? entityChange.contractsFlagged : 0,
+    project: after.project });
 }
 
 module.exports = {

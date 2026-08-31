@@ -708,6 +708,15 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .pj-live{font-family:var(--fm);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-400)}
 .pj-go{font-family:var(--fm);font-size:11px;color:var(--ink-400);white-space:nowrap}
 .pj-tbl tr.pj-row:hover .pj-go{color:var(--green-700)}
+.pj-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+.pj-field{display:flex;flex-direction:column;gap:4px}
+.pj-field-wide{grid-column:1 / -1}
+.pj-field>span{font-family:var(--fm);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-500)}
+.pj-field input,.pj-field select,.pj-field textarea{padding:7px 9px;border:1px solid var(--ink-200);border-radius:6px;font:inherit;font-size:13px;background:var(--white);color:var(--ink-950)}
+.pj-form-actions{display:flex;align-items:center;gap:12px;margin-top:14px}
+.pj-form-msg{font-size:12px;color:var(--ink-500)}
+.pj-form-err{color:var(--danger)}
+@media(max-width:640px){.pj-form{grid-template-columns:1fr}}
 .pj-card-menu{position:absolute;top:9px;right:37px;z-index:1}
 /* The activity log's Details column carries a sentence, not a token, so it
    wraps and takes the slack rather than forcing the table wider than the page. */
@@ -2294,6 +2303,7 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
   <div class="fb-tabs" style="margin-bottom:14px">
     <button class="fb-tab on" id="adminTab-users" onclick="showAdminTab('users')">Users</button>
+    <button class="fb-tab" id="adminTab-entities" onclick="showAdminTab('entities')">Entity Master</button>
     <button class="fb-tab" id="adminTab-feedback" onclick="showAdminTab('feedback')">Feedback</button>
     <span class="fb-counts" id="fbCounts"></span>
   </div>
@@ -2301,6 +2311,14 @@ th.sortable.sorted{color:var(--ink-900)}
     <table class="tbl" id="adminTable"><thead><tr>
       <th style="padding-left:22px">User</th><th>Email</th><th>Role</th><th>Last Seen</th><th>Logins</th><th class="no-print"></th>
     </tr></thead><tbody id="adminBody"></tbody></table>
+  </div></section>
+  <section class="card" id="adminEntitiesPane" style="display:none"><div class="card-bd">
+    <div style="display:flex;justify-content:flex-end;padding:12px 22px 0">
+      <button class="btn primary" onclick="openEntityDialog()">+ Add Entity</button>
+    </div>
+    <table class="tbl" id="entTable"><thead><tr>
+      <th style="padding-left:22px">Legal Name</th><th>Display Name</th><th>Type</th><th>Address</th><th>Status</th><th class="no-print"></th>
+    </tr></thead><tbody id="entBody"></tbody></table>
   </div></section>
   <section class="card" id="adminFeedbackPane" style="display:none"><div class="card-bd">
     <div class="fb-tabs" style="padding:12px 22px 0">
@@ -2590,6 +2608,38 @@ th.sortable.sorted{color:var(--ink-900)}
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
         <button class="btn btn-ghost" onclick="closeNewProject()">Cancel</button>
         <button class="btn btn-dark" id="npCreate" onclick="submitNewProject()">Create Project</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ENTITY MASTER MODAL =================
+     Add or edit an Entity Master row. Legal entities and the Finishes operating
+     companies are chosen here rather than typed free-text on each project. -->
+<div id="entityModal" class="modal" onclick="if(event.target===this)closeDialog('entityModal')">
+  <div class="card mod-sheet" style="width:520px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column"
+    role="dialog" aria-modal="true" aria-labelledby="entityTitle">
+    <div class="card-hd"><h2 class="mod-title" id="entityTitle">Add Entity</h2>
+      <button class="btn-x" onclick="closeDialog('entityModal')" aria-label="Close entity editor">&times;</button></div>
+    <div class="card-bd" style="overflow:auto">
+      <div class="set-grid">
+        <label class="fld wide"><span class="lab">Legal Name</span>
+          <input type="text" id="entLegal" placeholder="Jones Road Holdings LLC"></label>
+        <label class="fld wide"><span class="lab">Display Name</span>
+          <input type="text" id="entDisplay" placeholder="Jones Road Holdings"></label>
+        <label class="fld"><span class="lab">Entity Type</span>
+          <input type="text" id="entType" placeholder="LLC" value="LLC"></label>
+        <label class="fld"><span class="lab">Status</span>
+          <select id="entActive"><option value="1">Active</option><option value="0">Inactive</option></select></label>
+        <label class="fld wide"><span class="lab">Address</span>
+          <input type="text" id="entAddress" placeholder="10514 Woodedge Dr"></label>
+      </div>
+      <p class="set-note" id="entFinNote" style="margin:12px 0 0;display:none">This is a Finishes operating
+        company. Its key and active status are fixed — it participates in contracts.</p>
+      <span class="fld-err" id="entErr" style="display:none"></span>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button class="btn btn-ghost" onclick="closeDialog('entityModal')">Cancel</button>
+        <button class="btn btn-dark" id="entSave" onclick="saveEntity()">Save Entity</button>
       </div>
     </div>
   </div>
@@ -3193,22 +3243,96 @@ async function changeAdminRole(sel){
    visit to the page. */
 let adminTab='users';
 function showAdminTab(t){
-  adminTab=(t==='feedback')?'feedback':'users';
-  const fb=adminTab==='feedback';
-  document.getElementById('adminUsersPane').style.display=fb?'none':'';
+  adminTab=(t==='feedback'||t==='entities')?t:'users';
+  const fb=adminTab==='feedback', en=adminTab==='entities';
+  document.getElementById('adminUsersPane').style.display=(fb||en)?'none':'';
+  document.getElementById('adminEntitiesPane').style.display=en?'':'none';
   document.getElementById('adminFeedbackPane').style.display=fb?'':'none';
-  document.getElementById('adminTab-users').classList.toggle('on',!fb);
+  document.getElementById('adminTab-users').classList.toggle('on',!fb&&!en);
+  document.getElementById('adminTab-entities').classList.toggle('on',en);
   document.getElementById('adminTab-feedback').classList.toggle('on',fb);
-  document.getElementById('adminHeading').textContent=fb?'Feedback':'User Management';
+  document.getElementById('adminHeading').textContent=fb?'Feedback':en?'Entity Master':'User Management';
   document.getElementById('adminSub').textContent=fb
     ?'Bug reports and feature requests sent from the app, newest first.'
+    :en?'Legal entities and the Finishes operating companies used across projects and contracts.'
     :'Assign application roles to control what each user can see and do.';
   document.getElementById('fbCounts').style.display=fb?'':'none';
   if(fb&&window.FSFeedback)FSFeedback.loadBoard();
+  if(en)loadAdminEntities();
 }
 function refreshAdmin(){
   if(adminTab==='feedback'&&window.FSFeedback)FSFeedback.loadBoard();
+  else if(adminTab==='entities')loadAdminEntities();
   else loadAdminUsers();
+}
+
+/* ---- Admin: Entity Master. Reads ride GET budgets?scope=entities (with all=1
+   to include inactive rows); writes ride PUT user-settings?scope=entities. */
+let adminEntities=[];
+async function loadAdminEntities(){
+  const tb=document.getElementById('entBody');if(!tb)return;
+  tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--ink-400)">Loading…</td></tr>';
+  try{
+    const r=await api('budgets?scope=entities&all=1');
+    if(!r||!r.available){
+      tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--ink-400)">'
+        +'The Entity Master is not available yet — this database needs sql/migrate_entities.sql to be run.</td></tr>';
+      adminEntities=[];return;
+    }
+    adminEntities=r.entities||[];
+    paintEntityTable();
+  }catch(e){
+    tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--danger)">'+esc(e.message)+'</td></tr>';
+  }
+}
+function paintEntityTable(){
+  const tb=document.getElementById('entBody');if(!tb)return;
+  tb.innerHTML='';
+  adminEntities.forEach(e=>{
+    tb.insertAdjacentHTML('beforeend',
+      `<tr>
+        <td style="padding-left:22px">${esc(e.legalName)}${e.isFinishesCompany?' <span class="st-chip st-converted" style="margin-left:6px">Finishes</span>':''}</td>
+        <td>${esc(e.displayName)}</td>
+        <td style="font-size:12px;color:var(--ink-500)">${esc(e.entityType||'')}</td>
+        <td style="font-size:12px;color:var(--ink-500)">${esc(e.address||'')}</td>
+        <td><span class="st-chip ${e.isActive?'st-done':'st-cancel'}">${e.isActive?'Active':'Inactive'}</span></td>
+        <td class="no-print"><button class="btn btn-ghost" onclick='openEntityDialog(${JSON.stringify(e.entityId)})'>Edit</button></td></tr>`);
+  });
+  if(!adminEntities.length)tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--ink-400)">No entities yet. Add one to get started.</td></tr>';
+}
+function openEntityDialog(entityId){
+  const e=(entityId!=null)?adminEntities.find(x=>x.entityId===entityId):null;
+  document.getElementById('entityTitle').textContent=e?'Edit Entity':'Add Entity';
+  document.getElementById('entLegal').value=e?e.legalName:'';
+  document.getElementById('entDisplay').value=e?e.displayName:'';
+  document.getElementById('entType').value=e?(e.entityType||'LLC'):'LLC';
+  document.getElementById('entAddress').value=e?(e.address||''):'';
+  document.getElementById('entActive').value=e?(e.isActive?'1':'0'):'1';
+  const fin=!!(e&&e.isFinishesCompany);
+  document.getElementById('entActive').disabled=fin;
+  document.getElementById('entFinNote').style.display=fin?'':'none';
+  document.getElementById('entErr').style.display='none';
+  document.getElementById('entSave').dataset.entId=(e?String(e.entityId):'');
+  openDialog('entityModal','#entLegal');
+}
+async function saveEntity(){
+  const idStr=document.getElementById('entSave').dataset.entId||'';
+  const body={
+    legalName:document.getElementById('entLegal').value.trim(),
+    displayName:document.getElementById('entDisplay').value.trim(),
+    entityType:document.getElementById('entType').value.trim(),
+    address:document.getElementById('entAddress').value.trim(),
+    isActive:document.getElementById('entActive').value==='1'
+  };
+  if(idStr)body.entityId=Number(idStr);
+  const errEl=document.getElementById('entErr');
+  if(!body.legalName){errEl.textContent='Legal Name is required.';errEl.style.display='';return;}
+  try{
+    await api('user-settings?scope=entities',{method:'PUT',body:JSON.stringify(body)});
+    closeDialog('entityModal');
+    toast('Entity saved.');
+    loadAdminEntities();
+  }catch(e){errEl.textContent=e.message;errEl.style.display='';}
 }
 
 /* ---- created-by avatar (initials circle with user's avatar color) ---- */

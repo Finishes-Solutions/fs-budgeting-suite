@@ -73,6 +73,29 @@ CREATE INDEX IX_BudgetTemplateVersions_Template_VersionDesc
 -- its own, never borrowed from a budget. A project carries a base budget plus
 -- any number of alternates (BD-0001, BD-0001-02, BD-0001-03 …), which is why
 -- the budget id format below allows a two-digit suffix.
+-- The structured Entity Master (sql/migrate_entities.sql). Legal entities plus
+-- the six Finishes operating companies that participate in contracts. Master
+-- data deactivates (IsActive) rather than deletes. Defined before dbo.Projects
+-- because Projects.EntityId references it.
+CREATE TABLE dbo.Entities (
+    EntityId    INT IDENTITY(1,1) NOT NULL,
+    EntityKey   VARCHAR(64)   NOT NULL,   -- stable slug ('finishes-solutions')
+    LegalName   NVARCHAR(300) NOT NULL,
+    DisplayName NVARCHAR(200) NOT NULL,
+    EntityType  NVARCHAR(50)  NOT NULL CONSTRAINT DF_Entities_Type    DEFAULT (N'LLC'),
+    Address     NVARCHAR(300) NOT NULL CONSTRAINT DF_Entities_Address DEFAULT (N''),
+    IsFinishesCompany BIT     NOT NULL CONSTRAINT DF_Entities_Fin     DEFAULT (0),
+    IsActive    BIT           NOT NULL CONSTRAINT DF_Entities_Active  DEFAULT (1),
+    CreatedById NVARCHAR(128) NULL,
+    CreatedByName NVARCHAR(200) NULL,
+    CreatedAt   DATETIME2     NOT NULL CONSTRAINT DF_Entities_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    UpdatedAt   DATETIME2     NOT NULL CONSTRAINT DF_Entities_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT PK_Entities PRIMARY KEY (EntityId),
+    CONSTRAINT UQ_Entities_Key UNIQUE (EntityKey),
+    CONSTRAINT CK_Entities_Key CHECK (EntityKey NOT LIKE '%[^a-z0-9-]%')
+);
+CREATE INDEX IX_Entities_Active ON dbo.Entities (IsActive, DisplayName);
+
 CREATE TABLE dbo.Projects (
     ProjectId       VARCHAR(16)    NOT NULL,   -- OP-####
     Name            NVARCHAR(200)  NOT NULL CONSTRAINT DF_Projects_Name     DEFAULT (N''),
@@ -90,6 +113,9 @@ CREATE TABLE dbo.Projects (
     ContractAmount  DECIMAL(18,2)  NULL,
     ProjectAmount   DECIMAL(18,2)  NULL,
     Notes           NVARCHAR(2000) NOT NULL CONSTRAINT DF_Projects_Notes    DEFAULT (N''),
+    -- The project's legal entity (sql/migrate_entities.sql). Nullable — a
+    -- project without an entity is valid. Inherited by its budgets and contracts.
+    EntityId        INT            NULL CONSTRAINT FK_Projects_Entity REFERENCES dbo.Entities (EntityId),
     CreatedById     NVARCHAR(128)  NULL,
     CreatedByName   NVARCHAR(200)  NULL,
     CreatedAt       DATETIME2      NOT NULL CONSTRAINT DF_Projects_CreatedAt DEFAULT (SYSUTCDATETIME()),

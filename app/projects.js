@@ -69,6 +69,17 @@ async function loadDetail(id, force) {
 
 function invalidate() { list = null; detail = null; }
 
+// The Entity Master, loaded once and cached. Available:false means the
+// migration has not run — the entity picker stays hidden and the app behaves
+// exactly as it did before.
+var entities = null;
+async function loadEntities(force) {
+  if (entities && !force) return entities;
+  try { entities = await A.api('budgets?scope=entities'); }
+  catch (e) { entities = { available: false, entities: [] }; }
+  return entities;
+}
+
 /* ================= index ================= */
 
 async function render(force) {
@@ -242,7 +253,7 @@ async function show(id, force) {
   if (!host) return;
   host.innerHTML = '<div class="dash-loading">Loading project…</div>';
   if (A.go) A.go('project');
-  await loadDetail(openId, force);
+  await Promise.all([loadDetail(openId, force), loadEntities(false)]);
   paintDetail();
 }
 
@@ -272,7 +283,9 @@ function paintDetail() {
   // The types the project's BUDGETS are, not a type the project claims. One
   // property can carry a Multifamily budget and a Commercial budget at once,
   // so a single locked project type was a fiction the page had to keep.
-  el('projectSub').innerHTML = [p.address ? esc(p.address) : '', esc(p.budgetTypes || ''),
+  el('projectSub').innerHTML = [p.address ? esc(p.address) : '',
+    p.entity ? esc(p.entity.displayName || p.entity.legalName) : '',
+    esc(p.budgetTypes || ''),
     num(budgets.length) + ' Budget' + (budgets.length === 1 ? '' : 's'),
     num(analyses.length) + ' Analys' + (analyses.length === 1 ? 'is' : 'es')]
     .filter(Boolean).join(' · ');
@@ -301,9 +314,81 @@ function paintDetail() {
         + '<b>Converted to a project</b> on ' + esc(A.fmtDay ? A.fmtDay(p.convertedAt) : String(p.convertedAt || '').slice(0, 10))
         + '. The contract and project amounts above were captured at that moment and no longer move with the budget.'
         + '</div>' : '')
+    + projectInfoCard(p)
     + (favB.length || favA.length ? favoritesCard(favB, favA) : '')
     + budgetsCard(p, budgets)
     + analysesCard(analyses, budgets);
+}
+
+/* Project Information — the first project-edit surface. Name, Address, Notes and
+   the Project Entity, saved through PUT ?scope=project. The entity is chosen
+   from the Entity Master (never typed free-text), and a change under existing
+   contracts or approved budgets is confirmed before it goes through. */
+function projectInfoCard(p) {
+  var ents = (entities && entities.available) ? (entities.entities || []) : [];
+  var entOpts = '';
+  if (entities && entities.available) {
+    entOpts = '<option value="">— None —</option>'
+      + ents.map(function (e) {
+        var selId = p.entity ? String(p.entity.entityId) : '';
+        return '<option value="' + e.entityId + '"' + (selId === String(e.entityId) ? ' selected' : '') + '>'
+          + esc(e.displayName) + ' (' + esc(e.legalName) + ')</option>';
+      }).join('');
+  }
+  var entityRow = (entities && entities.available)
+    ? '<label class="pj-field"><span>Project Entity</span>'
+        + '<select id="pjEntity" data-k="proj.entity">' + entOpts + '</select></label>'
+    : (p.entity
+        ? '<label class="pj-field"><span>Project Entity</span><input value="' + esc(p.entity.legalName || '') + '" disabled></label>'
+        : '');
+  return '<section class="card" id="sec-projinfo"><div class="card-hd"><h2>Project Information</h2>'
+    + '<span class="eyebrow">Legal entity, name and address for this project</span></div>'
+    + '<div class="card-bd">'
+    + '<div class="pj-form">'
+    + '<label class="pj-field"><span>Project Name</span><input id="pjName" data-k="proj.name" value="' + esc(p.name || '') + '"></label>'
+    + '<label class="pj-field"><span>Address</span><input id="pjAddress" data-k="proj.address" value="' + esc(p.address || '') + '"></label>'
+    + entityRow
+    + '<label class="pj-field pj-field-wide"><span>Notes</span><textarea id="pjNotes" data-k="proj.notes" rows="2">' + esc(p.notes || '') + '</textarea></label>'
+    + '</div>'
+    + '<div class="pj-form-actions"><button class="btn primary" onclick="FSProjects.saveInfo(\'' + esc(p.projectId) + '\')">Save Project Info</button>'
+    + '<span id="pjInfoMsg" class="pj-form-msg"></span></div>'
+    + '</div></section>';
+}
+
+async function saveInfo(projectId, confirmEntityChange) {
+  var nameEl = el('pjName'), addrEl = el('pjAddress'), notesEl = el('pjNotes'), entEl = el('pjEntity');
+  if (!nameEl) return;
+  var body = { name: nameEl.value, address: addrEl.value, notes: notesEl.value };
+  if (entEl) body.entityId = entEl.value === '' ? null : Number(entEl.value);
+  if (confirmEntityChange) body.confirmEntityChange = true;
+  var msg = el('pjInfoMsg');
+  if (msg) { msg.textContent = 'Saving…'; msg.className = 'pj-form-msg'; }
+  try {
+    var r = await A.api('budget/' + encodeURIComponent(projectId) + '?scope=project',
+      { method: 'PUT', body: JSON.stringify(body) });
+    if (detail && detail.project) detail.project = r.project;
+    if (list && list.projects) list.projects = list.projects.map(function (x) { return x.projectId === projectId ? r.project : x; });
+    paintDetail();
+    if (A.toast) A.toast('Project information saved'
+      + (r.contractsFlagged ? ' — ' + r.contractsFlagged + ' contract(s) flagged for review.' : '.'));
+    if (A.dashboardInvalidate) A.dashboardInvalidate();
+  } catch (e) {
+    // The server refuses an entity change under contracts/approved budgets
+    // without confirmation. Quote its counts, then retry with confirmation.
+    if (e && e.body && e.body.error === 'entity_change_requires_confirmation') {
+      var d = e.body;
+      var parts = [];
+      if (d.contracts) parts.push(d.contracts + ' contract' + (d.contracts === 1 ? '' : 's'));
+      if (d.approvedBudgets) parts.push(d.approvedBudgets + ' approved budget' + (d.approvedBudgets === 1 ? '' : 's'));
+      if (confirm('This project has ' + parts.join(' and ') + ' tied to its current entity.\n\n'
+          + 'Changing the entity will flag those contracts as Requires Review. Continue?')) {
+        return saveInfo(projectId, true);
+      }
+      if (msg) { msg.textContent = 'Entity change cancelled.'; }
+      return;
+    }
+    if (msg) { msg.textContent = 'Could not save — ' + (e && e.message ? e.message : 'error'); msg.className = 'pj-form-msg pj-form-err'; }
+  }
 }
 
 /* Which budget the project's money comes from. The server decides — this is
@@ -773,6 +858,7 @@ window.FSProjects = {
   openProjectMenu: openProjectMenu,
   closeProjectMenu: closeProjectMenu,
   makePrimary: makePrimary,
+  saveInfo: saveInfo,
   addAlternate: addAlternate,
   newBudget: newBudget,
   addAnalysis: addAnalysis,

@@ -3,6 +3,7 @@ const { getPrincipal } = require('../shared/auth');
 const { ensureUser } = require('../shared/users');
 const { features } = require('../shared/schema');
 const { listProjects, getProject, nextProjectId, jsonRes } = require('../shared/projects');
+const { listEntities } = require('../shared/entities');
 
 const FULL_VISIBILITY_ROLES = new Set(['director', 'super_admin']);
 
@@ -35,6 +36,17 @@ module.exports = async function (context, req) {
   // principal and the same ownership rule as the budget list itself — that
   // in-function check is the real gate here, not defence in depth.
   const scope = String((req.query && req.query.scope) || '');
+  // Entity Master read. Every signed-in user needs it (project-entity picker,
+  // exec summary, contracts display). Admins can ask for inactive rows too.
+  if (scope === 'entities') {
+    if (!principal && !process.env.FS_ALLOW_ANON) {
+      context.res = jsonRes(401, { error: 'unauthenticated', message: 'Sign in to view entities.' });
+      return;
+    }
+    const includeInactive = String((req.query && req.query.all) || '') === '1' && canSeeAll;
+    context.res = jsonRes(200, await listEntities(pool, { includeInactive }));
+    return;
+  }
   if (scope === 'projects' || scope === 'project' || scope === 'next-project-id') {
     if (!principal && !process.env.FS_ALLOW_ANON) {
       context.res = jsonRes(401, { error: 'unauthenticated', message: 'Sign in to view projects.' });

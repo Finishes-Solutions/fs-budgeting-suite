@@ -75,8 +75,31 @@ test('a failing probe degrades to all-absent rather than throwing', async () => 
     budgetsCreatedBy: false, analysesCreatedBy: false, feedbackTable: false,
     budgetsGuardrail: false, budgetsProjectKey: false, analysesProjectKey: false,
     projectsNumber: false, analysesItemNumber: false,
-    projectsTable: false
+    projectsTable: false,
+    entitiesTable: false, projectsEntityId: false,
+    budgetsApproved: false, contractsTable: false
   });
+});
+
+test('the Entity Master, approval and contracts flags read from their columns', async () => {
+  fresh();
+  const f = await schema.features(poolReturning([
+    col('Entities', 'EntityId'), col('Projects', 'EntityId'),
+    col('Budgets', 'ApprovedVersionId'), col('Contracts', 'ContractId')
+  ]));
+  assert.strictEqual(f.entitiesTable, true);
+  assert.strictEqual(f.projectsEntityId, true);
+  assert.strictEqual(f.budgetsApproved, true);
+  assert.strictEqual(f.contractsTable, true);
+});
+
+test('the expansion flags read as absent before their migrations run', async () => {
+  fresh();
+  const f = await schema.features(poolReturning([col('Projects', 'ProjectId')]));
+  assert.strictEqual(f.entitiesTable, false);
+  assert.strictEqual(f.projectsEntityId, false);
+  assert.strictEqual(f.budgetsApproved, false);
+  assert.strictEqual(f.contractsTable, false);
 });
 
 test('projects and guard rails read as absent before their migration runs', async () => {
