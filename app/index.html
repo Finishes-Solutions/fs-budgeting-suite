@@ -68,6 +68,7 @@ try{
 <link rel="stylesheet" href="home.css">
 <link rel="stylesheet" href="feedback.css">
 <script src="guardrails.js"></script>
+<script src="budget-finance.js"></script>
 <script src="dashboard.js"></script>
 <script src="home.js"></script>
 <script src="projects.js"></script>
@@ -4288,7 +4289,11 @@ function blankDoc(kind){
     // lets the budget flag a manually re-priced line — and un-flag it if you put the
     // original rate back.
     lines:bare?[]:pricing.lines.map(l=>({...l,lineId:newLineId(),qty:l.basis==='ls'?1:0,auto:l.basis!=='ls',baseUnit:l.unit})),
-    companies:bare?[]:[{name:'Finishes Solutions LLC',pct:12}],
+    companies:bare?[]:[{name:'Finishes Solutions LLC',pct:12,entityKey:'finishes-solutions'}],
+    // Finance rules (bank uplift + entity allocations) inherit from the template
+    // like every other field; a new budget with no template carries the module
+    // default. Old budgets have no finance key and fall back to it at read time.
+    finance:bare?undefined:JSON.parse(JSON.stringify(FSBudgetFinance.DEFAULT_FINANCE)),
     contingency:bare?{mode:'pct',val:0}:{mode:'psf',val:2},
     projectCosts:bare
       ?{land:0,dev:{mode:'amt',val:0},mkt:{mode:'amt',val:0},cls:{mode:'amt',val:0}}
@@ -4324,6 +4329,23 @@ function migrate(d){ // tolerate older saves
   d.other.forEach(o=>{o.rate=nz(o.rate);o.count=nz(o.count);});
   d.expenses.forEach(x=>{x.rate=nz(x.rate);x.count=nz(x.count);});
   (d.companies||[]).forEach(c=>{c.pct=nz(c.pct);});
+  // Normalize finance rules only when present — never inject the default into an
+  // old doc, so an untouched budget's next save stays a no-op hash. A malformed
+  // block is dropped rather than trusted, mirroring the guardrailAcks repair.
+  if(d.finance&&typeof d.finance==='object'){
+    const fin=d.finance,b=(fin.bank&&typeof fin.bank==='object')?fin.bank:{};
+    d.finance={
+      bank:{upliftPct:nz(b.upliftPct),
+        allocation:Array.isArray(b.allocation)?b.allocation.filter(r=>r&&typeof r.match==='string').map(r=>({match:r.match,key:r.key,pct:nz(r.pct)})):[],
+        remainder:typeof b.remainder==='string'?b.remainder:'contingency'},
+      allocations:Array.isArray(fin.allocations)?fin.allocations.filter(a=>a&&typeof a.entityKey==='string'&&typeof a.stream==='string').map(a=>{
+        const o={entityKey:a.entityKey,stream:a.stream};
+        if(a.costShare!=null)o.costShare=nz(a.costShare);
+        if(a.share!=null)o.share=nz(a.share);
+        if(typeof a.basis==='string')o.basis=a.basis;
+        return o;}):[]
+    };
+  }
   d.resSF=nz(d.resSF);d.amenSF=nz(d.amenSF);d.siteSF=nz(d.siteSF);
   if(d.contingency)d.contingency.val=nz(d.contingency.val);
   d.projectCosts.land=nz(d.projectCosts.land);
