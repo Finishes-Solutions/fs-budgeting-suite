@@ -753,6 +753,9 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .exec-row.exec-strong .k{font-weight:600;color:var(--ink-900)}
 .exec-row.exec-strong .v{font-weight:600}
 .exec-sub{color:var(--ink-400);font-size:11px;margin-left:6px}
+.fin-form-row{display:flex;gap:22px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.fin-form-row label{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--ink-600)}
+.fin-form-row input,.fin-form-row select,.fin-tbl input,.fin-tbl select{padding:5px 8px;border:1px solid var(--ink-200);border-radius:6px;font:inherit;font-size:12px;background:var(--white);color:var(--ink-950)}
 .pj-card-menu{position:absolute;top:9px;right:37px;z-index:1}
 /* The activity log's Details column carries a sentence, not a token, so it
    wraps and takes the slack rather than forcing the table wider than the page. */
@@ -3994,9 +3997,8 @@ async function initAuth(){
     // The module renders only — it reads the live doc and the same parts()/
     // csiSchedule() the rest of the page uses, so its views cannot drift.
     doc:()=>doc, parts:parts, csiSchedule:csiSchedule, grossIncome:grossIncome,
-    api:api,
-    // Template mode authors finance rules rather than showing derived views;
-    // wired in Phase 5.
+    api:api, touch:touch, markDirty:markDirty,
+    // Template mode authors finance rules rather than showing derived views.
     isTemplateEdit:()=>!!templateEdit
   });
   if(window.FSHome)FSHome.init({
@@ -5189,7 +5191,10 @@ async function publishTemplate(){
   pullForms();
   const summary=(prompt('Describe this template change (shown in the version history):','')||'').trim();
   if(!confirm('Publish a new version of '+templateEdit.name+'?\n\nThis creates an immutable version. Existing budgets are not changed, recalculated or repriced.'))return;
-  const body={doc:JSON.parse(JSON.stringify(doc)),changeSummary:summary||null};
+  // Schema 2 marks a template that can carry finance rules and an authored
+  // guard-rail policy. Older versions read as schema 1 and fall back to the
+  // module defaults, so nothing published before this breaks.
+  const body={doc:JSON.parse(JSON.stringify(doc)),changeSummary:summary||null,templateSchemaVersion:2};
   delete body.doc.projectId;delete body.doc.templateKey;delete body.doc.templateVersionId;
   try{
     const r=await api('templates/'+encodeURIComponent(templateEdit.key),{method:'PUT',body:JSON.stringify(body)});
@@ -6313,9 +6318,64 @@ function guardrails(){
   const p=parts();
   return FSGuardrails.evaluate({doc,parts:p,gross:grossIncome(),fee:p.fee});
 }
+/* In template mode the Guard Rails card becomes an editor: the thresholds a
+   budget of this type will be judged on, authored per rail and published with
+   the template into doc.guardrails (the hook policyFor() already reads). */
+function guardrailPolicyOf(){
+  const type=(doc&&doc.type)||'Multifamily';
+  if(!doc.guardrails||typeof doc.guardrails!=='object')doc.guardrails={};
+  if(!doc.guardrails[type]||typeof doc.guardrails[type]!=='object'){
+    // Seed from the offline default so the editor starts at sensible numbers
+    // rather than blank, without changing behaviour for existing templates.
+    const base=(FSGuardrails.DEFAULT_POLICY[type]||FSGuardrails.DEFAULT_POLICY.Multifamily||{});
+    doc.guardrails[type]=JSON.parse(JSON.stringify(base));
+  }
+  return doc.guardrails[type];
+}
+function editGuardrailPolicy(id,field,value){
+  const pol=guardrailPolicyOf();
+  if(!pol[id])pol[id]={};
+  const rail=(FSGuardrails.RAILS||[]).filter(x=>x.id===id)[0];
+  if(field==='severity'){pol[id].severity=value==='error'?'error':'warn';}
+  else{
+    if(value===''){delete pol[id][field];}
+    else{
+      const n=+value;
+      // Percentage rails store decimal fractions; the field shows whole percents.
+      pol[id][field]=(rail&&rail.unit==='pct')?n/100:n;
+    }
+  }
+  touch();
+}
+function renderGuardrailPolicyEditor(host){
+  const pol=guardrailPolicyOf();
+  const rails=FSGuardrails.RAILS||[];
+  const fmt=(rail,v)=>v==null?'':(rail.unit==='pct'?(+ (v*100).toFixed(2)):v);
+  const row=rail=>{
+    const cfg=pol[rail.id]||{};
+    const unit=rail.unit==='pct'?'%':'$';
+    return `<tr>
+      <td>${esc(rail.label)}<div class="gr-measures">${esc(rail.measures)}</div></td>
+      <td class="r"><input type="number" step="any" value="${fmt(rail,cfg.min)}" style="width:80px"
+        onchange="editGuardrailPolicy('${rail.id}','min',this.value)"> ${unit}</td>
+      <td class="r"><input type="number" step="any" value="${fmt(rail,cfg.max)}" style="width:80px"
+        onchange="editGuardrailPolicy('${rail.id}','max',this.value)"> ${unit}</td>
+      <td class="r"><select onchange="editGuardrailPolicy('${rail.id}','severity',this.value)">
+        <option value="warn"${cfg.severity==='error'?'':' selected'}>Warn</option>
+        <option value="error"${cfg.severity==='error'?' selected':''}>Block</option></select></td>
+    </tr>`;
+  };
+  document.getElementById('grHeadline').textContent='Thresholds for '+((doc&&doc.type)||'this type')+' — published with the template';
+  host.innerHTML=`<div class="note" style="margin-bottom:10px">These guard rails ship inside this template's published version. A budget created from it is judged on exactly these numbers. Leave a bound blank to not judge that side.</div>
+    <div style="overflow-x:auto"><table class="tbl gr-tbl">
+      <thead><tr><th style="width:44%">Rail</th><th class="r">Min</th><th class="r">Max</th><th class="r">Severity</th></tr></thead>
+      <tbody>${rails.map(row).join('')}</tbody></table></div>`;
+}
+
 function renderGuardrails(){
   const host=document.getElementById('grBody');
   if(!host||!doc)return;
+  if(templateEdit){renderGuardrailPolicyEditor(host);return;}
   const r=guardrails();
   // Marking rides on data-gr, mirroring data-k: it survives re-render and never
   // needs a DOM query by position.

@@ -274,7 +274,7 @@ function pushVersion(key, body, defaultLabel) {
   const n = t.versions.length + 1;
   t.versions.push({versionNumber:n, versionLabel: body.versionLabel || defaultLabel || ('Version ' + n),
     changeSummary: body.changeSummary || null, pricingVersion: body.doc.pricingVersion || null,
-    createdByName: principal.clientPrincipal.userDetails, templateSchemaVersion: 1,
+    createdByName: principal.clientPrincipal.userDetails, templateSchemaVersion: +body.templateSchemaVersion || 1,
     createdAt: new Date().toISOString(), publishedAt: new Date().toISOString(),
     doc: JSON.parse(JSON.stringify(body.doc))});
   return n;

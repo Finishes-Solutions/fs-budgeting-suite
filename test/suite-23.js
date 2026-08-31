@@ -101,6 +101,26 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   const sub = await p.locator('#projectSub').textContent();
   ok('the project sub-line shows the entity', /Finishes Solutions/.test(sub), sub);
 
+  // ---------- 8. template-mode authoring ----------
+  await p.evaluate(async () => { await loadTemplates(); await editTemplate('multifamily'); });
+  await p.waitForTimeout(500);
+  await p.evaluate(() => go('financials'));
+  await p.waitForTimeout(500);
+  ok('template mode shows the finance-rules form', await p.locator('#bankBody input').count() > 0);
+  await p.evaluate(() => FSBudgetFinancials.editBankUplift(12));
+  ok('editing the bank uplift persists to doc.finance',
+    await p.evaluate(() => doc.finance.bank.upliftPct) === 12);
+  await p.evaluate(() => FSBudgetFinancials.addAlloc());
+  ok('an allocation rule can be added',
+    await p.evaluate(() => doc.finance.allocations.length) >= 1);
+  await p.evaluate(() => go('budget'));
+  await p.waitForTimeout(400);
+  ok('the Guard Rails card becomes a policy editor in template mode',
+    await p.locator('#grBody input').count() > 0);
+  await p.evaluate(() => editGuardrailPolicy('profitMargin', 'max', '25'));
+  ok('a percentage threshold stores as a decimal fraction',
+    Math.abs(await p.evaluate(() => doc.guardrails[doc.type].profitMargin.max) - 0.25) < 1e-9);
+
   ok('no JS errors', errs.length === 0, errs.join(' | '));
   console.log(R.join('\n'));
   console.log('\n' + R.filter(r => r.startsWith('FAIL')).length + ' failures of ' + R.length);

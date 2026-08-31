@@ -220,8 +220,9 @@
 
   function render() {
     if (!elm('bankBody')) return;
-    // Template mode authors rules instead of showing derived views (Phase 5).
-    if (isTemplate() && A.renderTemplateFinance) { A.renderTemplateFinance(); return; }
+    // Template mode authors the rules that budgets will inherit, instead of
+    // showing derived views — a template has no real numbers to derive from.
+    if (isTemplate()) { renderTemplateForm(); return; }
     var m = model();
     if (!m) {
       set('bankBody', '<div class="fin-empty">Open a budget to see its financial views.</div>');
@@ -243,12 +244,113 @@
     if (m) set('waterfallBody', waterfallHtml(m));
   }
 
+  /* ================= TEMPLATE-MODE AUTHORING ================= */
+  var STREAMS = [
+    { v: 'companyMarkup', l: 'Construction markup' },
+    { v: 'devFee', l: 'Developer fee' },
+    { v: 'mktFee', l: 'Marketing / Brokerage fee' },
+    { v: 'clsFee', l: 'Closing costs' },
+    { v: 'none', l: 'Not participating' }
+  ];
+  var REMAINDERS = [
+    { v: 'contingency', l: 'Contingency line' },
+    { v: 'lenderAllowance', l: 'Lender Allowance line' },
+    { v: 'prorata', l: 'Pro-rata across all lines' }
+  ];
+  function ensureFinance() {
+    var doc = docNow();
+    if (!doc.finance || typeof doc.finance !== 'object') doc.finance = { bank: { upliftPct: 10, allocation: [], remainder: 'contingency' }, allocations: [] };
+    if (!doc.finance.bank) doc.finance.bank = { upliftPct: 10, allocation: [], remainder: 'contingency' };
+    if (!Array.isArray(doc.finance.bank.allocation)) doc.finance.bank.allocation = [];
+    if (!Array.isArray(doc.finance.allocations)) doc.finance.allocations = [];
+    return doc.finance;
+  }
+  function finEntities() {
+    var list = (entitiesCache && entitiesCache.available) ? entitiesCache.entities : [];
+    return list.filter(function (e) { return e.isFinishesCompany; });
+  }
+  function renderTemplateForm() {
+    var fin = ensureFinance();
+    var ents = finEntities();
+    var entOpts = function (sel) {
+      return ents.map(function (e) {
+        return '<option value="' + esc(e.entityKey) + '"' + (e.entityKey === sel ? ' selected' : '') + '>' + esc(e.displayName) + '</option>';
+      }).join('');
+    };
+    // Bank rules.
+    var bankRuleRows = fin.bank.allocation.map(function (r, i) {
+      return '<tr>'
+        + '<td><select onchange="FSBudgetFinancials.editBankRule(' + i + ',\'match\',this.value)">'
+        + ['div', 'hard', 'soft', 'profit', 'cont', 'land', 'fees'].map(function (mm) {
+            return '<option value="' + mm + '"' + (r.match === mm ? ' selected' : '') + '>' + mm + '</option>'; }).join('')
+        + '</select></td>'
+        + '<td><input value="' + esc(r.key == null ? '' : r.key) + '" placeholder="div key e.g. 03" style="width:90px" onchange="FSBudgetFinancials.editBankRule(' + i + ',\'key\',this.value)"></td>'
+        + '<td class="r"><input type="number" step="0.5" value="' + (+r.pct || 0) + '" style="width:70px" onchange="FSBudgetFinancials.editBankRule(' + i + ',\'pct\',this.value)"> %</td>'
+        + '<td class="no-print"><button class="btn-x" onclick="FSBudgetFinancials.removeBankRule(' + i + ')">×</button></td></tr>';
+    }).join('');
+    var allocRows = fin.allocations.map(function (a, i) {
+      return '<tr>'
+        + '<td><select onchange="FSBudgetFinancials.editAlloc(' + i + ',\'entityKey\',this.value)">' + entOpts(a.entityKey) + '</select></td>'
+        + '<td><select onchange="FSBudgetFinancials.editAlloc(' + i + ',\'stream\',this.value)">'
+        + STREAMS.map(function (s) { return '<option value="' + s.v + '"' + (a.stream === s.v ? ' selected' : '') + '>' + esc(s.l) + '</option>'; }).join('')
+        + '</select></td>'
+        + '<td class="r"><input type="number" step="0.05" value="' + (a.costShare == null ? '' : a.costShare) + '" placeholder="—" style="width:70px" onchange="FSBudgetFinancials.editAlloc(' + i + ',\'costShare\',this.value)"></td>'
+        + '<td class="r"><input type="number" step="0.05" value="' + (a.share == null ? '' : a.share) + '" placeholder="1" style="width:70px" onchange="FSBudgetFinancials.editAlloc(' + i + ',\'share\',this.value)"></td>'
+        + '<td class="no-print"><button class="btn-x" onclick="FSBudgetFinancials.removeAlloc(' + i + ')">×</button></td></tr>';
+    }).join('');
+    var html = '<div class="fin-layer no-print">Editing template finance rules. These carry into every new budget created from this template; a budget can override them.</div>'
+      + '<div class="fin-hd"><h2>Bank / Lender Budget Rules</h2>'
+      + '<span class="eyebrow">The lender uplift and how it is distributed across categories</span></div>'
+      + '<div class="fin-form-row"><label>Bank uplift %<input type="number" step="0.5" value="' + (+fin.bank.upliftPct || 0)
+      + '" style="width:80px" onchange="FSBudgetFinancials.editBankUplift(this.value)"></label>'
+      + '<label>Remainder goes to <select onchange="FSBudgetFinancials.editBankRemainder(this.value)">'
+      + REMAINDERS.map(function (rm) { return '<option value="' + rm.v + '"' + (fin.bank.remainder === rm.v ? ' selected' : '') + '>' + esc(rm.l) + '</option>'; }).join('')
+      + '</select></label></div>'
+      + '<div class="fin-scroll"><table class="tbl fin-tbl"><thead><tr><th>Category</th><th>Division key</th><th class="r">Uplift</th><th class="no-print"></th></tr></thead>'
+      + '<tbody>' + (bankRuleRows || '<tr><td colspan="4" class="fin-empty">No category rules — the whole uplift lands on the remainder line.</td></tr>') + '</tbody></table></div>'
+      + '<div class="no-print" style="margin:8px 0 20px"><button class="btn btn-ghost" onclick="FSBudgetFinancials.addBankRule()">+ Add category rule</button></div>'
+      + '<div class="fin-hd"><h2>Profit Allocation Rules</h2>'
+      + '<span class="eyebrow">Which Finishes company earns each stream. Cost share splits construction cost basis (must total 1); Share splits a fee.</span></div>'
+      + (ents.length
+          ? '<div class="fin-scroll"><table class="tbl fin-tbl"><thead><tr><th>Company</th><th>Stream</th><th class="r">Cost Share</th><th class="r">Fee Share</th><th class="no-print"></th></tr></thead>'
+            + '<tbody>' + (allocRows || '<tr><td colspan="5" class="fin-empty">No allocation rules yet.</td></tr>') + '</tbody></table></div>'
+            + '<div class="no-print" style="margin-top:8px"><button class="btn btn-ghost" onclick="FSBudgetFinancials.addAlloc()">+ Add allocation rule</button></div>'
+          : '<div class="fin-empty">The Entity Master has not loaded, or its migration has not run — allocation rules need the Finishes companies.</div>');
+    set('bankBody', html);
+    set('splitsBody', ''); set('waterfallBody', ''); set('intercoBody', ''); set('finBanner', '');
+  }
+  function touched() { if (A.touch) A.touch(); else if (A.markDirty) A.markDirty(); render(); }
+  function editBankUplift(v) { ensureFinance().bank.upliftPct = +v || 0; touched(); }
+  function editBankRemainder(v) { ensureFinance().bank.remainder = v; touched(); }
+  function addBankRule() { ensureFinance().bank.allocation.push({ match: 'div', key: '', pct: 0 }); touched(); }
+  function removeBankRule(i) { ensureFinance().bank.allocation.splice(i, 1); touched(); }
+  function editBankRule(i, k, v) {
+    var r = ensureFinance().bank.allocation[i]; if (!r) return;
+    r[k] = (k === 'pct') ? (+v || 0) : v; touched();
+  }
+  function addAlloc() {
+    var ents = finEntities();
+    ensureFinance().allocations.push({ entityKey: ents[0] ? ents[0].entityKey : 'finishes-solutions', stream: 'companyMarkup', costShare: 1 });
+    touched();
+  }
+  function removeAlloc(i) { ensureFinance().allocations.splice(i, 1); touched(); }
+  function editAlloc(i, k, v) {
+    var a = ensureFinance().allocations[i]; if (!a) return;
+    if (k === 'costShare' || k === 'share') { if (v === '') delete a[k]; else a[k] = +v || 0; }
+    else a[k] = v;
+    touched();
+  }
+
   window.FSBudgetFinancials = {
     init: function (adapter) { A = adapter || {}; loadEntities(); },
     render: render,
     renderExec: renderExec,
     setWaterfallMode: setWaterfallMode,
     reloadEntities: function () { entitiesCache = null; return loadEntities(); },
+    // template-mode authoring
+    editBankUplift: editBankUplift, editBankRemainder: editBankRemainder,
+    addBankRule: addBankRule, removeBankRule: removeBankRule, editBankRule: editBankRule,
+    addAlloc: addAlloc, removeAlloc: removeAlloc, editAlloc: editAlloc,
     // exposed for suites
     _model: model
   };

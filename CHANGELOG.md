@@ -71,8 +71,20 @@ each — nothing breaks before they run):
   and uplift, the Project Entity → Finishes Solutions contract, each company's
   allocation, total Finishes profit, consolidated margin and reconciliation
   status — no manual math.
+- **Template-driven finance rules and guard rails.** Editing a budget template
+  now has, on its Financials step, a form for the bank uplift %, how the uplift
+  distributes across categories, and how each Finishes company earns its
+  streams; and the Guard Rails card becomes a threshold editor (min / max /
+  block-or-warn per rail) for that budget type. Publishing the template
+  publishes both — every new budget of that type inherits them, and can override
+  them. Different project types can now carry different assumptions. Templates
+  published before this read as schema 1 and behave exactly as before.
 
 Existing budgets, templates, projects and every stored total are unchanged.
+
+Follow-up for an administrator: create Retail / Industrial / Office / Mixed-Use
+/ Other Commercial templates (Templates → Duplicate) and set each type's finance
+rules and guard rails on its Financials step.
 
 ---
 
