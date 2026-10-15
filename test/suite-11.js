@@ -280,7 +280,35 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.goto('http://127.0.0.1:8100/index.html#/analysis/'+aid,{waitUntil:'networkidle'});
  await p.waitForTimeout(1000);
 
+ // ---- re-sync is a proposal: it asks first, names what will change, and
+ // stores nothing until the analysis is saved
  await p.locator('.inv-drift').click(); await p.waitForTimeout(1200);
+ const rsTxt=(await p.locator('#invModal').textContent().catch(()=>'')).replace(/\s+/g,' ');
+ ok('re-sync asks first, naming what will change from old to new',
+    /Re-Sync From Budget v2/.test(rsTxt) && /Purchase Price \$5,000,000 → \$[\d,]+/.test(rsTxt),
+    rsTxt.slice(0,260));
+ ok('and flags a value the user had typed over before replacing it',
+    /Changed Name/.test(rsTxt) && /Overridden/.test(rsTxt), rsTxt.slice(0,260));
+ await p.click('#invModal button:has-text("Apply Re-Sync")'); await p.waitForTimeout(400);
+ const applied=await p.evaluate(()=>{const s=FSInvestmentUI._state();
+   return {dirty:s.dirty,stale:s.stale,v:s.source.budgetVersionNumber,price:s.input.acquisition.basis.value,
+     exportOff:document.getElementById('invExportBtn').disabled};});
+ ok('applying it makes the re-sync an unsaved change with a stale result',
+    applied.dirty && applied.stale && applied.v===2 && applied.price>5000000, JSON.stringify(applied));
+ ok('so the export waits for the save', applied.exportOff);
+ const notYet=await p.evaluate(async id=>await (await fetch('/api/investment-analysis/'+id)).json(),aid);
+ ok('the saved version is NOT restated by a re-sync',
+    notYet.currentVersionNumber===1 && notYet.source.budgetVersionNumber===1 && notYet.source.drift===true
+    && notYet.input.acquisition.basis.value===5000000,
+    JSON.stringify({v:notYet.currentVersionNumber,src:notYet.source,price:notYet.input.acquisition.basis.value}));
+ // Walking away discards the re-sync with every other unsaved edit.
+ await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(1200);
+ ok('discarding the edits discards the re-sync: the budget update is offered again',
+    (await p.locator('.inv-drift').count())===1
+    && await p.evaluate(()=>FSInvestmentUI._state().source.budgetVersionNumber===1));
+ await p.locator('.inv-drift').click(); await p.waitForTimeout(1200);
+ await p.click('#invModal button:has-text("Apply Re-Sync")'); await p.waitForTimeout(400);
+ await p.click('#invSaveBtn'); await p.waitForTimeout(1000);
  const resynced=await p.evaluate(async id=>await (await fetch('/api/investment-analysis/'+id)).json(),aid);
  ok('re-syncing pulls the new purchase price',
     resynced.input.acquisition.basis.value>5000000,
@@ -295,8 +323,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     resynced.input.expenses.derivedFrom
       && resynced.input.expenses.derivedFrom.budgetVersionNumber===2,
     JSON.stringify(resynced.input.expenses.derivedFrom));
- ok('the saved version is NOT restated by a re-sync',
-    resynced.currentVersionNumber===1, String(resynced.currentVersionNumber));
+ ok('the save records the re-sync as a new version, with a matching result',
+    resynced.currentVersionNumber===2
+    && resynced.result.summary.purchasePrice===resynced.input.acquisition.basis.value,
+    String(resynced.currentVersionNumber));
 
  // ---- Home-page creation: ONE button, the shared modal
  await p.click('#nav-home'); await p.waitForTimeout(600);
@@ -333,7 +363,25 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the modal offers linked creation AND standalone in one place',
     (await p.locator('#invProjectPick tbody tr',{hasText:'TST-9911'}).count())===1
     && await p.locator('#invModal #invNewName').isVisible());
- await p.locator('#invProjectPick tbody tr',{hasText:'TST-9911'}).first().click();
+ // Two namespaces: rows are BUDGETS, grouped under the project they belong to.
+ ok('the picker heads its id column Budget, never Project ID',
+    await p.evaluate(()=>{const h=[...document.querySelectorAll('#invProjectPick thead th')].map(x=>x.textContent.trim());
+      return h[0]==='Budget'&&!h.includes('Project ID');}));
+ ok('a budget with no project is grouped as such, not passed off as a project',
+    /Not Linked to a Project/.test(await p.locator('#invProjectPick').textContent()));
+ ok('the search box takes focus', await p.evaluate(()=>document.activeElement&&document.activeElement.id==='invPickQ'));
+ await p.fill('#invPickQ','no-such-budget'); await p.waitForTimeout(100);
+ ok('searching filters the list',
+    (await p.locator('#invProjectPick tr[data-pick]:visible').count())===0
+    && await p.locator('#invProjectPick .inv-pick-none').isVisible());
+ await p.fill('#invPickQ','9911'); await p.waitForTimeout(100);
+ ok('and finds a budget by its id',
+    (await p.locator('#invProjectPick tr[data-pick]:visible').count())===1);
+ // Keyboard: ArrowDown from the search lands on the row, Enter picks it.
+ await p.press('#invPickQ','ArrowDown');
+ ok('rows are keyboard reachable',
+    await p.evaluate(()=>!!document.activeElement&&document.activeElement.matches('#invProjectPick tr[data-pick]')));
+ await p.keyboard.press('Enter');
  await p.waitForTimeout(900);
  ok('picking a project opens a linked analysis', /#\/analysis\/[0-9a-f-]{36}$/.test(p.url()), p.url());
  const linked=await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];

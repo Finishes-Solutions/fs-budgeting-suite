@@ -220,7 +220,8 @@ var EVENT_LABEL = {
   favorite_add: 'Favorited', favorite_remove: 'Unfavorited',
   export_pdf: 'Exported PDF', export_xlsx: 'Exported Excel', export_csv: 'Exported CSV',
   export_print: 'Printed', settings_update: 'Updated settings',
-  profile_update: 'Updated profile', pricing_publish: 'Published pricing'
+  profile_update: 'Updated profile', pricing_publish: 'Published pricing',
+  feedback_submit: 'Sent feedback', feedback_update: 'Updated feedback'
 };
 function eventLabel(e) { return EVENT_LABEL[e] || e; }
 
@@ -256,7 +257,15 @@ function eventDetail(e) {
     case 'project_update': case 'profile_update':
       return (name ? name + ' — ' : '')
         + (Array.isArray(d.fields) ? d.fields.map(fieldPhrase).join('; ') : '');
+    case 'feedback_submit':
+      return [d.kind === 'feature' ? 'Feature request' : d.kind === 'bug' ? 'Bug' : '',
+        d.title ? String(d.title) : ''].filter(Boolean).join(' · ');
+    case 'feedback_update':
+      return d.status ? 'Status → ' + String(d.status) : '';
     case 'settings_update':
+      // A role change, logged against the account whose role it was.
+      if (d.roleChangedTo) return 'Role changed to ' + String(d.roleChangedTo).split('_')
+        .map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
       return Array.isArray(d.changed) ? d.changed.map(function (c) {
         return typeof c === 'string' ? c.replace(/([a-z])([A-Z])/g, '$1 $2') : fieldPhrase(c);
       }).join('; ') : '';

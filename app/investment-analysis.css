@@ -61,14 +61,14 @@
 .inv-errmsg{font-size:11.5px;color:#C43C3C;margin-top:3px}
 .inv-statebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .inv-pill{font-size:11.5px;border-radius:999px;padding:3px 10px;background:var(--ink-100);color:var(--ink-700)}
-.inv-pill.stale{background:#FBF3E4;color:#8A6116}
-.inv-pill.dirty{background:#FBF3E4;color:#8A6116}
+.inv-pill.stale{background:var(--warn-bg,#FBF3E4);color:var(--warn-ink,#8A6116)}
+.inv-pill.dirty{background:var(--warn-bg,#FBF3E4);color:var(--warn-ink,#8A6116)}
 .inv-pill.busy{background:#EAF1FB;color:#2B579A}
 .inv-pill.saved{background:var(--green-50);color:var(--green-700)}
 .inv-pill.conflict{background:#FDF3F3;color:#C43C3C}
 
-.inv-warnings{background:#FBF3E4;border:1px solid #EAD9B0;border-radius:8px;
-  padding:10px 14px;margin:12px 0;font-size:12.5px;color:#6E4E12}
+.inv-warnings{background:var(--warn-bg,#FBF3E4);border:1px solid var(--warn-bd,#EAD9B0);border-radius:8px;
+  padding:10px 14px;margin:12px 0;font-size:12.5px;color:var(--warn-ink,#6E4E12)}
 .inv-warnings ul{margin:4px 0 0 18px;padding:0}
 
 /* report */
@@ -187,3 +187,30 @@ html[data-theme=dark] .inv-drift-dot{background:#2a2317;border-color:#4d4026}
 .inv-errjump:hover{background:#F6E9CE;border-color:#C9A94F}
 .inv-errjump:focus-visible{outline:none;box-shadow:var(--focus)}
 html[data-theme=dark] .inv-errjump{background:#2a2317;border-color:#4d4026;color:#E8C97A}
+
+/* ---- View Results: a calculation that finished away from step 6 waits here
+   rather than pulling the user off the step they were on. */
+button.inv-pill.view{border:1px solid var(--green-700);background:var(--white);color:var(--green-700);
+  cursor:pointer;font:inherit;font-size:11.5px;font-weight:600}
+button.inv-pill.view:hover{background:var(--green-50)}
+button.inv-pill.view:focus-visible{outline:none;box-shadow:var(--focus)}
+
+/* ---- New Investment Analysis picker: budgets grouped under their project */
+.inv-pick-grp td{background:var(--ink-50);font-size:12px;font-weight:600;color:var(--ink-800);
+  padding:7px 10px;border-bottom:1px solid var(--ink-150)}
+.inv-pick-grp .mono{font-family:var(--fm);color:var(--green-700)}
+.inv-pick-grp .shut{color:var(--ink-500);font-weight:400}
+#invProjectPick tr[data-pick]:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--green-700)}
+.inv-pick-none td{color:var(--ink-500);font-size:12.5px}
+.inv-primary{display:inline-block;font-family:var(--fm);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;font-weight:600;color:var(--green-700);background:var(--green-50);
+  border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:middle}
+
+/* ---- Re-Sync confirmation: what moves, old → new */
+.inv-resync-list{list-style:none;margin:0 0 6px;padding:0;display:flex;flex-direction:column;gap:7px;font-size:13px}
+.inv-resync-list li{line-height:1.5}
+.inv-resync-list .mono{font-family:var(--fm);font-size:12px}
+.inv-resync-list .inv-origin{margin-left:4px}
+
+/* version rows are keyboard-reachable now */
+.inv-verlist tr[tabindex]:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--green-700)}

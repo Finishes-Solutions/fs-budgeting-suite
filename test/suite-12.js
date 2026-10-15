@@ -21,6 +21,19 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the modal offers both linked and standalone creation',
     /From Existing Budget/.test(await p.locator('#invModal').textContent())
     && /Standalone Analysis/.test(await p.locator('#invModal').textContent()));
+ // ---- it behaves like the app's other dialogs
+ ok('the dialog is announced as a modal dialog and takes focus',
+    await p.evaluate(()=>{const s=document.querySelector('#invModal .mod-sheet');
+      return s.getAttribute('role')==='dialog'&&s.getAttribute('aria-modal')==='true'
+        &&!!document.getElementById(s.getAttribute('aria-labelledby'))
+        &&!!document.activeElement&&!!document.activeElement.closest('#invModal');}));
+ await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+ ok('Escape closes it', (await p.locator('#invModal').count())===0);
+ ok('and focus returns to the button that opened it',
+    await p.evaluate(()=>/New Investment Analysis/.test((document.activeElement&&document.activeElement.textContent)||'')),
+    await p.evaluate(()=>(document.activeElement&&document.activeElement.outerHTML||'').slice(0,80)));
+ await p.click('#page-analyses button:has-text("+ New Investment Analysis")');
+ await p.waitForTimeout(400);
  await p.fill('#invNewName','Workflow Deal');
  await p.click('button:has-text("Create Standalone Analysis")');
  await p.waitForTimeout(700);
@@ -113,12 +126,21 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#invCalcBtn'); await p.waitForTimeout(800);
  ok('errors clear once assumptions are complete', (await p.locator('.inv-err').count())===0);
  ok('report renders', (await p.locator('#invReport .inv-kpis .kpi').count())>=5);
+ ok('finishing the last step and calculating shows the results',
+    await p.locator('[data-steppane="6"]').evaluate(e=>e.classList.contains('on')));
+ // Every export names the saved version it came from, so a calculation that
+ // has not been saved has no version to name.
+ ok('a calculated but unsaved analysis cannot be exported yet',
+    await p.evaluate(()=>{const b=document.getElementById('invExportBtn');
+      return b.disabled&&/Save to export/.test(b.title);}),
+    await p.evaluate(()=>document.getElementById('invExportBtn').title));
 
  // save → version 1; reload and compare the persisted report values
  // (report fidelity is asserted against the SAVED canonical result below)
  await p.click('#invSaveBtn'); await p.waitForTimeout(800);
  ok('save shows the Saved pill', /Saved/.test(await p.locator('#invState').textContent()),
     await p.locator('#invState').textContent());
+ ok('saving enables Export', await p.evaluate(()=>!document.getElementById('invExportBtn').disabled));
  ok('save recorded version 1', (await p.evaluate(async()=>{const id=location.hash.match(/analysis\/([0-9a-f-]{36})/)[1];return (await (await fetch('/api/investment-analysis/'+id)).json()).currentVersionNumber;}))===1);
  await p.evaluate(()=>FSInvestmentUI.showVersions(FSInvestmentUI.currentId()));
  await p.waitForTimeout(500);
@@ -152,9 +174,18 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.check('#invFinanced'); await p.waitForTimeout(400);
  ok('editing marks the result stale', /stale/i.test(await p.locator('#invState').textContent()));
  await p.click('#invCalcBtn'); await p.waitForTimeout(800);
+ // Mid-form, Calculate no longer throws you onto the report.
+ ok('calculating mid-form leaves you on the step you were on',
+    await p.locator('[data-steppane="4"]').evaluate(e=>e.classList.contains('on')));
+ ok('and offers View Results instead',
+    await p.locator('#invState button:has-text("View Results")').isVisible());
  const rpt3=await p.locator('#invReport').textContent();
  ok('financed recalculation adds mortgage, DSCR and leverage', /DSCR/.test(rpt3)&&/Leverage Impact/.test(rpt3));
  ok('monthly payment appears in the mortgage step', /\$[\d,]+\.\d\d/.test(await p.locator('#invMonthlyPay').inputValue()));
+ await p.click('#invState button:has-text("View Results")'); await p.waitForTimeout(250);
+ ok('View Results opens the report',
+    await p.locator('[data-steppane="6"]').evaluate(e=>e.classList.contains('on'))
+    && (await p.locator('#invState button:has-text("View Results")').count())===0);
 
  // ---- ten-year projection
  await p.click('#invSteps button[data-step="1"]');
@@ -214,6 +245,84 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#nav-home'); await p.waitForTimeout(300);
  confirmMsg=await p.evaluate(()=>window.__cm||'');
  ok('leaving a dirty analysis asks first', /unsaved changes/i.test(confirmMsg), confirmMsg);
+
+ // ---- agreeing to leave IS the discard: nothing is held back or re-offered
+ const draftKey=await p.evaluate(id=>FSInvestmentUI._draftKey(id),aid);
+ const draftOf=()=>p.evaluate(k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return 'unreadable';}},draftKey);
+ ok('a confirmed leave discards the edits and their local copy',
+    (await draftOf())===null && await p.evaluate(()=>!FSInvestmentUI.isDirty()));
+ await p.evaluate(id=>{location.hash='#/analysis/'+id;},aid); await p.waitForTimeout(1000);
+ ok('so reopening the analysis offers nothing to restore',
+    (await p.locator('#invDraftBanner .inv-draft').count())===0);
+
+ // ---- a full save keeps the workflow status (every save used to reset it to Draft)
+ await p.evaluate(async id=>{await fetch('/api/investment-analysis/'+id,{method:'PUT',
+   headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'In Review'})});},aid);
+ await p.click('#invSteps button[data-step="3"]');
+ await p.fill('[data-f="vacancy.value"]','12');
+ await p.locator('[data-f="vacancy.value"]').dispatchEvent('change');
+ await p.click('#invSaveBtn'); await p.waitForTimeout(900);
+ const afterStatus=await p.evaluate(async id=>await (await fetch('/api/investment-analysis/'+id)).json(),aid);
+ ok('saving the assumptions keeps the In Review status',
+    afterStatus.status==='In Review' && Math.abs(afterStatus.input.vacancy.value-0.12)<1e-9,
+    afterStatus.status);
+
+ // ---- an edit made while a save is in flight stays unsaved
+ const putPath='**/api/investment-analysis/'+aid;
+ await p.route(putPath,async r=>{
+   if(r.request().method()==='PUT') await new Promise(x=>setTimeout(x,1200));
+   await r.continue();
+ });
+ await p.fill('[data-f="vacancy.value"]','13');
+ await p.locator('[data-f="vacancy.value"]').dispatchEvent('change');
+ await p.click('#invSaveBtn'); await p.waitForTimeout(250);
+ await p.fill('[data-f="vacancy.value"]','14');
+ await p.locator('[data-f="vacancy.value"]').dispatchEvent('change');
+ await p.waitForTimeout(1600);
+ await p.unroute(putPath);
+ const race=await p.evaluate(()=>{const s=FSInvestmentUI._state();
+   return {dirty:s.dirty,stale:s.stale,vac:s.input.vacancy.value,ver:s.loadedVersion,
+     exportOff:document.getElementById('invExportBtn').disabled,
+     pill:document.getElementById('invState').textContent};});
+ const raceSrv=await p.evaluate(async id=>await (await fetch('/api/investment-analysis/'+id)).json(),aid);
+ ok('the save in flight recorded what was on screen when it was pressed',
+    Math.abs(raceSrv.input.vacancy.value-0.13)<1e-9 && raceSrv.currentVersionNumber===race.ver,
+    JSON.stringify({srv:raceSrv.input.vacancy.value,v:raceSrv.currentVersionNumber,ver:race.ver}));
+ ok('and the edit made while it was out is still unsaved, with a stale result',
+    race.dirty && race.stale && Math.abs(race.vac-0.14)<1e-9 && /Unsaved/.test(race.pill), JSON.stringify(race));
+ ok('so Export stays off until that is saved too', race.exportOff);
+
+ // ---- local draft recovery: kept on this device, offered back, never applied unasked
+ await p.waitForTimeout(1000);
+ ok('unsaved edits are kept on this device',
+    await (async()=>{const d=await draftOf();return !!d&&Math.abs(d.input.vacancy.value-0.14)<1e-9;})());
+ const dialogTypes=[]; p.on('dialog',d=>dialogTypes.push(d.type()));
+ await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(1000);
+ ok('closing or reloading with unsaved edits asks first',
+    dialogTypes.includes('beforeunload'), JSON.stringify(dialogTypes));
+ const banner=(await p.locator('#invDraftBanner').textContent()).replace(/\s+/g,' ');
+ ok('reopening offers the unsaved changes back, with when they were made',
+    /Unsaved changes from \d{2}-\d{2}-\d{4} \d{1,2}:\d{2}/.test(banner)&&/Restore/.test(banner)&&/Discard/.test(banner),
+    banner.slice(0,160));
+ ok('without applying them on its own',
+    await p.evaluate(()=>{const s=FSInvestmentUI._state();return !s.dirty&&Math.abs(s.input.vacancy.value-0.13)<1e-9;}));
+ await p.click('#invDraftBanner button:has-text("Restore")'); await p.waitForTimeout(300);
+ await p.click('#invSteps button[data-step="3"]'); await p.waitForTimeout(150);
+ ok('Restore brings them back as unsaved changes',
+    (await p.locator('[data-f="vacancy.value"]').inputValue())==='14'
+    && await p.evaluate(()=>FSInvestmentUI._state().dirty)
+    && (await p.locator('#invDraftBanner .inv-draft').count())===0);
+ await p.click('#invSaveBtn'); await p.waitForTimeout(900);
+ ok('and saving them clears the kept copy',
+    (await draftOf())===null && /Saved/.test(await p.locator('#invState').textContent()));
+ await p.fill('[data-f="vacancy.value"]','15');
+ await p.locator('[data-f="vacancy.value"]').dispatchEvent('change');
+ await p.waitForTimeout(1000);
+ await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(1000);
+ await p.click('#invDraftBanner button:has-text("Discard")'); await p.waitForTimeout(200);
+ ok('Discard drops the kept copy and the offer',
+    (await draftOf())===null && (await p.locator('#invDraftBanner .inv-draft').count())===0
+    && await p.evaluate(()=>Math.abs(FSInvestmentUI._state().input.vacancy.value-0.14)<1e-9));
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
