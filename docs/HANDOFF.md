@@ -641,6 +641,41 @@ update selectors alongside label changes.
   nothing depends on it either way. `dbo.ProjectIdMap` tracks the re-keys, so
   rollback still works from the *current* ids.
 
+**Database state — written, NOT YET RUN**
+
+- `sql/publish_multifamily_input_defaults.sql` — publishes a new pricing
+  library (`2026.10-v1`) **and** a new multifamily template version together,
+  in one transaction, so new budgets follow their inputs: the pool becomes an
+  amenity lump sum (gone when Amenity SF is 0), nine finish lines (appliances,
+  cabinets, countertops, interior doors, door hardware, mirrors, bath
+  accessories, blinds, mailboxes) are priced per unit, and the developer fee
+  becomes the equivalent percentage of project cost. Rates are back-solved so
+  the template's own default totals do not move (contract sum −$0.34, project
+  cost +$1.39 on the shipped template).
+
+  Run order: standalone, any time — it publishes only scopes and bases the
+  deployed code already understands, so no release has to precede it. Read the
+  preflight output before it commits; every verification row must read PASS or
+  INFO. Re-running is a no-op. If `2026.10-v1` has already been used as a
+  pricing version name, edit `@newPricingVersion` at the top.
+
+  What to review afterwards: the rates are **starting points, not house
+  numbers** — the per-unit rates are odd cents ($3,081.90 for appliances) and
+  the fee is `2.0046%`. Whoever owns pricing should round them and republish
+  from the Pricing page (and the template editor for the fee).
+
+  Two things that are deliberate, not bugs: the nine per-unit lines carry
+  `(per Unit)` in their descriptions — repricing copies a library RATE by
+  `scope|code|desc` but never its basis, so keeping the old key would put a
+  $3,081.90 per-unit rate on every existing budget's per-SF appliance line.
+  And existing budgets are not touched: they keep their residential per-SF
+  pool and finish lines, and Update Pricing leaves those ten lines at the
+  rates they have. `tools/input-driven-defaults.js` is the JavaScript mirror
+  of the script and `test/input-defaults.test.js` proves it (including
+  against output captured from SQL Server) — change them together.
+  `DEFAULT_PRICING` in `app/index.html` (the offline fallback) should be
+  brought into line with `2026.10-v1` once the script has run.
+
 **Housekeeping**
 
 - **The `Close Pull Request Job` fails on every PR close, and per-PR preview

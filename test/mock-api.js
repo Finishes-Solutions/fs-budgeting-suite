@@ -227,7 +227,10 @@ function sovRows(doc) {
     let key = typeof l.lineId === 'string' && l.lineId ? l.lineId : null;
     if (key && seen.has(key)) key = null;
     if (key) seen.add(key);
-    const qty = l.auto === false ? (l.qty || 0)
+    // An inactive scope (amenity while amenSF is 0) keeps its row with qty 0 —
+    // the same rule, from the same function, as api/shared/sov.js.
+    const qty = !bc.scopeActive(doc, l.scope || 'res') ? 0
+      : l.auto === false ? (l.qty || 0)
       : l.basis === 'sf' ? (doc.resSF || 0)
       : l.basis === 'asf' ? (doc.amenSF || 0)
       : l.basis === 'unit' ? units : 1;

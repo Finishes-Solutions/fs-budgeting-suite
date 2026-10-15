@@ -481,6 +481,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--green-600);box-shadow
 input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .err{border-color:var(--danger)!important}
 .fld-err{font-size:11.5px;color:var(--danger);margin-top:4px}
+.fld-note{font-size:11.5px;color:var(--ink-500);margin-top:4px;line-height:1.45}
 
 .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:var(--r);
   font-family:var(--fb);font-weight:600;font-size:13px;padding:8px 16px;cursor:pointer;transition:all .12s}
@@ -816,6 +817,11 @@ tr.edited:hover td{background:var(--edit-50)}
 .scope-hd:hover td{background:var(--solid-2)}
 .grp-hd:hover td{background:var(--ink-100)}
 .shut{font-weight:400;opacity:.6;letter-spacing:.06em;margin-left:8px;text-transform:none}
+/* A suppressed scope (amenity at 0 SF): a muted stand-in for the dark header,
+   deliberately without the pointer — there is nothing to expand. */
+.tbl tr.scope-off td{background:var(--ink-50);color:var(--ink-500);font-family:var(--fm);font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;font-weight:600;padding:9px 12px;border-bottom:1px dashed var(--ink-200)}
+.tbl tr.scope-off td .shut{opacity:1}
 .budget-scroll{max-height:72vh}
 .budget-scroll thead th{position:sticky;top:0;z-index:2;background:var(--white);box-shadow:inset 0 -1px 0 var(--ink-200)}
 
@@ -1158,7 +1164,8 @@ th.sortable.sorted{color:var(--ink-900)}
             aria-describedby="pSizeErr" oninput="touch();validateSize()">
           <div class="fld-err" id="pSizeErr" style="display:none">Square footage is required — enter a building size greater than zero.</div></label>
         <label class="fld"><span class="lab">Amenity / Clubhouse SF</span>
-          <input type="number" class="num" id="pASF" value="1200" min="0" step="50" oninput="touch();validateSize()"></label>
+          <input type="number" class="num" id="pASF" value="1200" min="0" step="50" aria-describedby="pASFNote" oninput="touch();validateSize()">
+          <div class="fld-note" id="pASFNote" style="display:none"></div></label>
         <label class="fld"><span class="lab">Total Site SF</span><input type="number" class="num" id="pSiteSF" value="0" min="0" step="1000" oninput="syncSiteFromSF()"></label>
         <label class="fld"><span class="lab">Site Acreage</span><input type="number" class="num" id="pSiteAc" value="0" min="0" step="0.01" oninput="syncSiteFromAcres()"></label>
       </div>
@@ -5640,6 +5647,7 @@ function renderSiteMetrics(){
   if(et)et.classList.toggle('warn',m.bldgEff!==null&&m.bldgEff>1);
   const st=document.getElementById('mSiteEffTile');
   if(st)st.classList.toggle('warn',m.siteEff!==null&&m.siteEff>1);
+  renderAmenNote();
 }
 /* One expense row's monthly cost. A 'pctIncome' row (management fee, often
    taxes) is a share of rent + other income — NOT circular, because income does
@@ -5781,7 +5789,8 @@ function renderBudget(){
   const b=document.getElementById('budBody');b.innerHTML='';
   const shown=doc.lines.filter(l=>scopeActive(l.scope)).length;
   document.getElementById('budEmpty').style.display=shown?'none':'block';
-  activeScopes().forEach(sc=>{
+  ['res','amen','soft'].forEach(sc=>{
+    if(!scopeActive(sc)){b.insertAdjacentHTML('beforeend',suppressedScopeRow(sc));return;}
     const scLines=doc.lines.map((l,gi)=>({l,gi})).filter(x=>x.l.scope===sc);
     if(!scLines.length)return;
     const scSum=scopeSum(sc),scShut=collapsed.has(sc);
@@ -5835,6 +5844,25 @@ function renderBudget(){
   });
   renderEditLegend();
   renderSelectionBar();
+}
+
+/* An inactive scope's lines still exist and still cost nothing (scopeSum), but a
+   section that silently vanishes reads as lost work. This muted, non-interactive
+   row stands where the scope would be and says why. Display only: no money, no
+   selection, no data-toggle — and exports never read it. */
+function suppressedLines(sc){return scopeActive(sc)?0:doc.lines.filter(l=>l.scope===sc).length;}
+function suppressedScopeRow(sc){
+  const n=suppressedLines(sc);
+  if(!n)return '';
+  return `<tr class="scope-off" aria-disabled="true"><td colspan="5">${esc(SCOPES[sc])} <span class="shut">— ${n} ${n===1?'line':'lines'} excluded because Amenity SF is 0</span></td>
+    <td class="calc r">${usd(0)}</td><td class="calc r">—</td><td class="no-print"></td></tr>`;
+}
+/* The same fact, said where it can be changed: under the Amenity SF input. */
+function renderAmenNote(){
+  const el=document.getElementById('pASFNote');if(!el||!doc)return;
+  const n=suppressedLines('amen');
+  el.style.display=n?'block':'none';
+  el.textContent=n?'With amenity SF at 0, the '+n+' amenity '+(n===1?'line is':'lines are')+' excluded from the budget. Enter the clubhouse size to include them.':'';
 }
 
 /* ---- line lookup and mutation, all by stable lineId ---- */

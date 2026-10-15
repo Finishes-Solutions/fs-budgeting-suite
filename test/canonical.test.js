@@ -104,3 +104,51 @@ test('duplicate or missing lineIds fall back to a null LineKey', () => {
 test('an empty document projects to no rows', () => {
   assert.deepEqual(sovRows({}), []);
 });
+
+// ---- inactive scopes: amenity suppression is arithmetic, not filtering ----
+const noAmen = {
+  resSF: 1000, amenSF: 0,
+  units: [{ count: 10 }],
+  lines: [
+    { lineId: 'r', code: '03 30 00', grp: 'Shell', scope: 'res', desc: 'Slab', basis: 'sf', unit: 5, auto: true },
+    { lineId: 'a1', code: '09 60 00', grp: 'Amenity', scope: 'amen', desc: 'Flooring', basis: 'asf', unit: 4, auto: true },
+    { lineId: 'a2', code: '13 11 00', grp: 'Amenity', scope: 'amen', desc: 'Pool', basis: 'ls', unit: 250000, qty: 1, auto: false },
+    { lineId: 'a3', code: '12 50 00', grp: 'Amenity', scope: 'amen', desc: 'Furniture', basis: 'asf', unit: 3, qty: 900, auto: false },
+    { lineId: 's', code: 'SC-01', grp: 'Soft', scope: 'soft', desc: 'Architect', basis: 'sf', unit: 2, auto: true }
+  ]
+};
+
+test('an inactive amenity scope keeps its rows but contributes nothing', () => {
+  // The lump-sum and manual-quantity lines are the ones that matter: they do
+  // not follow amenSF to zero on their own, so before this rule they wrote a
+  // real Total into dbo.SovLines that ContractSum excluded.
+  const r = sovRows(noAmen);
+  assert.equal(r.length, 5, 'rows are kept, so LineOrder/LineKey identity survives');
+  assert.deepEqual(r.map(x => x.lineKey), ['r', 'a1', 'a2', 'a3', 's']);
+  assert.deepEqual(r.map(x => x.lineOrder), [1, 2, 3, 4, 5]);
+  for (const x of r.filter(x => x.scope === 'amen')) {
+    assert.equal(x.qty, 0, x.descr + ' quantity');
+    assert.equal(x.total, 0, x.descr + ' total');
+  }
+  assert.equal(r[2].rate, 250000, 'the rate is still the rate; only the quantity is suppressed');
+  assert.equal(r[0].total, 5000);
+  assert.equal(r[4].total, 2000);
+});
+
+test('turning the amenity scope back on restores the amenity rows', () => {
+  const r = sovRows({ ...noAmen, amenSF: 500 });
+  assert.equal(r[1].qty, 500);
+  assert.equal(r[2].total, 250000);
+  assert.equal(r[3].total, 2700);
+});
+
+test('SOV rows add up to the scope sums the contract sum is built from', () => {
+  const calc = require('../api/shared/budget-calc');
+  for (const d of [noAmen, { ...noAmen, amenSF: 500 }]) {
+    const rows = sovRows(d);
+    for (const sc of ['res', 'amen', 'soft']) {
+      const fromRows = rows.filter(x => x.scope === sc).reduce((s, x) => s + x.total, 0);
+      assert.equal(fromRows, calc.scopeSum(d, sc), sc + ' at amenSF ' + d.amenSF);
+    }
+  }
+});
