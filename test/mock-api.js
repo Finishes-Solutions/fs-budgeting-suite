@@ -353,24 +353,18 @@ const principal = {
   }
 };
 
-// Same SOV projection as api/shared/versioning.js, so a versioned snapshot in
-// the mock carries the same shape the real one does.
+// The REAL SOV projection (api/shared/sov.js), not a copy — a copy is what let
+// amenity suppression and the quantity rule drift. Shaped the way
+// api/budget-versions reads rows back: `desc` for Descr, the DECIMAL(18,2/4/2)
+// column rounding, and the provenance writeSovLines() stamps.
+const { sovRows: sovProjection } = require('../api/shared/sov');
+const dec = (v, dp) => Math.round(v * 10 ** dp) / 10 ** dp;
 function sovRows(doc) {
-  const units = (doc.units || []).reduce((s, u) => s + (u.count || 0), 0);
-  const seen = new Set();
-  return (doc.lines || []).map((l, i) => {
-    let key = typeof l.lineId === 'string' && l.lineId ? l.lineId : null;
-    if (key && seen.has(key)) key = null;
-    if (key) seen.add(key);
-    const qty = l.auto === false ? (l.qty || 0)
-      : l.basis === 'sf' ? (doc.resSF || 0)
-      : l.basis === 'asf' ? (doc.amenSF || 0)
-      : l.basis === 'unit' ? units : 1;
-    const rate = l.unit || 0;
-    return { lineOrder: i + 1, lineKey: key, scope: l.scope || 'res', grp: l.grp || '',
-             code: l.code || '', desc: l.desc || '', basis: l.basis || 'ls',
-             qty, rate, total: qty * rate, provenance: 'parametric-estimate' };
-  });
+  return sovProjection(doc).map(r => ({
+    lineOrder: r.lineOrder, lineKey: r.lineKey, scope: r.scope, grp: r.grp,
+    code: r.code, desc: r.descr, basis: r.basis,
+    qty: dec(r.qty, 2), rate: dec(r.rate, 4), total: dec(r.total, 2),
+    provenance: 'parametric-estimate' }));
 }
 
 // Templates, seeded with `multifamily` from test/pricing.json plus the same

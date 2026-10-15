@@ -98,21 +98,25 @@ function grossIncome(doc) {
   // income does not depend on expenses, so this is a straight computation off
   // the rent + other-income total.
   const incomeMo = rent + other;
-  const exp = (doc.expenses || []).reduce((s, e) =>
-    s + (e.per === 'pctIncome'
-      ? incomeMo * nz(e.rate) / 100
-      : nz(e.rate) * (e.per === 'fixed' ? (nz(e.count) || 1) : (e.auto ? tu : nz(e.count)))), 0);
+  const exp = (doc.expenses || []).reduce((s, e) => s + expenseMonthly(doc, e, incomeMo), 0);
   const netOther = other - exp;
   return { rentMo: rent, otherMo: other, expMo: exp, netOtherMo: netOther,
            grossYr: 12 * (rent + other), netYr: 12 * (rent + netOther) };
 }
 
-// The monthly amount one expense row contributes — shared by the renderers and
-// the exports so a pctIncome row prints the same number it is charged at.
+// The monthly amount one expense row contributes, and the ONE place the
+// per-basis rule lives server-side: grossIncome() sums it and the analysis
+// import (investment/from-budget.js) itemises it. The browser's
+// expenseMonthly() in app/index.html mirrors it, and every budget export —
+// print, engine PDF, legacy PDF, Excel — prints its rows from that mirror, so
+// a pctIncome row prints the number it is charged at and the rows add up to
+// the expense total. (They once each computed rate x count, which printed $0
+// for a % of income row under a correct total: BUDGET-SYSTEM.md §16 D2.)
 function expenseMonthly(doc, e, incomeMo) {
   const tu = totUnits(doc);
   if (e.per === 'pctIncome') {
-    const inc = Number.isFinite(+incomeMo) ? +incomeMo : grossIncome(doc).rentMo + grossIncome(doc).otherMo;
+    const g = Number.isFinite(+incomeMo) ? null : grossIncome(doc);
+    const inc = g ? g.rentMo + g.otherMo : +incomeMo;
     return inc * nz(e.rate) / 100;
   }
   return nz(e.rate) * (e.per === 'fixed' ? (nz(e.count) || 1) : (e.auto ? tu : nz(e.count)));

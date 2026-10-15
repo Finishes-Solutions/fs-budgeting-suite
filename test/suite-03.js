@@ -245,6 +245,66 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       ===Math.round(2*318972.18*100),
     String(await p.evaluate(()=>doc.lines.find(x=>x.derived==='impactFees').unit)));
 
+ // ---- Exports: the derived line is DERIVED, not edited, and a % of income
+ // expense row prints the amount it is charged at (BUDGET-SYSTEM.md §16 D2, D3).
+ // Every producer is called with the same selection the modal would give.
+ const ex = await p.evaluate(()=>{
+   const s={stats:1,units:1,other:1,budget:1,csi:1,summary:1,edits:1,sign:0};
+   const g=grossIncome();
+   const want=doc.expenses.map(e=>({label:e.label,pct:e.per==='pctIncome',rate:e.rate,mo:expenseMonthly(e,g.incomeMo)}));
+   const html=buildReport(s);
+   const rptRow=lbl=>(html.split('<tr>').find(r=>r.indexOf('<td>'+lbl+'</td>')===0)||'');
+   const sc20=html.split('<tr>').find(r=>/SC-20/.test(r))||'';
+   const fs=buildBudgetFsdoc(s).fsdoc;
+   const inc=fs.sheets.find(x=>x.key==='other');
+   const expT=inc.blocks.find(b=>b.kind==='table'&&b.totals&&b.totals.line==='Total Operating Expenses');
+   const bud=fs.sheets.find(x=>x.key==='budget');
+   const fsItems=bud.blocks.filter(b=>b.kind==='table').flatMap(b=>b.rows.map(r=>r.item));
+   const fsNotes=bud.blocks.filter(b=>b.kind==='note').map(b=>b.text);
+   const lg=legacyBudgetPdfDoc(s);
+   const lRows=lg.sheets.find(x=>x.key==='other').blocks[0].rows;
+   const lBud=lg.sheets.find(x=>x.key==='budget');
+   const lItems=lBud.blocks[0].rows.map(r=>r.label);
+   const lNotes=lBud.blocks.filter(b=>b.kind==='note').map(b=>b.text);
+   return {want,expMo:g.expMo,usd:want.map(w=>usd(w.mo)),
+     rpt:want.map(w=>rptRow(w.label)),sc20,
+     fsRows:expT.rows,fsTot:expT.totals.monthly,fsItems,fsNotes,
+     lRows:lRows.filter(r=>!r.total&&want.some(w=>w.label===r.label)),
+     lTot:(lRows.find(r=>r.label==='Total Operating Expenses')||{values:[]}).values[3],lItems,lNotes,
+     editedCount:editedCount(),isEditedAll:doc.lines.filter(isEdited).length};
+ });
+ const pctIdx = ex.want.map((w,i)=>w.pct?i:-1).filter(i=>i>=0);
+ ok('the budget carries % of income expense rows to export', pctIdx.length>0 && pctIdx.every(i=>ex.want[i].mo>0),
+    JSON.stringify(ex.want.filter(w=>w.pct)));
+ ok('print: a % of income row prints its real monthly amount, its rate as a percent and its basis',
+    pctIdx.every(i=>ex.rpt[i].includes('('+ex.usd[i]+')') && ex.rpt[i].includes('>'+ex.want[i].rate+'%<')
+      && ex.rpt[i].includes('% of income') && !ex.rpt[i].includes('($0)')),
+    JSON.stringify(pctIdx.map(i=>ex.rpt[i])));
+ ok('print: the derived impact-fee line is marked derived, not edited',
+    /derived-mark/.test(ex.sc20) && !/edited-mark/.test(ex.sc20), ex.sc20.slice(0,300));
+ ok('engine PDF: expense rows are the charged amounts and sum to the operating-expense total',
+    ex.fsRows.every((r,i)=>Math.abs(r.monthly+ex.want[i].mo)<1e-6)
+    && Math.abs(ex.fsRows.reduce((a,r)=>a+r.monthly,0)-ex.fsTot)<0.01 && Math.abs(ex.fsTot+ex.expMo)<0.01,
+    JSON.stringify({rows:ex.fsRows.reduce((a,r)=>a+r.monthly,0),tot:ex.fsTot}));
+ ok('engine PDF: a % of income row shows a percent rate and no count',
+    pctIdx.every(i=>ex.fsRows[i].rate===ex.want[i].rate+'%'&&ex.fsRows[i].count===null&&ex.fsRows[i].basis==='% of income'),
+    JSON.stringify(pctIdx.map(i=>ex.fsRows[i])));
+ ok('engine PDF: SC-20 is flagged derived with its provenance, never with the edited asterisk',
+    ex.fsItems.some(t=>/^SC-20 .* \(derived\)$/.test(t)) && !ex.fsItems.some(t=>/^SC-20 .*\*$/.test(t))
+    && ex.fsNotes.some(n=>/SC-20 is not a manual edit\. Derived from the impact fee schedule — City of Waller, TX \(high side, v1\)/.test(n)),
+    JSON.stringify({items:ex.fsItems.filter(t=>/SC-20/.test(t)),notes:ex.fsNotes}));
+ ok('legacy PDF: expense rows are the charged amounts and sum to the total',
+    ex.lRows.every((r,i)=>Math.abs(r.values[3]+ex.want[i].mo)<1e-6)
+    && Math.abs(ex.lRows.reduce((a,r)=>a+r.values[3],0)-ex.lTot)<0.01
+    && pctIdx.every(i=>ex.lRows[i].values[1]===ex.want[i].rate+'%'&&ex.lRows[i].values[2]===undefined),
+    JSON.stringify({rows:ex.lRows.map(r=>r.values),tot:ex.lTot}));
+ ok('legacy PDF: SC-20 is flagged derived with its provenance',
+    ex.lItems.some(t=>/^SC-20 .* \(derived\)$/.test(t)) && !ex.lItems.some(t=>/^SC-20 .*\*$/.test(t))
+    && ex.lNotes.some(n=>/City of Waller, TX \(high side, v1\)/.test(n)),
+    JSON.stringify({items:ex.lItems.filter(t=>/SC-20/.test(t)),notes:ex.lNotes}));
+ ok('the edited-lines count leaves the derived line out, matching what is flagged',
+    ex.editedCount===ex.isEditedAll-1, ex.editedCount+' counted vs '+ex.isEditedAll+' isEdited');
+
  // Clearing the jurisdiction restores the line rather than deleting it: the
  // template put it there and a budget without a schedule still has soft fees.
  await p.selectOption('#feeSchedule',''); await p.waitForTimeout(500);

@@ -20,7 +20,7 @@
 //     after vacancy. Deriving against gross income instead would understate the
 //     ratio by exactly the vacancy factor.
 
-const { parts, grossIncome, totUnits, nz } = require('../budget-calc');
+const { parts, grossIncome, totUnits, expenseMonthly, nz } = require('../budget-calc');
 const D = require('./defaults');
 
 const round2 = x => Math.round(x * 100) / 100;
@@ -104,16 +104,12 @@ function projectFromBudget(doc, v, opts) {
     expenseRows: (doc.expenses || []).map(e => ({
       label: e.label,
       basis: e.per === 'pctIncome' ? '% of income' : e.per === 'fixed' ? 'fixed / mo' : 'per unit',
-      annualAmount: round2(12 * (e.per === 'pctIncome'
-        ? (gi.rentMo + gi.otherMo) * nz(e.rate) / 100
-        : nz(e.rate) * (e.per === 'fixed' ? (nz(e.count) || 1) : (e.auto ? tu : nz(e.count)))))
+      annualAmount: round2(12 * expenseMonthly(doc, e, gi.rentMo + gi.otherMo))
     })),
     // Kept under its old name too: existing analyses render from it.
     serviceExpenseRows: (doc.expenses || []).map(e => ({
       label: e.label,
-      annualAmount: round2(12 * (e.per === 'pctIncome'
-        ? (gi.rentMo + gi.otherMo) * nz(e.rate) / 100
-        : nz(e.rate) * (e.per === 'fixed' ? (nz(e.count) || 1) : (e.auto ? tu : nz(e.count)))))
+      annualAmount: round2(12 * expenseMonthly(doc, e, gi.rentMo + gi.otherMo))
     })),
     unitMix: (doc.units || []).map(u => ({ label: u.label, count: nz(u.count), rent: nz(u.rent) })),
     opexSchemaVersion: nz(doc.opexSchemaVersion) || 1

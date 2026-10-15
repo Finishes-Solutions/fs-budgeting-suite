@@ -818,6 +818,9 @@ html[data-theme=dark] .badge.bad{background:#2c1a19;border-color:#523030}
   margin-right:8px;vertical-align:middle;flex:none}
 .autodot.on{background:var(--green-600)}
 .editdot.on{background:var(--edit);box-shadow:0 0 0 3px var(--edit-100)}
+/* A derived line (impact fees) is marked, but not in the edit colour the legend
+   counts: its tooltip says where the figure came from. */
+.editdot.derived{background:var(--ink-400);box-shadow:0 0 0 3px var(--ink-150)}
 tr.edited td:first-child{box-shadow:inset 2px 0 0 var(--edit)}
 tr.edited:hover td{background:var(--edit-50)}
 .legend{display:inline-flex;align-items:center;gap:0}
@@ -1011,8 +1014,9 @@ th.sortable.sorted{color:var(--ink-900)}
   .rpt-sig .sig-cap{font-size:8pt;color:var(--ink-600);margin-top:4px}
   .rpt-tbl tr.sub-tot td{border-top:1px solid var(--ink-300);font-weight:600}
   .rpt-tbl tr.tot td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;padding-top:6px}
-  .edited-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
+  .edited-mark,.derived-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
     color:var(--edit);border:1px solid var(--edit);border-radius:2px;padding:0 3px;margin-left:4px}
+  .derived-mark{color:var(--ink-600);border-color:var(--ink-300)}
 
   /* ---- guide PDF ---- */
   .rpt-guide .rpt-sec{break-inside:auto}
@@ -4505,7 +4509,17 @@ function isEdited(it){
    on the PDF would be actively misleading. It is derived, and from what is the
    part a lender needs. */
 function isDerived(it){return !!(it&&it.derived);}
-function editedCount(){return doc?doc.lines.filter(isEdited).length:0;}
+/* What a line is flagged as, everywhere a flag is printed or counted: 'derived',
+   'edited' or ''. Derived wins because isEdited() is true for the derived line
+   by construction — an export that said "edited" (or a legend that counted it)
+   would tell the reader the figure had been tampered with. */
+function lineFlag(it){return isDerived(it)?'derived':isEdited(it)?'edited':'';}
+function editedCount(){return doc?doc.lines.filter(l=>lineFlag(l)==='edited').length:0;}
+/* The PDF legend entry for a derived line: what it is and where it came from
+   (editReason() names the schedule, basis and version from the document). */
+function derivedNote(it){
+  return '(derived) '+it.code+' is not a manual edit. '+editReason(it)+'.';
+}
 function editReason(it){
   if(isDerived(it)){
     const p=doc&&doc.impactFees?FSImpactFees.provenance(feeResult()):'';
@@ -6166,6 +6180,20 @@ function expenseMonthly(e,incomeMo){
   if(e.per==='pctIncome')return nz(incomeMo)*nz(e.rate)/100;
   return nz(e.rate)*(e.per==='fixed'?(nz(e.count)||1):(e.auto?tu:nz(e.count)));
 }
+/* One expense row as every export prints it — print report, engine PDF,
+   legacy PDF and Excel all build their rows here. Each used to compute
+   rate × count itself, which printed $0 for a % of income row (its count is 0)
+   under a total that was right, so the rows did not add up to it. The amount
+   is expenseMonthly()'s, the same number the total sums; a % of income row
+   carries its rate as a percent and no count, as the screen shows it. */
+function expenseExportRow(e,incomeMo){
+  const pct=e.per==='pctIncome',mo=expenseMonthly(e,incomeMo);
+  return {label:e.label,pct,rate:nz(e.rate),
+    basis:pct?'% of income':e.per==='fixed'?'fixed / mo':'per unit',
+    rateText:pct?(+nz(e.rate).toFixed(4))+'%':null,
+    count:pct?null:e.per==='fixed'?(nz(e.count)||1):(e.auto?totUnits():nz(e.count)),
+    monthly:mo,yearly:12*mo};
+}
 function grossIncome(){
   const tu=totUnits();
   const rent=doc.units.reduce((s,u)=>s+u.rent*u.count,0);
@@ -6321,7 +6349,7 @@ function renderBudget(){
           <td class="calc r strong">${usd(gSum)}</td><td class="calc r">${scSum?(100*gSum/scSum).toFixed(1)+'%':'—'}</td>
           <td class="no-print"></td></tr>`);}
       if(collapsed.has(sc+'|'+it.grp))return;
-      const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0,ed=isEdited(it);
+      const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0,fl=lineFlag(it),ed=fl==='edited';
       // Every interactive control keys off lineId, not the array index: a code edit
       // can move this line to another group and a batch delete can shift every
       // index below it, but the key stays valid across both.
@@ -6331,7 +6359,7 @@ function renderBudget(){
         <td class="no-print selcell"><input type="checkbox" data-k="line.${id}.sel" ${sel?'checked':''}
           aria-label="Select ${esc(it.desc)}" onchange="toggleSelect('${id}',this.checked,this)"></td>
         <td><div class="lineitem">
-          <span class="editdot${ed?' on':''}"${ed?' title="'+esc(editReason(it))+'"':''}></span>
+          <span class="editdot${ed?' on':fl?' derived':''}"${fl?' title="'+esc(editReason(it))+'"':''}></span>
           <input type="text" class="codein" data-k="line.${id}.code"
             value="${esc(it.code)}" title="CSI code — changing it files the line under the matching division"
             aria-label="CSI code for ${esc(it.desc)}" onchange="setLineCode('${id}',this.value)">
@@ -6476,7 +6504,8 @@ function csiSchedule(){
   const p=parts(),divs=new Map(),soft=[],orphans=[];
   doc.lines.filter(l=>scopeActive(l.scope)).forEach(l=>{
     const row={code:l.code,desc:l.desc,scope:l.scope,grp:l.grp,basis:l.basis,
-               qty:lineQty(l),rate:l.unit,total:lineQty(l)*l.unit,edited:isEdited(l)};
+               qty:lineQty(l),rate:l.unit,total:lineQty(l)*l.unit,
+               edited:lineFlag(l)==='edited',derived:isDerived(l)};
     if(l.scope==='soft'){soft.push(row);return;}
     const k=csiDivKey(l.code);
     if(!k){orphans.push(row);return;}
@@ -7219,9 +7248,10 @@ function buildReport(s){
     doc.other.forEach(o=>{const c=o.auto?tu:o.count;h+='<tr><td>'+esc(o.label)+'</td><td class="muted">gross income</td>'
       +'<td class="r mono">'+usd(o.rate)+'</td><td class="r mono">'+num(c)+'</td><td class="r mono">'+usd(o.rate*c)+'</td><td class="r mono">'+usd(12*o.rate*c)+'</td></tr>';});
     h+='<tr class="sub-tot"><td>Total gross other income</td><td></td><td></td><td></td><td class="r mono">'+usd(g.otherMo)+'</td><td class="r mono">'+usd(12*g.otherMo)+'</td></tr>';
-    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-      h+='<tr><td>'+esc(e.label)+'</td><td class="muted">'+(e.per==='fixed'?'fixed / mo':'per unit')+'</td>'
-      +'<td class="r mono">'+usd(e.rate)+'</td><td class="r mono">'+num(c)+'</td><td class="r mono">('+usd(e.rate*c)+')</td><td class="r mono">('+usd(12*e.rate*c)+')</td></tr>';});
+    doc.expenses.forEach(e=>{const x=expenseExportRow(e,g.incomeMo);
+      h+='<tr><td>'+esc(x.label)+'</td><td class="muted">'+x.basis+'</td>'
+      +'<td class="r mono">'+(x.pct?x.rateText:usd(x.rate))+'</td><td class="r mono">'+(x.pct?'':num(x.count))+'</td>'
+      +'<td class="r mono">('+usd(x.monthly)+')</td><td class="r mono">('+usd(x.yearly)+')</td></tr>';});
     h+='<tr class="sub-tot"><td>Total Operating Expenses</td><td></td><td></td><td></td><td class="r mono">('+usd(g.expMo)+')</td><td class="r mono">('+usd(12*g.expMo)+')</td></tr>';
     h+='<tr class="tot"><td>Net income (rent + net other)</td><td></td><td></td><td></td><td class="r mono">'+usd(g.rentMo+g.netOtherMo)+'</td><td class="r mono">'+usd(g.netYr)+'</td></tr>';
     h+='</tbody></table></section>';
@@ -7238,8 +7268,11 @@ function buildReport(s){
         if(it.grp!==last){last=it.grp;
           const gs=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
           h+='<tr class="grp"><td colspan="4">'+esc(it.grp)+'</td><td class="r mono">'+usd(gs)+'</td></tr>';}
-        const q=lineQty(it);
-        h+='<tr><td><span class="mono code">'+esc(it.code)+'</span> '+esc(it.desc)+(s.edits&&isEdited(it)?' <span class="edited-mark">edited</span>':'')+'</td>'
+        const q=lineQty(it),fl=s.edits?lineFlag(it):'';
+        // The derived line's provenance is already in its description, so its
+        // mark only has to say it is not a manual edit.
+        h+='<tr><td><span class="mono code">'+esc(it.code)+'</span> '+esc(it.desc)
+          +(fl==='edited'?' <span class="edited-mark">edited</span>':fl==='derived'?' <span class="derived-mark">derived</span>':'')+'</td>'
           +'<td class="muted">'+esc(BASIS_LABEL[it.basis]||it.basis)+'</td><td class="r mono">'+num(q)+'</td>'
           +'<td class="r mono">'+usd2(it.unit)+'</td><td class="r mono">'+usd(q*it.unit)+'</td></tr>';
       });
@@ -7396,9 +7429,11 @@ function buildBudgetFsdoc(s){
     }
     if(doc.expenses.length){
       blocks.push({kind:'table',columns:cols,
-        rows:doc.expenses.map(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-          return {line:e.label,basis:e.per==='fixed'?'fixed / mo':'per unit',rate:e.rate,count:c,
-            monthly:-e.rate*c,yearly:-12*e.rate*c};}),
+        // A % of income row's rate is a preformatted '12%' string (strings pass
+        // every renderer verbatim) and its count null, which prints as a dash.
+        rows:doc.expenses.map(e=>{const x=expenseExportRow(e,g.incomeMo);
+          return {line:x.label,basis:x.basis,rate:x.pct?x.rateText:x.rate,count:x.count,
+            monthly:-x.monthly,yearly:-x.yearly};}),
         totals:{line:'Total Operating Expenses',monthly:-g.expMo,yearly:-12*g.expMo}});
     }
     blocks.push({kind:'kv',rows:[kv('Net Income (Rent + Net Other), Monthly',g.rentMo+g.netOtherMo,'money'),
@@ -7409,21 +7444,24 @@ function buildBudgetFsdoc(s){
   if(s.budget){
     const cols=[{key:'item',label:'Line Item'},{key:'basis',label:'Basis'},
       {key:'qty',label:'Qty',fmt:'qty'},{key:'rate',label:'Rate',fmt:'money2'},{key:'total',label:'Total',fmt:'money'}];
-    const blocks=[];let anyEdited=false;
+    const blocks=[];let anyEdited=false;const derived=[];
     activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
       blocks.push({kind:'group',label:SCOPES[sc].toUpperCase()+'   ·   '+usd(scopeSum(sc))});
       [...new Set(ls.map(l=>l.grp))].forEach(gp=>{
         const rows=ls.filter(l=>l.grp===gp).map(it=>{
-          const q=lineQty(it),ed=s.edits&&isEdited(it);if(ed)anyEdited=true;
-          return {item:it.code+'  '+it.desc+(ed?' *':''),basis:BASIS_LABEL[it.basis]||it.basis,
-            qty:q,rate:it.unit,total:q*it.unit};});
+          const q=lineQty(it),fl=s.edits?lineFlag(it):'';
+          if(fl==='edited')anyEdited=true;
+          if(fl==='derived')derived.push(it);
+          return {item:it.code+'  '+it.desc+(fl==='edited'?' *':fl==='derived'?' (derived)':''),
+            basis:BASIS_LABEL[it.basis]||it.basis,qty:q,rate:it.unit,total:q*it.unit};});
         const gs=ls.filter(l=>l.grp===gp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
         blocks.push({kind:'table',columns:cols,rows,
           totals:{item:gp,total:gs}});
       });
     });
     if(anyEdited)blocks.push({kind:'note',text:'* marks a line manually edited away from the pricing library.'});
+    derived.forEach(it=>blocks.push({kind:'note',text:derivedNote(it)}));
     sheets.push({key:'budget',name:'Budget Detail',title:'Budget Detail',blocks});
   }
 
@@ -7561,8 +7599,9 @@ function legacyBudgetPdfDoc(s){
     doc.other.forEach(o=>{const c=o.auto?tu:o.count;
       rows.push(tRow(o.label,['gross income',o.rate,c,o.rate*c,12*o.rate*c],F));});
     rows.push(tRow('Total Gross Other Income',[undefined,undefined,undefined,g.otherMo,12*g.otherMo],F,true));
-    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-      rows.push(tRow(e.label,[e.per==='fixed'?'fixed / mo':'per unit',e.rate,c,-e.rate*c,-12*e.rate*c],F));});
+    // undefined prints a blank cell: a % of income row has no count.
+    doc.expenses.forEach(e=>{const x=expenseExportRow(e,g.incomeMo);
+      rows.push(tRow(x.label,[x.basis,x.pct?x.rateText:x.rate,x.pct?undefined:x.count,-x.monthly,-x.yearly],F));});
     rows.push(tRow('Total Operating Expenses',[undefined,undefined,undefined,-g.expMo,-12*g.expMo],F,true));
     rows.push(tRow('Net Income (Rent + Net Other)',[undefined,undefined,undefined,g.rentMo+g.netOtherMo,g.netYr],F,true));
     sheets.push({key:'other',name:'Income',title:'Other Income & Operating Expenses',blocks:[
@@ -7571,7 +7610,7 @@ function legacyBudgetPdfDoc(s){
 
   if(s.budget){
     const F=['text','qty','money2','money'];
-    const rows=[];let anyEdited=false;
+    const rows=[];let anyEdited=false;const derived=[];
     activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
       rows.push(band(SCOPES[sc],[null,null,null,scopeSum(sc)],F,true));
@@ -7580,13 +7619,16 @@ function legacyBudgetPdfDoc(s){
         if(it.grp!==last){last=it.grp;
           const gs=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
           rows.push(band(it.grp,[null,null,null,gs],F,false));}
-        const q=lineQty(it),ed=s.edits&&isEdited(it);if(ed)anyEdited=true;
-        rows.push(tRow(it.code+'  '+it.desc+(ed?' *':''),
+        const q=lineQty(it),fl=s.edits?lineFlag(it):'';
+        if(fl==='edited')anyEdited=true;
+        if(fl==='derived')derived.push(it);
+        rows.push(tRow(it.code+'  '+it.desc+(fl==='edited'?' *':fl==='derived'?' (derived)':''),
           [BASIS_LABEL[it.basis]||it.basis,q,it.unit,q*it.unit],F));
       });
     });
     const blocks=[{kind:'table',headers:['Basis','Qty','Rate','Total'],rows}];
     if(anyEdited)blocks.push({kind:'note',text:'* marks a line manually edited away from the pricing library.'});
+    derived.forEach(it=>blocks.push({kind:'note',text:derivedNote(it)}));
     sheets.push({key:'budget',name:'Budget Detail',title:'Budget Detail',blocks});
   }
 
@@ -7957,8 +7999,11 @@ async function exportExcel(){
       styleBody(ws.addRow([o.label,'gross income',o.rate,c,o.rate*c,12*o.rate*c]),f);});
     groupRow(ws,'Total Gross Other Income',g.otherMo,6);
     groupRow(ws,'OPERATING EXPENSES',null,6,true);
-    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-      styleBody(ws.addRow([e.label,e.per==='fixed'?'fixed / mo':'per unit',e.rate,c,e.rate*c,12*e.rate*c]),f);});
+    // A % of income row keeps a NUMERIC rate cell — the fraction, under a
+    // percent format — and leaves Count empty, so the sheet still calculates.
+    doc.expenses.forEach(e=>{const x=expenseExportRow(e,g.incomeMo);
+      const r=styleBody(ws.addRow([x.label,x.basis,x.pct?x.rate/100:x.rate,x.count,x.monthly,x.yearly]),f);
+      if(x.pct){r.getCell(3).numFmt=Number.isInteger(x.rate)?'0%':'0.0#%';r.getCell(4).border=box;}});
     groupRow(ws,'Total Operating Expenses',g.expMo,6);
     ws.addRow([]);
     groupRow(ws,'Net Other Income (Gross − Expenses)',g.netOtherMo,6);
@@ -7987,11 +8032,16 @@ async function exportExcel(){
       ls.forEach(it=>{
         if(it.grp!==last){last=it.grp;
           groupRow(ws,it.grp,doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0),span);}
-        const q=lineQty(it),ed=isEdited(it);
+        // A derived line is 'Derived', never 'YES', and has no Library Rate: its
+        // baseUnit is the $/SF placeholder the fee replaced, not a rate it was
+        // edited away from. Its Provenance names the schedule it came from.
+        const q=lineQty(it),fl=lineFlag(it),ed=fl==='edited',dv=fl==='derived';
         const r=styleBody(ws.addRow([it.code,it.desc,BASIS_LABEL[it.basis]||it.basis,q,it.unit,q*it.unit,
-          ...(s.edits?[ed?'YES':'',ed?(+it.baseUnit||0):null]:[]),'parametric-estimate']),f);
+          ...(s.edits?[ed?'YES':dv?'Derived':'',ed?(+it.baseUnit||0):null]:[]),
+          dv?editReason(it):'parametric-estimate']),f);
         r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
         if(s.edits&&ed)r.getCell(7).font=F(9,{bold:true,color:{argb:'FF'+BRAND.edit}});
+        if(s.edits&&dv)r.getCell(7).font=F(9,{bold:true,color:{argb:'FF'+BRAND.green}});
       });
     });
     totalRow(ws,'CONSTRUCTION HARD COST',p.hard,span);
