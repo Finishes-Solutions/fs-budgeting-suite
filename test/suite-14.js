@@ -305,7 +305,12 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.click('#nbCreate'); await p.waitForTimeout(700);
  await p.click('#page-input button:has-text("Continue to Impact Fees")'); await p.waitForTimeout(400);
  await p.selectOption('#feeSchedule','tx-waller'); await p.waitForTimeout(600);
- await p.fill('#feeMeterTbl input[data-k="fee.m-4-250.qty"]','2'); await p.waitForTimeout(500);
+ // Meters are picked from a list and each selection has its own id (the
+ // feature branch's meter picker), so add one, then set its quantity.
+ await p.selectOption('#feeAddMeter','m-4-250');
+ await p.click('#feeAddBtn'); await p.waitForTimeout(500);
+ const mid14=await p.evaluate(()=>doc.impactFees.meters[doc.impactFees.meters.length-1].id);
+ await p.fill(`#feeMeterTbl input[data-k="fee.${mid14}.qty"]`,'2'); await p.waitForTimeout(500);
  const bx=await p.evaluate(async()=>{
    let captured=null;
    const orig=HTMLAnchorElement.prototype.click;
