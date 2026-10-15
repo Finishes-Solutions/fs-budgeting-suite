@@ -23,6 +23,68 @@ const usc = require('../api/shared/user-settings-contract');
 // Same for feedback: the mock validates and words things through the module
 // the deployed endpoint uses, so a suite cannot pass against friendlier rules.
 const fbc = require('../api/shared/feedback');
+const budgetAssistant = require('../api/shared/budget-assistant');
+
+// The Budget Assistant's view of this mock's records — the same shape
+// api/shared/budget-assistant.js's sqlStore returns from SQL.
+function mockAssistantStore() {
+  const row = (id, r) => ({ ProjectId: id, Name: r.meta.name || '', Type: r.meta.type || 'Multifamily',
+    Status: r.meta.status || 'Draft', ContractSum: r.meta.contractSum, ProjectCost: r.meta.projectCost,
+    PricingVersion: r.doc.pricingVersion || '', TemplateKey: r.doc.templateKey || null,
+    UpdatedAt: r.meta.updated || null, ProjectKey: r.projectKey || null });
+  const live = id => { const r = budgets.get(id); return r && !r.deleted ? r : null; };
+  return {
+    async loadBudget(id) { const r = live(id); return r ? { row: row(id, r), doc: r.doc } : null; },
+    async listVersions(id) {
+      const r = live(id); if (!r) return [];
+      return r.versions.slice().reverse().map(v => budgetAssistant.versionMeta({
+        VersionNumber: v.versionNumber, CreatedAt: v.createdAt, CreatedByName: v.createdByName,
+        ChangeSummary: v.changeSummary, Status: v.meta && v.meta.status,
+        ContractSum: v.meta && v.meta.contractSum, ProjectCost: v.meta && v.meta.projectCost,
+        PricingVersion: v.doc.pricingVersion, TemplateKey: v.doc.templateKey }));
+    },
+    async versionDoc(id, n) { const r = live(id); const v = r && r.versions[n - 1]; return v ? v.doc : null; },
+    async searchBudgets(q) {
+      const t = String(q || '').toLowerCase();
+      return [...budgets.entries()].filter(([, r]) => !r.deleted)
+        .filter(([id, r]) => !t || id.toLowerCase().includes(t) || String(r.meta.name || '').toLowerCase().includes(t)
+          || String(r.doc.address || '').toLowerCase().includes(t))
+        .map(([id, r]) => ({ row: row(id, r), doc: r.doc }));
+    },
+    async feeSchedule(key, n) {
+      const s = feeSchedules.get(key); if (!s) return null;
+      const v = n ? s.versions.find(x => x.versionNumber === n) : s.versions[s.versions.length - 1];
+      return v ? { scheduleKey: key, name: s.name, jurisdiction: s.jurisdiction, state: s.state,
+        version: v.versionNumber, effective: v.effective, changeSummary: v.changeSummary || null, schedule: v.doc } : null;
+    }
+  };
+}
+// A deterministic stand-in for Claude. It answers from the facts the real
+// module computed, so a suite can assert that real figures reached the model;
+// a question mentioning "version" exercises one round of the tool loop.
+const mockClaude = { beta: { messages: { async create(req) {
+  const first = String(req.messages[0].content);
+  const m = first.match(/<budget_context[^>]*>\n[^\n]*\n(.*)\n<\/budget_context>/);
+  const facts = m ? JSON.parse(m[1]) : null;
+  const last = req.messages[req.messages.length - 1];
+  const asked = typeof last.content === 'string' ? last.content : '';
+  const usage = { input_tokens: 1200, output_tokens: 80 };
+  if (/version/i.test(asked) && req.tool_choice.type === 'auto' && facts) {
+    return { stop_reason: 'tool_use', model: 'mock-claude', usage, content: [{ type: 'tool_use', id: 'mock-t1',
+      name: 'list_versions', input: { budget_id: facts.identity.budgetId } }] };
+  }
+  const usd = n => '$' + Math.round(Number(n) || 0).toLocaleString('en-US');
+  let tail = '';
+  if (Array.isArray(last.content) && last.content[0] && last.content[0].type === 'tool_result') {
+    const v = JSON.parse(last.content[0].content);
+    tail = '\n\nThis budget has **' + (v.versions || []).length + ' saved versions**.';
+  }
+  const t = facts ? facts.totals : {};
+  return { stop_reason: 'end_turn', model: 'mock-claude', usage, content: [{ type: 'text', text:
+    '**' + (facts ? facts.identity.name || facts.identity.budgetId : 'Budget') + '** — mock assistant answer.\n\n'
+    + '- Contract Sum: ' + usd(t.contractSum) + '\n- Total Project Cost: ' + usd(t.totalProjectCost)
+    + '\n- Based on: ' + (m ? first.match(/basis="([^"]+)"/)[1] : 'unknown') + tail }] };
+} } } };
 const mockUsers = new Map();   // userId -> profile + settings row
 const mockFeedback = [];       // dbo.Feedback stand-in, newest first
 let nextFeedbackId = 1;
@@ -927,6 +989,24 @@ http.createServer((req, res) => {
 
     const rec = budgets.get(id);
     const live = rec && !rec.deleted ? rec : null;
+
+    // POST ?scope=ask — the Budget Assistant. Behaviour-parallel by
+    // construction: this runs api/shared/budget-assistant.js itself, against
+    // an in-memory store and a deterministic stand-in for Claude, so every
+    // validation, limit and refusal is the real one. MOCK_AI=off answers as an
+    // API with no ANTHROPIC_API_KEY does.
+    if (req.method === 'POST') {
+      if (bScope !== 'ask') { res.writeHead(405); return res.end('POST is only accepted with ?scope=ask'); }
+      let ab = ''; req.on('data', c => ab += c);
+      return req.on('end', async () => {
+        let body = {};
+        try { body = ab ? JSON.parse(ab) : {}; } catch (e) { return json(res, 400, { error: 'bad_json' }); }
+        const out = await budgetAssistant.ask({ store: mockAssistantStore(), principal: principal.clientPrincipal,
+          id, body, env: {}, client: process.env.MOCK_AI === 'off' ? null : mockClaude });
+        if (out.activity) act('ai_ask', 'budget', id, out.activity);
+        res.writeHead(out.status, out.headers); res.end(out.body);
+      });
+    }
 
     // /api/budget/{id}/versions[/{n}] — read-only history
     if (seg[1] === 'versions') {

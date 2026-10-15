@@ -11,7 +11,7 @@ The **Budgeting Suite** (formally the **Finishes Solutions Budgeting Suite**) is
 internal tool for building multifamily construction budgets: a schedule-of-values
 editor with a pricing library, budget templates, version history, CSI division
 roll-ups, and PDF/Excel exports. It runs as an Azure Static Web App (Standard tier)
-with SWA-managed Azure Functions (Node 18) over a single Azure SQL serverless
+with SWA-managed Azure Functions (Node 22) over a single Azure SQL serverless
 database, authenticated through Microsoft Entra ID.
 
 Naming: the product is "Budgeting Suite" or "Finishes Solutions Budgeting Suite" —
@@ -27,9 +27,13 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
    minifier — a syntax error ships as a broken page. Before committing, verify
    the scripts parse (`node --check` on the module and on the extracted inline
    script, or run a test suite, which loads the page and fails loudly).
-2. **Push to `origin/staging` only.** Never commit to or push `main`. Release to
-   production is a staging→main pull request — a deliberate human decision, not a
-   side effect of finishing work.
+2. **Feature branch → `staging` → `main`. Never commit to or push `main`.** Build
+   a feature on its own branch; it reaches `staging` by merge (a pull request into
+   `staging`), is tested there, and only then goes to production through a
+   staging→main pull request — a deliberate human decision, not a side effect of
+   finishing work. A `feature` or `feature/**` branch also deploys to the
+   sign-in-capable **feature** environment (see Deployment & CI); other branch
+   names deploy nothing until they reach `staging`.
 3. **The workflow filename is its identity.** Never rename
    `.github/workflows/azure-static-web-apps-wonderful-rock-071c8e810.yml` and never
    add a second workflow that calls the SWA deploy action. Deployment auth is OIDC
@@ -52,6 +56,15 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
    workbook are composed from `parts()`, `csiSchedule()`, `grossIncome()`, and the
    document itself. Screen state (collapsed groups, filters, scroll) must never
    change what an export contains.
+7. **`BUDGET-SYSTEM.md` is the specification of the budget math, and it ships
+   with the math.** Any change to how a budget is calculated — `parts()`,
+   `grossIncome()`, `csiSchedule()`, `migrate()`, `api/shared/budget-calc.js`,
+   the guard rails, the impact-fee calculator, Update Pricing — updates
+   `BUDGET-SYSTEM.md` in the **same commit**, including its change log, and copies
+   it to `api/shared/budget-system.md` (`cp BUDGET-SYSTEM.md api/shared/budget-system.md`). The copy
+   is what the Budget Assistant reads; `test/budget-assistant.test.js` fails if the
+   two differ. A formula change without its spec change teaches the assistant —
+   and the next person — the old arithmetic.
 
 ## Architecture map
 
@@ -64,11 +77,13 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | `app/guardrails.js` / `api/shared/guardrails.js` | Budget guard rails — **byte-identical** UMD pair, enforced by `test/guardrails.test.js` |
 | `app/impact-fees.js` | The impact & tap fee calculator — a browser-only UMD module; there is no `api/` twin **on purpose** (see below) |
 | `CHANGELOG.md` | What changed and what to run — updated with every change that ships |
+| `BUDGET-SYSTEM.md` | **How a budget is formulated and how it changes** — every formula, keyed to its code; copied byte-for-byte to `api/shared/budget-system.md` for the Budget Assistant |
+| `api/shared/budget-assistant.js` | The Budget Assistant (Claude) behind `POST /api/budget/{id}?scope=ask` — facts from `budget-calc.js`, read-only tools, the request-window budget (see [Budget Assistant](#budget-assistant-ai)) |
 | `app/projects.js` | The Projects tab — one project per ID, with its budgets and analyses |
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement (first auth gate) |
 | `app/vendor/exceljs.min.js` | ExcelJS 4.4.0, vendored — see [Single sources of truth](#single-sources-of-truth) |
 | `app/assets/` | Logos + favicon set; regenerate with `tools/make-favicons.py`, don't hand-edit |
-| `api/budget/` | GET / PUT / DELETE one budget; PUT writes the version snapshot |
+| `api/budget/` | GET / PUT / DELETE one budget; PUT writes the version snapshot; POST `?scope=ask` is the Budget Assistant |
 | `api/budgets/` | Budget list (excludes soft-deleted) |
 | `api/budget-versions/` | Read-only version history |
 | `api/pricing/` | Pricing library read + publish, **and** the jurisdiction fee-schedule library on `?scope=fee-schedule(s)` |
@@ -78,17 +93,21 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | `api/shared/` | `auth.js` (principal + roles), `db.js` (pool + cold-start retry), `canonical.js` (canonical JSON + hashing), `sov.js` (SOV projection), `versioning.js` (version writes), `projects.js` (the Projects aggregate), `guardrails.js` (rail evaluator) |
 | `api/shared/investment/from-budget.js` | The budget→analysis projection, shared by creation AND re-sync so the two cannot derive differently |
 | `sql/` | Idempotent schema + migration + views, seeds, and admin-run scripts |
-| `test/` | Twenty-one Playwright suites, `node:test` logic tests, and `mock-api.js` (a local stand-in for the SWA API) |
+| `test/` | Twenty-two Playwright suites, `node:test` logic tests, and `mock-api.js` (a local stand-in for the SWA API) |
 | `docs/` | Build guide, data contract, handoff, roadmap, naming |
 
-Stack: Azure Static Web Apps (Standard) → SWA-managed Azure Functions (Node 18,
+Stack: Azure Static Web Apps (Standard) → SWA-managed Azure Functions (Node 22,
 `mssql`) → Azure SQL serverless (auto-pauses; see cold start below) → Entra ID
 custom provider for sign-in.
 
 ## Deployment & CI
 
-- **Branch model:** work lands on `staging`; every push deploys the staging
-  environment. Production deploys only when a staging→main PR merges.
+- **Branch model:** feature branch → merged into `staging` → staging→main PR.
+  Every push to `staging` deploys the staging environment; production deploys
+  only when a staging→main PR merges. Pull requests *into `staging`* do not get a
+  preview environment (the workflow's `pull_request` trigger covers `main` only),
+  so test a feature either on the `feature` environment below or on staging after
+  the merge.
 - **`feature` and `feature/**` branches deploy to the `feature` named environment**, which is
   where work in progress goes so staging and production are not carrying it.
   Unlike a per-PR preview it can sign in, because its hostname is stable and its
@@ -462,6 +481,48 @@ custom provider for sign-in.
   `/.auth/logout` with a `post_logout_redirect_uri` pointing back at
   `/.auth/login/aad`. Sign Out is the same drop, landing on `/login.html`.
 
+## Budget Assistant (AI)
+
+- **What it is.** Ask AI in the budget editor opens a dialog that posts to
+  `POST /api/budget/{id}?scope=ask` (a scope on an endpoint that already deploys —
+  the new-folder rule above). `api/shared/budget-assistant.js` builds the budget's
+  facts, calls Claude through the official `@anthropic-ai/sdk` (pinned exactly in
+  `api/package.json`), runs a bounded tool loop, and returns Markdown that
+  `aiMarkdown()` in `index.html` renders **after escaping** — model text is
+  untrusted like any other string.
+- **The model never does the arithmetic.** Every figure it is given comes from
+  `api/shared/budget-calc.js` and `api/shared/guardrails.js` via `budgetFacts()`.
+  Don't add a "let the model compute it" path, and don't copy budget math into
+  the assistant — extend `budgetFacts()` from the existing modules instead.
+- **Read only, and no wider than the budget list.** The tools (`get_budget`,
+  `list_versions`, `compare_versions`, `search_budgets`, `get_fee_schedule`) only
+  read. `sqlStore()` applies the ownership rule of `GET /api/budgets`; a new tool
+  that reads budgets must go through the store so it inherits that rule. The
+  signed-in check in `ask()` is the real gate (a route rule cannot see `?scope=`).
+- **It must finish inside the SWA request window (~45 s).** Facts and version
+  history are preloaded so most answers take one call; the loop is capped at
+  `LIMITS.toolRounds`; under `FINAL_ANSWER_MS` remaining the model is sent
+  `tool_choice: none` and must answer; the SDK runs with `maxRetries: 0` and a
+  per-call timeout from the remaining budget. Raising effort or adding tools
+  trades directly against this — measure before you do.
+- **The system prompt is byte-stable** (instructions + `budget-system.md`, no ids
+  or dates) and carries `cache_control`, so it caches across questions. Per-budget
+  context rides on the first user turn. Keep volatile content out of `system`.
+- **Configuration** (SWA application settings, per environment):
+  `ANTHROPIC_API_KEY` (required — without it the endpoint answers 503
+  `ai_not_configured` and the dialog says so), `ANTHROPIC_MODEL` (default
+  `claude-opus-5-5`), `ANTHROPIC_EFFORT` (default `medium`),
+  `ANTHROPIC_FALLBACKS=off` (drops the server-side refusal fallback beta).
+- **Errors never trip the global API banner.** The dialog uses its own `fetch`,
+  not `api()`, because `api()` treats any 5xx as "the server is down"; an AI
+  outage is not that.
+- **Logged as `ai_ask`** (question, model, token counts — never the answer), with
+  labels in both `app/dashboard.js` and `app/home.js` per the activity-log rule.
+- **Mock parity by construction.** `test/mock-api.js` runs the real
+  `budget-assistant.js` with an in-memory store and a deterministic fake client;
+  `MOCK_AI=off` simulates a missing key. Logic tests:
+  `test/budget-assistant.test.js`; browser: suite-09.
+
 ## Single sources of truth
 
 - **Templates → pricing library → `DEFAULT_PRICING`.** New budgets come from the
@@ -531,7 +592,7 @@ custom provider for sign-in.
   it. Those figures come from the city, so a change that moves one is a bug in
   the calculator until proven otherwise. `test/mock-api.js` seeds the same
   schedule, so the browser suites price against exactly what the node tests do.
-- New features come with tests in the same commit. Twenty-one suites exist
+- New features come with tests in the same commit. Twenty-two suites exist
   (`suite-01` … `suite-21`; 11–14 are the investment-analysis suites, 20 is guard
   rails, 21 is Projects); extend the closest one rather than starting a
   twenty-second for a small feature.
@@ -555,6 +616,7 @@ custom provider for sign-in.
 | Doc | When |
 |---|---|
 | `docs/HANDOFF.md` | First — invariants that bite, open items, known failures |
+| `BUDGET-SYSTEM.md` | Anything that touches how a budget's numbers are produced or change — and update it when you do |
 | `docs/DATA_CONTRACT.md` | Touching the SOV document, versioning, templates, or deletion |
 | `docs/BUILD_GUIDE.md` | Provisioning the Azure stack from scratch |
 | `docs/NAMING.md` | Anything that names or renames an Azure resource |

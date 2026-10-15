@@ -1,0 +1,244 @@
+// The Budget Assistant (api/shared/budget-assistant.js), without a database or
+// an API key: a fake store stands in for SQL and a fake client for Claude, so
+// what is pinned here is OUR side — the facts the model is given, the tool
+// loop, the limits, and the refusals — not the model's prose.
+const { test } = require('node:test');
+const assert = require('node:assert');
+const fs = require('fs');
+const path = require('path');
+const A = require('../api/shared/budget-assistant');
+const { parts, grossIncome } = require('../api/shared/budget-calc');
+
+const doc = () => ({
+  projectId: 'TST-0001', name: 'Assistant Test', type: 'Multifamily', pricingVersion: '2026.1',
+  resSF: 100000, amenSF: 5000, siteSF: 200000,
+  units: [ { label: '1BR', count: 40, sf: 700, rent: 1200 }, { label: '2BR', count: 10, sf: 1000, rent: 1600 } ],
+  lines: [
+    { lineId: 'a', scope: 'res', grp: 'Finishes', code: '09 29 00', desc: 'Drywall', basis: 'sf', auto: true, qty: 0, unit: 2.5, baseUnit: 2.5 },
+    { lineId: 'b', scope: 'res', grp: 'Finishes', code: '10 28 00', desc: 'Accessories', basis: 'unit', auto: true, qty: 0, unit: 800, baseUnit: 750 },
+    { lineId: 'c', scope: 'amen', grp: 'Amenity', code: '11 40 00', desc: 'Kitchen', basis: 'ls', auto: true, qty: 0, unit: 15000, baseUnit: 15000 },
+    { lineId: 'd', scope: 'soft', grp: 'Eng', code: 'SC-01', desc: 'Civil', basis: 'ls', auto: true, qty: 0, unit: 25000, baseUnit: 25000 }
+  ],
+  companies: [ { name: 'GC', pct: 5 } ],
+  contingency: { mode: 'pct', val: 2 },
+  projectCosts: { land: 1200000, dev: { mode: 'pct', val: 3 }, mkt: { mode: 'amt', val: 75000 }, cls: 25000 },
+  other: [ { label: 'Parking', rate: 25, auto: true, count: 0 } ],
+  expenses: [ { label: 'Trash', per: 'unit', rate: 12, auto: true, count: 0 },
+              { label: 'Mgmt', per: 'pctIncome', rate: 3 } ]
+});
+
+test('BUDGET-SYSTEM.md travels with the API byte-for-byte', () => {
+  // The API is deployed without the repo root, so the manual the assistant is
+  // given is a copy. A drifted copy would teach it stale formulas.
+  const root = fs.readFileSync(path.join(__dirname, '..', 'BUDGET-SYSTEM.md'));
+  const api = fs.readFileSync(path.join(__dirname, '..', 'api', 'shared', 'budget-system.md'));
+  assert.ok(root.equals(api), 'api/shared/budget-system.md must be an exact copy of BUDGET-SYSTEM.md — run: cp BUDGET-SYSTEM.md api/shared/budget-system.md');
+  assert.ok(A.systemPrompt().includes(root.toString('utf8')), 'the manual must be in the system prompt');
+});
+
+test('the system prompt is byte-stable, so it caches', () => {
+  assert.strictEqual(A.systemPrompt(), A.systemPrompt());
+  assert.doesNotMatch(A.systemPrompt(), /\d{4}-\d{2}-\d{2}T/);
+});
+
+test('facts are the app\'s own arithmetic, not a fourth copy', () => {
+  const d = doc(), p = parts(d), g = grossIncome(d);
+  const f = A.budgetFacts(d, null);
+  const r2 = n => Math.round(n * 100) / 100;
+  assert.strictEqual(f.totals.contractSum, r2(p.contract));
+  assert.strictEqual(f.totals.totalProjectCost, r2(p.project));
+  assert.strictEqual(f.totals.hardCost, r2(p.hard));
+  assert.strictEqual(f.totals.developerFee, r2(p.fee.dev));
+  assert.strictEqual(f.income.netAnnual, r2(g.netYr));
+  assert.strictEqual(f.inputs.totalUnits, 50);
+  assert.strictEqual(f.inputs.buildingSF, 105000);
+  assert.strictEqual(f.metrics.projectPerUnit, r2(p.project / 50));
+  assert.strictEqual(f.metrics.contractPerSF, r2(p.contract / 105000));
+  // Every line total adds back up to hard + soft.
+  const sum = f.lines.reduce((s, l) => s + l.total, 0);
+  assert.ok(Math.abs(sum - (p.hard + p.soft)) < 0.05);
+  // Why a line is flagged is reported, the way the editor reports it.
+  assert.deepStrictEqual(f.lines.find(l => l.lineId === 'b').edits, ['rate changed from library rate']);
+  assert.strictEqual(f.lines.find(l => l.lineId === 'b').libraryRate, 750);
+  assert.strictEqual(f.csiDivisionTotals['09'], 250000);
+});
+
+test('an inactive amenity scope is reported as suppressed, at $0', () => {
+  const d = doc(); d.amenSF = 0;
+  const kitchen = A.budgetFacts(d).lines.find(l => l.lineId === 'c');
+  assert.strictEqual(kitchen.total, 0);
+  assert.match(kitchen.suppressed, /amenity/);
+});
+
+test('diffDocs reports what moved, by line identity, biggest first', () => {
+  const a = doc(), b = doc();
+  b.lines[0].unit = 3;                                         // 100,000 SF × +$0.50
+  b.lines = b.lines.filter(l => l.lineId !== 'd');             // removed
+  b.lines.push({ lineId: 'e', scope: 'res', grp: 'X', code: '12 21 00', desc: 'Blinds', basis: 'unit', auto: false, qty: 12, unit: 100, baseUnit: 100 });
+  b.resSF = 100000; b.pricingVersion = '2026.2';
+  const d = A.diffDocs(a, b);
+  assert.strictEqual(d.lines.added.length, 1);
+  assert.strictEqual(d.lines.removed[0].lineId, 'd');
+  assert.strictEqual(d.lines.changed[0].code, '09 29 00');
+  assert.strictEqual(d.lines.changed[0].delta, 50000);
+  assert.deepStrictEqual(d.pricingVersion, { from: '2026.1', to: '2026.2' });
+  assert.ok(d.totals.contractSum && d.totals.totalProjectCost);
+});
+
+test('history is cleaned to alternating user/assistant text', () => {
+  const h = A.cleanHistory([
+    { role: 'assistant', content: 'orphan' }, { role: 'user', content: 'q1' },
+    { role: 'user', content: 'q1b' }, { role: 'assistant', content: 'a1' },
+    { role: 'system', content: 'nope' }, { role: 'user', content: 'dangling' }]);
+  assert.deepStrictEqual(h, [{ role: 'user', content: 'q1\n\nq1b' }, { role: 'assistant', content: 'a1' }]);
+});
+
+/* ---------------------------- orchestration ---------------------------- */
+
+function fakeStore(over) {
+  const saved = doc();
+  const v1 = doc(); v1.lines[1].unit = 750;
+  return Object.assign({
+    async loadBudget(id) {
+      return id === 'TST-0001' ? { row: { ProjectId: id, Name: 'Assistant Test', ContractSum: 1, ProjectCost: 2 }, doc: saved } : null;
+    },
+    async listVersions() { return [{ version: 2, savedBy: 'Pat' }, { version: 1, savedBy: 'Pat' }]; },
+    async versionDoc(id, n) { return n === 1 ? v1 : n === 2 ? saved : null; },
+    async searchBudgets() { return []; },
+    async feeSchedule() { return null; }
+  }, over || {});
+}
+const text = t => ({ stop_reason: 'end_turn', model: 'claude-opus-5-5', content: [{ type: 'text', text: t }],
+  usage: { input_tokens: 100, output_tokens: 20, cache_read_input_tokens: 80 } });
+function fakeClient(responses) {
+  const calls = [];
+  return { calls, beta: { messages: { async create(req, opts) {
+    calls.push({ req: JSON.parse(JSON.stringify(req)), opts });
+    const r = responses[calls.length - 1];
+    if (r instanceof Error) throw r;
+    return typeof r === 'function' ? r(req) : r;
+  } } } };
+}
+const principal = { userId: 'u1', userDetails: 'pat@example.com', userRoles: ['authenticated'] };
+const run = (o) => { A._resetThrottle(); return A.ask(Object.assign({ store: fakeStore(), principal, id: 'TST-0001', env: {} }, o)); };
+const bodyOf = r => JSON.parse(r.body);
+
+test('without a key it says so, and never builds a client', async () => {
+  const r = await run({ body: { question: 'hi' } });
+  assert.strictEqual(r.status, 503);
+  assert.strictEqual(bodyOf(r).error, 'ai_not_configured');
+});
+
+test('refuses the empty, the oversized, the unknown and the mismatched', async () => {
+  const c = fakeClient([]);
+  assert.strictEqual((await run({ client: c, body: { question: '  ' } })).status, 400);
+  assert.strictEqual((await run({ client: c, body: { question: 'x'.repeat(2001) } })).status, 400);
+  assert.strictEqual((await run({ client: c, id: 'TST-0002', body: { question: 'hi' } })).status, 404);
+  const d = doc(); d.projectId = 'TST-0009';
+  assert.strictEqual((await run({ client: c, body: { question: 'hi', draft: d } })).status, 400);
+  assert.strictEqual((await run({ client: c, principal: null, body: { question: 'hi' } })).status, 401);
+  assert.strictEqual(c.calls.length, 0);
+});
+
+test('one question, one call: context preloaded, prompt cached, fallbacks on', async () => {
+  const c = fakeClient([text('The contract sum is $X.')]);
+  const r = await run({ client: c, body: { question: 'What is the contract sum?' } });
+  assert.strictEqual(r.status, 200);
+  const b = bodyOf(r);
+  assert.strictEqual(b.answer, 'The contract sum is $X.');
+  assert.strictEqual(b.basedOn, 'saved');
+  assert.strictEqual(r.activity.question, 'What is the contract sum?');
+  assert.strictEqual(r.activity.inputTokens, 100);
+  assert.strictEqual(b.activity, undefined, 'the activity record is not sent to the browser');
+  const req = c.calls[0].req;
+  assert.strictEqual(req.model, 'claude-opus-5-5');
+  assert.deepStrictEqual(req.output_config, { effort: 'medium' });
+  assert.deepStrictEqual(req.system[0].cache_control, { type: 'ephemeral' });
+  assert.strictEqual(req.fallbacks, 'default');
+  assert.deepStrictEqual(req.betas, ['server-side-fallback-2026-07-01']);
+  assert.deepStrictEqual(req.tool_choice, { type: 'auto' });
+  assert.strictEqual(req.messages.length, 1);
+  const ctx = req.messages[0].content;
+  assert.match(ctx, /<budget_context basis="saved">/);
+  assert.ok(ctx.includes('"contractSum":' + A.budgetFacts(doc()).totals.contractSum));
+  assert.match(ctx, /What is the contract sum\?$/);
+  assert.ok(c.calls[0].opts.timeout > 0 && c.calls[0].opts.timeout < 45000, 'bounded by the request window');
+});
+
+test('ANTHROPIC_FALLBACKS=off and a configured model/effort are honoured', async () => {
+  const c = fakeClient([text('ok')]);
+  await run({ client: c, env: { ANTHROPIC_FALLBACKS: 'off', ANTHROPIC_MODEL: 'claude-sonnet-5-5', ANTHROPIC_EFFORT: 'low' },
+              body: { question: 'q' } });
+  const req = c.calls[0].req;
+  assert.strictEqual(req.fallbacks, undefined);
+  assert.strictEqual(req.betas, undefined);
+  assert.strictEqual(req.model, 'claude-sonnet-5-5');
+  assert.deepStrictEqual(req.output_config, { effort: 'low' });
+});
+
+test('the tool loop runs our read-only tools and feeds results back', async () => {
+  const c = fakeClient([
+    { stop_reason: 'tool_use', content: [
+      { type: 'tool_use', id: 't1', name: 'compare_versions', input: { budget_id: 'tst-0001', from_version: '1', to_version: 'current' } },
+      { type: 'tool_use', id: 't2', name: 'get_budget', input: { budget_id: 'TST-0404' } }],
+      usage: { input_tokens: 10, output_tokens: 5 } },
+    text('Accessories went from $750 to $800 a unit.')
+  ]);
+  const r = await run({ client: c, body: { question: 'Why did it go up since v1?' } });
+  assert.strictEqual(r.status, 200);
+  assert.deepStrictEqual(bodyOf(r).toolsUsed, ['compare_versions', 'get_budget']);
+  const second = c.calls[1].req.messages;
+  const results = second[second.length - 1].content;
+  assert.strictEqual(results.length, 2, 'all tool results return in ONE user message');
+  const diff = JSON.parse(results[0].content).diff;
+  assert.strictEqual(diff.lines.changed[0].code, '10 28 00');
+  assert.strictEqual(diff.lines.changed[0].delta, 2500);      // 50 units × $50
+  assert.strictEqual(results[1].is_error, true, 'an invisible budget is an error result, not a leak');
+  assert.strictEqual(bodyOf(r).usage.input, 110);
+});
+
+test('near the deadline the model is told to answer, not to call more tools', async () => {
+  let t = 0;
+  const c = fakeClient([
+    () => { t += 30000; return { stop_reason: 'tool_use', content: [{ type: 'tool_use', id: 't1', name: 'list_versions', input: { budget_id: 'TST-0001' } }], usage: {} }; },
+    text('Answer from what I have.')
+  ]);
+  const r = await run({ client: c, now: () => t, body: { question: 'q' } });
+  assert.strictEqual(r.status, 200);
+  assert.deepStrictEqual(c.calls[1].req.tool_choice, { type: 'none' });
+});
+
+test('an unsaved draft is what gets explained, labelled as such', async () => {
+  const d = doc(); d.resSF = 120000;
+  const c = fakeClient([text('ok')]);
+  const r = await run({ client: c, body: { question: 'q', draft: d } });
+  assert.strictEqual(bodyOf(r).basedOn, 'unsaved-draft');
+  assert.match(c.calls[0].req.messages[0].content, /basis="unsaved-draft"/);
+  assert.match(c.calls[0].req.messages[0].content, /"residentialSF":120000/);
+});
+
+test('history keeps the context on the first user turn', async () => {
+  const c = fakeClient([text('ok')]);
+  await run({ client: c, body: { question: 'and per unit?',
+    history: [{ role: 'user', content: 'total?' }, { role: 'assistant', content: '$10' }] } });
+  const m = c.calls[0].req.messages;
+  assert.deepStrictEqual(m.map(x => x.role), ['user', 'assistant', 'user']);
+  assert.match(m[0].content, /<budget_context[\s\S]*total\?$/);
+  assert.strictEqual(m[2].content, 'and per unit?');
+});
+
+test('a refusal and an upstream failure are clean errors', async () => {
+  let r = await run({ client: fakeClient([{ stop_reason: 'refusal', content: [], usage: {} }]), body: { question: 'q' } });
+  assert.strictEqual(r.status, 422);
+  r = await run({ client: fakeClient([new Error('socket hang up')]), body: { question: 'q' } });
+  assert.strictEqual(r.status, 502);
+});
+
+test('the throttle stops a runaway client', async () => {
+  A._resetThrottle();
+  const c = fakeClient(Array.from({ length: 40 }, () => text('ok')));
+  let last;
+  for (let i = 0; i < 31; i++)
+    last = await A.ask({ store: fakeStore(), principal, id: 'TST-0001', env: {}, client: c, body: { question: 'q' } });
+  assert.strictEqual(last.status, 429);
+});

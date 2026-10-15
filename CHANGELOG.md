@@ -24,6 +24,58 @@ House rules for writing one:
 
 ## Unreleased
 
+### Ask AI: a Budget Assistant on every budget
+
+A new **Ask AI** button in the budget editor, next to Save and Export, opens the
+**Budget Assistant**. You can ask about the open budget in plain English and
+Claude (Anthropic) answers:
+
+- **How a number was built.** "How was the total project cost calculated?" walks
+  from line items to hard cost, profit, contingency, the contract sum, soft costs,
+  land and fees, using the same formulas the editor uses (see
+  [`BUDGET-SYSTEM.md`](BUDGET-SYSTEM.md)).
+- **What changed and why.** It can read the budget's saved versions and compare
+  any two of them line by line: lines added, removed, re-rated or re-quantified,
+  sorted by dollar impact.
+- **How it compares.** It can look up your other budgets for $/SF, $/unit and
+  scope comparisons. It only sees the budgets your Budgets list shows you.
+- **Analysis.** It flags cost drivers, manual edits, guard-rail breaches and
+  assumptions worth a second look. It labels its opinions as opinions.
+
+Things you should know:
+
+- **The figures come from the app, not the model.** Every total the assistant
+  sees is computed on the server by the same code that sets the stored Contract
+  Sum and Project Cost. The assistant explains those numbers and does not invent
+  them. It can still be wrong, so check before you rely on an answer.
+- **Unsaved changes count.** If the budget has unsaved edits, the assistant reads
+  what is on your screen and says so.
+- **Read only.** It cannot change a budget.
+- **Data leaves the building.** The budget's contents are sent to Anthropic's API
+  to answer each question. The dialog says so.
+- **Logged.** Each question is recorded in the activity log as *Asked Budget
+  Assistant*, with the question and token counts. The answer is not stored.
+
+**Setup required (no SQL migration).** Add the application setting
+`ANTHROPIC_API_KEY` to the Static Web App, in **every environment that should
+have the assistant** (production, staging, feature). Until you do, Ask AI
+explains that the assistant is not configured. Optional settings:
+`ANTHROPIC_MODEL` (default `claude-opus-5-5`), `ANTHROPIC_EFFORT` (default
+`medium`) and `ANTHROPIC_FALLBACKS=off`.
+
+### How a budget is calculated, in one document
+
+[`BUDGET-SYSTEM.md`](BUDGET-SYSTEM.md) explains how every number in a budget is
+produced: line quantities and rates, amenity suppression, profit and contingency,
+the circular developer-fee percentage, impact and tap fees, income and expenses,
+the CSI schedule, $/SF and per-unit metrics, the guard rails, where rates come
+from, and every way a budget's numbers can change after it is created. It
+includes a worked example run against the real code, and a list of known
+discrepancies found while writing it.
+
+It is now a rule that any change to the budget math updates this file in the
+same change. The Budget Assistant reads it as its reference manual.
+
 ### Impact & tap fees are calculated, not guessed
 
 Every budget used to carry municipal fees as one parametric line — **Water &

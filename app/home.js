@@ -216,7 +216,8 @@ var EVENT_LABEL = {
   favorite_add: 'Favorited', favorite_remove: 'Unfavorited',
   export_pdf: 'Exported PDF', export_xlsx: 'Exported Excel', export_csv: 'Exported CSV',
   export_print: 'Printed', settings_update: 'Updated settings',
-  profile_update: 'Updated profile', pricing_publish: 'Published pricing'
+  profile_update: 'Updated profile', pricing_publish: 'Published pricing',
+  ai_ask: 'Asked the Budget Assistant'
 };
 function eventLabel(e) { return EVENT_LABEL[e] || e; }
 
@@ -245,6 +246,8 @@ function eventDetail(e) {
         ? d.changed.map(fieldPhrase).join('; ') : ''].filter(Boolean).join(' — ');
     case 'budget_status': case 'project_status': case 'budget_primary':
       return (name ? name + ' — ' : '') + (d.from || 'none') + ' → ' + (d.to || 'none');
+    case 'ai_ask':
+      return [name, d.question ? '"' + String(d.question) + '"' : ''].filter(Boolean).join(' — ');
     case 'project_delete':
       return (name ? name + ' — ' : '') + d.budgetsDeleted + ' budget'
         + (d.budgetsDeleted === 1 ? '' : 's') + ', ' + d.analysesDeleted + ' analys'

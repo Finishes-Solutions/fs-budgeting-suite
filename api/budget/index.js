@@ -80,6 +80,28 @@ module.exports = async function (context, req) {
 
   if (!ID_RX.test(id)) { context.res = { status: 400, body: 'Invalid project ID (OP-#### / BD-#### / AS-#### / TST-####)' }; return; }
 
+  // ---- POST /api/budget/{id}?scope=ask — the Budget Assistant (Claude).
+  // A scope on an endpoint that already deploys, for the same reason as the
+  // project scopes above. Read-only: it never writes the budget. The signed-in
+  // check and the ownership rule live in shared/budget-assistant.js and are
+  // the real gate — a route rule cannot see the query string.
+  if (req.method === 'POST') {
+    if (String((req.query && req.query.scope) || '') !== 'ask') {
+      context.res = { status: 405, body: 'POST is only accepted with ?scope=ask' }; return;
+    }
+    const principal = getPrincipal(req);
+    const assistant = require('../shared/budget-assistant');
+    const out = await assistant.ask({
+      store: () => assistant.sqlStore(pool, principal), principal, id, body: req.body || {},
+      log: m => context.log && context.log.warn && context.log.warn(m) });
+    const activity = out.activity; delete out.activity;
+    context.res = out;
+    // Best-effort, like every activity row: who asked what, about which
+    // budget, and what it cost in tokens — never the answer itself.
+    if (activity) await require('../shared/users').recordActivity(pool, principal, 'ai_ask', 'budget', id, activity);
+    return;
+  }
+
   if (req.method === 'GET') {
     // Soft-deleted budgets are invisible to the app; the row and its history stay.
     const r = await pool.request().input('id', sql.VarChar(16), id)

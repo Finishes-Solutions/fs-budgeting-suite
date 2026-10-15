@@ -177,7 +177,8 @@ which is why the history has merge commits on both sides.
   login page reads whatever survived and hands it back as the post-login target.
   Best-effort by design: worst case the user lands on Home.
 - **Application settings are per-environment.** Production and staging each need the
-  pair set. The same client ID/secret works for both — the difference is the redirect
+  pair set — and so does `ANTHROPIC_API_KEY`, in every environment that should
+  have the Budget Assistant (production, staging, feature). The same client ID/secret works for both — the difference is the redirect
   URI, which is per-hostname.
 - A blank white page on a new environment almost always means the redirect URI is not
   registered (or has not propagated — allow ~3 minutes), not a broken build.

@@ -452,6 +452,27 @@ body.modal-open{overflow:hidden}
    because `.card-hd h2` (0,1,1) out-specifies a bare `.mod-title` (0,1,0) and
    would otherwise hold every dialog title at the 15px section-header scale. */
 .card-hd .mod-title{margin:0;font-size:19px;font-weight:800;letter-spacing:-.015em}
+/* Budget Assistant. The answer is Markdown from the model, rendered by
+   aiMarkdown() — which escapes FIRST and only then adds a fixed set of tags,
+   so nothing the model writes can become live markup. */
+.ai-log{display:flex;flex-direction:column;gap:12px;min-height:120px}
+.ai-msg{padding:10px 14px;border-radius:var(--rm);font-size:13.5px;line-height:1.55;color:var(--ink-900);
+  max-width:100%;overflow-x:auto}
+.ai-msg.user{align-self:flex-end;background:var(--ink-100);max-width:85%;white-space:pre-wrap}
+.ai-msg.bot{background:var(--white);border:1px solid var(--ink-150)}
+.ai-msg.err{border:1px solid var(--danger);color:var(--danger);background:var(--white)}
+.ai-msg p{margin:0 0 8px}.ai-msg p:last-child{margin-bottom:0}
+.ai-msg ul,.ai-msg ol{margin:0 0 8px;padding-left:20px}.ai-msg li{margin:2px 0}
+.ai-msg h4{margin:10px 0 6px;font-size:13.5px;font-weight:800}
+.ai-msg code{font-family:var(--fm);font-size:12px;background:var(--ink-100);padding:0 3px;border-radius:3px}
+.ai-msg table{border-collapse:collapse;margin:6px 0 10px;font-size:12.5px}
+.ai-msg th,.ai-msg td{border:1px solid var(--ink-150);padding:4px 8px;text-align:left;vertical-align:top}
+.ai-msg th{background:var(--ink-50);font-weight:700}
+.ai-meta{font-size:11.5px;color:var(--ink-500);margin-top:6px}
+.ai-suggest{display:flex;flex-wrap:wrap;gap:8px}
+.ai-ask{display:flex;gap:8px;align-items:flex-end;margin-top:12px}
+.ai-ask textarea{flex:1;min-height:44px;max-height:160px;resize:vertical;font:inherit;font-size:13.5px;
+  padding:9px 11px;border:1px solid var(--ink-200);border-radius:var(--r);background:var(--white);color:var(--ink-900)}
 /* First-run welcome. Deliberately plain: three lines about what the tool is,
    set in the same dialog shell as every other sheet, so it reads as part of
    the app rather than as an ad in front of it. */
@@ -1366,6 +1387,7 @@ th.sortable.sorted{color:var(--ink-900)}
     <div><button class="btn-back" id="backBudget" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1 id="bTitle">Budget</h1><div class="sub" id="bSub"></div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="bStatusHost"></span>
+      <button class="btn btn-ghost" onclick="openAssistant()" title="Ask the Budget Assistant about this budget">Ask AI</button>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
       <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
@@ -2853,6 +2875,34 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="card-hd"><h2 class="mod-title" id="versionsTitle">Budget Versions</h2>
       <button class="btn-x" onclick="closeVersions()" aria-label="Close version history">×</button></div>
     <div class="card-bd" style="max-height:70vh;overflow:auto"><div id="versionsBody"></div></div>
+  </div>
+</div>
+
+<!-- ================= BUDGET ASSISTANT =================
+     Questions about the open budget, answered by Claude through
+     POST /api/budget/{id}?scope=ask (api/shared/budget-assistant.js). The
+     figures it quotes are computed server-side by the app's own budget math;
+     the model explains them. Read-only: it never changes the budget. -->
+<div id="assistantModal" class="modal" onclick="if(event.target===this)closeDialog('assistantModal')">
+  <div class="card mod-sheet" style="width:760px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column"
+    role="dialog" aria-modal="true" aria-labelledby="assistantTitle">
+    <div class="card-hd"><h2 class="mod-title" id="assistantTitle">Budget Assistant</h2>
+      <span style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost btn-sm" onclick="resetAssistant()">New Conversation</button>
+        <button class="btn-x" onclick="closeDialog('assistantModal')" aria-label="Close budget assistant">&times;</button></span></div>
+    <div class="card-bd" style="overflow:auto;flex:1" id="aiScroll">
+      <div class="ai-log" id="aiLog" aria-live="polite"></div>
+    </div>
+    <div class="card-bd" style="border-top:1px solid var(--ink-150);padding-top:12px">
+      <div class="note" id="aiBasis"></div>
+      <div class="ai-ask">
+        <textarea id="aiQ" rows="2" maxlength="2000" placeholder="Ask about this budget — how a number was built, what changed, how it compares…"
+          aria-label="Question for the Budget Assistant"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAssistant();}"></textarea>
+        <button class="btn btn-dark" id="aiSend" onclick="sendAssistant()">Ask</button>
+      </div>
+      <div class="note" style="margin-top:8px">Answers come from Claude (Anthropic) and can be wrong — check figures against the budget before relying on them. The budget's data is sent to Anthropic to answer.</div>
+    </div>
   </div>
 </div>
 
@@ -5744,6 +5794,116 @@ function closeVersions(){
   vBody().innerHTML='';
   if(versionsReturn&&document.body.contains(versionsReturn))versionsReturn.focus();
   versionsReturn=null;
+}
+
+/* ---- Budget Assistant ----
+   One conversation per budget, held in memory only: reopening the dialog on
+   the same budget continues it, opening another budget starts fresh. Only the
+   visible text of earlier turns is sent back as history — the server rebuilds
+   the budget's facts on every question, so they are never stale. When the
+   budget has unsaved changes the on-screen document goes along as a draft,
+   because "why is this number what it is" is about the number on screen. */
+let aiThread={pid:null,turns:[]},aiBusy=false;
+const AI_SUGGEST=['How was the total project cost calculated?','What are the biggest cost drivers?',
+  'What changed since the previous version, and why did the total move?','Which lines were manually edited?',
+  'How does this compare to my other budgets on a per-unit and per-SF basis?','Are any guard rails or assumptions worth a second look?'];
+function openAssistant(){
+  if(!doc||!doc.projectId){toast('Open a budget first');return;}
+  if(aiThread.pid!==doc.projectId)aiThread={pid:doc.projectId,turns:[]};
+  document.getElementById('assistantTitle').textContent='Budget Assistant — '+doc.projectId;
+  renderAssistant();
+  openDialog('assistantModal','#aiQ');
+}
+function resetAssistant(){
+  if(aiBusy)return;
+  aiThread={pid:doc?doc.projectId:null,turns:[]};renderAssistant();
+  document.getElementById('aiQ').focus();
+}
+function renderAssistant(){
+  const log=document.getElementById('aiLog');
+  document.getElementById('aiBasis').textContent=dirty
+    ?'This budget has unsaved changes — the assistant will read what is on screen, not the last save.'
+    :'The assistant reads this budget as last saved, plus its version history.';
+  if(!aiThread.turns.length){
+    log.innerHTML='<div class="note">Ask anything about '+esc(doc&&doc.name?doc.name:'this budget')
+      +' — how a figure was built, what changed between versions, how it compares to other budgets.</div>'
+      +'<div class="ai-suggest">'+AI_SUGGEST.map((q,i)=>'<button class="btn btn-ghost btn-sm" data-ai-suggest="'+i+'">'+esc(q)+'</button>').join('')+'</div>';
+    log.querySelectorAll('[data-ai-suggest]').forEach(b=>{b.onclick=()=>{
+      document.getElementById('aiQ').value=AI_SUGGEST[+b.dataset.aiSuggest];sendAssistant();};});
+    return;
+  }
+  log.innerHTML=aiThread.turns.map(t=>{
+    if(t.role==='user')return '<div class="ai-msg user">'+esc(t.content)+'</div>';
+    if(t.error)return '<div class="ai-msg err">'+esc(t.content)+'</div>';
+    return '<div class="ai-msg bot">'+aiMarkdown(t.content)
+      +(t.meta?'<div class="ai-meta">'+esc(t.meta)+'</div>':'')+'</div>';
+  }).join('')+(aiBusy?'<div class="ai-msg bot"><span class="note">Thinking through the budget…</span></div>':'');
+  const sc=document.getElementById('aiScroll');sc.scrollTop=sc.scrollHeight;
+}
+async function sendAssistant(){
+  const box=document.getElementById('aiQ'),q=box.value.trim();
+  if(!q||aiBusy||!doc)return;
+  const pid=doc.projectId;
+  // History is the visible conversation only — never an error bubble.
+  const history=aiThread.turns.filter(t=>!t.error).map(t=>({role:t.role,content:t.content}));
+  aiThread.turns.push({role:'user',content:q});
+  box.value='';aiBusy=true;
+  document.getElementById('aiSend').disabled=true;
+  renderAssistant();
+  const body={question:q,history};
+  if(dirty)body.draft=doc;
+  try{
+    const r=await fetch('/api/budget/'+encodeURIComponent(pid)+'?scope=ask',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    // An expired session comes back as a redirect to the sign-in page (see api()).
+    if(r.redirected&&/\/login\.html(\?|#|$)/.test(r.url))throw new Error('Your session has ended — sign in again, then ask.');
+    let d=null;try{d=await r.json();}catch(_){}
+    if(!r.ok||!d||!d.ok)throw new Error((d&&d.message)||('The assistant could not answer (HTTP '+r.status+').'));
+    if(aiThread.pid!==pid)return;      // the budget changed underneath; drop the late answer
+    aiThread.turns.push({role:'assistant',content:d.answer+(d.truncated?'\n\n_(Answer cut short.)_':''),
+      meta:(d.basedOn==='unsaved-draft'?'From unsaved changes · ':'')+(d.toolsUsed&&d.toolsUsed.length?'Looked up: '
+        +[...new Set(d.toolsUsed)].map(t=>t.replace(/_/g,' ')).join(', ')+' · ':'')+'Claude'});
+  }catch(e){
+    if(aiThread.pid===pid)aiThread.turns.push({role:'assistant',error:true,content:e.message});
+  }finally{
+    aiBusy=false;document.getElementById('aiSend').disabled=false;
+    if(aiThread.pid===pid)renderAssistant();
+  }
+}
+/* Markdown for the assistant's answers: ESCAPE FIRST, then a fixed set of
+   tags (paragraphs, ### headings, bullet and numbered lists, pipe tables,
+   **bold**, `code`). Escaping first is the XSS boundary — the model's text is
+   untrusted like any other user-visible string. */
+function aiMarkdown(md){
+  const inline=t=>t.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+    .replace(/(^|[^\w])_([^_]+)_(?=[^\w]|$)/g,'$1<i>$2</i>');
+  const lines=esc(String(md||'')).split(/\r?\n/);
+  let html='',para=[],list=null;
+  const flushP=()=>{if(para.length){html+='<p>'+inline(para.join(' '))+'</p>';para=[];}};
+  const flushL=()=>{if(list){html+='<'+list.tag+'>'+list.items.map(i=>'<li>'+inline(i)+'</li>').join('')+'</'+list.tag+'>';list=null;}};
+  for(let i=0;i<lines.length;i++){
+    const ln=lines[i];
+    if(/^\s*\|.*\|\s*$/.test(ln)){
+      flushP();flushL();
+      const rows=[];
+      while(i<lines.length&&/^\s*\|.*\|\s*$/.test(lines[i]))rows.push(lines[i++]);
+      i--;
+      const cells=r=>r.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+      const body=rows.filter(r=>!/^\s*\|[\s:|-]+\|\s*$/.test(r));
+      const hasHead=rows.length>1&&/^\s*\|[\s:|-]+\|\s*$/.test(rows[1]);
+      html+='<table>'+body.map((r,j)=>'<tr>'+cells(r).map(c=>(hasHead&&j===0?'<th>':'<td>')+inline(c)
+        +(hasHead&&j===0?'</th>':'</td>')).join('')+'</tr>').join('')+'</table>';
+      continue;
+    }
+    let m;
+    if((m=ln.match(/^#{1,6}\s+(.*)$/))){flushP();flushL();html+='<h4>'+inline(m[1])+'</h4>';continue;}
+    if((m=ln.match(/^\s*[-*]\s+(.*)$/))){flushP();if(!list||list.tag!=='ul'){flushL();list={tag:'ul',items:[]};}list.items.push(m[1]);continue;}
+    if((m=ln.match(/^\s*\d+[.)]\s+(.*)$/))){flushP();if(!list||list.tag!=='ol'){flushL();list={tag:'ol',items:[]};}list.items.push(m[1]);continue;}
+    if(!ln.trim()){flushP();flushL();continue;}
+    flushL();para.push(ln.trim());
+  }
+  flushP();flushL();
+  return html;
 }
 
 async function deleteBudget(pid){
