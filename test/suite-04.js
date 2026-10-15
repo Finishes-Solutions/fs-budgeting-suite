@@ -81,6 +81,70 @@ const PASS='Basalt-Meridian-8538-27D5B4';
     (await p.locator('#budBody .editdot.on').count())+' after reload');
  await p.screenshot({path:OUT+'/shot-edited.png'});
 
+ // ---- the edited FIELD says so, and can be put back ----
+ // The qty overridden above still carries its own mark and a reset.
+ const q0=p.locator('#budBody input[data-k$=".qty"]').first();
+ ok('an overridden quantity marks the field itself',
+    await q0.evaluate(e=>e.classList.contains('edited-val')));
+ ok('the quantity carries thousands separators', (await q0.inputValue())==='123'
+    && /,/.test(await p.locator('#budBody input[data-k$=".qty"]').nth(1).inputValue()),
+    await p.locator('#budBody input[data-k$=".qty"]').nth(1).inputValue());
+ ok('rates read as money — two decimals',
+    /^\d+\.\d\d$/.test(await p.locator('#budBody input[data-k$=".unit"]').nth(1).inputValue()),
+    await p.locator('#budBody input[data-k$=".unit"]').nth(1).inputValue());
+ const q0id=await q0.evaluate(e=>e.dataset.k.split('.')[1]);
+ const qReset=p.locator('#budBody button[aria-label="Reset to Derived Quantity"]');
+ ok('an overridden quantity offers one reset', (await qReset.count())===1, String(await qReset.count()));
+ await qReset.click(); await p.waitForTimeout(300);
+ ok('the reset puts the derived quantity back',
+    await p.evaluate(id=>lineById(id).auto===true,q0id) && !(await q0.evaluate(e=>e.classList.contains('edited-val'))));
+ ok('and focus lands on the field that was reset',
+    await p.evaluate(id=>document.activeElement.dataset.k==='line.'+id+'.qty',q0id));
+ // a typed separator is decoration — the document stores the number
+ const q1=p.locator('#budBody input[data-k$=".qty"]').nth(1);
+ await q1.fill('1,234'); await q1.blur(); await p.waitForTimeout(300);
+ const q1id=await q1.evaluate(e=>e.dataset.k.split('.')[1]);
+ ok('a quantity typed with a separator is stored as a number',
+    await p.evaluate(id=>lineById(id).qty===1234&&lineById(id).auto===false,q1id));
+ // a changed rate shows the library rate and resets to it
+ const r1=p.locator('#budBody input[data-k$=".unit"]').nth(2);
+ const lib=await r1.inputValue();
+ await r1.fill('99.5'); await r1.blur(); await p.waitForTimeout(300);
+ ok('a changed rate marks the field and names the library rate',
+    await r1.evaluate(e=>e.classList.contains('edited-val'))
+      && (await r1.getAttribute('title'))==='Library $'+lib, await r1.getAttribute('title'));
+ ok('an edited rate keeps the rate column aligned',
+    new Set(await p.locator('#budBody input[data-k$=".unit"]').evaluateAll(
+      els=>els.slice(0,25).map(e=>Math.round(e.getBoundingClientRect().right)))).size===1);
+ const rReset=p.locator('#budBody button[aria-label="Reset to Library Rate"]');
+ ok('a changed rate offers one reset', (await rReset.count())===1, String(await rReset.count()));
+ await rReset.click(); await p.waitForTimeout(300);
+ ok('the reset restores the library rate', (await r1.inputValue())===lib
+    && !(await r1.evaluate(e=>e.classList.contains('edited-val'))), await r1.inputValue());
+ ok('a hand-added line has no library rate to reset to',
+    await p.evaluate(()=>{const l=doc.lines.find(x=>x.custom);
+      const el=document.querySelector('#budBody [data-k="line.'+l.lineId+'.unit"]');
+      return !!el&&!el.classList.contains('edited-val')&&!el.closest('td').querySelector('.rst-btn');}));
+
+ // ---- spreadsheet keys: Enter / arrows walk the column ----
+ const rates=p.locator('#budBody input[data-k$=".unit"]');
+ const k=async i=>rates.nth(i).getAttribute('data-k');
+ await rates.nth(0).focus();
+ await p.keyboard.press('ArrowDown'); await p.waitForTimeout(150);
+ ok('ArrowDown moves to the same field on the next row',
+    await p.evaluate(()=>document.activeElement.dataset.k)===await k(1));
+ await p.keyboard.type('4.25'); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+ ok('Enter commits the value and moves down',
+    await p.evaluate(()=>document.activeElement.dataset.k)===await k(2)
+      && await p.evaluate(key=>lineById(key.split('.')[1]).unit===4.25, await k(1)),
+    await p.evaluate(()=>document.activeElement.dataset.k));
+ await p.keyboard.press('ArrowUp'); await p.waitForTimeout(150);
+ ok('ArrowUp moves back up the column',
+    await p.evaluate(()=>document.activeElement.dataset.k)===await k(1));
+ ok('arrows do not step the number', (await rates.nth(1).inputValue())==='4.25', await rates.nth(1).inputValue());
+ await p.keyboard.press('Tab'); await p.waitForTimeout(150);
+ ok('Tab still leaves the column', !/\.unit$/.test(await p.evaluate(()=>document.activeElement.dataset.k||'')));
+
  // unlock with the new passphrase (no principal -> control visible). Use a fresh page
  // without /.auth/me by blocking it.
  const p2=await b.newPage({viewport:{width:1200,height:900}});
