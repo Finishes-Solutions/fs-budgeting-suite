@@ -877,6 +877,8 @@
 
   function renderEditor() {
     const host = el('page-analysis'); if (!host) return;
+    // An open assistant panel follows the analysis on screen.
+    if (A && A.aiFocusChanged) setTimeout(A.aiFocusChanged, 0);
     const inp = st.input;
     const loan = (inp.financing && inp.financing.loans && inp.financing.loans[0]) || null;
     const dollarExp = inp.expenses && inp.expenses.mode === 'annualDollar';
@@ -2122,11 +2124,18 @@
     // The Budget Assistant, focused on this analysis. Unsaved assumptions go
     // along as a draft so the answer is about what is on screen; the dialog
     // itself belongs to index.html and is reached only through the adapter.
-    askAI() {
-      if (!A || !A.askAI || !st.input) return;
+    // What the Budget Assistant is told about the open analysis, or null when
+    // none is open. index.html reads it to follow you between pages.
+    aiContext() {
+      if (!st.input) return null;
       const id = st.id;
-      A.askAI({ id, name: st.input.analysisName || 'Investment Analysis',
-        getDraft: () => (st.id === id && st.dirty ? st.input : null) });
+      return { id, name: st.input.analysisName || 'Investment Analysis',
+        getDraft: () => (st.id === id && st.dirty ? st.input : null) };
+    },
+    askAI() {
+      if (!A || !A.askAI) return;
+      const ctx = FSInvestmentUI.aiContext();
+      if (ctx) A.askAI(ctx);
     },
     currentId: () => st.id,
     isDirty: () => st.dirty,

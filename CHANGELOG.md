@@ -28,10 +28,16 @@ House rules for writing one:
 
 - **It docks to the right edge instead of covering the page.** On a wide
   screen the page shifts left to make room, so the budget stays readable and
-  editable beside the conversation. It stays open as you move between Inputs,
-  Impact Fees, Budget and CSI Schedule for the same budget, and closes when you
-  leave for another page. On a narrow screen it covers the page. Escape closes
-  it when you are typing in it.
+  editable beside the conversation. On a narrow screen it covers the page.
+  Escape closes it when you are typing in it.
+- **One conversation that follows you around the app.** The panel stays open
+  as you move between pages, and it switches to whatever budget or pro forma
+  is on screen without losing the thread. Ask about a pro forma, open its
+  budget, and keep asking: the assistant reads the budget now on screen and
+  still has your earlier pro forma questions and answers. A divider in the
+  thread marks each change of subject. On a page that is about neither (Home,
+  the lists), it keeps talking about the last one you had open. **New
+  conversation** starts over.
 - **A redesigned conversation.** Your question sits in a bubble on the right
   and the answer reads as plain text beside the assistant's mark. Each answer
   has a **Copy** button. Suggested questions show as cards when a conversation

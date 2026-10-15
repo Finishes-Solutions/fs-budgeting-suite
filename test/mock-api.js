@@ -98,9 +98,15 @@ function mockAnalysisRec(a) {
 // module computed, so a suite can assert that real figures reached the model;
 // a question mentioning "version" exercises one round of the tool loop.
 const mockClaude = { beta: { messages: { async create(req) {
-  const first = String(req.messages[0].content);
+  // The on-screen context rides on the latest question; earlier user turns
+  // are the conversation as asked (possibly about another screen).
+  const ctxAt = req.messages.map(m => typeof m.content === 'string' && /<(budget|analysis)_context/.test(m.content)).lastIndexOf(true);
+  const first = String(ctxAt >= 0 ? req.messages[ctxAt].content : req.messages[0].content);
+  const prior = req.messages.slice(0, Math.max(ctxAt, 0)).filter(m => m.role === 'user' && typeof m.content === 'string');
+  const earlier = '\n- Earlier questions: ' + prior.length
+    + (prior.some(m => /^\[Asked while viewing /.test(m.content)) ? ' (some from another screen)' : '');
   const am = first.match(/<analysis_context[^>]*>\n[^\n]*\n(.*)\n<\/analysis_context>/);
-  if (am) return mockClaudeAnalysis(req, JSON.parse(am[1]));
+  if (am) return mockClaudeAnalysis(req, JSON.parse(am[1]), first, earlier);
   const m = first.match(/<budget_context[^>]*>\n[^\n]*\n(.*)\n<\/budget_context>/);
   const facts = m ? JSON.parse(m[1]) : null;
   const rv = first.match(/<budget_review>\n(.*)\n<\/budget_review>/);
@@ -109,7 +115,9 @@ const mockClaude = { beta: { messages: { async create(req) {
   const last = req.messages[req.messages.length - 1];
   const asked = typeof last.content === 'string' ? last.content : '';
   const usage = { input_tokens: 1200, output_tokens: 80 };
-  if (/version/i.test(asked) && req.tool_choice.type === 'auto' && facts) {
+  // The question itself, without the context block in front of it.
+  const question = asked.replace(/^[\s\S]*<\/version_history>\n\n/, '');
+  if (/version/i.test(question) && req.tool_choice.type === 'auto' && facts) {
     return { stop_reason: 'tool_use', model: 'mock-claude', usage, content: [{ type: 'tool_use', id: 'mock-t1',
       name: 'list_versions', input: { budget_id: facts.identity.budgetId } }] };
   }
@@ -126,11 +134,11 @@ const mockClaude = { beta: { messages: { async create(req) {
     + '\n- Based on: ' + (m ? first.match(/basis="([^"]+)"/)[1] : 'unknown')
     + '\n- Review findings: ' + (review ? review.summary.findings : 'none')
     + '\n- Pro formas: ' + (pf ? pf[1] : '0')
-    + '\n- Reasoning: ' + (req.output_config && req.output_config.effort) + tail }] };
+    + '\n- Reasoning: ' + (req.output_config && req.output_config.effort) + earlier + tail }] };
 } } } };
 // The pro forma half of the stand-in: quotes the engine's headline and top
 // driver, and a question about RUBS exercises run_scenario.
-function mockClaudeAnalysis(req, facts) {
+function mockClaudeAnalysis(req, facts, first, earlier) {
   const last = req.messages[req.messages.length - 1];
   const asked = typeof last.content === 'string' ? last.content : '';
   const usage = { input_tokens: 1500, output_tokens: 90 };
@@ -149,8 +157,8 @@ function mockClaudeAnalysis(req, facts) {
     '**' + ((facts.meta && facts.meta.name) || 'Analysis') + '** — mock pro forma answer.\n\n'
     + '- Equity IRR: ' + pct(h.finalYearEquityIRR) + '\n- Top driver: '
     + ((facts.drivers || [])[0] ? facts.drivers[0].change : 'none')
-    + '\n- Source budget: ' + (/<source_budget>\nThe budget this analysis/.test(String(req.messages[0].content)) ? 'loaded' : 'none')
-    + tail }] };
+    + '\n- Source budget: ' + (/<source_budget>\nThe budget this analysis/.test(first) ? 'loaded' : 'none')
+    + earlier + tail }] };
 }
 const mockUsers = new Map();   // userId -> profile + settings row
 const mockFeedback = [];       // dbo.Feedback stand-in, newest first

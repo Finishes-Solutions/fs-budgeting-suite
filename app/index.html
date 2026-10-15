@@ -506,6 +506,8 @@ body.modal-open{overflow:hidden}
 /* Messages: the question in a bubble on the right, the answer as plain text
    beside the assistant's mark — the answer is the thing to read. */
 .ai-msg{font-size:13.5px;line-height:1.6;color:var(--ink-900);min-width:0}
+.ai-ctx{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--ink-500)}
+.ai-ctx:before,.ai-ctx:after{content:'';flex:1;height:1px;background:var(--ink-150)}
 .ai-msg.user{align-self:flex-end;max-width:86%;padding:9px 14px;border-radius:18px 18px 4px 18px;
   background:var(--green-100);color:var(--ink-950);white-space:pre-wrap;overflow-wrap:anywhere}
 .ai-turn{display:flex;gap:10px;align-items:flex-start}
@@ -4772,7 +4774,7 @@ function go(p){
   // survive the trip and follow you to every other tab.
   if(p!==currentPage)closeAllDialogs();
   currentPage=p;
-  aiFollowPage(p);
+  aiFollowPage();
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   document.getElementById('page-'+p).classList.add('on');
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
@@ -6201,21 +6203,24 @@ function closeVersions(){
 }
 
 /* ---- Budget Assistant ----
-   A panel docked to the right, two focuses. On a budget it reads the budget,
-   its rule-based review and the pro formas built from it; on an investment
-   analysis it reads the analysis, its drivers and the budget it came from.
-   One conversation per focus, held in memory only: reopening on the same
-   budget or analysis continues it, opening another starts fresh. Only the
-   visible text of earlier turns goes back as history — the server rebuilds
-   the facts on every question, so they are never stale. Unsaved edits go
-   along as a draft, because "why is this number what it is" is about the
-   number on screen.
+   A panel docked to the right holding ONE conversation for the session. It
+   stays open as you move around the app and follows what is on screen: on a
+   budget it reads the budget, its rule-based review and the pro formas built
+   from it; on an investment analysis it reads the analysis, its drivers and
+   the budget it came from. On a page with neither (Home, the lists) it keeps
+   talking about the last one you had open. So you can ask about a pro forma,
+   open its budget and keep going without losing the thread.
+
+   The conversation is held in memory only. Only the visible text of earlier
+   turns goes back as history, each earlier question tagged with what it was
+   asked about when that differs from the screen now — the server rebuilds
+   the facts for the current screen on every question, so they are never
+   stale. Unsaved edits go along as a draft, because "why is this number what
+   it is" is about the number on screen.
 
    The panel is not a dialog: it does not trap focus or lock the page, so the
-   budget can be read and edited beside it. It stays open while you move
-   between the steps of the same budget (or stay on the same analysis) and
-   closes when you leave for something it is not about (aiFollowPage). */
-let aiThread={key:null,turns:[]},aiFocus=null,aiBusy=false,aiReturn=null;
+   budget can be read and edited beside it. */
+let aiTurns=[],aiConv=0,aiFocus=null,aiBusy=false,aiReturn=null;
 const AI_SUGGEST={
   budget:['How was the total project cost calculated?','Where might this budget be wrong, or what is it missing?',
     'What other ways could this property make money?','How does the pro forma look, and what is hurting the returns?',
@@ -6246,32 +6251,53 @@ const AI_ICON={
   alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9.5"/></svg>',
   check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
 };
-function openAssistant(){
-  if(!doc||!doc.projectId){toast('Open a budget first');return;}
+function budgetFocus(){
+  if(!doc||!doc.projectId)return null;
   const pid=doc.projectId;
-  showAssistant({kind:'budget',id:pid,key:'budget:'+pid,title:pid,name:doc.name||pid,
-    getDraft:()=>(dirty&&doc&&doc.projectId===pid)?doc:null});
+  return {kind:'budget',id:pid,key:'budget:'+pid,title:pid,name:doc.name||pid,
+    label:'budget '+pid+(doc.name&&doc.name!==pid?' "'+doc.name+'"':''),
+    getDraft:()=>(dirty&&doc&&doc.projectId===pid)?doc:null};
+}
+function analysisFocus(ctx){
+  if(!ctx)return null;
+  const name=ctx.name||'Investment Analysis';
+  return {kind:'analysis',id:ctx.id||null,key:'analysis:'+(ctx.id||'unsaved'),title:name,name,
+    label:'investment analysis "'+name+'"',getDraft:ctx.getDraft||(()=>null)};
+}
+// What is on screen right now, or null on a page that is about neither.
+function aiScreenFocus(){
+  if(DOC_PAGES.includes(currentPage))return budgetFocus();
+  if(currentPage==='analysis'&&window.FSInvestmentUI&&FSInvestmentUI.aiContext)
+    return analysisFocus(FSInvestmentUI.aiContext());
+  return null;
+}
+function openAssistant(){
+  const f=budgetFocus();
+  if(!f){toast('Open a budget first');return;}
+  showAssistant(f);
 }
 /* The investment-analysis module calls this through its adapter. ctx is
    {id, name, getDraft}; an analysis not yet saved has no id and is asked
    about from its on-screen input alone. */
 function openAnalysisAssistant(ctx){
-  if(!ctx)return;
-  showAssistant({kind:'analysis',id:ctx.id||null,key:'analysis:'+(ctx.id||'unsaved'),
-    title:ctx.name||'Investment Analysis',name:ctx.name||'this analysis',getDraft:ctx.getDraft||(()=>null)});
+  const f=analysisFocus(ctx);
+  if(f)showAssistant(f);
 }
 function assistantOpen(){return document.getElementById('assistantPanel').classList.contains('on');}
+function paintAiHeader(){
+  const f=aiFocus;if(!f)return;
+  const onScreen=aiScreenFocus();
+  document.getElementById('aiSub').textContent=(onScreen&&onScreen.key===f.key?'':'Last opened · ')
+    +(f.kind==='budget'?(f.name&&f.name!==f.title?f.title+' · '+f.name:f.title):'Investment analysis · '+f.title);
+  document.getElementById('aiQ').placeholder=f.kind==='budget'?'Ask about this budget…':'Ask about this analysis…';
+}
 function showAssistant(f){
   aiFocus=f;
-  if(aiThread.key!==f.key)aiThread={key:f.key,turns:[]};
-  document.getElementById('aiSub').textContent=f.kind==='budget'
-    ?(f.name&&f.name!==f.title?f.title+' · '+f.name:f.title):'Investment analysis · '+f.title;
-  document.getElementById('aiQ').placeholder=f.kind==='budget'?'Ask about this budget…':'Ask about this analysis…';
   const panel=document.getElementById('assistantPanel');
   if(!panel.classList.contains('on'))aiReturn=document.activeElement;
   panel.classList.add('on');panel.setAttribute('aria-hidden','false');
   document.body.classList.add('ai-docked');
-  paintEffort();renderAssistant();aiComposerChanged();
+  paintAiHeader();paintEffort();renderAssistant();aiComposerChanged();
   document.getElementById('aiQ').focus();
 }
 function closeAssistant(){
@@ -6284,18 +6310,22 @@ function closeAssistant(){
   if(hadFocus&&aiReturn&&document.body.contains(aiReturn))aiReturn.focus();
   aiReturn=null;
 }
-/* Called by go() on every page change: the panel stays while what it is
-   about is still on screen, and closes otherwise. */
-function aiFollowPage(p){
-  if(!aiFocus||!assistantOpen())return;
-  const stays=aiFocus.kind==='budget'
-    ?(DOC_PAGES.includes(p)&&!!doc&&doc.projectId===aiFocus.id)
-    :p==='analysis';
-  if(!stays)closeAssistant();
+/* Follow the screen. Called by go() on every page change (and once more after
+   it, since a budget or analysis can finish loading after the page shows) and
+   by the analysis module whenever it renders. A page about neither keeps the
+   last focus. Only a change of subject repaints the conversation. */
+function aiSyncFocus(){
+  const f=aiScreenFocus();
+  const changed=!!f&&(!aiFocus||f.key!==aiFocus.key);
+  if(f)aiFocus=f;
+  if(!assistantOpen()||!aiFocus)return;
+  paintAiHeader();
+  if(changed)renderAssistant();else paintAiBasis();
 }
+function aiFollowPage(){aiSyncFocus();setTimeout(aiSyncFocus,0);}
 function resetAssistant(){
   if(aiBusy||!aiFocus)return;
-  aiThread={key:aiFocus.key,turns:[]};renderAssistant();
+  aiTurns=[];aiConv++;renderAssistant();
   document.getElementById('aiQ').focus();
 }
 function aiComposerChanged(){
@@ -6349,16 +6379,20 @@ document.getElementById('assistantPanel').addEventListener('keydown',e=>{
 document.addEventListener('click',e=>{
   if(!e.target.closest('.ai-effort'))closeEffortMenu(false);
 });
-function renderAssistant(){
-  const log=document.getElementById('aiLog'),f=aiFocus;if(!f)return;
+function paintAiBasis(){
+  const f=aiFocus;if(!f)return;
   const unsaved=!!f.getDraft();
   document.getElementById('aiBasis').textContent=f.kind==='budget'
     ?(unsaved?'This budget has unsaved changes — the assistant will read what is on screen, not the last save.'
       :'Reads this budget as last saved, its version history, and the pro formas built from it.')
     :(unsaved?'This analysis has unsaved changes — the assistant will read the assumptions on screen.'
       :'Reads this analysis as last saved, plus the budget it was built from.');
+}
+function renderAssistant(){
+  const log=document.getElementById('aiLog'),f=aiFocus;if(!f)return;
+  paintAiBasis();
   document.getElementById('aiNew').disabled=aiBusy;
-  if(!aiThread.turns.length){
+  if(!aiTurns.length){
     const sug=AI_SUGGEST[f.kind];
     log.innerHTML='<div class="ai-hello"><span class="ai-mark">'+AI_ICON.spark+'</span>'
       +'<h3>Ask about '+esc(f.name)+'</h3><p>'
@@ -6371,17 +6405,27 @@ function renderAssistant(){
       document.getElementById('aiQ').value=sug[+b.dataset.aiSuggest];sendAssistant();};});
     return;
   }
-  log.innerHTML=aiThread.turns.map((t,i)=>{
-    if(t.role==='user')return '<div class="ai-msg user">'+esc(t.content)+'</div>';
+  // A marker wherever the subject changes, so a thread that moved from a pro
+  // forma to its budget reads that way — and one at the end when the screen
+  // has moved on since the last question.
+  let about=null;
+  const marker=(label,now)=>'<div class="ai-ctx" role="note">'+(now?'Now viewing ':'About ')+esc(label)+'</div>';
+  log.innerHTML=aiTurns.map((t,i)=>{
+    if(t.role==='user'){
+      const m=t.aboutKey!==about?marker(t.aboutLabel,false):'';
+      about=t.aboutKey;
+      return m+'<div class="ai-msg user">'+esc(t.content)+'</div>';
+    }
     if(t.error)return '<div class="ai-turn err"><span class="ai-mark">'+AI_ICON.alert+'</span><div class="ai-msg err">'
       +esc(t.content)+'</div></div>';
     return '<div class="ai-turn"><span class="ai-mark">'+AI_ICON.spark+'</span><div class="ai-msg bot">'+aiMarkdown(t.content)
       +'<div class="ai-meta"><button type="button" class="ai-copy" data-ai-copy="'+i+'" title="Copy answer">'+AI_ICON.copy
       +'<span>Copy</span></button>'+(t.meta?'<span>'+esc(t.meta)+'</span>':'')+'</div></div></div>';
   }).join('')+(aiBusy?'<div class="ai-turn"><span class="ai-mark">'+AI_ICON.spark+'</span><div class="ai-typing">'
-    +'<span class="ai-dots"><i></i><i></i><i></i></span>Working through the numbers…</div></div>':'');
+    +'<span class="ai-dots"><i></i><i></i><i></i></span>Working through the numbers…</div></div>':'')
+    +(!aiBusy&&about&&about!==f.key?marker(f.label,true):'');
   log.querySelectorAll('[data-ai-copy]').forEach(b=>{b.onclick=()=>{
-    const t=aiThread.turns[+b.dataset.aiCopy];if(!t)return;
+    const t=aiTurns[+b.dataset.aiCopy];if(!t)return;
     const done=()=>{const l=b.querySelector('span');l.textContent='Copied';setTimeout(()=>{l.textContent='Copy';},1500);};
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t.content).then(done,()=>toast('Copy failed'));
     else toast('Copy is not available in this browser');
@@ -6389,12 +6433,16 @@ function renderAssistant(){
   const sc=document.getElementById('aiScroll');sc.scrollTop=sc.scrollHeight;
 }
 async function sendAssistant(){
+  aiSyncFocus();                     // ask about what is on screen now
   const box=document.getElementById('aiQ'),q=box.value.trim(),f=aiFocus;
   if(!q||aiBusy||!f)return;
-  const key=aiThread.key,effort=aiEffort;
-  // History is the visible conversation only — never an error bubble.
-  const history=aiThread.turns.filter(t=>!t.error).map(t=>({role:t.role,content:t.content}));
-  aiThread.turns.push({role:'user',content:q});
+  const conv=aiConv,effort=aiEffort;
+  // History is the visible conversation only — never an error bubble. An
+  // earlier question about something other than what is on screen now says
+  // what it was about, so the model does not read it as about this record.
+  const history=aiTurns.filter(t=>!t.error).map(t=>({role:t.role,
+    content:t.role==='user'&&t.aboutKey!==f.key?'[Asked while viewing '+t.aboutLabel+'] '+t.content:t.content}));
+  aiTurns.push({role:'user',content:q,aboutKey:f.key,aboutLabel:f.label});
   box.value='';aiBusy=true;aiComposerChanged();
   renderAssistant();
   const draft=f.getDraft();
@@ -6416,20 +6464,20 @@ async function sendAssistant(){
     // deadline") — the part an administrator needs to act on a slow answer.
     if(!r.ok||!d||!d.ok)throw new Error(((d&&d.message)||('The assistant could not answer (HTTP '+r.status+').'))
       +(d&&d.detail?' ('+d.detail+')':''));
-    if(aiThread.key!==key)return;      // the focus changed underneath; drop the late answer
+    if(aiConv!==conv)return;      // a new conversation was started meanwhile; drop the late answer
     const used=d.effort||effort;
     if(!aiEffort&&d.effort&&aiEffortShown!==d.effort){aiEffortShown=d.effort;paintEffort();}
-    aiThread.turns.push({role:'assistant',content:d.answer+(d.cutShortForTime
+    aiTurns.push({role:'assistant',content:d.answer+(d.cutShortForTime
         ?'\n\n_(Answer cut short to fit the time limit — ask a narrower follow-up for the rest.)_'
         :d.truncated?'\n\n_(Answer cut short.)_':''),
       meta:(d.basedOn==='unsaved-draft'?'From unsaved changes · ':'')+(d.toolsUsed&&d.toolsUsed.length?'Looked up: '
         +[...new Set(d.toolsUsed)].map(t=>t.replace(/_/g,' ')).join(', ')+' · ':'')+'Claude'
         +(used?' · '+effortLabel(used)+' reasoning':'')});
   }catch(e){
-    if(aiThread.key===key)aiThread.turns.push({role:'assistant',error:true,content:e.message});
+    if(aiConv===conv)aiTurns.push({role:'assistant',error:true,content:e.message});
   }finally{
     aiBusy=false;aiComposerChanged();
-    if(aiThread.key===key)renderAssistant();
+    renderAssistant();
   }
 }
 /* Markdown for the assistant's answers: ESCAPE FIRST, then a fixed set of
@@ -8930,8 +8978,10 @@ function endBoot(){
       rememberExport:rememberExportOptions,
       activity:postActivity,
       timeFormat:()=>window.__fsTimeFormat||'12h',
-      // The Budget Assistant, focused on the open analysis (index.html owns the dialog).
-      askAI:openAnalysisAssistant
+      // The Budget Assistant, focused on the open analysis (index.html owns the
+      // panel); aiFocusChanged lets an open panel follow the analysis on screen.
+      askAI:openAnalysisAssistant,
+      aiFocusChanged:()=>aiSyncFocus()
     });
     await initAuth();
     await loadUserSettings();   // account settings apply before anything paints

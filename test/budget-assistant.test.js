@@ -254,14 +254,16 @@ test('an unsaved draft is what gets explained, labelled as such', async () => {
   assert.match(c.calls[0].req.messages[0].content, /"residentialSF":120000/);
 });
 
-test('history keeps the context on the first user turn', async () => {
+test('history goes first as asked; the on-screen context rides on the latest question', async () => {
   const c = fakeClient([text('ok')]);
   await run({ client: c, body: { question: 'and per unit?',
-    history: [{ role: 'user', content: 'total?' }, { role: 'assistant', content: '$10' }] } });
+    history: [{ role: 'user', content: '[Asked while viewing investment analysis "Deal"] what is the IRR?' },
+              { role: 'assistant', content: '8.1%' }] } });
   const m = c.calls[0].req.messages;
   assert.deepStrictEqual(m.map(x => x.role), ['user', 'assistant', 'user']);
-  assert.match(m[0].content, /<budget_context[\s\S]*total\?$/);
-  assert.strictEqual(m[2].content, 'and per unit?');
+  assert.strictEqual(m[0].content, '[Asked while viewing investment analysis "Deal"] what is the IRR?');
+  assert.match(m[2].content, /^<budget_context[\s\S]*and per unit\?$/);
+  assert.match(c.calls[0].req.system[0].text, /One conversation can span screens/);
 });
 
 test('a refusal and an upstream failure are clean errors', async () => {

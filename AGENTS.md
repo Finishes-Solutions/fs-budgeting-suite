@@ -498,11 +498,18 @@ custom provider for sign-in.
   (`#assistantPanel`, owned by `index.html`) with two focuses. It is NOT a
   dialog: it is not in the `openDialog` stack, does not trap focus or lock the
   page, and on screens ≥1180px `body.ai-docked` pads the page so nothing sits
-  under it. `aiFollowPage()` (called from `go()`) keeps it open across the
-  DOC_PAGES of the budget it is about, or on the analysis page, and closes it
-  otherwise. Escape is handled on the panel itself and stopped there. In the budget editor it posts to `POST /api/budget/{id}?scope=ask`;
+  under it. It holds ONE conversation (`aiTurns`) for the session and stays
+  open across every page: `aiSyncFocus()` — called from `go()` via
+  `aiFollowPage()`, before each send, and by the analysis module through the
+  adapter's `aiFocusChanged` on every render — points it at whatever budget
+  (DOC_PAGES) or analysis (`FSInvestmentUI.aiContext()`) is on screen, and on
+  a page about neither keeps the last one ("Last opened"). Each user turn
+  records what it was about; earlier questions about something else go back
+  as history prefixed `[Asked while viewing …]`, and the thread shows a marker
+  wherever the subject changes. Escape is handled on the panel itself and
+  stopped there. In the budget editor it posts to `POST /api/budget/{id}?scope=ask`;
   on an investment analysis (the button lives in `app/investment-analysis.js` and
-  reaches the dialog only through the adapter's `askAI`) it posts to
+  reaches the panel only through the adapter's `askAI`) it posts to
   `POST /api/investment-calculations?scope=ask` with `analysisId`. Both are
   scopes on endpoints that already deploy — the new-folder rule above. `api/shared/budget-assistant.js` builds the budget's
   facts, calls Claude through the official `@anthropic-ai/sdk` (pinned exactly in
@@ -540,8 +547,10 @@ custom provider for sign-in.
   shows and the Functions log records — read it before tuning. Raising effort
   or adding tools trades directly against this window — measure before you do.
 - **The system prompt is byte-stable** (instructions + `budget-system.md`, no ids
-  or dates) and carries `cache_control`, so it caches across questions. Per-budget
-  context rides on the first user turn. Keep volatile content out of `system`.
+  or dates) and carries `cache_control`, so it caches across questions. The
+  on-screen context rides on the LATEST user turn (history first, as asked),
+  because one conversation can span a pro forma and its budget. Keep volatile
+  content out of `system`.
 - **Configuration** (SWA application settings, per environment):
   `ANTHROPIC_API_KEY` (required — without it the endpoint answers 503
   `ai_not_configured` and the dialog says so), `ANTHROPIC_MODEL` (default
