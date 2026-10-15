@@ -3697,12 +3697,19 @@ async function refreshPricing(){
    publishing one. Those keep their rate; baseUnit still moves, so the
    re-priced flag keeps meaning "differs from the current library" rather than
    "differed from a library nobody uses any more". */
+/* The refresh key is scope|code|desc, which says nothing about basis. A library
+   line re-based from per-SF to per-unit carries a rate in different units: copied
+   onto a per-SF line it multiplies a per-unit dollar figure by every square foot
+   (a $3,082 appliance rate became a ~$158M line in testing). Such a line keeps
+   its rate and is reported, never silently repriced. */
+function basisDiffers(it,m){return !!(m.basis&&it.basis&&m.basis!==it.basis);}
 function stampCurrentPricing(d){
   const map={};
   (pricing.lines||[]).forEach(l=>{map[l.scope+'|'+l.code+'|'+l.desc]=l;});
   (d.lines||[]).forEach(it=>{
     const m=map[it.scope+'|'+it.code+'|'+it.desc];
     if(!m)return;                                   // hand-added line: no library rate to take
+    if(basisDiffers(it,m))return;                   // a rate is only meaningful on its own basis
     if(nz(it.unit)===nz(it.baseUnit))it.unit=m.unit; // at the baseline: refresh it
     it.baseUnit=m.unit;
   });
@@ -3934,6 +3941,7 @@ const isTest=id=>/^TST-/.test(id||'');
    render — focus keys, selection, the SOV LineKey column, version snapshots —
    keys off lineId instead of the index. randomUUID needs a secure context, so
    there is a fallback for plain-http local dev. */
+const LINE_ID_RX=/^[A-Za-z0-9_-]{1,64}$/;
 function newLineId(){
   try{ if(window.crypto&&crypto.randomUUID)return crypto.randomUUID(); }catch(_){}
   return 'l-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
@@ -4893,9 +4901,14 @@ function migrate(d){ // tolerate older saves
   // current rate: nothing is retroactively claimed to be a manual edit.
   // Older saves predate stable line IDs; mint one per line so selection, code
   // editing and SOV LineKey have something durable to hold on to.
+  // The id is also re-minted when it is not the shape newLineId() makes: the grid
+  // interpolates it into inline handlers and data-k keys, where esc() cannot help
+  // (the browser decodes &#39; back to a quote before the handler runs). The API
+  // stores whatever a client sent, so this is the boundary that keeps a crafted
+  // id in a saved budget from running as script for whoever opens it.
   d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';
     l.unit=nz(l.unit);l.qty=nz(l.qty);l.baseUnit=nz(l.baseUnit??l.unit);
-    if(!l.lineId)l.lineId=newLineId();});
+    if(typeof l.lineId!=='string'||!LINE_ID_RX.test(l.lineId))l.lineId=newLineId();});
   d.status=d.status||'Draft';
   return d;
 }
@@ -7209,16 +7222,18 @@ async function repriceFromHome(pid){
 }
 function repriceBudget(){
   const map={};pricing.lines.forEach(l=>{map[l.scope+'|'+l.code+'|'+l.desc]=l;});
-  let clobbered=0;
+  let clobbered=0,mismatched=0;
   doc.lines.forEach(it=>{
     const m=map[it.scope+'|'+it.code+'|'+it.desc];
     if(!m)return;                                    // hand-added lines keep their rate
+    if(basisDiffers(it,m)){mismatched++;return;}     // different units: see basisDiffers()
     if((+it.unit)!==(+it.baseUnit)&&(+it.unit)!==(+m.unit))clobbered++;   // replacing a manual rate
     it.unit=m.unit;it.baseUnit=m.unit;               // the new library rate is the new baseline
   });
   doc.pricingVersion=pricing.version;
   touch();
-  toast('Repriced to library '+pricing.version+(clobbered?' — replaced '+clobbered+' manually set '+(clobbered===1?'rate':'rates'):''));
+  toast('Repriced to library '+pricing.version+(clobbered?' — replaced '+clobbered+' manually set '+(clobbered===1?'rate':'rates'):'')
+    +(mismatched?' — kept '+mismatched+' '+(mismatched===1?'line':'lines')+' whose library basis has changed':''));
 }
 
 /* ============ PRICING PAGE ============ */

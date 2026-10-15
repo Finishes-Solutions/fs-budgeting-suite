@@ -582,7 +582,7 @@ function itemCard(kind, rec, meta, favorited) {
         ? rec.contractAmount : rec.liveContractSum)
     : kind === 'budget'
       ? usd(rec.projectCost || rec.contractSum || 0)
-      : usd(rec.purchasePrice || 0);
+      : (rec.purchasePrice ? usd(rec.purchasePrice) : '—');   // never calculated: no price yet, not $0
   var moneyLab = kind === 'project' ? 'Contract Sum'
     : kind === 'budget' ? 'Total Project Cost' : 'Purchase Price';
   var star = starButton(kind, id, recordName(kind, rec), favorited);

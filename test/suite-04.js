@@ -160,6 +160,39 @@ const PASS='Basalt-Meridian-8538-27D5B4';
  ok('new passphrase unlocks', await p2.locator('#unlockedBanner').isVisible());
  ok('passcode field is cleared after unlock', (await p2.locator('#adminPass').inputValue())==='');
 
+ // A saved line id reaches inline handlers, where esc() cannot protect it, so
+ // migrate() re-mints any id that is not the shape newLineId() makes.
+ const xss=await p.evaluate(()=>{
+   const d=JSON.parse(JSON.stringify(doc));
+   d.lines[0].lineId="x');window.__pwned=1;('";
+   d.lines[1].lineId=42;
+   const keep=d.lines[2].lineId;
+   const m=migrate(d);
+   doc=m; recalc();
+   const cb=document.querySelector('#budBody input[type=checkbox]');
+   if(cb){cb.click();cb.click();}
+   return {a:m.lines[0].lineId,b:m.lines[1].lineId,c:m.lines[2].lineId===keep,pwned:!!window.__pwned};
+ });
+ ok('a crafted line id is re-minted on load', /^[A-Za-z0-9_-]+$/.test(xss.a)&&typeof xss.b==='string', JSON.stringify(xss));
+ ok('a well-formed line id is kept', xss.c);
+ ok('a crafted line id never runs as script', !xss.pwned);
+
+ // Update Pricing matches scope|code|desc, not basis. A library line re-based
+ // to per-unit must not hand its per-unit rate to a per-SF line.
+ const rp=await p.evaluate(()=>{
+   const it=doc.lines.find(l=>l.scope==='res'&&l.basis==='sf');
+   const lib=pricing.lines.find(l=>l.scope===it.scope&&l.code===it.code&&l.desc===it.desc);
+   const saved={basis:lib.basis,unit:lib.unit,ver:pricing.version,docVer:doc.pricingVersion};
+   const before=it.unit;
+   lib.basis='unit';lib.unit=3081.9;doc.pricingVersion='old';
+   repriceBudget();
+   const after=it.unit,msg=document.getElementById('toast').textContent;
+   lib.basis=saved.basis;lib.unit=saved.unit;
+   return {before,after,msg};
+ });
+ ok('Update Pricing keeps a line whose library basis changed', rp.after===rp.before, JSON.stringify(rp));
+ ok('and says so', /whose library basis has changed/.test(rp.msg), rp.msg);
+
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();
