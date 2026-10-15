@@ -92,15 +92,46 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('reloaded vacancy is the other session\'s value',
     (await p.locator('[data-f="vacancy.value"]').inputValue())==='12');
 
+ // ---- Save As Copy: keep the inputs ON SCREEN as their own analysis. The
+ // list's Duplicate fetches the server's copy, which is exactly what the
+ // conflict says is no longer yours.
+ await p.evaluate(async id=>{
+   const cur=await (await fetch('/api/investment-analysis/'+id)).json();
+   cur.input.vacancy.value=0.11;
+   await fetch('/api/investment-analysis/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({input:cur.input,expectedVersionNumber:cur.currentVersionNumber})});
+ },aid);
+ await p.click('#invSteps button[data-step="2"]');
+ await p.fill('[data-f="income.year1PotentialIncome"]','260000');
+ await p.locator('[data-f="income.year1PotentialIncome"]').dispatchEvent('change');
+ await p.click('#invSaveBtn'); await p.waitForTimeout(800);
+ ok('the conflict offers Save As Copy beside Reload Latest',
+    (await p.locator('#invConflict button:has-text("Save As Copy")').count())===1
+    && (await p.locator('#invConflict button:has-text("Reload Latest")').count())===1);
+ await p.click('#invConflict button:has-text("Save As Copy")'); await p.waitForTimeout(1200);
+ const aid3=(p.url().match(/analysis\/([0-9a-f-]{36})/)||[])[1];
+ const copy=await p.evaluate(async id=>await (await fetch('/api/investment-analysis/'+id)).json(),aid3);
+ ok('Save As Copy opens a new analysis carrying the inputs that were on screen',
+    aid3 && aid3!==aid && copy.input.income.year1PotentialIncome===260000 && /\(Copy\)/.test(copy.name||''),
+    JSON.stringify({aid3,inc:copy.input&&copy.input.income.year1PotentialIncome,name:copy.name}));
+ const orig=await p.evaluate(async id=>await (await fetch('/api/investment-analysis/'+id)).json(),aid);
+ ok('and leaves the other session’s version as it was',
+    orig.currentVersionNumber===4 && orig.input.vacancy.value===0.11 && orig.input.income.year1PotentialIncome!==260000,
+    JSON.stringify({v:orig.currentVersionNumber,vac:orig.input.vacancy.value}));
+
  // ---- soft delete from the list
  await p.click('#nav-analyses'); await p.waitForTimeout(500);
  const listRows='#page-analyses [data-inv-list] tr';
  const rows0=await p.locator(listRows).count();
+ const delMsgs=[]; p.on('dialog',d=>delMsgs.push(d.message()));
  await p.locator(listRows).first().locator('.rowmenu-btn').click(); await p.waitForTimeout(200);
  await p.locator('#invRowMenu .rowmenu-item',{hasText:'Delete Analysis'}).click();
  await p.waitForTimeout(600);
  ok('delete from the row menu removes the analysis from the list',
     (await p.locator(listRows).count())===rows0-1);
+ ok('and the confirm promises no restore the app cannot do',
+    delMsgs.length>0 && !/restored by an administrator/i.test(delMsgs[0]) && /cannot be restored/i.test(delMsgs[0]),
+    delMsgs[0]||'no dialog');
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

@@ -484,6 +484,10 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   const pinnedBefore = await p.evaluate(() => FSInvestmentUI._state().source.budgetVersionNumber);
   await p.click('.inv-drift');
   await p.waitForTimeout(1500);
+  // The re-sync asks first and shows what moves; applying it re-pins the
+  // analysis on screen (the Save that follows is what records it).
+  await p.click('#invModal button:has-text("Apply Re-Sync")');
+  await p.waitForTimeout(500);
   const pinnedAfter = await p.evaluate(() => FSInvestmentUI._state().source);
   ok('clicking it re-pins the analysis to the newer version',
      pinnedAfter.budgetVersionNumber > pinnedBefore && !pinnedAfter.drift,
