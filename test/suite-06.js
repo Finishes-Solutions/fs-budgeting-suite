@@ -160,6 +160,39 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       .every(id => document.getElementById(id).offsetParent !== null)
     && document.getElementById('nav-help') !== null
     && document.getElementById('nav-pricing') !== null));
+ // The tab bar scrolls sideways on a phone, and its overflow used to clip the
+ // More dropdown to nothing — Pricing Library, How to Use and Version were
+ // unreachable. Hit-test the items: each must be the element under its own
+ // centre, inside the viewport.
+ await m.click('#nav-more-btn'); await m.waitForTimeout(250);
+ const moreHits = await m.evaluate(() => ['nav-pricing','nav-help','nav-version'].map(id => {
+   const e = document.getElementById(id), r = e.getBoundingClientRect();
+   const x = r.left + r.width / 2, y = r.top + r.height / 2;
+   const hit = document.elementFromPoint(x, y);
+   return { id, w: Math.round(r.width), h: Math.round(r.height),
+     inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight,
+     hit: !!hit && (hit === e || e.contains(hit)) };
+ }));
+ ok('Every More item is visible and clickable on a phone',
+    moreHits.every(h => h.w > 40 && h.h > 20 && h.inView && h.hit), JSON.stringify(moreHits));
+ await m.click('#nav-version'); await m.waitForTimeout(400);
+ ok('and a More item actually navigates on a phone',
+    (await m.evaluate(() => currentPage)) === 'version', await m.evaluate(() => currentPage));
+ ok('the More dropdown closes after choosing', await m.evaluate(() =>
+    !document.getElementById('navMore').classList.contains('open')));
+ // Navigating pans the tab bar so the lit tab is in view.
+ await m.evaluate(() => { document.querySelector('.hd>nav').scrollLeft = 0; go('analyses'); });
+ await m.waitForTimeout(300);
+ ok('the active tab is scrolled into view on a phone', await m.evaluate(() => {
+   const nav = document.querySelector('.hd>nav').getBoundingClientRect();
+   const r = document.getElementById('nav-analyses').getBoundingClientRect();
+   return r.left >= nav.left - 1 && r.right <= nav.right + 1;
+ }), await m.evaluate(() => {
+   const nav = document.querySelector('.hd>nav').getBoundingClientRect();
+   const r = document.getElementById('nav-analyses').getBoundingClientRect();
+   return Math.round(r.left) + '..' + Math.round(r.right) + ' in ' + Math.round(nav.left) + '..' + Math.round(nav.right);
+ }));
+ await m.evaluate(() => go('home')); await m.waitForTimeout(500);
  ok('The home page does not overflow the phone viewport', await m.evaluate(() =>
     document.documentElement.scrollWidth <= window.innerWidth + 1),
     await m.evaluate(() => document.documentElement.scrollWidth + 'px wide in a '
