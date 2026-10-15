@@ -21,6 +21,9 @@ const FSGuardrails = require('../api/shared/guardrails');
 // type, who may record an override) — the REAL module, so the mock decides
 // exactly as api/budget/index.js does.
 const SaveRules = require('../api/shared/budget-save-rules');
+// The SAME row-identifier rule as api/budget and api/pricing — required, not
+// copied, so the mock cannot drift from it.
+const { budgetIdentifierProblem, scheduleIdentifierProblem, IDENTIFIER_RULE } = require('../api/shared/identifiers');
 const crypto = require('crypto');
 // Per-user settings validation: the REAL contract module (dependency-free).
 const usc = require('../api/shared/user-settings-contract');
@@ -521,6 +524,10 @@ http.createServer((req, res) => {
       for (const f of (doc.fees || [])) {
         if (!f || !f.feeId || !f.label) return json(res, 400, { error: 'every fee needs a feeId and a label' });
         if (!FEE_BASES.includes(f.basis)) return json(res, 400, { error: 'fee ' + f.feeId + ' has an unknown basis: ' + f.basis });
+      }
+      {
+        const badId = scheduleIdentifierProblem(doc);
+        if (badId) return json(res, 400, { error: 'malformed identifier at ' + badId + ' — use ' + IDENTIFIER_RULE });
       }
       let s = feeSchedules.get(k);
       if (!s) { s = { scheduleKey: k, name: doc.name, jurisdiction: doc.jurisdiction || doc.name,
@@ -1142,6 +1149,12 @@ http.createServer((req, res) => {
       const { meta, doc } = body || {};
       if (!doc || !meta) { res.writeHead(400); return res.end('Body must be { meta, doc }'); }
       if ((doc.projectId || '').toUpperCase() !== id) { res.writeHead(400); return res.end('id mismatch'); }
+      // Row identifiers render into attributes — refused exactly as api/budget does.
+      {
+        const badId = budgetIdentifierProblem(doc);
+        if (badId) return json(res, 400, { error: 'bad_identifier', field: badId,
+          message: 'Malformed row identifier at ' + badId + ' — use ' + IDENTIFIER_RULE + '.' });
+      }
       // Building square footage is required and must be greater than zero —
       // the analysis imports it, and a sizeless budget produced an analysis
       // that could never calculate. resSF + amenSF is the BUILDING; site area

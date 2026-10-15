@@ -317,6 +317,96 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('and the fee total falls back to zero',
     (await p.evaluate(()=>feeResult().total))===0);
 
+ // ---- Stored XSS: row ids are data, never markup or code.
+ // A lineId used to break out of its data-k attribute (autofocus + onfocus ran
+ // on open, no click needed), and a manual-fee rowId sat inside a quoted string
+ // in an inline handler, where esc() is no defence — the HTML parser decodes
+ // &#39; back to a quote. Three layers: the API refuses, migrate() regenerates,
+ // and the render keeps ids out of handler source.
+ const HOSTILE_LINE='x" autofocus onfocus="window.__xss=1" data-z="';
+ const HOSTILE_FEE="x');window.__xss=2;('";
+ const refused=await p.evaluate(async a=>{
+   const stored=await (await fetch('/api/budget/TST-9999')).json();
+   const put=async d=>{
+     const r=await fetch('/api/budget/TST-9999',{method:'PUT',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({meta:{name:d.name,projectKey:'OP-0301',status:'Draft'},doc:d})});
+     return {status:r.status,body:await r.json().catch(()=>null)};
+   };
+   const d1=JSON.parse(JSON.stringify(stored));d1.lines[0].lineId=a.line;
+   const d2=JSON.parse(JSON.stringify(stored));
+   d2.impactFees=Object.assign({},d2.impactFees,{manual:[{rowId:a.fee,label:'Bad',amount:1}]});
+   const sched=await fetch('/api/pricing?scope=fee-schedule',{method:'PUT',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({doc:{scheduleKey:'tx-xss',name:'XSS City',meters:[{rowId:a.line,edu:1}],fees:[]}})});
+   return {line:await put(d1),fee:await put(d2),sched:sched.status};
+ },{line:HOSTILE_LINE,fee:HOSTILE_FEE});
+ ok('the API refuses a budget whose lineId could carry markup (400 bad_identifier)',
+    refused.line.status===400&&refused.line.body&&refused.line.body.error==='bad_identifier'
+    &&refused.line.body.field==='lines[0].lineId', JSON.stringify(refused.line));
+ ok('the API refuses a hostile manual-fee rowId',
+    refused.fee.status===400&&refused.fee.body&&refused.fee.body.field==='impactFees.manual[0].rowId',
+    JSON.stringify(refused.fee));
+ ok('a fee schedule cannot publish a hostile meter rowId', refused.sched===400, String(refused.sched));
+
+ // A budget saved before the fix can still hold such ids, so serve one
+ // directly — the mock would refuse to store it now.
+ const stored=await p.evaluate(async()=>(await fetch('/api/budget/TST-9999')).json());
+ const poisoned=JSON.parse(JSON.stringify(stored));
+ poisoned.lines[0].lineId=HOSTILE_LINE;
+ poisoned.impactFees=Object.assign({},poisoned.impactFees,{
+   meters:[{rowId:HOSTILE_LINE,qty:1}],extras:[{feeId:HOSTILE_FEE,qty:1}],
+   manual:[{rowId:HOSTILE_FEE,label:'Poisoned Fee',amount:10}]});
+ const p2=await b.newPage({viewport:{width:1400,height:1000}});
+ p2.on('dialog',d=>d.accept());
+ const errs2=[]; p2.on('pageerror',e=>errs2.push(e.message));
+ await p2.route('**/api/budget/TST-9999',r=>r.request().method()==='GET'
+   ?r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(poisoned)}):r.continue());
+ await p2.goto('http://127.0.0.1:8100/index.html#/budget/TST-9999',{waitUntil:'networkidle'});
+ await p2.waitForTimeout(1500);
+ ok('the poisoned budget opens', await p2.evaluate(()=>!!doc&&doc.projectId==='TST-9999'
+    &&document.querySelectorAll('#budBody input[data-k$=".sel"]').length>0));
+ ok('opening it runs no script', (await p2.evaluate(()=>window.__xss))===undefined,
+    String(await p2.evaluate(()=>window.__xss)));
+ ok('no injected attribute reached the page',
+    await p2.evaluate(()=>!document.querySelector('[data-z],[autofocus],[onfocus*="__xss"]')));
+ const SAFE_ID=/^[A-Za-z0-9_-]{1,64}$/;
+ const ids=await p2.evaluate(()=>({line:doc.lines[0].lineId,
+   fee:[...doc.impactFees.meters.map(m=>m.rowId),...doc.impactFees.extras.map(x=>x.feeId),
+        ...doc.impactFees.manual.map(m=>m.rowId)]}));
+ ok('the hostile lineId was regenerated on load',
+    SAFE_ID.test(ids.line)&&ids.line!==HOSTILE_LINE, ids.line);
+ ok('hostile fee row ids were regenerated on load',
+    ids.fee.length===3&&ids.fee.every(x=>SAFE_ID.test(x)), JSON.stringify(ids.fee));
+
+ await p2.evaluate(()=>go('fees')); await p2.waitForTimeout(700);
+ ok('the regenerated manual fee renders',
+    (await p2.locator('#feeOtherTbl input[data-k$=".label"]').count())===1);
+ await p2.click('#feeOtherTbl button:has-text("Remove")'); await p2.waitForTimeout(300);
+ ok('its Remove button finds the row through data-id',
+    (await p2.evaluate(()=>doc.impactFees.manual.length))===0);
+ ok('the fee step runs no script either', (await p2.evaluate(()=>window.__xss))===undefined);
+
+ // Once opened, the repaired document is clean enough for the API to accept.
+ const [savedResp]=await Promise.all([
+   p2.waitForResponse(r=>r.url().endsWith('/api/budget/TST-9999')&&r.request().method()==='PUT'),
+   p2.evaluate(()=>saveBudget())]);
+ ok('the repaired budget saves', savedResp.status()===200, String(savedResp.status()));
+
+ // Rendering is its own layer: an id that somehow skipped migrate() still
+ // renders inert and round-trips exactly through data-id.
+ await p2.evaluate(()=>go('budget')); await p2.waitForTimeout(400);
+ const rt=await p2.evaluate(h=>{
+   doc.lines[0].lineId=h; renderBudget();
+   const el=[...document.querySelectorAll('#budBody input[data-k$=".sel"]')].find(x=>x.dataset.id===h);
+   if(el)el.click();
+   const out={found:!!el,sel:selected.has(h),xss:window.__xss,injected:!!document.querySelector('[data-z]')};
+   selected.delete(h); doc.lines[0].lineId=newLineId(); renderBudget();
+   return out;
+ },HOSTILE_LINE);
+ ok('an unregenerated hostile lineId renders inert and round-trips through data-id',
+    rt.found&&rt.sel&&rt.xss===undefined&&!rt.injected, JSON.stringify(rt));
+ ok('no JS errors on the poisoned budget', errs2.length===0, errs2.join('|'));
+ await p2.close();
+
  ok('no JS errors', errs.length===0, errs.join('|'));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();

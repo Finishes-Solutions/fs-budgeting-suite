@@ -6,6 +6,7 @@ const { parts, grossIncome } = require('../shared/budget-calc');
 const { features } = require('../shared/schema');
 const FSGuardrails = require('../shared/guardrails');
 const SaveRules = require('../shared/budget-save-rules');
+const { budgetIdentifierProblem, IDENTIFIER_RULE } = require('../shared/identifiers');
 const P = require('../shared/projects');
 const { updateProject, createProject, deleteProject, linkBudgetToProject,
         PROJECT_ID_RX } = P;
@@ -173,6 +174,19 @@ module.exports = async function (context, req) {
   const { meta, doc } = req.body || {};
   if (!doc || !meta) { context.res = { status: 400, body: 'Body must be { meta, doc }' }; return; }
   if ((doc.projectId || '').toUpperCase() !== id) { context.res = { status: 400, body: 'Body projectId must match route' }; return; }
+
+  // Row identifiers are keys the page renders into attributes; a hostile one
+  // was a stored XSS that ran as whoever opened the budget. Refused here, at
+  // the door — see shared/identifiers.js.
+  {
+    const badId = budgetIdentifierProblem(doc);
+    if (badId) {
+      context.res = { status: 400, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'bad_identifier', field: badId,
+          message: 'Malformed row identifier at ' + badId + ' — use ' + IDENTIFIER_RULE + '.' }) };
+      return;
+    }
+  }
 
   // Building square footage is REQUIRED and must be greater than zero.
   //

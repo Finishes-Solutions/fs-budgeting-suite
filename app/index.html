@@ -3448,7 +3448,7 @@ function openNewBudget(presetProjectId){
   const host=document.getElementById('customTplList');
   const customs=activeTemplates().filter(t=>t.templateKey!=='multifamily');
   host.innerHTML=customs.length
-    ?customs.map(t=>`<button class="tpl-row" onclick="pickNewBudget('${esc(t.templateKey)}')">
+    ?customs.map(t=>`<button class="tpl-row" data-id="${esc(t.templateKey)}" onclick="pickNewBudget(this.dataset.id)">
         <span class="tpl-name">${esc(t.name||t.templateKey)}</span>
         <span class="tpl-sub">${esc(t.description||'Published custom template')}</span></button>`).join('')
     :'<div class="set-note">No custom templates yet. Open a budget and publish it as a template to see it here.</div>';
@@ -3791,6 +3791,12 @@ function newLineId(){
   try{ if(window.crypto&&crypto.randomUUID)return crypto.randomUUID(); }catch(_){}
   return 'l-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
 }
+/* Row ids (lineId, fee rowId/feeId) are rendered into attributes, so one read
+   from a stored document is untrusted: a lineId of `x" onfocus="…` was a stored
+   XSS. Both newLineId() forms match this; migrate() regenerates anything that
+   does not. Same pattern as api/shared/identifiers.js, which refuses the save. */
+const ROW_ID_RX=/^[A-Za-z0-9_-]{1,64}$/;
+const safeRowId=v=>typeof v==='string'&&ROW_ID_RX.test(v);
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
 
 /* ============ STORAGE — Azure Functions API ============ */
@@ -4428,14 +4434,17 @@ function normalizeImpactFees(f){
   return {scheduleKey:f.scheduleKey||null,scheduleName:f.scheduleName||null,
     scheduleVersion:f.scheduleVersion?nz(f.scheduleVersion):null,
     effective:f.effective||null,basis:basis,
+    // An unsafe id is regenerated, not kept: it reaches attributes in
+    // paintFeeMeters/paintFeeOther. A regenerated meter/extra id matches no
+    // schedule row, so it prices nothing rather than something wrong.
     meters:(Array.isArray(f.meters)?f.meters:[]).filter(m=>m&&m.rowId).map(m=>({
-      rowId:String(m.rowId),qty:nz(m.qty),
+      rowId:safeRowId(m.rowId)?m.rowId:newLineId(),qty:nz(m.qty),
       includeMeter:m.includeMeter!==false,includeVault:m.includeVault!==false,
       includeTaps:m.includeTaps!==false})),
     extras:(Array.isArray(f.extras)?f.extras:[]).filter(x=>x&&x.feeId)
-      .map(x=>({feeId:String(x.feeId),qty:x.qty===undefined?1:nz(x.qty)})),
+      .map(x=>({feeId:safeRowId(x.feeId)?x.feeId:newLineId(),qty:x.qty===undefined?1:nz(x.qty)})),
     manual:(Array.isArray(f.manual)?f.manual:[]).filter(m=>m&&m.rowId)
-      .map(m=>({rowId:String(m.rowId),label:String(m.label||'Fee'),amount:nz(m.amount)})),
+      .map(m=>({rowId:safeRowId(m.rowId)?m.rowId:newLineId(),label:String(m.label||'Fee'),amount:nz(m.amount)})),
     override:ov};
 }
 function blankDoc(kind){
@@ -4508,10 +4517,11 @@ function migrate(d){ // tolerate older saves
   // Budgets saved before edit-tracking existed have no baseline, so seed it from the
   // current rate: nothing is retroactively claimed to be a manual edit.
   // Older saves predate stable line IDs; mint one per line so selection, code
-  // editing and SOV LineKey have something durable to hold on to.
+  // editing and SOV LineKey have something durable to hold on to. A lineId that
+  // is not a safe row id is replaced too, so a poisoned save opens harmless.
   d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';
     l.unit=nz(l.unit);l.qty=nz(l.qty);l.baseUnit=nz(l.baseUnit??l.unit);
-    if(!l.lineId)l.lineId=newLineId();});
+    if(!safeRowId(l.lineId))l.lineId=newLineId();});
   d.status=d.status||'Draft';
   return d;
 }
@@ -4968,7 +4978,7 @@ function paintBudgets(){
   paintHomeSortArrows();
 }
 function homeCard(x){
-  return `<div class="hcard" onclick="openBudget('${x.projectId}')">
+  return `<div class="hcard" data-id="${esc(x.projectId)}" onclick="openBudget(this.dataset.id)">
     <div class="hc-id">${x.createdByName?creatorAvatar(x.createdByName,x.createdByAvatar)+' ':''}${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</div>
     <div class="hc-name">${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</div>
     <div class="hc-row"><span>Contract Sum</span><span class="v">${usd(x.contractSum||0)}</span></div>
@@ -4982,7 +4992,7 @@ function homeCard(x){
 // same markup into its own tbody.
 function homeRowHTML(x){
   return (
-    `<tr class="clickable" onclick="openBudget('${x.projectId}')">
+    `<tr class="clickable" data-id="${esc(x.projectId)}" onclick="openBudget(this.dataset.id)">
       <td class="no-print" style="padding-left:22px">${creatorAvatar(x.createdByName,x.createdByAvatar)}</td>
       <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
       <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
@@ -5148,20 +5158,23 @@ function paintFeeMeters(r){
     +'<th class="r">Water Impact</th><th class="r">Sewer Impact</th>'
     +'<th class="r">Adders</th><th class="r">Row Total</th></tr></thead><tbody>';
   feeDoc.meters.forEach(m=>{
+    // Row ids ride in an escaped data-id and come back through this.dataset —
+    // never inside a quoted string in handler source (see renderBudget).
+    const rid=esc(m.rowId);
     const s=byId[m.rowId]||{qty:0,includeMeter:true,includeVault:true,includeTaps:true};
     const a=FSImpactFees.rowAmounts(m,Object.assign({},s,{qty:nz(s.qty)||0}),f.basis);
     const adders=a.each.meter+a.each.vault+a.each.waterTap+a.each.sewerTap;
     const on=nz(s.qty)>0;
     const cb=(k,enabled)=>enabled
-      ?`<input type="checkbox" data-k="fee.${esc(m.rowId)}.${k}" ${s[k]!==false?'checked':''}
-          onchange="setFeeInclude('${esc(m.rowId)}','${k}',this.checked)">`
+      ?`<input type="checkbox" data-k="fee.${rid}.${k}" data-id="${rid}" ${s[k]!==false?'checked':''}
+          onchange="setFeeInclude(this.dataset.id,'${k}',this.checked)">`
       :'<span class="mono" style="color:var(--ink-500)">—</span>';
     h+=`<tr${on?'':' style="opacity:.55"'}>
       <td>${esc(m.size)}"</td>
       <td class="r mono">${num(m.gpm)}</td>
       <td class="r mono">${nz(m.edu)}</td>
-      <td class="r"><input type="number" class="qtyin" data-k="fee.${esc(m.rowId)}.qty" min="0" step="1"
-          value="${nz(s.qty)}" style="width:74px" oninput="setFeeQty('${esc(m.rowId)}',this.value)"></td>
+      <td class="r"><input type="number" class="qtyin" data-k="fee.${rid}.qty" data-id="${rid}" min="0" step="1"
+          value="${nz(s.qty)}" style="width:74px" oninput="setFeeQty(this.dataset.id,this.value)"></td>
       <td class="c">${cb('includeMeter',true)}</td>
       <td class="c">${cb('includeVault',!!m.vault)}</td>
       <td class="c">${cb('includeTaps',true)}</td>
@@ -5191,27 +5204,28 @@ function paintFeeOther(r){
   defs.forEach(d=>{
     const picked=!!chosen[d.feeId];
     const amt=FSImpactFees.pick(d.amount,f.basis);
-    const row=r.extras.find(x=>x.feeId===d.feeId);
+    const row=r.extras.find(x=>x.feeId===d.feeId),fid=esc(d.feeId);
     h+=`<tr${picked?'':' style="opacity:.55"'}>
-      <td><label><input type="checkbox" data-k="fee.x.${esc(d.feeId)}.on" ${picked?'checked':''}
-          onchange="toggleFeeExtra('${esc(d.feeId)}',this.checked)"> ${esc(d.label)}</label></td>
+      <td><label><input type="checkbox" data-k="fee.x.${fid}.on" data-id="${fid}" ${picked?'checked':''}
+          onchange="toggleFeeExtra(this.dataset.id,this.checked)"> ${esc(d.label)}</label></td>
       <td class="mono" style="font-size:12px;color:var(--ink-500)">${esc(FEE_BASIS_LABEL[d.basis]||d.basis)}</td>
-      <td class="r"><input type="number" class="qtyin" data-k="fee.x.${esc(d.feeId)}.qty" min="0" step="1"
+      <td class="r"><input type="number" class="qtyin" data-k="fee.x.${fid}.qty" data-id="${fid}" min="0" step="1"
           value="${picked?nz(chosen[d.feeId].qty):1}" style="width:74px"
-          oninput="setFeeExtraQty('${esc(d.feeId)}',this.value)" ${picked?'':'disabled'}></td>
+          oninput="setFeeExtraQty(this.dataset.id,this.value)" ${picked?'':'disabled'}></td>
       <td class="r mono">${usd2(amt)}</td>
       <td class="r mono"><b>${usd(row?row.total:0)}</b></td><td></td></tr>`;
   });
   (f.manual||[]).forEach(m=>{
-    h+=`<tr><td><input type="text" data-k="fee.m.${esc(m.rowId)}.label" value="${esc(m.label)}"
-          oninput="setManualFee('${esc(m.rowId)}','label',this.value)" style="width:100%"></td>
+    const rid=esc(m.rowId);
+    h+=`<tr><td><input type="text" data-k="fee.m.${rid}.label" data-id="${rid}" value="${esc(m.label)}"
+          oninput="setManualFee(this.dataset.id,'label',this.value)" style="width:100%"></td>
       <td class="mono" style="font-size:12px;color:var(--ink-500)">manual</td>
       <td class="r mono">—</td>
-      <td class="r"><input type="number" data-k="fee.m.${esc(m.rowId)}.amount" step="0.01"
+      <td class="r"><input type="number" data-k="fee.m.${rid}.amount" data-id="${rid}" step="0.01"
           value="${nz(m.amount)}" style="width:120px"
-          oninput="setManualFee('${esc(m.rowId)}','amount',this.value)"></td>
+          oninput="setManualFee(this.dataset.id,'amount',this.value)"></td>
       <td class="r mono"><b>${usd(nz(m.amount))}</b></td>
-      <td class="r"><button class="btn btn-ghost danger" onclick="removeManualFee('${esc(m.rowId)}')">Remove</button></td></tr>`;
+      <td class="r"><button class="btn btn-ghost danger" data-id="${rid}" onclick="removeManualFee(this.dataset.id)">Remove</button></td></tr>`;
   });
   h+=`</tbody><tfoot><tr class="tot"><td colspan="4">Other fees</td>
       <td class="r mono"><b>${usd(r.extrasTotal+r.manualTotal)}</b></td><td></td></tr></tfoot>`;
@@ -6418,30 +6432,33 @@ function renderBudget(){
       const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0,fl=lineFlag(it),ed=fl==='edited';
       // Every interactive control keys off lineId, not the array index: a code edit
       // can move this line to another group and a batch delete can shift every
-      // index below it, but the key stays valid across both.
-      const id=it.lineId;
-      const sel=selected.has(id);
+      // index below it, but the key stays valid across both. The id is stored
+      // data, so it is escaped into data-id and read back as this.dataset.id —
+      // never spliced into handler source, where esc() cannot help (the HTML
+      // parser decodes &#39; back into a quote before the JS runs).
+      const id=esc(it.lineId);
+      const sel=selected.has(it.lineId);
       b.insertAdjacentHTML('beforeend',`<tr class="${ed?'edited ':''}${sel?'sel':''}">
-        <td class="no-print selcell"><input type="checkbox" data-k="line.${id}.sel" ${sel?'checked':''}
-          aria-label="Select ${esc(it.desc)}" onchange="toggleSelect('${id}',this.checked,this)"></td>
+        <td class="no-print selcell"><input type="checkbox" data-k="line.${id}.sel" data-id="${id}" ${sel?'checked':''}
+          aria-label="Select ${esc(it.desc)}" onchange="toggleSelect(this.dataset.id,this.checked,this)"></td>
         <td><div class="lineitem">
           <span class="editdot${ed?' on':fl?' derived':''}"${fl?' title="'+esc(editReason(it))+'"':''}></span>
-          <input type="text" class="codein" data-k="line.${id}.code"
+          <input type="text" class="codein" data-k="line.${id}.code" data-id="${id}"
             value="${esc(it.code)}" title="CSI code — changing it files the line under the matching division"
-            aria-label="CSI code for ${esc(it.desc)}" onchange="setLineCode('${id}',this.value)">
-          <input type="text" class="descin" data-k="line.${id}.desc" value="${esc(it.desc)}" oninput="setLineDesc('${id}',this.value)">
+            aria-label="CSI code for ${esc(it.desc)}" onchange="setLineCode(this.dataset.id,this.value)">
+          <input type="text" class="descin" data-k="line.${id}.desc" data-id="${id}" value="${esc(it.desc)}" oninput="setLineDesc(this.dataset.id,this.value)">
         </div></td>
-        <td><select class="basisin" data-k="line.${id}.basis" onchange="setBasis('${id}',this.value)">
+        <td><select class="basisin" data-k="line.${id}.basis" data-id="${id}" onchange="setBasis(this.dataset.id,this.value)">
           <option value="sf" ${it.basis==='sf'?'selected':''}>Per Res SF</option>
           <option value="asf" ${it.basis==='asf'?'selected':''}>Per Amen SF</option>
           <option value="unit" ${it.basis==='unit'?'selected':''}>Per Unit</option>
           <option value="ls" ${it.basis==='ls'?'selected':''}>Lump Sum</option></select></td>
-        <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span><input type="number" data-k="line.${id}.qty" value="${q}" min="0" style="width:88px"
-          onchange="setLineQty('${id}',this.value)"></td>
-        <td class="r"><input type="number" data-k="line.${id}.unit" value="${it.unit}" min="0" step="0.01" style="width:96px"
-          onchange="setLineRate('${id}',this.value)"></td>
+        <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span><input type="number" data-k="line.${id}.qty" data-id="${id}" value="${q}" min="0" style="width:88px"
+          onchange="setLineQty(this.dataset.id,this.value)"></td>
+        <td class="r"><input type="number" data-k="line.${id}.unit" data-id="${id}" value="${it.unit}" min="0" step="0.01" style="width:96px"
+          onchange="setLineRate(this.dataset.id,this.value)"></td>
         <td class="calc r strong">${usd(tot)}</td><td class="calc r">${pct.toFixed(1)}%</td>
-        <td class="no-print"><button class="btn-x" title="Remove line item" aria-label="Remove ${esc(it.desc)}" onclick="removeLine('${id}')">×</button></td></tr>`);
+        <td class="no-print"><button class="btn-x" title="Remove line item" aria-label="Remove ${esc(it.desc)}" data-id="${id}" onclick="removeLine(this.dataset.id)">×</button></td></tr>`);
     });
   });
   renderEditLegend();
@@ -6891,7 +6908,7 @@ function renderGuardrails(){
         :b.severity==='error'?'<span class="badge bad">Blocking</span>'
         :'<span class="badge warn">Review</span>'}</td>
       <td class="no-print r">${b.ok||b.acked?''
-        :`<button class="btn btn-ghost btn-sm" onclick="openAckDialog('${esc(b.id)}')">Override…</button>`}</td>
+        :`<button class="btn btn-ghost btn-sm" data-id="${esc(b.id)}" onclick="openAckDialog(this.dataset.id)">Override…</button>`}</td>
     </tr>`;
   host.innerHTML=
     (r.blocking?`<div class="gr-alert bad"><b>${r.blocking} guard rail${r.blocking===1?'':'s'} block${r.blocking===1?'s':''} this save.</b>
@@ -7128,18 +7145,18 @@ function renderPricing(){
     let lastGrp=null;
     scLines.forEach(({l,i})=>{
       if(l.grp!==lastGrp){lastGrp=l.grp;
-        b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4">${l.grp}</td></tr>`);}
+        b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4">${esc(l.grp)}</td></tr>`);}
       b.insertAdjacentHTML('beforeend', adminUnlocked
-        ?`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${l.code}</span>
+        ?`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${esc(l.code)}</span>
             <input type="text" value="${esc(l.desc)}" style="width:72%" oninput="pricing.lines[${i}].desc=this.value"></td>
           <td><select onchange="pricing.lines[${i}].basis=this.value" style="width:104px;font-size:12px;padding:5px 8px">
             <option value="sf" ${l.basis==='sf'?'selected':''}>Per Res SF</option>
             <option value="asf" ${l.basis==='asf'?'selected':''}>Per Amen SF</option>
             <option value="unit" ${l.basis==='unit'?'selected':''}>Per Unit</option>
             <option value="ls" ${l.basis==='ls'?'selected':''}>Lump Sum</option></select></td>
-          <td class="r"><input type="number" value="${l.unit}" min="0" step="0.01" style="width:110px" oninput="pricing.lines[${i}].unit=+this.value"></td>
+          <td class="r"><input type="number" value="${esc(l.unit)}" min="0" step="0.01" style="width:110px" oninput="pricing.lines[${i}].unit=+this.value"></td>
           <td class="no-print"><button class="btn-x" onclick="pricing.lines.splice(${i},1);renderPricing()">×</button></td></tr>`
-        :`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${l.code}</span>${esc(l.desc)}</td>
+        :`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${esc(l.code)}</span>${esc(l.desc)}</td>
           <td><span class="badge">${l.basis==='sf'?'per res SF':l.basis==='asf'?'per amen SF':l.basis==='unit'?'per unit':'lump sum'}</span></td>
           <td class="calc r">${usd2(l.unit)}</td><td></td></tr>`);
     });
