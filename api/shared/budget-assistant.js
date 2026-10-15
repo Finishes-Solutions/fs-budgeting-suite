@@ -211,11 +211,15 @@ function budgetFacts(doc, row) {
         actual: b.display || b.actual, range: b.range, message: b.message })),
       acknowledgements: (doc.guardrailAcks || []).map(a => ({ id: a.id, reason: a.reason }))
     },
-    impactFees: f && (f.scheduleKey || (f.manual || []).length || f.override) ? {
+    // Three states (BUDGET-SYSTEM.md §6): not selected yet (null here — SC-20
+    // carries the parametric allowance), None (excluded: SC-20 at zero, a
+    // decision), or priced from a jurisdiction's schedule.
+    impactFees: f && (f.scheduleKey || f.excluded || (f.manual || []).length) ? {
+      state: f.excluded ? 'none — this project pays no impact fees' : 'priced from a schedule',
       scheduleKey: f.scheduleKey || null, scheduleName: f.scheduleName || null,
       scheduleVersion: f.scheduleVersion || null, effective: f.effective || null,
       basis: f.basis || null, meters: f.meters || [], extras: f.extras || [],
-      manual: f.manual || [], override: f.override || null,
+      manual: f.manual || [],
       materializedLine: lines.filter(l => l.edits[0] === 'derived from the impact fee schedule')
         .map(l => ({ code: l.code, description: l.description, total: l.total }))
     } : null,

@@ -186,14 +186,28 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  const projBefore = await p.evaluate(()=>parts().project);
 
  await p.selectOption('#feeSchedule','tx-waller'); await p.waitForTimeout(600);
- ok('the schedule loads its 17 meter sizes',
-    (await p.locator('#feeMeterTbl tbody tr').count())===17,
-    String(await p.locator('#feeMeterTbl tbody tr').count()));
+ ok('the picker offers all 17 meter sizes',
+    (await p.locator('#feeAddMeter option').count())===18,   // 17 + the placeholder
+    String(await p.locator('#feeAddMeter option').count()));
+ ok('the picker names size, rate and EDU — size alone is ambiguous',
+    (await p.evaluate(()=>[...document.querySelectorAll('#feeAddMeter option')]
+      .map(o=>o.textContent).filter(t=>/^2"/.test(t)).join('|')))
+    ==='2" · 80 gpm · 8 EDU|2" · 100 gpm · 10 EDU',
+    await p.evaluate(()=>[...document.querySelectorAll('#feeAddMeter option')]
+      .map(o=>o.textContent).filter(t=>/^2"/.test(t)).join('|')));
+ ok('no meters are chosen until you add one',
+    (await p.evaluate(()=>doc.impactFees.meters.length))===0);
  ok('the basis defaults to the high side',
     (await p.evaluate(()=>doc.impactFees.basis))==='high');
 
  // 4" @ 250 gpm is the first row that carries a vault, so it exercises the whole row.
- await p.fill('#feeMeterTbl input[data-k="fee.m-4-250.qty"]','2'); await p.waitForTimeout(500);
+ await p.selectOption('#feeAddMeter','m-4-250');
+ await p.click('#feeAddBtn'); await p.waitForTimeout(500);
+ ok('adding a meter puts one row on the table at qty 1',
+    (await p.locator('#feeMeterTbl tbody tr').count())===1
+    &&(await p.evaluate(()=>doc.impactFees.meters[0].qty))===1);
+ const mid = await p.evaluate(()=>doc.impactFees.meters[0].id);
+ await p.fill(`#feeMeterTbl input[data-k="fee.${mid}.qty"]`,'2'); await p.waitForTimeout(500);
  const feeTotal = await p.evaluate(()=>feeResult().total);
  ok('two 4-inch meters price at the published high-side total',
     Math.round(feeTotal*100)/100===Math.round(2*318972.18*100)/100, String(feeTotal));
@@ -223,6 +237,32 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     (await p.evaluate(()=>parts().contract))===(await p.evaluate(()=>parts().contract)));
  ok('total project cost moves with it', projAfter>projBefore,
     projBefore+' -> '+projAfter);
+
+ // Several meters per project is the normal case — domestic, irrigation, fire —
+ // so the same size must be able to appear twice without collapsing into one.
+ await p.selectOption('#feeAddMeter','m-4-250');
+ await p.click('#feeAddBtn'); await p.waitForTimeout(500);
+ ok('the same meter size can be added twice',
+    (await p.evaluate(()=>doc.impactFees.meters.length))===2
+    &&(await p.evaluate(()=>doc.impactFees.meters[0].id))
+      !==(await p.evaluate(()=>doc.impactFees.meters[1].id)));
+ const mid2 = await p.evaluate(()=>doc.impactFees.meters[1].id);
+ await p.fill(`#feeMeterTbl input[data-k="fee.${mid}.label"]`,'Domestic');
+ await p.fill(`#feeMeterTbl input[data-k="fee.${mid2}.label"]`,'Irrigation');
+ await p.waitForTimeout(400);
+ ok('each meter keeps its own label',
+    JSON.stringify(await p.evaluate(()=>doc.impactFees.meters.map(m=>m.label)))
+    ===JSON.stringify(['Domestic','Irrigation']),
+    JSON.stringify(await p.evaluate(()=>doc.impactFees.meters.map(m=>m.label))));
+ ok('three meters in total price as three',
+    Math.round((await p.evaluate(()=>feeResult().total))*100)/100
+      ===Math.round(3*318972.18*100)/100,
+    String(await p.evaluate(()=>feeResult().total)));
+ await p.click(`#feeMeterTbl tr:has(input[data-k="fee.${mid2}.qty"]) button:has-text("Remove")`);
+ await p.waitForTimeout(500);
+ ok('removing one leaves the other untouched',
+    (await p.evaluate(()=>doc.impactFees.meters.length))===1
+    &&(await p.evaluate(()=>doc.impactFees.meters[0].label))==='Domestic');
 
  // Basis is the conservatism knob, and only the adders move with it.
  await p.selectOption('#feeBasis','low'); await p.waitForTimeout(400);
@@ -305,8 +345,22 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the edited-lines count leaves the derived line out, matching what is flagged',
     ex.editedCount===ex.isEditedAll-1, ex.editedCount+' counted vs '+ex.isEditedAll+' isEdited');
 
- // Clearing the jurisdiction restores the line rather than deleting it: the
- // template put it there and a budget without a schedule still has soft fees.
+ // "None" is a decision and must zero the line — NOT fall back to the template's
+ // $7.50/SF allowance, which would charge a project that said it pays nothing.
+ await p.selectOption('#feeSchedule','__none__'); await p.waitForTimeout(600);
+ ok('choosing None zeroes the fee', (await p.evaluate(()=>feeResult().total))===0);
+ const noneLine = await p.evaluate(()=>{const l=doc.lines.find(x=>x.derived==='impactFees');
+   return l?{unit:l.unit,qty:l.qty,basis:l.basis,desc:l.desc}:null;});
+ ok('the soft-cost line is carried at zero, and says so',
+    !!noneLine&&noneLine.unit===0&&noneLine.qty===1&&noneLine.basis==='ls'
+    &&/none for this project/.test(noneLine.desc),
+    JSON.stringify(noneLine));
+ ok('None is remembered on the document, distinctly from "not selected"',
+    (await p.evaluate(()=>doc.impactFees.excluded))===true
+    &&(await p.evaluate(()=>doc.impactFees.scheduleKey))===null);
+
+ // Clearing back to "not selected" restores the line rather than deleting it:
+ // the template put it there and a budget without a schedule still has soft fees.
  await p.selectOption('#feeSchedule',''); await p.waitForTimeout(500);
  const restored = await p.evaluate(()=>{const l=doc.lines.find(x=>x.code==='SC-20'&&x.scope==='soft');
    return l?{derived:l.derived||null,basis:l.basis,auto:l.auto,unit:l.unit,baseUnit:l.baseUnit}:null;});
@@ -316,6 +370,35 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     JSON.stringify(restored));
  ok('and the fee total falls back to zero',
     (await p.evaluate(()=>feeResult().total))===0);
+ ok('there is no Override Total control',
+    (await p.locator('#page-fees button:has-text("Override")').count())===0);
+
+ // The Pricing Library carries the same schedules as published reference rates,
+ // below the cost assumptions table.
+ await p.evaluate(()=>go('pricing')); await p.waitForTimeout(900);
+ ok('the cost assumptions card is type-agnostic with a type picker',
+    (await p.evaluate(()=>{const c=[...document.querySelectorAll('#page-pricing .card-hd h2')]
+       .map(h=>h.textContent.trim()); return JSON.stringify(c);}))
+    .includes('Cost Assumptions Table'),
+    await p.evaluate(()=>[...document.querySelectorAll('#page-pricing .card-hd h2')].map(h=>h.textContent.trim()).join('|')));
+ ok('only Multifamily is selectable; the other types are named but disabled',
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#pricingType option')]
+      .map(o=>o.value+(o.disabled?':off':':on'))))
+    ===JSON.stringify(['multifamily:on','retail:off','industrial:off','office:off',
+                       'mixed-use:off','flex:off','custom:off']),
+    JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('#pricingType option')]
+      .map(o=>o.value+(o.disabled?':off':':on')))));
+ ok('the fee schedule table sits below the cost assumptions table',
+    await p.evaluate(()=>{
+      const h=[...document.querySelectorAll('#page-pricing .card-hd h2')].map(x=>x.textContent.trim());
+      return h.indexOf('Impact & Tap Fee Schedules') > h.indexOf('Cost Assumptions Table');
+    }));
+ ok('it lists all 17 meter sizes for the published jurisdiction',
+    (await p.locator('#feeLibTbl tbody tr').count())===17,
+    String(await p.locator('#feeLibTbl tbody tr').count()));
+ ok('and states the per-EDU rates the impact fees come from',
+    /3,689\.91.*water/i.test(await p.locator('#feeLibRates').textContent()),
+    (await p.locator('#feeLibRates').textContent()).slice(0,120));
 
  // ---- Stored XSS: row ids are data, never markup or code.
  // A lineId used to break out of its data-k attribute (autofocus + onfocus ran

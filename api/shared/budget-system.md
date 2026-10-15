@@ -110,8 +110,10 @@ Every time a budget is opened (and when one is made from a template),
   a pre-migration save and means **dollars**: it is lifted once to
   `{mode:'amt', val}`.
 - `opexSchemaVersion` defaults to 1.
-- `impactFees` is normalised (basis must be low/avg/high, else `high`; an override
-  survives only with a finite amount **and** a reason).
+- `impactFees` is normalised: basis must be low/avg/high (else `high`);
+  `excluded` is true only if saved true; every meter selection gets an `id` if it
+  has none; any `id`, `rowId` or `feeId` that is not plain letters, digits,
+  hyphens or underscores is replaced with a fresh one (it prices nothing).
 - `guardrailAcks` keeps only entries with a string `id` and `reason`.
 - Every numeric field is coerced with `nz()` (absent or non-numeric → 0).
 - Each line gets `scope` (default `res`), `grp` (default `div` or `General`),
@@ -256,10 +258,26 @@ doc.impactFees, ctx)` in `app/impact-fees.js`.
 
 ### What the budget stores
 
-`doc.impactFees = {scheduleKey, scheduleName, scheduleVersion, effective, basis,
-meters[{rowId, qty, includeMeter, includeVault, includeTaps}], extras[{feeId, qty}],
-manual[{rowId, label, amount}], override}`. These are **selections plus the
-schedule version**, not a copy of the schedule.
+`doc.impactFees = {excluded, scheduleKey, scheduleName, scheduleVersion,
+effective, basis, meters[{id, rowId, label, qty, includeMeter, includeVault,
+includeTaps}], extras[{feeId, qty}], manual[{rowId, label, amount}]}`. These are
+**selections plus the schedule version**, not a copy of the schedule.
+
+- **Meters are a list of selections, each with its own `id`.** A project can be
+  served by several meters of the same size (domestic, irrigation, fire line),
+  told apart by `label`; keying by size would collapse them and under-price the
+  budget. A meter is always named by size, gpm and EDU together
+  (`FSImpactFees.meterName()`), because size alone is ambiguous in the schedule.
+- **Three states, not two:**
+
+| State | `scheduleKey` | `excluded` | SC-20 |
+|---|---|---|---|
+| Not selected yet | none | false | the template's parametric $/SF allowance, untouched |
+| **None** | none | **true** | carried at **$0**, described "— none for this project" (a decision, not an oversight) |
+| Priced | a jurisdiction | false | the computed lump sum, with its provenance |
+
+There is no override of the computed total; a fee the schedule doesn't publish
+goes in as a manual row.
 
 ### The calculation
 
@@ -280,8 +298,8 @@ each selected generic fee:  qty × pick(amount, basis) × quantity basis
                   resSF; amenSF; bldgSF → resSF + amenSF; pctHard → hard cost / 100
 manual rows:      their typed amount
 
-total = override amount (when present, with a required reason)
-        otherwise meters + generic fees + manual rows
+total = meters + generic fees + manual rows
+(each meter selection is its own row, so two selections of one size add twice)
 ```
 
 The schedule's **published per-row amounts are authoritative**; the per-EDU
@@ -307,8 +325,9 @@ Three rules protect real money:
 - A budget whose schedule has not been fetched **keeps its saved amount**
   (recomputing against nothing would wipe a six-figure line) — and so does one
   whose loaded schedule is a different *version* of the same jurisdiction.
-- Clearing the jurisdiction **restores** SC-20 to its library $/SF basis rather
-  than deleting the line.
+- Clearing the jurisdiction back to "not selected" **restores** SC-20 to its
+  library $/SF basis rather than deleting the line; choosing **None** carries it
+  at $0 instead, never at the $/SF allowance.
 - Picking a jurisdiction with no meters yet sets SC-20 to $0 until meters are
   entered.
 
@@ -628,7 +647,7 @@ Each finding says which kind of evidence it rests on:
 
 | Kind | Checks |
 |---|---|
-| **fact** | Active lines priced at $0; amenity lines suppressed by amenity SF 0; SC-20 still on the $/SF placeholder instead of a jurisdiction; land, fees, contingency or profit at $0; unit types with no rent or no SF; leasable unit SF outside 70–95% of residential SF; $0 expense and other-income rows; other income under 3% of rent |
+| **fact** | Active lines priced at $0; amenity lines suppressed by amenity SF 0; SC-20 still on the $/SF placeholder instead of a jurisdiction (a deliberate **None** is reported as a decision to confirm, not as a $0 line); land, fees, contingency or profit at $0; unit types with no rent or no SF; leasable unit SF outside 70–95% of residential SF; $0 expense and other-income rows; other income under 3% of rent |
 | **library** | Budget on an older pricing library than the current one; current-library lines (matched on scope + CSI code) that the budget does not carry, each with its cost at this budget's quantities and the library rate; lines whose rate differs from the library by 15% or more, **on the same basis only** |
 | **portfolio** | Hard, soft, contract and project cost per building SF against the **median of the user's own budgets of the same type** (up to 40, test budgets excluded, same visibility as the Budgets list), flagged beyond ±25%; group $/SF flagged beyond ±30% where at least three peers carry the group. Needs at least three peers |
 | **heuristic** | A development checklist matched by keyword in line descriptions and groups: construction-loan interest / interest reserve, loan fees, builder's risk, property taxes during construction, legal/title, FF&E, lease-up / operating reserve, soft-cost contingency, bonds, temporary utilities. Not finding a keyword is *not* proof the cost is missing |

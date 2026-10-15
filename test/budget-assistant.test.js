@@ -395,3 +395,14 @@ test('on a pro forma: unsaved assumptions are what gets read; bad and invisible 
   assert.strictEqual((await run({ client: c, store: richStore({ async loadAnalysis() { return null; } }), focus: 'analysis',
     id: GUID, body: { question: 'q' } })).status, 404);
 });
+
+test('review: impact fees set to None are a decision to confirm, not a $0 mistake', () => {
+  const d = libDoc();
+  const sc20 = d.lines.find(l => l.code === 'SC-20');
+  Object.assign(sc20, { derived: 'impactFees', basis: 'ls', auto: false, qty: 1, unit: 0 });
+  d.impactFees = { excluded: true, scheduleKey: null, meters: [], extras: [], manual: [] };
+  const r = reviewBudget(d, { library: LIB });
+  assert.ok(!r.findings.some(f => f.area === 'lines' && /SC-20/.test(f.finding)), 'not reported as priced at $0');
+  assert.ok(r.findings.some(f => f.area === 'impactFees' && /None/.test(f.finding)));
+  assert.strictEqual(A.budgetFacts(d).impactFees.state, 'none — this project pays no impact fees');
+});

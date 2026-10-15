@@ -338,11 +338,11 @@ stores `scheduleVersion` and is offered an update; it is never given one.
 { "scheduleKey": "tx-waller", "scheduleName": "City of Waller, TX",
   "scheduleVersion": 1, "effective": "2025-10-15",
   "basis": "high",                                    // 'low' | 'avg' | 'high'
-  "meters": [ { "rowId": "m-4-250", "qty": 2,
+  "meters": [ { "id": "…", "rowId": "m-2-100", "label": "Domestic", "qty": 1,
                 "includeMeter": true, "includeVault": true, "includeTaps": true } ],
   "extras": [ { "feeId": "…", "qty": 1 } ],           // generic fees the schedule publishes
   "manual": [ { "rowId": "…", "label": "…", "amount": 0 } ],
-  "override": null }                                  // {amount, reason, by, at}
+  "excluded": false }                                 // true = this project pays none
 ```
 
 ## The total is MATERIALIZED onto the SOV line — that is the whole design
@@ -370,6 +370,38 @@ Three rules in the derivation, each of which would be a real bug if dropped:
    `eduRates` is carried for display and for the admin editor's fill-down.
 3. **Clearing the jurisdiction restores the line, it does not delete it.** The
    line comes from the template; it goes back to its library `$/SF` basis.
+
+## Three states, not two
+
+`excluded` is not the same as "no jurisdiction picked yet", and collapsing them
+would charge real money to a project that said it pays none:
+
+| State | `scheduleKey` | `excluded` | The `SC-20` line |
+|---|---|---|---|
+| Not selected yet | `null` | `false` | The template's parametric `$/SF` allowance, untouched |
+| **None** | `null` | `true` | Carried at **zero**, described as "none for this project" |
+| Priced | `tx-waller` | `false` | The computed lump sum, with its provenance |
+
+The line is carried at zero rather than deleted: a missing line reads as an
+oversight, a zero line reads as a decision.
+
+## Meter selections are a LIST, keyed by their own id
+
+`doc.impactFees.meters` is a list, not a map keyed by meter size, and that is
+load-bearing. A project is commonly served by several meters — domestic,
+irrigation, fire line, or one per building — so the **same size legitimately
+appears more than once** with different `label`s. Keying by `rowId` would
+collapse the fire line into the domestic one and silently halve the fee.
+
+`id` is minted per selection and backfilled by `migrate()` for anything saved
+before the list existed.
+
+Size alone never identifies a schedule row either: `2"`, `3"`, `4"`, `6"`, `8"`
+and `10"` each appear twice in the Waller table at different continuous-duty
+rates, and the rate is what sets the EDU multiplier (2" @ 80 gpm is 8 EDU; 2" @
+100 gpm is 10 EDU — a $22,617 difference on the impact fees alone). Anything
+naming a meter to a person goes through `FSImpactFees.meterName()`, which always
+prints size, gpm and EDU together.
 
 ## Derived is not edited
 

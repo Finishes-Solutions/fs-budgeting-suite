@@ -51,8 +51,12 @@ function reviewBudget(doc, ctx) {
   const p = calc.parts(doc), g = calc.grossIncome(doc), tu = calc.totUnits(doc), sf = perSF(doc);
 
   /* ---- facts in the document ---- */
+  const feesExcluded = !!(doc.impactFees && doc.impactFees.excluded);
+  if (feesExcluded) add('fact', 'info', 'impactFees', 'Impact fees are set to None for this project — '
+    + 'SC-20 is carried at $0 by decision. Confirm the jurisdiction really charges none.');
   lines.forEach(l => {
     if (!calc.scopeActive(doc, l.scope)) return;
+    if (feesExcluded && l.derived) return;   // the None decision, reported above
     const total = calc.lineQty(doc, l) * calc.nz(l.unit);
     if (total === 0) add('fact', 'warn', 'lines', 'Priced at $0: ' + (l.code || '') + ' ' + (l.desc || ''),
       { code: l.code || null, reason: calc.nz(l.unit) === 0 ? 'rate is $0' : 'quantity is 0' });

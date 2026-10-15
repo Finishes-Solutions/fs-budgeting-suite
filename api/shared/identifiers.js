@@ -35,6 +35,9 @@ function budgetIdentifierProblem(doc) {
   const f = doc.impactFees && typeof doc.impactFees === 'object' ? doc.impactFees : {};
   return firstBad(doc.lines, 'lineId', 'lines')
     || firstBad(f.meters, 'rowId', 'impactFees.meters')
+    // Each meter selection's own id (a project can carry the same size twice)
+    // is rendered into the same attributes as rowId.
+    || firstBad(f.meters, 'id', 'impactFees.meters')
     || firstBad(f.manual, 'rowId', 'impactFees.manual')
     || firstBad(f.extras, 'feeId', 'impactFees.extras');
 }

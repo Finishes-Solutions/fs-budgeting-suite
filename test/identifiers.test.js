@@ -78,3 +78,11 @@ test('the client carries the same pattern as the API', () => {
   assert.ok(m, 'ROW_ID_RX is declared in app/index.html');
   assert.strictEqual(m[1], String(I.ROW_ID_RX));
 });
+
+test('a meter selection id is held to the same rule as its rowId', () => {
+  const { budgetIdentifierProblem } = require('../api/shared/identifiers');
+  const doc = { lines: [], impactFees: { meters: [{ id: 'sel-1', rowId: 'm-4-250', qty: 1 }] } };
+  assert.strictEqual(budgetIdentifierProblem(doc), null);
+  doc.impactFees.meters[0].id = "x' onmouseover='alert(1)";
+  assert.strictEqual(budgetIdentifierProblem(doc), 'impactFees.meters[0].id');
+});
