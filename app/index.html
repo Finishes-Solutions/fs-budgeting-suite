@@ -68,6 +68,7 @@ try{
 <link rel="stylesheet" href="home.css">
 <link rel="stylesheet" href="feedback.css">
 <script src="guardrails.js"></script>
+<script src="impact-fees.js"></script>
 <script src="dashboard.js"></script>
 <script src="home.js"></script>
 <script src="projects.js"></script>
@@ -387,7 +388,7 @@ nav button[disabled]{opacity:.35;cursor:not-allowed}
 main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 /* Room under the editors for the bug button (bottom-left, feedback.css), so the
    last row and the + Add buttons can always be scrolled out from under it. */
-body:has(#page-input.on,#page-budget.on,#page-csi.on,#page-pricing.on) main{padding-bottom:84px}
+body:has(#page-input.on,#page-fees.on,#page-budget.on,#page-csi.on,#page-pricing.on) main{padding-bottom:84px}
 .page{display:none}.page.on{display:block}
 .page-title{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px}
 .page-title h1{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--ink-950)}
@@ -473,6 +474,125 @@ body.modal-open{overflow:hidden}
    because `.card-hd h2` (0,1,1) out-specifies a bare `.mod-title` (0,1,0) and
    would otherwise hold every dialog title at the 15px section-header scale. */
 .card-hd .mod-title{margin:0;font-size:19px;font-weight:800;letter-spacing:-.015em}
+/* Budget Assistant — a panel docked to the right edge, not a dialog: the
+   budget stays readable and usable beside the conversation. On a wide screen
+   the page makes room for it (body.ai-docked); on a narrow one it overlays.
+   Answers are Markdown from the model, rendered by aiMarkdown() — which
+   escapes FIRST and only then adds a fixed set of tags, so nothing the model
+   writes can become live markup. */
+:root{--ai-w:440px}
+.ai-panel{position:fixed;top:0;right:0;bottom:0;z-index:55;width:min(var(--ai-w),100vw);
+  display:flex;flex-direction:column;background:var(--white);border-left:1px solid var(--ink-150);
+  box-shadow:-12px 0 32px rgba(11,13,12,.10);transform:translateX(100%);visibility:hidden;
+  transition:transform .22s ease,visibility 0s linear .22s}
+.ai-panel.on{transform:none;visibility:visible;transition:transform .22s ease}
+@media(min-width:1180px){
+  body.ai-docked{padding-right:var(--ai-w)}
+  body.ai-docked .toast{right:calc(var(--ai-w) + 24px)}
+  .ai-panel{box-shadow:none}
+}
+@media(prefers-reduced-motion:reduce){.ai-panel,.ai-panel.on{transition:none}}
+@media print{body.ai-docked{padding-right:0}}
+.ai-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 14px 14px 18px;border-bottom:1px solid var(--ink-150)}
+.ai-hd-id{display:flex;align-items:center;gap:10px;min-width:0}
+.ai-hd h2{margin:0;font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink-950)}
+.ai-hd-sub{font-size:12px;color:var(--ink-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-hd-act{display:flex;gap:2px;flex:none}
+.ai-mark{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+  background:var(--green-100);color:var(--green-700)}
+.ai-mark svg{width:16px;height:16px}
+.ai-icon{width:34px;height:34px;display:grid;place-items:center;border:none;border-radius:8px;
+  background:transparent;color:var(--ink-600);cursor:pointer;transition:background .12s,color .12s}
+.ai-icon:hover{background:var(--ink-100);color:var(--ink-950)}
+.ai-icon:focus-visible,.ai-chip:focus-visible,.ai-send:focus-visible,.ai-sug:focus-visible,.ai-copy:focus-visible{
+  outline:none;box-shadow:var(--focus)}
+.ai-icon[disabled]{opacity:.4;cursor:not-allowed}
+.ai-icon svg{width:18px;height:18px}
+.ai-scroll{flex:1;overflow-y:auto;padding:18px 18px 8px;overscroll-behavior:contain}
+.ai-log{display:flex;flex-direction:column;gap:18px}
+/* Empty state */
+.ai-hello{padding:28px 4px 6px;text-align:center}
+.ai-hello .ai-mark{width:44px;height:44px;margin:0 auto 12px}
+.ai-hello .ai-mark svg{width:22px;height:22px}
+.ai-hello h3{margin:0 0 6px;font-size:17px;font-weight:800;color:var(--ink-950);letter-spacing:-.01em}
+.ai-hello p{margin:0 auto;max-width:340px;font-size:13px;line-height:1.55;color:var(--ink-500)}
+.ai-suggest{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.ai-sug{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;
+  padding:11px 14px;border:1px solid var(--ink-150);border-radius:12px;background:var(--white);
+  font:inherit;font-size:13px;line-height:1.4;color:var(--ink-800);cursor:pointer;
+  transition:border-color .12s,background .12s}
+.ai-sug:hover{border-color:var(--green-200);background:var(--green-50);color:var(--ink-950)}
+.ai-sug svg{flex:none;width:14px;height:14px;color:var(--ink-400)}
+.ai-sug:hover svg{color:var(--green-700)}
+/* Messages: the question in a bubble on the right, the answer as plain text
+   beside the assistant's mark — the answer is the thing to read. */
+.ai-msg{font-size:13.5px;line-height:1.6;color:var(--ink-900);min-width:0}
+.ai-ctx{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--ink-500)}
+.ai-ctx:before,.ai-ctx:after{content:'';flex:1;height:1px;background:var(--ink-150)}
+.ai-msg.user{align-self:flex-end;max-width:86%;padding:9px 14px;border-radius:18px 18px 4px 18px;
+  background:var(--green-100);color:var(--ink-950);white-space:pre-wrap;overflow-wrap:anywhere}
+.ai-turn{display:flex;gap:10px;align-items:flex-start}
+.ai-turn .ai-mark{width:26px;height:26px;margin-top:1px}
+.ai-turn .ai-mark svg{width:14px;height:14px}
+.ai-msg.bot{flex:1;overflow-x:auto}
+.ai-msg.err{flex:1;padding:10px 12px;border:1px solid var(--danger);border-radius:10px;color:var(--danger);
+  background:var(--white);font-size:13px;overflow-wrap:anywhere}
+.ai-turn.err .ai-mark{background:var(--ink-100);color:var(--danger)}
+.ai-msg p{margin:0 0 9px}.ai-msg p:last-child{margin-bottom:0}
+.ai-msg ul,.ai-msg ol{margin:0 0 9px;padding-left:20px}.ai-msg li{margin:3px 0}
+.ai-msg h4{margin:12px 0 6px;font-size:13.5px;font-weight:800;color:var(--ink-950)}
+.ai-msg h4:first-child{margin-top:0}
+.ai-msg b{color:var(--ink-950)}
+.ai-msg code{font-family:var(--fm);font-size:12px;background:var(--ink-100);padding:1px 4px;border-radius:4px}
+.ai-msg table{border-collapse:collapse;margin:6px 0 10px;font-size:12.5px}
+.ai-msg th,.ai-msg td{border:1px solid var(--ink-150);padding:5px 8px;text-align:left;vertical-align:top}
+.ai-msg th{background:var(--ink-50);font-weight:700}
+.ai-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--ink-500)}
+.ai-copy{display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;color:var(--ink-500);
+  font:inherit;font-size:11.5px;padding:3px 6px;margin-left:-6px;border-radius:6px;cursor:pointer}
+.ai-copy:hover{background:var(--ink-100);color:var(--ink-900)}
+.ai-copy svg{width:13px;height:13px}
+.ai-typing{display:flex;align-items:center;gap:8px;padding-top:5px;font-size:12.5px;color:var(--ink-500)}
+.ai-dots{display:inline-flex;gap:4px}
+.ai-dots i{width:6px;height:6px;border-radius:50%;background:var(--green-600);opacity:.35;animation:aiDot 1.2s infinite ease-in-out}
+.ai-dots i:nth-child(2){animation-delay:.15s}.ai-dots i:nth-child(3){animation-delay:.3s}
+@keyframes aiDot{0%,80%,100%{opacity:.35;transform:none}40%{opacity:1;transform:translateY(-3px)}}
+@media(prefers-reduced-motion:reduce){.ai-dots i{animation:none;opacity:.7}}
+/* Composer */
+.ai-compose{padding:10px 14px 14px}
+.ai-box{border:1px solid var(--ink-200);border-radius:18px;background:var(--white);padding:10px 10px 8px 14px;
+  transition:border-color .12s,box-shadow .12s}
+.ai-box:focus-within{border-color:var(--green-600);box-shadow:var(--focus)}
+.ai-box textarea{display:block;width:100%;min-height:24px;max-height:200px;resize:none;border:none;outline:none;
+  box-shadow:none;padding:2px 0;background:transparent;font:inherit;font-size:14px;line-height:1.5;color:var(--ink-900)}
+.ai-box textarea:focus{box-shadow:none}
+.ai-box-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+.ai-effort{position:relative}
+.ai-chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--ink-150);
+  border-radius:999px;background:var(--ink-50);font:inherit;font-size:12px;font-weight:600;color:var(--ink-700);cursor:pointer}
+.ai-chip:hover{border-color:var(--ink-300);color:var(--ink-950)}
+.ai-chip svg{width:14px;height:14px}
+.ai-chip .chev{width:12px;height:12px;color:var(--ink-400)}
+.ai-menu{position:absolute;left:0;bottom:calc(100% + 6px);z-index:2;width:250px;padding:6px;
+  background:var(--white);border:1px solid var(--ink-150);border-radius:12px;box-shadow:0 8px 28px rgba(11,13,12,.16)}
+.ai-menu[hidden]{display:none}
+.ai-menu-hd{padding:6px 10px 4px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-500)}
+.ai-opt{display:grid;grid-template-columns:1fr 16px;align-items:center;gap:2px 8px;width:100%;text-align:left;
+  padding:8px 10px;border:none;border-radius:8px;background:transparent;font:inherit;color:var(--ink-900);cursor:pointer}
+.ai-opt:hover,.ai-opt:focus-visible{background:var(--ink-100);outline:none}
+.ai-opt b{font-size:13px;font-weight:700}
+.ai-opt span{grid-column:1;font-size:11.5px;color:var(--ink-500);line-height:1.4}
+.ai-opt svg{grid-row:1/span 2;grid-column:2;width:16px;height:16px;color:var(--green-700);visibility:hidden}
+.ai-opt[aria-checked=true] svg{visibility:visible}
+.ai-send{flex:none;width:34px;height:34px;display:grid;place-items:center;border:none;border-radius:50%;
+  background:var(--green-700);color:#fff;cursor:pointer;transition:opacity .12s,background .12s}
+.ai-send:hover{background:var(--green-800)}
+.ai-send[disabled]{opacity:.25;cursor:not-allowed}
+.ai-send svg{width:18px;height:18px}
+.ai-foot{margin-top:8px;font-size:11px;line-height:1.45;color:var(--ink-500);text-align:center}
+.ai-foot.basis{color:var(--ink-600)}
+.btn .ai-spark{width:15px;height:15px;color:var(--green-700)}
 /* First-run welcome. Deliberately plain: three lines about what the tool is,
    set in the same dialog shell as every other sheet, so it reads as part of
    the app rather than as an ad in front of it. */
@@ -483,8 +603,8 @@ body.modal-open{overflow:hidden}
   border-radius:50%;background:var(--green-600)}
 .wel-list b{color:var(--ink-900);font-weight:700}
 .wel-note{margin:18px 0 0;font-size:12.5px;color:var(--ink-500)}
-.grid{display:grid;gap:14px}.g5{grid-template-columns:repeat(5,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
-@media(max-width:900px){.g4,.g5{grid-template-columns:1fr 1fr}}
+.grid{display:grid;gap:14px}.g5{grid-template-columns:repeat(5,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.g3,.g4,.g5{grid-template-columns:1fr 1fr}}
 
 label.fld{display:block}
 /* .fld, not label.fld: the fee fields (Developer Fee and friends) are div.fld
@@ -503,7 +623,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 .err{border-color:var(--danger)!important}
 .fld-err{font-size:11.5px;color:var(--danger);margin-top:4px}
 .fld-note{font-size:11.5px;color:var(--ink-500);margin-top:4px;line-height:1.45}
-.fld-hint{font-size:11.5px;color:var(--ink-500);margin-top:4px}
+.fld-help{font-size:11.5px;color:var(--ink-500);margin-top:4px}
 
 .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:var(--r);
   font-family:var(--fb);font-weight:600;font-size:13px;padding:8px 16px;cursor:pointer;transition:all .12s;
@@ -539,6 +659,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
   padding:8px 12px;font-family:inherit;font-size:13px;color:var(--ink-900);cursor:pointer}
 .rowmenu-item:hover,.rowmenu-item:focus-visible{background:var(--ink-100);outline:none}
 .rowmenu-item.danger{color:var(--danger)}
+.btn.danger,.btn-ghost.danger{color:var(--danger)}
 .rowmenu-item.danger:hover,.rowmenu-item.danger:focus-visible{background:#fdf0ee}
 .rowmenu-sep{height:1px;background:var(--ink-150);margin:4px 0}
 
@@ -673,7 +794,7 @@ tr.fs-flash td{animation:fsflashrow 1.8s ease-out}
   #page-pricing .tbl{min-width:640px}
   .stats{grid-template-columns:repeat(2,1fr)}
   .stat{padding:14px 16px}
-  .g4,.g5{grid-template-columns:1fr}
+  .g3,.g4,.g5{grid-template-columns:1fr}
   .set-grid{grid-template-columns:1fr}
   .list-toolbar input[type=text]{width:auto;flex:1 1 150px;min-width:0}
   .list-toolbar select.lt-status,.list-toolbar select.lt-group{width:auto;flex:0 1 auto;min-width:0}
@@ -712,6 +833,7 @@ tr.fs-flash td{animation:fsflashrow 1.8s ease-out}
    ("Per Amen SF") are clipped once it is the selected value. */
 .tbl select{padding-right:24px}
 .basisin{width:132px;font-size:12px}
+.tbl input.qtyin{width:74px;font-size:12px;text-align:right}
 
 /* Checkboxes are drawn rather than native so they can be rounded and pick up the
    brand green. Native padding from `.tbl input` is reset explicitly. */
@@ -938,6 +1060,9 @@ html[data-theme=dark] .btn-dark:hover{background:var(--ink-300)}
   margin-right:8px;vertical-align:middle;flex:none}
 .autodot.on{background:var(--green-600)}
 .editdot.on{background:var(--edit);box-shadow:0 0 0 3px var(--edit-100)}
+/* A derived line (impact fees) is marked, but not in the edit colour the legend
+   counts: its tooltip says where the figure came from. */
+.editdot.derived{background:var(--ink-400);box-shadow:0 0 0 3px var(--ink-150)}
 tr.edited td:first-child{box-shadow:inset 2px 0 0 var(--edit)}
 tr.edited:hover td{background:var(--edit-50)}
 .legend{display:inline-flex;align-items:center;gap:0}
@@ -1151,8 +1276,9 @@ th.sortable.sorted{color:var(--ink-900)}
   .rpt-sig .sig-cap{font-size:8pt;color:var(--ink-600);margin-top:4px}
   .rpt-tbl tr.sub-tot td{border-top:1px solid var(--ink-300);font-weight:600}
   .rpt-tbl tr.tot td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;padding-top:6px}
-  .edited-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
+  .edited-mark,.derived-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
     color:var(--edit);border:1px solid var(--edit);border-radius:2px;padding:0 3px;margin-left:4px}
+  .derived-mark{color:var(--ink-600);border-color:var(--ink-300)}
 
   /* ---- guide PDF ---- */
   .rpt-guide .rpt-sec{break-inside:auto}
@@ -1285,11 +1411,11 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= INPUTS ================= -->
 <div class="page" id="page-input">
   <div class="page-title">
-    <div><button class="btn-back" id="backInputs" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Inputs</h1><div class="sub">Step 1 of 3 — project, unit mix, income, profit &amp; contingency</div></div>
+    <div><button class="btn-back" id="backInputs" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Inputs</h1><div class="sub">Step 1 of 4 — project, unit mix, income, profit &amp; contingency</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="iStatusHost"></span>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
-      <button class="btn btn-primary" onclick="toBudget()">Continue to Budget →</button>
+      <button class="btn btn-primary" onclick="toFees()">Continue to Impact Fees →</button>
     </div>
   </div>
   <div class="wf-steps no-print" data-wf-pills></div>
@@ -1301,7 +1427,8 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="fld"><span class="lab">Budget ID</span>
           <input type="text" id="pId" placeholder="BD-0001" oninput="validateId();markDirty()" style="font-family:var(--fm);text-transform:uppercase">
           <div class="fld-err" id="pIdErr" style="display:none">Must match BDG-####-## or BD-#### (or a legacy OP-/AS-/TST-####)</div>
-          <div class="fld-hint" id="pIdLock" style="display:none">Budget IDs can't be changed after the first save. To copy this budget under a new ID, use + Add Alternate Budget on its project.</div></label>
+          <!-- Shown once the budget exists on the server; paintIdLock() owns it. -->
+          <div class="fld-help" id="pIdLocked" style="display:none">A budget's ID is fixed once it is saved. To price it another way, use Add Alternate on its project.</div></label>
         <label class="fld"><span class="lab">Budget Name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
         <!-- Which project this budget belongs to. Read-only because it is the
@@ -1469,12 +1596,86 @@ th.sortable.sorted{color:var(--ink-900)}
 
 </div>
 
+<!-- ================= IMPACT FEES ================= -->
+<!-- Step 2 of the budget workflow. The whole page computes ONE number, which is
+     materialized onto a soft-cost line — see applyImpactFees(). Everything here
+     is a real route, so the workflow pills work the same as on every other step. -->
+<div class="page" id="page-fees">
+  <div class="page-title">
+    <div><button class="btn-back" id="backFees" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Impact &amp; Tap Fees</h1>
+      <div class="sub">Step 2 of 4 — the jurisdiction's fee schedule, priced against this project's meters</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
+      <span id="fStatusHost"></span>
+      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
+      <button class="btn btn-primary" onclick="go('budget')">Continue to Budget &rarr;</button>
+    </div>
+  </div>
+  <div class="wf-steps no-print" data-wf-pills></div>
+
+  <section class="card">
+    <div class="card-hd"><h2>Jurisdiction</h2>
+      <span class="eyebrow" id="feeProvenance">No schedule selected</span></div>
+    <div class="card-bd">
+      <div class="grid g3">
+        <label class="fld"><span class="lab">Fee Schedule</span>
+          <select id="feeSchedule" data-k="fee.schedule" onchange="chooseFeeSchedule(this.value)"></select>
+          <div class="note" id="feeScheduleHint">Published schedules are managed by a pricing admin.</div></label>
+        <label class="fld"><span class="lab">Cost Basis</span>
+          <select id="feeBasis" data-k="fee.basis" onchange="setFeeBasis(this.value)">
+            <option value="high">High Side</option>
+            <option value="avg">Average</option>
+            <option value="low">Low Side</option></select>
+          <div class="note">Impact fees are fixed; this moves the meter, vault and tap work ranges only.</div></label>
+        <div class="fld"><span class="lab">Schedule Version</span>
+          <div class="mono" id="feeVersion" style="padding-top:9px">&mdash;</div>
+          <div class="note" id="feeVersionHint">A budget keeps the version it was priced from.</div></div>
+      </div>
+      <div id="feeUpdateBanner" style="display:none" class="note"></div>
+    </div>
+  </section>
+
+  <section class="card" id="sec-fee-meters">
+    <div class="card-hd"><h2>Meters</h2>
+      <span class="eyebrow" id="feeMeterMeta">&mdash;</span></div>
+    <div class="card-bd" style="padding-top:8px">
+      <!-- Size alone does not identify a meter: 2", 3", 4", 6", 8" and 10" each
+           appear twice at different continuous-duty rates, and the rate is what
+           sets the EDU multiplier. The picker always names size, gpm and EDU. -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <select id="feeAddMeter" data-k="fee.addMeter" style="min-width:260px"></select>
+        <button class="btn btn-ghost" id="feeAddBtn" onclick="addFeeMeter()">+ Add Meter</button>
+        <span class="note">Add one row per meter — domestic, irrigation, fire line, or per building.</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="feeMeterTbl" style="min-width:1100px"></table>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="sec-fee-other">
+    <div class="card-hd"><h2>Other Fees</h2>
+      <button class="btn btn-ghost" onclick="addManualFee()">Add Manual Fee</button></div>
+    <div class="card-bd" style="overflow-x:auto;padding-top:8px">
+      <table class="tbl" id="feeOtherTbl" style="min-width:720px"></table>
+    </div>
+  </section>
+
+  <section class="card" id="sec-fee-total">
+    <div class="card-hd"><h2>Roll-Up</h2>
+      <span class="eyebrow">Carried as a soft cost, outside the construction contract sum</span></div>
+    <div class="card-bd">
+      <div id="feeRollup"></div>
+    </div>
+  </section>
+</div>
+
 <!-- ================= BUDGET ================= -->
 <div class="page" id="page-budget">
   <div class="page-title">
     <div><button class="btn-back" id="backBudget" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1 id="bTitle">Budget</h1><div class="sub" id="bSub"></div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="bStatusHost"></span>
+      <button class="btn btn-ghost" onclick="openAssistant()" title="Ask the Budget Assistant about this budget"><svg class="ai-spark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9z"/><path d="M19 15l.9 2.6 2.6.9-2.6.9L19 22l-.9-2.6-2.6-.9 2.6-.9z" opacity=".7"/></svg>Ask AI</button>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
       <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
@@ -1674,8 +1875,23 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
 
   <div class="card"><div class="card-hd">
-      <h2>Multifamily Cost Assumptions</h2>
-      <span class="eyebrow" id="pricingMeta">—</span></div>
+      <h2>Cost Assumptions Table</h2>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <!-- One published rate table today. The other property types are named
+             rather than hidden so the shape of the library is visible, and
+             disabled rather than absent so nobody picks one that prices nothing. -->
+        <select id="pricingType" style="width:190px;font-size:12px;padding:6px 8px"
+          aria-label="Property type" onchange="choosePricingType(this.value)">
+          <option value="multifamily" selected>Multifamily</option>
+          <option value="retail" disabled>Retail (soon)</option>
+          <option value="industrial" disabled>Industrial (soon)</option>
+          <option value="office" disabled>Office (soon)</option>
+          <option value="mixed-use" disabled>Mixed-Use (soon)</option>
+          <option value="flex" disabled>Flex (soon)</option>
+          <option value="custom" disabled>Custom (soon)</option>
+        </select>
+        <span class="eyebrow" id="pricingMeta">—</span>
+      </div></div>
     <div class="card-bd" style="overflow-x:auto;padding-top:8px">
       <table class="tbl">
         <thead><tr><th style="width:44%">Line Item</th><th>Basis</th><th class="r">Rate</th><th class="no-print"></th></tr></thead>
@@ -1684,6 +1900,27 @@ th.sortable.sorted{color:var(--ink-900)}
       <div style="margin-top:12px" class="no-print" id="priceAdd" hidden>
         <button class="btn btn-ghost btn-sm" onclick="addPriceLine()">+ Add Blank Line</button>
         <span class="note" style="margin-left:10px">Prefer adding from the CSI catalog below so every line carries a real code.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Impact & tap fees sit here, below the cost assumptions, because they are
+       the same kind of thing: published reference rates a budget is priced from.
+       Read-only — a schedule is published through the API, and a budget picks
+       one on its Impact Fees step. -->
+  <div class="card" id="feeLibCard">
+    <div class="card-hd">
+      <h2>Impact &amp; Tap Fee Schedules</h2>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap" class="no-print">
+        <select id="feeLibSelect" style="width:230px;font-size:12px;padding:6px 8px"
+          aria-label="Jurisdiction" onchange="showFeeLibrary(this.value)"></select>
+        <span class="eyebrow" id="feeLibMeta">—</span>
+      </div>
+    </div>
+    <div class="card-bd" style="padding-top:8px">
+      <div id="feeLibRates" class="note" style="margin-bottom:12px"></div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="feeLibTbl" style="min-width:1080px"></table>
       </div>
     </div>
   </div>
@@ -2223,7 +2460,8 @@ th.sortable.sorted{color:var(--ink-900)}
         <p>When a budget is running on an older library, a banner appears on the budget page naming both versions.
           <span class="kbd">Update to current pricing</span> pulls the new rates in — it matches on scope, code and
           description, so standard template lines are repriced and any custom line you added keeps the rate you
-          gave it. Quantities and overrides are untouched. The banner's <b>×</b> hides it for that budget while
+          gave it. Quantities are untouched, but a rate you changed by hand on a standard line <b>is replaced</b>
+          by the library rate (the confirmation says how many were). The banner's <b>×</b> hides it for that budget while
           you work; the reprice stays one click away in the Home list's three-dot menu as
           <span class="kbd">Update Pricing</span> (which simply confirms when a budget is already current).</p>
         <p>Publishing is the other direction: an admin edits the library and publishes, which stamps a new version
@@ -3008,6 +3246,51 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
 </div>
 
+<!-- ================= BUDGET ASSISTANT =================
+     Questions about the open budget, answered by Claude through
+     POST /api/budget/{id}?scope=ask (api/shared/budget-assistant.js). The
+     figures it quotes are computed server-side by the app's own budget math;
+     the model explains them. Read-only: it never changes the budget. -->
+<aside id="assistantPanel" class="ai-panel no-print" aria-labelledby="assistantTitle" aria-hidden="true">
+  <div class="ai-hd">
+    <div class="ai-hd-id">
+      <span class="ai-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9z"/><path d="M19 15l.9 2.6 2.6.9-2.6.9L19 22l-.9-2.6-2.6-.9 2.6-.9z" opacity=".7"/></svg></span>
+      <div style="min-width:0"><h2 id="assistantTitle">Budget Assistant</h2><div class="ai-hd-sub" id="aiSub"></div></div>
+    </div>
+    <div class="ai-hd-act">
+      <button class="ai-icon" id="aiNew" onclick="resetAssistant()" aria-label="New conversation" title="New conversation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M18.4 2.6a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></button>
+      <button class="ai-icon" onclick="closeAssistant()" aria-label="Close budget assistant" title="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+  </div>
+  <div class="ai-scroll" id="aiScroll">
+    <div class="ai-log" id="aiLog" aria-live="polite"></div>
+  </div>
+  <div class="ai-compose">
+    <div class="ai-box">
+      <textarea id="aiQ" rows="1" maxlength="2000" placeholder="Ask about this budget…"
+        aria-label="Question for the Budget Assistant" oninput="aiComposerChanged()"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAssistant();}"></textarea>
+      <div class="ai-box-row">
+        <div class="ai-effort">
+          <button class="ai-chip" id="aiEffortBtn" type="button" onclick="toggleEffortMenu()" aria-haspopup="menu"
+            aria-expanded="false" aria-controls="aiEffortMenu" title="Reasoning effort — how hard Claude thinks before answering">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z"/></svg>
+            <span id="aiEffortLabel">Medium</span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="ai-menu" id="aiEffortMenu" role="menu" aria-label="Reasoning effort" hidden></div>
+        </div>
+        <button class="ai-send" id="aiSend" onclick="sendAssistant()" aria-label="Send question" title="Send (Enter)" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+      </div>
+    </div>
+    <div class="ai-foot basis" id="aiBasis"></div>
+    <div class="ai-foot">Claude can be wrong — check figures against the budget. This record's data is sent to Anthropic to answer.</div>
+  </div>
+</aside>
+
 <div id="printDoc" aria-hidden="true"></div>
 
 <!-- ================= FEEDBACK =================
@@ -3571,7 +3854,7 @@ function openNewBudget(presetProjectId){
   const host=document.getElementById('customTplList');
   const customs=activeTemplates().filter(t=>t.templateKey!=='multifamily');
   host.innerHTML=customs.length
-    ?customs.map(t=>`<button class="tpl-row" onclick="pickNewBudget('${esc(t.templateKey)}')">
+    ?customs.map(t=>`<button class="tpl-row" data-id="${esc(t.templateKey)}" onclick="pickNewBudget(this.dataset.id)">
         <span class="tpl-name">${esc(t.name||t.templateKey)}</span>
         <span class="tpl-sub">${esc(t.description||'Published custom template')}</span></button>`).join('')
     :'<div class="set-note">No custom templates yet. Open a budget and publish it as a template to see it here.</div>';
@@ -3970,11 +4253,16 @@ const isTest=id=>/^TST-/.test(id||'');
    render — focus keys, selection, the SOV LineKey column, version snapshots —
    keys off lineId instead of the index. randomUUID needs a secure context, so
    there is a fallback for plain-http local dev. */
-const LINE_ID_RX=/^[A-Za-z0-9_-]{1,64}$/;
 function newLineId(){
   try{ if(window.crypto&&crypto.randomUUID)return crypto.randomUUID(); }catch(_){}
   return 'l-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
 }
+/* Row ids (lineId, fee rowId/feeId) are rendered into attributes, so one read
+   from a stored document is untrusted: a lineId of `x" onfocus="…` was a stored
+   XSS. Both newLineId() forms match this; migrate() regenerates anything that
+   does not. Same pattern as api/shared/identifiers.js, which refuses the save. */
+const ROW_ID_RX=/^[A-Za-z0-9_-]{1,64}$/;
+const safeRowId=v=>typeof v==='string'&&ROW_ID_RX.test(v);
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
 
 /* ============ STORAGE — Azure Functions API ============ */
@@ -4009,8 +4297,18 @@ async function api(path,opts={}){
     const err=new Error('Session expired: sign in again');err.session=true;throw err;
   }
   setApiHealth(true);
-  if(r.status===403)throw new Error('Not authorized (pricing_admin role required)');
   const ct=r.headers.get('content-type')||'';
+  if(r.status===403){
+    // Most 403s are the pricing_admin gate and keep that wording. A guard-rail
+    // override refused by the budget save says something different and more
+    // useful, so a structured refusal carries the server's own message.
+    let body=null;
+    if(ct.includes('json')){try{body=await r.json();}catch(_){}}
+    const err=new Error(body&&body.error==='override_not_allowed'&&body.message
+      ?body.message:'Not authorized (pricing_admin role required)');
+    err.status=403;err.body=body;
+    throw err;
+  }
   if(!r.ok){
     // A structured refusal (a guard-rail 422, a project 400) carries a message
     // worth showing. Keep it on the error so callers can react to the SHAPE,
@@ -4571,6 +4869,9 @@ function recordUndo(){
 }
 function restoreSnap(snap,msg){
   doc=migrate(JSON.parse(snap));
+  // A step from before the first save can carry an id that was still being
+  // typed. Once the budget exists its id is fixed, and undo must not move it.
+  if(loadedId)doc.projectId=loadedId;
   dirty=true;editSeq++;selected.clear();
   fillForms();recalc();renderSaveState();scheduleDraft();
   toast(msg);
@@ -4871,6 +5172,45 @@ function withFocus(fn){
 /* kind 'blank' starts genuinely from scratch — no unit types, no income or expense lines,
    no scope, no square footage, no markups. Everything is added by hand, which is what you
    want for a project the multifamily template does not describe. */
+/* The Impact Fees step's document field. Two functions rather than one literal
+   because migrate() needs the same repair for a document saved before the step
+   existed — and every numeric read below still guards with nz(), because a
+   blank input coerces to 0 but an ABSENT property is undefined and prints $NaN. */
+function blankImpactFees(){
+  /* excluded is NOT the same as "no jurisdiction picked yet". Unset means the
+     budget still carries the template's parametric $/SF fee line; excluded means
+     somebody decided this project pays no impact fees, and the line goes to zero.
+     Collapsing the two would silently charge $7.50/SF to a project that said no. */
+  return {scheduleKey:null,scheduleName:null,scheduleVersion:null,effective:null,
+    excluded:false,basis:FSImpactFees.DEFAULT_BASIS,meters:[],extras:[],manual:[]};
+}
+function normalizeImpactFees(f){
+  const b=blankImpactFees();
+  if(!f||typeof f!=='object')return b;
+  const basis=FSImpactFees.BASES.includes(f.basis)?f.basis:FSImpactFees.DEFAULT_BASIS;
+  return {excluded:f.excluded===true,
+    scheduleKey:f.scheduleKey||null,scheduleName:f.scheduleName||null,
+    scheduleVersion:f.scheduleVersion?nz(f.scheduleVersion):null,
+    effective:f.effective||null,basis:basis,
+    /* A LIST, not a map keyed by meter size. A project is commonly served by
+       several meters — domestic, irrigation, fire, or one per building — so the
+       same size legitimately appears twice with different labels. Each selection
+       carries its own id; keying by rowId would collapse the fire line into the
+       domestic one and under-price the budget. `id` is backfilled for anything
+       saved before the list existed.
+       An unsafe id or rowId is regenerated, not kept: both reach attributes in
+       paintFeeMeters/paintFeeOther. A regenerated rowId matches no schedule row,
+       so it prices nothing rather than something wrong. */
+    meters:(Array.isArray(f.meters)?f.meters:[]).filter(m=>m&&m.rowId).map(m=>({
+      id:safeRowId(m.id)?m.id:newLineId(),rowId:safeRowId(m.rowId)?m.rowId:newLineId(),
+      label:String(m.label||''),qty:nz(m.qty),
+      includeMeter:m.includeMeter!==false,includeVault:m.includeVault!==false,
+      includeTaps:m.includeTaps!==false})),
+    extras:(Array.isArray(f.extras)?f.extras:[]).filter(x=>x&&x.feeId)
+      .map(x=>({feeId:safeRowId(x.feeId)?x.feeId:newLineId(),qty:x.qty===undefined?1:nz(x.qty)})),
+    manual:(Array.isArray(f.manual)?f.manual:[]).filter(m=>m&&m.rowId)
+      .map(m=>({rowId:safeRowId(m.rowId)?m.rowId:newLineId(),label:String(m.label||'Fee'),amount:nz(m.amount)}))};
+}
 function blankDoc(kind){
   const bare=kind==='blank';
   return {projectId:'',name:'',address:'',type:bare?'Blank':'Multifamily',
@@ -4896,10 +5236,21 @@ function blankDoc(kind){
     // warned rather than blocked until they are updated from the template.
     opexSchemaVersion:bare?1:FSGuardrails.OPEX_SCHEMA_FULL,
     guardrailAcks:[],
+    // The Impact Fees step starts present and empty rather than absent: a budget
+    // with no jurisdiction picked totals zero, which is exactly how every budget
+    // that predates the step behaves. Defaults to the high side deliberately —
+    // a fee estimate under what the city bills is worse than one over, and this
+    // number reaches lenders.
+    impactFees:blankImpactFees(),
     pricingVersion:pricing.version,status:'Draft',
     created:new Date().toISOString(),updated:new Date().toISOString()};
 }
 function migrate(d){ // tolerate older saves
+  // parts() reads all four unconditionally; the server treats absent as empty,
+  // so an old or hand-built document must too rather than throw on open.
+  d.units=Array.isArray(d.units)?d.units:[];d.lines=Array.isArray(d.lines)?d.lines:[];
+  d.companies=Array.isArray(d.companies)?d.companies:[];
+  d.contingency=d.contingency&&typeof d.contingency==='object'?d.contingency:{mode:'amt',val:0};
   d.resSF=d.resSF??d.buildableSF??0; d.amenSF=d.amenSF??0; d.siteSF=d.siteSF??0;
   d.other=d.other??JSON.parse(JSON.stringify(DEFAULT_OTHER));
   d.expenses=d.expenses??JSON.parse(JSON.stringify(DEFAULT_EXPENSES));
@@ -4913,6 +5264,7 @@ function migrate(d){ // tolerate older saves
     else d.projectCosts[k]={mode:v.mode==='pct'?'pct':'amt',val:nz(v.val)};
   });
   d.opexSchemaVersion=nz(d.opexSchemaVersion)||1;
+  d.impactFees=normalizeImpactFees(d.impactFees);
   d.guardrailAcks=Array.isArray(d.guardrailAcks)
     ? d.guardrailAcks.filter(a=>a&&typeof a.id==='string'&&typeof a.reason==='string')
     : [];
@@ -4929,15 +5281,11 @@ function migrate(d){ // tolerate older saves
   // Budgets saved before edit-tracking existed have no baseline, so seed it from the
   // current rate: nothing is retroactively claimed to be a manual edit.
   // Older saves predate stable line IDs; mint one per line so selection, code
-  // editing and SOV LineKey have something durable to hold on to.
-  // The id is also re-minted when it is not the shape newLineId() makes: the grid
-  // interpolates it into inline handlers and data-k keys, where esc() cannot help
-  // (the browser decodes &#39; back to a quote before the handler runs). The API
-  // stores whatever a client sent, so this is the boundary that keeps a crafted
-  // id in a saved budget from running as script for whoever opens it.
+  // editing and SOV LineKey have something durable to hold on to. A lineId that
+  // is not a safe row id is replaced too, so a poisoned save opens harmless.
   d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';
     l.unit=nz(l.unit);l.qty=nz(l.qty);l.baseUnit=nz(l.baseUnit??l.unit);
-    if(typeof l.lineId!=='string'||!LINE_ID_RX.test(l.lineId))l.lineId=newLineId();});
+    if(!safeRowId(l.lineId))l.lineId=newLineId();});
   d.status=d.status||'Draft';
   return d;
 }
@@ -4951,8 +5299,28 @@ function isEdited(it){
       || (+it.unit)!==(+it.baseUnit)
       || it.edited===true;
 }
-function editedCount(){return doc?doc.lines.filter(isEdited).length:0;}
+/* A line whose amount comes from the Impact Fees step. It is "edited" by every
+   test above — its rate differs from the library's $/SF placeholder and its
+   quantity is off auto — but calling it a manual edit in the edits report and
+   on the PDF would be actively misleading. It is derived, and from what is the
+   part a lender needs. */
+function isDerived(it){return !!(it&&it.derived);}
+/* What a line is flagged as, everywhere a flag is printed or counted: 'derived',
+   'edited' or ''. Derived wins because isEdited() is true for the derived line
+   by construction — an export that said "edited" (or a legend that counted it)
+   would tell the reader the figure had been tampered with. */
+function lineFlag(it){return isDerived(it)?'derived':isEdited(it)?'edited':'';}
+function editedCount(){return doc?doc.lines.filter(l=>lineFlag(l)==='edited').length:0;}
+/* The PDF legend entry for a derived line: what it is and where it came from
+   (editReason() names the schedule, basis and version from the document). */
+function derivedNote(it){
+  return '(derived) '+it.code+' is not a manual edit. '+editReason(it)+'.';
+}
 function editReason(it){
+  if(isDerived(it)){
+    const p=doc&&doc.impactFees?FSImpactFees.provenance(feeResult()):'';
+    return 'Derived from the impact fee schedule'+(p?' — '+p:'');
+  }
   const r=[];
   if(it.custom)r.push('added by hand');
   if(it.auto===false&&it.basis!=='ls')r.push('quantity overridden');
@@ -4964,15 +5332,15 @@ function editReason(it){
 /* ============ NAV + HASH ROUTING ============
    The hash keeps your place across a refresh, makes browser Back work, and lets a
    budget be linked directly — #/budget/BD-0001. */
-const PAGE_SLUG={home:'home',projects:'projects',project:'project',budgets:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+const PAGE_SLUG={home:'home',projects:'projects',project:'project',budgets:'budgets',input:'inputs',fees:'fees',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
 /* Human names for the pages, for anything a person reads: today the subject
    line of a feedback email, which is more use as "Budgets" than as
    "budgets". */
-const PAGE_LABEL={home:'Home',projects:'Projects',project:'Project Detail',budgets:'Budgets',input:'Budget Inputs',budget:'Budget Detail',
+const PAGE_LABEL={home:'Home',projects:'Projects',project:'Project Detail',budgets:'Budgets',input:'Budget Inputs',fees:'Impact Fees',budget:'Budget Detail',
   csi:'CSI Schedule',analyses:'Investment Analysis',analysis:'Investment Analysis Editor',
   pricing:'Pricing Library',help:'How to Use',dashboard:'Analytics',admin:'Admin',version:'Version'};
-const SLUG_PAGE={home:'home',projects:'projects',project:'project',budgets:'budgets',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
-const DOC_PAGES=['input','budget','csi'];
+const SLUG_PAGE={home:'home',projects:'projects',project:'project',budgets:'budgets',inputs:'input',fees:'fees',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
+const DOC_PAGES=['input','fees','budget','csi'];
 
 function hashFor(p){
   const s=PAGE_SLUG[p]||'home';
@@ -5013,12 +5381,13 @@ function go(p){
   if(p!==currentPage)closeAllDialogs();
   currentPage=p;
   if(DOC_PAGES.includes(p))lastDocPage=p;
+  aiFollowPage();
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   document.getElementById('page-'+p).classList.add('on');
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
   // Nested pages light their parent tab: the whole budget workflow keeps
   // Budgets lit, and the analysis editor keeps Investment Analysis lit.
-  var NAV_PARENT={analysis:'analyses',input:'budgets',budget:'budgets',csi:'budgets',project:'projects'};
+  var NAV_PARENT={analysis:'analyses',input:'budgets',fees:'budgets',budget:'budgets',csi:'budgets',project:'projects'};
   const nb=document.getElementById('nav-'+(NAV_PARENT[p]||p));
   if(nb)nb.classList.add('on');
   var MORE_PAGES=['help','dashboard','admin','version','pricing'];
@@ -5031,11 +5400,12 @@ function go(p){
   if(p==='projects'&&window.FSProjects)FSProjects.render(true);
   if(DOC_PAGES.includes(p))paintWorkflowPills(p);
   if(p==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
-  if(p==='pricing'){renderPricing();renderCatalog();}
+  if(p==='pricing'){renderPricing();renderCatalog();renderFeeLibrary();}
   if(p==='dashboard'&&window.FSDashboard)FSDashboard.render();
   if(p==='admin')refreshAdmin();
   if(p==='version')renderVersionPage();
   if(p==='budget'||p==='input'||p==='csi')recalc();
+  if(p==='fees')renderFeesPage();
   window.scrollTo(0,0);
 }
 
@@ -5201,7 +5571,7 @@ async function renderBudgetsPage(){
 /* The budget workflow pills — the same .wf-steps component the analysis steps
    use. Each pill is a real route, so the current page is both marked `on` and
    given aria-current for assistive tech. */
-const WORKFLOW_STEPS=[{page:'input',label:'Inputs'},{page:'budget',label:'Budget'},{page:'csi',label:'CSI Schedule'}];
+const WORKFLOW_STEPS=[{page:'input',label:'Inputs'},{page:'fees',label:'Impact Fees'},{page:'budget',label:'Budget'},{page:'csi',label:'CSI Schedule'}];
 function workflowPillsHTML(active){
   return WORKFLOW_STEPS.map((s,i)=>
     `<a href="${hashFor(s.page)}" class="${s.page===active?'on':''}"
@@ -5420,7 +5790,7 @@ function paintBudgets(){
   paintHomeSortArrows();
 }
 function homeCard(x){
-  return `<div class="hcard" onclick="openBudget('${x.projectId}')">
+  return `<div class="hcard" data-id="${esc(x.projectId)}" onclick="openBudget(this.dataset.id)">
     <div class="hc-id">${x.createdByName?creatorAvatar(x.createdByName,x.createdByAvatar)+' ':''}${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</div>
     <div class="hc-name">${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</div>
     <div class="hc-row"><span>Contract Sum</span><span class="v">${usd(x.contractSum||0)}</span></div>
@@ -5434,7 +5804,7 @@ function homeCard(x){
 // same markup into its own tbody.
 function homeRowHTML(x){
   return (
-    `<tr class="clickable" onclick="openBudget('${x.projectId}')">
+    `<tr class="clickable" data-id="${esc(x.projectId)}" onclick="openBudget(this.dataset.id)">
       <td class="no-print" style="padding-left:22px">${creatorAvatar(x.createdByName,x.createdByAvatar)}</td>
       <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
       <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
@@ -5482,6 +5852,512 @@ function homeSort(k){
    own that state rather than scattering the removal across its callers. */
 function enableDocNav(){ /* no global workflow tabs to enable any more */ }
 function disableDocNav(){ /* likewise */ }
+/* ============ IMPACT & TAP FEES ============
+   The Impact Fees step. Everything here feeds ONE number, which applyImpactFees()
+   materializes onto a soft-cost SOV line as a lump sum. That is the whole design:
+   downstream, parts(), csiSchedule(), the exports and api/shared/budget-calc.js
+   see an ordinary soft line and need no knowledge of fee schedules at all.
+
+   The published schedule is a SNAPSHOT, not a live join. A budget stores the
+   version it priced from, and publishing a newer one offers an update rather
+   than silently repricing saved work — the same rule templates and the pricing
+   library already follow (docs/DATA_CONTRACT.md, "Four different versions"). */
+let feeSchedules=[],feeSchedulesLoaded=false,feeSchedulesAdmin=false,feeDoc=null;
+
+/* The soft-cost line the total lands on. Matched by its `derived` marker first
+   and its pricing-library code second, never by array position — lineId is row
+   identity and a template can reorder lines. */
+const FEE_LINE_CODE='SC-20';
+const FEE_LINE_GRP='Soft Costs — Impact & Fees';
+const FEE_LINE_DESC='Water & Sewer Impact & Tap Fees';
+
+async function loadFeeSchedules(){
+  try{
+    const r=await api('pricing?scope=fee-schedules');
+    feeSchedules=r.schedules||[];
+    feeSchedulesAdmin=!!r.isAdmin;
+    feeSchedulesLoaded=true;
+  }catch(e){feeSchedules=[];feeSchedulesLoaded=false;}
+}
+
+/* The context the generic (non-meter) fees price against, so a per-unit or
+   per-acre fee needs no second place to type the unit count. siteMetrics()
+   already owns the SF-to-acres conversion; don't reimplement it here. */
+function feeContext(){
+  const m=siteMetrics();
+  return {units:totUnits(),acres:m.acres,resSF:nz(doc.resSF),amenSF:nz(doc.amenSF),
+    hard:scopeSum('res')+scopeSum('amen')};
+}
+function feeResult(){
+  if(!doc)return FSImpactFees.evaluate(null,null,{});
+  return FSImpactFees.evaluate(feeDoc,doc.impactFees,feeContext());
+}
+
+/* Load the schedule document a budget was priced from. Asks for the exact
+   stored version, not the current one, so opening an old budget shows the
+   numbers it was actually priced with. */
+async function loadFeeDoc(){
+  const f=doc&&doc.impactFees;
+  if(!f||!f.scheduleKey){feeDoc=null;return;}
+  if(feeDoc&&feeDoc.scheduleKey===f.scheduleKey
+     &&feeDoc.__version===f.scheduleVersion)return;
+  try{
+    const q='pricing?scope=fee-schedule&key='+encodeURIComponent(f.scheduleKey)
+      +(f.scheduleVersion?'&version='+encodeURIComponent(f.scheduleVersion):'');
+    const r=await api(q);
+    feeDoc=Object.assign({},r.doc,{__version:r.versionNumber,__current:r.currentVersion});
+  }catch(e){feeDoc=null;}
+}
+
+async function renderFeesPage(){
+  if(!doc)return;
+  if(!feeSchedulesLoaded)await loadFeeSchedules();
+  await loadFeeDoc();
+  paintFeesPage();
+}
+
+function paintFeesPage(){
+  if(!doc)return;
+  const f=doc.impactFees,r=feeResult();
+  // --- jurisdiction picker ---
+  const sel=document.getElementById('feeSchedule');
+  /* Three states, not two. "Not selected yet" leaves the template's parametric
+     $/SF fee line alone; "None" is a decision that this project pays no impact
+     fees and zeroes the line. */
+  const opts=['<option value="">— Not selected —</option>',
+    `<option value="__none__" ${f.excluded?'selected':''}>None — no impact fees</option>`]
+    .concat(feeSchedules.map(s=>
+    `<option value="${esc(s.scheduleKey)}" ${s.scheduleKey===f.scheduleKey?'selected':''}>${esc(s.name)}</option>`));
+  // A schedule a budget was priced from that has since been deactivated is not
+  // in the list. Keep it selectable rather than silently switching the budget.
+  if(f.scheduleKey&&!feeSchedules.some(s=>s.scheduleKey===f.scheduleKey))
+    opts.push(`<option value="${esc(f.scheduleKey)}" selected>${esc(f.scheduleName||f.scheduleKey)} (unavailable)</option>`);
+  sel.innerHTML=opts.join('');
+  document.getElementById('feeBasis').value=f.basis;
+  document.getElementById('feeProvenance').textContent=
+    r.hasSchedule?FSImpactFees.provenance(r)
+      :f.excluded?'No impact fees on this project'
+      :'No schedule selected';
+  document.getElementById('feeVersion').textContent=f.scheduleVersion?('v'+f.scheduleVersion):'—';
+  document.getElementById('feeScheduleHint').textContent=
+    feeSchedulesLoaded
+      ?(feeSchedules.length?'Published schedules are managed by a pricing admin.'
+                           :'No fee schedules published yet.')
+      :'Could not load fee schedules — the total stays at whatever was last saved.';
+
+  // A newer published version exists: offer it, never take it.
+  const banner=document.getElementById('feeUpdateBanner');
+  const cur=feeDoc&&feeDoc.__current;
+  if(cur&&f.scheduleVersion&&cur>f.scheduleVersion){
+    banner.style.display='';
+    banner.innerHTML='This jurisdiction has published <b>v'+esc(String(cur))+'</b>. '
+      +'This budget is priced from v'+esc(String(f.scheduleVersion))+'. '
+      +'<button class="btn btn-ghost" onclick="updateFeeSchedule()">Update to v'+esc(String(cur))+'</button>';
+  } else banner.style.display='none';
+
+  paintFeeMeters(r);
+  paintFeeOther(r);
+  paintFeeRollup(r);
+}
+
+function paintFeeMeters(r){
+  const t=document.getElementById('feeMeterTbl');
+  const meta=document.getElementById('feeMeterMeta');
+  const add=document.getElementById('feeAddMeter');
+  const f=doc.impactFees;
+
+  // The picker names size, rate and EDU together: size alone is ambiguous —
+  // 2" appears at both 80 and 100 gpm, and the gpm is what sets the multiplier.
+  if(add){
+    const list=(feeDoc&&Array.isArray(feeDoc.meters))?feeDoc.meters:[];
+    add.innerHTML='<option value="">Choose a meter size…</option>'
+      +list.map(m=>`<option value="${esc(m.rowId)}">${esc(FSImpactFees.meterName(m))}</option>`).join('');
+    add.disabled=!list.length;
+  }
+  document.getElementById('feeAddBtn').disabled=!(feeDoc&&feeDoc.meters&&feeDoc.meters.length);
+
+  if(!feeDoc||!Array.isArray(feeDoc.meters)||!feeDoc.meters.length){
+    t.innerHTML='';
+    meta.textContent=f.scheduleKey?'Schedule unavailable':'Pick a jurisdiction first';
+    return;
+  }
+  if(!r.rows.length){
+    t.innerHTML='<tbody><tr><td class="note" style="padding:14px">'
+      +'No meters yet. Add the ones this project is served by — domestic, irrigation, '
+      +'fire line, or one per building. Each is priced from the city\'s table.</td></tr></tbody>';
+    meta.textContent=feeDoc.meters.length+' sizes available';
+    return;
+  }
+  const units=r.rows.reduce((s,x)=>s+x.qty,0);
+  const edu=r.rows.reduce((s,x)=>s+x.qty*x.edu,0);
+  meta.textContent=units+(units===1?' meter':' meters')+' · '+(+edu.toFixed(2))+' EDU total';
+
+  let h='<thead><tr><th>Meter</th><th>Serves</th><th class="r">EDU</th>'
+    +'<th class="r">Qty</th><th class="c">Meter</th><th class="c">Vault</th><th class="c">Taps</th>'
+    +'<th class="r">Water Impact</th><th class="r">Sewer Impact</th>'
+    +'<th class="r">Adders</th><th class="r">Row Total</th><th></th></tr></thead><tbody>';
+  r.rows.forEach(x=>{
+    // Selection ids ride in an escaped data-id and come back through
+    // this.dataset — never inside a quoted string in handler source (see
+    // renderBudget). The id comes from the saved document.
+    const sid=esc(x.id);
+    const m=feeDoc.meters.find(d=>d.rowId===x.rowId)||{};
+    const sel=feeSel(x.id)||{};
+    const adders=x.each.meter+x.each.vault+x.each.waterTap+x.each.sewerTap;
+    const cb=(k,enabled)=>enabled
+      ?`<input type="checkbox" data-k="fee.${sid}.${k}" data-id="${sid}" ${sel[k]!==false?'checked':''}
+          onchange="setFeeInclude(this.dataset.id,'${k}',this.checked)">`
+      :'<span class="mono" style="color:var(--ink-500)">—</span>';
+    h+=`<tr>
+      <td>${esc(FSImpactFees.meterName(m))}</td>
+      <td><input type="text" data-k="fee.${sid}.label" data-id="${sid}" value="${esc(x.label)}"
+          placeholder="Domestic, irrigation…" style="width:100%;min-width:130px"
+          oninput="setFeeMeterLabel(this.dataset.id,this.value)"></td>
+      <td class="r mono">${+(x.qty*x.edu).toFixed(2)}</td>
+      <td class="r"><input type="number" class="qtyin" data-k="fee.${sid}.qty" data-id="${sid}" min="0" step="1"
+          value="${nz(x.qty)}" oninput="setFeeQty(this.dataset.id,this.value)"></td>
+      <td class="c">${cb('includeMeter',true)}</td>
+      <td class="c">${cb('includeVault',x.hasVault)}</td>
+      <td class="c">${cb('includeTaps',true)}</td>
+      <td class="r mono">${usd(x.qty*x.each.waterImpact)}</td>
+      <td class="r mono">${usd(x.qty*x.each.sewerImpact)}</td>
+      <td class="r mono">${usd(x.qty*adders)}</td>
+      <td class="r mono"><b>${usd(x.total)}</b></td>
+      <td class="r"><button class="btn btn-ghost danger" title="Remove this meter"
+          data-id="${sid}" onclick="removeFeeMeter(this.dataset.id)">Remove</button></td></tr>`;
+  });
+  h+=`</tbody><tfoot><tr class="tot"><td colspan="10">Meter fees</td>
+      <td class="r mono"><b>${usd(r.meterTotal)}</b></td><td></td></tr></tfoot>`;
+  t.innerHTML=h;
+}
+
+function paintFeeOther(r){
+  const t=document.getElementById('feeOtherTbl');
+  const f=doc.impactFees;
+  const defs=(feeDoc&&Array.isArray(feeDoc.fees))?feeDoc.fees:[];
+  if(!defs.length&&!f.manual.length){
+    t.innerHTML='<tbody><tr><td class="note" style="padding:14px">'
+      +'This schedule carries no fees beyond the meter table. Add a manual fee for anything '
+      +'this project pays that the jurisdiction does not publish.</td></tr></tbody>';
+    return;
+  }
+  const chosen={};(f.extras||[]).forEach(x=>{chosen[x.feeId]=x;});
+  let h='<thead><tr><th>Fee</th><th>Basis</th><th class="r">Qty</th><th class="r">Amount</th>'
+    +'<th class="r">Total</th><th></th></tr></thead><tbody>';
+  defs.forEach(d=>{
+    const picked=!!chosen[d.feeId];
+    const amt=FSImpactFees.pick(d.amount,f.basis);
+    const row=r.extras.find(x=>x.feeId===d.feeId),fid=esc(d.feeId);
+    h+=`<tr${picked?'':' style="opacity:.55"'}>
+      <td><label><input type="checkbox" data-k="fee.x.${fid}.on" data-id="${fid}" ${picked?'checked':''}
+          onchange="toggleFeeExtra(this.dataset.id,this.checked)"> ${esc(d.label)}</label></td>
+      <td class="mono" style="font-size:12px;color:var(--ink-500)">${esc(FEE_BASIS_LABEL[d.basis]||d.basis)}</td>
+      <td class="r"><input type="number" class="qtyin" data-k="fee.x.${fid}.qty" data-id="${fid}" min="0" step="1"
+          value="${picked?nz(chosen[d.feeId].qty):1}" style="width:74px"
+          oninput="setFeeExtraQty(this.dataset.id,this.value)" ${picked?'':'disabled'}></td>
+      <td class="r mono">${usd2(amt)}</td>
+      <td class="r mono"><b>${usd(row?row.total:0)}</b></td><td></td></tr>`;
+  });
+  (f.manual||[]).forEach(m=>{
+    const rid=esc(m.rowId);
+    h+=`<tr><td><input type="text" data-k="fee.m.${rid}.label" data-id="${rid}" value="${esc(m.label)}"
+          oninput="setManualFee(this.dataset.id,'label',this.value)" style="width:100%"></td>
+      <td class="mono" style="font-size:12px;color:var(--ink-500)">manual</td>
+      <td class="r mono">—</td>
+      <td class="r"><input type="number" data-k="fee.m.${rid}.amount" data-id="${rid}" step="0.01"
+          value="${nz(m.amount)}" style="width:120px"
+          oninput="setManualFee(this.dataset.id,'amount',this.value)"></td>
+      <td class="r mono"><b>${usd(nz(m.amount))}</b></td>
+      <td class="r"><button class="btn btn-ghost danger" data-id="${rid}" onclick="removeManualFee(this.dataset.id)">Remove</button></td></tr>`;
+  });
+  h+=`</tbody><tfoot><tr class="tot"><td colspan="4">Other fees</td>
+      <td class="r mono"><b>${usd(r.extrasTotal+r.manualTotal)}</b></td><td></td></tr></tfoot>`;
+  t.innerHTML=h;
+}
+const FEE_BASIS_LABEL={flat:'lump sum',unit:'per unit',acre:'per acre',resSF:'per res SF',
+  amenSF:'per amen SF',bldgSF:'per building SF',pctHard:'% of hard cost'};
+
+function paintFeeRollup(r){
+  const f=doc.impactFees,p=parts();
+  const softPct=p.soft>0?(100*r.total/p.soft):null;
+  let h='';
+  if(f.excluded){
+    h='<div class="sum-row tot"><span class="k">Total Impact &amp; Tap Fees</span><span class="v">'+usd(0)+'</span></div>'
+      +'<div class="note" style="margin-top:10px">This project is marked as paying <b>no impact fees</b>. '
+      +'The soft-cost line <b>'+esc(FEE_LINE_CODE)+' '+esc(FEE_LINE_DESC)+'</b> is carried at zero rather than '
+      +'at the template\'s per-SF allowance. Pick a jurisdiction above to price them instead.</div>';
+    document.getElementById('feeRollup').innerHTML=h;
+    return;
+  }
+  if(!r.hasSchedule){
+    h='<div class="note">No jurisdiction selected yet, so this budget still carries the template\'s '
+      +'per-SF allowance for impact and tap fees. Pick the jurisdiction above to price them from its '
+      +'published schedule, or choose <b>None</b> if this project pays none.</div>';
+    document.getElementById('feeRollup').innerHTML=h;
+    return;
+  }
+  h=`<div class="sum-row"><span class="k">Meter fees</span><span class="v">${usd(r.meterTotal)}</span></div>
+    <div class="sum-row"><span class="k">Other fees</span><span class="v">${usd(r.extrasTotal+r.manualTotal)}</span></div>
+    <div class="sum-row tot"><span class="k">Total Impact &amp; Tap Fees</span><span class="v">${usd(r.total)}</span></div>
+    <div class="note" style="margin-top:10px">Carried on the soft-cost line <b>${esc(FEE_LINE_CODE)} ${esc(FEE_LINE_DESC)}</b>
+      as a lump sum${softPct!==null?', '+softPct.toFixed(1)+'% of total soft costs':''}.
+      Soft costs sit outside the construction contract sum and join at total project cost.</div>`;
+  document.getElementById('feeRollup').innerHTML=h;
+}
+
+/* ---- mutations. Every one ends at applyImpactFees() + touch(), which is the
+   document's change pipeline — don't invent a parallel dirty flag. ---- */
+function feeSel(id){return doc.impactFees.meters.find(m=>m.id===id)||null;}
+/* Add the meter the picker is showing. A repeat of a size already chosen is
+   legitimate — that is the second meter, not a mistake — so it appends rather
+   than finding the existing row. */
+function addFeeMeter(){
+  const sel=document.getElementById('feeAddMeter');
+  const rowId=sel?sel.value:'';
+  if(!rowId){toast('Pick a meter size first');return;}
+  doc.impactFees.meters.push({id:newLineId(),rowId:rowId,label:'',qty:1,
+    includeMeter:true,includeVault:true,includeTaps:true});
+  if(sel)sel.value='';
+  afterFeeChange();
+}
+function removeFeeMeter(id){
+  doc.impactFees.meters=doc.impactFees.meters.filter(m=>m.id!==id);
+  afterFeeChange();
+}
+function setFeeQty(id,v){const s=feeSel(id);if(s){s.qty=Math.max(0,nz(v));afterFeeChange();}}
+function setFeeInclude(id,k,on){const s=feeSel(id);if(s){s[k]=!!on;afterFeeChange();}}
+function setFeeMeterLabel(id,v){const s=feeSel(id);if(s){s.label=String(v);afterFeeChange(false);}}
+function setFeeBasis(v){
+  doc.impactFees.basis=FSImpactFees.BASES.includes(v)?v:FSImpactFees.DEFAULT_BASIS;
+  afterFeeChange();
+}
+function toggleFeeExtra(feeId,on){
+  const f=doc.impactFees;
+  if(on){if(!f.extras.some(x=>x.feeId===feeId))f.extras.push({feeId:feeId,qty:1});}
+  else f.extras=f.extras.filter(x=>x.feeId!==feeId);
+  afterFeeChange();
+}
+function setFeeExtraQty(feeId,v){
+  const x=doc.impactFees.extras.find(e=>e.feeId===feeId);
+  if(x){x.qty=Math.max(0,nz(v));afterFeeChange();}
+}
+function addManualFee(){
+  doc.impactFees.manual.push({rowId:newLineId(),label:'New fee',amount:0});
+  afterFeeChange();
+}
+function setManualFee(rowId,k,v){
+  const m=doc.impactFees.manual.find(x=>x.rowId===rowId);
+  if(!m)return;
+  m[k]=k==='amount'?nz(v):String(v);
+  afterFeeChange(k!=='label');
+}
+function removeManualFee(rowId){
+  doc.impactFees.manual=doc.impactFees.manual.filter(x=>x.rowId!==rowId);
+  afterFeeChange();
+}
+async function chooseFeeSchedule(key){
+  const f=doc.impactFees;
+  if(!key||key==='__none__'){
+    f.excluded=(key==='__none__');
+    f.scheduleKey=null;f.scheduleName=null;f.scheduleVersion=null;f.effective=null;
+    f.meters=[];f.extras=[];feeDoc=null;
+    afterFeeChange();return;
+  }
+  f.excluded=false;
+  if(key===f.scheduleKey){paintFeesPage();return;}
+  try{
+    const r=await api('pricing?scope=fee-schedule&key='+encodeURIComponent(key));
+    feeDoc=Object.assign({},r.doc,{__version:r.versionNumber,__current:r.currentVersion});
+    f.scheduleKey=r.scheduleKey;f.scheduleName=r.name;
+    f.scheduleVersion=r.versionNumber;f.effective=r.effective||null;
+    // Switching jurisdiction cannot carry the old meter selection: rowIds are
+    // per-schedule and a 4-inch row in one city is not the 4-inch row in another.
+    f.meters=[];f.extras=[];
+    afterFeeChange();
+  }catch(e){toast('Could not load that fee schedule');}
+}
+async function updateFeeSchedule(){
+  const f=doc.impactFees;
+  if(!f.scheduleKey)return;
+  try{
+    const r=await api('pricing?scope=fee-schedule&key='+encodeURIComponent(f.scheduleKey));
+    feeDoc=Object.assign({},r.doc,{__version:r.versionNumber,__current:r.currentVersion});
+    f.scheduleVersion=r.versionNumber;f.scheduleName=r.name;f.effective=r.effective||null;
+    // The meter mix is the project's, not the schedule's — keep whatever still
+    // exists in the new version and drop only rows the jurisdiction removed.
+    const ids=new Set((r.doc.meters||[]).map(m=>m.rowId));
+    f.meters=f.meters.filter(m=>ids.has(m.rowId));
+    afterFeeChange();
+    toast('Updated to v'+r.versionNumber);
+  }catch(e){toast('Could not update the fee schedule');}
+}
+
+function afterFeeChange(repaint){
+  applyImpactFees();
+  touch();
+  // withFocus, not a bare repaint: every input here carries a data-k, and this
+  // replaces whole tables' innerHTML — without it the caret jumps out of the
+  // quantity field on every keystroke.
+  if(repaint!==false)withFocus(()=>paintFeesPage());
+}
+
+/* Materialize the total onto the soft-cost line. This is the seam: everything
+   downstream reads an ordinary lump-sum soft line and never learns that a fee
+   schedule exists. */
+function impactFeeLine(){
+  return doc.lines.find(l=>l.derived==='impactFees')
+      || doc.lines.find(l=>l.code===FEE_LINE_CODE&&l.scope==='soft')
+      || null;
+}
+function applyImpactFees(){
+  if(!doc||!doc.impactFees)return;
+  const f=doc.impactFees;
+  /* The saved line is the authority until we can prove a new number. A budget
+     priced from a jurisdiction whose schedule has not been fetched yet (opened
+     straight to the Budget page, or the API is down) must keep the amount it
+     was saved with — recomputing against a null schedule would total zero and
+     silently wipe a six-figure soft-cost line. */
+  /* The loaded schedule must be the VERSION this budget was priced from, not
+     just the same jurisdiction: feeDoc is page-wide and outlives openBudget(),
+     so after viewing a budget on v2, a budget priced at v1 would otherwise be
+     recomputed against v2 while still labelled v1 (BUDGET-SYSTEM.md D5).
+     Moving a budget to a newer version is Update to vN, which sets both. */
+  if(f.scheduleKey&&!(feeDoc&&feeDoc.scheduleKey===f.scheduleKey
+     &&(!f.scheduleVersion||feeDoc.__version===f.scheduleVersion)))return;
+  const r=feeResult();
+  let line=impactFeeLine();
+
+  const ensureLine=()=>{
+    if(line)return line;
+    line={lineId:newLineId(),code:FEE_LINE_CODE,grp:FEE_LINE_GRP,scope:'soft',
+      desc:FEE_LINE_DESC,basis:'ls',unit:0,baseUnit:0,auto:false,qty:1,custom:true};
+    insertLine(line);
+    return line;
+  };
+
+  /* "None" is a decision, and it has to be visible. The line stays on the SOV at
+     zero, saying so, rather than being deleted — a missing line reads as an
+     oversight, and reverting to the template's per-SF allowance would charge a
+     project that explicitly said it pays nothing. */
+  if(f.excluded){
+    line=ensureLine();
+    line.derived='impactFees';
+    line.scope='soft';line.basis='ls';line.auto=false;line.qty=1;line.unit=0;
+    line.desc=FEE_LINE_DESC+' — none for this project';
+    return;
+  }
+
+  // Nothing to carry and no line to restore: leave the document alone.
+  if(!line&&r.total<=0)return;
+  line=ensureLine();
+
+  if(!r.hasSchedule&&r.total<=0){
+    // No jurisdiction picked. Give the line its library basis back rather than
+    // deleting it — deleting would lose a line the template put there.
+    if(line.derived){
+      delete line.derived;
+      line.basis='sf';line.auto=true;line.qty=0;
+      line.unit=nz(line.baseUnit);line.desc=FEE_LINE_DESC;
+    }
+    return;
+  }
+  line.derived='impactFees';
+  line.scope='soft';
+  line.basis='ls';
+  line.auto=false;
+  line.qty=1;
+  line.unit=r.total;
+  line.desc=FEE_LINE_DESC+' — '+FSImpactFees.provenance(r);
+}
+
+/* ---- Pricing Library: the impact & tap fee schedules ----
+   Read-only here. This page is where a person goes to see what a budget will be
+   priced from, and the fee schedules are exactly that — published reference
+   rates, sitting under the cost assumptions for the same reason. Publishing a
+   schedule is an API call (PUT /api/pricing?scope=fee-schedule); a budget picks
+   one on its Impact Fees step. */
+let feeLibDoc=null,feeLibKey=null;
+
+/* Only one published rate table exists today. The control is here so the
+   library's shape is legible, and every other type is disabled rather than
+   missing — picking one that prices nothing would be worse than not offering it. */
+function choosePricingType(v){
+  if(v!=='multifamily'){
+    const el=document.getElementById('pricingType');
+    if(el)el.value='multifamily';
+    toast('Only the Multifamily table is published today');
+  }
+}
+
+async function renderFeeLibrary(){
+  const sel=document.getElementById('feeLibSelect');
+  if(!sel)return;
+  if(!feeSchedulesLoaded)await loadFeeSchedules();
+  if(!feeSchedules.length){
+    sel.innerHTML='<option value="">None published</option>';
+    document.getElementById('feeLibMeta').textContent =
+      feeSchedulesLoaded?'No jurisdictions published yet':'Could not load fee schedules';
+    document.getElementById('feeLibTbl').innerHTML='';
+    document.getElementById('feeLibRates').textContent='';
+    return;
+  }
+  sel.innerHTML=feeSchedules.map(s=>
+    `<option value="${esc(s.scheduleKey)}" ${s.scheduleKey===feeLibKey?'selected':''}>${esc(s.name)}</option>`).join('');
+  await showFeeLibrary(feeLibKey||feeSchedules[0].scheduleKey);
+}
+
+async function showFeeLibrary(key){
+  if(!key)return;
+  feeLibKey=key;
+  try{
+    const r=await api('pricing?scope=fee-schedule&key='+encodeURIComponent(key));
+    feeLibDoc=r.doc;
+    document.getElementById('feeLibMeta').textContent=
+      'v'+r.versionNumber+(r.effective?' · effective '+r.effective:'')
+      +' · '+(r.doc.meters||[]).length+' meter sizes';
+  }catch(e){
+    feeLibDoc=null;
+    document.getElementById('feeLibMeta').textContent='Could not load that schedule';
+  }
+  paintFeeLibrary();
+}
+
+function paintFeeLibrary(){
+  const t=document.getElementById('feeLibTbl');
+  const rates=document.getElementById('feeLibRates');
+  if(!feeLibDoc||!Array.isArray(feeLibDoc.meters)||!feeLibDoc.meters.length){
+    t.innerHTML='';rates.textContent='';return;
+  }
+  const er=feeLibDoc.eduRates||{};
+  rates.innerHTML='Impact fees are the meter\'s EDU multiplier times the city\'s per-EDU rate — '
+    +'<b>'+usd2(nz(er.water))+'/EDU</b> water, <b>'+usd2(nz(er.sewer))+'/EDU</b> sewer. '
+    +'The low and high columns cover the meter, vault and tap work only; impact fees are single-valued.'
+    +(feeLibDoc.source?' <span class="mono" style="font-size:11px">Source: '+esc(feeLibDoc.source)+'</span>':'');
+
+  let h='<thead><tr><th>Meter Size</th><th class="r">GPM</th><th class="r">EDU</th>'
+    +'<th class="r">Water Impact</th><th class="r">Sewer Impact</th>'
+    +'<th class="r">Meter</th><th class="r">Vault</th><th class="r">Water Tap</th><th class="r">Sewer Tap</th>'
+    +'<th class="r">Total Low</th><th class="r">Total High</th></tr></thead><tbody>';
+  const rng=x=>x?usd(nz(x.low))+' – '+usd(nz(x.high)):'—';
+  feeLibDoc.meters.forEach(m=>{
+    const lo=FSImpactFees.rowAmounts(m,{qty:1},'low').total;
+    const hi=FSImpactFees.rowAmounts(m,{qty:1},'high').total;
+    h+=`<tr>
+      <td>${esc(m.size)}"</td>
+      <td class="r mono">${num(m.gpm)}</td>
+      <td class="r mono">${nz(m.edu)}</td>
+      <td class="r mono">${usd(nz(m.waterImpact))}</td>
+      <td class="r mono">${usd(nz(m.sewerImpact))}</td>
+      <td class="r mono">${rng(m.meter)}</td>
+      <td class="r mono">${rng(m.vault)}</td>
+      <td class="r mono">${rng(m.waterTap)}</td>
+      <td class="r mono">${rng(m.sewerTap)}</td>
+      <td class="r mono">${usd(lo)}</td>
+      <td class="r mono"><b>${usd(hi)}</b></td></tr>`;
+  });
+  t.innerHTML=h+'</tbody>';
+}
+
 /* ============ BUDGET TEMPLATES ============
    The template system is the authoritative source of new-budget defaults
    (docs/DATA_CONTRACT.md). A template is edited by loading its document into the
@@ -5645,6 +6521,7 @@ async function createTemplate(){
   const d=src&&src.doc?JSON.parse(JSON.stringify(src.doc)):(doc?JSON.parse(JSON.stringify(doc)):null);
   if(!d){toast('No template document to start from');return;}
   d.name=name;d.type=name;
+  d.guardrailAcks=[];             // overrides belong to a budget, never a template
   try{
     await api('templates',{method:'POST',body:JSON.stringify({templateKey:key,name,budgetType:name,
       description:'Created from '+(base?base.name:'the open budget'),doc:d,changeSummary:'Initial version'})});
@@ -5676,6 +6553,11 @@ async function duplicateBudgetAs(fromId,newId,projectKey){
   delete doc.templateVersionId;
   resetDocState();                // not the original's id lock, base or draft
   docIsNew=true;                  // its first save must create, not overwrite
+  // An override was recorded on the original by someone allowed to; carrying
+  // it into a copy is recording it again, so only someone with that authority
+  // keeps it (the API refuses a new override from anyone else). Without it the
+  // copy's rails get their say, exactly as the note above intends.
+  if(!canAckGuardrail())doc.guardrailAcks=[];
   fillForms();
   markDirty();
   go('input');
@@ -5707,6 +6589,10 @@ async function applyTemplateBudget(key){
   // on its first paint.
   (d.lines||[]).forEach(l=>{l.lineId=newLineId();});   // fresh identity per budget
   stampCurrentPricing(d);
+  // An override is a decision about one budget's numbers, recorded by someone
+  // allowed to make it — a template is not a budget and must not hand one to
+  // every budget made from it (the API would refuse it as a new override).
+  d.guardrailAcks=[];
   d.created=new Date().toISOString();d.updated=d.created;
   templateEdit=null;renderTemplateBanner();
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
@@ -5758,7 +6644,7 @@ function backFromBudget(){
 function paintBackTargets(){
   const onProject=!!(budgetOrigin&&budgetOrigin.page==='project'&&budgetOrigin.id);
   const label=onProject?('Back to '+budgetOrigin.id):'Back to Budgets';
-  ['backInputs','backBudget','backCsi'].forEach(id=>{
+  ['backInputs','backFees','backBudget','backCsi'].forEach(id=>{
     const b=document.getElementById(id);
     if(!b)return;
     b.setAttribute('aria-label',label);b.setAttribute('title',label);
@@ -5960,6 +6846,320 @@ function closeVersions(){
   versionsReturn=null;
 }
 
+/* ---- Budget Assistant ----
+   A panel docked to the right holding ONE conversation for the session. It
+   stays open as you move around the app and follows what is on screen: on a
+   budget it reads the budget, its rule-based review and the pro formas built
+   from it; on an investment analysis it reads the analysis, its drivers and
+   the budget it came from. On a page with neither (Home, the lists) it keeps
+   talking about the last one you had open. So you can ask about a pro forma,
+   open its budget and keep going without losing the thread.
+
+   The conversation is held in memory only. Only the visible text of earlier
+   turns goes back as history, each earlier question tagged with what it was
+   asked about when that differs from the screen now — the server rebuilds
+   the facts for the current screen on every question, so they are never
+   stale. Unsaved edits go along as a draft, because "why is this number what
+   it is" is about the number on screen.
+
+   The panel is not a dialog: it does not trap focus or lock the page, so the
+   budget can be read and edited beside it. */
+let aiTurns=[],aiConv=0,aiFocus=null,aiBusy=false,aiReturn=null;
+const AI_SUGGEST={
+  budget:['How was the total project cost calculated?','Where might this budget be wrong, or what is it missing?',
+    'What other ways could this property make money?','How does the pro forma look, and what is hurting the returns?',
+    'What changed since the previous version, and why did the total move?',
+    'How does this compare to my other budgets on a per-unit and per-SF basis?'],
+  analysis:['Why are the returns what they are? What is hurting them most?','What would most improve the IRR?',
+    'What other ways could this property make money?','Is this pro forma consistent with its budget?',
+    'Which assumptions here are aggressive or risky?','Is the debt sized sensibly for this NOI?']
+};
+/* Reasoning effort, picked per question and remembered per browser. The
+   server accepts exactly these three; xhigh and max think for longer than a
+   request may run, so they are not offered here. Until someone picks, nothing
+   is sent and the ANTHROPIC_EFFORT setting applies; the chip shows the effort
+   the server last reported using (Medium before the first answer, which is
+   that setting's default). */
+const AI_EFFORTS=[
+  {v:'low',label:'Low',help:'Fastest. Good for lookups and quick explanations.'},
+  {v:'medium',label:'Medium',help:'Balanced. The default for most questions.'},
+  {v:'high',label:'High',help:'Most thorough. Slower — a long answer may be cut short.'}];
+let aiEffort=(()=>{try{const v=localStorage.getItem('fsAiEffort');
+  return AI_EFFORTS.some(e=>e.v===v)?v:null;}catch(_){return null;}})();
+let aiEffortShown=aiEffort||'medium';
+const effortLabel=v=>{const e=AI_EFFORTS.find(x=>x.v===v);return e?e.label:String(v).charAt(0).toUpperCase()+String(v).slice(1);};
+const AI_ICON={
+  spark:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9z"/><path d="M19 15l.9 2.6 2.6.9-2.6.9L19 22l-.9-2.6-2.6-.9 2.6-.9z" opacity=".7"/></svg>',
+  arrow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>',
+  alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9.5"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+};
+function budgetFocus(){
+  if(!doc||!doc.projectId)return null;
+  const pid=doc.projectId;
+  return {kind:'budget',id:pid,key:'budget:'+pid,title:pid,name:doc.name||pid,
+    label:'budget '+pid+(doc.name&&doc.name!==pid?' "'+doc.name+'"':''),
+    getDraft:()=>(dirty&&doc&&doc.projectId===pid)?doc:null};
+}
+function analysisFocus(ctx){
+  if(!ctx)return null;
+  const name=ctx.name||'Investment Analysis';
+  return {kind:'analysis',id:ctx.id||null,key:'analysis:'+(ctx.id||'unsaved'),title:name,name,
+    label:'investment analysis "'+name+'"',getDraft:ctx.getDraft||(()=>null)};
+}
+// What is on screen right now, or null on a page that is about neither.
+function aiScreenFocus(){
+  if(DOC_PAGES.includes(currentPage))return budgetFocus();
+  if(currentPage==='analysis'&&window.FSInvestmentUI&&FSInvestmentUI.aiContext)
+    return analysisFocus(FSInvestmentUI.aiContext());
+  return null;
+}
+function openAssistant(){
+  const f=budgetFocus();
+  if(!f){toast('Open a budget first');return;}
+  showAssistant(f);
+}
+/* The investment-analysis module calls this through its adapter. ctx is
+   {id, name, getDraft}; an analysis not yet saved has no id and is asked
+   about from its on-screen input alone. */
+function openAnalysisAssistant(ctx){
+  const f=analysisFocus(ctx);
+  if(f)showAssistant(f);
+}
+function assistantOpen(){return document.getElementById('assistantPanel').classList.contains('on');}
+function paintAiHeader(){
+  const f=aiFocus;if(!f)return;
+  const onScreen=aiScreenFocus();
+  document.getElementById('aiSub').textContent=(onScreen&&onScreen.key===f.key?'':'Last opened · ')
+    +(f.kind==='budget'?(f.name&&f.name!==f.title?f.title+' · '+f.name:f.title):'Investment analysis · '+f.title);
+  document.getElementById('aiQ').placeholder=f.kind==='budget'?'Ask about this budget…':'Ask about this analysis…';
+}
+function showAssistant(f){
+  aiFocus=f;
+  const panel=document.getElementById('assistantPanel');
+  if(!panel.classList.contains('on'))aiReturn=document.activeElement;
+  panel.classList.add('on');panel.setAttribute('aria-hidden','false');
+  document.body.classList.add('ai-docked');
+  paintAiHeader();paintEffort();renderAssistant();aiComposerChanged();
+  document.getElementById('aiQ').focus();
+}
+function closeAssistant(){
+  const panel=document.getElementById('assistantPanel');
+  if(!panel.classList.contains('on'))return;
+  closeEffortMenu(false);
+  const hadFocus=panel.contains(document.activeElement);
+  panel.classList.remove('on');panel.setAttribute('aria-hidden','true');
+  document.body.classList.remove('ai-docked');
+  if(hadFocus&&aiReturn&&document.body.contains(aiReturn))aiReturn.focus();
+  aiReturn=null;
+}
+/* Follow the screen. Called by go() on every page change (and once more after
+   it, since a budget or analysis can finish loading after the page shows) and
+   by the analysis module whenever it renders. A page about neither keeps the
+   last focus. Only a change of subject repaints the conversation. */
+function aiSyncFocus(){
+  const f=aiScreenFocus();
+  const changed=!!f&&(!aiFocus||f.key!==aiFocus.key);
+  if(f)aiFocus=f;
+  if(!assistantOpen()||!aiFocus)return;
+  paintAiHeader();
+  if(changed)renderAssistant();else paintAiBasis();
+}
+function aiFollowPage(){aiSyncFocus();setTimeout(aiSyncFocus,0);}
+function resetAssistant(){
+  if(aiBusy||!aiFocus)return;
+  aiTurns=[];aiConv++;renderAssistant();
+  document.getElementById('aiQ').focus();
+}
+function aiComposerChanged(){
+  const box=document.getElementById('aiQ');
+  box.style.height='auto';box.style.height=Math.min(box.scrollHeight,200)+'px';
+  document.getElementById('aiSend').disabled=aiBusy||!box.value.trim();
+}
+/* ---- Reasoning effort menu (a small menu of radio items) ---- */
+function paintEffort(){
+  const label=effortLabel(aiEffortShown);
+  document.getElementById('aiEffortLabel').textContent=label;
+  document.getElementById('aiEffortBtn').setAttribute('aria-label','Reasoning effort: '+label);
+  document.getElementById('aiEffortMenu').innerHTML='<div class="ai-menu-hd" aria-hidden="true">Reasoning effort</div>'
+    +AI_EFFORTS.map(e=>'<button type="button" class="ai-opt" role="menuitemradio" data-effort="'+e.v+'" aria-checked="'
+      +(e.v===aiEffortShown)+'" tabindex="-1"><b>'+e.label+'</b><span>'+e.help+'</span>'+AI_ICON.check+'</button>').join('');
+  document.querySelectorAll('#aiEffortMenu [data-effort]').forEach(b=>{b.onclick=()=>pickEffort(b.dataset.effort);});
+}
+function toggleEffortMenu(){
+  const m=document.getElementById('aiEffortMenu');
+  if(!m.hidden){closeEffortMenu(true);return;}
+  m.hidden=false;document.getElementById('aiEffortBtn').setAttribute('aria-expanded','true');
+  (m.querySelector('[aria-checked=true]')||m.querySelector('.ai-opt')).focus();
+}
+function closeEffortMenu(refocus){
+  const m=document.getElementById('aiEffortMenu');if(m.hidden)return;
+  m.hidden=true;document.getElementById('aiEffortBtn').setAttribute('aria-expanded','false');
+  if(refocus)document.getElementById('aiEffortBtn').focus();
+}
+function pickEffort(v){
+  if(!AI_EFFORTS.some(e=>e.v===v))return;
+  aiEffort=aiEffortShown=v;try{localStorage.setItem('fsAiEffort',v);}catch(_){}
+  paintEffort();closeEffortMenu(false);
+  document.getElementById('aiQ').focus();
+}
+// Keys inside the panel. Escape closes the effort menu first, then the panel;
+// it is handled here (and stopped) so the page's own Escape handling never
+// sees a key meant for the panel.
+document.getElementById('assistantPanel').addEventListener('keydown',e=>{
+  const m=document.getElementById('aiEffortMenu');
+  if(e.key==='Escape'){
+    e.preventDefault();e.stopPropagation();
+    if(!m.hidden)closeEffortMenu(true);else closeAssistant();
+    return;
+  }
+  if(!m.hidden&&(e.key==='ArrowDown'||e.key==='ArrowUp')){
+    e.preventDefault();
+    const opts=[...m.querySelectorAll('.ai-opt')],i=opts.indexOf(document.activeElement);
+    opts[(i+(e.key==='ArrowDown'?1:-1)+opts.length)%opts.length].focus();
+  }else if(!m.hidden&&e.key==='Tab'){closeEffortMenu(false);}
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.ai-effort'))closeEffortMenu(false);
+});
+function paintAiBasis(){
+  const f=aiFocus;if(!f)return;
+  const unsaved=!!f.getDraft();
+  document.getElementById('aiBasis').textContent=f.kind==='budget'
+    ?(unsaved?'This budget has unsaved changes — the assistant will read what is on screen, not the last save.'
+      :'Reads this budget as last saved, its version history, and the pro formas built from it.')
+    :(unsaved?'This analysis has unsaved changes — the assistant will read the assumptions on screen.'
+      :'Reads this analysis as last saved, plus the budget it was built from.');
+}
+function renderAssistant(){
+  const log=document.getElementById('aiLog'),f=aiFocus;if(!f)return;
+  paintAiBasis();
+  document.getElementById('aiNew').disabled=aiBusy;
+  if(!aiTurns.length){
+    const sug=AI_SUGGEST[f.kind];
+    log.innerHTML='<div class="ai-hello"><span class="ai-mark">'+AI_ICON.spark+'</span>'
+      +'<h3>Ask about '+esc(f.name)+'</h3><p>'
+      +(f.kind==='budget'
+        ?'How a figure was built, where it may be wrong or missing scope, what changed, how its pro forma performs, and how the property could earn more.'
+        :'What is driving its returns, which assumptions are risky, how it squares with its budget, and how the property could earn more.')
+      +'</p></div><div class="ai-suggest">'+sug.map((q,i)=>'<button type="button" class="ai-sug" data-ai-suggest="'+i+'"><span>'
+        +esc(q)+'</span>'+AI_ICON.arrow+'</button>').join('')+'</div>';
+    log.querySelectorAll('[data-ai-suggest]').forEach(b=>{b.onclick=()=>{
+      document.getElementById('aiQ').value=sug[+b.dataset.aiSuggest];sendAssistant();};});
+    return;
+  }
+  // A marker wherever the subject changes, so a thread that moved from a pro
+  // forma to its budget reads that way — and one at the end when the screen
+  // has moved on since the last question.
+  let about=null;
+  const marker=(label,now)=>'<div class="ai-ctx" role="note">'+(now?'Now viewing ':'About ')+esc(label)+'</div>';
+  log.innerHTML=aiTurns.map((t,i)=>{
+    if(t.role==='user'){
+      const m=t.aboutKey!==about?marker(t.aboutLabel,false):'';
+      about=t.aboutKey;
+      return m+'<div class="ai-msg user">'+esc(t.content)+'</div>';
+    }
+    if(t.error)return '<div class="ai-turn err"><span class="ai-mark">'+AI_ICON.alert+'</span><div class="ai-msg err">'
+      +esc(t.content)+'</div></div>';
+    return '<div class="ai-turn"><span class="ai-mark">'+AI_ICON.spark+'</span><div class="ai-msg bot">'+aiMarkdown(t.content)
+      +'<div class="ai-meta"><button type="button" class="ai-copy" data-ai-copy="'+i+'" title="Copy answer">'+AI_ICON.copy
+      +'<span>Copy</span></button>'+(t.meta?'<span>'+esc(t.meta)+'</span>':'')+'</div></div></div>';
+  }).join('')+(aiBusy?'<div class="ai-turn"><span class="ai-mark">'+AI_ICON.spark+'</span><div class="ai-typing">'
+    +'<span class="ai-dots"><i></i><i></i><i></i></span>Working through the numbers…</div></div>':'')
+    +(!aiBusy&&about&&about!==f.key?marker(f.label,true):'');
+  log.querySelectorAll('[data-ai-copy]').forEach(b=>{b.onclick=()=>{
+    const t=aiTurns[+b.dataset.aiCopy];if(!t)return;
+    const done=()=>{const l=b.querySelector('span');l.textContent='Copied';setTimeout(()=>{l.textContent='Copy';},1500);};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t.content).then(done,()=>toast('Copy failed'));
+    else toast('Copy is not available in this browser');
+  };});
+  const sc=document.getElementById('aiScroll');sc.scrollTop=sc.scrollHeight;
+}
+async function sendAssistant(){
+  aiSyncFocus();                     // ask about what is on screen now
+  const box=document.getElementById('aiQ'),q=box.value.trim(),f=aiFocus;
+  if(!q||aiBusy||!f)return;
+  const conv=aiConv,effort=aiEffort;
+  // History is the visible conversation only — never an error bubble. An
+  // earlier question about something other than what is on screen now says
+  // what it was about, so the model does not read it as about this record.
+  const history=aiTurns.filter(t=>!t.error).map(t=>({role:t.role,
+    content:t.role==='user'&&t.aboutKey!==f.key?'[Asked while viewing '+t.aboutLabel+'] '+t.content:t.content}));
+  aiTurns.push({role:'user',content:q,aboutKey:f.key,aboutLabel:f.label});
+  box.value='';aiBusy=true;aiComposerChanged();
+  renderAssistant();
+  const draft=f.getDraft();
+  let url,body;
+  if(f.kind==='budget'){
+    url='/api/budget/'+encodeURIComponent(f.id)+'?scope=ask';
+    body={question:q,history};if(draft)body.draft=draft;
+  }else{
+    url='/api/investment-calculations?scope=ask';
+    body={question:q,history,analysisId:f.id};if(draft)body.draftInput=draft;
+  }
+  if(effort)body.effort=effort;
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    // An expired session comes back as a redirect to the sign-in page (see api()).
+    if(r.redirected&&/\/login\.html(\?|#|$)/.test(r.url))throw new Error('Your session has ended — sign in again, then ask.');
+    let d=null;try{d=await r.json();}catch(_){}
+    // detail says where the time went ("gathering context 1.2s; call 1: 33.0s,
+    // deadline") — the part an administrator needs to act on a slow answer.
+    if(!r.ok||!d||!d.ok)throw new Error(((d&&d.message)||('The assistant could not answer (HTTP '+r.status+').'))
+      +(d&&d.detail?' ('+d.detail+')':''));
+    if(aiConv!==conv)return;      // a new conversation was started meanwhile; drop the late answer
+    const used=d.effort||effort;
+    if(!aiEffort&&d.effort&&aiEffortShown!==d.effort){aiEffortShown=d.effort;paintEffort();}
+    aiTurns.push({role:'assistant',content:d.answer+(d.cutShortForTime
+        ?'\n\n_(Answer cut short to fit the time limit — ask a narrower follow-up for the rest.)_'
+        :d.truncated?'\n\n_(Answer cut short.)_':''),
+      meta:(d.basedOn==='unsaved-draft'?'From unsaved changes · ':'')+(d.toolsUsed&&d.toolsUsed.length?'Looked up: '
+        +[...new Set(d.toolsUsed)].map(t=>t.replace(/_/g,' ')).join(', ')+' · ':'')+'Claude'
+        +(used?' · '+effortLabel(used)+' reasoning':'')});
+  }catch(e){
+    if(aiConv===conv)aiTurns.push({role:'assistant',error:true,content:e.message});
+  }finally{
+    aiBusy=false;aiComposerChanged();
+    renderAssistant();
+  }
+}
+/* Markdown for the assistant's answers: ESCAPE FIRST, then a fixed set of
+   tags (paragraphs, ### headings, bullet and numbered lists, pipe tables,
+   **bold**, `code`). Escaping first is the XSS boundary — the model's text is
+   untrusted like any other user-visible string. */
+function aiMarkdown(md){
+  const inline=t=>t.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+    .replace(/(^|[^\w])_([^_]+)_(?=[^\w]|$)/g,'$1<i>$2</i>');
+  const lines=esc(String(md||'')).split(/\r?\n/);
+  let html='',para=[],list=null;
+  const flushP=()=>{if(para.length){html+='<p>'+inline(para.join(' '))+'</p>';para=[];}};
+  const flushL=()=>{if(list){html+='<'+list.tag+'>'+list.items.map(i=>'<li>'+inline(i)+'</li>').join('')+'</'+list.tag+'>';list=null;}};
+  for(let i=0;i<lines.length;i++){
+    const ln=lines[i];
+    if(/^\s*\|.*\|\s*$/.test(ln)){
+      flushP();flushL();
+      const rows=[];
+      while(i<lines.length&&/^\s*\|.*\|\s*$/.test(lines[i]))rows.push(lines[i++]);
+      i--;
+      const cells=r=>r.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+      const body=rows.filter(r=>!/^\s*\|[\s:|-]+\|\s*$/.test(r));
+      const hasHead=rows.length>1&&/^\s*\|[\s:|-]+\|\s*$/.test(rows[1]);
+      html+='<table>'+body.map((r,j)=>'<tr>'+cells(r).map(c=>(hasHead&&j===0?'<th>':'<td>')+inline(c)
+        +(hasHead&&j===0?'</th>':'</td>')).join('')+'</tr>').join('')+'</table>';
+      continue;
+    }
+    let m;
+    if((m=ln.match(/^#{1,6}\s+(.*)$/))){flushP();flushL();html+='<h4>'+inline(m[1])+'</h4>';continue;}
+    if((m=ln.match(/^\s*[-*]\s+(.*)$/))){flushP();if(!list||list.tag!=='ul'){flushL();list={tag:'ul',items:[]};}list.items.push(m[1]);continue;}
+    if((m=ln.match(/^\s*\d+[.)]\s+(.*)$/))){flushP();if(!list||list.tag!=='ol'){flushL();list={tag:'ol',items:[]};}list.items.push(m[1]);continue;}
+    if(!ln.trim()){flushP();flushL();continue;}
+    flushL();para.push(ln.trim());
+  }
+  flushP();flushL();
+  return html;
+}
+
 async function deleteBudget(pid){
   // Deletion is recoverable now: the API flags the budget, keeps its saved
   // version history, and restores it if the same project ID is saved again.
@@ -5973,6 +7173,7 @@ async function deleteBudget(pid){
 /* ============ FORMS ============ */
 function fillForms(){
   document.getElementById('pId').value=doc.projectId;
+  paintIdLock();
   document.getElementById('pName').value=doc.name;
   document.getElementById('pAddr').value=doc.address;
   // A budget saved before projects had their own ids carries no link yet; it
@@ -6002,8 +7203,8 @@ function paintIdLock(){
   const el=document.getElementById('pId');if(!el)return;
   const locked=!!(loadedId&&!templateEdit);
   el.readOnly=locked;el.classList.toggle('set-locked',locked);
-  el.title=locked?'Budget IDs can\u2019t be changed after the first save':'';
-  const h=document.getElementById('pIdLock');if(h)h.style.display=locked?'block':'none';
+  el.title=locked?'Budget IDs are fixed once saved.':'';
+  const h=document.getElementById('pIdLocked');if(h)h.style.display=locked?'block':'none';
 }
 /* `nz()` for the fee OBJECT. An old document can carry an absent
    projectCosts.dev, and `undefined.mode` is a TypeError exactly as absent
@@ -6086,6 +7287,13 @@ function toBudget(){
   pullForms();
   if(!validateId()){toast('Enter a valid budget ID (BD-0001)');document.getElementById('pId').focus();return;}
   go('budget');
+}
+/* Inputs now leads to the Impact Fees step. Same validation — the id has to be
+   real before any of the later steps mean anything. */
+function toFees(){
+  pullForms();
+  if(!validateId()){toast('Enter a valid budget ID (BD-0001)');document.getElementById('pId').focus();return;}
+  go('fees');
 }
 
 /* ============ CALC ============ */
@@ -6192,6 +7400,20 @@ function expenseMonthly(e,incomeMo){
   const tu=totUnits();
   if(e.per==='pctIncome')return nz(incomeMo)*nz(e.rate)/100;
   return nz(e.rate)*(e.per==='fixed'?(nz(e.count)||1):(e.auto?tu:nz(e.count)));
+}
+/* One expense row as every export prints it — print report, engine PDF,
+   legacy PDF and Excel all build their rows here. Each used to compute
+   rate × count itself, which printed $0 for a % of income row (its count is 0)
+   under a total that was right, so the rows did not add up to it. The amount
+   is expenseMonthly()'s, the same number the total sums; a % of income row
+   carries its rate as a percent and no count, as the screen shows it. */
+function expenseExportRow(e,incomeMo){
+  const pct=e.per==='pctIncome',mo=expenseMonthly(e,incomeMo);
+  return {label:e.label,pct,rate:nz(e.rate),
+    basis:pct?'% of income':e.per==='fixed'?'fixed / mo':'per unit',
+    rateText:pct?(+nz(e.rate).toFixed(4))+'%':null,
+    count:pct?null:e.per==='fixed'?(nz(e.count)||1):(e.auto?totUnits():nz(e.count)),
+    monthly:mo,yearly:12*mo};
 }
 function grossIncome(){
   const tu=totUnits();
@@ -6352,23 +7574,26 @@ function renderBudget(){
           <td class="calc r strong">${usd(gSum)}</td><td class="calc r">${scSum?(100*gSum/scSum).toFixed(1)+'%':'—'}</td>
           <td class="no-print"></td></tr>`);}
       if(collapsed.has(sc+'|'+it.grp))return;
-      const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0,ed=isEdited(it);
+      const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0,fl=lineFlag(it),ed=fl==='edited';
       // Every interactive control keys off lineId, not the array index: a code edit
       // can move this line to another group and a batch delete can shift every
-      // index below it, but the key stays valid across both.
-      const id=it.lineId;
-      const sel=selected.has(id);
+      // index below it, but the key stays valid across both. The id is stored
+      // data, so it is escaped into data-id and read back as this.dataset.id —
+      // never spliced into handler source, where esc() cannot help (the HTML
+      // parser decodes &#39; back into a quote before the JS runs).
+      const id=esc(it.lineId);
+      const sel=selected.has(it.lineId);
       b.insertAdjacentHTML('beforeend',`<tr class="${ed?'edited ':''}${sel?'sel':''}">
-        <td class="no-print selcell"><input type="checkbox" data-k="line.${id}.sel" ${sel?'checked':''}
-          aria-label="Select ${esc(it.desc)}" onchange="toggleSelect('${id}',this.checked,this)"></td>
+        <td class="no-print selcell"><input type="checkbox" data-k="line.${id}.sel" data-id="${id}" ${sel?'checked':''}
+          aria-label="Select ${esc(it.desc)}" onchange="toggleSelect(this.dataset.id,this.checked,this)"></td>
         <td><div class="lineitem">
-          <span class="editdot${ed?' on':''}"${ed?' title="'+esc(editReason(it))+'"':''}></span>
-          <input type="text" class="codein" data-k="line.${id}.code"
+          <span class="editdot${ed?' on':fl?' derived':''}"${fl?' title="'+esc(editReason(it))+'"':''}></span>
+          <input type="text" class="codein" data-k="line.${id}.code" data-id="${id}"
             value="${esc(it.code)}" title="CSI code — changing it files the line under the matching division"
-            aria-label="CSI code for ${esc(it.desc)}" onchange="setLineCode('${id}',this.value)">
-          <input type="text" class="descin" data-k="line.${id}.desc" value="${esc(it.desc)}" oninput="setLineDesc('${id}',this.value)">
+            aria-label="CSI code for ${esc(it.desc)}" onchange="setLineCode(this.dataset.id,this.value)">
+          <input type="text" class="descin" data-k="line.${id}.desc" data-id="${id}" value="${esc(it.desc)}" oninput="setLineDesc(this.dataset.id,this.value)">
         </div></td>
-        <td><select class="basisin" data-k="line.${id}.basis" onchange="setBasis('${id}',this.value)">
+        <td><select class="basisin" data-k="line.${id}.basis" data-id="${id}" onchange="setBasis(this.dataset.id,this.value)">
           <option value="sf" ${it.basis==='sf'?'selected':''}>Per Res SF</option>
           <option value="asf" ${it.basis==='asf'?'selected':''}>Per Amen SF</option>
           <option value="unit" ${it.basis==='unit'?'selected':''}>Per Unit</option>
@@ -6376,7 +7601,7 @@ function renderBudget(){
         <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span>${lineQtyCell(it,id,q)}</td>
         <td class="r">${lineRateCell(it,id)}</td>
         <td class="calc r strong">${usd(tot)}</td><td class="calc r">${pct.toFixed(1)}%</td>
-        <td class="no-print"><button class="btn-x" title="Remove line item" aria-label="Remove ${esc(it.desc)}" onclick="removeLine('${id}')">×</button></td></tr>`);
+        <td class="no-print"><button class="btn-x" title="Remove line item" aria-label="Remove ${esc(it.desc)}" data-id="${id}" onclick="removeLine(this.dataset.id)">×</button></td></tr>`);
     });
   });
   renderEditLegend();
@@ -6567,7 +7792,8 @@ function csiSchedule(){
   const p=parts(),divs=new Map(),soft=[],orphans=[];
   doc.lines.filter(l=>scopeActive(l.scope)).forEach(l=>{
     const row={code:l.code,desc:l.desc,scope:l.scope,grp:l.grp,basis:l.basis,
-               qty:lineQty(l),rate:l.unit,total:lineQty(l)*l.unit,edited:isEdited(l)};
+               qty:lineQty(l),rate:l.unit,total:lineQty(l)*l.unit,
+               edited:lineFlag(l)==='edited',derived:isDerived(l)};
     if(l.scope==='soft'){soft.push(row);return;}
     const k=csiDivKey(l.code);
     if(!k){orphans.push(row);return;}
@@ -6888,8 +8114,9 @@ function renderSummary(){
 /* ============ GUARD RAILS ============
    The rail arithmetic lives in guardrails.js, which the API requires as a
    byte-identical copy — the browser never owns a threshold or a formula, only
-   the presentation. The policy travels with the budget template (doc.guardrails)
-   so publishing a template publishes the rails. */
+   the presentation. The browser judges by the document's own type; the API
+   judges by DEFAULT_POLICY for the type it has STORED and ignores
+   doc.guardrails, so a hand-built document cannot pick its own rails. */
 /* " (3% of total project cost)" — appended to a fee label wherever the number
    alone would hide that it is a rate, which is every export. */
 function feeBasisNote(k){
@@ -6939,7 +8166,7 @@ function renderGuardrails(){
         :b.severity==='error'?'<span class="badge bad">Blocking</span>'
         :'<span class="badge warn">Review</span>'}</td>
       <td class="no-print r">${b.ok||b.acked?''
-        :`<button class="btn btn-ghost btn-sm" onclick="openAckDialog('${esc(b.id)}')">Override…</button>`}</td>
+        :`<button class="btn btn-ghost btn-sm" data-id="${esc(b.id)}" onclick="openAckDialog(this.dataset.id)">Override…</button>`}</td>
     </tr>`;
   host.innerHTML=
     (r.blocking?`<div class="gr-alert bad"><b>${r.blocking} guard rail${r.blocking===1?'':'s'} block${r.blocking===1?'s':''} this save.</b>
@@ -6950,7 +8177,7 @@ function renderGuardrails(){
     +`<div style="overflow-x:auto"><table class="tbl gr-tbl">
       <thead><tr><th style="width:42%">Rail</th><th class="r">Actual</th><th class="r">Guard Rail</th><th class="r">State</th><th class="no-print"></th></tr></thead>
       <tbody>${r.rails.map(row).join('')}</tbody></table></div>`
-    +`<div class="note" style="margin-top:10px">Thresholds ship with the budget template, so publishing a template version publishes the rails. A rail whose denominator is zero is not evaluated and never blocks.</div>`;
+    +`<div class="note" style="margin-top:10px">Thresholds are the built-in ones for the budget’s type, and the server applies the same table when it saves. A rail with nothing to judge yet is not evaluated and never blocks.</div>`;
 }
 /* A rail's name leads to the field that drives it. The target is found the
    way renderGuardrails marks it — by data-gr, never by position — on the
@@ -6991,7 +8218,11 @@ function jumpToRail(path){
    budget summary and every export so the decision is never invisible. Gated to
    director / super_admin — a rail anyone can wave through is not a rail. */
 function canAckGuardrail(){
-  return US.appRole==='director'||US.appRole==='super_admin';
+  if(US.appRole==='director'||US.appRole==='super_admin')return true;
+  // The platform super_admin role counts too — the same rule the API applies
+  // when it decides whether to accept a new override on save.
+  const roles=(principal&&principal.userRoles)||[];
+  return roles.includes('super_admin');
 }
 function openAckDialog(id){
   if(!canAckGuardrail()){
@@ -7026,6 +8257,9 @@ function removeAck(id){
 function recalc(){
   if(!doc)return;
   pullForms();
+  // A schedule can carry a %-of-hard-cost fee, so the fee total is not
+  // independent of the rest of the budget. Re-derive before anything renders.
+  applyImpactFees();
   withFocus(()=>{renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();renderSiteMetrics();
     if(currentPage==='csi')renderCsi();});
 }
@@ -7090,8 +8324,12 @@ async function saveBudget(show,opts){
   // The field is locked, so this is a document changed some other way. Put
   // the id back rather than write this budget over a different one.
   if(chk.reason==='id-locked'){
+    // Same words as the API's 409 budget_id_changed (budget-save-rules.js):
+    // the browser refuses first, the server would refuse the same way.
+    const was=doc.projectId;
     doc.projectId=loadedId;fillForms();
-    toast('Budget IDs can\u2019t be changed after the first save — use + Add Alternate Budget on its project to copy it.');
+    toast('This budget is '+loadedId+'. A budget\u2019s ID is fixed once it is saved, so it cannot be saved as '
+      +was+' — nothing was saved. To price it another way, use Add Alternate on its project.');
     return;
   }
   // Guard rails refuse the save before anything is serialized. The endpoint
@@ -7123,6 +8361,10 @@ async function saveBudget(show,opts){
     // carries one: a save that does not mention a project leaves the existing
     // link alone, which is what every edit of an older budget does.
     projectKey:doc.projectKey||undefined,
+    // The id this budget exists under. The API refuses an update to any other
+    // id (409 budget_id_changed), so a changed Budget ID can never overwrite
+    // a different budget. Absent until the first save, when it is a create.
+    originalId:loadedId||undefined,
     guardrailStatus:gr.status,guardrailBreachCount:gr.breaches.length};
   // Everything the save needs is captured NOW: the body is serialised before
   // the await, so an edit made while it is in flight is not in it — and must
@@ -7169,6 +8411,24 @@ function saveFailed(e,show){
   if(e.status===422&&e.body&&e.body.error==='guardrail_breach'){
     go('budget');renderGuardrails();
     document.getElementById('sec-guardrails').scrollIntoView({block:'start'});
+    toast(e.message);
+    return;
+  }
+  // A guard-rail override this account is not allowed to record. The
+  // dialog already refuses it; reaching here means the document carried one
+  // in anyway. Show the server's reason against the card it concerns.
+  if(e.status===403&&e.body&&e.body.error==='override_not_allowed'){
+    go('budget');renderGuardrails();
+    document.getElementById('sec-guardrails').scrollIntoView({block:'start'});
+    toast(e.message);
+    return;
+  }
+  // The Budget ID was changed on a budget that already exists. The field
+  // is locked, so this is a forced edit; put the id back rather than let
+  // the next save try again.
+  if(e.status===409&&e.body&&e.body.error==='budget_id_changed'){
+    if(loadedId){doc.projectId=loadedId;fillForms();validateId();}
+    go('input');
     toast(e.message);
     return;
   }
@@ -7402,6 +8662,15 @@ function exportPDF(){
   setTimeout(()=>{document.body.classList.remove('printing');
     document.getElementById('printDoc').innerHTML='';},600);
 }
+/* The impact-fee provenance line on the printed report. Absent entirely when no
+   jurisdiction was picked — a budget priced without a fee schedule should not
+   grow an empty row claiming otherwise. */
+function impactFeeReportRow(){
+  const r=feeResult();
+  if(!r.hasSchedule&&!r.total)return '';
+  return rptRow('&nbsp;&nbsp;Impact &amp; Tap Fees — '+esc(FSImpactFees.provenance(r)),
+    usd(r.total),'sub');
+}
 function rptRow(k,v,cls){return '<div class="rr '+(cls||'')+'"><span>'+k+'</span><span class="v">'+v+'</span></div>';}
 function buildReport(s){
   const p=parts(),g=grossIncome(),tu=totUnits(),tsf=doc.resSF+doc.amenSF,sm=siteMetrics();
@@ -7443,6 +8712,11 @@ function buildReport(s){
       +rptRow('Contract Sum (Construction)',usd(p.contract),'grand')
       +'<div style="height:10px"></div>'
       +rptRow('Soft Costs',usd(p.soft),'sub')
+      /* Impact fees are one line inside soft costs, but they are the line a
+         lender asks about, so the report states where the figure came from.
+         Read from the document, never from the fee page's rendered table —
+         exports build from the data model (AGENTS ground rule 6). */
+      +impactFeeReportRow()
       +rptRow('Land',usd(doc.projectCosts.land),'sub')
       +rptRow('Developer Fee'+feeBasisNote('dev'),usd(p.fee.dev),'sub')
       +rptRow('Marketing / Brokerage'+feeBasisNote('mkt'),usd(p.fee.mkt),'sub')
@@ -7496,9 +8770,10 @@ function buildReport(s){
     doc.other.forEach(o=>{const c=o.auto?tu:o.count;h+='<tr><td>'+esc(o.label)+'</td><td class="muted">gross income</td>'
       +'<td class="r mono">'+usd(o.rate)+'</td><td class="r mono">'+num(c)+'</td><td class="r mono">'+usd(o.rate*c)+'</td><td class="r mono">'+usd(12*o.rate*c)+'</td></tr>';});
     h+='<tr class="sub-tot"><td>Total gross other income</td><td></td><td></td><td></td><td class="r mono">'+usd(g.otherMo)+'</td><td class="r mono">'+usd(12*g.otherMo)+'</td></tr>';
-    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-      h+='<tr><td>'+esc(e.label)+'</td><td class="muted">'+(e.per==='fixed'?'fixed / mo':'per unit')+'</td>'
-      +'<td class="r mono">'+usd(e.rate)+'</td><td class="r mono">'+num(c)+'</td><td class="r mono">('+usd(e.rate*c)+')</td><td class="r mono">('+usd(12*e.rate*c)+')</td></tr>';});
+    doc.expenses.forEach(e=>{const x=expenseExportRow(e,g.incomeMo);
+      h+='<tr><td>'+esc(x.label)+'</td><td class="muted">'+x.basis+'</td>'
+      +'<td class="r mono">'+(x.pct?x.rateText:usd(x.rate))+'</td><td class="r mono">'+(x.pct?'':num(x.count))+'</td>'
+      +'<td class="r mono">('+usd(x.monthly)+')</td><td class="r mono">('+usd(x.yearly)+')</td></tr>';});
     h+='<tr class="sub-tot"><td>Total Operating Expenses</td><td></td><td></td><td></td><td class="r mono">('+usd(g.expMo)+')</td><td class="r mono">('+usd(12*g.expMo)+')</td></tr>';
     h+='<tr class="tot"><td>Net income (rent + net other)</td><td></td><td></td><td></td><td class="r mono">'+usd(g.rentMo+g.netOtherMo)+'</td><td class="r mono">'+usd(g.netYr)+'</td></tr>';
     h+='</tbody></table></section>';
@@ -7515,8 +8790,11 @@ function buildReport(s){
         if(it.grp!==last){last=it.grp;
           const gs=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
           h+='<tr class="grp"><td colspan="4">'+esc(it.grp)+'</td><td class="r mono">'+usd(gs)+'</td></tr>';}
-        const q=lineQty(it);
-        h+='<tr><td><span class="mono code">'+esc(it.code)+'</span> '+esc(it.desc)+(s.edits&&isEdited(it)?' <span class="edited-mark">edited</span>':'')+'</td>'
+        const q=lineQty(it),fl=s.edits?lineFlag(it):'';
+        // The derived line's provenance is already in its description, so its
+        // mark only has to say it is not a manual edit.
+        h+='<tr><td><span class="mono code">'+esc(it.code)+'</span> '+esc(it.desc)
+          +(fl==='edited'?' <span class="edited-mark">edited</span>':fl==='derived'?' <span class="derived-mark">derived</span>':'')+'</td>'
           +'<td class="muted">'+esc(BASIS_LABEL[it.basis]||it.basis)+'</td><td class="r mono">'+num(q)+'</td>'
           +'<td class="r mono">'+usd2(it.unit)+'</td><td class="r mono">'+usd(q*it.unit)+'</td></tr>';
       });
@@ -7673,9 +8951,11 @@ function buildBudgetFsdoc(s){
     }
     if(doc.expenses.length){
       blocks.push({kind:'table',columns:cols,
-        rows:doc.expenses.map(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-          return {line:e.label,basis:e.per==='fixed'?'fixed / mo':'per unit',rate:e.rate,count:c,
-            monthly:-e.rate*c,yearly:-12*e.rate*c};}),
+        // A % of income row's rate is a preformatted '12%' string (strings pass
+        // every renderer verbatim) and its count null, which prints as a dash.
+        rows:doc.expenses.map(e=>{const x=expenseExportRow(e,g.incomeMo);
+          return {line:x.label,basis:x.basis,rate:x.pct?x.rateText:x.rate,count:x.count,
+            monthly:-x.monthly,yearly:-x.yearly};}),
         totals:{line:'Total Operating Expenses',monthly:-g.expMo,yearly:-12*g.expMo}});
     }
     blocks.push({kind:'kv',rows:[kv('Net Income (Rent + Net Other), Monthly',g.rentMo+g.netOtherMo,'money'),
@@ -7686,21 +8966,24 @@ function buildBudgetFsdoc(s){
   if(s.budget){
     const cols=[{key:'item',label:'Line Item'},{key:'basis',label:'Basis'},
       {key:'qty',label:'Qty',fmt:'qty'},{key:'rate',label:'Rate',fmt:'money2'},{key:'total',label:'Total',fmt:'money'}];
-    const blocks=[];let anyEdited=false;
+    const blocks=[];let anyEdited=false;const derived=[];
     activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
       blocks.push({kind:'group',label:SCOPES[sc].toUpperCase()+'   ·   '+usd(scopeSum(sc))});
       [...new Set(ls.map(l=>l.grp))].forEach(gp=>{
         const rows=ls.filter(l=>l.grp===gp).map(it=>{
-          const q=lineQty(it),ed=s.edits&&isEdited(it);if(ed)anyEdited=true;
-          return {item:it.code+'  '+it.desc+(ed?' *':''),basis:BASIS_LABEL[it.basis]||it.basis,
-            qty:q,rate:it.unit,total:q*it.unit};});
+          const q=lineQty(it),fl=s.edits?lineFlag(it):'';
+          if(fl==='edited')anyEdited=true;
+          if(fl==='derived')derived.push(it);
+          return {item:it.code+'  '+it.desc+(fl==='edited'?' *':fl==='derived'?' (derived)':''),
+            basis:BASIS_LABEL[it.basis]||it.basis,qty:q,rate:it.unit,total:q*it.unit};});
         const gs=ls.filter(l=>l.grp===gp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
         blocks.push({kind:'table',columns:cols,rows,
           totals:{item:gp,total:gs}});
       });
     });
     if(anyEdited)blocks.push({kind:'note',text:'* marks a line manually edited away from the pricing library.'});
+    derived.forEach(it=>blocks.push({kind:'note',text:derivedNote(it)}));
     sheets.push({key:'budget',name:'Budget Detail',title:'Budget Detail',blocks});
   }
 
@@ -7838,8 +9121,9 @@ function legacyBudgetPdfDoc(s){
     doc.other.forEach(o=>{const c=o.auto?tu:o.count;
       rows.push(tRow(o.label,['gross income',o.rate,c,o.rate*c,12*o.rate*c],F));});
     rows.push(tRow('Total Gross Other Income',[undefined,undefined,undefined,g.otherMo,12*g.otherMo],F,true));
-    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-      rows.push(tRow(e.label,[e.per==='fixed'?'fixed / mo':'per unit',e.rate,c,-e.rate*c,-12*e.rate*c],F));});
+    // undefined prints a blank cell: a % of income row has no count.
+    doc.expenses.forEach(e=>{const x=expenseExportRow(e,g.incomeMo);
+      rows.push(tRow(x.label,[x.basis,x.pct?x.rateText:x.rate,x.pct?undefined:x.count,-x.monthly,-x.yearly],F));});
     rows.push(tRow('Total Operating Expenses',[undefined,undefined,undefined,-g.expMo,-12*g.expMo],F,true));
     rows.push(tRow('Net Income (Rent + Net Other)',[undefined,undefined,undefined,g.rentMo+g.netOtherMo,g.netYr],F,true));
     sheets.push({key:'other',name:'Income',title:'Other Income & Operating Expenses',blocks:[
@@ -7848,7 +9132,7 @@ function legacyBudgetPdfDoc(s){
 
   if(s.budget){
     const F=['text','qty','money2','money'];
-    const rows=[];let anyEdited=false;
+    const rows=[];let anyEdited=false;const derived=[];
     activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
       rows.push(band(SCOPES[sc],[null,null,null,scopeSum(sc)],F,true));
@@ -7857,13 +9141,16 @@ function legacyBudgetPdfDoc(s){
         if(it.grp!==last){last=it.grp;
           const gs=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
           rows.push(band(it.grp,[null,null,null,gs],F,false));}
-        const q=lineQty(it),ed=s.edits&&isEdited(it);if(ed)anyEdited=true;
-        rows.push(tRow(it.code+'  '+it.desc+(ed?' *':''),
+        const q=lineQty(it),fl=s.edits?lineFlag(it):'';
+        if(fl==='edited')anyEdited=true;
+        if(fl==='derived')derived.push(it);
+        rows.push(tRow(it.code+'  '+it.desc+(fl==='edited'?' *':fl==='derived'?' (derived)':''),
           [BASIS_LABEL[it.basis]||it.basis,q,it.unit,q*it.unit],F));
       });
     });
     const blocks=[{kind:'table',headers:['Basis','Qty','Rate','Total'],rows}];
     if(anyEdited)blocks.push({kind:'note',text:'* marks a line manually edited away from the pricing library.'});
+    derived.forEach(it=>blocks.push({kind:'note',text:derivedNote(it)}));
     sheets.push({key:'budget',name:'Budget Detail',title:'Budget Detail',blocks});
   }
 
@@ -8234,8 +9521,11 @@ async function exportExcel(){
       styleBody(ws.addRow([o.label,'gross income',o.rate,c,o.rate*c,12*o.rate*c]),f);});
     groupRow(ws,'Total Gross Other Income',g.otherMo,6);
     groupRow(ws,'OPERATING EXPENSES',null,6,true);
-    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-      styleBody(ws.addRow([e.label,e.per==='fixed'?'fixed / mo':'per unit',e.rate,c,e.rate*c,12*e.rate*c]),f);});
+    // A % of income row keeps a NUMERIC rate cell — the fraction, under a
+    // percent format — and leaves Count empty, so the sheet still calculates.
+    doc.expenses.forEach(e=>{const x=expenseExportRow(e,g.incomeMo);
+      const r=styleBody(ws.addRow([x.label,x.basis,x.pct?x.rate/100:x.rate,x.count,x.monthly,x.yearly]),f);
+      if(x.pct){r.getCell(3).numFmt=Number.isInteger(x.rate)?'0%':'0.0#%';r.getCell(4).border=box;}});
     groupRow(ws,'Total Operating Expenses',g.expMo,6);
     ws.addRow([]);
     groupRow(ws,'Net Other Income (Gross − Expenses)',g.netOtherMo,6);
@@ -8264,11 +9554,16 @@ async function exportExcel(){
       ls.forEach(it=>{
         if(it.grp!==last){last=it.grp;
           groupRow(ws,it.grp,doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0),span);}
-        const q=lineQty(it),ed=isEdited(it);
+        // A derived line is 'Derived', never 'YES', and has no Library Rate: its
+        // baseUnit is the $/SF placeholder the fee replaced, not a rate it was
+        // edited away from. Its Provenance names the schedule it came from.
+        const q=lineQty(it),fl=lineFlag(it),ed=fl==='edited',dv=fl==='derived';
         const r=styleBody(ws.addRow([it.code,it.desc,BASIS_LABEL[it.basis]||it.basis,q,it.unit,q*it.unit,
-          ...(s.edits?[ed?'YES':'',ed?(+it.baseUnit||0):null]:[]),'parametric-estimate']),f);
+          ...(s.edits?[ed?'YES':dv?'Derived':'',ed?(+it.baseUnit||0):null]:[]),
+          dv?editReason(it):'parametric-estimate']),f);
         r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
         if(s.edits&&ed)r.getCell(7).font=F(9,{bold:true,color:{argb:'FF'+BRAND.edit}});
+        if(s.edits&&dv)r.getCell(7).font=F(9,{bold:true,color:{argb:'FF'+BRAND.green}});
       });
     });
     totalRow(ws,'CONSTRUCTION HARD COST',p.hard,span);
@@ -8644,7 +9939,11 @@ function endBoot(){
       exportDefaults:exportDefaultsFor,
       rememberExport:rememberExportOptions,
       activity:postActivity,
-      timeFormat:()=>window.__fsTimeFormat||'12h'
+      timeFormat:()=>window.__fsTimeFormat||'12h',
+      // The Budget Assistant, focused on the open analysis (index.html owns the
+      // panel); aiFocusChanged lets an open panel follow the analysis on screen.
+      askAI:openAnalysisAssistant,
+      aiFocusChanged:()=>aiSyncFocus()
     });
     await initAuth();
     await loadUserSettings();   // account settings apply before anything paints

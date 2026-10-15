@@ -163,7 +163,10 @@ function rowFor(p) {
   var total = conv && p.projectAmount !== null ? p.projectAmount : p.liveProjectCost;
   // The ID and the name are two facts, so they are two columns. The address
   // stays with the name as its secondary line — it identifies the same thing.
-  return '<tr class="pj-row" onclick="FSProjects.open(\'' + esc(p.projectId) + '\')">'
+  // Ids ride in an escaped data-id, never inside a quoted string in handler
+  // source: the HTML parser decodes &#39; back to a quote before the JS runs,
+  // so esc() alone cannot keep data out of the code.
+  return '<tr class="pj-row" data-id="' + esc(p.projectId) + '" onclick="FSProjects.open(this.dataset.id)">'
     + '<td onclick="event.stopPropagation()">' + star('project', p.projectId, p.name || p.projectId) + '</td>'
     + '<td><span class="pj-id mono">' + esc(p.projectId) + '</span>'
       + (p.breachCount ? ' <span class="badge bad" title="' + p.breachCount + ' budget(s) outside a guard rail">'
@@ -193,7 +196,7 @@ function cardFor(p) {
   var contract = conv && p.contractAmount !== null ? p.contractAmount : p.liveContractSum;
   var s = PROJECT_STATUSES.indexOf(p.status) === -1 ? 'Lead' : p.status;
   return '<div class="hm-card-wrap">'
-    + '<button class="hm-card" onclick="FSProjects.open(\'' + esc(p.projectId) + '\')">'
+    + '<button class="hm-card" data-id="' + esc(p.projectId) + '" onclick="FSProjects.open(this.dataset.id)">'
     + '<div class="hm-card-hd"><div class="hm-card-top">'
     + '<span class="hm-kind hm-kind-project">Project</span>'
     + '<span class="hm-id mono">' + esc(p.projectId) + '</span></div>'
@@ -224,7 +227,7 @@ function statCard(k, v, sub) {
 function statusChip(p) {
   var s = PROJECT_STATUSES.indexOf(p.status) === -1 ? 'Lead' : p.status;
   return '<button class="st-chip ' + (STATUS_CLS[s] || 'st-draft') + '"'
-    + ' onclick="event.stopPropagation();FSProjects.openStatusMenu(this,\'' + esc(p.projectId) + '\')"'
+    + ' data-id="' + esc(p.projectId) + '" onclick="event.stopPropagation();FSProjects.openStatusMenu(this,this.dataset.id)"'
     + ' title="Change project status" aria-haspopup="menu">' + esc(s) + '</button>';
 }
 
@@ -322,11 +325,10 @@ function favoritesCard(favB, favA) {
 }
 
 function miniCard(kind, id, name, money, moneyLab, status) {
-  var openAttr = kind === 'budget'
-    ? 'FSProjects.openBudget(\'' + esc(String(id).replace(/'/g, '')) + '\')'
-    : 'FSProjects.openAnalysis(\'' + esc(String(id).replace(/'/g, '')) + '\')';
+  var openAttr = 'data-id="' + esc(id) + '" onclick="'
+    + (kind === 'budget' ? 'FSProjects.openBudget' : 'FSProjects.openAnalysis') + '(this.dataset.id)"';
   return '<div class="hm-card-wrap is-fav">'
-    + '<button class="hm-card" onclick="' + openAttr + '">'
+    + '<button class="hm-card" ' + openAttr + '>'
     + '<div class="hm-card-hd"><div class="hm-card-top">'
     + '<span class="hm-kind hm-kind-' + kind + '">' + (kind === 'budget' ? 'Budget' : 'Analysis') + '</span>'
     + '<span class="hm-id mono">' + esc(kind === 'budget' ? id : '') + '</span></div>'
@@ -361,7 +363,7 @@ function budgetsCard(p, budgets) {
         + '<th>Guard Rails</th><th class="r">Contract Sum</th><th class="r">Total Project Cost</th>'
         + '<th class="no-print"></th></tr></thead><tbody>'
         + budgets.map(function (b) {
-          return '<tr class="pj-row" onclick="FSProjects.openBudget(\'' + esc(b.projectId) + '\')">'
+          return '<tr class="pj-row" data-id="' + esc(b.projectId) + '" onclick="FSProjects.openBudget(this.dataset.id)">'
             + '<td onclick="event.stopPropagation()">' + star('budget', b.projectId, b.name) + '</td>'
             + '<td><span class="pj-id mono">' + esc(b.projectId) + '</span>'
               + (b.isPrimary ? ' <span class="badge ok">Primary</span>'
@@ -415,7 +417,7 @@ function analysesCard(analyses, budgets) {
         + analyses.map(function (a) {
           var inaId = A.displayChildId && a.itemNumber && detail && detail.project
             ? A.displayChildId('INA', Number(String(detail.project.projectId).slice(-4)), a.itemNumber) : '';
-          return '<tr class="pj-row" onclick="FSProjects.openAnalysis(\'' + esc(a.analysisId) + '\')">'
+          return '<tr class="pj-row" data-id="' + esc(a.analysisId) + '" onclick="FSProjects.openAnalysis(this.dataset.id)">'
             + '<td onclick="event.stopPropagation()">' + star('analysis', a.analysisId, a.name) + '</td>'
             + '<td><div class="pj-name">' + esc(a.name || 'Untitled') + '</div>'
               + (inaId ? '<div class="pj-addr mono">' + esc(inaId) + '</div>' : '') + '</td>'

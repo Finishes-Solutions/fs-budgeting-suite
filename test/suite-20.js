@@ -172,7 +172,10 @@ async function nbFinish(p,project,id,name){
 
  // ---------- 7. an override rides into the export ----------
  await p.evaluate(()=>{
-   doc.expenses=[];
+   // A schedule filled in at zero: a real 0% that breaches. (NO rows at all
+   // is "not entered yet" and is not judged — D6 — so it could not carry an
+   // override into the report.)
+   doc.expenses=[{label:'Operations',per:'pctIncome',rate:0,count:0,auto:false}];
    doc.guardrailAcks=[{id:'opexRatio',reason:'Master-metered, billed by the ground lessor',
      byId:'u',byName:'Tester',at:new Date().toISOString()}];
    touch();
@@ -220,6 +223,95 @@ async function nbFinish(p,project,id,name){
     String(await p.evaluate(()=>doc.opexSchemaVersion)));
  ok('the appended categories start at zero, never guessed',
     await p.evaluate(()=>doc.expenses.slice(1).every(e=>e.rate===0)));
+
+ // ---------- 9. income but no expense rows is not judged (D6) ----------
+ const noRows=await p.evaluate(()=>{
+   const keep=doc.expenses;
+   doc.expenses=[];
+   const r={ids:guardrails().rails.map(x=>x.id),income:grossIncome().grossYr,schema:doc.opexSchemaVersion};
+   doc.expenses=keep;
+   return r;
+ });
+ ok('a budget with income and no expense rows is not judged on operating expenses',
+    noRows.income>0 && noRows.schema>=2 && !noRows.ids.includes('opexRatio'), JSON.stringify(noRows));
+
+ // ---------- 10. the document cannot choose its own rails (D7) ----------
+ // TST-7202 is saved, Multifamily, with its ratio in range. Drive it out of
+ // range and try each forgery a hand-built save could carry.
+ const forge=await p.evaluate(async()=>{
+   const cur=await (await fetch('/api/budget/TST-7202')).json();
+   cur.expenses=[{label:'Operations',per:'pctIncome',rate:10,count:0,auto:false}];
+   cur.guardrailAcks=[];
+   const send=async(meta,d)=>{
+     const r=await fetch('/api/budget/TST-7202',{method:'PUT',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({meta:Object.assign({projectId:'TST-7202',name:'Rail Tower',status:'Draft'},meta),doc:d})});
+     return {status:r.status,body:await r.json().catch(()=>null)};
+   };
+   return {
+     policy: await send({type:'Multifamily'},Object.assign({},cur,{guardrails:{Multifamily:{}}})),
+     docType: await send({type:'Multifamily'},Object.assign({},cur,{type:'Blank'})),
+     metaType: await send({type:'Blank'},Object.assign({},cur,{type:'Blank'}))
+   };
+ });
+ ok('a forged doc.guardrails does not switch the rails off',
+    forge.policy.status===422&&forge.policy.body.error==='guardrail_breach', JSON.stringify(forge.policy));
+ ok('a forged doc.type of Blank is judged by the stored type',
+    forge.docType.status===422&&forge.docType.body.error==='guardrail_breach', JSON.stringify(forge.docType));
+ ok('and an existing budget cannot be saved into Blank',
+    forge.metaType.status===409&&forge.metaType.body.error==='type_change_not_allowed', JSON.stringify(forge.metaType));
+
+ // ---------- 11. only a director / super admin may record an override (D7) ----------
+ // First, as the seeded super admin, store a budget that carries one.
+ const seeded=await p.evaluate(async()=>{
+   const d=await (await fetch('/api/budget/TST-7202')).json();
+   d.projectId='TST-7204'; d.name='Overridden Tower';
+   d.expenses=[{label:'Operations',per:'pctIncome',rate:10,count:0,auto:false}];
+   d.guardrailAcks=[{id:'opexRatio',reason:'Ground lease covers taxes and insurance',byName:'Director'}];
+   const r=await fetch('/api/budget/TST-7204',{method:'PUT',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({meta:{projectId:'TST-7204',name:'Overridden Tower',status:'Draft',type:'Multifamily'},doc:d})});
+   return r.status;
+ });
+ ok('a super admin records an override', seeded===200, String(seeded));
+ // Now become an ordinary manager: no platform super_admin, AppRole manager.
+ await p.evaluate(async()=>{
+   await fetch('/api/_mock/roles',{method:'POST',body:JSON.stringify({userRoles:['anonymous','authenticated'],appRole:'manager'})});
+ });
+ await p.goto('http://127.0.0.1:8100/index.html',{waitUntil:'networkidle'}); await p.waitForTimeout(600);
+ await p.evaluate(()=>openBudget('TST-7202')); await p.waitForTimeout(900);
+ await p.evaluate(()=>{doc.expenses=[{label:'Operations',per:'pctIncome',rate:10,count:0,auto:false}];touch();});
+ await p.waitForTimeout(400);
+ await p.evaluate(()=>go('budget')); await p.waitForTimeout(300);
+ await p.click('#grBody button:has-text("Override…")'); await p.waitForTimeout(300);
+ ok('the Override… dialog is refused to a manager',
+    !(await p.locator('#ackDlg').isVisible())
+      && /director or super admin/i.test(await p.locator('#toast').textContent()),
+    await p.locator('#toast').textContent());
+ // A client that skips the dialog: the override goes straight onto the doc.
+ await p.evaluate(()=>{doc.guardrailAcks=[{id:'opexRatio',reason:'Trust me'}];touch();});
+ await p.waitForTimeout(300);
+ await p.click('.page.on button[data-save-btn]'); await p.waitForTimeout(900);
+ const toastTxt=await p.locator('#toast').textContent();
+ ok('the server refuses the new override and the save says why',
+    /Only a director or super admin can record a guard-rail override/.test(toastTxt), toastTxt);
+ ok('nothing was written',
+    await p.evaluate(async()=>((await (await fetch('/api/budget/TST-7202')).json()).guardrailAcks||[]).length===0));
+ const mgr=await p.evaluate(async()=>{
+   const d=await (await fetch('/api/budget/TST-7204')).json();
+   const send=async acks=>{
+     const x=JSON.parse(JSON.stringify(d)); x.name='Overridden Tower (edited)'; x.guardrailAcks=acks;
+     const r=await fetch('/api/budget/TST-7204',{method:'PUT',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({meta:{projectId:'TST-7204',name:x.name,status:'Draft',type:'Multifamily'},doc:x})});
+     return {status:r.status,body:await r.json().catch(()=>null)};
+   };
+   return { keep: await send(d.guardrailAcks),
+            reword: await send([{id:'opexRatio',reason:'A different story'}]) };
+ });
+ ok('an override already on the budget keeps saving for a manager', mgr.keep.status===200, JSON.stringify(mgr.keep));
+ ok('but rewording it is a new override, and refused',
+    mgr.reword.status===403&&mgr.reword.body.error==='override_not_allowed', JSON.stringify(mgr.reword));
+ await p.evaluate(async()=>{
+   await fetch('/api/_mock/roles',{method:'POST',body:JSON.stringify({userRoles:['anonymous','authenticated','pricing_admin','super_admin'],appRole:'super_admin'})});
+ });
 
  ok('No uncaught JS errors', errs.length===0, errs.join(' | '));
  await b.close();

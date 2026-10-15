@@ -221,7 +221,8 @@ var EVENT_LABEL = {
   export_pdf: 'Exported PDF', export_xlsx: 'Exported Excel', export_csv: 'Exported CSV',
   export_print: 'Printed', settings_update: 'Updated settings',
   profile_update: 'Updated profile', pricing_publish: 'Published pricing',
-  feedback_submit: 'Sent feedback', feedback_update: 'Updated feedback'
+  feedback_submit: 'Sent feedback', feedback_update: 'Updated feedback',
+  ai_ask: 'Asked the Budget Assistant'
 };
 function eventLabel(e) { return EVENT_LABEL[e] || e; }
 
@@ -250,6 +251,8 @@ function eventDetail(e) {
         ? d.changed.map(fieldPhrase).join('; ') : ''].filter(Boolean).join(' — ');
     case 'budget_status': case 'project_status': case 'budget_primary':
       return (name ? name + ' — ' : '') + (d.from || 'none') + ' → ' + (d.to || 'none');
+    case 'ai_ask':
+      return [name, d.question ? '"' + String(d.question) + '"' : ''].filter(Boolean).join(' — ');
     case 'project_delete':
       return (name ? name + ' — ' : '') + d.budgetsDeleted + ' budget'
         + (d.budgetsDeleted === 1 ? '' : 's') + ', ' + d.analysesDeleted + ' analys'
@@ -531,10 +534,13 @@ var UNTITLED = { budget: 'Untitled budget', analysis: 'Untitled analysis', proje
 function recordName(kind, rec) {
   return rec.name || UNTITLED[kind] || 'Untitled';
 }
+/* The id rides in an escaped data-id and comes back through this.dataset —
+   never inside a quoted string in the handler, where esc() is no defence (the
+   HTML parser decodes &#39; back to a quote before the JS runs). Returns the
+   whole attribute pair. */
 function openAttr(kind, rec) {
-  var id = String(recordId(kind, rec)).replace(/'/g, '');
-  if (kind === 'project') return `FSHome.openProject('${esc(id)}')`;
-  return kind === 'budget' ? `FSHome.openBudget('${esc(id)}')` : `FSHome.openAnalysis('${esc(id)}')`;
+  var fn = kind === 'project' ? 'openProject' : kind === 'budget' ? 'openBudget' : 'openAnalysis';
+  return `data-id="${esc(recordId(kind, rec))}" onclick="FSHome.${fn}(this.dataset.id)"`;
 }
 /* A project runs the deal pipeline, not the budget statuses, so its chip has
    its own vocabulary. Sharing one map would have painted "Awarded" as a Draft. */
@@ -561,9 +567,9 @@ var STAR_OUTLINE = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden=
 /* The star markup, reused by Home, the budget and analysis lists, the project
    page and both editor headers — one affordance, one behaviour, everywhere. */
 function starButton(kind, id, name, on) {
-  var safeId = String(id).replace(/'/g, '');
   return '<button class="hm-star' + (on ? ' is-on' : '') + '"'
-    + ' onclick="event.stopPropagation();FSHome.toggleFavorite(\'' + kind + '\',\'' + esc(safeId) + '\')"'
+    + ' data-kind="' + esc(kind) + '" data-id="' + esc(id) + '"'
+    + ' onclick="event.stopPropagation();FSHome.toggleFavorite(this.dataset.kind,this.dataset.id)"'
     + ' aria-pressed="' + (on ? 'true' : 'false') + '"'
     + ' aria-label="' + (on ? 'Remove ' : 'Add ') + esc(name || id) + (on ? ' from' : ' to') + ' Favorites"'
     + ' title="' + (on ? 'Remove from Favorites' : 'Add to Favorites') + '">'
@@ -587,7 +593,7 @@ function itemCard(kind, rec, meta, favorited) {
     : kind === 'budget' ? 'Total Project Cost' : 'Purchase Price';
   var star = starButton(kind, id, recordName(kind, rec), favorited);
   return `<div class="hm-card-wrap${favorited ? ' is-fav' : ''}">
-    <button class="hm-card" onclick="${openAttr(kind, rec)}">
+    <button class="hm-card" ${openAttr(kind, rec)}>
       <div class="hm-card-hd">
         <div class="hm-card-top">
           <span class="hm-kind hm-kind-${kind}">${KIND_LABEL[kind] || kind}</span>
@@ -667,7 +673,7 @@ function render() {
   if (att.length) {
     var rows = att.slice(0, ATTENTION_SHOWN).map(function (x) {
       var id = recordId(x.kind, x.rec);
-      return `<button class="hm-att" onclick="${openAttr(x.kind, x.rec)}">
+      return `<button class="hm-att" ${openAttr(x.kind, x.rec)}>
         <span class="hm-att-tag hm-tone-${x.tone}">${esc(x.reason)}</span>
         <span class="hm-att-name">${esc(recordName(x.kind, x.rec))}</span>
         <span class="hm-att-id mono">${esc(x.kind === 'budget' ? id : (x.rec.projectId || 'Standalone'))}</span>

@@ -752,8 +752,14 @@
   function expDerivedNote() {
     const d = derivedExpenses();
     if (!d) return '';
-    const base = usd(d.annualOpex) + ' of operating expenses ÷ ' + usd(d.goi)
-      + ' gross operating income (' + usd(d.grossIncomeYr) + ' less ' + pctf(d.vacancy, 1) + ' vacancy)';
+    // Derivations since the engine-matching fix record otherIncomeYr: vacancy
+    // applied to rent only. An older one vacated all gross income; its note
+    // says so, because that is how its number was made.
+    const base = usd(d.annualOpex) + ' of operating expenses ÷ ' + usd(d.goi) + ' gross operating income ('
+      + (Number.isFinite(d.otherIncomeYr)
+        ? usd(d.grossIncomeYr - d.otherIncomeYr) + ' rent less ' + pctf(d.vacancy, 1) + ' vacancy, plus '
+          + usd(d.otherIncomeYr) + ' other income)'
+        : usd(d.grossIncomeYr) + ' less ' + pctf(d.vacancy, 1) + ' vacancy)');
     // A source budget that is itself outside the 35–55% rail cannot produce a
     // trustworthy ratio, and saying so here is the whole point of the rail.
     const ratio = d.goi > 0 ? d.annualOpex / d.goi : null;
@@ -912,7 +918,7 @@
     if (!pid) return '';
     return `<a class="inv-srclink" href="#/inputs/${esc(pid)}"
       aria-label="Open linked budget ${esc(pid)}" title="Open linked budget ${esc(pid)}"
-      onclick="event.preventDefault();FSInvestmentUI.openSourceBudget('${esc(pid)}')"
+      data-id="${esc(pid)}" onclick="event.preventDefault();FSInvestmentUI.openSourceBudget(this.dataset.id)"
       ><span class="mono">${esc(pid)}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
         ><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg></a>`;
@@ -1078,6 +1084,8 @@
 
   function renderEditor() {
     const host = el('page-analysis'); if (!host) return;
+    // An open assistant panel follows the analysis on screen.
+    if (A && A.aiFocusChanged) setTimeout(A.aiFocusChanged, 0);
     const inp = st.input;
     const loan = (inp.financing && inp.financing.loans && inp.financing.loans[0]) || null;
     const dollarExp = inp.expenses && inp.expenses.mode === 'annualDollar';
@@ -1097,6 +1105,8 @@
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
           <span id="invStatusHost"></span>
           <span class="inv-statebar" id="invState"></span>
+          <button class="btn btn-ghost" id="invAskBtn" onclick="FSInvestmentUI.askAI()"
+            title="Ask the Budget Assistant about this analysis"><svg class="ai-spark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9z"/><path d="M19 15l.9 2.6 2.6.9-2.6.9L19 22l-.9-2.6-2.6-.9 2.6-.9z" opacity=".7"/></svg>Ask AI</button>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
           <button class="btn btn-dark" data-inv-edit id="invExportBtn" onclick="FSInvestmentUI.openExport()">Export</button>
@@ -1136,7 +1146,7 @@
           <label class="fld"><span class="lab">Size Value</span>
             <input type="text" inputmode="decimal" data-f="property.size.value" data-k="inv.size.value" value="${esc(fmtSizeIn(inp.property.size.value, inp.property.size.unit))}"${ro('property.size')}></label>
           <label class="fld"><span class="lab">Unit Count ${originBadge('property.unitCount')}</span>
-            <input type="number" min="0" step="1" data-f="property.unitCount" data-k="inv.unitCount" value="${inp.property.unitCount === null ? '' : inp.property.unitCount}"${ro('property.unitCount')}></label>
+            <input type="number" min="0" step="1" data-f="property.unitCount" data-k="inv.unitCount" value="${inp.property.unitCount === null ? '' : esc(inp.property.unitCount)}"${ro('property.unitCount')}></label>
           <label class="fld"><span class="lab">Purchase Month</span>
             <input type="month" data-f="property.purchaseMonth" data-k="inv.purchaseMonth" value="${esc(inp.property.purchaseMonth || '')}"></label>
           <label class="fld"><span class="lab">Projection Years</span>
@@ -1213,7 +1223,7 @@
             </select></label>
           <label class="fld"><span class="lab" id="invExpLab">${dollarExp ? 'Year-1 Operating Expenses $' : 'Operating Expenses % of GOI'}${expBadge()}</span>
             <input type="number" min="0" step="any" data-f="expenses.value" data-k="inv.expValue" ${expLocked ? 'readonly' : ''}
-              value="${inp.expenses.value === null ? '' : (dollarExp ? inp.expenses.value : toPct(inp.expenses.value))}"></label>
+              value="${inp.expenses.value === null ? '' : (dollarExp ? esc(inp.expenses.value) : toPct(inp.expenses.value))}"></label>
           <label class="fld" id="invExpGrowthFld" style="${dollarExp ? '' : 'display:none'}"><span class="lab">Expense Growth %</span>
             <input type="number" step="any" data-f="expenses.growth.value" data-k="inv.expGrowth" value="${toPct(inp.expenses.growth ? inp.expenses.growth.value : 0.03)}"></label>
           <!-- The provenance note is its own full-width row rather than a tail
@@ -1240,13 +1250,13 @@
               <option value="amount" ${loan && loan.amount.mode === 'amount' ? 'selected' : ''}>Dollar Amount</option>
             </select></label>
           <label class="fld"><span class="lab" id="invLoanAmtLab">${loan && loan.amount.mode === 'amount' ? 'Loan Amount' : 'LTV %'}</span>
-            <input type="number" min="0" step="any" data-f="loan.amount.value" data-k="inv.loan.value" value="${loan ? (loan.amount.mode === 'amount' ? loan.amount.value : toPct(loan.amount.value)) : toPct(0.65)}"></label>
+            <input type="number" min="0" step="any" data-f="loan.amount.value" data-k="inv.loan.value" value="${loan ? (loan.amount.mode === 'amount' ? esc(loan.amount.value) : toPct(loan.amount.value)) : toPct(0.65)}"></label>
           <label class="fld"><span class="lab">Annual Rate %</span>
             <input type="number" min="0" step="any" data-f="loan.annualRate" data-k="inv.loan.rate" value="${loan ? toPct(loan.annualRate) : '6.5'}"></label>
           <label class="fld"><span class="lab">Amortization (Years)</span>
-            <input type="number" min="1" step="1" data-f="loan.amortizationYears" data-k="inv.loan.amort" value="${loan ? loan.amortizationYears : 25}"></label>
+            <input type="number" min="1" step="1" data-f="loan.amortizationYears" data-k="inv.loan.amort" value="${loan ? esc(loan.amortizationYears) : 25}"></label>
           <label class="fld"><span class="lab">Loan Term (Years)</span>
-            <input type="number" min="1" step="1" data-f="loan.termYears" data-k="inv.loan.term" value="${loan ? loan.termYears : 5}"></label>
+            <input type="number" min="1" step="1" data-f="loan.termYears" data-k="inv.loan.term" value="${loan ? esc(loan.termYears) : 5}"></label>
           <label class="fld"><span class="lab">Loan Fees / Points %</span>
             <input type="number" min="0" step="any" data-f="loan.feePercent" data-k="inv.loan.fee" value="${loan ? toPct(loan.feePercent) : '1'}"></label>
           <label class="fld"><span class="lab">Interest Calculation</span>
@@ -1650,7 +1660,7 @@
         <td><input type="text" data-k="inv.other.${i}.label" value="${esc(r.label)}"${lock ? ' readonly aria-readonly="true"' : ''}
              onchange="FSInvestmentUI._other(${i},'label',this.value)"></td>
         <td class="r"><input type="${lock ? 'text' : 'number'}"${lock ? ' inputmode="decimal" readonly aria-readonly="true"' : ' min="0" step="any"'} style="width:120px" data-k="inv.other.${i}.amount"
-             value="${lock ? esc(fmtMoneyIn(r.year1Amount)) : (r.year1Amount === null ? '' : r.year1Amount)}" onchange="FSInvestmentUI._other(${i},'amount',this.value)"></td>
+             value="${lock ? esc(fmtMoneyIn(r.year1Amount)) : (r.year1Amount === null ? '' : esc(r.year1Amount))}" onchange="FSInvestmentUI._other(${i},'amount',this.value)"></td>
         <td class="r"><input type="number" step="any" style="width:80px" data-k="inv.other.${i}.growth"
              value="${toPct(r.growth.value)}" onchange="FSInvestmentUI._other(${i},'growth',this.value)"></td>
         ${lock ? '' : `<td class="no-print"><button class="btn-x" data-inv-edit title="Remove row"
@@ -1720,7 +1730,7 @@
         <td><input type="text" data-k="inv.capex.${i}.label" value="${esc(r.label)}"
              onchange="FSInvestmentUI._capex(${i},-1,this.value)"></td>
         ${r.annualAmounts.map((a, y) => `<td class="r"><input type="number" min="0" step="any" style="width:86px"
-             data-k="inv.capex.${i}.${y}" value="${a || ''}" onchange="FSInvestmentUI._capex(${i},${y},this.value)"></td>`).join('')}
+             data-k="inv.capex.${i}.${y}" value="${esc(a || '')}" onchange="FSInvestmentUI._capex(${i},${y},this.value)"></td>`).join('')}
         <td class="no-print"><button class="btn-x" data-inv-edit title="Remove row"
              onclick="FSInvestmentUI._capexRemove(${i})">×</button></td></tr>`).join('') +
       '</tbody></table>' : '<div style="font-size:12.5px;color:var(--ink-500);margin:6px 0 10px">No capital expenses or reserves.</div>';
@@ -2583,6 +2593,22 @@
     _other, _otherRemove, _capex, _capexRemove,
     _statusApplied(id, status) {
       if (st.id === id) { st.status = status; paintStatusChip(); }
+    },
+    // The Budget Assistant, focused on this analysis. Unsaved assumptions go
+    // along as a draft so the answer is about what is on screen; the dialog
+    // itself belongs to index.html and is reached only through the adapter.
+    // What the Budget Assistant is told about the open analysis, or null when
+    // none is open. index.html reads it to follow you between pages.
+    aiContext() {
+      if (!st.input) return null;
+      const id = st.id;
+      return { id, name: st.input.analysisName || 'Investment Analysis',
+        getDraft: () => (st.id === id && st.dirty ? st.input : null) };
+    },
+    askAI() {
+      if (!A || !A.askAI) return;
+      const ctx = FSInvestmentUI.aiContext();
+      if (ctx) A.askAI(ctx);
     },
     currentId: () => st.id,
     // true while the OPEN analysis editor holds unsaved edits (index.html's

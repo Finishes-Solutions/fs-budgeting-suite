@@ -60,14 +60,17 @@ test('parseDoc tolerates malformed stored documents', () => {
 });
 
 // ---- SOV projection ----
+// Basis-driven lines say auto: true. A line with NO auto field is a typed
+// quantity (lineQty's rule, BUDGET-SYSTEM.md §3) — this fixture once leaned on
+// sov.js's divergent `auto === false` test (D10). test/sov.test.js covers that.
 const doc = {
   resSF: 1000, amenSF: 200,
   units: [{ count: 10 }, { count: 5 }],
   lines: [
-    { lineId: 'a', code: '03 30 00', grp: 'Shell', scope: 'res', desc: 'Slab', basis: 'sf', unit: 5 },
-    { lineId: 'b', code: '09 60 00', grp: 'Amenity', scope: 'amen', desc: 'Flooring', basis: 'asf', unit: 4 },
-    { lineId: 'c', code: '11 31 00', grp: 'Interiors', scope: 'res', desc: 'Appliances', basis: 'unit', unit: 100 },
-    { lineId: 'd', code: '99 03 00', grp: 'Markups', scope: 'res', desc: 'Lump', basis: 'ls', unit: 250 }
+    { lineId: 'a', code: '03 30 00', grp: 'Shell', scope: 'res', desc: 'Slab', basis: 'sf', auto: true, unit: 5 },
+    { lineId: 'b', code: '09 60 00', grp: 'Amenity', scope: 'amen', desc: 'Flooring', basis: 'asf', auto: true, unit: 4 },
+    { lineId: 'c', code: '11 31 00', grp: 'Interiors', scope: 'res', desc: 'Appliances', basis: 'unit', auto: true, unit: 100 },
+    { lineId: 'd', code: '99 03 00', grp: 'Markups', scope: 'res', desc: 'Lump', basis: 'ls', auto: true, unit: 250 }
   ]
 };
 

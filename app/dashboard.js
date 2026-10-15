@@ -62,7 +62,8 @@ function eventLabel(ev){
     export_print:'Print',settings_update:'Settings Update',
     profile_update:'Profile Updated',
     pricing_publish:'Pricing Publish',
-    feedback_submit:'Feedback Submitted',feedback_update:'Feedback Updated'
+    feedback_submit:'Feedback Submitted',feedback_update:'Feedback Updated',
+    ai_ask:'Asked Budget Assistant'
   };
   return map[ev]||ev;
 }
@@ -128,6 +129,13 @@ function eventDetail(r){
     case 'project_delete':
       return (name?name+' — ':'')+d.budgetsDeleted+' budget'+(d.budgetsDeleted===1?'':'s')
         +' and '+d.analysesDeleted+' analys'+(d.analysesDeleted===1?'is':'es')+' with it';
+    case 'ai_ask':
+      // The question and what it cost — never the answer, which is not stored.
+      if(name) bits.push(name);
+      if(d.question) bits.push('"'+String(d.question)+'"');
+      if(d.inputTokens!==undefined) bits.push((Number(d.inputTokens)||0).toLocaleString('en-US')+' in / '
+        +(Number(d.outputTokens)||0).toLocaleString('en-US')+' out tokens');
+      return bits.join(' · ');
     case 'analysis_save':
       if(name) bits.push(name);
       if(d.budgetId) bits.push('from '+d.budgetId);

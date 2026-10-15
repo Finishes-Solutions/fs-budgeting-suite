@@ -32,7 +32,7 @@ const PASS='Basalt-Meridian-8538-27D5B4';
  await p.waitForTimeout(600);
 
  await p.fill('#pId','TST-9999'); await p.fill('#pName','Edit Flag Test');
- await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
+ await p.click('#page-input button:has-text("Continue to Impact Fees")'); await p.waitForTimeout(250); await p.click('#page-fees button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
 
  ok('a fresh budget has no edited lines', (await p.locator('#budBody .editdot.on').count())===0);
  ok('legend reads no manual edits', /no manual edits/.test(await p.locator('#editCount').textContent()));

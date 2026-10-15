@@ -154,10 +154,10 @@ const BASE='http://127.0.0.1:8100';
  // ---------- 3. workflow pills ----------
  await p.click('#page-budget [data-wf-pills] a:has-text("Inputs")'); await p.waitForTimeout(600);
  ok('the Inputs page shows the workflow pills',
-    (await p.locator('#page-input [data-wf-pills] a').count())===3);
- ok('the pills are Inputs, Budget and CSI Schedule',
+    (await p.locator('#page-input [data-wf-pills] a').count())===4);
+ ok('the pills are Inputs, Impact Fees, Budget and CSI Schedule',
     (await p.evaluate(()=>[...document.querySelectorAll('#page-input [data-wf-pills] a')]
-      .map(a=>a.textContent.replace(/^\d/,'').trim()).join('|')))==='Inputs|Budget|CSI Schedule',
+      .map(a=>a.textContent.replace(/^\d/,'').trim()).join('|')))==='Inputs|Impact Fees|Budget|CSI Schedule',
     await p.evaluate(()=>[...document.querySelectorAll('#page-input [data-wf-pills] a')]
       .map(a=>a.textContent.trim()).join('|')));
  ok('the current section pill is marked active',
@@ -194,7 +194,7 @@ const BASE='http://127.0.0.1:8100';
  ok('the CSI pill reaches the CSI Schedule',
     await p.evaluate(()=>document.getElementById('page-csi').classList.contains('on')));
  ok('the CSI page shows the pills too',
-    (await p.locator('#page-csi [data-wf-pills] a').count())===3);
+    (await p.locator('#page-csi [data-wf-pills] a').count())===4);
  ok('the CSI pill is the active one there',
     await p.evaluate(()=>{
       const on=document.querySelector('#page-csi [data-wf-pills] a.on');

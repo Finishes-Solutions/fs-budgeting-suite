@@ -86,6 +86,80 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     close(tampered.contractSum, sp.contract) && close(tampered.projectCost, sp.project),
     'stored '+tampered.contractSum+' expected '+sp.contract);
 
+ // The Budget Assistant. The mock runs the real api/shared/budget-assistant.js
+ // with a deterministic stand-in for Claude that quotes the facts it was given,
+ // so what is pinned is that the SERVER'S figures reach the model, a tool round
+ // works, an unsaved draft is what gets read, and the dialog behaves.
+ const usd0=n=>'$'+Math.round(n).toLocaleString('en-US');
+ await p.click('.page.on button:has-text("Ask AI")'); await p.waitForTimeout(300);
+ ok('Ask AI opens the assistant on this budget',
+    await p.locator('#assistantPanel.on').count()===1
+    && /TST-9996/.test(await p.locator('#aiSub').textContent()));
+ ok('the panel docks on the right and leaves the budget usable beside it',
+    await p.evaluate(()=>{const r=document.getElementById('assistantPanel').getBoundingClientRect();
+      return Math.abs(r.right-window.innerWidth)<2&&r.left>window.innerWidth/2
+        &&document.body.classList.contains('ai-docked')&&!document.body.classList.contains('modal-open');}));
+ ok('New conversation is an icon button with a name',
+    await p.locator('#aiNew svg').count()===1 && (await p.locator('#aiNew').getAttribute('aria-label'))==='New conversation'
+    && !/\S/.test(await p.locator('#aiNew').textContent()));
+ ok('reasoning effort starts at Medium', (await p.locator('#aiEffortLabel').textContent())==='Medium');
+ ok('a saved budget is read as saved', /as last saved/.test(await p.locator('#aiBasis').textContent()));
+ await p.click('#aiLog [data-ai-suggest="0"]');
+ await p.waitForSelector('#aiLog .ai-msg.bot:has-text("mock assistant answer")',{timeout:5000});
+ const a1=await p.locator('#aiLog .ai-msg.bot').last().textContent();
+ ok('the answer quotes the server-computed contract sum and project cost',
+    a1.includes(usd0(sp.contract)) && a1.includes(usd0(sp.project)), a1);
+ ok('the question is shown as the user turn',
+    /How was the total project cost calculated/.test(await p.locator('#aiLog .ai-msg.user').first().textContent()));
+ await p.fill('#aiQ','How many versions does it have?'); await p.press('#aiQ','Enter');
+ await p.waitForSelector('#aiLog .ai-msg.bot:has-text("saved versions")',{timeout:5000});
+ ok('a tool round reports what it looked up',
+    /Looked up: list versions/.test(await p.locator('#aiLog .ai-msg.bot').last().textContent()));
+ ok('the answer was asked at the effort shown',
+    /Reasoning: medium/.test(await p.locator('#aiLog .ai-msg.bot').first().textContent())
+    && /Medium reasoning/.test(await p.locator('#aiLog .ai-meta').last().textContent()));
+ // Picking an effort: the menu, the label, the request, and the browser remembers it.
+ await p.click('#aiEffortBtn');
+ ok('the effort menu offers Low, Medium and High with Medium checked',
+    (await p.locator('#aiEffortMenu:not([hidden]) [role=menuitemradio] b').allTextContents()).join(',')==='Low,Medium,High'
+    && (await p.locator('#aiEffortMenu [aria-checked=true]').getAttribute('data-effort'))==='medium');
+ await p.keyboard.press('ArrowDown'); await p.keyboard.press('Enter');
+ ok('High is picked from the keyboard', (await p.locator('#aiEffortLabel').textContent())==='High'
+    && await p.locator('#aiEffortMenu[hidden]').count()===1);
+ await p.fill('#aiQ','Explain the contingency.'); await p.press('#aiQ','Enter');
+ await p.waitForSelector('#aiLog .ai-msg.bot >> nth=2',{timeout:5000});
+ ok('the next question is asked at High',
+    /Reasoning: high/.test(await p.locator('#aiLog .ai-msg.bot').last().textContent())
+    && /High reasoning/.test(await p.locator('#aiLog .ai-meta').last().textContent()));
+ ok('the choice is remembered in this browser', await p.evaluate(()=>localStorage.getItem('fsAiEffort'))==='high');
+ await p.click('#aiEffortBtn'); await p.click('#aiEffortMenu [data-effort="medium"]');
+ // Docked, not modal: moving to another step of the same budget keeps it open.
+ await p.click(".page.on [data-wf-pills] a >> nth=0"); await p.waitForTimeout(250);
+ ok('the panel stays open across the steps of the same budget', await p.locator('#assistantPanel.on').count()===1);
+ await p.click(".page.on [data-wf-pills] a:has-text('Budget')"); await p.waitForTimeout(250);
+ await p.focus('#aiQ');
+ const acts=await p.evaluate(async()=>(await (await fetch('/api/user-activity')).json()).events);
+ ok('asking is logged as ai_ask with the question, not the answer',
+    acts.some(e=>e.eventType==='ai_ask'&&e.entityId==='TST-9996'&&/versions/.test(e.detail.question)
+      &&e.detail.answer===undefined));
+ await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+ ok('Escape closes the assistant', await p.locator('#assistantPanel.on').count()===0
+    && !(await p.evaluate(()=>document.body.classList.contains('ai-docked'))));
+ // Unsaved edits: the on-screen document is what the assistant reads.
+ const rate2=p.locator('#budBody input[data-k$=".unit"]').first();
+ await rate2.fill('99'); await rate2.press('Tab'); await p.waitForTimeout(200);
+ await p.click('.page.on button:has-text("Ask AI")'); await p.waitForTimeout(200);
+ ok('the conversation continues on the same budget', await p.locator('#aiLog .ai-msg.user').count()===3);
+ ok('unsaved changes are announced', /unsaved changes/.test(await p.locator('#aiBasis').textContent()));
+ await p.fill('#aiQ','And now?'); await p.click('#aiSend');
+ await p.waitForSelector('#aiLog .ai-msg.bot:has-text("unsaved-draft")',{timeout:5000});
+ const draftContract=await p.evaluate(()=>parts().contract);
+ ok('an unsaved draft is answered from the screen, not the save',
+    (await p.locator('#aiLog .ai-msg.bot').last().textContent()).includes(usd0(draftContract)));
+ await p.click('#aiNew');
+ ok('New Conversation clears the thread', await p.locator('#aiLog .ai-msg').count()===0
+    && await p.locator('#aiLog [data-ai-suggest]').count()===6);
+ await p.keyboard.press('Escape');
  // ================= the save lifecycle =================
  const pill=async()=>(await p.locator('#saveState').textContent())||'';
  const toastText=async()=>(await p.locator('#toast').textContent())||'';
@@ -111,7 +185,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // ---- the id locks once the budget exists
  ok('the Budget ID is read-only after the first save',
-    await p.locator('#pId').evaluate(e=>e.readOnly) && await p.locator('#pIdLock').isVisible());
+    await p.locator('#pId').evaluate(e=>e.readOnly) && await p.locator('#pIdLocked').isVisible());
  // The field cannot be typed into; a value forced into it some other way
  // (autofill, devtools) must still not reach the server.
  const idRefused=await p.evaluate(async()=>{
@@ -121,7 +195,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  });
  ok('a changed id is refused and put back, not saved over another budget',
     idRefused.id==='TST-9996' && idRefused.field==='TST-9996'
-      && /can.t be changed after the first save/i.test(await toastText()),
+      && /fixed once it is saved/i.test(await toastText()),
     JSON.stringify(idRefused)+' '+await toastText());
  ok('and the other budget is untouched', (await stored('TST-9993')).name==='Other Budget');
  await saveNow();

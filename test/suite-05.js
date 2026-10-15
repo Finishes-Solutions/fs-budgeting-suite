@@ -55,7 +55,7 @@ async function nbFinish(p,id,name){
  ok('Land & project costs now on Inputs page',
     await p.locator('#page-input #sec-project').count()===1 && await p.locator('#page-budget #sec-project').count()===0);
  await p.fill('#pId','TST-9999'); await p.fill('#pName','Blank Scratch Build');
- await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(300);
+ await p.click('#page-input button:has-text("Continue to Impact Fees")'); await p.waitForTimeout(250); await p.click('#page-fees button:has-text("Continue to Budget")'); await p.waitForTimeout(300);
  ok('blank: budget grid empty state shows', await p.locator('#budEmpty').isVisible());
  ok('blank: contract sum is $0', (await p.locator('#rContract').textContent())==='$0');
 
@@ -84,7 +84,7 @@ async function nbFinish(p,id,name){
  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(400);
  await nbFinish(p,'BD-0502','Export Multifamily');
  await p.fill('#pId','TST-9998'); await p.fill('#pName','CSI Format Check');
- await p.click('button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
+ await p.click('#page-input button:has-text("Continue to Impact Fees")'); await p.waitForTimeout(250); await p.click('#page-fees button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
  await p.click(".page.on [data-wf-pills] a:has-text('CSI Schedule')"); await p.waitForTimeout(500);
  ok('CSI tab renders', await p.locator('#page-csi').isVisible());
  ok('CSI hash route', p.url().endsWith('#/csi/TST-9998'), p.url());
