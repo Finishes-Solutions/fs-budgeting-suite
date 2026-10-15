@@ -9,7 +9,7 @@
 // budget-calc.js); it decided "typed quantity" with `auto === false`, summed
 // unit counts without coercion (string counts concatenated) and ignored
 // amenity suppression — so dbo.SovLines could disagree with the ContractSum
-// saved beside it (BUDGET-SYSTEM.md §16 D1, D10).
+// saved beside it (BUDGET-SYSTEM.md §17 D1, D10).
 const { nz, lineQty, scopeActive } = require('./budget-calc');
 
 // Kept for callers of the old signature; a trailing units argument is ignored

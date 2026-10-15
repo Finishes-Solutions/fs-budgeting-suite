@@ -634,8 +634,14 @@
   function expDerivedNote() {
     const d = derivedExpenses();
     if (!d) return '';
-    const base = usd(d.annualOpex) + ' of operating expenses ÷ ' + usd(d.goi)
-      + ' gross operating income (' + usd(d.grossIncomeYr) + ' less ' + pctf(d.vacancy, 1) + ' vacancy)';
+    // Derivations since the engine-matching fix record otherIncomeYr: vacancy
+    // applied to rent only. An older one vacated all gross income; its note
+    // says so, because that is how its number was made.
+    const base = usd(d.annualOpex) + ' of operating expenses ÷ ' + usd(d.goi) + ' gross operating income ('
+      + (Number.isFinite(d.otherIncomeYr)
+        ? usd(d.grossIncomeYr - d.otherIncomeYr) + ' rent less ' + pctf(d.vacancy, 1) + ' vacancy, plus '
+          + usd(d.otherIncomeYr) + ' other income)'
+        : usd(d.grossIncomeYr) + ' less ' + pctf(d.vacancy, 1) + ' vacancy)');
     // A source budget that is itself outside the 35–55% rail cannot produce a
     // trustworthy ratio, and saying so here is the whole point of the rail.
     const ratio = d.goi > 0 ? d.annualOpex / d.goi : null;

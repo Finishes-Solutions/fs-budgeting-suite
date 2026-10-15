@@ -289,7 +289,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // ---- The BUDGET workbook (exportExcel), re-read with the same ExcelJS build.
  // A budget priced from the template's expense schedule (two % of income rows)
  // with the impact-fee line derived from the City of Waller schedule.
- // BUDGET-SYSTEM.md §16 D2 (expense rows printed $0) and D3 (derived as edited).
+ // BUDGET-SYSTEM.md §17 D2 (expense rows printed $0) and D3 (derived as edited).
  await p.evaluate(async()=>{
    await fetch('/api/budget/OP-1401?scope=project',{method:'PUT',
      headers:{'Content-Type':'application/json'},

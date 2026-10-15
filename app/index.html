@@ -5332,7 +5332,13 @@ function applyImpactFees(){
      straight to the Budget page, or the API is down) must keep the amount it
      was saved with — recomputing against a null schedule would total zero and
      silently wipe a six-figure soft-cost line. */
-  if(f.scheduleKey&&!(feeDoc&&feeDoc.scheduleKey===f.scheduleKey))return;
+  /* The loaded schedule must be the VERSION this budget was priced from, not
+     just the same jurisdiction: feeDoc is page-wide and outlives openBudget(),
+     so after viewing a budget on v2, a budget priced at v1 would otherwise be
+     recomputed against v2 while still labelled v1 (BUDGET-SYSTEM.md D5).
+     Moving a budget to a newer version is Update to vN, which sets both. */
+  if(f.scheduleKey&&!(feeDoc&&feeDoc.scheduleKey===f.scheduleKey
+     &&(!f.scheduleVersion||feeDoc.__version===f.scheduleVersion)))return;
   const r=feeResult();
   let line=impactFeeLine();
   // Nothing to carry and no line to restore: leave the document alone.

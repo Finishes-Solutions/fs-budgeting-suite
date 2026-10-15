@@ -53,7 +53,7 @@ change, on 2026-10-15.
 | Guard rails | Pass / warn / block on save | `app/guardrails.js` ≡ `api/shared/guardrails.js` (byte-identical; `test/guardrails.test.js` enforces it) |
 | Impact & tap fees | The municipal fee total | `app/impact-fees.js` (browser only, by design — see §6) |
 | CSI roll-up | The CSI tab and the CSI sections of the exports | `app/index.html`: `csiDivKey`, `csiSchedule` |
-| SOV projection | Rows written to `dbo.SovLines` (the lender-package read surface) | `api/shared/sov.js`: `sovRows` — has its own quantity rule (see §16) |
+| SOV projection | Rows written to `dbo.SovLines` (the lender-package read surface) | `api/shared/sov.js`: `sovRows` — uses `budget-calc.js`'s `lineQty` and `scopeActive`, not a copy |
 | Budget → analysis | What an investment analysis imports | `api/shared/investment/from-budget.js` |
 
 The browser and the server compute the same totals from the same document.
@@ -151,7 +151,9 @@ There is no per-line rounding.
   line), its rate differs from `baseUnit`, or its description or basis was
   changed (`edited`).
 - A line is **derived** (`isDerived`) when `derived` is set — today only the
-  impact-fee line (§6). The editor's tooltip calls it derived, not edited.
+  impact-fee line (§6). The editor, the edited-lines count, the CSI tab and every
+  export call it **derived**, not edited, and name the fee schedule it came from;
+  Excel shows Edited = "Derived" with no library rate.
 - Editing a rate changes `unit` only. Typing a quantity sets `qty` and turns
   `auto` off. Switching a line to Lump Sum keeps any typed quantity
   (`qty || 1`).
@@ -173,8 +175,10 @@ to zero. Nothing is subtracted from residential: residential and amenity are
 separate sums, and the inactive one is replaced by zero. The amenity lines stay
 in the document, so restoring amenity SF brings them back unchanged.
 
-`parts()`, the budget grid, `csiSchedule()` and the exports all honour this.
-`api/shared/sov.js` does not — see §16.
+`parts()`, the budget grid, `csiSchedule()`, the exports and the SOV projection
+all honour this. A suppressed amenity line is still written to `dbo.SovLines`, at
+quantity 0 and total $0 with its rate unchanged, so its row keeps its identity
+across versions and the SOV totals equal the contract sum's hard cost.
 
 ---
 
@@ -298,7 +302,8 @@ the line.
 Three rules protect real money:
 
 - A budget whose schedule has not been fetched **keeps its saved amount**
-  (recomputing against nothing would wipe a six-figure line).
+  (recomputing against nothing would wipe a six-figure line) — and so does one
+  whose loaded schedule is a different *version* of the same jurisdiction.
 - Clearing the jurisdiction **restores** SC-20 to its library $/SF basis rather
   than deleting the line.
 - Picking a jurisdiction with no meters yet sets SC-20 to $0 until meters are
@@ -325,6 +330,10 @@ expenses / mo = Σ rows
 gross income / yr = 12 × (rent + other)
 net income / yr   = 12 × (rent + other − expenses)        shown as "Net Income / Yr"
 ```
+
+Every export (print, both PDFs, Excel) prints each expense row from the same
+`expenseMonthly()`: a % of income row shows its rate as a percent, no count, and
+the amount it is charged at, so the rows add up to the operating-expense total.
 
 **The budget has no vacancy.** Net income is rent plus other income minus the
 expense rows, with no vacancy or credit loss. Vacancy enters only in an
@@ -520,8 +529,11 @@ deliberate in the code but easy to miss.
   cents (`DECIMAL(18,2)`), `PricingVersion`, template, project link, guard-rail
   status and breach count.
 - `dbo.SovLines`: one row per line — scope, group, code, description, basis,
-  quantity (2 dp), rate (4 dp), total (2 dp). There are no profit or contingency
-  rows.
+  quantity (2 dp), rate (4 dp), total (2 dp), computed with the same `lineQty` and
+  amenity suppression as `parts()`. Σ totals over residential + amenity rows =
+  hard cost; over soft rows = soft costs. There are no profit or contingency rows.
+  (`vw_SovScopeRollup`'s line count still counts suppressed rows; its dollars are
+  right.)
 - `dbo.BudgetVersions` (+ `BudgetVersionSovLines`): the same per version.
 - Rounding happens only at display (`usd()` whole dollars, `usd2()` cents) and
   storage. Unit rent computed from a $/SF is rounded to cents.
@@ -578,9 +590,11 @@ specific saved **version** of the budget:
   document.
 - **Year-1 potential rental income** = 12 × rent / mo. Each other-income row
   becomes an annual amount (12 × rate × count).
-- **Expense ratio** (percent of GOI) = 12 × expenses / mo ÷ (gross income / yr ×
-  (1 − vacancy)), using the analysis's vacancy (default 10%). Null when there is
-  no income or no expenses.
+- **Expense ratio** (percent of GOI) = 12 × expenses / mo ÷ (12 × rent / mo ×
+  (1 − vacancy) + 12 × other income / mo), using the analysis's vacancy (default
+  10%). Vacancy applies to rent only, exactly as the engine computes GOI, so the
+  analysis's year-1 operating expenses equal the budget's. Null when there is no
+  income or no expenses.
 
 Everything after that (vacancy, NOI, debt, returns) is the investment engine,
 documented in `docs/INVESTMENT_FORMULAS.md`. Budget changes never flow into an
@@ -595,16 +609,10 @@ today. Remove an entry here when its fix ships (and say so in the change log).
 
 | # | Severity | What happens |
 |---|---|---|
-| D1 | High | **SovLines ignore amenity suppression.** With amenity SF 0, lump-sum or typed-quantity amenity lines are still written to `dbo.SovLines` (and `vw_SovScopeRollup`), while `ContractSum` excludes them. |
-| D2 | High | **Exports print $0 for "% of Income" expense rows.** The print report, both PDFs and Excel compute every expense row as rate × count and label it "per unit"; a % of income row (count 0) prints $0. The totals are correct, so the rows don't add up to them. The screen is correct. |
-| D3 | Medium | Exports flag the impact-fee line as **edited** (Excel "Edited = YES", library rate $7.50) instead of derived. |
 | D4 | Medium | The impact-fee source row appears only on the print report, and only if the Impact Fees step was opened in that session. |
-| D5 | Medium, latent | The fee recalculation checks the schedule key but not the version. Viewing a budget on schedule v2 and then opening another budget priced at v1 recomputes the second against v2 while it still says v1. Cannot happen until a jurisdiction has two versions. |
 | D6 | Medium | opexRatio judges a budget with income but **no expense rows** as 0% and blocks the save (when `opexSchemaVersion ≥ 2`); the code comment says such a budget is skipped. |
 | D7 | Medium | The guard-rail policy and budget type are read from the submitted document, so a hand-crafted save could relax the server gate. |
-| D8 | Medium | The analysis import applies vacancy to other income; the investment engine does not. The derived expense ratio comes out slightly high (≈0.5% in the worked example). |
 | D9 | Low | The CSI roll-up can fail to reconcile to the contract with a negative company percentage or a line whose scope is not res/amen/soft. |
-| D10 | Low | `sov.js` decides "typed quantity" with `auto === false`, where `lineQty` uses "not auto"; a line with no `auto` field gets different quantities. Only old or hand-built documents have that. |
 | D11 | Low | Browser `parts()` fails on a document with no `companies` or `contingency`; the server treats them as 0. |
 | D12 | Low | Update Pricing replaces edited rates on matched lines (§11); its help text says "overrides are untouched", which reads as including rates. |
 | D13 | Low | Changing the Budget ID field on a saved budget and saving overwrites whichever budget has that id. |

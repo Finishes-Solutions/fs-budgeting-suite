@@ -246,7 +246,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     String(await p.evaluate(()=>doc.lines.find(x=>x.derived==='impactFees').unit)));
 
  // ---- Exports: the derived line is DERIVED, not edited, and a % of income
- // expense row prints the amount it is charged at (BUDGET-SYSTEM.md §16 D2, D3).
+ // expense row prints the amount it is charged at (BUDGET-SYSTEM.md §17 D2, D3).
  // Every producer is called with the same selection the modal would give.
  const ex = await p.evaluate(()=>{
    const s={stats:1,units:1,other:1,budget:1,csi:1,summary:1,edits:1,sign:0};

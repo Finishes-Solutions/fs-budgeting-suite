@@ -78,7 +78,9 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | `app/impact-fees.js` | The impact & tap fee calculator — a browser-only UMD module; there is no `api/` twin **on purpose** (see below) |
 | `CHANGELOG.md` | What changed and what to run — updated with every change that ships |
 | `BUDGET-SYSTEM.md` | **How a budget is formulated and how it changes** — every formula, keyed to its code; copied byte-for-byte to `api/shared/budget-system.md` for the Budget Assistant |
-| `api/shared/budget-assistant.js` | The Budget Assistant (Claude) behind `POST /api/budget/{id}?scope=ask` — facts from `budget-calc.js`, read-only tools, the request-window budget (see [Budget Assistant](#budget-assistant-ai)) |
+| `api/shared/budget-assistant.js` | The Budget Assistant (Claude) behind `POST /api/budget/{id}?scope=ask` and `POST /api/investment-calculations?scope=ask` — facts from `budget-calc.js`, read-only tools, the request-window budget (see [Budget Assistant](#budget-assistant-ai)) |
+| `api/shared/budget-review.js` | Rule-based budget review for the assistant: $0 lines, missing library scope, rate drift, portfolio $/SF outliers, development checklist |
+| `api/shared/investment/insight.js` | Pro forma diagnostics, engine-computed drivers and `run_scenario` what-ifs for the assistant |
 | `app/projects.js` | The Projects tab — one project per ID, with its budgets and analyses |
 | `app/staticwebapp.config.json` | Routes, Entra provider registration, role enforcement (first auth gate) |
 | `app/vendor/exceljs.min.js` | ExcelJS 4.4.0, vendored — see [Single sources of truth](#single-sources-of-truth) |
@@ -483,21 +485,34 @@ custom provider for sign-in.
 
 ## Budget Assistant (AI)
 
-- **What it is.** Ask AI in the budget editor opens a dialog that posts to
-  `POST /api/budget/{id}?scope=ask` (a scope on an endpoint that already deploys —
-  the new-folder rule above). `api/shared/budget-assistant.js` builds the budget's
+- **What it is.** Ask AI opens one dialog (owned by `index.html`) with two
+  focuses. In the budget editor it posts to `POST /api/budget/{id}?scope=ask`;
+  on an investment analysis (the button lives in `app/investment-analysis.js` and
+  reaches the dialog only through the adapter's `askAI`) it posts to
+  `POST /api/investment-calculations?scope=ask` with `analysisId`. Both are
+  scopes on endpoints that already deploy — the new-folder rule above. `api/shared/budget-assistant.js` builds the budget's
   facts, calls Claude through the official `@anthropic-ai/sdk` (pinned exactly in
   `api/package.json`), runs a bounded tool loop, and returns Markdown that
   `aiMarkdown()` in `index.html` renders **after escaping** — model text is
   untrusted like any other string.
-- **The model never does the arithmetic.** Every figure it is given comes from
-  `api/shared/budget-calc.js` and `api/shared/guardrails.js` via `budgetFacts()`.
-  Don't add a "let the model compute it" path, and don't copy budget math into
-  the assistant — extend `budgetFacts()` from the existing modules instead.
+- **The model never does the arithmetic.** Budget figures come from
+  `api/shared/budget-calc.js` and `api/shared/guardrails.js` via `budgetFacts()`;
+  pro forma figures, drivers and what-ifs from the investment engine via
+  `api/shared/investment/insight.js`; budget findings from the rule-based
+  `api/shared/budget-review.js`. The prompt requires `run_scenario` for any
+  IRR/NOI effect. Don't add a "let the model compute it" path, and don't copy
+  math into the assistant — extend those modules from the existing ones.
+- **Context follows the focus.** A budget question preloads the budget's facts,
+  its review, the pro formas built from it or its project (brief), and its
+  version history. An analysis question preloads the analysis in full, its source
+  budget (summary + review, no line items) and the project's other analyses.
+  Both are documented, with every rule, in `BUDGET-SYSTEM.md` §16.
 - **Read only, and no wider than the budget list.** The tools (`get_budget`,
   `list_versions`, `compare_versions`, `search_budgets`, `get_fee_schedule`) only
-  read. `sqlStore()` applies the ownership rule of `GET /api/budgets`; a new tool
-  that reads budgets must go through the store so it inherits that rule. The
+  read. `sqlStore()` applies the ownership rule of `GET /api/budgets` to budgets
+  and of `GET /api/investment-analyses` to analyses; a new tool that reads
+  either must go through the store so it inherits that rule. Benchmarks read
+  only the user's visible budgets of the same type, never `TST-` ids. The
   signed-in check in `ask()` is the real gate (a route rule cannot see `?scope=`).
 - **It must finish inside the SWA request window (~45 s).** Facts and version
   history are preloaded so most answers take one call; the loop is capped at
@@ -521,7 +536,8 @@ custom provider for sign-in.
 - **Mock parity by construction.** `test/mock-api.js` runs the real
   `budget-assistant.js` with an in-memory store and a deterministic fake client;
   `MOCK_AI=off` simulates a missing key. Logic tests:
-  `test/budget-assistant.test.js`; browser: suite-09.
+  `test/budget-assistant.test.js`; browser: suite-09 (budget), suite-11
+  (analysis page, including a `run_scenario` round).
 
 ## Single sources of truth
 

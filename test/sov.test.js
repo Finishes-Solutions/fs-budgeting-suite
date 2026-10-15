@@ -2,7 +2,7 @@
 // agree with. dbo.SovLines is what the lender-package pipeline reads and
 // ContractSum is saved beside it, so the invariant is exact:
 //   Σ Total over res + amen = parts(doc).hard,  Σ Total over soft = parts(doc).soft.
-// BUDGET-SYSTEM.md §4 (amenity suppression) and §16 D1 / D10.
+// BUDGET-SYSTEM.md §4 (amenity suppression) and §17 D1 / D10.
 const { test } = require('node:test');
 const assert = require('node:assert');
 const { sovRows, qtyOf } = require('../api/shared/sov');

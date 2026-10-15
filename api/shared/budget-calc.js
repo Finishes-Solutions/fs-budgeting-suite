@@ -111,7 +111,7 @@ function grossIncome(doc) {
 // print, engine PDF, legacy PDF, Excel — prints its rows from that mirror, so
 // a pctIncome row prints the number it is charged at and the rows add up to
 // the expense total. (They once each computed rate x count, which printed $0
-// for a % of income row under a correct total: BUDGET-SYSTEM.md §16 D2.)
+// for a % of income row under a correct total: BUDGET-SYSTEM.md §17 D2.)
 function expenseMonthly(doc, e, incomeMo) {
   const tu = totUnits(doc);
   if (e.per === 'pctIncome') {

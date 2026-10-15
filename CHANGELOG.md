@@ -24,6 +24,75 @@ House rules for writing one:
 
 ## Unreleased
 
+### The Budget Assistant reads your pro formas, reviews budgets and finds revenue
+
+**Ask AI** now works on both sides of the app, and each side can see the other:
+
+- **On a budget**, the assistant also sees the investment analyses (pro formas)
+  built from that budget or its project. You can ask how the pro forma looks
+  without leaving the budget.
+- **On an investment analysis**, there is now an **Ask AI** button too. It reads
+  the analysis, the budget it was built from, and the project's other analyses.
+- **"Where might this budget be wrong, or what is it missing?"** The assistant
+  starts from a rule-based review:
+  - lines priced at $0;
+  - pricing-library lines the budget doesn't carry, with what each would cost
+    here;
+  - rates far from the library;
+  - the impact-fee placeholder still in place;
+  - unit-mix and income gaps;
+  - $/SF outliers against the median of **your own** other budgets of the same
+    type;
+  - a development checklist (construction interest, loan fees, builder's risk,
+    taxes during construction, reserves…) matched by keyword.
+
+  Each finding says what it's based on.
+- **"What is making this pro forma bad?"** The assistant gets the analysis's
+  drivers, computed by re-running the investment engine with each assumption
+  nudged one step (rent, vacancy, expenses, price, exit cap, rate, growth) and
+  ranking them by their effect on IRR. It also gets checks against common
+  underwriting rules of thumb (DSCR, negative leverage, exit cap below going-in
+  cap, and so on), labelled as rules of thumb.
+- **"How could this property make more money?"** Ideas such as RUBS, parking,
+  storage, pet fees and tech packages are sized per unit, then **run through the
+  engine** so the NOI, value and IRR effects are computed, not guessed. Nothing is
+  saved.
+
+### Fixed: pro forma expense ratio came out slightly high
+
+An analysis created or re-synced from a budget derives its expense ratio from
+the budget's expenses. The derivation applied vacancy to other income, which the
+investment engine does not, so the analysis's year-1 operating expenses came out
+a little above the budget's own (about 0.5% on a typical budget). It now matches
+the engine exactly. Existing analyses keep their saved ratio until you re-sync
+them.
+
+### Fixed: exports show the real amount for "% of income" expenses
+
+The print report, both PDFs and the Excel workbook printed **$0** for expense
+rows set as a percentage of income, such as property taxes and management, while
+the total underneath was right. Each row now shows its real monthly and yearly
+amount with its rate as a percent, and the rows add up to the total.
+
+### Fixed: the impact-fee line is "derived", not "edited", everywhere
+
+Every export now marks the impact & tap fee line as **Derived**, naming the fee
+schedule it came from, instead of "edited" with a $/SF library rate. The
+"lines manually edited" count no longer includes it.
+
+### Fixed: SOV rows match the contract sum when amenity SF is 0
+
+With no amenity square footage, amenity lines contribute $0 to the budget, but
+the schedule-of-values rows saved for lenders still carried their amounts. Those
+rows are now saved at $0, so they add up to the contract sum.
+
+### Fixed: one budget's fee schedule version could reprice another
+
+After viewing a budget priced on one version of a jurisdiction's fee schedule,
+opening another budget priced on a different version of the same schedule could
+recalculate its impact fees against the wrong version. It cannot happen yet,
+because only one version of each schedule exists, but it is fixed before it can.
+
 ### Ask AI: a Budget Assistant on every budget
 
 A new **Ask AI** button in the budget editor, next to Save and Export, opens the
