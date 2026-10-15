@@ -317,6 +317,13 @@ input.set-locked{background:var(--ink-50);color:var(--ink-500);cursor:not-allowe
 .tpl-row:disabled{opacity:.45;cursor:not-allowed}
 .tpl-row .tpl-name{font-size:13.5px;font-weight:600;color:var(--ink-950)}
 .tpl-row .tpl-sub{font-size:12px;color:var(--ink-500)}
+/* Template types that do not exist yet are one quiet line, not three dead rows. */
+.tpl-soon{font-size:12px;color:var(--ink-400);padding:0 2px}
+/* The way out of an empty project list, right where the list is. */
+.nb-newproj{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
+.nb-newproj .set-note{margin-top:0}
+/* The id field upper-cases what is typed; its hint is a sentence, not an id. */
+#nbId::placeholder{text-transform:none;font-family:var(--fb)}
 *{box-sizing:border-box;margin:0;padding:0}
 /* The scrollbar gutter is always reserved, so switching between tall and
    short pages (Home vs Investment Analysis) never shifts the layout. */
@@ -565,6 +572,10 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
   .brand img{height:30px}
   .hd>nav{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .hd>nav::-webkit-scrollbar{display:none}
+  /* The scrolling tab bar clips anything absolutely positioned inside it, which
+     made every More item unreachable on a phone. Fixed escapes the clip;
+     placeNavDrop() pins it under the button from the button's own rect. */
+  .nav-drop{position:fixed;top:auto;right:auto}
   .page-title{flex-wrap:wrap;gap:10px}
   .page-title h1{font-size:20px}
   .card-hd{padding:12px 14px}
@@ -1089,7 +1100,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <div class="sub">Every project, with the budgets and investment analyses linked to it. One project per ID.</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <button class="btn btn-ghost" onclick="FSProjects.render(true)">Refresh</button>
-      <button class="btn btn-dark" onclick="openNewProject()">+ Create Project</button>
+      <button class="btn btn-dark" onclick="openNewProject()">+ New Project</button>
     </div>
   </div>
   <div id="projectsBody"></div>
@@ -1529,7 +1540,7 @@ th.sortable.sorted{color:var(--ink-900)}
      — the identical template Home uses — so the two lists cannot drift. -->
 <div class="page" id="page-budgets">
   <div class="page-title">
-    <div><h1>Project Budgets</h1>
+    <div><h1>Budgets</h1>
       <div class="sub">Every budget you can see, newest first. Open one to work through Inputs, Budget and the CSI Schedule.</div></div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-primary" onclick="openNewBudget()">+ New Budget</button>
@@ -1617,7 +1628,7 @@ th.sortable.sorted{color:var(--ink-900)}
             rainbow swatch for any custom color.</li>
           <li><b>Time Format</b> — 12-hour (8:52 PM) or 24-hour (20:52) for every timestamp.</li>
           <li><b>Views</b> — three options per section: a Comfortable list, a Compact list, or Cards —
-            chosen separately for Projects, Project Budgets and Investment Analyses (a roomy budget list
+            chosen separately for Projects, Budgets and Investment Analyses (a roomy budget list
             next to analysis cards is fine). The same three-way icon toggle sits above each list.</li>
           <li><b>Exports</b> — the <b>Remember Export Settings</b> toggle: on, the sections and options
             you pick in the export popups (budget and analysis separately) become your defaults
@@ -1731,7 +1742,7 @@ th.sortable.sorted{color:var(--ink-900)}
         <h3 id="help-projects">Projects</h3>
         <p>The <b>Projects</b> tab is the parent view. One project per ID, and everything that belongs to it hangs
           off its page: the budgets, the investment analyses built from them, and whatever you have starred.</p>
-        <p>Create one with <span class="kbd">+ Create Project</span> on the Projects tab: an ID, a name and an
+        <p>Create one with <span class="kbd">+ New Project</span> on the Projects tab (or from the New Budget dialog): an ID, a name and an
           address. A project has no type of its own — each of its budgets carries one, so a single property can
           hold a Multifamily budget and a Commercial budget at the same time. From a project page you can:</p>
         <ul>
@@ -1746,7 +1757,7 @@ th.sortable.sorted{color:var(--ink-900)}
             <b>Converted to Project</b>, with On Hold and Lost for everything else.</li>
           <li><b>See what you starred</b> — the Favorites strip shows only the budget and analysis you starred on
             this project, rather than everything that exists.</li>
-          <li><b>Add an investment analysis</b> — <span class="kbd">+ Add Investment Analysis</span> on the
+          <li><b>Add an investment analysis</b> — <span class="kbd">+ New Investment Analysis</span> on the
             Investment Analyses card. With one budget on the project it links to that budget without asking;
             with several it asks which one, offering only this project's budgets.</li>
           <li><b>Act on a row</b> — the <b>three-dot menu</b> at the end of each budget row carries the same
@@ -2444,7 +2455,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <p class="wel-note">Your settings and favorites save to your account, so they follow you to any signed-in browser.</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:22px">
         <button class="btn btn-ghost" onclick="closeWelcome();go('help')">Open the Guide</button>
-        <button class="btn btn-primary" id="welcomeGo" onclick="closeWelcome()">Get Started</button>
+        <button class="btn btn-primary" id="welcomeGo" onclick="welcomeGetStarted()">Get Started</button>
       </div>
     </div>
   </div>
@@ -2507,15 +2518,10 @@ th.sortable.sorted{color:var(--ink-900)}
         <button class="tpl-row" onclick="pickNewBudget('multifamily')">
           <span class="tpl-name">Multifamily</span>
           <span class="tpl-sub">The standard template — unit mix, income, expenses, and every priced line from the current pricing library</span></button>
-        <button class="tpl-row" disabled title="Coming soon">
-          <span class="tpl-name">Industrial</span><span class="tpl-sub">Coming soon</span></button>
-        <button class="tpl-row" disabled title="Coming soon">
-          <span class="tpl-name">Retail</span><span class="tpl-sub">Coming soon</span></button>
-        <button class="tpl-row" disabled title="Coming soon">
-          <span class="tpl-name">Mixed-Use</span><span class="tpl-sub">Coming soon</span></button>
         <button class="tpl-row" onclick="pickNewBudget('blank')">
           <span class="tpl-name">Blank Budget</span>
           <span class="tpl-sub">Genuinely empty — no units, no income, no scope. Build everything yourself from the CSI catalog</span></button>
+        <div class="tpl-soon" id="nbComingSoon">Industrial, Retail and Mixed-Use templates are coming soon.</div>
       </div>
       <div class="set-lab">Custom Templates</div>
       <div class="tpl-list" id="customTplList"></div>
@@ -2532,10 +2538,17 @@ th.sortable.sorted{color:var(--ink-900)}
           <select id="nbProject" onchange="nbProjectPicked()" aria-describedby="nbProjectErr"></select>
           <span class="fld-err" id="nbProjectErr" style="display:none"></span></label>
       </div>
+      <!-- Not on the list yet? Make it here and come straight back, with the
+           new project chosen. Without this, an account with no projects met a
+           disabled Create button and no way forward. -->
+      <div class="nb-newproj" id="nbNewProjectRow">
+        <button type="button" class="btn btn-ghost btn-sm" id="nbNewProjectBtn" onclick="nbNewProject()">+ New Project…</button>
+        <span class="set-note" id="nbNewProjectNote">Not listed? Create it here — you come straight back to this budget.</span>
+      </div>
       <div class="set-lab" style="margin-top:16px">Budget</div>
       <div class="set-grid">
         <label class="fld wide"><span class="lab">Budget ID</span>
-          <input type="text" id="nbId" placeholder="BDG-0042-01" autocomplete="off"
+          <input type="text" id="nbId" placeholder="Choose a project first" autocomplete="off"
             style="font-family:var(--fm);text-transform:uppercase"
             aria-describedby="nbIdErr" oninput="this.dataset.touched='1';nbValidate()">
           <span class="fld-err" id="nbIdErr" style="display:none"></span></label>
@@ -2565,8 +2578,8 @@ th.sortable.sorted{color:var(--ink-900)}
 <div id="newProjectModal" class="modal" onclick="if(event.target===this)closeNewProject()">
   <div class="card mod-sheet" style="width:520px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column"
     role="dialog" aria-modal="true" aria-labelledby="newProjectTitle">
-    <div class="card-hd"><h2 class="mod-title" id="newProjectTitle">Create Project</h2>
-      <button class="btn-x" onclick="closeNewProject()" aria-label="Close create project">&times;</button></div>
+    <div class="card-hd"><h2 class="mod-title" id="newProjectTitle">New Project</h2>
+      <button class="btn-x" onclick="closeNewProject()" aria-label="Close new project">&times;</button></div>
     <div class="card-bd" style="overflow:auto">
       <p class="set-note" style="margin:0 0 14px">The project is the parent. Each of its budgets
         carries its own type, so one property can hold a Multifamily budget and a Commercial
@@ -2602,7 +2615,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <div id="invPickModal" class="modal" onclick="if(event.target===this)FSProjects.closeBudgetPicker()">
   <div class="card mod-sheet" style="width:560px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column"
     role="dialog" aria-modal="true" aria-labelledby="invPickTitle">
-    <div class="card-hd"><h2 class="mod-title" id="invPickTitle">Add Investment Analysis</h2>
+    <div class="card-hd"><h2 class="mod-title" id="invPickTitle">New Investment Analysis</h2>
       <button class="btn-x" onclick="FSProjects.closeBudgetPicker()" aria-label="Close">&times;</button></div>
     <div class="card-bd" style="overflow:auto" id="invPickBody"></div>
   </div>
@@ -2727,8 +2740,8 @@ th.sortable.sorted{color:var(--ink-900)}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
           Cards<span class="tick">✓</span></button>
       </div>
-      <div class="set-note" style="margin:10px 0 4px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase">Project Budgets</div>
-      <div class="set-choice" role="group" aria-label="Project Budgets View">
+      <div class="set-note" style="margin:10px 0 4px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase">Budgets</div>
+      <div class="set-choice" role="group" aria-label="Budgets View">
         <button data-budgetview-pick="comfortable" onclick="chooseSetting('budgetView','comfortable')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
           Comfortable<span class="tick">✓</span></button>
@@ -3135,6 +3148,14 @@ function closeWelcome(){
   if(US.settings&&welcomeSeenVersion()<WELCOME_VERSION)
     chooseSetting('welcomeSeenVersion',WELCOME_VERSION);
 }
+/* Get Started means start: an account with no project yet is taken straight
+   to making one, because every budget needs a project to belong to. Anyone
+   who already has projects just lands on Home. Only this button does it — the
+   ×, the backdrop and Escape are ways of saying "not now". */
+function welcomeGetStarted(){
+  closeWelcome();
+  if(window.FSHome&&FSHome.needsProject&&FSHome.needsProject())openNewProject();
+}
 /* ---- Admin: user role management (super_admin only) ---- */
 const ADMIN_ROLES=['user','manager','director','super_admin'];
 const ROLE_LABELS={user:'User',manager:'Manager',director:'Director',super_admin:'Super Admin'};
@@ -3317,10 +3338,16 @@ function closeAllDialogs(){
    and stating it is what lets the name and address come across instead of
    being retyped. */
 let nbTemplateKey=null,nbProjects=[],nbPreset=null;
+/* Where the dialog was opened from — the project page's project, or null for
+   Home / the Budgets list. It is what Back returns to once the budget is
+   open, and it is NOT moved by choosing (or creating) a different project in
+   the dialog: Back goes where you came from. */
+let nbOrigin=null;
 function openNewBudget(presetProjectId){
   nbTemplateKey=null;
   nbPreset=presetProjectId&&PROJECT_ID_RX.test(String(presetProjectId).toUpperCase())
     ?String(presetProjectId).toUpperCase():null;
+  nbOrigin=nbPreset;
   const host=document.getElementById('customTplList');
   const customs=activeTemplates().filter(t=>t.templateKey!=='multifamily');
   host.innerHTML=customs.length
@@ -3358,10 +3385,21 @@ function paintNbProjects(){
   if(!sel)return;
   const chosen=nbPreset||sel.value||'';
   const head=nbProjectsFailed?'Not available offline — link it later'
-    :nbProjects.length?'Choose a project…':'No projects yet — create one first';
+    :nbProjects.length?'Choose a project…':'No projects yet — use + New Project below';
   sel.innerHTML=`<option value="">${esc(head)}</option>`
     +nbProjects.map(p=>`<option value="${esc(p.projectId)}">${esc(p.projectId)} — ${esc(p.name||'Untitled')}</option>`).join('');
   sel.disabled=nbProjectsFailed;
+  // Offline a project cannot be created either, so the way out is hidden
+  // rather than offered and refused. With no projects at all it is THE next
+  // step, so it is the filled button.
+  const row=document.getElementById('nbNewProjectRow');
+  if(row)row.style.display=nbProjectsFailed?'none':'';
+  const nb=document.getElementById('nbNewProjectBtn');
+  if(nb)nb.className='btn btn-sm '+(nbProjects.length?'btn-ghost':'btn-dark');
+  const note=document.getElementById('nbNewProjectNote');
+  if(note)note.textContent=nbProjects.length
+    ?'Not listed? Create it here — you come straight back to this budget.'
+    :'A budget belongs to a project. Create the project, then finish this budget.';
   if(chosen)sel.value=chosen;
   // Opened from a project page: that IS the project, so it is shown rather
   // than re-asked. Still a real select, so the choice is visible and, if the
@@ -3390,12 +3428,20 @@ function nbProjectPicked(){
    value is never overwritten. */
 async function nbSuggestId(){
   const f=document.getElementById('nbId');
-  if(f.dataset.touched)return;
   const proj=document.getElementById('nbProject').value;
+  // Online, a budget id is minted from its project (BDG-<project>-<item>), so
+  // until one is chosen there is nothing honest to suggest — the old fallback
+  // offered a legacy BD-#### that the project would then replace. Offline the
+  // field is typed, as it always was.
+  f.placeholder=nbProjectsFailed||proj?'BDG-0042-01':'Suggested once a project is chosen';
+  if(f.dataset.touched)return;
+  if(!proj){f.value='';return;}
   try{
-    const r=await api('budget/BD-0000?scope=next-budget-id'
-      +(proj?'&project='+encodeURIComponent(proj):''));
-    if(r&&r.budgetId&&!f.dataset.touched){f.value=r.budgetId;nbValidate();}
+    const r=await api('budget/BD-0000?scope=next-budget-id&project='+encodeURIComponent(proj));
+    // Only if the project is still the one asked about: a fast re-pick must
+    // not be overwritten by the slower answer for the previous project.
+    if(r&&r.budgetId&&!f.dataset.touched&&document.getElementById('nbProject').value===proj){
+      f.value=r.budgetId;nbValidate();}
   }catch(e){/* offline: type one instead */}
 }
 function nbFieldErr(id,msg){
@@ -3491,6 +3537,10 @@ async function nbCreate(){
     doc.address=address||(p?p.address:'')||'';
     doc.projectKey=p?p.projectId:null;
     docIsNew=true;              // the first save must CREATE, never overwrite
+    // Back from the new budget goes where the dialog was opened from — never
+    // to the project of whatever budget happened to be open before it.
+    budgetOrigin=nbOrigin?{page:'project',id:nbOrigin}:null;
+    paintBackTargets();
     closeNewBudget();
     fillForms();markDirty();go('input');
     toast('New budget '+id+' on '+(p?p.projectId:'its project')+'. Fill in the size, then Save.');
@@ -3504,7 +3554,27 @@ async function nbCreate(){
    the ID must be unique; both rules are enforced by the API, which is what
    makes them true when two people submit at once. The checks here exist so
    the answer arrives against the field it concerns instead of as a toast. */
-function openNewProject(){
+/* Opened from step 2 of New Budget, success returns there with the new
+   project chosen instead of navigating to it: the person was making a budget,
+   and the project was only the thing standing in the way. */
+let npForBudget=false;
+function nbNewProject(){openNewProject({forBudget:true});}
+async function nbAdoptProject(id,p){
+  await loadNbProjects();
+  // The list is the server's answer; a project this account just made is in
+  // it, but if visibility rules ever hid it the choice must still be made.
+  if(!nbProjects.some(x=>x.projectId===id)){
+    nbProjects.unshift({projectId:id,name:p.name,address:p.address});
+    paintNbProjects();
+  }
+  nbPreset=id;                // keeps it chosen through any later repaint
+  document.getElementById('nbProject').value=id;
+  nbFieldErr('nbProject','');
+  nbProjectPicked();
+  const n=document.getElementById('nbName');if(n)n.focus();
+}
+function openNewProject(opts){
+  npForBudget=!!(opts&&opts.forBudget);
   ['npId','npName','npAddress'].forEach(id=>{
     document.getElementById(id).value='';
     npFieldErr(id,'');
@@ -3550,7 +3620,17 @@ async function submitNewProject(){
     await api('budget/'+encodeURIComponent(id)+'?scope=project',
       {method:'PUT',body:JSON.stringify(body)});
     closeNewProject();
-    if(window.FSProjects){FSProjects.invalidate();FSProjects.open(id);}
+    if(window.FSProjects)FSProjects.invalidate();
+    // Home steers an account with no projects toward making one, so it has to
+    // learn that one now exists.
+    if(window.FSHome){FSHome.invalidate();if(currentPage==='home')FSHome.show();}
+    if(npForBudget&&openDialogs.some(d=>d.id==='newBudgetModal')){
+      npForBudget=false;
+      toast('Project '+id+' created — now finish the budget.');
+      await nbAdoptProject(id,body);
+      return;
+    }
+    if(window.FSProjects)FSProjects.open(id);
     toast('Project '+id+' created.');
   }catch(e){
     // The server answers per field, so the message lands on the input it is
@@ -3795,6 +3875,9 @@ async function initAuth(){
     displayChildId:displayChildId,
     // Creating a budget from a project starts with that project chosen.
     newBudget:pid=>openNewBudget(pid),
+    // The same editable status chip every list uses, so a budget or analysis
+    // status reads — and changes — the same way on a project page.
+    statusChip:(kind,status,id)=>statusChip(status,kind,id),
     // An alternate starts as a copy of the budget it is an alternative to.
     duplicateBudget:duplicateBudgetAs,
     // Converting a project changes what the dashboard reports, so its cache
@@ -3810,6 +3893,19 @@ async function initAuth(){
     settings:usSettings,
     setSetting:(k,v)=>chooseSetting(k,v),
     currentPage:()=>currentPage,
+    // Home's budget fetch doubles as the refresh of `index` (see renderHome).
+    budgetsLoaded:list=>{if(Array.isArray(list))index=list;},
+    // The overflow of Needs Attention opens the Budgets list, filtered when
+    // the overflow shares one status.
+    openBudgetsList:status=>{
+      homeView.q='';homeView.status=STATUS_LIST.includes(status)?status:'all';
+      ['budgetsSearch','budgetsStatus'].forEach(id=>{const e=document.getElementById(id);
+        if(e)e.value=id==='budgetsSearch'?'':homeView.status;});
+      go('budgets');
+    },
+    go:go,
+    // A first run with no project anywhere starts by making one.
+    newProject:()=>openNewProject(),
     userId:()=>(principal&&principal.userId)||'anon',
     // Same precedence the avatar uses: the Settings display name wins,
     // otherwise the platform name claim, otherwise a humanised sign-in local part.
@@ -3864,8 +3960,27 @@ function toggleNavMore(){
   var el=document.getElementById('navMore');
   if(el.classList.contains('open'))closeNavMore();
   else{closeProfile(true);el.classList.add('open');document.getElementById('nav-more-btn').setAttribute('aria-expanded','true');
+    placeNavDrop();
     setTimeout(()=>document.addEventListener('click',navMoreOutside,{once:true}),0);}
 }
+/* On a phone the menu is position:fixed (see the 760px block), so it needs real
+   coordinates: under the button, right-aligned to it, and never off-screen.
+   On wider screens the inline values are cleared and the stylesheet's absolute
+   placement applies. */
+function placeNavDrop(){
+  const drop=document.getElementById('navDrop'),btn=document.getElementById('nav-more-btn');
+  if(!drop||!btn)return;
+  if(!window.matchMedia('(max-width:760px)').matches){drop.style.top=drop.style.left='';return;}
+  const r=btn.getBoundingClientRect(),w=drop.offsetWidth;
+  drop.style.top=Math.round(r.bottom+4)+'px';
+  drop.style.left=Math.round(Math.max(8,Math.min(r.right-w,window.innerWidth-w-8)))+'px';
+}
+// The button moves when the tab bar pans or the window resizes; the menu follows.
+window.addEventListener('resize',()=>{const el=document.getElementById('navMore');if(el&&el.classList.contains('open'))placeNavDrop();});
+document.addEventListener('DOMContentLoaded',()=>{
+  const nav=document.querySelector('.hd>nav');
+  if(nav)nav.addEventListener('scroll',()=>{const el=document.getElementById('navMore');if(el&&el.classList.contains('open'))placeNavDrop();},{passive:true});
+});
 function closeNavMore(){
   var el=document.getElementById('navMore');if(!el)return;
   el.classList.remove('open');document.getElementById('nav-more-btn').setAttribute('aria-expanded','false');
@@ -4363,9 +4478,9 @@ function editReason(it){
    budget be linked directly — #/budget/BD-0001. */
 const PAGE_SLUG={home:'home',projects:'projects',project:'project',budgets:'budgets',input:'inputs',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
 /* Human names for the pages, for anything a person reads: today the subject
-   line of a feedback email, which is more use as "Project Budgets" than as
+   line of a feedback email, which is more use as "Budgets" than as
    "budgets". */
-const PAGE_LABEL={home:'Home',projects:'Projects',project:'Project Detail',budgets:'Project Budgets',input:'Budget Inputs',budget:'Budget Detail',
+const PAGE_LABEL={home:'Home',projects:'Projects',project:'Project Detail',budgets:'Budgets',input:'Budget Inputs',budget:'Budget Detail',
   csi:'CSI Schedule',analyses:'Investment Analysis',analysis:'Investment Analysis Editor',
   pricing:'Pricing Library',help:'How to Use',dashboard:'Analytics',admin:'Admin',version:'Version'};
 const SLUG_PAGE={home:'home',projects:'projects',project:'project',budgets:'budgets',inputs:'input',budget:'budget',csi:'csi',analyses:'analyses',analysis:'analysis',pricing:'pricing',help:'help',dashboard:'dashboard',admin:'admin',version:'version'};
@@ -4384,6 +4499,17 @@ function hashFor(p){
 }
 function syncHash(p){const h=hashFor(p);if(location.hash!==h)location.hash=h;}
 
+/* On a phone the tab bar pans, so the lit tab can be scrolled out of sight —
+   arriving on Investment Analysis with only Home visible says nothing about
+   where you are. Pans the bar itself rather than calling scrollIntoView(),
+   which would also scroll the page. */
+function revealNavTab(btn){
+  const nav=btn&&btn.closest('nav');
+  if(!nav||nav.scrollWidth<=nav.clientWidth)return;
+  const nr=nav.getBoundingClientRect(),br=btn.getBoundingClientRect();
+  if(br.left<nr.left)nav.scrollLeft-=nr.left-br.left+8;
+  else if(br.right>nr.right)nav.scrollLeft+=br.right-nr.right+8;
+}
 function go(p){
   // Leaving a budget for a non-budget page abandons unsaved edits — ask first.
   if(p!==currentPage&&DOC_PAGES.includes(currentPage)&&!DOC_PAGES.includes(p)&&!confirmDiscard()){
@@ -4408,6 +4534,7 @@ function go(p){
   if(nb)nb.classList.add('on');
   var MORE_PAGES=['help','dashboard','admin','version','pricing'];
   if(MORE_PAGES.includes(p))document.getElementById('nav-more-btn').classList.add('on');
+  revealNavTab(MORE_PAGES.includes(p)?document.getElementById('nav-more-btn'):nb);
   syncHash(p);
   renderSaveState();
   if(p==='home')renderHome();
@@ -4478,7 +4605,7 @@ function budgetsListShell(p){
         <select id="${p}Group" class="lt-group" title="Group the list" aria-label="Group By">
           <option value="">No Grouping</option>
           <option value="address">Group by Address</option>
-          <option value="id">Group by Project ID</option>
+          <option value="project">Group by Project</option>
           <option value="type">Group by Type</option>
           <option value="status">Group by Status</option>
           <option value="user">Group by User</option>
@@ -4500,7 +4627,7 @@ function budgetsListShell(p){
     <table class="tbl">
       <thead id="${p}Head"><tr>
         <th style="padding-left:22px" class="no-print lt-user-col">User</th>
-        <th class="sortable" data-sort="projectId">Project ID</th>
+        <th class="sortable" data-sort="projectId">Budget ID</th>
         <th class="sortable" data-sort="name">Name</th>
         <th class="sortable" data-sort="status">Status</th>
         <th class="r sortable" data-sort="contractSum">Contract Sum</th>
@@ -4529,7 +4656,8 @@ function mountBudgetsList(p,hostId){
   const gr=document.getElementById(p+'Group');
   if(q)q.addEventListener('input',e=>{homeView.q=e.target.value;paintBudgets();});
   if(st)st.addEventListener('change',e=>{homeView.status=e.target.value;paintBudgets();});
-  if(gr)gr.addEventListener('change',e=>{homeView.group=e.target.value;paintBudgets();});
+  if(gr)gr.addEventListener('change',e=>{homeView.group=e.target.value;paintBudgets();
+    if(homeView.group==='project')loadProjectNames();});
   const head=document.getElementById(p+'Head');
   if(head)head.addEventListener('click',e=>{
     const th=e.target.closest('th[data-sort]');
@@ -4543,10 +4671,26 @@ function mountBudgetsList(p,hostId){
 // Every mounted list, so a repaint keeps them in step.
 const BUDGET_LIST_PREFIXES=['budgets'];
 
+/* Project names for the Group by Project headings ("OP-0003 — Riverbend").
+   The budget list carries only each budget's projectKey, so the names come
+   from the projects scope — fetched only while that grouping is chosen, and
+   never required: without them a heading is the bare OP-#### id. */
+let projectNames={};
+async function loadProjectNames(){
+  try{
+    const r=await api('budgets?scope=projects');
+    const next={};
+    ((r&&r.projects)||[]).forEach(x=>{if(x&&x.projectId)next[String(x.projectId).toUpperCase()]=x.name||'';});
+    projectNames=next;
+  }catch(e){return;}
+  if(homeView.group==='project')paintBudgets();
+}
+
 /* The dedicated Budgets page: same data load as Home, same list card. */
 async function renderBudgetsPage(){
   const host=document.getElementById('budgetsHost');
   if(host&&host.dataset.mounted!=='1')mountBudgetsList('budgets','budgetsHost');
+  if(homeView.group==='project')loadProjectNames();
   try{
     index=(await sGet('budgets-index'))||[];
     paintBudgets();
@@ -4575,10 +4719,11 @@ function paintWorkflowPills(active){
 
 /* Home is the personal dashboard now (app/home.js), not a copy of the two
    indexes. It keeps `index` fresh because the row menus and status writes
-   still read it. */
+   still read it — from Home's OWN load, handed back through the adapter's
+   budgetsLoaded, so a visit to Home is one GET /api/budgets, not two. */
 async function renderHome(){
+  if(window.FSHome){await FSHome.show();return;}
   index=(await sGet('budgets-index'))||[];
-  if(window.FSHome)FSHome.show();
 }
 
 /* A budget was created, deleted or repriced: refresh both surfaces that show
@@ -4609,15 +4754,16 @@ function homeRows(){
     return String(a[k]??'').localeCompare(String(z[k]??''))*d;
   });
 }
-/* Grouping keys. Project ID groups by its prefix — every ID is unique, so grouping
-   on the whole value would make one group per budget. The prefix is the part that
-   actually classifies a record (BD / OP / AS / TST). */
+/* Grouping keys. Project groups by the budget's PROJECT — its explicit
+   ProjectKey link, never anything read out of the budget id. This used to be
+   "Group by Project ID" and grouped budget ids by their prefix, which labelled
+   budgets as projects and put every BDG- budget in one group. */
 const HOME_GROUPS={
   address:{label:'Address', of:x=>(x.address||'').trim()||'No Address'},
-  id:     {label:'Project ID', of:x=>{
-            const m=/^([A-Z]+)-/.exec(String(x.projectId||'').toUpperCase());
-            return m?({BD:'BD — Business Development',OP:'OP — Operations',
-                       AS:'AS — Assessment',TST:'TST — Test'}[m[1]]||m[1]):'Other';}},
+  project:{label:'Project', of:x=>{
+            const k=String(x.projectKey||'').toUpperCase();
+            if(!k)return 'No Project';
+            return projectNames[k]?k+' — '+projectNames[k]:k;}},
   type:   {label:'Type', of:x=>(x.type||'').trim()||'No Type'},
   status: {label:'Status', of:x=>normStatus(x.status)},
   // Records saved before ownership tracking have no creator; they group under
@@ -4718,6 +4864,9 @@ async function setEntityStatus(kind,id,status){
         if(window.FSHome)FSHome.invalidate();
       else if(currentPage==='analyses'&&window.FSInvestmentUI)FSInvestmentUI.renderList();
     }
+    // A project page lists both kinds with the same chip; repaint it from the
+    // server so the row and the page's own figures agree.
+    if(currentPage==='project'&&window.FSProjects&&FSProjects.refresh)FSProjects.refresh();
     toast('Status updated to '+status+'.');
   }catch(e){toast('Could not update the status — '+e.message);}
 }
@@ -4774,7 +4923,7 @@ function homeCard(x){
     <div class="hc-id">${x.createdByName?creatorAvatar(x.createdByName,x.createdByAvatar)+' ':''}${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</div>
     <div class="hc-name">${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</div>
     <div class="hc-row"><span>Contract Sum</span><span class="v">${usd(x.contractSum||0)}</span></div>
-    <div class="hc-row"><span>Total Project</span><span class="v">${usd(x.projectCost||0)}</span></div>
+    <div class="hc-row"><span>Total Project Cost</span><span class="v">${usd(x.projectCost||0)}</span></div>
     <div class="hc-ft">${statusChip(x.status,'budget',x.projectId)}
       <span>${esc(fmtDay(x.updated))}</span></div>
     <button class="rowmenu-btn hc-menu" data-pid="${esc(x.projectId)}" aria-haspopup="menu" aria-expanded="false"

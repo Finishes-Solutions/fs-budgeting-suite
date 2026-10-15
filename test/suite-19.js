@@ -108,8 +108,8 @@ const mailMode=async(p,m)=>p.evaluate(mm=>fetch('/api/_mock/mail-mode',{method:'
  await p.click('#fbFab'); await p.waitForTimeout(300);
  const fromBudgets=decodeURIComponent(await p.evaluate(()=>FSFeedback.pick('bug')));
  ok('the report names the page it was opened from',
-    /\[FS Suite · Bug\] Project Budgets/.test(fromBudgets)
-    && /Page: Project Budgets \(#\/budgets\)/.test(fromBudgets),
+    /\[FS Suite · Bug\] Budgets/.test(fromBudgets)
+    && /Page: Budgets \(#\/budgets\)/.test(fromBudgets),
     fromBudgets.split('&body=')[0]);
  await p.evaluate(()=>go('home')); await p.waitForTimeout(400);
 

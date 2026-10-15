@@ -27,6 +27,18 @@ const BASE='http://127.0.0.1:8100';
  ok('both create actions are on Home',
     (await p.locator('#page-home button:has-text("+ New Budget")').count())===1
     && (await p.locator('#page-home button:has-text("+ New Investment Analysis")').count())===1);
+ // No project exists yet, and a budget needs one to belong to: the first step
+ // is the project, so it leads — and New Budget is still there, not hidden.
+ ok('with no projects, + New Project leads the create actions',
+    await p.evaluate(()=>{
+      const b=[...document.querySelectorAll('#page-home .hm-actions button')];
+      return b.length===3 && /\+ New Project/.test(b[0].textContent)
+        && b[0].classList.contains('btn-primary')
+        && document.getElementById('newBudgetBtn').classList.contains('btn-ghost');
+    }),
+    await p.evaluate(()=>[...document.querySelectorAll('#page-home .hm-actions button')].map(b=>b.textContent.trim()+':'+b.className).join(' | ')));
+ ok('and the empty state says to start with a project',
+    /start by creating the project/.test(await p.locator('#page-home').textContent()));
 
  // An empty account is greeted differently from a returning one.
  const emptyGreet=await p.evaluate(()=>document.querySelector('.hm-greet').textContent.trim());
@@ -63,11 +75,12 @@ const BASE='http://127.0.0.1:8100';
  ok('Home shows Recent and Your Activity once there is work',
     (await sections()).includes('Recent') && (await sections()).includes('Your Activity'),
     JSON.stringify(await sections()));
- // What you were doing outranks what is nagging you.
- ok('Recent sits above Needs Attention',
+ // What is waiting on a decision is the reason to open Home; on a phone,
+ // Recent's cards used to push it a screen and a half down.
+ ok('Needs Attention sits above Recent',
     await (async()=>{ const s=await sections();
       return s.indexOf('Recent')>=0 && s.indexOf('Needs Attention')>=0
-        && s.indexOf('Recent')<s.indexOf('Needs Attention'); })(),
+        && s.indexOf('Needs Attention')<s.indexOf('Recent'); })(),
     JSON.stringify(await sections()));
  ok('the activity list carries no View All link',
     await p.evaluate(()=>{
@@ -126,7 +139,14 @@ const BASE='http://127.0.0.1:8100';
     }),
     await p.evaluate(()=>[...document.querySelectorAll('#page-home .hm-log-ev')].map(e=>e.textContent.trim()).join(',')));
  ok('the feed is capped so Home stays short',
-    (await p.locator('#page-home .hm-log-row').count())<=8);
+    (await p.locator('#page-home .hm-log-row').count())<=5,
+    'rows='+await p.locator('#page-home .hm-log-row').count());
+ // Sign-ins say nothing about any record; the feed is what you DID.
+ await p.evaluate(()=>{FSHome.invalidate();return FSHome.show();}); await p.waitForTimeout(700);
+ ok('sign-ins are left out of Your Activity',
+    await p.evaluate(()=>![...document.querySelectorAll('#page-home .hm-log-ev')]
+      .some(e=>/Signed in/.test(e.textContent))),
+    await p.evaluate(()=>[...document.querySelectorAll('#page-home .hm-log-ev')].map(e=>e.textContent.trim()).join(',')));
 
  // ---------- 6. favoriting from the budget row menu ----------
  await p.evaluate(()=>go('budgets')); await p.waitForTimeout(800);
@@ -363,6 +383,43 @@ const BASE='http://127.0.0.1:8100';
     }));
  await p.setViewportSize({width:1400,height:1000});
  await p.waitForTimeout(300);
+
+ // ---------- 13. the queue's overflow leads somewhere ----------
+ // Seven more budgets waiting on a decision, and the two unanalysed ones
+ // underwritten, so everything past the first six is In Review.
+ await p.evaluate(async()=>{
+   for(let i=1;i<=7;i++){
+     const pid='BD-61'+String(i).padStart(2,'0');
+     const doc={projectId:pid,name:'Review Queue '+i,status:'In Review',resSF:1000,amenSF:0,
+       units:[],other:[],expenses:[],
+       lines:[{lineId:'s1',scope:'res',grp:'General',code:'',desc:'Shell',basis:'ls',auto:true,qty:0,unit:1000}],
+       companies:[],contingency:{mode:'fixed',val:0},projectCosts:{land:0,dev:0,mkt:0,cls:0},
+       pricingVersion:'2026.08-v2',updated:new Date().toISOString()};
+     await fetch('/api/budget/'+pid,{method:'PUT',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({meta:{projectId:pid,name:doc.name,status:'In Review'},doc})});
+   }
+   for(const pid of ['BD-6003','BD-6009'])
+     await fetch('/api/investment-analyses',{method:'POST',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({mode:'fromBudget',projectId:pid,analysisName:pid+' Deal'})});
+ });
+ await p.evaluate(()=>go('home')); await p.waitForTimeout(1000);
+ ok('the queue shows six rows and offers the rest',
+    (await p.locator('#page-home .hm-att').count())===6
+      && /^\d+ more/.test((await p.locator('#page-home button.hm-more').textContent().catch(()=>'')).trim()),
+    (await p.locator('#page-home .hm-att').count())+' rows, more='
+      +(await p.locator('#page-home button.hm-more').textContent().catch(()=>'none')));
+ ok('the overflow target is the Budgets list filtered to In Review',
+    JSON.stringify(await p.evaluate(()=>FSHome._overflowTarget()))===JSON.stringify({page:'budgets',status:'In Review'}),
+    JSON.stringify(await p.evaluate(()=>FSHome._overflowTarget())));
+ await p.click('#page-home button.hm-more'); await p.waitForTimeout(900);
+ ok('clicking it opens the Budgets list',
+    await p.evaluate(()=>currentPage==='budgets'), await p.evaluate(()=>currentPage));
+ ok('filtered to the status the overflow shares',
+    (await p.locator('#budgetsStatus').inputValue())==='In Review'
+      && (await p.evaluate(()=>[...document.querySelectorAll('#budgetsBody tr:not(.grp-hd) .st-chip')]
+        .every(c=>c.textContent.trim()==='In Review')))
+      && (await p.locator('#budgetsBody tr:not(.grp-hd)').count())===8,
+    (await p.locator('#budgetsStatus').inputValue())+' / '+(await p.locator('#budgetsBody tr:not(.grp-hd)').count())+' rows');
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
