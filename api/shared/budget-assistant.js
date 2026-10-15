@@ -118,7 +118,10 @@ function budgetFacts(doc, row) {
   const g = calc.grossIncome(doc);
   const tu = calc.totUnits(doc);
   const bldgSF = calc.nz(doc.resSF) + calc.nz(doc.amenSF);
-  const rails = FSGuardrails.evaluate({ doc, parts: p, gross: g, fee: p.fee });
+  // Judged by the same table the save gate uses: DEFAULT_POLICY for the
+  // budget's type, never a policy the document carries (BUDGET-SYSTEM.md §10).
+  const rails = FSGuardrails.evaluate({ doc, parts: p, gross: g, fee: p.fee,
+    policy: FSGuardrails.policyForType((row && row.Type) || doc.type) });
   const lines = (doc.lines || []).map(l => lineFacts(doc, l));
 
   const groups = new Map();

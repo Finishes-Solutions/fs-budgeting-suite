@@ -2125,7 +2125,8 @@ th.sortable.sorted{color:var(--ink-900)}
         <p>When a budget is running on an older library, a banner appears on the budget page naming both versions.
           <span class="kbd">Update to current pricing</span> pulls the new rates in — it matches on scope, code and
           description, so standard template lines are repriced and any custom line you added keeps the rate you
-          gave it. Quantities and overrides are untouched. The banner's <b>×</b> hides it for that budget while
+          gave it. Quantities are untouched, but a rate you changed by hand on a standard line <b>is replaced</b>
+          by the library rate (the confirmation says how many were). The banner's <b>×</b> hides it for that budget while
           you work; the reprice stays one click away in the Home list's three-dot menu as
           <span class="kbd">Update Pricing</span> (which simply confirms when a budget is already current).</p>
         <p>Publishing is the other direction: an admin edits the library and publishes, which stamps a new version
@@ -4472,6 +4473,11 @@ function blankDoc(kind){
     created:new Date().toISOString(),updated:new Date().toISOString()};
 }
 function migrate(d){ // tolerate older saves
+  // parts() reads all four unconditionally; the server treats absent as empty,
+  // so an old or hand-built document must too rather than throw on open.
+  d.units=Array.isArray(d.units)?d.units:[];d.lines=Array.isArray(d.lines)?d.lines:[];
+  d.companies=Array.isArray(d.companies)?d.companies:[];
+  d.contingency=d.contingency&&typeof d.contingency==='object'?d.contingency:{mode:'amt',val:0};
   d.resSF=d.resSF??d.buildableSF??0; d.amenSF=d.amenSF??0; d.siteSF=d.siteSF??0;
   d.other=d.other??JSON.parse(JSON.stringify(DEFAULT_OTHER));
   d.expenses=d.expenses??JSON.parse(JSON.stringify(DEFAULT_EXPENSES));
@@ -6896,7 +6902,7 @@ function renderGuardrails(){
     +`<div style="overflow-x:auto"><table class="tbl gr-tbl">
       <thead><tr><th style="width:42%">Rail</th><th class="r">Actual</th><th class="r">Guard Rail</th><th class="r">State</th><th class="no-print"></th></tr></thead>
       <tbody>${r.rails.map(row).join('')}</tbody></table></div>`
-    +`<div class="note" style="margin-top:10px">Thresholds ship with the budget template, so publishing a template version publishes the rails. A rail whose denominator is zero is not evaluated and never blocks.</div>`;
+    +`<div class="note" style="margin-top:10px">Thresholds are the built-in ones for the budget’s type, and the server applies the same table when it saves. A rail with nothing to judge yet is not evaluated and never blocks.</div>`;
 }
 /* An override needs a reason, and the reason is the point: it rides into the
    budget summary and every export so the decision is never invisible. Gated to

@@ -101,6 +101,8 @@ no companies, contingency `pct` 0 and all project costs 0.
 Every time a budget is opened (and when one is made from a template),
 `migrate()` in `app/index.html` repairs older documents **in memory**:
 
+- Absent `units`, `lines` or `companies` become empty lists; absent
+  `contingency` becomes $0 — the same as the server's reading.
 - `resSF ← resSF ?? buildableSF ?? 0`; `amenSF`, `siteSF` default 0.
 - Absent `other` / `expenses` arrays get the default rows (this changes income
   and expenses, not the contract).
@@ -419,15 +421,22 @@ Rules that must not be "simplified" away:
 - **A rail with nothing to judge is skipped, not passed or failed.** Each rail
   returns no value when its denominator is zero, and devFee, marketing, closing,
   landShare and softCost also skip when their own amount is zero ("not entered
-  yet"). Without this a blank budget could never be saved. opexRatio,
-  profitMargin and contingency do judge a zero amount (see §17).
+  yet"); opexRatio skips a budget with **no expense rows** (rows priced at $0 are
+  still judged). Without this a blank budget could never be saved.
+  profitMargin and contingency do judge a zero amount.
 - Ranges are strict: below `min` or above `max` is a breach.
 - An **override** (an acknowledgement with a non-blank reason) downgrades that
   rail's blocking breach to a warning. Stale overrides are pruned when their
-  rail is back in range.
-- The policy is `doc.guardrails[type]` if present, else the built-in defaults
-  above. Nothing in the app writes `doc.guardrails` today, so the defaults are
-  what apply.
+  rail is back in range. **Only a director or super admin can record a new
+  override** — the editor offers it only to them, and the server refuses (403) a
+  save that adds or rewords one from anyone else. Overrides already stored stay
+  valid whoever saves next. (Before the roles migration, when the app cannot
+  tell roles apart, anyone may.)
+- **The server judges by the built-in table for the budget's type**, never by a
+  policy or type the submitted document carries. An existing budget cannot be
+  re-saved as Blank (409); Blank is chosen only when a budget is created. The
+  browser shows the same table. (`evaluate()` takes the table as `policy`;
+  `policyForType()` picks it.)
 
 ---
 
@@ -459,7 +468,7 @@ to Current Pricing** (also in the row menu as Update Pricing). `repriceBudget()`
 - Stamps `pricingVersion`. Nothing is saved until you save.
 
 Creation preserves edited rates; Update Pricing does not. That asymmetry is
-deliberate in the code but easy to miss.
+deliberate, and the in-app help and the confirmation both say so.
 
 ---
 
@@ -476,6 +485,10 @@ deliberate in the code but easy to miss.
    `create: true` and is refused (409) if the id is taken.
 
 ### Editing and saving
+
+- **The Budget ID is fixed once a budget is saved.** The field locks, and the
+  server refuses (409) a save whose id differs from the one the budget was
+  opened as. Use Add Alternate to price the same project another way.
 
 - Every edit runs `touch()` → recalculation (including `applyImpactFees()`).
   There is **no autosave**. Saving is the Save button or Cmd/Ctrl+S.
@@ -649,12 +662,7 @@ today. Remove an entry here when its fix ships (and say so in the change log).
 | # | Severity | What happens |
 |---|---|---|
 | D4 | Medium | The impact-fee source row appears only on the print report, and only if the Impact Fees step was opened in that session. |
-| D6 | Medium | opexRatio judges a budget with income but **no expense rows** as 0% and blocks the save (when `opexSchemaVersion ≥ 2`); the code comment says such a budget is skipped. |
-| D7 | Medium | The guard-rail policy and budget type are read from the submitted document, so a hand-crafted save could relax the server gate. |
 | D9 | Low | The CSI roll-up can fail to reconcile to the contract with a negative company percentage or a line whose scope is not res/amen/soft. |
-| D11 | Low | Browser `parts()` fails on a document with no `companies` or `contingency`; the server treats them as 0. |
-| D12 | Low | Update Pricing replaces edited rates on matched lines (§11); its help text says "overrides are untouched", which reads as including rates. |
-| D13 | Low | Changing the Budget ID field on a saved budget and saving overwrites whichever budget has that id. |
 
 ---
 

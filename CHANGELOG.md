@@ -86,6 +86,49 @@ With no amenity square footage, amenity lines contribute $0 to the budget, but
 the schedule-of-values rows saved for lenders still carried their amounts. Those
 rows are now saved at $0, so they add up to the contract sum.
 
+### Fixed: changing a saved budget's ID overwrote another budget
+
+The Budget ID field stayed editable after a budget was saved. Typing another
+budget's ID and saving silently replaced that other budget and recorded it as
+its next version. The field now **locks once a budget is saved**, and the server
+refuses a save whose ID differs from the one the budget was opened as. To price
+the same project another way, use **Add Alternate**.
+
+### Guard-rail overrides need a director or super admin, on the server too
+
+The editor only offered **Override…** to directors and super admins, but the
+server accepted an override from anyone. Now the server refuses a save that adds
+or rewords an override unless it comes from a director or super admin, and says
+why. Overrides already on a budget keep saving for everyone. A copy made by
+someone without the role starts without overrides.
+
+**Breaking:** the server now judges the rails by the built-in table for the
+budget's type, ignoring any thresholds or type a save carries. It also refuses
+to re-save an existing budget as **Blank**; a budget is Blank only when it is
+created that way.
+
+### The expense guard rail waits for expense rows
+
+A budget with rent but **no expense rows at all** was blocked at "0% operating
+expenses". The rail now waits until expenses are entered. Rows priced at $0 are
+still judged.
+
+### Fixed: in-app bug reports failed in production
+
+The server was not set up to accept the request the bug button sends, so
+reports failed and fell back to an email draft. They now reach the server.
+
+### Fixed: deleting an investment analysis showed an error
+
+The delete went through, but the server then crashed and the activity log never
+recorded it. It now finishes cleanly and is logged.
+
+### Clearer Update Pricing help
+
+The help page said Update Pricing leaves "overrides untouched". Rates you
+changed by hand on standard lines **are** replaced by the library rate. The help
+now says so.
+
 ### Fixed: one budget's fee schedule version could reprice another
 
 After viewing a budget priced on one version of a jurisdiction's fee schedule,
