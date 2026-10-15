@@ -39,8 +39,9 @@ change, on 2026-10-15.
 13. [What is stored, and rounding](#13-what-is-stored-and-rounding)
 14. [Worked example](#14-worked-example)
 15. [What an investment analysis takes from a budget](#15-what-an-investment-analysis-takes-from-a-budget)
-16. [Known discrepancies](#16-known-discrepancies)
-17. [Change log](#change-log)
+16. [What the Budget Assistant computes for itself](#16-what-the-budget-assistant-computes-for-itself)
+17. [Known discrepancies](#17-known-discrepancies)
+18. [Change log](#change-log)
 
 ---
 
@@ -360,7 +361,7 @@ change existing rows.
 - Percent columns: divisions and markups are **% of Contract Sum**; soft costs
   are **% of total soft costs**. A zero denominator shows "—".
 
-Divisions + markups add up to the contract sum (exceptions in §16).
+Divisions + markups add up to the contract sum (exceptions in §17).
 
 ---
 
@@ -419,7 +420,7 @@ Rules that must not be "simplified" away:
   returns no value when its denominator is zero, and devFee, marketing, closing,
   landShare and softCost also skip when their own amount is zero ("not entered
   yet"). Without this a blank budget could never be saved. opexRatio,
-  profitMargin and contingency do judge a zero amount (see §16).
+  profitMargin and contingency do judge a zero amount (see §17).
 - Ranges are strict: below `min` or above `max` is a breach.
 - An **override** (an acknowledgement with a non-blank reason) downgrades that
   rail's blocking breach to a warning. Stale overrides are pruned when their
@@ -602,7 +603,45 @@ analysis on their own; an analysis is re-synced deliberately.
 
 ---
 
-## 16. Known discrepancies
+## 16. What the Budget Assistant computes for itself
+
+The assistant (Ask AI, on budgets and on investment analyses) never estimates a
+number it can compute. Besides the figures above, it is given two rule-based
+analyses. Both are deterministic code, so they can be tested and audited.
+
+### Budget review — `api/shared/budget-review.js`
+
+Each finding says which kind of evidence it rests on:
+
+| Kind | Checks |
+|---|---|
+| **fact** | Active lines priced at $0; amenity lines suppressed by amenity SF 0; SC-20 still on the $/SF placeholder instead of a jurisdiction; land, fees, contingency or profit at $0; unit types with no rent or no SF; leasable unit SF outside 70–95% of residential SF; $0 expense and other-income rows; other income under 3% of rent |
+| **library** | Budget on an older pricing library than the current one; current-library lines (matched on scope + CSI code) that the budget does not carry, each with its cost at this budget's quantities and the library rate; lines whose rate differs from the library by 15% or more, **on the same basis only** |
+| **portfolio** | Hard, soft, contract and project cost per building SF against the **median of the user's own budgets of the same type** (up to 40, test budgets excluded, same visibility as the Budgets list), flagged beyond ±25%; group $/SF flagged beyond ±30% where at least three peers carry the group. Needs at least three peers |
+| **heuristic** | A development checklist matched by keyword in line descriptions and groups: construction-loan interest / interest reserve, loan fees, builder's risk, property taxes during construction, legal/title, FF&E, lease-up / operating reserve, soft-cost contingency, bonds, temporary utilities. Not finding a keyword is *not* proof the cost is missing |
+
+### Pro forma diagnostics — `api/shared/investment/insight.js`
+
+- **Drivers.** Each assumption is nudged by one step and the analysis is re-run
+  through the investment engine: rental income +5%, rent growth +1 pt, vacancy
+  −2 pts, operating expenses −5%, purchase price / project cost −5%, exit cap
+  −0.50 pt, loan rate −0.50 pt. Ranked by the change in final-year equity IRR.
+  A nudge that does not apply (no loans; price set by cap rate) is skipped.
+- **Diagnostics** compare the computed results with common multifamily
+  underwriting rules of thumb, always labelled as such: exit cap below the
+  going-in cap, year-1 DSCR under 1.25x (or under 1.0x), negative leverage, year-1
+  cash-on-cash under 5%, equity IRR under 12%, vacancy under 5%, expense ratio
+  outside 30–55% of GOI, rent growth over 4%, and no other income.
+- **Scenarios** (`run_scenario`) apply a bounded set of changes — added other
+  income rows, rent ±, rent growth, vacancy, expense ratio or ±%, purchase price,
+  exit cap, interest rate — each range-checked, re-run through the engine, and
+  return before/after year-1 NOI, IRR, multiple, DSCR and cash-on-cash. Nothing
+  is saved.
+
+The engine reproduces its own result exactly from its `normalizedInput`, which
+is what every nudge and scenario starts from.
+
+## 17. Known discrepancies
 
 Found in the 2026-10-15 audit and verified in code. Each is a real behaviour
 today. Remove an entry here when its fix ships (and say so in the change log).
