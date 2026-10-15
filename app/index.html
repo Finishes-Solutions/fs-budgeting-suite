@@ -496,6 +496,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--green-600);box-shadow
 input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .err{border-color:var(--danger)!important}
 .fld-err{font-size:11.5px;color:var(--danger);margin-top:4px}
+.fld-help{font-size:11.5px;color:var(--ink-500);margin-top:4px}
 
 .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:var(--r);
   font-family:var(--fb);font-weight:600;font-size:13px;padding:8px 16px;cursor:pointer;transition:all .12s}
@@ -1155,7 +1156,9 @@ th.sortable.sorted{color:var(--ink-900)}
       <div class="grid g4">
         <label class="fld"><span class="lab">Budget ID</span>
           <input type="text" id="pId" placeholder="BD-0001" oninput="validateId();markDirty()" style="font-family:var(--fm);text-transform:uppercase">
-          <div class="fld-err" id="pIdErr" style="display:none">Must match BDG-####-## or BD-#### (or a legacy OP-/AS-/TST-####)</div></label>
+          <div class="fld-err" id="pIdErr" style="display:none">Must match BDG-####-## or BD-#### (or a legacy OP-/AS-/TST-####)</div>
+          <!-- Shown once the budget exists on the server; paintIdLock() owns it. -->
+          <div class="fld-help" id="pIdLocked" style="display:none">A budget's ID is fixed once it is saved. To price it another way, use Add Alternate on its project.</div></label>
         <label class="fld"><span class="lab">Budget Name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
         <!-- Which project this budget belongs to. Read-only because it is the
@@ -3813,8 +3816,18 @@ async function api(path,opts={}){
     throw new Error('Session expired: sign in again');
   }
   setApiHealth(true);
-  if(r.status===403)throw new Error('Not authorized (pricing_admin role required)');
   const ct=r.headers.get('content-type')||'';
+  if(r.status===403){
+    // Most 403s are the pricing_admin gate and keep that wording. A guard-rail
+    // override refused by the budget save says something different and more
+    // useful, so a structured refusal carries the server's own message.
+    let body=null;
+    if(ct.includes('json')){try{body=await r.json();}catch(_){}}
+    const err=new Error(body&&body.error==='override_not_allowed'&&body.message
+      ?body.message:'Not authorized (pricing_admin role required)');
+    err.status=403;err.body=body;
+    throw err;
+  }
   if(!r.ok){
     // A structured refusal (a guard-rail 422, a project 400) carries a message
     // worth showing. Keep it on the error so callers can react to the SHAPE,
@@ -4323,6 +4336,9 @@ function recordUndo(){
 }
 function restoreSnap(snap,msg){
   doc=migrate(JSON.parse(snap));
+  // A step from before the first save can carry an id that was still being
+  // typed. Once the budget exists its id is fixed, and undo must not move it.
+  if(docOriginalId)doc.projectId=docOriginalId;
   dirty=true;selected.clear();
   fillForms();recalc();renderSaveState();
   toast(msg);
@@ -5475,6 +5491,7 @@ async function editTemplate(key){
   templateEdit={key:t.templateKey,name:t.name,version:t.currentVersion};
   doc=migrate(JSON.parse(JSON.stringify(t.doc)));
   doc.projectId='';                       // a template is not a project
+  docOriginalId=null;
   dirty=false;lastSaved=null;selected.clear();
   enableDocNav();fillForms();renderTemplateBanner();go('input');
   toast('Editing template '+t.name+' — version '+(t.currentVersion||1));
@@ -5528,6 +5545,7 @@ async function createTemplate(){
   const d=src&&src.doc?JSON.parse(JSON.stringify(src.doc)):(doc?JSON.parse(JSON.stringify(doc)):null);
   if(!d){toast('No template document to start from');return;}
   d.name=name;d.type=name;
+  d.guardrailAcks=[];             // overrides belong to a budget, never a template
   try{
     await api('templates',{method:'POST',body:JSON.stringify({templateKey:key,name,budgetType:name,
       description:'Created from '+(base?base.name:'the open budget'),doc:d,changeSummary:'Initial version'})});
@@ -5558,6 +5576,12 @@ async function duplicateBudgetAs(fromId,newId,projectKey){
   // A copy is not the original's history: it starts its own.
   delete doc.templateVersionId;
   docIsNew=true;                  // its first save must create, not overwrite
+  docOriginalId=null;             // ...under the NEW id, which it does not have yet
+  // An override was recorded on the original by someone allowed to; carrying
+  // it into a copy is recording it again, so only someone with that authority
+  // keeps it (the API refuses a new override from anyone else). Without it the
+  // copy's rails get their say, exactly as the note above intends.
+  if(!canAckGuardrail())doc.guardrailAcks=[];
   fillForms();
   markDirty();
   go('input');
@@ -5589,9 +5613,14 @@ async function applyTemplateBudget(key){
   // on its first paint.
   (d.lines||[]).forEach(l=>{l.lineId=newLineId();});   // fresh identity per budget
   stampCurrentPricing(d);
+  // An override is a decision about one budget's numbers, recorded by someone
+  // allowed to make it — a template is not a budget and must not hand one to
+  // every budget made from it (the API would refuse it as a new override).
+  d.guardrailAcks=[];
   d.created=new Date().toISOString();d.updated=d.created;
   templateEdit=null;renderTemplateBanner();
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
+  docOriginalId=null;
   enableDocNav();resetUndo();
   return true;
 }
@@ -5603,6 +5632,7 @@ function newBudget(kind){
 /* The discard prompt has already been answered by the caller. */
 function applyNewBudget(kind){
   doc=blankDoc(kind);dirty=false;lastSaved=null;selected.clear();
+  docOriginalId=null;             // nothing on the server yet: the id is still choosable
   templateEdit=null;renderTemplateBanner();
   enableDocNav();fillForms();resetUndo();go('input');
   if(kind==='blank')toast('Blank budget — build the scope from the CSI catalog on the Budget page');
@@ -5612,6 +5642,28 @@ function applyNewBudget(kind){
    exists replaced that budget and versioned the replacement as its next
    revision, and the original survived only in history. */
 let docIsNew=false;
+/* The id the open budget EXISTS under on the server — set when one is opened
+   or first saved, null for anything not yet written. Two jobs:
+
+   - The Budget ID field locks once it is set. Editing it used to re-point the
+     next save at whatever budget had the new id: the save was an update (not
+     a create), so the occupied-id guard never ran and the other budget was
+     overwritten and versioned as its own next revision (BUDGET-SYSTEM.md D13).
+   - Every full save sends it as meta.originalId, and the API refuses an
+     update whose route id is not the id the budget was opened as — so a
+     forced field (or a hand-built request) still cannot land on another
+     budget. A save that legitimately goes to a new id is a create
+     (New Budget, Add Alternate), and those start with this null. */
+let docOriginalId=null;
+function paintIdLock(){
+  const el=document.getElementById('pId'),note=document.getElementById('pIdLocked');
+  if(!el)return;
+  const locked=!!(doc&&docOriginalId&&!templateEdit);
+  el.readOnly=locked;
+  el.classList.toggle('set-locked',locked);
+  el.title=locked?'Budget IDs are fixed once saved.':'';
+  if(note)note.style.display=locked?'block':'none';
+}
 /* Where the budget currently open was reached FROM.
 
    Deliberately route state rather than browser history: history holds every
@@ -5642,6 +5694,7 @@ async function openBudget(pid,page,origin){
   if(!d){toast('Could not load '+pid);return;}
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
   docIsNew=false;                 // it exists: saving it is an update
+  docOriginalId=String(pid).toUpperCase();   // ...and only ever of THIS id
   budgetOrigin=origin&&origin.page?origin:null;
   templateEdit=null;renderTemplateBanner();      // opening a budget leaves template mode
   enableDocNav();fillForms();resetUndo();
@@ -5972,6 +6025,7 @@ async function deleteBudget(pid){
 /* ============ FORMS ============ */
 function fillForms(){
   document.getElementById('pId').value=doc.projectId;
+  paintIdLock();
   document.getElementById('pName').value=doc.name;
   document.getElementById('pAddr').value=doc.address;
   // A budget saved before projects had their own ids carries no link yet; it
@@ -6782,8 +6836,9 @@ function renderSummary(){
 /* ============ GUARD RAILS ============
    The rail arithmetic lives in guardrails.js, which the API requires as a
    byte-identical copy — the browser never owns a threshold or a formula, only
-   the presentation. The policy travels with the budget template (doc.guardrails)
-   so publishing a template publishes the rails. */
+   the presentation. The browser judges by the document's own type; the API
+   judges by DEFAULT_POLICY for the type it has STORED and ignores
+   doc.guardrails, so a hand-built document cannot pick its own rails. */
 /* " (3% of total project cost)" — appended to a fee label wherever the number
    alone would hide that it is a rate, which is every export. */
 function feeBasisNote(k){
@@ -6847,7 +6902,11 @@ function renderGuardrails(){
    budget summary and every export so the decision is never invisible. Gated to
    director / super_admin — a rail anyone can wave through is not a rail. */
 function canAckGuardrail(){
-  return US.appRole==='director'||US.appRole==='super_admin';
+  if(US.appRole==='director'||US.appRole==='super_admin')return true;
+  // The platform super_admin role counts too — the same rule the API applies
+  // when it decides whether to accept a new override on save.
+  const roles=(principal&&principal.userRoles)||[];
+  return roles.includes('super_admin');
 }
 function openAckDialog(id){
   if(!canAckGuardrail()){
@@ -6947,11 +7006,16 @@ async function saveBudget(show){
     // carries one: a save that does not mention a project leaves the existing
     // link alone, which is what every edit of an older budget does.
     projectKey:doc.projectKey||undefined,
+    // The id this budget exists under. The API refuses an update to any other
+    // id (409 budget_id_changed), so a changed Budget ID can never overwrite
+    // a different budget. Absent until the first save, when it is a create.
+    originalId:docOriginalId||undefined,
     guardrailStatus:gr.status,guardrailBreachCount:gr.breaches.length};
   try{
     await api('budget/'+encodeURIComponent(doc.projectId),
       {method:'PUT',body:JSON.stringify({meta,doc,create:docIsNew||undefined})});
     saving=false;docIsNew=false;markSaved();
+    docOriginalId=doc.projectId;paintIdLock();   // it exists now: the id is fixed
     if(window.FSProjects)FSProjects.invalidate();   // its counts and money just moved
     if(show)toast('Saved '+doc.projectId);
   }catch(e){
@@ -6962,6 +7026,24 @@ async function saveBudget(show){
     if(e.status===422&&e.body&&e.body.error==='guardrail_breach'){
       go('budget');renderGuardrails();
       document.getElementById('sec-guardrails').scrollIntoView({block:'start'});
+      toast(e.message);
+      return;
+    }
+    // A guard-rail override this account is not allowed to record. The
+    // dialog already refuses it; reaching here means the document carried one
+    // in anyway. Show the server's reason against the card it concerns.
+    if(e.status===403&&e.body&&e.body.error==='override_not_allowed'){
+      go('budget');renderGuardrails();
+      document.getElementById('sec-guardrails').scrollIntoView({block:'start'});
+      toast(e.message);
+      return;
+    }
+    // The Budget ID was changed on a budget that already exists. The field
+    // is locked, so this is a forced edit; put the id back rather than let
+    // the next save try again.
+    if(e.status===409&&e.body&&e.body.error==='budget_id_changed'){
+      if(docOriginalId){doc.projectId=docOriginalId;fillForms();validateId();}
+      go('input');
       toast(e.message);
       return;
     }

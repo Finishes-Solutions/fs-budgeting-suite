@@ -17,6 +17,10 @@ const INV_C = require('../api/shared/investment/constants');
 const INV_D = require('../api/shared/investment/defaults');
 const fromBudget = require('../api/shared/investment/from-budget');
 const FSGuardrails = require('../api/shared/guardrails');
+// The budget save's pre-write refusals (Budget ID change, rail policy by trusted
+// type, who may record an override) — the REAL module, so the mock decides
+// exactly as api/budget/index.js does.
+const SaveRules = require('../api/shared/budget-save-rules');
 const crypto = require('crypto');
 // Per-user settings validation: the REAL contract module (dependency-free).
 const usc = require('../api/shared/user-settings-contract');
@@ -24,6 +28,12 @@ const usc = require('../api/shared/user-settings-contract');
 // the deployed endpoint uses, so a suite cannot pass against friendlier rules.
 const fbc = require('../api/shared/feedback');
 const budgetAssistant = require('../api/shared/budget-assistant');
+// The methods the deployed host lets through to /api/user-settings, read from
+// the real binding rather than restated, so the two cannot drift.
+const USER_SETTINGS_METHODS = new Set(
+  require('../api/user-settings/function.json').bindings
+    .filter(b => b.type === 'httpTrigger')
+    .flatMap(b => b.methods || []).map(m => String(m).toUpperCase()));
 
 // The Budget Assistant's view of this mock's records — the same shape
 // api/shared/budget-assistant.js's sqlStore returns from SQL.
@@ -309,9 +319,11 @@ function logSettingsDiff(uid, before, after, body, beforeProfile, prof) {
 }
 
 // The same evaluation the browser and the real endpoint run, off one module.
-function evalGuardrails(doc) {
+// `policy` is the trusted rail table the save path chose; without one (the
+// list and seed paths) the document's own type decides, as in the browser.
+function evalGuardrails(doc, policy) {
   const gp = bcParts(doc);
-  return FSGuardrails.evaluate({ doc, parts: gp, gross: bcGross(doc), fee: gp.fee });
+  return FSGuardrails.evaluate({ doc, parts: gp, gross: bcGross(doc), fee: gp.fee, policy });
 }
 
 // Same canonicalization the API uses to decide whether a save changed anything
@@ -712,6 +724,23 @@ http.createServer((req, res) => {
     });
   }
 
+  // Mock-only: lets a suite play an account WITHOUT override rights — drop the
+  // platform super_admin role and/or set the dbo.Users AppRole — which the
+  // seeded principal (deliberately all-powerful) can never be. Body is JSON
+  // { userRoles?, appRole? }; answers what is now in force. No counterpart in
+  // the real API.
+  if (p === '/api/_mock/roles') {
+    let b = ''; req.on('data', c => b += c);
+    return req.on('end', () => {
+      const body = b ? JSON.parse(b) : {};
+      if (Array.isArray(body.userRoles)) principal.clientPrincipal.userRoles = body.userRoles.map(String);
+      const u = mockUsers.get(principal.clientPrincipal.userId);
+      if (u && typeof body.appRole === 'string') u.appRole = body.appRole;
+      return json(res, 200, { userRoles: principal.clientPrincipal.userRoles,
+                              appRole: u ? (u.appRole || 'user') : null });
+    });
+  }
+
   // Mock-only: lets a suite make mail look unconfigured or broken, which is
   // the state the board must render honestly. No counterpart in the real API.
   if (p === '/api/_mock/mail-mode') {
@@ -726,6 +755,11 @@ http.createServer((req, res) => {
   // ---- per-user settings + activity (dbo.Users / dbo.UserActivity stand-in).
   // Validation is the REAL contract module, so drift is impossible.
   if (p === '/api/user-settings') {
+    // The host answers a method the function.json does not bind with a 404
+    // before the code runs. Read from the real binding so the mock cannot
+    // accept what production refuses — it did, for the feedback POST, which
+    // is how bug reports passed every suite and never reached the server.
+    if (!USER_SETTINGS_METHODS.has(req.method)) { res.writeHead(404); return res.end('Not found'); }
     const uid = principal.clientPrincipal.userId;
     // ?scope=roles is the Admin page's role management, served from this
     // endpoint because a dedicated function did not register on the host.
@@ -1116,6 +1150,10 @@ http.createServer((req, res) => {
         return json(res, 422, { error: 'size_required', field: 'resSF',
           message: 'Square footage is required — enter a building size greater than zero before saving.' });
       }
+      // Budget ID fixed once saved — same rule and wording as the real endpoint.
+      const send = r => { res.writeHead(r.status, r.headers); return res.end(r.body); };
+      { const refusal = SaveRules.idChangeRefusal(meta, id, body.create === true);
+        if (refusal) return send(refusal); }
       const wantsCreate = body.create === true;
       const wantsKey = meta.projectKey ? String(meta.projectKey).toUpperCase() : null;
       if (wantsKey && !PROJECT_ID_RX.test(wantsKey)) {
@@ -1125,6 +1163,20 @@ http.createServer((req, res) => {
       if (wantsCreate && !wantsKey) {
         return json(res, 400, { error: 'project_required', field: 'projectKey',
           message: 'Choose the project this budget belongs to.' });
+      }
+      // Guard-rail trust, parallel with api/budget/index.js: the rail table
+      // comes from the STORED type, and a new override needs the role. The
+      // mock always has the AppRole column (its users carry appRole).
+      const storedRec = wantsCreate ? null : (budgets.get(id) || null);   // a create trusts nothing stored
+      const rp = SaveRules.railPolicy({ exists: !!storedRec,
+        storedType: storedRec ? storedRec.meta.type : null, submittedType: meta.type });
+      if (rp.refusal) return send(rp.refusal);
+      const freshAcks = SaveRules.newAcks(storedRec ? storedRec.doc : null, doc);
+      if (freshAcks.length) {
+        const u = mockUsers.get(principal.clientPrincipal.userId);
+        if (!SaveRules.canOverride({ appRoleColumn: true, appRole: (u && u.appRole) || 'user',
+                                     userRoles: principal.clientPrincipal.userRoles }))
+          return send(SaveRules.overrideRefusal(freshAcks));
       }
       // A create must not land on an occupied id. Without this, a new budget
       // typed against an existing id replaced that budget and versioned the
@@ -1137,7 +1189,7 @@ http.createServer((req, res) => {
       // Behaviour-parallel with api/budget/index.js: the rails are re-evaluated
       // from the SUBMITTED document and refuse the write, never trusting a
       // client-supplied verdict.
-      const rails = evalGuardrails(doc);
+      const rails = evalGuardrails(doc, rp.policy);
       if (rails.blocking) {
         return json(res, 422, { error: 'guardrail_breach',
           message: rails.blocking + ' guard rail' + (rails.blocking === 1 ? '' : 's')
