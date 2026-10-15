@@ -217,6 +217,15 @@ custom provider for sign-in.
 - **`esc()` every user-supplied string** interpolated into HTML — including
   strings added by new features (group names, template names, notes). This is the
   XSS boundary; there is no framework doing it for you.
+- **`esc()` is not enough inside an inline handler.** In
+  `onclick="f('${x}')"` the HTML parser decodes `&#39;` back to `'` before the
+  JavaScript runs, so an escaped value can still break out of the string. Never
+  put data in a JS string inside an inline handler: put it in an escaped
+  `data-*` attribute and read `this.dataset`. Row identifiers (`lineId`, fee
+  `rowId`/`feeId`) must match `IDENTIFIER_RULE` in `api/shared/identifiers.js`:
+  the budget PUT and fee-schedule publish refuse anything else, and `migrate()`
+  regenerates a bad one on open. A stored XSS through exactly this path was
+  fixed in 2026-10; `suite-03` pins it.
 - **`nz()` every numeric read** that could be absent on old documents. Blank
   inputs coerce to 0, but *absent properties* are `undefined` and print `$NaN`.
   `migrate()` repairs old documents on load; formatters and arithmetic still

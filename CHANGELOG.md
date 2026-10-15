@@ -24,6 +24,21 @@ House rules for writing one:
 
 ## Unreleased
 
+### Security: fixed a stored cross-site scripting flaw
+
+A specially crafted budget could run script in the browser of anyone who opened
+it, including an administrator. This was confirmed against a local test copy of
+the app; we have no evidence it was ever used. It is fixed in three layers:
+
+- **Saving refuses malformed identifiers.** The server rejects a budget whose
+  line or fee identifiers are not plain letters, digits, hyphens and
+  underscores. Publishing a fee schedule does the same.
+- **Old budgets are repaired on open.** A budget saved with a bad identifier
+  before this fix gets a fresh one when opened, and saves normally afterwards.
+- **Pages no longer place stored values inside clickable code.** Pricing Library
+  codes and groups, and stored investment-analysis inputs, are always shown as
+  plain text.
+
 ### The Budget Assistant reads your pro formas, reviews budgets and finds revenue
 
 **Ask AI** now works on both sides of the app, and each side can see the other:
