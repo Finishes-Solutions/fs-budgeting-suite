@@ -500,6 +500,7 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .err{border-color:var(--danger)!important}
 .fld-err{font-size:11.5px;color:var(--danger);margin-top:4px}
 .fld-note{font-size:11.5px;color:var(--ink-500);margin-top:4px;line-height:1.45}
+.fld-hint{font-size:11.5px;color:var(--ink-500);margin-top:4px}
 
 .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:var(--r);
   font-family:var(--fb);font-weight:600;font-size:13px;padding:8px 16px;cursor:pointer;transition:all .12s;
@@ -873,6 +874,11 @@ html[data-theme=dark] .toast{border:1px solid var(--ink-300)}
 .savepill.saved{background:rgba(31,146,73,.16);color:#7fd3a1}
 .savepill.dirty{background:rgba(214,158,46,.18);color:#f0c674}
 .savepill.saving{background:rgba(255,255,255,.12);color:rgba(255,255,255,.75)}
+.savepill.error{background:rgba(224,49,49,.22);color:#ffb4ab}
+.savepill.act{cursor:pointer}
+.savepill .sp-t{min-width:0;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:760px){.savepill{max-width:calc(100vw - 180px)}}
+.savepill.act:hover,.savepill.act:focus-visible{filter:brightness(1.2);outline:none;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
 
 /* ---- banners ---- */
 .banner.danger{border-color:#e8c4c0;background:#fdf2f1;color:#8c2a20}
@@ -1202,6 +1208,15 @@ th.sortable.sorted{color:var(--ink-900)}
   <span id="apiBannerMsg">Cannot reach the server.</span>
   <button class="btn btn-sm btn-dark" onclick="location.reload()">Reload</button>
 </div>
+<!-- Draft recovery: unsaved budget edits journaled to this browser. Filled by
+     showDraftBanner(); the message is set with textContent. -->
+<div class="banner no-print" id="draftBanner" role="status" style="display:none">
+  <span id="draftBannerMsg"></span>
+  <span style="display:flex;gap:8px;flex:none">
+    <button class="btn btn-sm btn-dark" onclick="restoreDraft()">Restore</button>
+    <button class="btn btn-sm btn-ghost" onclick="discardDraftOffer()">Discard</button>
+  </span>
+</div>
 
 <!-- ================= HOME ================= -->
 <!-- ================= HOME =================
@@ -1247,7 +1262,7 @@ th.sortable.sorted{color:var(--ink-900)}
     <div><button class="btn-back" id="backInputs" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Inputs</h1><div class="sub">Step 1 of 3 — project, unit mix, income, profit &amp; contingency</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="iStatusHost"></span>
-      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save Draft</button>
+      <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
       <button class="btn btn-primary" onclick="toBudget()">Continue to Budget →</button>
     </div>
   </div>
@@ -1259,7 +1274,8 @@ th.sortable.sorted{color:var(--ink-900)}
       <div class="grid g4">
         <label class="fld"><span class="lab">Budget ID</span>
           <input type="text" id="pId" placeholder="BD-0001" oninput="validateId();markDirty()" style="font-family:var(--fm);text-transform:uppercase">
-          <div class="fld-err" id="pIdErr" style="display:none">Must match BDG-####-## or BD-#### (or a legacy OP-/AS-/TST-####)</div></label>
+          <div class="fld-err" id="pIdErr" style="display:none">Must match BDG-####-## or BD-#### (or a legacy OP-/AS-/TST-####)</div>
+          <div class="fld-hint" id="pIdLock" style="display:none">Budget IDs can't be changed after the first save. To copy this budget under a new ID, use + Add Alternate Budget on its project.</div></label>
         <label class="fld"><span class="lab">Budget Name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
         <!-- Which project this budget belongs to. Read-only because it is the
@@ -1797,9 +1813,12 @@ th.sortable.sorted{color:var(--ink-900)}
           <span class="kbd">+ New Investment Analysis</span> — on the Home page or the Investment Analysis
           tab — turns a saved budget into a before-tax investment model, or starts a standalone one. See
           the <a href="#help-investment">Investment Analysis</a> section.</div></div>
-        <div class="callout">The header pill shows <b>Unsaved changes</b> until a save succeeds. Nothing is stored
-          automatically — if you close the tab with that pill showing, the browser will warn you.
-          <b>Cmd+S</b> (or <b>Ctrl+S</b>) saves from anywhere in a budget or an analysis.</div>
+        <div class="callout">The header pill shows <b>Unsaved Changes</b> until a save succeeds. Only
+          <span class="kbd">Save</span> writes to the database, and each save that changes something records a
+          new version. Meanwhile your unsaved budget edits are kept in this browser: if the tab closes or the
+          connection drops, opening the budget again on this device offers to <b>Restore</b> them. That copy
+          lives only on this device and is cleared when you sign out. <b>Cmd+S</b> (or <b>Ctrl+S</b>) saves
+          from anywhere in a budget or an analysis.</div>
       </div></section>
 
       <section class="card" data-sample-project><div class="card-bd">
@@ -2326,8 +2345,8 @@ th.sortable.sorted{color:var(--ink-900)}
         <table class="tbl"><tbody>
           <tr><td>A red banner says the server cannot be reached</td>
             <td>Saves will fail and rates shown may be the built-in fallback rather than the published library.
-              Reload. If it persists, the API or database is down — report it before doing more work, and copy
-              anything unsaved out first.</td></tr>
+              Unsaved budget edits stay in this browser, so you can save again once the server is back. If it
+              persists, the API or database is down — report it.</td></tr>
           <tr><td>The first request of the day hangs</td>
             <td>The database pauses when idle and can take a couple minutes to resume — the loading screen
               keeps you posted while it wakes. If a request still hangs after that, retry once.</td></tr>
@@ -2344,9 +2363,11 @@ th.sortable.sorted{color:var(--ink-900)}
             <td><b>Cmd/Ctrl+Z</b> restores it — up to ten changes back, while the budget stays open.
               <b>Cmd/Ctrl+Shift+Z</b> (or <b>Ctrl+Y</b>) redoes an undo.</td></tr>
           <tr><td>I lost my edits</td>
-            <td>Nothing autosaves. The header pill shows unsaved state and the browser warns before closing —
-              if that warning was dismissed, the work is gone. While the budget is still open,
-              <b>Cmd/Ctrl+Z</b> steps back up to ten changes.</td></tr>
+            <td>Open the budget again in the same browser: unsaved edits kept on this device are offered back
+              with <b>Restore</b>. Nothing is written to the server until you <b>Save</b>, and the kept copy does
+              not follow you to another computer or survive signing out. If the header pill says
+              <b>Couldn't Save — Retry</b>, the last save failed — click it to try again. While the budget is
+              still open, <b>Cmd/Ctrl+Z</b> steps back up to ten changes.</td></tr>
         </tbody></table>
 
         <h3 id="help-report">Reporting a Problem</h3>
@@ -2624,6 +2645,24 @@ th.sortable.sorted{color:var(--ink-900)}
      Blank are the implemented paths (the existing creation logic, untouched);
      the other project types are visible but disabled so the UI is already
      structured for them. Custom templates come from the template system. -->
+<!-- Budget save conflict: someone saved since this editor opened the budget. -->
+<div id="conflictDlg" class="modal" onclick="if(event.target===this)closeConflict()">
+  <div class="card mod-sheet" style="width:520px;max-width:94vw;margin:0" role="alertdialog" aria-modal="true"
+    aria-labelledby="conflictTitle" aria-describedby="conflictMsg">
+    <div class="card-hd"><h2 class="mod-title" id="conflictTitle">Budget Saved Elsewhere</h2>
+      <button class="btn-x" onclick="closeConflict()" aria-label="Close">&times;</button></div>
+    <div class="card-bd">
+      <p id="conflictMsg" style="margin-top:0"></p>
+      <p class="note">Nothing was written. <b>Reload Latest</b> opens the saved budget and discards your
+        changes. <b>Overwrite Anyway</b> saves yours over it — the other save stays in Versions.</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px">
+        <button class="btn btn-ghost" id="conflictKeep" onclick="closeConflict()">Keep Editing</button>
+        <button class="btn btn-ghost" onclick="conflictReload()">Reload Latest</button>
+        <button class="btn btn-dark" onclick="conflictOverwrite()">Overwrite Anyway</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- Guard-rail override. The reason is mandatory on purpose: an override without
      one is a disabled check, and this one prints on every export. -->
 <div id="ackDlg" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:62;align-items:center;justify-content:center;padding:20px 14px"
@@ -3908,11 +3947,18 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.cla
    hardcoded rates and never know. Now it raises a banner. */
 let apiHealthy=true,apiDownMsg='',pricingFromApi=false;
 async function api(path,opts={}){
+  // onResponse lets one caller read a header (the budget's X-Budget-Hash)
+  // without changing what every other caller gets back.
+  const {onResponse,...fo}=opts;
   let r;
   try{
-    r=await fetch('/api/'+path,{headers:{'Content-Type':'application/json'},...opts});
-  }catch(e){setApiHealth(false,'Cannot reach the server — check your connection, then reload.');throw new Error('Network error: '+e.message);}
-  if(r.status>=500){const t=await r.text();setApiHealth(false,'The server returned '+r.status+' on /api/'+path+'. Saves will fail until this clears.');throw new Error('API '+r.status+': '+t);}
+    r=await fetch('/api/'+path,{headers:{'Content-Type':'application/json'},...fo});
+  }catch(e){setApiHealth(false,'Cannot reach the server — check your connection. Unsaved budget edits are kept on this device; save again once you are back online.');
+    const err=new Error('Network error: '+e.message);err.network=true;throw err;}
+  // The raw body of a 5xx can be a database error ("Login failed for user …").
+  // It stays on the error for the console; nothing shows it to the user.
+  if(r.status>=500){const t=await r.text();setApiHealth(false,'The server returned an error ('+r.status+' on /api/'+path+'). Unsaved budget edits are kept on this device — try saving again in a moment.');
+    const err=new Error('API '+r.status+': '+t);err.status=r.status;err.server=true;throw err;}
   /* A session that has expired is answered by the platform, not by our
      Functions: the 401 override in staticwebapp.config.json turns it into a
      302 to the sign-in screen, so what lands here is a 200 of HTML. Left
@@ -3921,8 +3967,9 @@ async function api(path,opts={}){
      unsaved, so the user decides when to leave it. */
   if(r.redirected&&/\/login\.html(\?|#|$)/.test(r.url)){
     setApiHealth(false,'Your session has ended. Sign in again to keep working — '
-      +'open '+location.origin+'/login.html in another tab, then reload this page.');
-    throw new Error('Session expired: sign in again');
+      +'open '+location.origin+'/login.html in another tab, sign in, then come back and save. '
+      +'Unsaved budget edits are kept on this device.');
+    const err=new Error('Session expired: sign in again');err.session=true;throw err;
   }
   setApiHealth(true);
   if(r.status===403)throw new Error('Not authorized (pricing_admin role required)');
@@ -3937,6 +3984,7 @@ async function api(path,opts={}){
     err.status=r.status;err.body=body;
     throw err;
   }
+  if(onResponse)onResponse(r);
   return ct.includes('json')?await r.json():null;
 }
 function setApiHealth(ok,msg){
@@ -4206,9 +4254,10 @@ async function leaveSession(url){
   closeProfile(false);
   if(!confirmDiscard())return;
   dirty=false;                       // already asked — do not let beforeunload ask again
-  // Every bit of app state lives in memory or behind the API, so the navigation
-  // below disposes of it. These clears are defensive: nothing writes here today,
-  // but a stale entry from a later change must not survive an account switch.
+  // App state lives in memory or behind the API, so the navigation below
+  // disposes of it — except the budget draft journal, which is localStorage on
+  // purpose. Clearing it here is what keeps one person's unsaved edits from
+  // being offered to the next person on a shared machine.
   try{localStorage.clear();sessionStorage.clear();}catch(_){}
   try{
     if(window.caches&&caches.keys)await Promise.all((await caches.keys()).map(k=>caches.delete(k)));
@@ -4436,6 +4485,21 @@ const DEFAULT_EXPENSES=[
 /* ============ STATE ============ */
 let pricing=null,doc=null,index=[],adminUnlocked=false,currentPage='home';
 let dirty=false,saving=false,lastSaved=null;
+/* ---- save lifecycle state ----
+   editSeq counts committed edits. A save remembers the count it started at
+   and clears `dirty` only if nothing moved while it was in flight: the request
+   body is serialised before the await, so an edit made during it is NOT in
+   what the server stored, and marking it clean lost it.
+   loadedId is the id the open budget was loaded or first saved under (null
+   until it exists on the server). The id is locked once it exists — saving
+   under a different id would land on, and overwrite, a different budget.
+   loadedSnap is that server copy as JSON, so a confirmed discard can put the
+   budget back the way it was rather than leave the edits looking clean.
+   baseHash is the server's X-Budget-Hash for the copy this editor started
+   from; sending it back lets the server refuse a save that would silently
+   replace somebody else's. docGen moves whenever a different document is
+   loaded, so a save that finishes after the user moved on touches nothing. */
+let editSeq=0,loadedId=null,loadedSnap=null,baseHash=null,saveError=null,docGen=0,lastDocPage='input';
 const collapsed=new Set();              // "scope|grp" keys collapsed on the budget grid
 const homeView={q:'',sort:'updated',dir:-1,status:'all',group:''};
 const SCOPES={res:'Residential Construction',amen:'Amenity / Clubhouse',soft:'Soft Costs'};
@@ -4445,8 +4509,8 @@ const BASIS_LABEL={sf:'Per Res SF',asf:'Per Amen SF',unit:'Per Unit',ls:'Lump Su
    touch() is recalc() plus "the user changed something". Mutation handlers call it;
    navigation and initial paints call plain recalc(), so simply opening a budget or
    switching tabs never marks it dirty. */
-function markDirty(){recordUndo();if(!dirty){dirty=true;renderSaveState();}}   // edits that need no recalc
-function touch(){recordUndo();dirty=true;renderSaveState();recalc();}
+function markDirty(){recordUndo();dirty=true;editSeq++;renderSaveState();scheduleDraft();}   // edits that need no recalc
+function touch(){recordUndo();dirty=true;editSeq++;scheduleDraft();recalc();renderSaveState();}
 
 /* ---- undo / redo (Cmd/Ctrl+Z · Cmd/Ctrl+Shift+Z or Ctrl+Y) ----
    A small ring of document snapshots: the current state plus up to ten
@@ -4470,8 +4534,8 @@ function recordUndo(){
 }
 function restoreSnap(snap,msg){
   doc=migrate(JSON.parse(snap));
-  dirty=true;selected.clear();
-  fillForms();recalc();renderSaveState();
+  dirty=true;editSeq++;selected.clear();
+  fillForms();recalc();renderSaveState();scheduleDraft();
   toast(msg);
 }
 function undoBudget(){
@@ -4487,22 +4551,252 @@ function redoBudget(){
   if(undoStack.length>UNDO_MAX+1)undoStack.shift();
   restoreSnap(snap,'Redid the change.');
 }
-function markSaved(){dirty=false;lastSaved=new Date();renderSaveState();}
+function markSaved(){dirty=false;saveError=null;lastSaved=new Date();renderSaveState();}
+/* "Saved · 2 min ago": relative, because the question the pill answers is
+   "is my work safe"; the absolute time is in its tooltip. */
+function savedAgo(d){
+  const s=(Date.now()-d.getTime())/1000;
+  if(s<45)return 'just now';
+  if(s<3600)return Math.max(1,Math.round(s/60))+' min ago';
+  return fmtClock(d);
+}
+/* The header pill is the one place that says where the open budget stands,
+   so every state that needs the user is a clickable state: a failed save
+   retries, a guard-rail block shows the rails, and a dirty budget left open
+   behind another page takes you back to it. */
 function renderSaveState(){
   const el=document.getElementById('saveState');if(!el)return;
-  if(!doc){el.style.display='none';return;}
-  el.style.display='inline-flex';
-  el.className='savepill'+(saving?' saving':dirty?' dirty':' saved');
-  el.textContent=saving?'Saving…':dirty?'Unsaved changes'
-    :lastSaved?'Saved '+fmtClock(lastSaved)
-    :'No changes yet';
   document.querySelectorAll('[data-save-btn]').forEach(b=>{b.disabled=saving;});
+  if(!doc){el.style.display='none';el.onclick=null;return;}
+  el.style.display='inline-flex';
+  let text,cls,title='',act=null;
+  const away=!DOC_PAGES.includes(currentPage);
+  const blocking=dirty&&!saving&&!saveError&&!away&&!templateEdit?checkSaveable().count:0;
+  if(saving){text='Saving…';cls='saving';}
+  else if(away&&dirty){
+    text=(doc.projectId||(templateEdit?'Template':'New Budget'))+' · Unsaved — Resume';cls='dirty';
+    title='Go back to the budget with unsaved changes';act=()=>go(lastDocPage);
+  }
+  else if(saveError){text='Couldn’t Save — Retry';cls='error';title=saveError;act=()=>saveBudget(true);}
+  else if(blocking){
+    text='Unsaved · '+blocking+' Guard Rail'+(blocking===1?'':'s')+' Blocking';cls='dirty';
+    title='Show the guard rails that are blocking the save';act=showGuardrails;
+  }
+  else if(dirty){
+    const kept=draftKept();
+    text=kept?'Unsaved Changes · Kept on This Device':'Unsaved Changes';cls='dirty';
+    title=kept?'Not saved yet. A copy is kept in this browser in case it closes; Save records a version.':'Not saved yet.';
+  }
+  else if(lastSaved){text='Saved · '+savedAgo(lastSaved);cls='saved';title='Saved '+fmtWhen(lastSaved);}
+  else{text='No changes yet';cls='saved';}
+  el.className='savepill '+cls+(act?' act':'');
+  // The text sits in its own span so a narrow header can ellipsize it.
+  el.innerHTML='<span class="sp-t">'+esc(text)+'</span>';el.title=title||text;
+  el.onclick=act;
+  if(act){el.setAttribute('role','button');el.tabIndex=0;}
+  else{el.removeAttribute('role');el.removeAttribute('tabindex');}
 }
+document.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.id==='saveState'&&e.target.onclick){
+    e.preventDefault();e.target.onclick();}
+});
+setInterval(()=>{if(doc&&!dirty&&!saving&&lastSaved)renderSaveState();},30000);
+function showGuardrails(){
+  go('budget');renderGuardrails();
+  const s=document.getElementById('sec-guardrails');if(s)s.scrollIntoView({block:'start'});
+}
+/* Asking is half of it. "Leave without saving?" answered OK used to leave the
+   edits in memory still flagged dirty, so the pill said Unsaved Changes on
+   every page and the next open asked again. A confirmed discard now really
+   discards: a budget that exists goes back to its saved copy, a new one that
+   was never saved is dropped, and its draft on this device goes with it. */
 function confirmDiscard(){
   if(!dirty)return true;
-  return confirm('This budget has unsaved changes that will be lost.\n\nLeave without saving?');
+  if(!confirm('This budget has unsaved changes that will be lost.\n\nLeave without saving?'))return false;
+  discardEdits();
+  return true;
 }
-window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+function discardEdits(){
+  clearDraft();
+  hideDraftBanner();
+  dirty=false;saveError=null;selected.clear();
+  if(templateEdit){renderSaveState();return;}      // the template flows reset their own state
+  if(loadedSnap&&!docIsNew){
+    doc=migrate(JSON.parse(loadedSnap));
+    fillForms();resetUndo();
+  }else{
+    doc=null;docIsNew=false;loadedId=null;baseHash=null;loadedSnap=null;newDraftTok=null;docGen++;
+    disableDocNav();
+  }
+  renderSaveState();
+}
+function invDirty(){
+  return !!(window.FSInvestmentUI&&typeof FSInvestmentUI.isDirty==='function'&&FSInvestmentUI.isDirty());
+}
+window.addEventListener('beforeunload',e=>{
+  flushDraft();
+  if(dirty||invDirty()){e.preventDefault();e.returnValue='';}
+});
+
+/* ============ LOCAL DRAFT JOURNAL ============
+   Not autosave. Every content-changing budget PUT records an immutable
+   BudgetVersions row, so saving on a timer would bury the version history in
+   snapshots nobody chose. Instead the dirty document is journaled to this
+   browser — debounced, and flushed when the tab is hidden or closed — and
+   offered back when the budget is opened again. Save is still the only thing
+   that writes to the server or records a version.
+
+   Keyed by account and budget id ('new:<token>' until a new budget's first
+   save), so one person's drafts are never offered to another; Sign Out and
+   Switch Account clear localStorage entirely for shared machines. Storage can
+   be full or blocked, so every access is wrapped and a failure only means the
+   pill does not claim the copy was kept. Templates are never journaled. */
+const DRAFT_V=1,DRAFT_MAX=10,DRAFT_WAIT=800;
+let draftTimer=null,draftSeq=-1,newDraftTok=null,pendingDraft=null;
+function draftPrefix(){return 'fsDraft:'+((principal&&principal.userId)||'anon')+':';}
+function newDraftToken(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
+function draftKeyFor(){
+  if(!doc||templateEdit)return null;
+  if(loadedId)return draftPrefix()+'id:'+loadedId;
+  if(!newDraftTok)newDraftTok=newDraftToken();
+  return draftPrefix()+'new:'+newDraftTok;
+}
+function lsKeys(prefix){
+  const out=[];
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(prefix))out.push(k);}}catch(_){}
+  return out;
+}
+function lsDel(k){try{localStorage.removeItem(k);}catch(_){}}
+function readDraft(k){
+  let raw=null;try{raw=localStorage.getItem(k);}catch(_){return null;}
+  if(!raw)return null;
+  try{const d=JSON.parse(raw);return d&&d.v===DRAFT_V&&d.doc&&typeof d.doc==='object'?d:null;}catch(_){return null;}
+}
+function scheduleDraft(){
+  if(!doc||templateEdit)return;
+  clearTimeout(draftTimer);draftTimer=setTimeout(writeDraft,DRAFT_WAIT);
+}
+function flushDraft(){if(draftTimer)writeDraft();}
+function writeDraft(){
+  clearTimeout(draftTimer);draftTimer=null;
+  if(!doc||templateEdit||!dirty)return false;
+  const k=draftKeyFor();if(!k)return false;
+  // An older draft of this same budget is still waiting for Restore or
+  // Discard. Writing now would replace it before the user chose.
+  if(pendingDraft&&pendingDraft.key===k)return false;
+  try{pullForms();}catch(_){}                       // name/address reach the doc on recalc, not on input
+  const seq=editSeq;
+  let raw;
+  try{raw=JSON.stringify({v:DRAFT_V,id:doc.projectId||'',isNew:!loadedId,baseHash:baseHash||null,
+    at:new Date().toISOString(),doc});}catch(_){return false;}
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      localStorage.setItem(k,raw);
+      draftSeq=seq;renderSaveState();return true;
+    }catch(e){if(attempt===0)pruneDrafts(DRAFT_MAX-1,k);}
+  }
+  console.warn('Budget draft not kept on this device — browser storage is full or blocked.');
+  return false;
+}
+/* Keep the newest `keep` drafts (every account's — this is the browser's
+   space, not the account's); unreadable and oldest go first. */
+function pruneDrafts(keep,except){
+  lsKeys('fsDraft:').filter(k=>k!==except)
+    .map(k=>{const d=readDraft(k);return {k,at:d?(Date.parse(d.at)||0):-1};})
+    .sort((a,b)=>b.at-a.at)
+    .slice(Math.max(0,keep)).forEach(x=>lsDel(x.k));
+}
+function clearDraft(k){
+  const cur=draftKeyFor();
+  const key=k||cur;
+  if(key===cur){clearTimeout(draftTimer);draftTimer=null;draftSeq=-1;}
+  if(key)lsDel(key);
+}
+function draftKept(){return dirty&&!templateEdit&&draftSeq===editSeq;}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushDraft();});
+window.addEventListener('pagehide',flushDraft);
+/* Sorted-key comparison (the shape api/shared/canonical.js uses, `updated`
+   excluded) — only to decide whether a draft differs from what loaded. */
+function canonDoc(v){
+  if(v===null||typeof v!=='object')return JSON.stringify(v===undefined?null:v);
+  if(Array.isArray(v))return '['+v.map(canonDoc).join(',')+']';
+  return '{'+Object.keys(v).filter(k=>k!=='updated'&&v[k]!==undefined).sort()
+    .map(k=>JSON.stringify(k)+':'+canonDoc(v[k])).join(',')+'}';
+}
+/* After a budget loads: is there a draft of it on this device that differs? */
+function offerDraft(){
+  hideDraftBanner();
+  if(!doc||!loadedId||templateEdit)return;
+  const k=draftPrefix()+'id:'+loadedId;
+  const d=readDraft(k);if(!d)return;
+  if(canonDoc(Object.assign({},d.doc,{projectId:loadedId}))===canonDoc(doc)){lsDel(k);return;}   // nothing to recover
+  showDraftBanner({key:k,draft:d,isNew:false});
+}
+/* At boot, with nothing open: a new budget that never reached its first save. */
+function offerNewDraft(){
+  if(doc)return;
+  let best=null;
+  lsKeys(draftPrefix()+'new:').forEach(k=>{
+    const d=readDraft(k);
+    if(d&&(!best||(Date.parse(d.at)||0)>(Date.parse(best.draft.at)||0)))best={key:k,draft:d,isNew:true};
+  });
+  if(best)showDraftBanner(best);
+}
+function showDraftBanner(pd){
+  const el=document.getElementById('draftBanner');if(!el)return;
+  pendingDraft=pd;
+  const when=fmtWhen(pd.draft.at);
+  let msg;
+  if(pd.isNew){
+    msg='An unsaved new budget'+(pd.draft.id?' ('+pd.draft.id+')':'')+' from '+when+' is kept on this device.';
+  }else{
+    msg='Unsaved changes to '+loadedId+' from '+when+' are kept on this device.';
+    if(pd.draft.baseHash&&baseHash&&pd.draft.baseHash!==baseHash)
+      msg+=' This budget has been saved since then — if you restore, Save will ask before replacing that save.';
+  }
+  document.getElementById('draftBannerMsg').textContent=msg;
+  el.style.display='flex';
+}
+function hideDraftBanner(){
+  pendingDraft=null;
+  const el=document.getElementById('draftBanner');if(el)el.style.display='none';
+}
+function restoreDraft(){
+  const pd=pendingDraft;if(!pd)return;
+  let d;
+  try{d=migrate(JSON.parse(JSON.stringify(pd.draft.doc)));}
+  catch(_){lsDel(pd.key);hideDraftBanner();toast('That draft could not be read, so it was discarded.');return;}
+  if(pd.isNew){
+    if(!confirmDiscard())return;                    // something else is open with unsaved edits
+    templateEdit=null;renderTemplateBanner();
+    doc=d;docIsNew=true;loadedId=null;loadedSnap=null;baseHash=null;saveError=null;lastSaved=null;docGen++;
+    newDraftTok=pd.key.slice((draftPrefix()+'new:').length);
+    budgetOrigin=null;selected.clear();
+    enableDocNav();fillForms();resetUndo();paintBackTargets();
+    hideDraftBanner();
+    dirty=true;editSeq++;draftSeq=editSeq;
+    go('input');
+  }else{
+    if(!doc||draftPrefix()+'id:'+loadedId!==pd.key){hideDraftBanner();return;}
+    d.projectId=loadedId;                           // the id is locked; a draft cannot move it
+    doc=d;
+    // Keep the base the draft was made against: if someone saved since, the
+    // next Save meets a conflict and asks, instead of silently replacing it.
+    if(pd.draft.baseHash)baseHash=pd.draft.baseHash;
+    hideDraftBanner();
+    selected.clear();saveError=null;
+    dirty=true;editSeq++;draftSeq=editSeq;
+    fillForms();resetUndo();recalc();
+  }
+  renderSaveState();
+  toast('Restored your unsaved changes — Save to keep them.');
+}
+function discardDraftOffer(){
+  const pd=pendingDraft;if(!pd)return;
+  lsDel(pd.key);hideDraftBanner();
+  if(dirty)scheduleDraft();                         // journaling of the open budget resumes
+  toast('Discarded the unsaved changes kept on this device.');
+}
 
 /* ---- focus preservation across re-renders ----
    Every table cell commits with onchange → recalc(), and recalc() rebuilds all five
@@ -4676,6 +4970,7 @@ function go(p){
   // survive the trip and follow you to every other tab.
   if(p!==currentPage)closeAllDialogs();
   currentPage=p;
+  if(DOC_PAGES.includes(p))lastDocPage=p;
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   document.getElementById('page-'+p).classList.add('on');
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
@@ -4715,7 +5010,15 @@ async function routeFromHash(){
     const gid=(seg[1]||'').toLowerCase();
     if(!gid){go('analyses');return;}
     if(currentPage==='analysis'&&window.FSInvestmentUI&&FSInvestmentUI.currentId()===gid)return;
-    if(window.FSInvestmentUI){await FSInvestmentUI.open(gid);go('analysis');}
+    if(window.FSInvestmentUI){
+      // Ask BEFORE loading: open() replaces the analysis on screen, so asking
+      // afterwards (go() does, but only when the PAGE changes) was too late,
+      // and analysis → analysis never asked at all.
+      if(currentPage==='analysis'&&typeof FSInvestmentUI.confirmLeave==='function'
+         &&!FSInvestmentUI.confirmLeave()){syncHash('analysis');return;}
+      if(DOC_PAGES.includes(currentPage)&&!confirmDiscard()){syncHash(currentPage);return;}
+      await FSInvestmentUI.open(gid);go('analysis');
+    }
     return;
   }
   const id=(seg[1]||'').toUpperCase();
@@ -5001,10 +5304,14 @@ async function setEntityStatus(kind,id,status){
     return;
   }
   try{
-    await api(kind==='budget'?'budget/'+encodeURIComponent(id):'investment-analysis/'+id,
+    const res=await api(kind==='budget'?'budget/'+encodeURIComponent(id):'investment-analysis/'+id,
       {method:'PUT',body:JSON.stringify({status})});
     if(kind==='budget'){
       if(doc&&doc.projectId===id){
+        // The status is inside the stored document, so this moved the
+        // concurrency base; adopting it keeps the next Save from reading
+        // our own status change as somebody else's save.
+        if(loadedId===id&&res&&res.docHash)baseHash=res.docHash;
         doc.status=status;
         paintBudgetStatusChips();
       }
@@ -5242,6 +5549,7 @@ async function editTemplate(key){
   doc=migrate(JSON.parse(JSON.stringify(t.doc)));
   doc.projectId='';                       // a template is not a project
   dirty=false;lastSaved=null;selected.clear();
+  resetDocState();
   enableDocNav();fillForms();renderTemplateBanner();go('input');
   toast('Editing template '+t.name+' — version '+(t.currentVersion||1));
 }
@@ -5262,6 +5570,7 @@ function renderTemplateBanner(){
 function exitTemplateEdit(){
   if(!confirmDiscard())return;
   templateEdit=null;doc=null;dirty=false;selected.clear();
+  resetDocState();
   renderTemplateBanner();
   disableDocNav();
   go('pricing');
@@ -5323,6 +5632,7 @@ async function duplicateBudgetAs(fromId,newId,projectKey){
   doc.created=new Date().toISOString();
   // A copy is not the original's history: it starts its own.
   delete doc.templateVersionId;
+  resetDocState();                // not the original's id lock, base or draft
   docIsNew=true;                  // its first save must create, not overwrite
   fillForms();
   markDirty();
@@ -5358,6 +5668,7 @@ async function applyTemplateBudget(key){
   d.created=new Date().toISOString();d.updated=d.created;
   templateEdit=null;renderTemplateBanner();
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
+  resetDocState();
   enableDocNav();resetUndo();
   return true;
 }
@@ -5369,6 +5680,7 @@ function newBudget(kind){
 /* The discard prompt has already been answered by the caller. */
 function applyNewBudget(kind){
   doc=blankDoc(kind);dirty=false;lastSaved=null;selected.clear();
+  resetDocState();
   templateEdit=null;renderTemplateBanner();
   enableDocNav();fillForms();resetUndo();go('input');
   if(kind==='blank')toast('Blank budget — build the scope from the CSI catalog on the Budget page');
@@ -5378,6 +5690,14 @@ function applyNewBudget(kind){
    exists replaced that budget and versioned the replacement as its next
    revision, and the original survived only in history. */
 let docIsNew=false;
+/* A different document is now open: none of the previous one's save state
+   (its id lock, its concurrency base, its failed save, its draft slot or a
+   pending recovery offer) may carry over to it. */
+function resetDocState(){
+  docIsNew=false;loadedId=null;loadedSnap=null;baseHash=null;saveError=null;
+  newDraftTok=null;draftSeq=-1;clearTimeout(draftTimer);draftTimer=null;
+  docGen++;hideDraftBanner();
+}
 /* Where the budget currently open was reached FROM.
 
    Deliberately route state rather than browser history: history holds every
@@ -5402,17 +5722,33 @@ function paintBackTargets(){
     b.setAttribute('aria-label',label);b.setAttribute('title',label);
   });
 }
-async function openBudget(pid,page,origin){
-  if(!confirmDiscard())return;
-  const d=await sGet('budget-'+pid);
-  if(!d){toast('Could not load '+pid);return;}
+async function openBudget(pid,page,origin,opt){
+  opt=opt||{};
+  // Cancelling must also put the address bar back: when the hash brought us
+  // here, leaving it pointing at the budget NOT opened made a reload open it.
+  if(!opt.discarded&&!confirmDiscard()){syncHash(currentPage);return;}
+  pid=String(pid||'').toUpperCase();
+  // Fetched directly rather than through sGet() because the concurrency
+  // token rides in a header, and sGet() returns only the body.
+  let d=null,h=null;
+  try{d=await api('budget/'+encodeURIComponent(pid),{onResponse:r=>{h=r.headers.get('X-Budget-Hash');}});}
+  catch(e){console.warn('GET budget-'+pid,e.message);}
+  if(!d){
+    toast('Could not load '+pid);
+    if(!doc&&DOC_PAGES.includes(currentPage))go('home');   // nothing left to show here
+    return;
+  }
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
+  resetDocState();
   docIsNew=false;                 // it exists: saving it is an update
+  loadedId=pid;loadedSnap=JSON.stringify(doc);baseHash=h||null;
+  if(opt.dropDraft)lsDel(draftPrefix()+'id:'+pid);
   budgetOrigin=origin&&origin.page?origin:null;
   templateEdit=null;renderTemplateBanner();      // opening a budget leaves template mode
   enableDocNav();fillForms();resetUndo();
   paintBackTargets();
   go(page||'budget');
+  offerDraft();
 }
 /* ---- Budgets list row actions ----
    Whole-budget actions live behind one menu so Delete is deliberate and clearly
@@ -5587,7 +5923,8 @@ async function deleteBudget(pid){
   // version history, and restores it if the same project ID is saved again.
   if(!confirm('Delete '+pid+'?\n\nIt will be removed from your budgets list. Its saved version history is kept, and an administrator can restore it.'))return;
   try{await sDel('budget-'+pid);}catch(e){toast('Delete failed: '+e.message);return;}
-  if(doc&&doc.projectId===pid){doc=null;dirty=false;disableDocNav();}
+  lsDel(draftPrefix()+'id:'+String(pid).toUpperCase());   // a draft of a deleted budget is not recoverable work
+  if(doc&&doc.projectId===pid){doc=null;dirty=false;resetDocState();disableDocNav();renderSaveState();}
   refreshBudgetSurfaces();toast('Deleted '+pid);
 }
 
@@ -5613,6 +5950,18 @@ function fillForms(){
     paintFeeMode(k);
   });
   setCMode(doc.contingency.mode,true);
+  paintIdLock();
+}
+/* Once a budget exists its id is its identity: BudgetVersions, the project
+   link and every favorite hang off it. Typing a different id into an existing
+   budget and saving used to land on — and overwrite — whatever budget had
+   that id, so the field locks after the first save. */
+function paintIdLock(){
+  const el=document.getElementById('pId');if(!el)return;
+  const locked=!!(loadedId&&!templateEdit);
+  el.readOnly=locked;el.classList.toggle('set-locked',locked);
+  el.title=locked?'Budget IDs can\u2019t be changed after the first save':'';
+  const h=document.getElementById('pIdLock');if(h)h.style.display=locked?'block':'none';
 }
 /* `nz()` for the fee OBJECT. An old document can carry an absent
    projectCosts.dev, and `undefined.mode` is a TypeError exactly as absent
@@ -6660,35 +7009,70 @@ async function invApi(path,opts={}){
   }
   return body;
 }
-async function saveBudget(show){
+/* Can the open budget be saved as it stands? Pure: no navigation, no toast,
+   no repaint — so the header pill can ask it on every edit, and saveBudget()
+   owns the effects of a manual save that is refused. Order matches what the
+   user is told first: the id, then the guard rails, then the size. `count` is
+   the number of blocking rails whatever the reason, for the pill. */
+function checkSaveable(){
+  if(!doc)return {ok:false,reason:'none',count:0};
+  const gr=guardrails();
+  const count=gr.blocking;
+  const id=String(doc.projectId||'').trim().toUpperCase();
+  if(!ID_RX.test(id))return {ok:false,reason:'id',count,gr};
+  if(loadedId&&id!==loadedId)return {ok:false,reason:'id-locked',count,gr};
+  if(count)return {ok:false,reason:'guardrails',count,gr};
+  if(!(buildingSF()>0))return {ok:false,reason:'size',count,gr};
+  return {ok:true,reason:'',count,gr};
+}
+/* What a failed save says. Never the raw server text — a 500 can carry a
+   database error — and only claims the edits are safe when the draft journal
+   actually holds them. The detail goes to the console. */
+function saveFailMsg(e){
+  const kept=draftKept()?' Your changes are kept on this device.':'';
+  if(e&&e.network)return 'Couldn\u2019t reach the server, so nothing was saved.'+kept+' Retry once you are back online.';
+  if(e&&e.session)return 'Your session has ended, so nothing was saved.'+kept+' Sign in again in another tab, then Retry.';
+  if(e&&e.status>=500)return 'The server had a problem, so nothing was saved.'+kept+' Retry in a moment.';
+  if(e&&e.body&&e.body.message)return 'Couldn\u2019t save — '+e.body.message;
+  return 'Couldn\u2019t save — '+((e&&e.message)||'unknown error')+'.'+kept;
+}
+async function saveBudget(show,opts){
   if(!doc||saving)return;
   // In template mode the same Save affordance publishes a template version instead
   // of writing a budget — a template has no project ID and is not a project.
   if(templateEdit)return publishTemplate();
+  const force=!!(opts&&opts.force);
   pullForms();
-  if(!validateId()){toast('Valid project ID required to save');go('input');document.getElementById('pId').focus();return;}
+  const chk=checkSaveable();
+  if(chk.reason==='id'){validateId();toast('Valid budget ID required to save');go('input');document.getElementById('pId').focus();return;}
+  // The field is locked, so this is a document changed some other way. Put
+  // the id back rather than write this budget over a different one.
+  if(chk.reason==='id-locked'){
+    doc.projectId=loadedId;fillForms();
+    toast('Budget IDs can\u2019t be changed after the first save — use + Add Alternate Budget on its project to copy it.');
+    return;
+  }
   // Guard rails refuse the save before anything is serialized. The endpoint
   // re-evaluates from the submitted document and answers 422, so a client that
   // skipped this check still cannot write — this is the courteous half.
-  const gr=guardrails();
+  const gr=chk.gr;
   const kept=FSGuardrails.pruneAcks(doc,gr);
   if(kept.length!==(doc.guardrailAcks||[]).length)doc.guardrailAcks=kept;
-  if(gr.blocking){
-    go('budget');
-    renderGuardrails();
-    document.getElementById('sec-guardrails').scrollIntoView({block:'start'});
+  if(chk.reason==='guardrails'){
+    showGuardrails();
     toast(gr.blocking+' guard rail'+(gr.blocking===1?'':'s')+' blocking — fix the value or record an override.');
     return;
   }
   // Size is required, and the endpoint refuses the save too — this is the
   // courteous half, shown against the field it belongs to.
-  if(!validateSize(true)){
+  if(chk.reason==='size'){
+    validateSize(true);
     go('input');
     document.getElementById('pSF').focus();
     toast('Square footage is required — enter a building size greater than zero.');
     return;
   }
-  saving=true;renderSaveState();
+  saving=true;saveError=null;renderSaveState();
   doc.updated=new Date().toISOString();
   const p=parts();
   const meta={projectId:doc.projectId,name:doc.name,type:doc.type,status:doc.status,
@@ -6698,48 +7082,112 @@ async function saveBudget(show){
     // link alone, which is what every edit of an older budget does.
     projectKey:doc.projectKey||undefined,
     guardrailStatus:gr.status,guardrailBreachCount:gr.breaches.length};
+  // Everything the save needs is captured NOW: the body is serialised before
+  // the await, so an edit made while it is in flight is not in it — and must
+  // not be marked clean when it returns (editSeq is how we know).
+  const seq=editSeq,gen=docGen,id=doc.projectId,wasNew=docIsNew;
+  const snap=JSON.stringify(doc);
+  // baseHash: "refuse this if the budget changed since I opened it". Overwrite
+  // Anyway is the one save that deliberately leaves it out.
+  const body=JSON.stringify({meta,doc,create:docIsNew||undefined,
+    baseHash:(!docIsNew&&!force&&baseHash)||undefined});
+  flushDraft();                   // a crash mid-save loses nothing
+  let r;
   try{
-    await api('budget/'+encodeURIComponent(doc.projectId),
-      {method:'PUT',body:JSON.stringify({meta,doc,create:docIsNew||undefined})});
-    saving=false;docIsNew=false;markSaved();
-    if(window.FSProjects)FSProjects.invalidate();   // its counts and money just moved
-    if(show)toast('Saved '+doc.projectId);
+    r=await api('budget/'+encodeURIComponent(id),{method:'PUT',body});
   }catch(e){
-    saving=false;renderSaveState();
-    // The endpoint re-evaluates the rails independently. Reaching here means
-    // the browser and the server disagreed — surface the server's verdict and
-    // repaint the card so the user sees the same thing the endpoint saw.
-    if(e.status===422&&e.body&&e.body.error==='guardrail_breach'){
-      go('budget');renderGuardrails();
-      document.getElementById('sec-guardrails').scrollIntoView({block:'start'});
-      toast(e.message);
-      return;
-    }
-    // The size rule, from the side that decides.
-    if(e.status===422&&e.body&&e.body.error==='size_required'){
-      go('input');validateSize(true);document.getElementById('pSF').focus();
-      toast(e.message);
-      return;
-    }
-    // The id is taken. This is the whole point of sending `create`: without
-    // it the save landed on that budget and versioned the replacement as its
-    // next revision. Offer the next free id rather than just refusing.
-    if(e.status===409&&e.body&&e.body.error==='budget_id_taken'){
-      go('input');
-      const sug=e.body.suggestion;
-      document.getElementById('pId').classList.add('err');
-      document.getElementById('pIdErr').textContent=e.body.message;
-      document.getElementById('pIdErr').style.display='block';
-      if(sug&&confirm(e.body.message+'\n\nUse '+sug+' instead?')){
-        doc.projectId=sug;fillForms();validateId();markDirty();
-        return saveBudget(show);
-      }
-      document.getElementById('pId').focus();
-      toast(e.body.message);
-      return;
-    }
-    toast('Save failed: '+e.message);
+    saving=false;
+    if(gen!==docGen){renderSaveState();toast(saveFailMsg(e));return;}   // that budget is no longer open
+    saveFailed(e,show);
+    return;
   }
+  saving=false;
+  if(window.FSProjects)FSProjects.invalidate();   // its counts and money just moved
+  const what=r&&r.versionNumber
+    ?(r.versionCreated?' — version '+r.versionNumber+' recorded':' — no changes since version '+r.versionNumber):'';
+  if(gen!==docGen){renderSaveState();if(show)toast('Saved '+id+what);return;}
+  // A new budget now exists: its draft moves from the 'new' slot to its id.
+  if(wasNew&&newDraftTok){lsDel(draftPrefix()+'new:'+newDraftTok);newDraftTok=null;}
+  docIsNew=false;loadedId=id;loadedSnap=snap;
+  if(r&&r.docHash)baseHash=r.docHash;
+  lastSaved=new Date();saveError=null;
+  if(editSeq===seq){dirty=false;clearDraft();}
+  else scheduleDraft();           // edited while saving: still unsaved, re-journaled against the new base
+  paintIdLock();
+  renderSaveState();
+  if(show)toast('Saved '+id+what);
+}
+/* A save that did not land. The refusals that point at a field go back to it;
+   everything else leaves the pill saying so until a save succeeds. */
+function saveFailed(e,show){
+  renderSaveState();
+  // The endpoint re-evaluates the rails independently. Reaching here means
+  // the browser and the server disagreed — surface the server's verdict and
+  // repaint the card so the user sees the same thing the endpoint saw.
+  if(e.status===422&&e.body&&e.body.error==='guardrail_breach'){
+    go('budget');renderGuardrails();
+    document.getElementById('sec-guardrails').scrollIntoView({block:'start'});
+    toast(e.message);
+    return;
+  }
+  // The size rule, from the side that decides.
+  if(e.status===422&&e.body&&e.body.error==='size_required'){
+    go('input');validateSize(true);document.getElementById('pSF').focus();
+    toast(e.message);
+    return;
+  }
+  // The id is taken. This is the whole point of sending `create`: without
+  // it the save landed on that budget and versioned the replacement as its
+  // next revision. Offer the next free id rather than just refusing.
+  if(e.status===409&&e.body&&e.body.error==='budget_id_taken'){
+    go('input');
+    const sug=e.body.suggestion;
+    document.getElementById('pId').classList.add('err');
+    document.getElementById('pIdErr').textContent=e.body.message;
+    document.getElementById('pIdErr').style.display='block';
+    if(sug&&confirm(e.body.message+'\n\nUse '+sug+' instead?')){
+      doc.projectId=sug;fillForms();validateId();markDirty();
+      return saveBudget(show);
+    }
+    document.getElementById('pId').focus();
+    toast(e.body.message);
+    return;
+  }
+  // Somebody saved this budget since it was opened. Nothing was written;
+  // the user decides whose version wins.
+  if(e.status===409&&e.body&&e.body.error==='budget_conflict'){
+    writeDraft();
+    saveError='Someone else saved this budget since you opened it.';
+    renderSaveState();
+    openConflict(e.body);
+    return;
+  }
+  writeDraft();                 // so "kept on this device" is true when it is said
+  const msg=saveFailMsg(e);
+  console.warn('Budget save failed:',e&&e.message);   // warn, not error: a failed save is handled, not a bug
+  saveError=msg+(e&&e.status?' ('+e.status+')':'');
+  renderSaveState();
+  toast(msg);
+}
+function openConflict(info){
+  const when=info&&info.updatedAt?' ('+fmtWhen(info.updatedAt)+')':'';
+  document.getElementById('conflictMsg').textContent=
+    'Someone saved '+(loadedId||'this budget')+' since you opened it'+when+'. Saving now would replace their changes.';
+  openDialog('conflictDlg','#conflictKeep');
+}
+function closeConflict(){closeDialog('conflictDlg');}
+async function conflictReload(){
+  closeConflict();
+  if(!doc||!loadedId)return;
+  const page=DOC_PAGES.includes(currentPage)?currentPage:'budget';
+  // The edits are being thrown away on purpose: no second "leave without
+  // saving?", and the draft goes too — once the latest copy has loaded.
+  await openBudget(loadedId,page,budgetOrigin,{discarded:true,dropDraft:true});
+  if(!dirty)toast('Loaded the latest saved '+loadedId+'.');
+}
+function conflictOverwrite(){
+  closeConflict();
+  saveBudget(true,{force:true});
 }
 function setStatus(v){doc.status=v;markDirty();}
 /* The stale-pricing banner is dismissible per budget (in memory — it returns
@@ -8164,8 +8612,10 @@ function endBoot(){
     loadExportConfig();   // fire-and-forget: exports default to the engine until it answers
     await loadTemplates();
     await renderHome();
+    pruneDrafts(DRAFT_MAX);   // a browser keeps at most ten budget drafts
     await routeFromHash();
     if(!location.hash)syncHash(currentPage);
+    offerNewDraft();          // a new budget that never reached its first save
     renderSaveState();
     maybeShowWelcome();   // last: a first-run account meets a painted app, not an empty one
   }finally{

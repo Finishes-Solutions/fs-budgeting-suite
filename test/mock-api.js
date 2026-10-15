@@ -208,6 +208,10 @@ function canonical(v) {
   return '{' + Object.keys(v).filter(k => !VOLATILE.has(k) && v[k] !== undefined).sort()
     .map(k => JSON.stringify(k) + ':' + canonical(v[k])).join(',') + '}';
 }
+// The budget concurrency token, as api/budget/index.js computes it: the
+// canonical SHA-256 of the stored document. GET sends it as X-Budget-Hash; a
+// PUT carrying it as baseHash is refused with 409 once the stored doc moved.
+const budgetHash = d => crypto.createHash('sha256').update(canonical(d), 'utf8').digest('hex');
 let pricing = JSON.parse(fs.readFileSync(path.join(__dirname, 'pricing.json'), 'utf8'));
 
 const principal = {
@@ -890,7 +894,8 @@ http.createServer((req, res) => {
 
     if (req.method === 'GET') {
       if (!live) { res.writeHead(404); return res.end('Not found'); }
-      return json(res, 200, live.doc);
+      res.writeHead(200, { 'Content-Type': 'application/json', 'X-Budget-Hash': budgetHash(live.doc) });
+      return res.end(JSON.stringify(live.doc));
     }
     // Soft delete: the record and its history stay, the budget just goes invisible.
     if (req.method === 'DELETE') {
@@ -915,7 +920,7 @@ http.createServer((req, res) => {
         if (wasStatus !== body.status) act('budget_status', 'budget', id,
           { name: live.meta.name || null, projectKey: live.projectKey || null,
             from: wasStatus, to: body.status });
-        return json(res, 200, { ok: true, status: body.status });
+        return json(res, 200, { ok: true, status: body.status, docHash: budgetHash(live.doc) });
       }
       // A malformed body must answer 400, exactly as api/budget/index.js does.
       // Throwing here would kill the whole mock and cascade into every suite
@@ -933,6 +938,9 @@ http.createServer((req, res) => {
           message: 'Square footage is required — enter a building size greater than zero before saving.' });
       }
       const wantsCreate = body.create === true;
+      // Optional, as in the real API: no baseHash means last-write-wins.
+      const baseHash = typeof body.baseHash === 'string' && /^[0-9a-f]{64}$/.test(body.baseHash)
+        ? body.baseHash : null;
       const wantsKey = meta.projectKey ? String(meta.projectKey).toUpperCase() : null;
       if (wantsKey && !PROJECT_ID_RX.test(wantsKey)) {
         return json(res, 400, { error: 'bad_project_id', field: 'projectKey',
@@ -961,6 +969,14 @@ http.createServer((req, res) => {
           breaches: rails.breaches.filter(x => x.severity === 'error').map(x => ({
             id: x.id, label: x.label, actual: x.actual, display: x.display,
             min: x.min, max: x.max, range: x.range, message: x.message })) });
+      }
+      // The real API checks this inside the save transaction, after the rails,
+      // against the stored row — soft-deleted included, as there.
+      const stored = budgets.get(id);
+      if (baseHash && stored && !wantsCreate && budgetHash(stored.doc) !== baseHash) {
+        return json(res, 409, { error: 'budget_conflict',
+          message: 'Someone saved ' + id + ' since you opened it.',
+          currentHash: budgetHash(stored.doc), updatedAt: (stored.meta && stored.meta.updated) || null });
       }
       const calc = parts(doc);
       // The real API reads UpdatedAt off the row, so `updated` is always
@@ -1025,7 +1041,8 @@ http.createServer((req, res) => {
         pricingVersion: doc.pricingVersion || null,
         changed: changedFields.length ? changedFields : null
       });
-      json(res, 200, { ok: true, projectKey: linked, versionNumber: entry.versions.length, versionCreated });
+      json(res, 200, { ok: true, projectKey: linked, versionNumber: entry.versions.length, versionCreated,
+        docHash: budgetHash(doc) });
     });
   }
 
