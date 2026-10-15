@@ -51,6 +51,21 @@ function mockAssistantStore() {
           || String(r.doc.address || '').toLowerCase().includes(t))
         .map(([id, r]) => ({ row: row(id, r), doc: r.doc }));
     },
+    async loadAnalysis(id) {
+      const a = invAnalyses.get(id);
+      return a && !a.deleted ? mockAnalysisRec(a) : null;
+    },
+    async listAnalyses(q) {
+      return [...invAnalyses.values()].filter(a => !a.deleted
+          && ((q.budgetId && a.projectId === q.budgetId) || (q.projectKey && a.projectKey === q.projectKey)))
+        .sort((x, y) => y.updatedAt.localeCompare(x.updatedAt)).slice(0, 10).map(mockAnalysisRec);
+    },
+    async pricingLibrary() { return pricing; },
+    async benchmarkBudgets(type, excludeId) {
+      return [...budgets.entries()].filter(([id, r]) => !r.deleted && id !== excludeId && !/^TST-/.test(id)
+          && (r.meta.type || 'Multifamily') === (type || 'Multifamily'))
+        .slice(0, 40).map(([id, r]) => ({ id, name: r.meta.name, doc: r.doc }));
+    },
     async feeSchedule(key, n) {
       const s = feeSchedules.get(key); if (!s) return null;
       const v = n ? s.versions.find(x => x.versionNumber === n) : s.versions[s.versions.length - 1];
@@ -59,13 +74,25 @@ function mockAssistantStore() {
     }
   };
 }
+function mockAnalysisRec(a) {
+  const br = a.projectId ? budgets.get(a.projectId) : null;
+  return { id: a.id, budgetId: a.projectId || null, projectKey: a.projectKey || null, name: a.name,
+    status: a.status, savedVersion: a.currentVersionNumber, input: a.input, updatedAt: a.updatedAt,
+    sourceBudgetVersion: a.sourceBudgetVersionNumber || null,
+    budgetCurrentVersion: br && !br.deleted ? br.versions.length : null };
+}
 // A deterministic stand-in for Claude. It answers from the facts the real
 // module computed, so a suite can assert that real figures reached the model;
 // a question mentioning "version" exercises one round of the tool loop.
 const mockClaude = { beta: { messages: { async create(req) {
   const first = String(req.messages[0].content);
+  const am = first.match(/<analysis_context[^>]*>\n[^\n]*\n(.*)\n<\/analysis_context>/);
+  if (am) return mockClaudeAnalysis(req, JSON.parse(am[1]));
   const m = first.match(/<budget_context[^>]*>\n[^\n]*\n(.*)\n<\/budget_context>/);
   const facts = m ? JSON.parse(m[1]) : null;
+  const rv = first.match(/<budget_review>\n(.*)\n<\/budget_review>/);
+  const review = rv ? JSON.parse(rv[1]) : null;
+  const pf = first.match(/<pro_formas count="(\d+)">/);
   const last = req.messages[req.messages.length - 1];
   const asked = typeof last.content === 'string' ? last.content : '';
   const usage = { input_tokens: 1200, output_tokens: 80 };
@@ -83,8 +110,34 @@ const mockClaude = { beta: { messages: { async create(req) {
   return { stop_reason: 'end_turn', model: 'mock-claude', usage, content: [{ type: 'text', text:
     '**' + (facts ? facts.identity.name || facts.identity.budgetId : 'Budget') + '** — mock assistant answer.\n\n'
     + '- Contract Sum: ' + usd(t.contractSum) + '\n- Total Project Cost: ' + usd(t.totalProjectCost)
-    + '\n- Based on: ' + (m ? first.match(/basis="([^"]+)"/)[1] : 'unknown') + tail }] };
+    + '\n- Based on: ' + (m ? first.match(/basis="([^"]+)"/)[1] : 'unknown')
+    + '\n- Review findings: ' + (review ? review.summary.findings : 'none')
+    + '\n- Pro formas: ' + (pf ? pf[1] : '0') + tail }] };
 } } } };
+// The pro forma half of the stand-in: quotes the engine's headline and top
+// driver, and a question about RUBS exercises run_scenario.
+function mockClaudeAnalysis(req, facts) {
+  const last = req.messages[req.messages.length - 1];
+  const asked = typeof last.content === 'string' ? last.content : '';
+  const usage = { input_tokens: 1500, output_tokens: 90 };
+  if (/rubs/i.test(asked) && req.tool_choice.type === 'auto')
+    return { stop_reason: 'tool_use', model: 'mock-claude', usage, content: [{ type: 'tool_use', id: 'mock-s1',
+      name: 'run_scenario', input: { changes: { addOtherIncome: [{ label: 'RUBS', annualAmount: 60000 }] } } }] };
+  const pct = v => (Number.isFinite(v) ? (v * 100).toFixed(2) + '%' : '—');
+  let tail = '';
+  if (Array.isArray(last.content) && last.content[0] && last.content[0].type === 'tool_result') {
+    const r = JSON.parse(last.content[0].content);
+    tail = r.error ? '\n\nScenario failed: ' + r.error
+      : '\n\nWith RUBS the equity IRR moves to **' + pct(r.after.finalYearEquityIRR) + '**.';
+  }
+  const h = facts.headline || {};
+  return { stop_reason: 'end_turn', model: 'mock-claude', usage, content: [{ type: 'text', text:
+    '**' + ((facts.meta && facts.meta.name) || 'Analysis') + '** — mock pro forma answer.\n\n'
+    + '- Equity IRR: ' + pct(h.finalYearEquityIRR) + '\n- Top driver: '
+    + ((facts.drivers || [])[0] ? facts.drivers[0].change : 'none')
+    + '\n- Source budget: ' + (/<source_budget>\nThe budget this analysis/.test(String(req.messages[0].content)) ? 'loaded' : 'none')
+    + tail }] };
+}
 const mockUsers = new Map();   // userId -> profile + settings row
 const mockFeedback = [];       // dbo.Feedback stand-in, newest first
 let nextFeedbackId = 1;
@@ -1167,6 +1220,20 @@ http.createServer((req, res) => {
   }
 
   // ---- investment analyses: same semantics as the four Azure Functions ----
+  // POST ?scope=ask — the Budget Assistant focused on a pro forma; the real
+  // module again, against the in-memory store.
+  if (p === '/api/investment-calculations' && req.method === 'POST' && q.get('scope') === 'ask') {
+    let ab = ''; req.on('data', c => ab += c);
+    return req.on('end', async () => {
+      let body = {};
+      try { body = ab ? JSON.parse(ab) : {}; } catch (e) { return json(res, 400, { error: 'bad_json' }); }
+      const out = await budgetAssistant.ask({ store: mockAssistantStore(), principal: principal.clientPrincipal,
+        id: body.analysisId ? String(body.analysisId).toLowerCase() : null, focus: 'analysis', body, env: {},
+        client: process.env.MOCK_AI === 'off' ? null : mockClaude });
+      if (out.activity) act('ai_ask', 'analysis', out.activity.entityId || null, out.activity);
+      res.writeHead(out.status, out.headers); res.end(out.body);
+    });
+  }
   if (p === '/api/investment-calculations' && req.method === 'POST') {
     let b = ''; req.on('data', c => b += c);
     return req.on('end', () => {

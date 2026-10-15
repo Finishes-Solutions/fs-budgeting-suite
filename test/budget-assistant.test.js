@@ -242,3 +242,141 @@ test('the throttle stops a runaway client', async () => {
     last = await A.ask({ store: fakeStore(), principal, id: 'TST-0001', env: {}, client: c, body: { question: 'q' } });
   assert.strictEqual(last.status, 429);
 });
+
+/* ------------------- pro forma insight (investment engine) ------------------- */
+
+const insight = require('../api/shared/investment/insight');
+const { calculateInvestmentAnalysis } = require('../api/shared/investment/calculate');
+const FX = fs.readdirSync(path.join(__dirname, 'fixtures', 'investment'))
+  .map(f => require(path.join(__dirname, 'fixtures', 'investment', f)));
+
+test('the engine reproduces itself from normalizedInput — what every scenario starts from', () => {
+  for (const fx of FX) {
+    const r = calculateInvestmentAnalysis(fx.input);
+    const again = calculateInvestmentAnalysis(JSON.parse(JSON.stringify(r.normalizedInput)));
+    assert.deepStrictEqual(again.summary, r.summary, fx.name);
+  }
+});
+
+test('drivers are real engine re-runs, ranked by how far they move the IRR', () => {
+  const f = insight.analysisFacts(FX[0].input, { name: 'x' });
+  assert.ok(f.drivers.length >= 5);
+  for (let i = 1; i < f.drivers.length; i++)
+    assert.ok(Math.abs(f.drivers[i - 1].irrChange) >= Math.abs(f.drivers[i].irrChange));
+  const rent = f.drivers.find(d => d.id === 'rent');
+  const norm = calculateInvestmentAnalysis(FX[0].input).normalizedInput;
+  const direct = insight.runScenario(norm, { rentChangePct: 0.05 });
+  assert.strictEqual(rent.irrChange, direct.change.finalYearEquityIRR);
+});
+
+test('a scenario adds income through the engine, exactly', () => {
+  const norm = calculateInvestmentAnalysis(FX[0].input).normalizedInput;   // 25% of GOI expenses
+  const s = insight.runScenario(norm, { addOtherIncome: [{ label: 'RUBS', annualAmount: 60000 }] });
+  assert.ok(!s.error, s.error);
+  assert.strictEqual(s.change.year1NOI, 60000 * (1 - norm.expenses.value));
+  assert.ok(s.change.finalYearEquityIRR > 0);
+  assert.match(insight.runScenario(norm, { bogus: 1 }).error, /Unknown change/);
+  assert.match(insight.runScenario(norm, { vacancy: 2 }).error, /between/);
+});
+
+test('diagnostics name the classic problems, labelled as rules of thumb', () => {
+  const f = insight.analysisFacts(FX[0].input, {});   // Barker: exit cap below entry, thin cash-on-cash
+  const ids = f.diagnostics.map(d => d.id);
+  assert.ok(ids.includes('exitBelowEntry'));
+  assert.ok(ids.includes('negativeLeverage'));
+  assert.ok(f.diagnostics.find(d => d.id === 'cashOnCash').finding.includes('rule of thumb'));
+  const incomplete = insight.analysisFacts({ analysisName: 'x' }, {});
+  assert.match(incomplete.error, /Not calculable/);
+});
+
+/* ------------------------------ budget review ------------------------------ */
+
+const { reviewBudget } = require('../api/shared/budget-review');
+const LIB = require('./pricing.json');
+function libDoc(mul) {
+  return { type: 'Multifamily', resSF: 50000, amenSF: 1200, pricingVersion: LIB.version,
+    units: [{ label: '1BR', count: 60, sf: 750, rent: 1500 }],
+    lines: LIB.lines.map((l, i) => Object.assign({}, l, { lineId: 'l' + i, auto: l.basis !== 'ls', qty: 0,
+      baseUnit: l.unit, unit: l.unit * (mul || 1) })),
+    companies: [{ name: 'GC', pct: 10 }], contingency: { mode: 'pct', val: 5 },
+    projectCosts: { land: 1e6, dev: { mode: 'amt', val: 1 }, mkt: { mode: 'amt', val: 1 }, cls: { mode: 'amt', val: 1 } },
+    other: [], expenses: [] };
+}
+
+test('review: facts, missing library scope with its cost, and the impact-fee placeholder', () => {
+  const d = libDoc();
+  d.lines = d.lines.filter(l => l.code !== 'SC-01');          // architect removed
+  d.lines[0].unit = 0;                                          // a $0 line
+  const r = reviewBudget(d, { library: LIB });
+  const kinds = r.findings.map(f => f.kind + ':' + f.area);
+  assert.ok(kinds.includes('fact:lines'));
+  assert.ok(kinds.includes('fact:impactFees'), 'SC-20 still on $/SF');
+  const miss = r.findings.find(f => f.area === 'scope');
+  assert.strictEqual(miss.lines[0].code, 'SC-01');
+  assert.strictEqual(miss.lines[0].estimatedCostAtLibraryRate, 50000 * 2.65);
+  assert.ok(r.findings.some(f => f.kind === 'heuristic' && /Construction loan interest/.test(f.finding)));
+});
+
+test('review: portfolio outliers need at least three peers', () => {
+  const peers = [libDoc(1), libDoc(1.02), libDoc(0.98)].map(doc => ({ doc }));
+  const r2 = reviewBudget(libDoc(1.5), { library: LIB, benchmarks: peers });
+  assert.ok(r2.benchmarks.hardPerSF.portfolioMedian > 0);
+  assert.ok(r2.findings.some(f => f.kind === 'portfolio' && /hardPerSF/.test(f.finding)));
+  assert.strictEqual(reviewBudget(libDoc(1.5), { library: LIB, benchmarks: peers.slice(0, 2) }).benchmarks, null);
+});
+
+/* --------------------- both focuses, through ask() --------------------- */
+
+const GUID = '0f1e2d3c-4b5a-4968-8776-655443322110';
+function richStore(over) {
+  return fakeStore(Object.assign({
+    async listAnalyses() { return [{ id: GUID, budgetId: 'TST-0001', projectKey: 'OP-0001', name: 'Base Case',
+      status: 'Draft', input: FX[0].input, sourceBudgetVersion: 1, budgetCurrentVersion: 2 }]; },
+    async loadAnalysis(id) { return id === GUID ? (await this.listAnalyses())[0] : null; },
+    async pricingLibrary() { return LIB; },
+    async benchmarkBudgets() { return []; }
+  }, over || {}));
+}
+
+test('on a budget, the review and its pro formas are in context, and run_scenario defaults to them', async () => {
+  const c = fakeClient([
+    { stop_reason: 'tool_use', usage: {}, content: [{ type: 'tool_use', id: 't1', name: 'run_scenario',
+      input: { changes: { addOtherIncome: [{ label: 'Storage', annualAmount: 24000 }] } } }] },
+    text('ok')]);
+  const r = await run({ client: c, store: richStore(), body: { question: 'How can it make more money?' } });
+  assert.strictEqual(r.status, 200);
+  const ctx = c.calls[0].req.messages[0].content;
+  assert.match(ctx, /<budget_review>/);
+  assert.match(ctx, /<pro_formas count="1">/);
+  assert.match(ctx, /"budgetChangedSinceImport":true/);
+  const tr = JSON.parse(c.calls[1].req.messages.at(-1).content[0].content);
+  assert.ok(tr.change.year1NOI > 0, JSON.stringify(tr));
+});
+
+test('on a pro forma, the analysis, its drivers and its source budget are in context', async () => {
+  const c = fakeClient([text('ok')]);
+  const r = await run({ client: c, store: richStore(), focus: 'analysis', id: GUID,
+    body: { question: 'Why are the returns weak?' } });
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(bodyOf(r).focus, 'analysis');
+  const ctx = c.calls[0].req.messages[0].content;
+  assert.match(ctx, /<analysis_context basis="saved">/);
+  assert.match(ctx, /"drivers":\[/);
+  assert.match(ctx, /<source_budget>\nThe budget this analysis was built from/);
+  const summary = ctx.split('<source_budget>')[1].split('<budget_review>')[0];
+  assert.doesNotMatch(summary, /"lines":\[/, 'line items are left out of the source budget');
+  assert.match(summary, /"totalProjectCost":/);
+  assert.strictEqual(r.activity.entityType, 'analysis');
+  assert.strictEqual(r.activity.entityId, GUID);
+});
+
+test('on a pro forma: unsaved assumptions are what gets read; bad and invisible ids are refused', async () => {
+  const c = fakeClient([text('ok'), text('ok')]);
+  const draft = JSON.parse(JSON.stringify(FX[0].input)); draft.vacancy.value = 0.2;
+  const r = await run({ client: c, store: richStore(), focus: 'analysis', id: GUID, body: { question: 'q', draftInput: draft } });
+  assert.strictEqual(bodyOf(r).basedOn, 'unsaved-draft');
+  assert.match(c.calls[0].req.messages[0].content, /"vacancy":0\.2/);
+  assert.strictEqual((await run({ client: c, store: richStore(), focus: 'analysis', id: 'nope', body: { question: 'q' } })).status, 400);
+  assert.strictEqual((await run({ client: c, store: richStore({ async loadAnalysis() { return null; } }), focus: 'analysis',
+    id: GUID, body: { question: 'q' } })).status, 404);
+});

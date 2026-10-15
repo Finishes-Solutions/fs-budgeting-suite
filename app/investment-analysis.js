@@ -890,6 +890,8 @@
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
           <span id="invStatusHost"></span>
           <span class="inv-statebar" id="invState"></span>
+          <button class="btn btn-ghost" id="invAskBtn" onclick="FSInvestmentUI.askAI()"
+            title="Ask the Budget Assistant about this analysis">Ask AI</button>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
           <button class="btn btn-dark" data-inv-edit id="invExportBtn" onclick="FSInvestmentUI.openExport()">Export</button>
@@ -2110,6 +2112,15 @@
     _other, _otherRemove, _capex, _capexRemove,
     _statusApplied(id, status) {
       if (st.id === id) { st.status = status; paintStatusChip(); }
+    },
+    // The Budget Assistant, focused on this analysis. Unsaved assumptions go
+    // along as a draft so the answer is about what is on screen; the dialog
+    // itself belongs to index.html and is reached only through the adapter.
+    askAI() {
+      if (!A || !A.askAI || !st.input) return;
+      const id = st.id;
+      A.askAI({ id, name: st.input.analysisName || 'Investment Analysis',
+        getDraft: () => (st.id === id && st.dirty ? st.input : null) });
     },
     currentId: () => st.id,
     isDirty: () => st.dirty,

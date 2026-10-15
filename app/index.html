@@ -5797,39 +5797,67 @@ function closeVersions(){
 }
 
 /* ---- Budget Assistant ----
-   One conversation per budget, held in memory only: reopening the dialog on
-   the same budget continues it, opening another budget starts fresh. Only the
-   visible text of earlier turns is sent back as history — the server rebuilds
-   the budget's facts on every question, so they are never stale. When the
-   budget has unsaved changes the on-screen document goes along as a draft,
+   One dialog, two focuses. On a budget it reads the budget, its rule-based
+   review and the pro formas built from it; on an investment analysis it reads
+   the analysis, its drivers and the budget it came from. One conversation per
+   focus, held in memory only: reopening on the same budget or analysis
+   continues it, opening another starts fresh. Only the visible text of earlier
+   turns goes back as history — the server rebuilds the facts on every
+   question, so they are never stale. Unsaved edits go along as a draft,
    because "why is this number what it is" is about the number on screen. */
-let aiThread={pid:null,turns:[]},aiBusy=false;
-const AI_SUGGEST=['How was the total project cost calculated?','What are the biggest cost drivers?',
-  'What changed since the previous version, and why did the total move?','Which lines were manually edited?',
-  'How does this compare to my other budgets on a per-unit and per-SF basis?','Are any guard rails or assumptions worth a second look?'];
+let aiThread={key:null,turns:[]},aiFocus=null,aiBusy=false;
+const AI_SUGGEST={
+  budget:['How was the total project cost calculated?','Where might this budget be wrong, or what is it missing?',
+    'What other ways could this property make money?','How does the pro forma look, and what is hurting the returns?',
+    'What changed since the previous version, and why did the total move?',
+    'How does this compare to my other budgets on a per-unit and per-SF basis?'],
+  analysis:['Why are the returns what they are? What is hurting them most?','What would most improve the IRR?',
+    'What other ways could this property make money?','Is this pro forma consistent with its budget?',
+    'Which assumptions here are aggressive or risky?','Is the debt sized sensibly for this NOI?']
+};
 function openAssistant(){
   if(!doc||!doc.projectId){toast('Open a budget first');return;}
-  if(aiThread.pid!==doc.projectId)aiThread={pid:doc.projectId,turns:[]};
-  document.getElementById('assistantTitle').textContent='Budget Assistant — '+doc.projectId;
+  const pid=doc.projectId;
+  showAssistant({kind:'budget',id:pid,key:'budget:'+pid,title:pid,name:doc.name||pid,
+    getDraft:()=>(dirty&&doc&&doc.projectId===pid)?doc:null});
+}
+/* The investment-analysis module calls this through its adapter. ctx is
+   {id, name, getDraft}; an analysis not yet saved has no id and is asked
+   about from its on-screen input alone. */
+function openAnalysisAssistant(ctx){
+  if(!ctx)return;
+  showAssistant({kind:'analysis',id:ctx.id||null,key:'analysis:'+(ctx.id||'unsaved'),
+    title:ctx.name||'Investment Analysis',name:ctx.name||'this analysis',getDraft:ctx.getDraft||(()=>null)});
+}
+function showAssistant(f){
+  aiFocus=f;
+  if(aiThread.key!==f.key)aiThread={key:f.key,turns:[]};
+  document.getElementById('assistantTitle').textContent='Budget Assistant — '+f.title;
   renderAssistant();
   openDialog('assistantModal','#aiQ');
 }
 function resetAssistant(){
-  if(aiBusy)return;
-  aiThread={pid:doc?doc.projectId:null,turns:[]};renderAssistant();
+  if(aiBusy||!aiFocus)return;
+  aiThread={key:aiFocus.key,turns:[]};renderAssistant();
   document.getElementById('aiQ').focus();
 }
 function renderAssistant(){
-  const log=document.getElementById('aiLog');
-  document.getElementById('aiBasis').textContent=dirty
-    ?'This budget has unsaved changes — the assistant will read what is on screen, not the last save.'
-    :'The assistant reads this budget as last saved, plus its version history.';
+  const log=document.getElementById('aiLog'),f=aiFocus;if(!f)return;
+  const unsaved=!!f.getDraft();
+  document.getElementById('aiBasis').textContent=f.kind==='budget'
+    ?(unsaved?'This budget has unsaved changes — the assistant will read what is on screen, not the last save.'
+      :'The assistant reads this budget as last saved, its version history, and the pro formas built from it.')
+    :(unsaved?'This analysis has unsaved changes — the assistant will read the assumptions on screen.'
+      :'The assistant reads this analysis as last saved, plus the budget it was built from.');
   if(!aiThread.turns.length){
-    log.innerHTML='<div class="note">Ask anything about '+esc(doc&&doc.name?doc.name:'this budget')
-      +' — how a figure was built, what changed between versions, how it compares to other budgets.</div>'
-      +'<div class="ai-suggest">'+AI_SUGGEST.map((q,i)=>'<button class="btn btn-ghost btn-sm" data-ai-suggest="'+i+'">'+esc(q)+'</button>').join('')+'</div>';
+    const sug=AI_SUGGEST[f.kind];
+    log.innerHTML='<div class="note">Ask anything about '+esc(f.name)
+      +(f.kind==='budget'
+        ?' — how a figure was built, where it may be wrong or missing scope, what changed, how its pro forma performs, and how the property could earn more.'
+        :' — what is driving its returns, which assumptions are risky, how it squares with its budget, and how the property could earn more.')
+      +'</div><div class="ai-suggest">'+sug.map((q,i)=>'<button class="btn btn-ghost btn-sm" data-ai-suggest="'+i+'">'+esc(q)+'</button>').join('')+'</div>';
     log.querySelectorAll('[data-ai-suggest]').forEach(b=>{b.onclick=()=>{
-      document.getElementById('aiQ').value=AI_SUGGEST[+b.dataset.aiSuggest];sendAssistant();};});
+      document.getElementById('aiQ').value=sug[+b.dataset.aiSuggest];sendAssistant();};});
     return;
   }
   log.innerHTML=aiThread.turns.map(t=>{
@@ -5837,37 +5865,43 @@ function renderAssistant(){
     if(t.error)return '<div class="ai-msg err">'+esc(t.content)+'</div>';
     return '<div class="ai-msg bot">'+aiMarkdown(t.content)
       +(t.meta?'<div class="ai-meta">'+esc(t.meta)+'</div>':'')+'</div>';
-  }).join('')+(aiBusy?'<div class="ai-msg bot"><span class="note">Thinking through the budget…</span></div>':'');
+  }).join('')+(aiBusy?'<div class="ai-msg bot"><span class="note">Working through the numbers…</span></div>':'');
   const sc=document.getElementById('aiScroll');sc.scrollTop=sc.scrollHeight;
 }
 async function sendAssistant(){
-  const box=document.getElementById('aiQ'),q=box.value.trim();
-  if(!q||aiBusy||!doc)return;
-  const pid=doc.projectId;
+  const box=document.getElementById('aiQ'),q=box.value.trim(),f=aiFocus;
+  if(!q||aiBusy||!f)return;
+  const key=aiThread.key;
   // History is the visible conversation only — never an error bubble.
   const history=aiThread.turns.filter(t=>!t.error).map(t=>({role:t.role,content:t.content}));
   aiThread.turns.push({role:'user',content:q});
   box.value='';aiBusy=true;
   document.getElementById('aiSend').disabled=true;
   renderAssistant();
-  const body={question:q,history};
-  if(dirty)body.draft=doc;
+  const draft=f.getDraft();
+  let url,body;
+  if(f.kind==='budget'){
+    url='/api/budget/'+encodeURIComponent(f.id)+'?scope=ask';
+    body={question:q,history};if(draft)body.draft=draft;
+  }else{
+    url='/api/investment-calculations?scope=ask';
+    body={question:q,history,analysisId:f.id};if(draft)body.draftInput=draft;
+  }
   try{
-    const r=await fetch('/api/budget/'+encodeURIComponent(pid)+'?scope=ask',{method:'POST',
-      headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     // An expired session comes back as a redirect to the sign-in page (see api()).
     if(r.redirected&&/\/login\.html(\?|#|$)/.test(r.url))throw new Error('Your session has ended — sign in again, then ask.');
     let d=null;try{d=await r.json();}catch(_){}
     if(!r.ok||!d||!d.ok)throw new Error((d&&d.message)||('The assistant could not answer (HTTP '+r.status+').'));
-    if(aiThread.pid!==pid)return;      // the budget changed underneath; drop the late answer
+    if(aiThread.key!==key)return;      // the focus changed underneath; drop the late answer
     aiThread.turns.push({role:'assistant',content:d.answer+(d.truncated?'\n\n_(Answer cut short.)_':''),
       meta:(d.basedOn==='unsaved-draft'?'From unsaved changes · ':'')+(d.toolsUsed&&d.toolsUsed.length?'Looked up: '
         +[...new Set(d.toolsUsed)].map(t=>t.replace(/_/g,' ')).join(', ')+' · ':'')+'Claude'});
   }catch(e){
-    if(aiThread.pid===pid)aiThread.turns.push({role:'assistant',error:true,content:e.message});
+    if(aiThread.key===key)aiThread.turns.push({role:'assistant',error:true,content:e.message});
   }finally{
     aiBusy=false;document.getElementById('aiSend').disabled=false;
-    if(aiThread.pid===pid)renderAssistant();
+    if(aiThread.key===key)renderAssistant();
   }
 }
 /* Markdown for the assistant's answers: ESCAPE FIRST, then a fixed set of
@@ -8299,7 +8333,9 @@ function endBoot(){
       exportDefaults:exportDefaultsFor,
       rememberExport:rememberExportOptions,
       activity:postActivity,
-      timeFormat:()=>window.__fsTimeFormat||'12h'
+      timeFormat:()=>window.__fsTimeFormat||'12h',
+      // The Budget Assistant, focused on the open analysis (index.html owns the dialog).
+      askAI:openAnalysisAssistant
     });
     await initAuth();
     await loadUserSettings();   // account settings apply before anything paints
