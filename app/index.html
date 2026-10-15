@@ -491,12 +491,15 @@ label.fld{display:block}
    because they wrap a $/% toggle as well as the input, and they rendered their
    labels in body type beside the mono labels of their neighbours. */
 .fld .lab{display:block;margin-bottom:6px;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
-input[type=text],input[type=number],input[type=password],input[type=month],input[type=date],select,textarea{
+input[type=text],input[type=number],input[type=password],input[type=month],input[type=date],input[type=search],select,textarea{
   width:100%;padding:9px 12px;border:1px solid var(--ink-200);border-radius:var(--r);
   font-family:var(--fb);font-size:14px;color:var(--ink-900);background:var(--white);outline:none;
   transition:border-color .12s,box-shadow .12s}
 input:focus,select:focus,textarea:focus{border-color:var(--green-600);box-shadow:var(--focus)}
 input.num{font-family:var(--fm);font-size:13px;text-align:right}
+/* type=search otherwise keeps the browser's own chrome (Safari rounds it, Chrome
+   draws its own cancel glyph at a different size) beside the app's fields. */
+input[type=search]{-webkit-appearance:none;appearance:none}
 .err{border-color:var(--danger)!important}
 .fld-err{font-size:11.5px;color:var(--danger);margin-top:4px}
 .fld-note{font-size:11.5px;color:var(--ink-500);margin-top:4px;line-height:1.45}
@@ -656,6 +659,16 @@ tr.fs-flash td{animation:fsflashrow 1.8s ease-out}
   #budBody .lineitem .codein{flex-basis:74px;width:74px}
   #budBody tr.sel td:nth-child(2){background:var(--green-50)}
   #budBody tr.edited:hover td:nth-child(2){background:var(--edit-50)}
+  /* Scope and group headers (and the footer) are one wide colspan cell, so the
+     cell cannot pin like the Line Item column — panned to Qty they showed as
+     blank bands. Their LABEL pins instead, inside its own cell; left matches
+     the cell's padding so nothing jumps before the pan starts. */
+  /* A label can only slide as far as its own cell's right edge (the end of
+     Rate), so it is capped at the pinned column's width — long group names
+     ellipsize; the row's title still carries the whole name. */
+  #budBody tr.scope-hd .hd-pin,#budBody tr.grp-hd .hd-pin,#budBody tr.scope-off .hd-pin,
+  #sec-budget .bud-foot .bf-k,#sec-budget .bud-foot .bf-sub{position:sticky;left:12px;display:inline-block;
+    max-width:186px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
   #page-input .tbl{min-width:640px}
   #page-pricing .tbl{min-width:640px}
   .stats{grid-template-columns:repeat(2,1fr)}
@@ -948,11 +961,15 @@ tr.edited:hover td{background:var(--edit-50)}
 /* The running Contract Sum rides the bottom of the grid while it scrolls, so
    an edit 80 rows down shows what it did to the total without a trip to the
    summary card. */
-.budget-scroll tfoot td{position:sticky;bottom:0;z-index:2;background:var(--white);
-  box-shadow:inset 0 1px 0 var(--ink-300);padding-top:9px;padding-bottom:9px;border-bottom:none}
+.budget-scroll tfoot td{position:sticky;z-index:2;background:var(--white);height:34px;box-sizing:border-box;
+  padding-top:6px;padding-bottom:6px;border-bottom:none}
+/* Two rows, both figures in the Total column. The upper row sits on the lower
+   one, so its offset is the lower row's fixed height. */
+.budget-scroll tfoot tr.bf-c td{bottom:34px;box-shadow:inset 0 1px 0 var(--ink-300);padding-top:8px}
+.budget-scroll tfoot tr.bf-p td{bottom:0}
 .bud-foot .bf-k{font-weight:700;color:var(--ink-950)}
-.bud-foot .bf-sub{float:right;font-family:var(--fm);font-size:12px;color:var(--ink-500);white-space:nowrap}
-.bud-foot .bf-sub b{color:var(--ink-800);font-weight:600}
+.bud-foot .bf-sub{font-family:var(--fm);font-size:12px;color:var(--ink-500);white-space:nowrap}
+.bud-foot #bfProject{color:var(--ink-800);font-weight:600}
 
 /* ---- sortable table headers ---- */
 th.sortable{cursor:pointer;user-select:none}
@@ -1514,11 +1531,14 @@ th.sortable.sorted{color:var(--ink-900)}
         <!-- Outside #budBody on purpose: the body is rebuilt on every render
              and counted by the suites; this row is filled from parts() by
              renderSummary(). -->
-        <tfoot class="bud-foot"><tr>
+        <tfoot class="bud-foot"><tr class="bf-c">
           <td class="no-print"></td>
-          <td colspan="4"><span class="bf-k">Contract Sum</span>
-            <span class="bf-sub">Total Project Cost <b id="bfProject">$0</b></span></td>
+          <td colspan="4"><span class="bf-k">Contract Sum</span></td>
           <td class="calc r strong" id="bfContract">$0</td><td colspan="2"></td>
+        </tr><tr class="bf-p">
+          <td class="no-print"></td>
+          <td colspan="4"><span class="bf-sub">Total Project Cost</span></td>
+          <td class="calc r" id="bfProject">$0</td><td colspan="2"></td>
         </tr></tfoot>
       </table>
       <div class="empty" id="budEmpty" style="display:none">
@@ -6318,7 +6338,7 @@ function renderBudget(){
     // point of a collapsed section. The denominator is the scope sum, matching the
     // "% Scope" column on the leaf rows beneath.
     b.insertAdjacentHTML('beforeend',`<tr class="scope-hd" data-toggle="scope:${esc(sc)}" title="${scShut?'Expand':'Collapse'} ${esc(SCOPES[sc])}">
-      <td colspan="5"><span class="caret">${scShut?'▸':'▾'}</span>${esc(SCOPES[sc])}${scShut?' <span class="shut">'+scLines.length+' lines · '+nGrp+' groups hidden</span>':''}</td>
+      <td colspan="5"><span class="hd-pin"><span class="caret">${scShut?'▸':'▾'}</span>${esc(SCOPES[sc])}${scShut?' <span class="shut">'+scLines.length+' lines · '+nGrp+' groups hidden</span>':''}</span></td>
       <td class="calc r strong">${usd(scSum)}</td><td class="calc r">${scSum?'100.0%':'—'}</td>
       <td class="no-print"></td></tr>`);
     if(scShut)return;
@@ -6328,7 +6348,7 @@ function renderBudget(){
         const gSum=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((s,x)=>s+lineQty(x)*x.unit,0);
         const n=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).length,gShut=collapsed.has(sc+'|'+it.grp);
         b.insertAdjacentHTML('beforeend',`<tr class="grp-hd" data-toggle="grp:${esc(sc)}|${esc(it.grp)}" title="${gShut?'Expand':'Collapse'} ${esc(it.grp)}">
-          <td colspan="5"><span class="caret">${gShut?'▸':'▾'}</span>${esc(it.grp)}${gShut?' <span class="shut">'+n+' lines hidden</span>':''}</td>
+          <td colspan="5"><span class="hd-pin"><span class="caret">${gShut?'▸':'▾'}</span>${esc(it.grp)}${gShut?' <span class="shut">'+n+' lines hidden</span>':''}</span></td>
           <td class="calc r strong">${usd(gSum)}</td><td class="calc r">${scSum?(100*gSum/scSum).toFixed(1)+'%':'—'}</td>
           <td class="no-print"></td></tr>`);}
       if(collapsed.has(sc+'|'+it.grp))return;
@@ -6371,7 +6391,7 @@ function suppressedLines(sc){return scopeActive(sc)?0:doc.lines.filter(l=>l.scop
 function suppressedScopeRow(sc){
   const n=suppressedLines(sc);
   if(!n)return '';
-  return `<tr class="scope-off" aria-disabled="true"><td colspan="5">${esc(SCOPES[sc])} <span class="shut">— ${n} ${n===1?'line':'lines'} excluded because Amenity SF is 0</span></td>
+  return `<tr class="scope-off" aria-disabled="true"><td colspan="5"><span class="hd-pin">${esc(SCOPES[sc])} <span class="shut">— ${n} ${n===1?'line':'lines'} excluded because Amenity SF is 0</span></span></td>
     <td class="calc r">${usd(0)}</td><td class="calc r">—</td><td class="no-print"></td></tr>`;
 }
 /* The same fact, said where it can be changed: under the Amenity SF input. */

@@ -77,7 +77,7 @@ inputs.
   projects yet, Home leads with **+ New Project**, and the welcome's
   **Get Started** opens it.
 - The Budget Detail grid shows a running **Contract Sum** and **Total Project
-  Cost** pinned to its bottom edge.
+  Cost** pinned to its bottom edge, one above the other in the Total column.
 - **Enter** and the **arrow keys** in Qty or Rate move up and down the
   column. In the CSI catalog, **Enter** adds the first match, and a new line
   scrolls into view with its rate ready to type.
@@ -128,13 +128,17 @@ inputs.
 - Negative amounts read **−$31,866**, and Net Other Income turns red when
   expenses exceed other income. Rates show two decimals and quantities show
   thousands separators.
-- On a phone, the Line Item column stays pinned while you pan to Qty and Rate.
+- On a phone, the Line Item column stays pinned while you pan to Qty and Rate,
+  and so do the scope and group names and the footer labels (long group names
+  shorten with "…"; before, they scrolled off and left blank bands).
   The bug-report button shrinks to an icon on the editing pages so it no
   longer covers the grid.
 - Contrast, focus outlines, dark-mode banners and buttons, dialog semantics
   and screen-reader labels are improved throughout.
 - The Dashboard PDF includes the converted-project figures and the project
   pipeline.
+- The New Investment Analysis picker's search box now looks like every other
+  field in the app instead of the browser's default.
 
 ### Fixed
 

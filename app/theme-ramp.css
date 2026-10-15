@@ -229,7 +229,7 @@ html[data-skin=ramp] .btn[disabled],html[data-skin=ramp] .btn-soon{opacity:1;
 html[data-skin=ramp] .btn:focus-visible{outline:none;box-shadow:var(--focus)}
 html[data-skin=ramp] input[type=text],html[data-skin=ramp] input[type=number],
 html[data-skin=ramp] input[type=password],html[data-skin=ramp] input[type=month],
-html[data-skin=ramp] input[type=date],html[data-skin=ramp] select,html[data-skin=ramp] textarea{
+html[data-skin=ramp] input[type=date],html[data-skin=ramp] input[type=search],html[data-skin=ramp] select,html[data-skin=ramp] textarea{
   border-radius:8px;padding:10px 12px;border-color:var(--ink-200)}
 html[data-skin=ramp] input:hover:not(:focus),html[data-skin=ramp] select:hover:not(:focus),
 html[data-skin=ramp] textarea:hover:not(:focus){border-color:var(--ink-300)}

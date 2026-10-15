@@ -248,6 +248,27 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
    go('pricing');const pOk = currentPage === 'pricing';
    return bOk && cOk && pOk;
  }));
+ // Panned to Qty/Rate, the group headers and the footer keep their labels in
+ // view: they pin inside their own wide cell rather than scrolling off.
+ const pan = await m.evaluate(async () => {
+   // The seeded phone budget has no lines; borrow the template's.
+   const d = blankDoc(); doc.lines = d.lines; doc.resSF = 51365;
+   go('budget'); recalc(); await new Promise(r => setTimeout(r, 200));
+   const pane = document.querySelector('#sec-budget .budget-scroll');
+   const out = {};
+   for (const x of [330, 470]) {
+     pane.scrollLeft = x; await new Promise(r => setTimeout(r, 60));
+     const left = pane.getBoundingClientRect().left;
+     const inView = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.left >= left - 1 && r.left <= left + 40; };
+     out[x] = { grp: inView(document.querySelector('#budBody tr.grp-hd .hd-pin')),
+       scope: inView(document.querySelector('#budBody tr.scope-hd .hd-pin')),
+       k: inView(document.querySelector('.bud-foot .bf-k')), sub: inView(document.querySelector('.bud-foot .bf-sub')) };
+   }
+   pane.scrollLeft = 0; return out;
+ });
+ ok('Panned on a phone, group and scope labels stay in view',
+    [330, 470].every(x => pan[x].grp && pan[x].scope), JSON.stringify(pan));
+ ok('and so do the footer labels', [330, 470].every(x => pan[x].k && pan[x].sub), JSON.stringify(pan));
  ok('No JS errors on mobile', merrs.length === 0, merrs.join(' | '));
  await m.close();
 

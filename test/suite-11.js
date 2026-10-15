@@ -370,6 +370,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('a budget with no project is grouped as such, not passed off as a project',
     /Not Linked to a Project/.test(await p.locator('#invProjectPick').textContent()));
  ok('the search box takes focus', await p.evaluate(()=>document.activeElement&&document.activeElement.id==='invPickQ'));
+ ok('the search box wears the app field style, not the browser default',
+    await p.evaluate(()=>{const s=getComputedStyle(document.getElementById('invPickQ'));
+      return s.appearance==='none'&&s.borderTopStyle==='solid'&&parseFloat(s.paddingLeft)>=10&&parseFloat(s.borderTopLeftRadius)>=4;}));
  await p.fill('#invPickQ','no-such-budget'); await p.waitForTimeout(100);
  ok('searching filters the list',
     (await p.locator('#invProjectPick tr[data-pick]:visible').count())===0

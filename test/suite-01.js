@@ -154,7 +154,8 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
     return { sticky: getComputedStyle(td).position, text: td.textContent.trim(),
       contract: usd(parts().contract), project: document.getElementById('bfProject').textContent.trim(),
       projectWant: usd(parts().project),
-      gap: Math.round(e.getBoundingClientRect().bottom - td.getBoundingClientRect().bottom),
+      gap: Math.round(e.getBoundingClientRect().bottom - document.getElementById('bfProject').getBoundingClientRect().bottom),
+      stacked: Math.round(document.getElementById('bfProject').getBoundingClientRect().top - td.getBoundingClientRect().bottom),
       outsideBody: !document.getElementById('budBody').contains(td) };
   });
   ok('U1 the grid footer carries the Contract Sum', foot.text === foot.contract && foot.text.startsWith('$'),
@@ -162,6 +163,7 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
   ok('U1 and the Total Project Cost', foot.project === foot.projectWant, foot.project);
   ok('U1 the footer is sticky to the bottom of the pane', foot.sticky === 'sticky' && Math.abs(foot.gap) <= 1,
      foot.sticky + ' gap ' + foot.gap);
+  ok('U1 Contract Sum sits directly above Total Project Cost', Math.abs(foot.stacked) <= 1, foot.stacked + 'px');
   ok('U1 the footer is not a #budBody row', foot.outsideBody);
   // Negative money reads âˆ’$, never $-.
   ok('U1 negative money prints with a leading minus',
