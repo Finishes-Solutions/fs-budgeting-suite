@@ -79,18 +79,73 @@ module.exports = async function (context, req) {
     return;
   }
 
-  const [budgets, analyses, users, recentActivity, statusBreakdown, analysisStatusBreakdown,
-         activityByDay, topBudgets, activityUsers] =
-    await Promise.all([
-      pool.request().query(`
-        SELECT COUNT(*) AS total,
+  /* The money. A project's money is its PRIMARY budget's alone — an
+     alternate is another way of pricing the same work, so summing every
+     active budget counted each priced-twice project twice. Once the projects
+     migration has run, the totals add up one budget per project (the stated
+     primary, else the same shortest/lowest-id tie-break listProjects uses)
+     plus every budget that belongs to no live project, whose money is its own
+     because there is nothing to double-count it against. Before that
+     migration there is no project to ask, and the totals stay what they were.
+     Counts (active / deleted budgets) are still counts of every budget. */
+  const pf = await features(pool);
+  const byPrimary = !!(pf.projectsTable && pf.budgetsProjectKey);
+  const COUNTED = `
+    counted AS (
+      SELECT b.ProjectId, b.Name, b.ContractSum, b.ProjectCost,
+             CAST(NULL AS VARCHAR(16)) AS ProjectKey, CAST(NULL AS NVARCHAR(200)) AS ProjectName
+      FROM dbo.Budgets AS b
+      WHERE b.IsDeleted = 0
+        AND NOT EXISTS (SELECT 1 FROM dbo.Projects AS lp
+                        WHERE lp.ProjectId = b.ProjectKey AND lp.IsDeleted = 0)
+      UNION ALL
+      SELECT pb.ProjectId, pb.Name, pb.ContractSum, pb.ProjectCost, p.ProjectId, p.Name
+      FROM dbo.Projects AS p
+      CROSS APPLY (SELECT TOP 1 b2.ProjectId, b2.Name, b2.ContractSum, b2.ProjectCost
+                   FROM dbo.Budgets AS b2
+                   WHERE b2.ProjectKey = p.ProjectId AND b2.IsDeleted = 0
+                     AND b2.ProjectId = ISNULL(p.PrimaryBudgetId, b2.ProjectId)
+                   ORDER BY LEN(b2.ProjectId), b2.ProjectId) AS pb
+      WHERE p.IsDeleted = 0
+    )`;
+  const budgetMoneySql = byPrimary
+    ? `WITH ${COUNTED},
+       money AS (SELECT SUM(ContractSum) AS totalContractSum, SUM(ProjectCost) AS totalProjectCost,
+                        COUNT(*) AS countedBudgets
+                 FROM counted WHERE ProjectId NOT LIKE 'TST-%')
+       SELECT COUNT(*) AS total,
+              SUM(CASE WHEN b.IsDeleted = 0 THEN 1 ELSE 0 END) AS active,
+              SUM(CASE WHEN b.IsDeleted = 1 THEN 1 ELSE 0 END) AS deleted,
+              MAX(m.totalContractSum) AS totalContractSum,
+              MAX(m.totalProjectCost) AS totalProjectCost,
+              MAX(m.countedBudgets) AS countedBudgets,
+              MIN(CASE WHEN b.IsDeleted = 0 THEN b.CreatedAt END) AS earliest,
+              MAX(CASE WHEN b.IsDeleted = 0 THEN b.UpdatedAt END) AS lastUpdated
+       FROM dbo.Budgets AS b CROSS JOIN money AS m
+       WHERE b.ProjectId NOT LIKE 'TST-%'`
+    : `SELECT COUNT(*) AS total,
                SUM(CASE WHEN IsDeleted = 0 THEN 1 ELSE 0 END) AS active,
                SUM(CASE WHEN IsDeleted = 1 THEN 1 ELSE 0 END) AS deleted,
                SUM(CASE WHEN IsDeleted = 0 THEN ContractSum ELSE 0 END) AS totalContractSum,
                SUM(CASE WHEN IsDeleted = 0 THEN ProjectCost ELSE 0 END) AS totalProjectCost,
+               SUM(CASE WHEN IsDeleted = 0 THEN 1 ELSE 0 END) AS countedBudgets,
                MIN(CASE WHEN IsDeleted = 0 THEN CreatedAt END) AS earliest,
                MAX(CASE WHEN IsDeleted = 0 THEN UpdatedAt END) AS lastUpdated
-        FROM dbo.Budgets WHERE ProjectId NOT LIKE 'TST-%'`),
+        FROM dbo.Budgets WHERE ProjectId NOT LIKE 'TST-%'`;
+  // The ranking is of PROJECTS, by their primary budget — the id shown is the
+  // project's (OP-####), never a budget id passing for one.
+  const topProjectsSql = byPrimary
+    ? `WITH ${COUNTED}
+       SELECT TOP 8 ProjectKey, ProjectName, ProjectId AS BudgetId, Name AS BudgetName, ContractSum, ProjectCost
+       FROM counted
+       WHERE ProjectKey IS NOT NULL AND ProjectId NOT LIKE 'TST-%'
+       ORDER BY ProjectCost DESC`
+    : null;
+
+  const [budgets, analyses, users, recentActivity, statusBreakdown, analysisStatusBreakdown,
+         activityByDay, topBudgets, activityUsers, topProjects] =
+    await Promise.all([
+      pool.request().query(budgetMoneySql),
 
       pool.request().query(`
         SELECT COUNT(*) AS total,
@@ -172,7 +227,9 @@ module.exports = async function (context, req) {
       // first paged, because a filter you cannot populate is a filter you
       // cannot use — which is exactly how it behaved before.
       pool.request().query(`
-        SELECT UserId, DisplayName, Email FROM dbo.Users ORDER BY DisplayName`)
+        SELECT UserId, DisplayName, Email FROM dbo.Users ORDER BY DisplayName`),
+
+      topProjectsSql ? pool.request().query(topProjectsSql) : Promise.resolve(null)
     ]);
 
   const b = budgets.recordset[0];
@@ -187,7 +244,6 @@ module.exports = async function (context, req) {
      The converted totals come from the SNAPSHOT columns, not from a live join
      to the budgets: reported backlog must not move when someone edits a budget
      after the project was already converted. */
-  const pf = await features(pool);
   let projects = { available: false, statuses: PROJECT_STATUSES };
   if (pf.projectsTable) {
     try {
@@ -238,6 +294,10 @@ module.exports = async function (context, req) {
     budgets: {
       total: b.total, active: b.active, deleted: b.deleted,
       totalContractSum: b.totalContractSum, totalProjectCost: b.totalProjectCost,
+      // 'primary' = one budget per project plus budgets with no project;
+      // 'all' = every active budget (before the projects migration).
+      moneyBasis: byPrimary ? 'primary' : 'all',
+      countedBudgets: b.countedBudgets === null || b.countedBudgets === undefined ? 0 : b.countedBudgets,
       earliest: b.earliest, lastUpdated: b.lastUpdated,
       statusBreakdown: statusBreakdown.recordset.map(r => ({ status: r.Status || 'Draft', count: r.cnt }))
     },
@@ -269,7 +329,14 @@ module.exports = async function (context, req) {
     topBudgets: topBudgets.recordset.map(r => ({
       projectId: r.ProjectId, name: r.Name,
       contractSum: Number(r.ContractSum), projectCost: Number(r.ProjectCost)
-    }))
+    })),
+    // Null before the projects migration: there are no projects to rank, and
+    // the dashboard says so rather than ranking budgets under a project title.
+    topProjects: topProjects ? topProjects.recordset.map(r => ({
+      projectId: r.ProjectKey, name: r.ProjectName || '',
+      budgetId: r.BudgetId, budgetName: r.BudgetName || '',
+      contractSum: Number(r.ContractSum), projectCost: Number(r.ProjectCost)
+    })) : null
   });
 };
 

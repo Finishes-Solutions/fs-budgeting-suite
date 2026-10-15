@@ -273,7 +273,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.selectOption('#feeBasis','high'); await p.waitForTimeout(400);
 
  // Save, reopen, and the whole thing round-trips.
- await p.click('#page-fees button:has-text("Save Draft")'); await p.waitForTimeout(900);
+ await p.click('#page-fees button[data-save-btn]'); await p.waitForTimeout(900);
  await p.evaluate(()=>{doc=null;});
  await p.evaluate(()=>openBudget('TST-9999','fees')); await p.waitForTimeout(1200);
  ok('the fee selection round-trips through a save',

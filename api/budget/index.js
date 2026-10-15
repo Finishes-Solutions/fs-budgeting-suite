@@ -18,6 +18,19 @@ const ID_RX = /^(OP|BD|BDG|AS|TST)-\d{4}(-\d{2})?$/;
 
 const DUP_KEY = new Set([2627, 2601]);   // unique constraint / unique index violation
 
+// The concurrency token for a budget: the canonical content hash of the Doc
+// as STORED on dbo.Budgets. GET hands it out (X-Budget-Hash), a PUT may hand
+// it back as `baseHash`, and the save refuses with 409 when the stored Doc no
+// longer hashes to it — someone else saved in between. It is computed on
+// read rather than stored, so it needs no column and no migration, and it
+// goes through the shared canonical hash so key order and `updated` never
+// count as a change.
+function storedHash(text) {
+  const d = parseDoc(text);
+  return contentHash(d !== null ? d : String(text || ''));
+}
+const HASH_RX = /^[0-9a-f]{64}$/;
+
 module.exports = async function (context, req) {
   const id = (context.bindingData.id || '').toUpperCase();
   const pool = await getPool();
@@ -109,7 +122,11 @@ module.exports = async function (context, req) {
     const r = await pool.request().input('id', sql.VarChar(16), id)
       .query('SELECT Doc FROM dbo.Budgets WHERE ProjectId = @id AND IsDeleted = 0');
     if (!r.recordset.length) { context.res = { status: 404, body: 'Not found' }; return; }
-    context.res = { headers: { 'Content-Type': 'application/json' }, body: r.recordset[0].Doc };
+    // The body stays exactly the stored document; the concurrency token rides
+    // in a header so the response shape every caller parses is unchanged.
+    context.res = { headers: { 'Content-Type': 'application/json',
+                               'X-Budget-Hash': storedHash(r.recordset[0].Doc) },
+                    body: r.recordset[0].Doc };
     return;
   }
 
@@ -153,11 +170,16 @@ module.exports = async function (context, req) {
               UPDATE dbo.Budgets SET Status=@st, Doc=JSON_MODIFY(Doc,'$.status',@st),
                 UpdatedAt=SYSUTCDATETIME()
               WHERE ProjectId=@id AND IsDeleted=0;
-              SELECT @@ROWCOUNT AS N;`);
+              SELECT @@ROWCOUNT AS N;
+              SELECT Doc FROM dbo.Budgets WHERE ProjectId=@id AND IsDeleted=0;`);
     const was = (r.recordsets[0] || [])[0] || null;
     if (!(r.recordsets[1] || [])[0] || !r.recordsets[1][0].N) { context.res = { status: 404, body: 'Not found' }; return; }
+    // The status lives inside the stored Doc, so this moves the concurrency
+    // token; the editor holding this budget open adopts the new one.
+    const after = (r.recordsets[2] || [])[0] || null;
     context.res = { status: 200, headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ok: true, status: req.body.status }) };
+      body: JSON.stringify({ ok: true, status: req.body.status,
+                             docHash: after ? storedHash(after.Doc) : null }) };
     // A status change is a decision, and it recorded nothing before this.
     if (was && was.Was !== req.body.status) {
       await require('../shared/users').recordActivity(pool, getPrincipal(req),
@@ -224,6 +246,11 @@ module.exports = async function (context, req) {
   // budgets saved before sql/migrate_project_op_ids.sql already carry their
   // ProjectKey and must keep saving without one being resent.
   const wantsCreate = req.body.create === true;
+  // Optimistic concurrency, opt-in: the editor sends the X-Budget-Hash it
+  // opened the budget at. A save without one (an older page still open during
+  // a deploy, the API used directly) is last-write-wins, exactly as before.
+  const baseHash = typeof req.body.baseHash === 'string' && HASH_RX.test(req.body.baseHash)
+    ? req.body.baseHash : null;
   const projectKey = meta.projectKey ? String(meta.projectKey).toUpperCase() : null;
   if (projectKey && !PROJECT_ID_RX.test(projectKey)) {
     context.res = { status: 400, headers: { 'Content-Type': 'application/json' },
@@ -335,6 +362,13 @@ module.exports = async function (context, req) {
   for (let attempt = 0; ; attempt++) {
     try { result = await save(); break; }
     catch (e) {
+      if (e && e.fsBudgetConflict) {
+        context.res = { status: 409, headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ error: 'budget_conflict',
+            message: 'Someone saved ' + id + ' since you opened it.',
+            currentHash: e.currentHash, updatedAt: e.updatedAt || null }) };
+        return;
+      }
       if (e && e.fsBudgetIdTaken) {
         context.res = { status: 409, headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ error: 'budget_id_taken', field: 'projectId',
@@ -385,7 +419,7 @@ module.exports = async function (context, req) {
       // the key range so two first-saves of a new ProjectId cannot both proceed.
       const cur = await new sql.Request(tx).input('id', sql.VarChar(16), id)
         .query(`SELECT Name, Type, Status, ContractSum, ProjectCost, PricingVersion,
-                       TemplateKey, TemplateVersionId, Doc, IsDeleted
+                       TemplateKey, TemplateVersionId, Doc, IsDeleted, UpdatedAt
                 FROM dbo.Budgets WITH (UPDLOCK, HOLDLOCK) WHERE ProjectId = @id`);
       const existing = cur.recordset[0] || null;
 
@@ -397,6 +431,21 @@ module.exports = async function (context, req) {
         const err = new Error('Budget ' + id + ' already exists');
         err.fsBudgetIdTaken = true;
         throw err;
+      }
+
+      // Checked under the same UPDLOCK that serialises saves, so two editors
+      // holding the same base cannot both pass it: the second one sees the
+      // first one's Doc and is refused instead of silently replacing it.
+      if (baseHash && existing && !wantsCreate) {
+        const currentHash = storedHash(existing.Doc);
+        if (currentHash !== baseHash) {
+          await tx.rollback();
+          const err = new Error('Budget ' + id + ' changed since it was opened');
+          err.fsBudgetConflict = true;
+          err.currentHash = currentHash;
+          err.updatedAt = existing.UpdatedAt ? new Date(existing.UpdatedAt).toISOString() : null;
+          throw err;
+        }
       }
 
       const top = await new sql.Request(tx).input('id', sql.VarChar(16), id)
@@ -523,12 +572,13 @@ module.exports = async function (context, req) {
       }
 
       await tx.commit();
+      // docHash is the new concurrency token: what a GET would now return.
       return { ok: true, versionNumber, versionCreated,
-               contractSum, projectCost, changedFields: changed };
+               contractSum, projectCost, changedFields: changed, docHash: incomingHash };
     } catch (e) {
-      // The id-taken path rolls back before throwing, so a second rollback
-      // here would fail on a transaction that is already gone.
-      if (!e || !e.fsBudgetIdTaken) { try { await tx.rollback(); } catch (_) { /* already rolled back */ } }
+      // The id-taken and conflict paths roll back before throwing, so a second
+      // rollback here would fail on a transaction that is already gone.
+      if (!e || (!e.fsBudgetIdTaken && !e.fsBudgetConflict)) { try { await tx.rollback(); } catch (_) { /* already rolled back */ } }
       throw e;
     }
   }

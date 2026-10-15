@@ -164,6 +164,79 @@ test('concurrent first calls share a single probe', async () => {
   assert.deepStrictEqual(b, c);
 });
 
+/* ---- the analytics money basis ----
+   GET /api/analytics, driven through the real function module with a fake
+   pool that records every statement. The db module is stubbed in the require
+   cache so no mssql driver (and no database) is involved. */
+function loadAnalytics(pool) {
+  const dbPath = require.resolve('../api/shared/db');
+  require.cache[dbPath] = { id: dbPath, filename: dbPath, loaded: true,
+    exports: { getPool: async () => pool, sql: new Proxy({}, { get: () => () => null }), isTransient: () => false } };
+  const fnPath = require.resolve('../api/analytics/index.js');
+  delete require.cache[fnPath];
+  return require(fnPath);
+}
+function analyticsPool(columns, rows) {
+  const seen = [];
+  return {
+    seen,
+    request: () => {
+      const rq = {
+        input: () => rq,
+        query: async (text) => {
+          seen.push(text);
+          if (/sys\.columns/.test(text)) return { recordset: columns };
+          for (const [rx, rs] of rows) if (rx.test(text)) return { recordset: rs };
+          return { recordset: [{}] };
+        }
+      };
+      return rq;
+    }
+  };
+}
+const ADMIN_REQ = { query: {}, headers: { 'x-ms-client-principal':
+  Buffer.from(JSON.stringify({ userId: 'u1', userRoles: ['authenticated', 'super_admin'] })).toString('base64') } };
+
+test('analytics totals stay all-budget before the projects migration, and never name its columns', async () => {
+  fresh();
+  const pool = analyticsPool(MIGRATED, [[/AS totalContractSum/, [{ total: 3, active: 3, deleted: 0,
+    totalContractSum: 300, totalProjectCost: 330, countedBudgets: 3 }]]]);
+  const fn = loadAnalytics(pool);
+  const ctx = { res: null, log: Object.assign(() => {}, { warn() {}, error() {} }) };
+  await fn(ctx, ADMIN_REQ);
+  assert.strictEqual(ctx.res.status, 200);
+  const body = JSON.parse(ctx.res.body);
+  assert.strictEqual(body.budgets.moneyBasis, 'all');
+  assert.strictEqual(body.topProjects, null, 'no projects to rank before the migration');
+  assert.ok(!pool.seen.some(t => /PrimaryBudgetId|ProjectKey|dbo\.Projects/.test(t)),
+    'a not-yet-migrated column or table must not be named');
+});
+
+test('after the projects migration the money is the primary budget per project, never a sum of alternates', async () => {
+  fresh();
+  const cols = MIGRATED.concat([col('Projects', 'ProjectId'), col('Budgets', 'ProjectKey'),
+    col('InvestmentAnalyses', 'ProjectKey')]);
+  const pool = analyticsPool(cols, [
+    [/TOP 8 ProjectKey/, [{ ProjectKey: 'OP-0101', ProjectName: 'Northgate', BudgetId: 'BD-0101',
+      BudgetName: 'Northgate Base', ContractSum: 900, ProjectCost: 1000 }]],
+    [/AS totalContractSum/, [{ total: 4, active: 4, deleted: 0,
+      totalContractSum: 900, totalProjectCost: 1000, countedBudgets: 1 }]]
+  ]);
+  const fn = loadAnalytics(pool);
+  const ctx = { res: null, log: Object.assign(() => {}, { warn() {}, error() {} }) };
+  await fn(ctx, ADMIN_REQ);
+  const body = JSON.parse(ctx.res.body);
+  assert.strictEqual(body.budgets.moneyBasis, 'primary');
+  const money = pool.seen.find(t => /AS totalContractSum/.test(t));
+  assert.ok(/PrimaryBudgetId/.test(money) && /TOP 1/.test(money),
+    'the totals take ONE budget per project — the primary');
+  assert.ok(!/SUM\(CASE WHEN IsDeleted = 0 THEN ContractSum/.test(money),
+    'not a sum across every active budget');
+  assert.deepStrictEqual(body.topProjects, [{ projectId: 'OP-0101', name: 'Northgate',
+    budgetId: 'BD-0101', budgetName: 'Northgate Base', contractSum: 900, projectCost: 1000 }],
+    'the ranking is of projects, carrying the project id and name');
+});
+
 test('a database without the impact-fee migration reports the fee library absent', async () => {
   fresh();
   // The state the release lands in: the deploy is live, sql/migrate_impact_fees.sql

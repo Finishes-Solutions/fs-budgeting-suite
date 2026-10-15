@@ -30,13 +30,17 @@ const BASE = 'http://127.0.0.1:8100';
      && (await p.locator('#page-home button:has-text("Multifamily")').count()) === 0
      && (await p.locator('#page-home button:has-text("+ Blank Budget")').count()) === 0);
   await p.click('button:has-text("+ New Budget")'); await p.waitForTimeout(200);
-  ok('the modal offers Multifamily and Blank, with future types disabled',
+  ok('the modal offers Multifamily and Blank, with future types on one muted line',
      await p.evaluate(() => {
        const rows = [...document.querySelectorAll('#newBudgetModal .tpl-row')];
        const by = n => rows.find(r => r.textContent.includes(n));
+       const soon = document.getElementById('nbComingSoon');
        return !!by('Multifamily') && !by('Multifamily').disabled
          && !!by('Blank Budget') && !by('Blank Budget').disabled
-         && by('Industrial').disabled && by('Retail').disabled && by('Mixed-Use').disabled;
+         // not three dead buttons any more — one line of text naming all three
+         && !by('Industrial') && !by('Retail') && !by('Mixed-Use')
+         && !!soon && /Industrial/.test(soon.textContent) && /Retail/.test(soon.textContent)
+         && /Mixed-Use/.test(soon.textContent) && soon.tagName !== 'BUTTON';
      }));
   ok('custom templates show an empty state when none exist',
      /No custom templates yet/.test(await p.locator('#customTplList').textContent()));
@@ -140,7 +144,10 @@ const BASE = 'http://127.0.0.1:8100';
   ok('All budgets listed', (await p.locator('#budgetsBody tr').count()) === 4,
      (await p.locator('#budgetsBody tr').count()) + ' rows');
 
-  // Column 1 is the User column (creator avatar); Project ID is column 2.
+  // Column 1 is the User column (creator avatar); Budget ID is column 2.
+  ok('the id column is labelled Budget ID, never Project ID',
+     (await p.locator('#budgetsHead th[data-sort="projectId"]').textContent()).trim() === 'Budget ID',
+     (await p.locator('#budgetsHead th[data-sort="projectId"]').textContent()).trim());
   const ids = async () => (await p.locator('#budgetsBody tr td:nth-child(2)').allTextContents()).map(s => s.trim().split(' ')[0]);
 
   await p.click('#budgetsHead th[data-sort="contractSum"]');           // desc first
@@ -173,9 +180,9 @@ const BASE = 'http://127.0.0.1:8100';
        && fmtDay('2026-01-05T00:00:00') === '01-05-2026'));
 
   // --- Group By
-  ok('Group By offers no-grouping, address, ID, type, status and user',
+  ok('Group By offers no-grouping, address, project, type, status and user',
      (await p.locator('#budgetsGroup option').allTextContents()).join('|')
-       === 'No Grouping|Group by Address|Group by Project ID|Group by Type|Group by Status|Group by User',
+       === 'No Grouping|Group by Address|Group by Project|Group by Type|Group by Status|Group by User',
      (await p.locator('#budgetsGroup option').allTextContents()).join('|'));
   ok('The list is ungrouped by default',
      (await p.locator('#budgetsBody tr.grp-hd').count()) === 0);
@@ -212,13 +219,18 @@ const BASE = 'http://127.0.0.1:8100';
      JSON.stringify(byStatus.moneyCols) === '[4,5]', JSON.stringify(byStatus.moneyCols));
   const byType = await grouped('type');
   ok('Grouping by type works', byType.groups >= 1 && byType.rows === 4);
-  const byId = await grouped('id');
-  // Fewer groups than rows is the proof it grouped by prefix — grouping on the whole
-  // (unique) ID would give one group per budget. Groups sort alphabetically, so AS
-  // legitimately comes before BD.
-  ok('Grouping by project ID groups by prefix, not by unique ID',
-     byId.groups < byId.rows && byId.allGroups.some(g => /BD/.test(g)),
-     byId.groups + ' groups for ' + byId.rows + ' budgets');
+  const byId = await grouped('project');
+  await p.waitForTimeout(400);            // the project names arrive after the first paint
+  const byProject = await grouped('project');
+  // Grouped by the budget's PROJECT link (projectKey), never by a prefix read
+  // out of the budget id: TST-9999 was created under OP-0201, the three
+  // seeded budgets carry no project.
+  ok('Grouping by project groups by the linked project, not by id prefix',
+     byId.groups === 2 && byProject.allGroups.some(g => /OP-0201 — Waller Preview/.test(g))
+       && !byProject.allGroups.some(g => /Business Development|Operations/.test(g)),
+     JSON.stringify(byProject.allGroups.map(g => g.trim().replace(/\s+/g, ' '))));
+  ok('Budgets with no project are grouped last, as No Project',
+     /No Project/.test(byProject.last), byProject.last.trim());
   const byAddr = await grouped('address');
   ok('Grouping by address works', byAddr.rows === 4);
   ok('Budgets with no address are grouped last', /No Address/.test(byAddr.last), byAddr.last.trim());

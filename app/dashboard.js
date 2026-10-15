@@ -15,6 +15,7 @@ var SUMMARY_LIMIT = 30;
 // something you can actually read.
 var PAGE_SIZE = 50;
 var range = 30;                // days shown in the activity chart; 0 = all
+var activityError = null;      // why the last activity page did not load, shown in place
 
 function esc(s){ return adapter.esc ? adapter.esc(String(s)) : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -61,6 +62,7 @@ function eventLabel(ev){
     export_print:'Print',settings_update:'Settings Update',
     profile_update:'Profile Updated',
     pricing_publish:'Pricing Publish',
+    feedback_submit:'Feedback Submitted',feedback_update:'Feedback Updated',
     ai_ask:'Asked Budget Assistant'
   };
   return map[ev]||ev;
@@ -85,6 +87,9 @@ function fieldPhrase(f){
     return pretty+' '+String(f.from)+' → '+String(f.to);
   if(f && f.to!==undefined && f.to!==null) return pretty+' → '+String(f.to);
   return pretty;
+}
+function rolePhrase(r){
+  return String(r).split('_').map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(' ');
 }
 function eventDetail(r){
   var d=r&&r.detail;
@@ -142,7 +147,15 @@ function eventDetail(r){
       return bits.join(' · ');
     case 'profile_update':
       return Array.isArray(d.fields)?d.fields.map(fieldPhrase).join('; '):'';
+    case 'feedback_submit':
+      return [d.kind==='feature'?'Feature request':d.kind==='bug'?'Bug':'',d.title?String(d.title):'']
+        .filter(Boolean).join(' · ');
+    case 'feedback_update':
+      return d.status?'Status → '+String(d.status):'';
     case 'settings_update':
+      // A role change is logged against the account it changed, as
+      // {roleChangedTo}; the entity column already names that account.
+      if(d.roleChangedTo) return 'Role changed to '+rolePhrase(d.roleChangedTo);
       if(!Array.isArray(d.changed)) return '';
       // The pre-granular shape was a bare list of key names.
       return d.changed.map(function(c){
@@ -185,6 +198,14 @@ function projectKPIs(){
     +'<div class="sub">Captured at conversion</div></div>';
 }
 
+/* What the money tiles add up. Once projects exist it is one budget per
+   project — its primary — plus budgets that belong to no project: an
+   alternate is another pricing of the same work, and adding it in counted the
+   project twice. The sub-line says which, because the two read differently. */
+function moneyBasisNote(b){
+  return b&&b.moneyBasis==='primary'?'Primary budget per project':'Across all active budgets';
+}
+
 function renderKPIs(el){
   if(!data){el.innerHTML='<div class="dash-loading">Loading dashboard data...</div>';return;}
   var b=data.budgets, a=data.analyses, u=data.users;
@@ -192,9 +213,9 @@ function renderKPIs(el){
     '<div class="dash-kpi"><div class="k">Active Budgets</div><div class="v">'+num(b.active)+'</div>'
     +'<div class="sub">'+num(b.deleted)+' deleted</div></div>'
     +'<div class="dash-kpi"><div class="k">Total Contract Sum</div><div class="v">'+money(b.totalContractSum)+'</div>'
-    +'<div class="sub">Across all active budgets</div></div>'
+    +'<div class="sub">'+moneyBasisNote(b)+'</div></div>'
     +'<div class="dash-kpi"><div class="k">Total Project Cost</div><div class="v">'+money(b.totalProjectCost)+'</div>'
-    +'<div class="sub">Across all active budgets</div></div>'
+    +'<div class="sub">'+moneyBasisNote(b)+'</div></div>'
     +'<div class="dash-kpi"><div class="k">Active Analyses</div><div class="v">'+num(a.active)+'</div>'
     +'<div class="sub">'+num(a.total)+' total created</div></div>'
     +projectKPIs()
@@ -206,19 +227,6 @@ function renderKPIs(el){
     +'<div class="dash-kpi"><div class="k">Avg Equity IRR</div><div class="v">'+pct(a.avgIRR)+'</div><div class="sub"></div></div>'
     +'<div class="dash-kpi"><div class="k">Registered Users</div><div class="v">'+num(u.total)+'</div>'
     +'<div class="sub">'+num(u.totalLogins)+' total logins</div></div>';
-}
-
-function barHTML(breakdown, total){
-  if(!breakdown||!breakdown.length) return '<div style="color:var(--ink-500);font-size:13px">No data</div>';
-  var html='<div class="dash-bar-group">';
-  breakdown.forEach(function(r){
-    var w=total>0?Math.max(2,Math.round(r.count/total*100)):0;
-    html+='<div class="dash-bar-row">'
-      +'<span class="dash-bar-label">'+esc(r.status)+'</span>'
-      +'<div class="dash-bar-track"><div class="dash-bar-fill" style="width:'+w+'%;background:'+statusColor(r.status)+'"></div></div>'
-      +'<span class="dash-bar-count">'+r.count+'</span></div>';
-  });
-  return html+'</div>';
 }
 
 function renderBreakdowns(el){
@@ -489,11 +497,18 @@ function fmtDay(iso){
 
 /* The ranking the KPI tiles cannot show: which projects actually carry the
    money, and how much of the total each one is. Deliberately one metric —
-   total project cost — where Budgets By Value compares two. */
+   total project cost — where Budgets By Value compares two.
+   It ranks PROJECTS (OP-####, the project's name) by their primary budget.
+   Before the projects migration there are no projects to rank and the API
+   sends topProjects:null; the budgets ranking it used to show stands in. */
+function rankRows(){
+  if(!data) return [];
+  return Array.isArray(data.topProjects)?data.topProjects:(data.topBudgets||[]);
+}
 function topProjectsHTML(rows){
   rows=(rows||[]).filter(function(r){return (r.projectCost||0)>0;})
     .slice().sort(function(a,b){return (b.projectCost||0)-(a.projectCost||0);}).slice(0,5);
-  if(!rows.length) return '<div style="color:var(--ink-500);font-size:13px;padding:8px 0">No budgets yet</div>';
+  if(!rows.length) return '<div style="color:var(--ink-500);font-size:13px;padding:8px 0">No projects yet</div>';
   var max=rows[0].projectCost||1;
   var all=(data&&data.budgets&&data.budgets.totalProjectCost)||rows.reduce(function(s,r){return s+(r.projectCost||0);},0);
   var html='<div class="dash-rank">';
@@ -501,7 +516,7 @@ function topProjectsHTML(rows){
     var w=Math.max(2,Math.round((r.projectCost||0)/max*100));
     var share=all>0?Math.round((r.projectCost||0)/all*100):0;
     html+='<div class="dash-rank-row" title="'+esc(r.name||'Untitled')+' — '+money(r.projectCost)
-      +' ('+share+'% of all project cost)">'
+      +' ('+share+'% of all project cost)'+(r.budgetId?' · primary budget '+esc(r.budgetId):'')+'">'
       +'<span class="dash-rank-n">'+(i+1)+'</span>'
       +'<span class="dash-rank-id mono">'+esc(r.projectId)+'</span>'
       +'<span class="dash-rank-nm">'+esc(r.name||'Untitled')+'</span>'
@@ -552,9 +567,10 @@ function renderCharts(){
     }
   }
   if(value) value.innerHTML=data?budgetValueChartHTML(data.topBudgets):'';
-  if(top) top.innerHTML=data?topProjectsHTML(data.topBudgets):'';
+  if(top) top.innerHTML=data?topProjectsHTML(rankRows()):'';
   var note=document.getElementById('dashTopNote');
-  if(note&&data) note.textContent='Share of '+money(data.budgets.totalProjectCost)+' total project cost';
+  if(note&&data) note.textContent='Share of '+money(data.budgets.totalProjectCost)+' total project cost'
+    +(data.budgets.moneyBasis==='primary'?' · primary budgets':'');
   document.querySelectorAll('#page-dashboard .dash-range').forEach(function(b){
     b.classList.toggle('on', Number(b.dataset.range)===range);
   });
@@ -582,13 +598,21 @@ function renderActivity(){
     total=activityData.total||0;
   }
 
+  // A page that failed to load says so where the rows would be, instead of
+  // leaving the last page (or "No activity found") standing as if it were
+  // the answer.
+  if(empty){
+    empty.textContent=activityError||'No activity found';
+    empty.style.color=activityError?'var(--danger)':'var(--ink-500)';
+    if(activityError) empty.setAttribute('role','alert'); else empty.removeAttribute('role');
+  }
   if(!events.length){
     body.innerHTML='';
     if(empty) empty.style.display='block';
     if(viewBtn) viewBtn.style.display='none';
     return;
   }
-  if(empty) empty.style.display='none';
+  if(empty) empty.style.display=activityError?'block':'none';
 
   var html='';
   events.forEach(function(r){
@@ -646,7 +670,7 @@ function renderDashboard(){
 }
 
 async function loadData(){
-  loading=true; error=null;
+  loading=true; error=null; activityError=null;
   renderDashboard();
   try{
     var r=await fetch('/api/analytics');
@@ -678,12 +702,19 @@ function buildActivityURL(limit, offset){
 }
 
 async function loadActivityPage(offset){
+  activityError=null;
   try{
     var url=buildActivityURL(PAGE_SIZE, offset);
     var r=await fetch(url);
-    if(!r.ok) return;
+    if(!r.ok){
+      activityError=r.status===403
+        ?'Access denied. The super_admin role is required to read the activity log.'
+        :'Could not load the activity log (HTTP '+r.status+'). Try again in a moment.';
+      renderActivity();
+      return;
+    }
     var d=await r.json();
-    if(offset===0){
+    if(offset===0||!activityData){
       activityData=d;
       populateUserFilter(d.users);
     } else {
@@ -692,7 +723,10 @@ async function loadActivityPage(offset){
     }
     activityOffset=offset;
     renderActivity();
-  }catch(e){/* silently fail */}
+  }catch(e){
+    activityError='Could not reach the activity log. Check your connection, then try again.';
+    renderActivity();
+  }
 }
 
 /* One press, the next 50. The first press swaps the 30-row summary for the
@@ -730,10 +764,19 @@ async function exportCSV(){
       if(to&&to.value) parts.push('to='+encodeURIComponent(to.value+'T23:59:59Z'));
       if(user&&user.value) parts.push('userId='+encodeURIComponent(user.value));
       var r=await fetch(parts.join('&'));
-      if(!r.ok) break;
+      // A failed batch STOPS the export. Breaking out and writing what had
+      // arrived produced a partial (or empty) file that looked complete.
+      if(!r.ok){
+        notify('Export failed — the activity log could not be read (HTTP '+r.status+'). Nothing was downloaded.');
+        return;
+      }
       var d=await r.json();
+      if(!d||!Array.isArray(d.events)){
+        notify('Export failed — the activity log came back unreadable. Nothing was downloaded.');
+        return;
+      }
       all=all.concat(d.events);
-      if(all.length>=d.total) break;
+      if(all.length>=d.total||!d.events.length) break;
       offset+=batch;
     }
     // Details rides in the export too: an audit trail that is only complete
@@ -751,8 +794,15 @@ async function exportCSV(){
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }catch(e){
-    alert('Export failed. Please try again.');
+    notify('Export failed — the activity log could not be reached. Nothing was downloaded.');
   }
+}
+
+// The app's toast when there is one; a plain alert is the floor.
+function notify(msg){
+  if(adapter.toast) adapter.toast(msg);
+  else if(typeof window.toast==='function') window.toast(msg);
+  else alert(msg);
 }
 
 function csvSafe(s){return String(s||'').replace(/"/g,'""');}
@@ -768,7 +818,7 @@ function exportPDF(){
   if(!host||!adapter.print){ alert('Export is unavailable on this page.'); return; }
 
   var stamp=adapter.stamp?adapter.stamp():new Date().toLocaleString();
-  var b=data.budgets,a=data.analyses,u=data.users;
+  var b=data.budgets,a=data.analyses,u=data.users,pj=data.projects;
   var kpi=function(k,v,s){
     return '<div class="dpdf-kpi"><div class="dpdf-k">'+esc(k)+'</div><div class="dpdf-v">'+esc(v)+'</div>'
       +(s?'<div class="dpdf-s">'+esc(s)+'</div>':'')+'</div>';
@@ -802,9 +852,15 @@ function exportPDF(){
     +'<h2 class="dpdf-h">Key Figures</h2>'
     +'<div class="dpdf-kpis">'
     +kpi('Active Budgets',num(b.active),num(b.deleted)+' deleted')
-    +kpi('Total Contract Sum',money(b.totalContractSum),'Across all active budgets')
-    +kpi('Total Project Cost',money(b.totalProjectCost),'Across all active budgets')
+    +kpi('Total Contract Sum',money(b.totalContractSum),moneyBasisNote(b))
+    +kpi('Total Project Cost',money(b.totalProjectCost),moneyBasisNote(b))
     +kpi('Active Analyses',num(a.active),num(a.total)+' total created')
+    // The same converted-project tiles the screen shows: an export that
+    // drops the headline the dashboard exists for is not a snapshot of it.
+    +(pj&&pj.available
+      ? kpi('Converted Contract Amount',money(pj.convertedContractAmount),num(pj.converted)+' of '+num(pj.total)+' converted')
+        +kpi('Converted Project Amount',money(pj.convertedProjectAmount),'Captured at conversion')
+      : '')
     +kpi('Avg Purchase Price',money(a.avgPurchasePrice),'')
     +kpi('Avg Year 1 NOI',money(a.avgYear1NOI),'')
     +kpi('Avg Equity IRR',pct(a.avgIRR),'')
@@ -820,11 +876,13 @@ function exportPDF(){
     +'<div><h3 class="dpdf-h3">Analysis Status</h3>'+donutHTML(a.statusBreakdown)+'</div>'
     +'</div>'
 
+    +(pj&&pj.available?pipelinePdfHTML(pj):'')
+
     +'<h2 class="dpdf-h">Budgets By Value</h2>'
     +'<div class="dpdf-chart">'+budgetValueChartHTML(data.topBudgets)+'</div>'
 
     +'<h2 class="dpdf-h">Top 5 Projects By Budget Amount</h2>'
-    +'<div class="dpdf-chart">'+topProjectsHTML(data.topBudgets)+'</div>'
+    +'<div class="dpdf-chart">'+topProjectsHTML(rankRows())+'</div>'
 
     +'<h2 class="dpdf-h">Activity Log</h2>'
     +(log
@@ -835,6 +893,25 @@ function exportPDF(){
       : '<div class="dpdf-note">No activity recorded.</div>');
 
   adapter.print(html);
+}
+
+/* The pipeline for the PDF: a plain table in pipeline order, built from the
+   payload like everything else in the export. The on-screen strip leans on
+   dashboard-page styles the print document does not carry. */
+function pipelinePdfHTML(p){
+  var rows=pipelineRows(p);
+  var total=rows.reduce(function(s,r){return s+r.count;},0);
+  if(!total) return '<h2 class="dpdf-h">Project Pipeline</h2><div class="dpdf-note">No projects yet.</div>';
+  return '<h2 class="dpdf-h">Project Pipeline</h2>'
+    +'<table class="dpdf-tbl dpdf-pipe"><thead><tr><th>Stage</th><th class="r">Projects</th><th class="r">Share</th></tr></thead><tbody>'
+    +rows.map(function(r){
+      return '<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:'
+        +statusColor(r.status)+'"></span>'+esc(r.status)+'</td>'
+        +'<td class="r mono">'+num(r.count)+'</td>'
+        +'<td class="r mono">'+Math.round(r.count/total*100)+'%</td></tr>';
+    }).join('')
+    +'<tr><td><b>Total</b></td><td class="r mono"><b>'+num(total)+'</b></td><td></td></tr>'
+    +'</tbody></table>';
 }
 
 function refresh(){

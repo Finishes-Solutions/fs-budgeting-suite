@@ -33,6 +33,10 @@ var analyses = [];
    fetch budgets and analyses only, which is why starring a project stored the
    favorite correctly and then nothing appeared. */
 var projects = [];
+// False when the projects scope could not be read (offline, or before its
+// migration). "No projects" is only a fact worth steering someone by when the
+// list was actually read.
+var projectsAvailable = false;
 var events = [];
 var loaded = false;
 var loading = false;
@@ -217,6 +221,7 @@ var EVENT_LABEL = {
   export_pdf: 'Exported PDF', export_xlsx: 'Exported Excel', export_csv: 'Exported CSV',
   export_print: 'Printed', settings_update: 'Updated settings',
   profile_update: 'Updated profile', pricing_publish: 'Published pricing',
+  feedback_submit: 'Sent feedback', feedback_update: 'Updated feedback',
   ai_ask: 'Asked the Budget Assistant'
 };
 function eventLabel(e) { return EVENT_LABEL[e] || e; }
@@ -255,7 +260,15 @@ function eventDetail(e) {
     case 'project_update': case 'profile_update':
       return (name ? name + ' — ' : '')
         + (Array.isArray(d.fields) ? d.fields.map(fieldPhrase).join('; ') : '');
+    case 'feedback_submit':
+      return [d.kind === 'feature' ? 'Feature request' : d.kind === 'bug' ? 'Bug' : '',
+        d.title ? String(d.title) : ''].filter(Boolean).join(' · ');
+    case 'feedback_update':
+      return d.status ? 'Status → ' + String(d.status) : '';
     case 'settings_update':
+      // A role change, logged against the account whose role it was.
+      if (d.roleChangedTo) return 'Role changed to ' + String(d.roleChangedTo).split('_')
+        .map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
       return Array.isArray(d.changed) ? d.changed.map(function (c) {
         return typeof c === 'string' ? c.replace(/([a-z])([A-Z])/g, '$1 $2') : fieldPhrase(c);
       }).join('; ') : '';
@@ -299,8 +312,12 @@ async function load() {
     budgets = results[0] || [];
     analyses = results[1] || [];
   }
+  // Home's fetch of the budget list is also index.html's: handing it back
+  // saves a visit a second identical GET /api/budgets.
+  if (results[0] && A.budgetsLoaded) A.budgetsLoaded(results[0]);
   events = (results[2] && results[2].events) || [];
   projects = (results[3] && results[3].projects) || [];
+  projectsAvailable = !!(results[3] && results[3].available !== false && Array.isArray(results[3].projects));
   if (!adopted) { adopted = true; adoptLocalFavorites(); }
   loading = false; loaded = true;
 }
@@ -370,11 +387,22 @@ function attentionItems() {
   });
 
   // Budgets that have never been underwritten. The clearest next action in
-  // the whole app, and invisible on either index page.
-  var underwritten = {};
-  analyses.forEach(function (a) { if (a.projectId) underwritten[String(a.projectId).toUpperCase()] = 1; });
+  // the whole app, and invisible on either index page — but only for the
+  // budget that stands for its project. An alternate is another way of
+  // pricing the same work, so nagging about every alternate (and every
+  // finished sibling) buried the one nudge that mattered. A project counts
+  // as underwritten once ANY of its budgets has an analysis.
+  var underwritten = {}, underwrittenProject = {};
+  analyses.forEach(function (a) {
+    if (a.projectId) underwritten[String(a.projectId).toUpperCase()] = 1;
+    if (a.projectKey) underwrittenProject[String(a.projectKey).toUpperCase()] = 1;
+  });
+  var primary = primaryBudgetIds();
   budgets.forEach(function (b) {
     if (b.status === 'Cancelled') return;
+    var key = b.projectKey ? String(b.projectKey).toUpperCase() : '';
+    if (key && !primary[String(b.projectId).toUpperCase()]) return;
+    if (key && underwrittenProject[key]) return;
     if (!underwritten[String(b.projectId).toUpperCase()]) {
       out.push({ kind: 'budget', rec: b, reason: 'No Analysis', tone: 'idea',
                  note: 'No investment analysis yet' });
@@ -400,6 +428,62 @@ function attentionItems() {
   });
   return Object.keys(best).map(function (k) { return best[k]; })
     .sort(function (p, q) { return rank[p.tone] - rank[q.tone]; });
+}
+
+/* Each project's primary budget, as the set of budget ids. The project list
+   names it (primaryBudgetId); when it does not — or the primary is not one
+   this account can see — the same tie-break the server applies stands in:
+   shortest id, then alphabetical. Budgets with no project are not here; they
+   stand for themselves. */
+function primaryBudgetIds() {
+  var byKey = {}, named = {}, out = {};
+  projects.forEach(function (x) {
+    if (x && x.projectId && x.primaryBudgetId)
+      named[String(x.projectId).toUpperCase()] = String(x.primaryBudgetId).toUpperCase();
+  });
+  budgets.forEach(function (b) {
+    if (!b.projectKey) return;
+    var k = String(b.projectKey).toUpperCase();
+    (byKey[k] = byKey[k] || []).push(String(b.projectId).toUpperCase());
+  });
+  Object.keys(byKey).forEach(function (k) {
+    var ids = byKey[k];
+    var hit = named[k] && ids.indexOf(named[k]) !== -1 ? named[k]
+      : ids.slice().sort(function (a, z) { return a.length - z.length || (a < z ? -1 : a > z ? 1 : 0); })[0];
+    out[hit] = 1;
+  });
+  return out;
+}
+
+/* Where "N more" in Needs Attention leads: the list that holds the rest.
+   Analyses only → the analyses list; otherwise the Budgets list, filtered to
+   the status the overflow shares when it shares one (In Review, or Draft for
+   idle drafts), unfiltered when it is a mix. */
+function attentionOverflowTarget(rest) {
+  if (!rest.length) return null;
+  if (rest.every(function (x) { return x.kind === 'analysis'; })) return { page: 'analyses' };
+  var st = null, same = true;
+  rest.forEach(function (x) {
+    if (x.kind !== 'budget') { same = false; return; }
+    var s = x.reason === 'In Review' ? 'In Review' : x.reason === 'Idle Draft' ? 'Draft' : null;
+    if (!s || (st && s !== st)) same = false;
+    st = st || s;
+  });
+  return { page: 'budgets', status: same && st ? st : 'all' };
+}
+function openAttentionList() {
+  var t = attentionOverflowTarget(attentionItems().slice(ATTENTION_SHOWN));
+  if (!t) return;
+  if (t.page === 'analyses') { if (A.go) A.go('analyses'); return; }
+  if (A.openBudgetsList) A.openBudgetsList(t.status);
+}
+var ATTENTION_SHOWN = 6;
+var ACTIVITY_SHOWN = 5;
+
+/* True when this account demonstrably has no project to put a budget in.
+   Unknown (not loaded, offline, pre-migration) is not "none". */
+function needsProject() {
+  return loaded && !loadError && projectsAvailable && projects.length === 0;
 }
 
 function favoriteItems() {
@@ -504,9 +588,9 @@ function itemCard(kind, rec, meta, favorited) {
         ? rec.contractAmount : rec.liveContractSum)
     : kind === 'budget'
       ? usd(rec.projectCost || rec.contractSum || 0)
-      : usd(rec.purchasePrice || 0);
+      : (rec.purchasePrice ? usd(rec.purchasePrice) : '—');   // never calculated: no price yet, not $0
   var moneyLab = kind === 'project' ? 'Contract Sum'
-    : kind === 'budget' ? 'Total Project' : 'Purchase Price';
+    : kind === 'budget' ? 'Total Project Cost' : 'Purchase Price';
   var star = starButton(kind, id, recordName(kind, rec), favorited);
   return `<div class="hm-card-wrap${favorited ? ' is-fav' : ''}">
     <button class="hm-card" ${openAttr(kind, rec)}>
@@ -541,13 +625,18 @@ function render() {
   // the two create buttons are still the point of the page. An error replaces
   // the sections below it, never the way to act.
   var g = pickGreeting();
+  // With no project anywhere, a budget has nowhere to belong, so making the
+  // project is the first step and gets the filled button. + New Budget stays
+  // (its dialog can create the project too); it just stops leading.
+  var firstProject = needsProject();
   var html = `<div class="hm-hero">
     <div>
       <h1 class="hm-greet">${esc(g.title)}</h1>
-      <div class="hm-greet-sub">${esc(g.sub)}</div>
+      <div class="hm-greet-sub">${esc(firstProject && g.empty ? 'Start with a project — every budget belongs to one.' : g.sub)}</div>
     </div>
     <div class="hm-actions">
-      <button class="btn btn-primary" id="newBudgetBtn" onclick="openNewBudget()">+ New Budget</button>
+      ${firstProject ? '<button class="btn btn-primary" id="homeNewProjectBtn" onclick="FSHome.newProject()">+ New Project</button>' : ''}
+      <button class="btn ${firstProject ? 'btn-ghost' : 'btn-primary'}" id="newBudgetBtn" onclick="openNewBudget()">+ New Budget</button>
       <button class="btn btn-ghost" onclick="FSInvestmentUI.openProjectPicker()">+ New Investment Analysis</button>
     </div>
   </div>`;
@@ -577,26 +666,12 @@ function render() {
       }).join('') + '</div>');
   }
 
-  // ---- recent
-  var rec = recentItems(6);
-  if (rec.length) {
-    html += section('Recent', '<div class="hm-cards">' + rec.map(function (x) {
-      return itemCard(x.kind, x.rec, x.why + ' · ' + relTime(x.when),
-        isFavorite(x.kind, recordId(x.kind, x.rec)));
-    }).join('') + '</div>');
-  } else if (!budgets.length && !analyses.length) {
-    html += section('Get Started',
-      `<div class="hm-empty">
-        <div class="hm-empty-big">No budgets yet</div>
-        <div>Create a budget to price a project, then underwrite it as an investment analysis.
-        Everything you open will show up here.</div>
-      </div>`);
-  }
-
   // ---- needs attention
+  // Above Recent: what is waiting on a decision is the reason to open Home,
+  // and on a phone Recent's cards pushed it a screen and a half down.
   var att = attentionItems();
   if (att.length) {
-    var rows = att.slice(0, 6).map(function (x) {
+    var rows = att.slice(0, ATTENTION_SHOWN).map(function (x) {
       var id = recordId(x.kind, x.rec);
       return `<button class="hm-att" ${openAttr(x.kind, x.rec)}>
         <span class="hm-att-tag hm-tone-${x.tone}">${esc(x.reason)}</span>
@@ -605,12 +680,38 @@ function render() {
         <span class="hm-att-note">${esc(x.note)}</span>
       </button>`;
     }).join('');
+    // The overflow is a way to the rest, not a number to read and shrug at.
     html += section('Needs Attention', '<div class="hm-atts">' + rows + '</div>',
-      att.length > 6 ? `<span class="hm-more">${att.length - 6} more</span>` : '');
+      att.length > ATTENTION_SHOWN
+        ? `<button class="hm-link hm-more" onclick="FSHome.openAttentionList()">${att.length - ATTENTION_SHOWN} more →</button>` : '');
+  }
+
+  // ---- recent
+  var rec = recentItems(6);
+  if (rec.length) {
+    html += section('Recent', '<div class="hm-cards">' + rec.map(function (x) {
+      return itemCard(x.kind, x.rec, x.why + ' · ' + relTime(x.when),
+        isFavorite(x.kind, recordId(x.kind, x.rec)));
+    }).join('') + '</div>');
+  } else if (!budgets.length && !analyses.length) {
+    html += section('Get Started', firstProject
+      ? `<div class="hm-empty">
+          <div class="hm-empty-big">No budgets yet</div>
+          <div>A budget belongs to a project, so start by creating the project — its ID, name and
+          address. Then add its first budget and underwrite it as an investment analysis.</div>
+        </div>`
+      : `<div class="hm-empty">
+          <div class="hm-empty-big">No budgets yet</div>
+          <div>Create a budget to price a project, then underwrite it as an investment analysis.
+          Everything you open will show up here.</div>
+        </div>`);
   }
 
   // ---- your activity
-  var acts = events.slice(0, 8);
+  // What you DID, so sign-ins are left out: they say nothing about any record
+  // and crowded the real events off a short list. Short because Recent above
+  // already shows the records themselves.
+  var acts = events.filter(function (e) { return e && e.eventType !== 'login'; }).slice(0, ACTIVITY_SHOWN);
   if (acts.length) {
     html += section('Your Activity', '<div class="hm-log">' + acts.map(function (e) {
       // The record's NAME, with its id as the fallback: "Riverbend Phase 1"
@@ -654,7 +755,13 @@ window.FSHome = {
   unfavorite: unfavorite,
   isFavorite: isFavorite,
   starButton: starButton,
+  // The static coloured chip, for cards that are themselves buttons (the
+  // project page's Favorites strip borrows it).
+  statusChipStatic: statusChipStatic,
   favorites: favoritesRead,
+  needsProject: needsProject,
+  newProject: function () { if (A.newProject) A.newProject(); },
+  openAttentionList: openAttentionList,
   openBudget: function (id) { if (A.openBudget) A.openBudget(id); },
   openAnalysis: function (id) {
     if (window.FSInvestmentUI) { location.hash = '#/analysis/' + String(id).toLowerCase(); }
@@ -664,6 +771,7 @@ window.FSHome = {
   },
   // exposed for the suites
   _attention: function () { return attentionItems(); },
+  _overflowTarget: function () { return attentionOverflowTarget(attentionItems().slice(ATTENTION_SHOWN)); },
   _recent: function (n) { return recentItems(n || 6); },
   _favorites: function () { return favoritesRead(); },
   _greetingPools: GREET
@@ -691,7 +799,7 @@ window.FSHome = {
       correlated MAX per project. No migration.
 
    4. Activity older than the last 50 events.
-      /api/user-activity is TOP 50 with no paging. Home only shows 8, so this
+      /api/user-activity is TOP 50 with no paging. Home only shows 5, so this
       matters solely if the section grows a "view all" — the analytics endpoint
       already has the paged version to copy.
    ============================================================ */

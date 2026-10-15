@@ -140,6 +140,46 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' �
   await p.waitForTimeout(200);
   const stickyOk = await p.locator('.budget-scroll thead th').first().evaluate(e => getComputedStyle(e).position === 'sticky');
   ok('U1 header is sticky', stickyOk);
+  // It sticks flush to the top of the pane — padding on the pane used to leave
+  // a strip of rows scrolling visibly above it.
+  const flush = await p.locator('.budget-scroll').evaluate(e => {
+    const th = e.querySelector('thead th');
+    return Math.round(th.getBoundingClientRect().top - e.getBoundingClientRect().top);
+  });
+  ok('U1 sticky header sits flush with the top of the pane', Math.abs(flush) <= 1, flush + 'px');
+  // The running Contract Sum rides the bottom of the grid, from parts().
+  const foot = await p.evaluate(() => {
+    const e = document.querySelector('.budget-scroll');
+    const td = document.getElementById('bfContract');
+    return { sticky: getComputedStyle(td).position, text: td.textContent.trim(),
+      contract: usd(parts().contract), project: document.getElementById('bfProject').textContent.trim(),
+      projectWant: usd(parts().project),
+      gap: Math.round(e.getBoundingClientRect().bottom - document.getElementById('bfProject').getBoundingClientRect().bottom),
+      stacked: Math.round(document.getElementById('bfProject').getBoundingClientRect().top - td.getBoundingClientRect().bottom),
+      outsideBody: !document.getElementById('budBody').contains(td) };
+  });
+  ok('U1 the grid footer carries the Contract Sum', foot.text === foot.contract && foot.text.startsWith('$'),
+     foot.text + ' vs ' + foot.contract);
+  ok('U1 and the Total Project Cost', foot.project === foot.projectWant, foot.project);
+  ok('U1 the footer is sticky to the bottom of the pane', foot.sticky === 'sticky' && Math.abs(foot.gap) <= 1,
+     foot.sticky + ' gap ' + foot.gap);
+  ok('U1 Contract Sum sits directly above Total Project Cost', Math.abs(foot.stacked) <= 1, foot.stacked + 'px');
+  ok('U1 the footer is not a #budBody row', foot.outsideBody);
+  // Negative money reads −$, never $-.
+  ok('U1 negative money prints with a leading minus',
+     await p.evaluate(() => usd(-31866) === '−$31,866' && usd2(-7.5) === '−$7.50' && usd(-0.4) === '$0'),
+     await p.evaluate(() => usd(-31866) + ' ' + usd2(-7.5) + ' ' + usd(-0.4)));
+  const net = await p.evaluate(() => {
+    doc.expenses.push({ label: 'Big', per: 'fixed', rate: 999999, count: 1, auto: false }); touch();
+    const neg = { t: document.getElementById('nMo').textContent, c: document.getElementById('nMo').style.color };
+    doc.expenses.pop();
+    const keep = doc.expenses; doc.expenses = []; touch();           // no expenses: net ≥ 0
+    const pos = document.getElementById('nMo').style.color;
+    doc.expenses = keep; touch();
+    return { neg, pos };
+  });
+  ok('U1 a negative Net Other Income is red, not success green',
+     net.neg.t.startsWith('−$') && /danger/.test(net.neg.c) && /green/.test(net.pos), JSON.stringify(net));
 
   // D2 — the unsaved guard must fire when leaving a dirty budget
   const before2 = dialogs;

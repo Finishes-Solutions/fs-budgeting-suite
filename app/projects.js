@@ -83,9 +83,9 @@ async function render(force) {
   if (!ps.length) {
     // The old copy said a project appears the first time a budget is saved
     // against its ID. It does not any more: a budget id cannot name a project,
-    // so the first move is Create Project.
+    // so the first move is New Project.
     host.innerHTML = '<div class="card"><div class="card-bd"><div class="hm-empty">'
-      + '<b>No projects yet.</b><br>Create one with <b>+ Create Project</b> above. '
+      + '<b>No projects yet.</b><br>Create one with <b>+ New Project</b> above. '
       + 'A project is the parent: its budgets and investment analyses hang off it, '
       + 'and every budget belongs to exactly one.</div></div></div>';
     return;
@@ -117,7 +117,7 @@ async function render(force) {
         + (view === 'compact' ? 'compact' : 'comfortable') + '">'
         + '<table class="tbl pj-tbl pj-tbl-index"><thead><tr>'
         + '<th style="width:34px"></th><th>Project ID</th><th>Project Name</th><th>Status</th>'
-        + '<th class="r">Contract</th><th class="r">Total Project</th>'
+        + '<th class="r">Contract Sum</th><th class="r">Total Project Cost</th>'
         + '<th class="r">Budgets</th><th class="r">Analyses</th><th></th></tr></thead><tbody>'
         + ps.map(rowFor).join('')
         + '</tbody></table></div>')
@@ -198,7 +198,7 @@ function cardFor(p) {
   return '<div class="hm-card-wrap">'
     + '<button class="hm-card" data-id="' + esc(p.projectId) + '" onclick="FSProjects.open(this.dataset.id)">'
     + '<div class="hm-card-hd"><div class="hm-card-top">'
-    + '<span class="hm-kind hm-kind-budget">Project</span>'
+    + '<span class="hm-kind hm-kind-project">Project</span>'
     + '<span class="hm-id mono">' + esc(p.projectId) + '</span></div>'
     + '<div class="hm-card-name">' + esc(p.name || 'Untitled') + '</div>'
     + (p.address ? '<div class="pj-addr">' + esc(p.address) + '</div>' : '') + '</div>'
@@ -257,7 +257,7 @@ function paintDetail() {
   if (!detail.project) {
     host.innerHTML = '<div class="card"><div class="card-bd"><div class="hm-empty">'
       + '<b>No project with that ID.</b><br>Project IDs look like <span class="mono">OP-0001</span>. '
-      + 'Create one with + Create Project on the Projects tab.'
+      + 'Create one with + New Project on the Projects tab.'
       + '</div></div></div>';
     return;
   }
@@ -319,7 +319,7 @@ function favoritesCard(favB, favA) {
   return '<div class="card"><div class="card-hd"><h2>Favorites</h2>'
     + '<span class="eyebrow">What you starred on this project</span></div>'
     + '<div class="card-bd"><div class="hm-cards">'
-    + favB.map(function (b) { return miniCard('budget', b.projectId, b.name, usd(b.projectCost), 'Total Project', b.status); }).join('')
+    + favB.map(function (b) { return miniCard('budget', b.projectId, b.name, usd(b.projectCost), 'Total Project Cost', b.status); }).join('')
     + favA.map(function (a) { return miniCard('analysis', a.analysisId, a.name, usd(a.purchasePrice), 'Purchase Price', a.status); }).join('')
     + '</div></div></div>';
 }
@@ -335,7 +335,7 @@ function miniCard(kind, id, name, money, moneyLab, status) {
     + '<div class="hm-card-name">' + esc(name || 'Untitled') + '</div></div>'
     + '<div class="hm-card-sum"><div class="hm-card-money"><span class="k">' + esc(moneyLab) + '</span>'
     + '<span class="v mono">' + money + '</span></div>'
-    + '<div class="hm-card-ft"><span class="badge">' + esc(status || 'Draft') + '</span></div></div>'
+    + '<div class="hm-card-ft">' + staticChip(status) + '</div></div>'
     + '</button>' + star(kind, id, name) + '</div>';
 }
 
@@ -345,8 +345,10 @@ function budgetsCard(p, budgets) {
     + '<span class="eyebrow">The base budget and its alternates</span>'
     // A project can exist before any budget does now, so the first budget has
     // to be creatable from here — the alternate button copies one and cannot
-    // be the only way in.
-    + '<button class="btn btn-ghost btn-sm no-print" onclick="FSProjects.newBudget()">+ New Budget</button>'
+    // be the only way in. With none yet it is the page's next step, so it is
+    // the filled button.
+    + '<button class="btn ' + (budgets.length ? 'btn-ghost' : 'btn-primary') + ' btn-sm no-print"'
+    + ' onclick="FSProjects.newBudget()">+ New Budget</button>'
     + (budgets.length
       ? '<button class="btn btn-ghost btn-sm no-print" onclick="FSProjects.addAlternate()">+ Add Alternate Budget</button>'
       : '')
@@ -358,7 +360,7 @@ function budgetsCard(p, budgets) {
       // Investment Analyses table below.
       ? '<table class="tbl pj-tbl pj-tbl-budgets"><thead><tr><th style="width:34px"></th>'
         + '<th>Budget ID</th><th>Budget Name</th><th>Status</th>'
-        + '<th>Guard Rails</th><th class="r">Contract</th><th class="r">Total Project</th>'
+        + '<th>Guard Rails</th><th class="r">Contract Sum</th><th class="r">Total Project Cost</th>'
         + '<th class="no-print"></th></tr></thead><tbody>'
         + budgets.map(function (b) {
           return '<tr class="pj-row" data-id="' + esc(b.projectId) + '" onclick="FSProjects.openBudget(this.dataset.id)">'
@@ -367,7 +369,7 @@ function budgetsCard(p, budgets) {
               + (b.isPrimary ? ' <span class="badge ok">Primary</span>'
                  : b.isAlternate ? ' <span class="badge">Alternate</span>' : '') + '</td>'
             + '<td><div class="pj-name">' + esc(b.name || 'Untitled') + '</div></td>'
-            + '<td><span class="badge">' + esc(b.status || 'Draft') + '</span></td>'
+            + '<td>' + rowChip('budget', b.status, b.projectId) + '</td>'
             + '<td>' + guardrailCell(b) + '</td>'
             + '<td class="r mono">' + usd(b.contractSum) + '</td>'
             + '<td class="r mono">' + usd(b.projectCost) + '</td>'
@@ -383,7 +385,10 @@ function budgetsCard(p, budgets) {
             + ' aria-label="Actions for budget ' + esc(b.projectId) + '"'
             + ' onclick="event.stopPropagation();openRowMenu(this)">\u22EE</button></td></tr>';
         }).join('') + '</tbody></table>'
-      : '<div class="hm-empty">No budgets on this project yet.</div>')
+      : '<div class="hm-empty"><div class="hm-empty-big">No budgets on this project yet</div>'
+        + '<div>Start one from a template — it carries this project\u2019s name and address across.</div>'
+        + '<div style="margin-top:12px"><button class="btn btn-primary btn-sm no-print"'
+        + ' onclick="FSProjects.newBudget()">+ New Budget</button></div></div>')
     + '</div></div>';
 }
 
@@ -402,7 +407,7 @@ function analysesCard(analyses, budgets) {
     + '<span class="eyebrow">Underwriting built from this project’s budgets</span>'
     + '<button class="btn btn-ghost btn-sm no-print" onclick="FSProjects.addAnalysis()"'
     + ((budgets || []).length ? '' : ' disabled title="Create a budget on this project first"')
-    + '>+ Add Investment Analysis</button>'
+    + '>+ New Investment Analysis</button>'
     + '</div></div>'
     + '<div class="card-bd" style="overflow-x:auto">'
     + (analyses.length
@@ -418,7 +423,7 @@ function analysesCard(analyses, budgets) {
               + (inaId ? '<div class="pj-addr mono">' + esc(inaId) + '</div>' : '') + '</td>'
             + '<td class="mono" style="font-size:12px">' + esc(a.projectId || 'Standalone')
               + (a.sourceBudgetVersionNumber ? ' <span class="inv-vsub">v' + esc(a.sourceBudgetVersionNumber) + '</span>' : '') + '</td>'
-            + '<td><span class="badge">' + esc(a.status || 'Draft') + '</span></td>'
+            + '<td>' + rowChip('analysis', a.status, a.analysisId) + '</td>'
             + '<td class="r mono">' + usd(a.purchasePrice) + '</td>'
             + '<td class="r mono">' + usd(a.year1NOI) + '</td>'
             + '<td class="r no-print" onclick="event.stopPropagation()">'
@@ -477,7 +482,7 @@ function openBudgetPicker(budgets) {
     + esc(detail.project.projectId) + ' has ' + num(budgets.length) + ' budgets. '
     + 'Choose the one to underwrite — the analysis snapshots that budget\u2019s latest saved version.</p>'
     + '<div style="max-height:300px;overflow:auto;border:1px solid var(--ink-150);border-radius:8px">'
-    + '<table class="tbl"><thead><tr><th>Budget ID</th><th>Budget Name</th><th class="r">Total Project</th></tr></thead><tbody>'
+    + '<table class="tbl"><thead><tr><th>Budget ID</th><th>Budget Name</th><th class="r">Total Project Cost</th></tr></thead><tbody>'
     + budgets.map(function (b) {
       return '<tr class="clickable" tabindex="0" data-pick="' + esc(b.projectId) + '">'
         + '<td><span class="pj-id mono">' + esc(b.projectId) + '</span>'
@@ -503,6 +508,19 @@ function closeBudgetPicker() {
   if (A.closeDialog) A.closeDialog('invPickModal');
   var body = el('invPickBody');
   if (body) body.innerHTML = '';
+}
+
+/* Budget and analysis statuses wear the same coloured chip here as on every
+   list — editable in a table row, static inside a card (which is itself a
+   button, and a button cannot hold another). The plain grey badge this page
+   used to draw made "Completed" and "Draft" look the same. */
+function rowChip(kind, status, id) {
+  if (A.statusChip) return A.statusChip(kind, status, id);
+  return staticChip(status);
+}
+function staticChip(status) {
+  if (window.FSHome && FSHome.statusChipStatic) return FSHome.statusChipStatic(status);
+  return '<span class="badge">' + esc(status || 'Draft') + '</span>';
 }
 
 function errorCard(msg) {
@@ -781,6 +799,13 @@ window.FSProjects = {
   closeBudgetPicker: closeBudgetPicker,
   setView: setView,
   paint: paintDetail,
+  // Re-read the open project in place — for a change made from one of its
+  // rows (a status chip), where re-routing would also scroll the page.
+  refresh: async function () {
+    if (!openId) return;
+    await loadDetail(openId, true);
+    if (A.currentPage && A.currentPage() === 'project') paintDetail();
+  },
   currentId: function () { return openId; },
   openBudget: function (id) { if (A.openBudget) A.openBudget(id); },
   openAnalysis: function (id) { location.hash = '#/analysis/' + String(id).toLowerCase(); },

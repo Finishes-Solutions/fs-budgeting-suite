@@ -347,6 +347,10 @@ function canonical(v) {
   return '{' + Object.keys(v).filter(k => !VOLATILE.has(k) && v[k] !== undefined).sort()
     .map(k => JSON.stringify(k) + ':' + canonical(v[k])).join(',') + '}';
 }
+// The budget concurrency token, as api/budget/index.js computes it: the
+// canonical SHA-256 of the stored document. GET sends it as X-Budget-Hash; a
+// PUT carrying it as baseHash is refused with 409 once the stored doc moved.
+const budgetHash = d => crypto.createHash('sha256').update(canonical(d), 'utf8').digest('hex');
 let pricing = JSON.parse(fs.readFileSync(path.join(__dirname, 'pricing.json'), 'utf8'));
 
 // Fee schedules — behavior-parallel with api/pricing/index.js. Seeded with
@@ -654,6 +658,20 @@ http.createServer((req, res) => {
       });
     }
     const budgetList = [...budgets.values()].filter(b => !b.deleted && !b.meta.projectId.startsWith('TST-'));
+    // The money is one budget per project — its primary — plus every budget
+    // with no live project, exactly as the real query counts it. Summing every
+    // active budget double-counted each project priced with an alternate.
+    const liveProjects = [...projects.values()].filter(x => !x.deleted);
+    const counted = [];
+    [...budgets.values()].filter(b => !b.deleted
+      && !(b.projectKey && projects.get(b.projectKey) && !projects.get(b.projectKey).deleted))
+      .forEach(b => counted.push({ b, pr: null }));
+    liveProjects.forEach(pr => {
+      const bs = projectBudgets(pr.projectId);
+      const primary = bs.find(b => b.meta.projectId === pr.primaryBudgetId) || bs[0] || null;
+      if (primary) counted.push({ b: primary, pr });
+    });
+    const countedReal = counted.filter(c => !c.b.meta.projectId.startsWith('TST-'));
     const analysisList = [...invAnalyses.values()].filter(a => !a.deleted && !a.id.startsWith('TST-'));
     const bStatus = {};
     budgetList.forEach(b => { const s = b.meta.status || 'Draft'; bStatus[s] = (bStatus[s] || 0) + 1; });
@@ -666,7 +684,7 @@ http.createServer((req, res) => {
     // Projects. The converted totals read the SNAPSHOT columns, never a live
     // join — the same rule the real query follows, so reported backlog does not
     // move when a budget is edited after conversion.
-    const projectList = [...projects.values()].filter(x => !x.isDeleted && !x.projectId.startsWith('TST-'));
+    const projectList = [...projects.values()].filter(x => !x.deleted && !x.projectId.startsWith('TST-'));
     const pStatus = {};
     projectList.forEach(x => { const st = x.status || 'Lead'; pStatus[st] = (pStatus[st] || 0) + 1; });
     const convertedList = projectList.filter(x => x.status === CONVERTED);
@@ -692,8 +710,9 @@ http.createServer((req, res) => {
       budgets: {
         total: budgets.size, active: budgetList.length,
         deleted: [...budgets.values()].filter(b => b.deleted).length,
-        totalContractSum: budgetList.reduce((s, b) => s + (b.meta.contractSum || 0), 0),
-        totalProjectCost: budgetList.reduce((s, b) => s + (b.meta.projectCost || 0), 0),
+        totalContractSum: countedReal.reduce((s, c) => s + (c.b.meta.contractSum || 0), 0),
+        totalProjectCost: countedReal.reduce((s, c) => s + (c.b.meta.projectCost || 0), 0),
+        moneyBasis: 'primary', countedBudgets: countedReal.length,
         earliest: null, lastUpdated: null,
         statusBreakdown: Object.entries(bStatus).map(([status, count]) => ({ status, count }))
       },
@@ -736,7 +755,12 @@ http.createServer((req, res) => {
       topBudgets: budgetList
         .slice().sort((x, y) => (y.meta.projectCost || 0) - (x.meta.projectCost || 0)).slice(0, 8)
         .map(x => ({ projectId: x.meta.projectId, name: x.meta.name,
-          contractSum: x.meta.contractSum || 0, projectCost: x.meta.projectCost || 0 }))
+          contractSum: x.meta.contractSum || 0, projectCost: x.meta.projectCost || 0 })),
+      topProjects: countedReal.filter(c => c.pr)
+        .sort((x, y) => (y.b.meta.projectCost || 0) - (x.b.meta.projectCost || 0)).slice(0, 8)
+        .map(c => ({ projectId: c.pr.projectId, name: c.pr.name || '',
+          budgetId: c.b.meta.projectId, budgetName: c.b.meta.name || '',
+          contractSum: c.b.meta.contractSum || 0, projectCost: c.b.meta.projectCost || 0 }))
     });
   }
 
@@ -801,6 +825,8 @@ http.createServer((req, res) => {
           const target = mockUsers.get(targetId);
           if (!target) return json(res, 404, { error: 'not_found', message: 'User not found.' });
           target.appRole = body.appRole;
+          // Same audit row the real endpoint writes for a role change.
+          act('settings_update', 'user', targetId, { roleChangedTo: body.appRole });
           return json(res, 200, { ok: true, userId: targetId, appRole: body.appRole });
         });
       }
@@ -850,6 +876,8 @@ http.createServer((req, res) => {
           row.status = parsed.update.status;
           if (parsed.update.notes !== undefined) row.adminNotes = parsed.update.notes || null;
           row.updatedAt = new Date().toISOString();
+          // Logged like the real endpoint logs it.
+          act('feedback_update', 'feedback', String(row.feedbackId), { status: row.status }, uid);
           return json(res, 200, { ok: true, feedbackId: row.feedbackId, status: row.status });
         });
       }
@@ -1124,7 +1152,8 @@ http.createServer((req, res) => {
 
     if (req.method === 'GET') {
       if (!live) { res.writeHead(404); return res.end('Not found'); }
-      return json(res, 200, live.doc);
+      res.writeHead(200, { 'Content-Type': 'application/json', 'X-Budget-Hash': budgetHash(live.doc) });
+      return res.end(JSON.stringify(live.doc));
     }
     // Soft delete: the record and its history stay, the budget just goes invisible.
     if (req.method === 'DELETE') {
@@ -1149,7 +1178,7 @@ http.createServer((req, res) => {
         if (wasStatus !== body.status) act('budget_status', 'budget', id,
           { name: live.meta.name || null, projectKey: live.projectKey || null,
             from: wasStatus, to: body.status });
-        return json(res, 200, { ok: true, status: body.status });
+        return json(res, 200, { ok: true, status: body.status, docHash: budgetHash(live.doc) });
       }
       // A malformed body must answer 400, exactly as api/budget/index.js does.
       // Throwing here would kill the whole mock and cascade into every suite
@@ -1177,6 +1206,9 @@ http.createServer((req, res) => {
       { const refusal = SaveRules.idChangeRefusal(meta, id, body.create === true);
         if (refusal) return send(refusal); }
       const wantsCreate = body.create === true;
+      // Optional, as in the real API: no baseHash means last-write-wins.
+      const baseHash = typeof body.baseHash === 'string' && /^[0-9a-f]{64}$/.test(body.baseHash)
+        ? body.baseHash : null;
       const wantsKey = meta.projectKey ? String(meta.projectKey).toUpperCase() : null;
       if (wantsKey && !PROJECT_ID_RX.test(wantsKey)) {
         return json(res, 400, { error: 'bad_project_id', field: 'projectKey',
@@ -1219,6 +1251,14 @@ http.createServer((req, res) => {
           breaches: rails.breaches.filter(x => x.severity === 'error').map(x => ({
             id: x.id, label: x.label, actual: x.actual, display: x.display,
             min: x.min, max: x.max, range: x.range, message: x.message })) });
+      }
+      // The real API checks this inside the save transaction, after the rails,
+      // against the stored row — soft-deleted included, as there.
+      const stored = budgets.get(id);
+      if (baseHash && stored && !wantsCreate && budgetHash(stored.doc) !== baseHash) {
+        return json(res, 409, { error: 'budget_conflict',
+          message: 'Someone saved ' + id + ' since you opened it.',
+          currentHash: budgetHash(stored.doc), updatedAt: (stored.meta && stored.meta.updated) || null });
       }
       const calc = parts(doc);
       // The real API reads UpdatedAt off the row, so `updated` is always
@@ -1283,7 +1323,8 @@ http.createServer((req, res) => {
         pricingVersion: doc.pricingVersion || null,
         changed: changedFields.length ? changedFields : null
       });
-      json(res, 200, { ok: true, projectKey: linked, versionNumber: entry.versions.length, versionCreated });
+      json(res, 200, { ok: true, projectKey: linked, versionNumber: entry.versions.length, versionCreated,
+        docHash: budgetHash(doc) });
     });
   }
 
@@ -1428,8 +1469,13 @@ http.createServer((req, res) => {
 
     /* PUT ?scope=resync — refresh ONLY the imported fields from the budget's
        current version, leaving what the user typed alone. Behaviour-parallel
-       with api/investment-analysis/index.js, off the same projection module. */
+       with api/investment-analysis/index.js, off the same projection module:
+       a PROPOSAL that stores nothing — the save that follows records it. */
     if (req.method === 'PUT' && String(q.get('scope') || '') === 'resync') {
+      let rb = ''; req.on('data', c => rb += c);
+      return req.on('end', () => {
+      let rbody = {};
+      try { rbody = rb ? JSON.parse(rb) : {}; } catch (_) { rbody = {}; }
       if (!live) return json(res, 404, { error: 'not_found', message: 'Not found' });
       if (!live.projectId) return json(res, 400, { error: 'not_linked',
         message: 'This analysis is standalone — there is no budget to re-sync from.' });
@@ -1438,7 +1484,10 @@ http.createServer((req, res) => {
       const vn = bl ? bl.versions.length : 0;
       const v = bl ? bl.versions[vn - 1] : null;
       if (!v) return json(res, 404, { error: 'not_found', message: 'Budget version not found.' });
-      const input = live.input;
+      // The copy on screen when the browser sends one, else the stored input —
+      // copied either way, because nothing here may touch the stored row.
+      const input = JSON.parse(JSON.stringify(
+        rbody.input && typeof rbody.input === 'object' && !Array.isArray(rbody.input) ? rbody.input : live.input));
       const vac = input.vacancy && Number.isFinite(+input.vacancy.value) ? +input.vacancy.value : undefined;
       const proj = fromBudget.projectFromBudget(v.doc,
         { Id: vn, VersionNumber: vn, Name: v.meta.name }, { projectId: live.projectId, vacancy: vac });
@@ -1461,13 +1510,13 @@ http.createServer((req, res) => {
         // against the original import forever.
         originalValues: (input.source && input.source.originalValues) || {},
         importedAt: (input.source && input.source.importedAt) || new Date().toISOString() });
-      live.sourceBudgetVersionNumber = vn;
-      live.updatedAt = new Date().toISOString();
+      // Deliberately no write — the stored input and source stay as saved.
       return json(res, 200, { ok: true, input, expensesOverridden: overridden,
         source: { projectId: live.projectId, budgetVersionId: vn, budgetVersionNumber: vn,
                   budgetCurrentVersionNumber: vn, drift: false },
         message: 'Re-synced from budget ' + live.projectId + ' v' + vn
-          + '. Recalculate and save to fold the new numbers into a version.' });
+          + '. Nothing is stored until the analysis is saved.' });
+      });
     }
 
     // Server-rendered exports — the SAME shared renderer module the real
@@ -1617,11 +1666,31 @@ http.createServer((req, res) => {
       const input = body.input;
       if (!input || typeof input !== 'object')
         return json(res, 400, { error: 'bad_request', message: 'Body must be { input, expectedVersionNumber }.' });
+      // Same rules as the real save: an absent status keeps the stored one,
+      // a present one must be real; a re-sync must be a newer version of
+      // this analysis's own budget.
+      const STATUSES = ['Draft', 'In Review', 'Completed', 'Cancelled'];
+      if (body.status !== undefined && body.status !== null && !STATUSES.includes(body.status))
+        return json(res, 400, { error: 'bad_request', message: 'status must be one of: ' + STATUSES.join(', ') });
+      const resyncTo = body.resyncBudgetVersionId === undefined || body.resyncBudgetVersionId === null
+        ? null : String(body.resyncBudgetVersionId);
+      if (resyncTo !== null && !/^\d{1,18}$/.test(resyncTo))
+        return json(res, 400, { error: 'bad_request', message: 'resyncBudgetVersionId must be a budget version id.' });
       if (body.expectedVersionNumber !== undefined && body.expectedVersionNumber !== null
           && body.expectedVersionNumber !== a.currentVersionNumber)
         return json(res, 409, { error: 'version_conflict',
           message: 'Someone saved a newer version of this analysis after you loaded it.',
           currentVersionNumber: a.currentVersionNumber });
+      let sourceVn = a.sourceBudgetVersionNumber;
+      if (resyncTo !== null && +resyncTo !== a.sourceBudgetVersionNumber) {
+        // In the mock a budget version's id IS its number.
+        const br = a.projectId ? budgets.get(a.projectId) : null;
+        const n = +resyncTo;
+        if (!br || n < 1 || n > br.versions.length || (a.sourceBudgetVersionNumber && n <= a.sourceBudgetVersionNumber))
+          return json(res, 400, { error: 'bad_resync',
+            message: 'That budget version cannot be re-synced into this analysis. Re-sync again, then save.' });
+        sourceVn = n;
+      }
       let result;
       try { result = calculateInvestmentAnalysis(input); }
       catch (e) {
@@ -1630,8 +1699,8 @@ http.createServer((req, res) => {
         return json(res, 500, { error: 'calculation_failed', message: 'The calculation could not be completed.' });
       }
       if (input.source && typeof input.source === 'object')
-        input.source.budgetVersionId = a.sourceBudgetVersionNumber;   // provenance is server-owned
-      const hash = invHash(input, a.sourceBudgetVersionNumber);
+        input.source.budgetVersionId = sourceVn;   // provenance is server-owned
+      const hash = invHash(input, sourceVn);
       const unchanged = a.currentVersionNumber >= 1 && a.contentHash === hash;
       if (!unchanged) {
         a.currentVersionNumber += 1;
@@ -1644,7 +1713,8 @@ http.createServer((req, res) => {
           createdAt: new Date().toISOString() });
       }
       a.name = result.normalizedInput.analysisName;
-      a.status = typeof body.status === 'string' ? body.status.slice(0, 30) : 'Draft';
+      if (typeof body.status === 'string') a.status = body.status;
+      a.sourceBudgetVersionNumber = sourceVn;
       a.input = input; a.result = result; a.contentHash = hash;
       a.deleted = false; a.deletedAt = null;
       a.updatedAt = new Date().toISOString();

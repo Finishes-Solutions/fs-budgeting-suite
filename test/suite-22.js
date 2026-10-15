@@ -18,14 +18,14 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   await p.goto('http://127.0.0.1:8100/index.html', { waitUntil: 'networkidle' });
   await p.waitForTimeout(600);
 
-  // ================= comment 5 — Create Project =================
+  // ================= comment 5 — New Project =================
   await p.evaluate(() => go('projects'));
   await p.waitForTimeout(500);
-  ok('the Projects page offers Create Project, not New Budget',
-     await p.locator('#page-projects button:has-text("+ Create Project")').isVisible()
+  ok('the Projects page offers New Project, not New Budget',
+     await p.locator('#page-projects button:has-text("+ New Project")').isVisible()
      && (await p.locator('#page-projects button:has-text("+ New Budget")').count()) === 0);
 
-  await p.click('#page-projects button:has-text("+ Create Project")');
+  await p.click('#page-projects button:has-text("+ New Project")');
   await p.waitForTimeout(400);
 
   // ---- comment 3/5 — a real, centered dialog over a dimmed page
@@ -87,7 +87,7 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   // ---- uniqueness, decided by the API
   await p.evaluate(() => go('projects'));
   await p.waitForTimeout(500);
-  await p.click('#page-projects button:has-text("+ Create Project")');
+  await p.click('#page-projects button:has-text("+ New Project")');
   await p.waitForTimeout(300);
   await p.fill('#npId', 'OP-0900');
   await p.fill('#npName', 'Duplicate');
@@ -107,7 +107,7 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   ok('and focus returns to the control that opened it',
      await p.evaluate(() => {
        const a = document.activeElement;
-       return !!a && /Create Project/.test(a.textContent || '');
+       return !!a && /New Project/.test(a.textContent || '');
      }),
      await p.evaluate(() => (document.activeElement && document.activeElement.textContent || '').trim().slice(0, 40)));
 
@@ -203,7 +203,8 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   await p.waitForTimeout(400);
   await p.evaluate(() => FSProjects.open('OP-0900'));
   await p.waitForTimeout(700);
-  await p.click(`#page-project .pj-tbl-budgets tr:has-text("${newBudgetId}")`);
+  // The Budget ID cell: the status cell's chip opens the status menu by design.
+  await p.click(`#page-project .pj-tbl-budgets tr:has-text("${newBudgetId}") td:nth-child(2)`);
   await p.waitForTimeout(700);
   ok('a budget opened from a project remembers where it came from',
      await p.evaluate(() => budgetOrigin && budgetOrigin.page === 'project' && budgetOrigin.id === 'OP-0900'),
@@ -307,9 +308,9 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   await p.evaluate(() => FSProjects.open('OP-0900'));
   await p.waitForSelector('#projectBody .pj-stats', { timeout: 15000 });
   await p.waitForTimeout(400);
-  await p.click('#page-project button:has-text("+ Add Investment Analysis")');
+  await p.click('#page-project button:has-text("+ New Investment Analysis")');
   await p.waitForTimeout(600);
-  ok('the Add Investment Analysis picker is a centered dialog',
+  ok('the New Investment Analysis picker is a centered dialog',
      await p.evaluate(() => {
        const m = document.getElementById('invPickModal');
        const s = getComputedStyle(m);
@@ -399,7 +400,7 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   await p.evaluate(() => FSProjects.open('OP-0900'));
   await p.waitForSelector('#projectBody .pj-stats', { timeout: 15000 });
   await p.waitForTimeout(400);
-  await p.click('#page-project button:has-text("+ Add Investment Analysis")');
+  await p.click('#page-project button:has-text("+ New Investment Analysis")');
   await p.waitForTimeout(600);
   if (await p.locator('#invPickModal').isVisible()) {
     await p.click('#invPickBody [data-pick]');
@@ -484,6 +485,10 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   const pinnedBefore = await p.evaluate(() => FSInvestmentUI._state().source.budgetVersionNumber);
   await p.click('.inv-drift');
   await p.waitForTimeout(1500);
+  // The re-sync asks first and shows what moves; applying it re-pins the
+  // analysis on screen (the Save that follows is what records it).
+  await p.click('#invModal button:has-text("Apply Re-Sync")');
+  await p.waitForTimeout(500);
   const pinnedAfter = await p.evaluate(() => FSInvestmentUI._state().source);
   ok('clicking it re-pins the analysis to the newer version',
      pinnedAfter.budgetVersionNumber > pinnedBefore && !pinnedAfter.drift,
@@ -538,9 +543,9 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
     await p.setViewportSize({ width: w, height: 900 });
     await p.evaluate(() => go('projects'));
     await p.waitForTimeout(400);
-    await p.click('#page-projects button:has-text("+ Create Project")');
+    await p.click('#page-projects button:has-text("+ New Project")');
     await p.waitForTimeout(350);
-    ok('the Create Project dialog fits at ' + w + 'px',
+    ok('the New Project dialog fits at ' + w + 'px',
        await p.evaluate(() => {
          const r = document.querySelector('#newProjectModal .mod-sheet').getBoundingClientRect();
          return r.left >= -1 && r.right <= innerWidth + 1 && r.width > 260;
