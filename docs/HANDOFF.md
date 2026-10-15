@@ -212,6 +212,15 @@ body>header { … }            /* app chrome only — a bare `header` also hits 
 The printed report builds its own `<header>` inside `#printDoc`. Unscoped selectors
 either hide it or paint it dark, making the black logo invisible on white.
 
+Two more from the 2026-10 pass:
+
+- **Sticky cells stick at the scroll pane's padding edge.** `.budget-scroll` once had
+  `padding-top:8px`, so eight pixels of rows showed above the "pinned" header. A pane
+  with sticky `thead`/`tfoot` cells must have no padding on those sides.
+- **An absolutely positioned element inside a panning container escapes it.** On a
+  phone it widens the page; inside the tab bar it is clipped (which is why the More
+  menu is `position:fixed` at ≤760px).
+
 ### Dots and alignment
 
 The green auto-calculated dot and the blue manually-edited dot both render as a
@@ -247,7 +256,10 @@ Each budget line has `code` (CSI), `grp`, `scope` (`res` | `amen` | `soft`), `de
    `amenSF` is 0 there is no amenity building, so `scopeActive('amen')` is false and
    `scopeSum` returns **0** for it. Hiding the rows while still summing them was the
    original bug: lump-sum and manual-quantity amenity lines do not follow `amenSF` to
-   zero, so a $250k lump sum stayed in the contract sum invisibly.
+   zero, so a $250k lump sum stayed in the contract sum invisibly. The same rule now
+   holds in `api/shared/sov.js` (an inactive scope's `SovLines` rows write 0), and the
+   grid shows a muted "N lines excluded because Amenity SF is 0" row in the scope's
+   place so the section never silently vanishes.
 
 3. **Insert new lines next to their group; never append.** `renderBudget` starts a new
    heading whenever `grp` changes, so an appended line produces a *duplicate* group

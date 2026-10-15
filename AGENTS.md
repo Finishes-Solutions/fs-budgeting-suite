@@ -179,9 +179,30 @@ custom provider for sign-in.
   guard with `nz()`.
 - **`touch()` / `markDirty()` / `recalc()`** are the change pipeline — call
   `touch()` after mutating the document; don't invent parallel dirty tracking.
+- **The save loop has four guards; keep all of them.** `editSeq` (bumped by
+  `markDirty`/`touch`/`restoreSnap`) means a save only clears `dirty` if nothing
+  changed while it was in flight. `loadedId` locks the Budget ID after the
+  first save — a changed id used to overwrite another budget. GET returns the
+  stored doc's canonical hash in `X-Budget-Hash`; PUT sends it back as
+  `baseHash` and a mismatch is 409 `budget_conflict` (a PUT without it is still
+  last-write-wins, so an old client keeps working). `checkSaveable()` is the
+  pure "can this save?" — UI effects (navigating to the rails, toasts) belong
+  to a MANUAL save only.
+- **Auto-save is a LOCAL draft journal, never a server save.** Every
+  content-changing PUT writes an immutable `BudgetVersions` row, so saving on a
+  timer would bury the history. `markDirty`/`touch` journal the dirty doc to
+  `localStorage` (`fsDraft:<user>:id:<ID>`; analyses use `fsInvDraft:`), and
+  opening a record with a differing draft offers Restore / Discard. Never
+  journal templates; `leaveSession()` clears it all (shared machines). A
+  confirmed "Leave without saving?" really discards — reverts a saved budget,
+  drops a new one, and clears its draft.
 - **`data-gr` is the guard-rail equivalent of `data-k`.** A rail marks its
   driving input by `data-gr="<railId path>"`, which survives re-render; never
-  mark a field by DOM position.
+  mark a field by DOM position. Every rail path has a marker, and the rail's
+  name in the Guard Rails card jumps to it — a new rail needs one too.
+- **A `lineId` must be the shape `newLineId()` makes** (`LINE_ID_RX`). The grid
+  interpolates it into inline handlers, where `esc()` cannot help; `migrate()`
+  re-mints anything else on load, and that is the XSS boundary for line ids.
 - **Fees are `{mode:'amt'|'pct', val}`, like `doc.contingency`.** A percentage is
   a share of the FINAL total project cost, which is circular, so `parts()` solves
   it in closed form: `project = (contract + soft + land + fixedFees) / (1 − f)`.
@@ -198,6 +219,8 @@ custom provider for sign-in.
   that calculates, validates, saves or exports ever sees a formatted string.
   Never widen the set by making a field `type="text"` without adding it to
   `FORMATTED` and routing its `onFieldChange` case through `parseNum()`.
+  The budget grid's Qty field is the same idea on the budget side: it shows
+  `51,365` and `setLineQty` reads it back through `parseQty()`.
 - **Square feet and acres share one canonical area.** Changing Size Unit
   CONVERTS the value, through `st.sizeSF` (square feet) rather than through the
   displayed figure — which is what makes SF → acres → SF land back on the
@@ -251,7 +274,10 @@ custom provider for sign-in.
   tables keep their column widths and pan inside their card (`.card-bd`
   gains `overflow-x:auto` plus per-table `min-width`s), dense grids collapse
   to one column, and the tab bar scrolls horizontally. Never reintroduce a
-  width-based feature gate; suite-06 pins the fully-capable behavior.
+  width-based feature gate; suite-06 pins the fully-capable behavior. The tab
+  bar's `overflow-x` clips anything absolutely positioned inside it, which is
+  why the More dropdown (`.nav-drop`) is `position:fixed` at ≤760px, placed by
+  `placeNavDrop()`.
 
 ## Projects
 
@@ -294,7 +320,10 @@ custom provider for sign-in.
   in the same write — a project cannot pass through a state with none or two.
   `liveContractSum` / `liveProjectCost` are a `TOP 1` on that budget, never a
   `SUM` across alternates: an alternate is a different way of pricing the same
-  work, and adding it in double-counts the project.
+  work, and adding it in double-counts the project. The Analytics money totals
+  and Top 5 Projects follow the same rule (primary budgets, plus budgets not
+  linked to a project), and fall back to the old all-budgets sum only while
+  the projects columns are absent.
 - **Deleting a project is a soft delete that cascades**, in one transaction, to
   its budgets and its analyses — a project flagged deleted while its budgets
   were still live would keep being counted. Nothing is destroyed; only
@@ -450,6 +479,23 @@ custom provider for sign-in.
   because that is what the engine's `percentOfGOI` mode multiplies.
   Deriving the ratio does **not** move `CALCULATION_VERSION`: the arithmetic is
   unchanged, only where the input came from is new.
+  **A re-sync is a proposal, never a write.** `?scope=resync` returns the
+  re-derived input; the client shows the field diff and applies it as unsaved
+  changes, and the ordinary save persists it with `resyncBudgetVersionId`,
+  which the server checks belongs to the analysis's budget and is newer than
+  the pinned version.
+- **The rate refresh key is `scope|code|desc`, and it carries no basis.**
+  `repriceBudget()` and `stampCurrentPricing()` skip a match whose basis
+  differs (`basisDiffers()`): a per-unit rate on a per-SF line multiplies by
+  every square foot. Re-basing a library line therefore also renames it
+  (`… (per Unit)`) so the new key never meets the old line.
+- **`sql/publish_multifamily_input_defaults.sql` and
+  `tools/input-driven-defaults.js` are one transformation in two languages**
+  (the JS mirror is what `test/input-defaults.test.js` can run, checked against
+  SQL Server's captured output). They change together. Published template and
+  pricing data may only use scopes and bases the DEPLOYED code understands —
+  one database serves production, so a publish is live under the old code the
+  moment it runs.
 - **The investment engine is server-only and version-stamped**
   (`api/shared/investment/`, `before-tax-1.1.0`). The browser posts
   assumptions and renders returned results; saves recalculate server-side and

@@ -877,7 +877,16 @@ html[data-theme=dark] .toast{border:1px solid var(--ink-300)}
 .savepill.error{background:rgba(224,49,49,.22);color:#ffb4ab}
 .savepill.act{cursor:pointer}
 .savepill .sp-t{min-width:0;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:760px){.savepill{max-width:calc(100vw - 180px)}}
+/* On a phone the header cannot spare the width: an ellipsized pill left the tab
+   bar a sliver. The pill becomes its coloured dot (the text stays for screen
+   readers and the title), except a failed save, which keeps its words because
+   it is the one state that needs a tap. */
+@media(max-width:760px){
+  .savepill{padding:9px;gap:0}
+  .savepill .sp-t{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .savepill.error{padding:5px 10px;gap:6px;max-width:42vw}
+  .savepill.error .sp-t{position:static;width:auto;height:auto;clip:auto}
+}
 .savepill.act:hover,.savepill.act:focus-visible{filter:brightness(1.2);outline:none;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
 
 /* ---- banners ---- */

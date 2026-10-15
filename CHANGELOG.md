@@ -22,6 +22,150 @@ House rules for writing one:
 
 ---
 
+## Unreleased — Site-wide flow, saving and input-driven defaults
+
+A pass over the whole app: how a budget gets started, how work is kept safe
+while it is edited, how the editor reads, and how new budgets follow their
+inputs.
+
+### Migration required
+
+- `sql/publish_multifamily_input_defaults.sql` — **optional, NOT YET RUN,
+  safe to run any time** (it uses only scopes and bases the code running today
+  already understands). Publishes pricing library `2026.10-v1` and the next
+  Multifamily template so new budgets follow their inputs:
+  - the swimming pool becomes an Amenity lump sum, so it drops out when
+    Amenity SF is 0;
+  - appliances, cabinets, countertops, interior doors and hardware, mirrors,
+    bath accessories, blinds and mailboxes are priced per unit (shown as
+    "… (per Unit)"), so the budget moves with the unit count;
+  - the developer fee becomes a percentage of total project cost.
+
+  The default budget's totals are unchanged (to within a few dollars of
+  rounding). Existing budgets are not touched, and Update Pricing leaves their
+  per-SF versions of these lines alone. **The per-unit rates are back-solved
+  starting points** — whoever owns pricing should review them before running.
+
+### Breaking
+
+- **"Leave without saving?" now means it.** Answering OK discards the
+  changes — a saved budget goes back to its last save, a never-saved one is
+  dropped. Before, the edits quietly stayed in memory and the question came
+  back on the next page.
+- **A budget's ID can't be changed after its first save.** Changing it used to
+  overwrite whatever budget already had that ID. Use **+ Add Alternate
+  Budget** to copy a budget under a new ID.
+- **Analytics money counts each project's primary budget only** (plus budgets
+  not linked to a project). Total Contract Sum, Total Project Cost and Top 5
+  Projects no longer add alternates in, so these totals may drop.
+
+### Added
+
+- **Unsaved work is kept on this device.** While you edit a budget or an
+  investment analysis, your changes are kept in this browser. If the tab
+  closes, the connection drops or your session ends, open it again on the same
+  device and choose **Restore** (or **Discard**). Nothing reaches the server
+  until you Save, every Save still records a version, and signing out clears
+  the kept copy. (This is deliberately not server auto-save: each server save
+  writes a permanent version, so saving on a timer would bury the history.)
+- **Two people editing one budget no longer overwrite each other silently.**
+  If someone saved after you opened it, Save asks: **Keep Editing**,
+  **Reload Latest** or **Overwrite Anyway**.
+- **New Budget no longer dead-ends without a project.** Step 2 has
+  **+ New Project…**; create it there and you come straight back with it
+  chosen, its name and address filled in and its Budget ID suggested. With no
+  projects yet, Home leads with **+ New Project**, and the welcome's
+  **Get Started** opens it.
+- The Budget Detail grid shows a running **Contract Sum** and **Total Project
+  Cost** pinned to its bottom edge.
+- **Enter** and the **arrow keys** in Qty or Rate move up and down the
+  column. In the CSI catalog, **Enter** adds the first match, and a new line
+  scrolls into view with its rate ready to type.
+- An edited rate or overridden quantity is marked on the field itself, shows
+  the library value on hover, and has a **↺** button to put it back.
+- Each **Guard Rails** name is a link to the field that drives it.
+- With Amenity SF at 0, the budget grid shows "Amenity / Clubhouse — N lines
+  excluded because Amenity SF is 0" instead of the section silently vanishing,
+  and the Inputs page says the same under the Amenity SF field.
+- Re-syncing an analysis from its budget lists exactly which values will
+  change and flags the ones you had changed yourself.
+- The New Investment Analysis picker groups budgets under their project,
+  marks each project's primary budget, and has search and keyboard navigation.
+- An analysis save conflict offers **Save As Copy**, which keeps your
+  on-screen inputs as a new analysis.
+
+### Changed
+
+- **The save indicator tells the truth.** It shows *Saving…*, *Saved · 2 min
+  ago*, *Unsaved Changes · Kept on This Device*, *Unsaved · N Guard Rails
+  Blocking* (click to see them), or *Couldn't Save — Retry* (click to retry),
+  which stays until a save succeeds. The save message says whether a new
+  version was recorded. Raw server errors are no longer shown.
+- The Inputs page **Save Draft** button is now **Save** (it never set the
+  Draft status).
+- Re-syncing an analysis applies the new values as unsaved changes; nothing is
+  stored until you Save, and leaving without saving discards the re-sync.
+  Export on an analysis is available only once it is saved and up to date, so
+  every export matches the version it names.
+- Calculate no longer jumps away from the step you are on; use **View
+  Results**.
+- **Home:** Needs Attention sits above Recent. "No Analysis" only flags a
+  project's primary budget, and only until the project has an analysis. "N
+  more" opens the matching list. Your Activity leaves out sign-ins and shows
+  five rows. An analysis that was never calculated shows "—", not "$0".
+- **Budgets list:** the id column is **Budget ID**, and **Group by Project**
+  groups budgets under their linked project ("OP-0003 — Name", unlinked ones
+  under "No Project"). It replaces Group by Project ID, which grouped by id
+  prefix.
+- **Project page:** an empty project leads with **+ New Budget**; statuses use
+  the same coloured, clickable chip as everywhere else; money columns read
+  Contract Sum and Total Project Cost.
+- The Budget ID waits for the project: blank until you pick one, then that
+  project's next `BDG-` id.
+- Consistent wording: **+ New Project**, **+ New Budget**, **+ New Investment
+  Analysis**; the Budgets page is titled **Budgets**; the coming-soon templates
+  are one line; the Inputs page says "Step 1 of 3".
+- Negative amounts read **−$31,866**, and Net Other Income turns red when
+  expenses exceed other income. Rates show two decimals and quantities show
+  thousands separators.
+- On a phone, the Line Item column stays pinned while you pan to Qty and Rate.
+  The bug-report button shrinks to an icon on the editing pages so it no
+  longer covers the grid.
+- Contrast, focus outlines, dark-mode banners and buttons, dialog semantics
+  and screen-reader labels are improved throughout.
+- The Dashboard PDF includes the converted-project figures and the project
+  pipeline.
+
+### Fixed
+
+- Edits made while a save was in flight were marked saved and lost — for
+  budgets and analyses alike.
+- More works on phones: Pricing Library, How to Use, Analytics, Admin and
+  Version were unreachable because the menu was clipped. The tab bar now keeps
+  the current tab in view.
+- Back after creating a budget went to whichever project you had last visited.
+- Cancelling a link to another budget left the address bar pointing at it, so
+  a reload opened the wrong budget.
+- Closing the tab, or switching to another analysis, with unsaved analysis
+  edits now warns.
+- Saving an analysis no longer resets its status to Draft.
+- Saved SOV rows (what reporting and the lender package read) no longer carry
+  amenity money when Amenity SF is 0, so they agree with the contract sum.
+- Update Pricing no longer copies a rate onto a line whose library basis has
+  changed (a per-unit rate on a per-SF line); it keeps the line and says so.
+- A line id crafted into a saved budget can no longer run as script in the
+  editor.
+- The column headers on the Budget and CSI grids stay put cleanly while you
+  scroll.
+- Feedback no longer offers "send as email" for a validation problem; the
+  activity log describes feedback and role-change events in words.
+- The activity log and its CSV export report failures instead of silently
+  showing old rows or downloading a partial file.
+- Analysis dialogs close with Escape and return focus; the analysis delete
+  confirmation no longer promises an administrator restore.
+
+---
+
 ## 2026-08-24 — The identifier model
 
 A project is a number; prefixes are labels; children carry the number
