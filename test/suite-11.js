@@ -141,7 +141,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('budget expenses shown with their total',
     /partial/i.test(expTxt)&&/7,800/.test(expTxt), expTxt.slice(0,120));
  ok('and the derived ratio shows the arithmetic it came from',
-    /449,820/.test(await p.locator('#invExpDerived').textContent()),
+    // GOI = rent × (1 − vacancy) + other income, as the engine computes it:
+    // 480,000 × 0.9 + 19,800 = 451,800 (vacancy on rent only — BUDGET-SYSTEM.md §15).
+    /451,800/.test(await p.locator('#invExpDerived').textContent())
+      && /rent less 10\.0% vacancy, plus \$19,800 other income/.test(await p.locator('#invExpDerived').textContent()),
     await p.locator('#invExpDerived').textContent());
  ok('with the source budget flagged as outside the guard rail',
     /guard rail/i.test(await p.locator('#invExpDerived').textContent()));

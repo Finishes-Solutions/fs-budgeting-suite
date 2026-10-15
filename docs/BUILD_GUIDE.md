@@ -200,7 +200,7 @@ az staticwebapp create \
 | `SQL_CONN` | connection string from §3c |
 | `AAD_CLIENT_ID` | client ID from §2 |
 | `AAD_CLIENT_SECRET` | secret value from §2 |
-| `ANTHROPIC_API_KEY` | *Optional.* An Anthropic API key — turns on the Budget Assistant (Ask AI). Without it the dialog says the assistant is not configured. Optional companions: `ANTHROPIC_MODEL` (default `claude-opus-5-5`), `ANTHROPIC_EFFORT` (default `medium`), `ANTHROPIC_FALLBACKS=off` |
+| `ANTHROPIC_API_KEY` | *Optional.* An Anthropic API key — turns on the Budget Assistant (Ask AI). Without it the dialog says the assistant is not configured. Optional companions: `ANTHROPIC_MODEL` (default `claude-haiku-5-5`), `ANTHROPIC_EFFORT` (default `medium`), `ANTHROPIC_FALLBACKS=off` |
 
 ```bash
 az staticwebapp appsettings set \

@@ -140,7 +140,7 @@ test('refuses the empty, the oversized, the unknown and the mismatched', async (
   assert.strictEqual(c.calls.length, 0);
 });
 
-test('one question, one call: context preloaded, prompt cached, fallbacks on', async () => {
+test('one question, one call: context preloaded, prompt cached, Haiku at medium by default', async () => {
   const c = fakeClient([text('The contract sum is $X.')]);
   const r = await run({ client: c, body: { question: 'What is the contract sum?' } });
   assert.strictEqual(r.status, 200);
@@ -151,11 +151,12 @@ test('one question, one call: context preloaded, prompt cached, fallbacks on', a
   assert.strictEqual(r.activity.inputTokens, 100);
   assert.strictEqual(b.activity, undefined, 'the activity record is not sent to the browser');
   const req = c.calls[0].req;
-  assert.strictEqual(req.model, 'claude-opus-5-5');
+  assert.strictEqual(req.model, 'claude-haiku-5-5');
   assert.deepStrictEqual(req.output_config, { effort: 'medium' });
   assert.deepStrictEqual(req.system[0].cache_control, { type: 'ephemeral' });
-  assert.strictEqual(req.fallbacks, 'default');
-  assert.deepStrictEqual(req.betas, ['server-side-fallback-2026-07-01']);
+  // Haiku 5.5 has no server-side refusal fallback; sending one is a 400.
+  assert.strictEqual(req.fallbacks, undefined);
+  assert.strictEqual(req.betas, undefined);
   assert.deepStrictEqual(req.tool_choice, { type: 'auto' });
   assert.strictEqual(req.messages.length, 1);
   const ctx = req.messages[0].content;
@@ -163,6 +164,20 @@ test('one question, one call: context preloaded, prompt cached, fallbacks on', a
   assert.ok(ctx.includes('"contractSum":' + A.budgetFacts(doc()).totals.contractSum));
   assert.match(ctx, /What is the contract sum\?$/);
   assert.ok(c.calls[0].opts.timeout > 0 && c.calls[0].opts.timeout < 45000, 'bounded by the request window');
+});
+
+test('a model that supports fallbacks gets them; a dotted model id is accepted', async () => {
+  const c = fakeClient([text('ok'), text('ok')]);
+  await run({ client: c, env: { ANTHROPIC_MODEL: 'claude-opus-5.5', ANTHROPIC_EFFORT: 'High' }, body: { question: 'q' } });
+  let req = c.calls[0].req;
+  assert.strictEqual(req.model, 'claude-opus-5-5');
+  assert.deepStrictEqual(req.output_config, { effort: 'high' });
+  assert.strictEqual(req.fallbacks, 'default');
+  assert.deepStrictEqual(req.betas, ['server-side-fallback-2026-07-01']);
+  await run({ client: c, env: { ANTHROPIC_MODEL: 'claude-haiku-5.5', ANTHROPIC_FALLBACKS: 'on' }, body: { question: 'q' } });
+  req = c.calls[1].req;
+  assert.strictEqual(req.model, 'claude-haiku-5-5');
+  assert.strictEqual(req.fallbacks, undefined, 'never sent to Haiku, even when asked');
 });
 
 test('ANTHROPIC_FALLBACKS=off and a configured model/effort are honoured', async () => {

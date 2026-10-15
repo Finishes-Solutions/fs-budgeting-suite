@@ -61,19 +61,37 @@ const DEADLINE_MS = 38000;
 // Below this much remaining time, no more tool rounds: answer now.
 const FINAL_ANSWER_MS = 14000;
 
-const DEFAULT_MODEL = 'claude-opus-5-5';
+// Haiku by default: fast and inexpensive, which suits a dialog that must answer
+// inside the request window. Every figure it explains is computed by the app,
+// so the model's job is explanation and judgement, not arithmetic. Set
+// ANTHROPIC_MODEL (e.g. claude-opus-5-5) for deeper analysis.
+const DEFAULT_MODEL = 'claude-haiku-5-5';
 const EFFORTS = new Set(['low', 'medium', 'high', 'xhigh', 'max']);
+// Models that accept the server-side refusal fallback (`fallbacks: 'default'`,
+// beta server-side-fallback-2026-07-01). Haiku 5.5 does NOT: a declined Haiku
+// request stays declined, and naming fallback models there is a 400 — so the
+// parameter is only ever sent to a model on this list.
+const FALLBACK_MODELS = new Set(['claude-opus-5-5', 'claude-opus-5', 'claude-fable-5-1', 'claude-sonnet-5-5']);
+
+// The API spells versions with hyphens (claude-haiku-5-5); people type dots
+// (claude-haiku-5.5). Accept both rather than fail every question on a typo.
+function modelId(v) {
+  const m = String(v || '').trim().toLowerCase();
+  return /^claude-/.test(m) ? m.replace(/(\d)\.(\d)/g, '$1-$2') : (m || DEFAULT_MODEL);
+}
 
 function config(env) {
   env = env || process.env;
-  const effort = String(env.ANTHROPIC_EFFORT || 'medium').toLowerCase();
+  const effort = String(env.ANTHROPIC_EFFORT || 'medium').trim().toLowerCase();
+  const model = env.ANTHROPIC_MODEL ? modelId(env.ANTHROPIC_MODEL) : DEFAULT_MODEL;
   return {
     apiKey: env.ANTHROPIC_API_KEY || '',
-    model: env.ANTHROPIC_MODEL || DEFAULT_MODEL,
+    model,
     effort: EFFORTS.has(effort) ? effort : 'medium',
-    // Server-side refusal fallback (beta). On by default; ANTHROPIC_FALLBACKS=off
-    // removes it if the account or a proxy rejects the beta.
-    fallbacks: String(env.ANTHROPIC_FALLBACKS || 'on').toLowerCase() !== 'off',
+    // Server-side refusal fallback (beta): on for models that support it;
+    // ANTHROPIC_FALLBACKS=off removes it if the account or a proxy rejects it.
+    fallbacks: FALLBACK_MODELS.has(model)
+      && String(env.ANTHROPIC_FALLBACKS || 'on').toLowerCase() !== 'off',
     maxTokens: 8000
   };
 }

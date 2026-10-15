@@ -535,8 +535,13 @@ custom provider for sign-in.
 - **Configuration** (SWA application settings, per environment):
   `ANTHROPIC_API_KEY` (required — without it the endpoint answers 503
   `ai_not_configured` and the dialog says so), `ANTHROPIC_MODEL` (default
-  `claude-opus-5-5`), `ANTHROPIC_EFFORT` (default `medium`),
+  `claude-haiku-5-5`), `ANTHROPIC_EFFORT` (default `medium`),
   `ANTHROPIC_FALLBACKS=off` (drops the server-side refusal fallback beta).
+  Haiku is the default because it answers fast and cheaply inside the request
+  window, and the app computes every figure it explains; set `claude-opus-5-5`
+  for deeper analysis. The refusal fallback is sent only to models that
+  support it (`FALLBACK_MODELS`) — Haiku 5.5 does not, and sending it there is
+  a 400. A dotted id (`claude-haiku-5.5`) is accepted and normalised.
 - **Errors never trip the global API banner.** The dialog uses its own `fetch`,
   not `api()`, because `api()` treats any 5xx as "the server is down"; an AI
   outage is not that.

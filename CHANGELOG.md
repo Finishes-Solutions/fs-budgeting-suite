@@ -41,6 +41,12 @@ the app; we have no evidence it was ever used. It is fixed in three layers:
 
 ### The Budget Assistant reads your pro formas, reviews budgets and finds revenue
 
+**The assistant now runs on Claude Haiku 5.5 by default**, at medium effort:
+fast, inexpensive, and well inside the time a request is allowed. To use a
+more capable model for deeper analysis, set the `ANTHROPIC_MODEL` application
+setting (for example `claude-opus-5-5`); `ANTHROPIC_EFFORT` sets the effort
+(`low`, `medium`, `high`, `xhigh`, `max`).
+
 **Ask AI** now works on both sides of the app, and each side can see the other:
 
 - **On a budget**, the assistant also sees the investment analyses (pro formas)
@@ -187,7 +193,7 @@ Things you should know:
 `ANTHROPIC_API_KEY` to the Static Web App, in **every environment that should
 have the assistant** (production, staging, feature). Until you do, Ask AI
 explains that the assistant is not configured. Optional settings:
-`ANTHROPIC_MODEL` (default `claude-opus-5-5`), `ANTHROPIC_EFFORT` (default
+`ANTHROPIC_MODEL` (default `claude-haiku-5-5`), `ANTHROPIC_EFFORT` (default
 `medium`) and `ANTHROPIC_FALLBACKS=off`.
 
 ### How a budget is calculated, in one document
