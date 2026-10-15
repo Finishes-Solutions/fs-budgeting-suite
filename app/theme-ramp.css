@@ -304,6 +304,8 @@ html[data-skin=ramp] .badge.ok{border-color:var(--fs-success-line);background:va
   color:var(--fs-success)}
 html[data-skin=ramp] .badge.warn{border-color:var(--fs-warning-line);background:var(--fs-warning-soft);
   color:var(--fs-warning)}
+/* The guard-rail names (buttons to the field) take the badge face, not mono. */
+html[data-skin=ramp] .gr-jump{font-family:var(--fb);font-size:10.5px;font-weight:600;letter-spacing:.04em}
 html[data-skin=ramp] .st-chip{font-family:var(--fb);font-size:10.5px;letter-spacing:.04em}
 html[data-skin=ramp] .st-draft{color:var(--ink-600);border-color:var(--ink-200);background:var(--ink-100)}
 html[data-skin=ramp] .st-review{color:var(--fs-warning);border-color:var(--fs-warning-line);
