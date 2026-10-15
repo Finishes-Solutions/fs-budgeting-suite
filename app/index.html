@@ -6182,9 +6182,14 @@ async function sendAssistant(){
     // An expired session comes back as a redirect to the sign-in page (see api()).
     if(r.redirected&&/\/login\.html(\?|#|$)/.test(r.url))throw new Error('Your session has ended — sign in again, then ask.');
     let d=null;try{d=await r.json();}catch(_){}
-    if(!r.ok||!d||!d.ok)throw new Error((d&&d.message)||('The assistant could not answer (HTTP '+r.status+').'));
+    // detail says where the time went ("gathering context 1.2s; call 1: 33.0s,
+    // deadline") — the part an administrator needs to act on a slow answer.
+    if(!r.ok||!d||!d.ok)throw new Error(((d&&d.message)||('The assistant could not answer (HTTP '+r.status+').'))
+      +(d&&d.detail?' ('+d.detail+')':''));
     if(aiThread.key!==key)return;      // the focus changed underneath; drop the late answer
-    aiThread.turns.push({role:'assistant',content:d.answer+(d.truncated?'\n\n_(Answer cut short.)_':''),
+    aiThread.turns.push({role:'assistant',content:d.answer+(d.cutShortForTime
+        ?'\n\n_(Answer cut short to fit the time limit — ask a narrower follow-up for the rest.)_'
+        :d.truncated?'\n\n_(Answer cut short.)_':''),
       meta:(d.basedOn==='unsaved-draft'?'From unsaved changes · ':'')+(d.toolsUsed&&d.toolsUsed.length?'Looked up: '
         +[...new Set(d.toolsUsed)].map(t=>t.replace(/_/g,' ')).join(', ')+' · ':'')+'Claude'});
   }catch(e){

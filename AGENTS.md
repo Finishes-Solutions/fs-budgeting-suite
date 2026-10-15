@@ -526,9 +526,14 @@ custom provider for sign-in.
 - **It must finish inside the SWA request window (~45 s).** Facts and version
   history are preloaded so most answers take one call; the loop is capped at
   `LIMITS.toolRounds`; under `FINAL_ANSWER_MS` remaining the model is sent
-  `tool_choice: none` and must answer; the SDK runs with `maxRetries: 0` and a
-  per-call timeout from the remaining budget. Raising effort or adding tools
-  trades directly against this — measure before you do.
+  `tool_choice: none` at low effort and must answer; the SDK runs with
+  `maxRetries: 0`. Each call STREAMS under a hard deadline (`callModel()`): if
+  the deadline fires mid-answer, the text so far is returned marked
+  `cutShortForTime` rather than discarded. A turn that spent `max_tokens`
+  thinking gets one appended "answer now" turn. Every timeout carries a
+  `detail` ("gathering context 1.2s; call 1: 33.0s, deadline") that the dialog
+  shows and the Functions log records — read it before tuning. Raising effort
+  or adding tools trades directly against this window — measure before you do.
 - **The system prompt is byte-stable** (instructions + `budget-system.md`, no ids
   or dates) and carries `cache_control`, so it caches across questions. Per-budget
   context rides on the first user turn. Keep volatile content out of `system`.
