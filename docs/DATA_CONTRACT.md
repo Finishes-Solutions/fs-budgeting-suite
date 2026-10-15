@@ -302,7 +302,8 @@ version into an analysis input, used by creation **and** by
 3. **The expense ratio is derived against Gross Operating Income** — after
    vacancy, other income included — because that is what the engine's
    `percentOfGOI` mode multiplies:
-   `derived = annualBudgetOpex / (budgetGrossIncomeYr × (1 − vacancy))`.
+   `derived = annualBudgetOpex / (rentYr × (1 − vacancy) + otherIncomeYr)` —
+   vacancy on rent only, as the engine applies it.
 
 `expenses.derivedFrom` records the project, the budget version, and the two
 figures the ratio came from. `expenses.override` is the user turning it off,

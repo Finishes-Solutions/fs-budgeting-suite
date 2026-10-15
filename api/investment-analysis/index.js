@@ -23,6 +23,11 @@ module.exports = async function (context, req) {
   const id = (context.bindingData.id || '').toLowerCase();
   if (!GUID_RX.test(id)) { context.res = jsonRes(400, { error: 'bad_request', message: 'Invalid analysis ID.' }); return; }
   const pool = await getPool();
+  // Declared once, up front. The DELETE branch below used to read it before
+  // the `const` further down had run — a temporal-dead-zone ReferenceError
+  // thrown AFTER the soft-delete had committed, so the analysis vanished, no
+  // activity row was written and the caller got a 500.
+  const principal = getPrincipal(req);
 
   if (req.method === 'GET') {
     const gf = await features(pool);
@@ -188,7 +193,6 @@ module.exports = async function (context, req) {
   if (!input || typeof input !== 'object') { context.res = jsonRes(400, { error: 'bad_request', message: 'Body must be { input, expectedVersionNumber }.' }); return; }
   if (JSON.stringify(body).length > MAX_BODY) { context.res = jsonRes(413, { error: 'too_large', message: 'The analysis input is too large.' }); return; }
 
-  const principal = getPrincipal(req);
   const userId = principal ? (principal.userId || null) : null;
   const userName = principal ? (principal.userDetails || null) : null;
 

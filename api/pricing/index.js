@@ -1,6 +1,7 @@
 const { getPool, sql } = require('../shared/db');
 const { hasRole, getPrincipal } = require('../shared/auth');
 const { features } = require('../shared/schema');
+const { scheduleIdentifierProblem, IDENTIFIER_RULE } = require('../shared/identifiers');
 
 // A URL-safe schedule key, matching CK_FeeSchedules_KeyFormat in the database.
 const KEY_RX = /^[a-z0-9-]{2,64}$/;
@@ -117,6 +118,10 @@ function validateScheduleDoc(doc) {
     if (!f || !f.feeId || !f.label) return 'every fee needs a feeId and a label';
     if (!FEE_BASES.includes(f.basis)) return 'fee ' + f.feeId + ' has an unknown basis: ' + f.basis;
   }
+  // Budgets copy these ids and the Impact Fees step renders them into
+  // attributes, so a schedule must not be able to publish markup as a key.
+  const badId = scheduleIdentifierProblem(doc);
+  if (badId) return 'malformed identifier at ' + badId + ' — use ' + IDENTIFIER_RULE;
   return null;
 }
 
@@ -233,3 +238,5 @@ module.exports = async function (context, req) {
   } catch (e) { await tx.rollback(); throw e; }
   context.res = { status: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true, version: doc.version }) };
 };
+// Exposed for test/identifiers.test.js; the Functions host only calls the default export.
+module.exports.validateScheduleDoc = validateScheduleDoc;

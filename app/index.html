@@ -452,6 +452,27 @@ body.modal-open{overflow:hidden}
    because `.card-hd h2` (0,1,1) out-specifies a bare `.mod-title` (0,1,0) and
    would otherwise hold every dialog title at the 15px section-header scale. */
 .card-hd .mod-title{margin:0;font-size:19px;font-weight:800;letter-spacing:-.015em}
+/* Budget Assistant. The answer is Markdown from the model, rendered by
+   aiMarkdown() — which escapes FIRST and only then adds a fixed set of tags,
+   so nothing the model writes can become live markup. */
+.ai-log{display:flex;flex-direction:column;gap:12px;min-height:120px}
+.ai-msg{padding:10px 14px;border-radius:var(--rm);font-size:13.5px;line-height:1.55;color:var(--ink-900);
+  max-width:100%;overflow-x:auto}
+.ai-msg.user{align-self:flex-end;background:var(--ink-100);max-width:85%;white-space:pre-wrap}
+.ai-msg.bot{background:var(--white);border:1px solid var(--ink-150)}
+.ai-msg.err{border:1px solid var(--danger);color:var(--danger);background:var(--white)}
+.ai-msg p{margin:0 0 8px}.ai-msg p:last-child{margin-bottom:0}
+.ai-msg ul,.ai-msg ol{margin:0 0 8px;padding-left:20px}.ai-msg li{margin:2px 0}
+.ai-msg h4{margin:10px 0 6px;font-size:13.5px;font-weight:800}
+.ai-msg code{font-family:var(--fm);font-size:12px;background:var(--ink-100);padding:0 3px;border-radius:3px}
+.ai-msg table{border-collapse:collapse;margin:6px 0 10px;font-size:12.5px}
+.ai-msg th,.ai-msg td{border:1px solid var(--ink-150);padding:4px 8px;text-align:left;vertical-align:top}
+.ai-msg th{background:var(--ink-50);font-weight:700}
+.ai-meta{font-size:11.5px;color:var(--ink-500);margin-top:6px}
+.ai-suggest{display:flex;flex-wrap:wrap;gap:8px}
+.ai-ask{display:flex;gap:8px;align-items:flex-end;margin-top:12px}
+.ai-ask textarea{flex:1;min-height:44px;max-height:160px;resize:vertical;font:inherit;font-size:13.5px;
+  padding:9px 11px;border:1px solid var(--ink-200);border-radius:var(--r);background:var(--white);color:var(--ink-900)}
 /* First-run welcome. Deliberately plain: three lines about what the tool is,
    set in the same dialog shell as every other sheet, so it reads as part of
    the app rather than as an ad in front of it. */
@@ -475,6 +496,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--green-600);box-shadow
 input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .err{border-color:var(--danger)!important}
 .fld-err{font-size:11.5px;color:var(--danger);margin-top:4px}
+.fld-help{font-size:11.5px;color:var(--ink-500);margin-top:4px}
 
 .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:var(--r);
   font-family:var(--fb);font-weight:600;font-size:13px;padding:8px 16px;cursor:pointer;transition:all .12s}
@@ -797,6 +819,9 @@ html[data-theme=dark] .badge.bad{background:#2c1a19;border-color:#523030}
   margin-right:8px;vertical-align:middle;flex:none}
 .autodot.on{background:var(--green-600)}
 .editdot.on{background:var(--edit);box-shadow:0 0 0 3px var(--edit-100)}
+/* A derived line (impact fees) is marked, but not in the edit colour the legend
+   counts: its tooltip says where the figure came from. */
+.editdot.derived{background:var(--ink-400);box-shadow:0 0 0 3px var(--ink-150)}
 tr.edited td:first-child{box-shadow:inset 2px 0 0 var(--edit)}
 tr.edited:hover td{background:var(--edit-50)}
 .legend{display:inline-flex;align-items:center;gap:0}
@@ -990,8 +1015,9 @@ th.sortable.sorted{color:var(--ink-900)}
   .rpt-sig .sig-cap{font-size:8pt;color:var(--ink-600);margin-top:4px}
   .rpt-tbl tr.sub-tot td{border-top:1px solid var(--ink-300);font-weight:600}
   .rpt-tbl tr.tot td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;padding-top:6px}
-  .edited-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
+  .edited-mark,.derived-mark{font-family:var(--fm);font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;
     color:var(--edit);border:1px solid var(--edit);border-radius:2px;padding:0 3px;margin-left:4px}
+  .derived-mark{color:var(--ink-600);border-color:var(--ink-300)}
 
   /* ---- guide PDF ---- */
   .rpt-guide .rpt-sec{break-inside:auto}
@@ -1130,7 +1156,9 @@ th.sortable.sorted{color:var(--ink-900)}
       <div class="grid g4">
         <label class="fld"><span class="lab">Budget ID</span>
           <input type="text" id="pId" placeholder="BD-0001" oninput="validateId();markDirty()" style="font-family:var(--fm);text-transform:uppercase">
-          <div class="fld-err" id="pIdErr" style="display:none">Must match BDG-####-## or BD-#### (or a legacy OP-/AS-/TST-####)</div></label>
+          <div class="fld-err" id="pIdErr" style="display:none">Must match BDG-####-## or BD-#### (or a legacy OP-/AS-/TST-####)</div>
+          <!-- Shown once the budget exists on the server; paintIdLock() owns it. -->
+          <div class="fld-help" id="pIdLocked" style="display:none">A budget's ID is fixed once it is saved. To price it another way, use Add Alternate on its project.</div></label>
         <label class="fld"><span class="lab">Budget Name</span><input type="text" id="pName" placeholder="e.g., Waller Multifamily Phase I" oninput="markDirty()"></label>
         <label class="fld"><span class="lab">Address</span><input type="text" id="pAddr" placeholder="Street, City, TX ZIP" oninput="markDirty()"></label>
         <!-- Which project this budget belongs to. Read-only because it is the
@@ -1376,6 +1404,7 @@ th.sortable.sorted{color:var(--ink-900)}
     <div><button class="btn-back" id="backBudget" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1 id="bTitle">Budget</h1><div class="sub" id="bSub"></div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="bStatusHost"></span>
+      <button class="btn btn-ghost" onclick="openAssistant()" title="Ask the Budget Assistant about this budget">Ask AI</button>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
       <button class="btn btn-dark" onclick="openExport()">Export</button>
     </div>
@@ -2142,7 +2171,8 @@ th.sortable.sorted{color:var(--ink-900)}
         <p>When a budget is running on an older library, a banner appears on the budget page naming both versions.
           <span class="kbd">Update to current pricing</span> pulls the new rates in — it matches on scope, code and
           description, so standard template lines are repriced and any custom line you added keeps the rate you
-          gave it. Quantities and overrides are untouched. The banner's <b>×</b> hides it for that budget while
+          gave it. Quantities are untouched, but a rate you changed by hand on a standard line <b>is replaced</b>
+          by the library rate (the confirmation says how many were). The banner's <b>×</b> hides it for that budget while
           you work; the reprice stays one click away in the Home list's three-dot menu as
           <span class="kbd">Update Pricing</span> (which simply confirms when a budget is already current).</p>
         <p>Publishing is the other direction: an admin edits the library and publishes, which stamps a new version
@@ -2902,6 +2932,34 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
 </div>
 
+<!-- ================= BUDGET ASSISTANT =================
+     Questions about the open budget, answered by Claude through
+     POST /api/budget/{id}?scope=ask (api/shared/budget-assistant.js). The
+     figures it quotes are computed server-side by the app's own budget math;
+     the model explains them. Read-only: it never changes the budget. -->
+<div id="assistantModal" class="modal" onclick="if(event.target===this)closeDialog('assistantModal')">
+  <div class="card mod-sheet" style="width:760px;max-width:94vw;margin:0;max-height:88vh;display:flex;flex-direction:column"
+    role="dialog" aria-modal="true" aria-labelledby="assistantTitle">
+    <div class="card-hd"><h2 class="mod-title" id="assistantTitle">Budget Assistant</h2>
+      <span style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost btn-sm" onclick="resetAssistant()">New Conversation</button>
+        <button class="btn-x" onclick="closeDialog('assistantModal')" aria-label="Close budget assistant">&times;</button></span></div>
+    <div class="card-bd" style="overflow:auto;flex:1" id="aiScroll">
+      <div class="ai-log" id="aiLog" aria-live="polite"></div>
+    </div>
+    <div class="card-bd" style="border-top:1px solid var(--ink-150);padding-top:12px">
+      <div class="note" id="aiBasis"></div>
+      <div class="ai-ask">
+        <textarea id="aiQ" rows="2" maxlength="2000" placeholder="Ask about this budget — how a number was built, what changed, how it compares…"
+          aria-label="Question for the Budget Assistant"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAssistant();}"></textarea>
+        <button class="btn btn-dark" id="aiSend" onclick="sendAssistant()">Ask</button>
+      </div>
+      <div class="note" style="margin-top:8px">Answers come from Claude (Anthropic) and can be wrong — check figures against the budget before relying on them. The budget's data is sent to Anthropic to answer.</div>
+    </div>
+  </div>
+</div>
+
 <div id="printDoc" aria-hidden="true"></div>
 
 <!-- ================= FEEDBACK =================
@@ -3436,7 +3494,7 @@ function openNewBudget(presetProjectId){
   const host=document.getElementById('customTplList');
   const customs=activeTemplates().filter(t=>t.templateKey!=='multifamily');
   host.innerHTML=customs.length
-    ?customs.map(t=>`<button class="tpl-row" onclick="pickNewBudget('${esc(t.templateKey)}')">
+    ?customs.map(t=>`<button class="tpl-row" data-id="${esc(t.templateKey)}" onclick="pickNewBudget(this.dataset.id)">
         <span class="tpl-name">${esc(t.name||t.templateKey)}</span>
         <span class="tpl-sub">${esc(t.description||'Published custom template')}</span></button>`).join('')
     :'<div class="set-note">No custom templates yet. Open a budget and publish it as a template to see it here.</div>';
@@ -3779,6 +3837,12 @@ function newLineId(){
   try{ if(window.crypto&&crypto.randomUUID)return crypto.randomUUID(); }catch(_){}
   return 'l-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
 }
+/* Row ids (lineId, fee rowId/feeId) are rendered into attributes, so one read
+   from a stored document is untrusted: a lineId of `x" onfocus="…` was a stored
+   XSS. Both newLineId() forms match this; migrate() regenerates anything that
+   does not. Same pattern as api/shared/identifiers.js, which refuses the save. */
+const ROW_ID_RX=/^[A-Za-z0-9_-]{1,64}$/;
+const safeRowId=v=>typeof v==='string'&&ROW_ID_RX.test(v);
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
 
 /* ============ STORAGE — Azure Functions API ============ */
@@ -3805,8 +3869,18 @@ async function api(path,opts={}){
     throw new Error('Session expired: sign in again');
   }
   setApiHealth(true);
-  if(r.status===403)throw new Error('Not authorized (pricing_admin role required)');
   const ct=r.headers.get('content-type')||'';
+  if(r.status===403){
+    // Most 403s are the pricing_admin gate and keep that wording. A guard-rail
+    // override refused by the budget save says something different and more
+    // useful, so a structured refusal carries the server's own message.
+    let body=null;
+    if(ct.includes('json')){try{body=await r.json();}catch(_){}}
+    const err=new Error(body&&body.error==='override_not_allowed'&&body.message
+      ?body.message:'Not authorized (pricing_admin role required)');
+    err.status=403;err.body=body;
+    throw err;
+  }
   if(!r.ok){
     // A structured refusal (a guard-rail 422, a project 400) carries a message
     // worth showing. Keep it on the error so callers can react to the SHAPE,
@@ -4315,6 +4389,9 @@ function recordUndo(){
 }
 function restoreSnap(snap,msg){
   doc=migrate(JSON.parse(snap));
+  // A step from before the first save can carry an id that was still being
+  // typed. Once the budget exists its id is fixed, and undo must not move it.
+  if(docOriginalId)doc.projectId=docOriginalId;
   dirty=true;selected.clear();
   fillForms();recalc();renderSaveState();
   toast(msg);
@@ -4410,16 +4487,19 @@ function normalizeImpactFees(f){
        same size legitimately appears twice with different labels. Each selection
        carries its own id; keying by rowId would collapse the fire line into the
        domestic one and under-price the budget. `id` is backfilled for anything
-       saved before the list existed. */
+       saved before the list existed.
+       An unsafe id or rowId is regenerated, not kept: both reach attributes in
+       paintFeeMeters/paintFeeOther. A regenerated rowId matches no schedule row,
+       so it prices nothing rather than something wrong. */
     meters:(Array.isArray(f.meters)?f.meters:[]).filter(m=>m&&m.rowId).map(m=>({
-      id:m.id||newLineId(),rowId:String(m.rowId),label:String(m.label||''),
-      qty:nz(m.qty),
+      id:safeRowId(m.id)?m.id:newLineId(),rowId:safeRowId(m.rowId)?m.rowId:newLineId(),
+      label:String(m.label||''),qty:nz(m.qty),
       includeMeter:m.includeMeter!==false,includeVault:m.includeVault!==false,
       includeTaps:m.includeTaps!==false})),
     extras:(Array.isArray(f.extras)?f.extras:[]).filter(x=>x&&x.feeId)
-      .map(x=>({feeId:String(x.feeId),qty:x.qty===undefined?1:nz(x.qty)})),
+      .map(x=>({feeId:safeRowId(x.feeId)?x.feeId:newLineId(),qty:x.qty===undefined?1:nz(x.qty)})),
     manual:(Array.isArray(f.manual)?f.manual:[]).filter(m=>m&&m.rowId)
-      .map(m=>({rowId:String(m.rowId),label:String(m.label||'Fee'),amount:nz(m.amount)}))};
+      .map(m=>({rowId:safeRowId(m.rowId)?m.rowId:newLineId(),label:String(m.label||'Fee'),amount:nz(m.amount)}))};
 }
 function blankDoc(kind){
   const bare=kind==='blank';
@@ -4456,6 +4536,11 @@ function blankDoc(kind){
     created:new Date().toISOString(),updated:new Date().toISOString()};
 }
 function migrate(d){ // tolerate older saves
+  // parts() reads all four unconditionally; the server treats absent as empty,
+  // so an old or hand-built document must too rather than throw on open.
+  d.units=Array.isArray(d.units)?d.units:[];d.lines=Array.isArray(d.lines)?d.lines:[];
+  d.companies=Array.isArray(d.companies)?d.companies:[];
+  d.contingency=d.contingency&&typeof d.contingency==='object'?d.contingency:{mode:'amt',val:0};
   d.resSF=d.resSF??d.buildableSF??0; d.amenSF=d.amenSF??0; d.siteSF=d.siteSF??0;
   d.other=d.other??JSON.parse(JSON.stringify(DEFAULT_OTHER));
   d.expenses=d.expenses??JSON.parse(JSON.stringify(DEFAULT_EXPENSES));
@@ -4486,10 +4571,11 @@ function migrate(d){ // tolerate older saves
   // Budgets saved before edit-tracking existed have no baseline, so seed it from the
   // current rate: nothing is retroactively claimed to be a manual edit.
   // Older saves predate stable line IDs; mint one per line so selection, code
-  // editing and SOV LineKey have something durable to hold on to.
+  // editing and SOV LineKey have something durable to hold on to. A lineId that
+  // is not a safe row id is replaced too, so a poisoned save opens harmless.
   d.lines.forEach(l=>{l.scope=l.scope??'res';l.grp=l.grp??l.div??'General';
     l.unit=nz(l.unit);l.qty=nz(l.qty);l.baseUnit=nz(l.baseUnit??l.unit);
-    if(!l.lineId)l.lineId=newLineId();});
+    if(!safeRowId(l.lineId))l.lineId=newLineId();});
   d.status=d.status||'Draft';
   return d;
 }
@@ -4509,7 +4595,17 @@ function isEdited(it){
    on the PDF would be actively misleading. It is derived, and from what is the
    part a lender needs. */
 function isDerived(it){return !!(it&&it.derived);}
-function editedCount(){return doc?doc.lines.filter(isEdited).length:0;}
+/* What a line is flagged as, everywhere a flag is printed or counted: 'derived',
+   'edited' or ''. Derived wins because isEdited() is true for the derived line
+   by construction — an export that said "edited" (or a legend that counted it)
+   would tell the reader the figure had been tampered with. */
+function lineFlag(it){return isDerived(it)?'derived':isEdited(it)?'edited':'';}
+function editedCount(){return doc?doc.lines.filter(l=>lineFlag(l)==='edited').length:0;}
+/* The PDF legend entry for a derived line: what it is and where it came from
+   (editReason() names the schedule, basis and version from the document). */
+function derivedNote(it){
+  return '(derived) '+it.code+' is not a manual edit. '+editReason(it)+'.';
+}
 function editReason(it){
   if(isDerived(it)){
     const p=doc&&doc.impactFees?FSImpactFees.provenance(feeResult()):'';
@@ -4936,7 +5032,7 @@ function paintBudgets(){
   paintHomeSortArrows();
 }
 function homeCard(x){
-  return `<div class="hcard" onclick="openBudget('${x.projectId}')">
+  return `<div class="hcard" data-id="${esc(x.projectId)}" onclick="openBudget(this.dataset.id)">
     <div class="hc-id">${x.createdByName?creatorAvatar(x.createdByName,x.createdByAvatar)+' ':''}${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</div>
     <div class="hc-name">${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</div>
     <div class="hc-row"><span>Contract Sum</span><span class="v">${usd(x.contractSum||0)}</span></div>
@@ -4950,7 +5046,7 @@ function homeCard(x){
 // same markup into its own tbody.
 function homeRowHTML(x){
   return (
-    `<tr class="clickable" onclick="openBudget('${x.projectId}')">
+    `<tr class="clickable" data-id="${esc(x.projectId)}" onclick="openBudget(this.dataset.id)">
       <td class="no-print" style="padding-left:22px">${creatorAvatar(x.createdByName,x.createdByAvatar)}</td>
       <td class="mono" style="font-size:13px;color:var(--green-700);font-weight:600">${esc(x.projectId)}${isTest(x.projectId)?' <span class="badge test">Test</span>':''}</td>
       <td>${esc(x.name)||'<span style="color:var(--ink-400)">Untitled</span>'}</td>
@@ -5143,21 +5239,25 @@ function paintFeeMeters(r){
     +'<th class="r">Water Impact</th><th class="r">Sewer Impact</th>'
     +'<th class="r">Adders</th><th class="r">Row Total</th><th></th></tr></thead><tbody>';
   r.rows.forEach(x=>{
+    // Selection ids ride in an escaped data-id and come back through
+    // this.dataset — never inside a quoted string in handler source (see
+    // renderBudget). The id comes from the saved document.
+    const sid=esc(x.id);
     const m=feeDoc.meters.find(d=>d.rowId===x.rowId)||{};
     const sel=feeSel(x.id)||{};
     const adders=x.each.meter+x.each.vault+x.each.waterTap+x.each.sewerTap;
     const cb=(k,enabled)=>enabled
-      ?`<input type="checkbox" data-k="fee.${esc(x.id)}.${k}" ${sel[k]!==false?'checked':''}
-          onchange="setFeeInclude('${esc(x.id)}','${k}',this.checked)">`
+      ?`<input type="checkbox" data-k="fee.${sid}.${k}" data-id="${sid}" ${sel[k]!==false?'checked':''}
+          onchange="setFeeInclude(this.dataset.id,'${k}',this.checked)">`
       :'<span class="mono" style="color:var(--ink-500)">—</span>';
     h+=`<tr>
       <td>${esc(FSImpactFees.meterName(m))}</td>
-      <td><input type="text" data-k="fee.${esc(x.id)}.label" value="${esc(x.label)}"
+      <td><input type="text" data-k="fee.${sid}.label" data-id="${sid}" value="${esc(x.label)}"
           placeholder="Domestic, irrigation…" style="width:100%;min-width:130px"
-          oninput="setFeeMeterLabel('${esc(x.id)}',this.value)"></td>
+          oninput="setFeeMeterLabel(this.dataset.id,this.value)"></td>
       <td class="r mono">${+(x.qty*x.edu).toFixed(2)}</td>
-      <td class="r"><input type="number" class="qtyin" data-k="fee.${esc(x.id)}.qty" min="0" step="1"
-          value="${nz(x.qty)}" oninput="setFeeQty('${esc(x.id)}',this.value)"></td>
+      <td class="r"><input type="number" class="qtyin" data-k="fee.${sid}.qty" data-id="${sid}" min="0" step="1"
+          value="${nz(x.qty)}" oninput="setFeeQty(this.dataset.id,this.value)"></td>
       <td class="c">${cb('includeMeter',true)}</td>
       <td class="c">${cb('includeVault',x.hasVault)}</td>
       <td class="c">${cb('includeTaps',true)}</td>
@@ -5166,7 +5266,7 @@ function paintFeeMeters(r){
       <td class="r mono">${usd(x.qty*adders)}</td>
       <td class="r mono"><b>${usd(x.total)}</b></td>
       <td class="r"><button class="btn btn-ghost danger" title="Remove this meter"
-          onclick="removeFeeMeter('${esc(x.id)}')">Remove</button></td></tr>`;
+          data-id="${sid}" onclick="removeFeeMeter(this.dataset.id)">Remove</button></td></tr>`;
   });
   h+=`</tbody><tfoot><tr class="tot"><td colspan="10">Meter fees</td>
       <td class="r mono"><b>${usd(r.meterTotal)}</b></td><td></td></tr></tfoot>`;
@@ -5189,27 +5289,28 @@ function paintFeeOther(r){
   defs.forEach(d=>{
     const picked=!!chosen[d.feeId];
     const amt=FSImpactFees.pick(d.amount,f.basis);
-    const row=r.extras.find(x=>x.feeId===d.feeId);
+    const row=r.extras.find(x=>x.feeId===d.feeId),fid=esc(d.feeId);
     h+=`<tr${picked?'':' style="opacity:.55"'}>
-      <td><label><input type="checkbox" data-k="fee.x.${esc(d.feeId)}.on" ${picked?'checked':''}
-          onchange="toggleFeeExtra('${esc(d.feeId)}',this.checked)"> ${esc(d.label)}</label></td>
+      <td><label><input type="checkbox" data-k="fee.x.${fid}.on" data-id="${fid}" ${picked?'checked':''}
+          onchange="toggleFeeExtra(this.dataset.id,this.checked)"> ${esc(d.label)}</label></td>
       <td class="mono" style="font-size:12px;color:var(--ink-500)">${esc(FEE_BASIS_LABEL[d.basis]||d.basis)}</td>
-      <td class="r"><input type="number" class="qtyin" data-k="fee.x.${esc(d.feeId)}.qty" min="0" step="1"
+      <td class="r"><input type="number" class="qtyin" data-k="fee.x.${fid}.qty" data-id="${fid}" min="0" step="1"
           value="${picked?nz(chosen[d.feeId].qty):1}" style="width:74px"
-          oninput="setFeeExtraQty('${esc(d.feeId)}',this.value)" ${picked?'':'disabled'}></td>
+          oninput="setFeeExtraQty(this.dataset.id,this.value)" ${picked?'':'disabled'}></td>
       <td class="r mono">${usd2(amt)}</td>
       <td class="r mono"><b>${usd(row?row.total:0)}</b></td><td></td></tr>`;
   });
   (f.manual||[]).forEach(m=>{
-    h+=`<tr><td><input type="text" data-k="fee.m.${esc(m.rowId)}.label" value="${esc(m.label)}"
-          oninput="setManualFee('${esc(m.rowId)}','label',this.value)" style="width:100%"></td>
+    const rid=esc(m.rowId);
+    h+=`<tr><td><input type="text" data-k="fee.m.${rid}.label" data-id="${rid}" value="${esc(m.label)}"
+          oninput="setManualFee(this.dataset.id,'label',this.value)" style="width:100%"></td>
       <td class="mono" style="font-size:12px;color:var(--ink-500)">manual</td>
       <td class="r mono">—</td>
-      <td class="r"><input type="number" data-k="fee.m.${esc(m.rowId)}.amount" step="0.01"
+      <td class="r"><input type="number" data-k="fee.m.${rid}.amount" data-id="${rid}" step="0.01"
           value="${nz(m.amount)}" style="width:120px"
-          oninput="setManualFee('${esc(m.rowId)}','amount',this.value)"></td>
+          oninput="setManualFee(this.dataset.id,'amount',this.value)"></td>
       <td class="r mono"><b>${usd(nz(m.amount))}</b></td>
-      <td class="r"><button class="btn btn-ghost danger" onclick="removeManualFee('${esc(m.rowId)}')">Remove</button></td></tr>`;
+      <td class="r"><button class="btn btn-ghost danger" data-id="${rid}" onclick="removeManualFee(this.dataset.id)">Remove</button></td></tr>`;
   });
   h+=`</tbody><tfoot><tr class="tot"><td colspan="4">Other fees</td>
       <td class="r mono"><b>${usd(r.extrasTotal+r.manualTotal)}</b></td><td></td></tr></tfoot>`;
@@ -5358,7 +5459,13 @@ function applyImpactFees(){
      straight to the Budget page, or the API is down) must keep the amount it
      was saved with — recomputing against a null schedule would total zero and
      silently wipe a six-figure soft-cost line. */
-  if(f.scheduleKey&&!(feeDoc&&feeDoc.scheduleKey===f.scheduleKey))return;
+  /* The loaded schedule must be the VERSION this budget was priced from, not
+     just the same jurisdiction: feeDoc is page-wide and outlives openBudget(),
+     so after viewing a budget on v2, a budget priced at v1 would otherwise be
+     recomputed against v2 while still labelled v1 (BUDGET-SYSTEM.md D5).
+     Moving a budget to a newer version is Update to vN, which sets both. */
+  if(f.scheduleKey&&!(feeDoc&&feeDoc.scheduleKey===f.scheduleKey
+     &&(!f.scheduleVersion||feeDoc.__version===f.scheduleVersion)))return;
   const r=feeResult();
   let line=impactFeeLine();
 
@@ -5601,6 +5708,7 @@ async function editTemplate(key){
   templateEdit={key:t.templateKey,name:t.name,version:t.currentVersion};
   doc=migrate(JSON.parse(JSON.stringify(t.doc)));
   doc.projectId='';                       // a template is not a project
+  docOriginalId=null;
   dirty=false;lastSaved=null;selected.clear();
   enableDocNav();fillForms();renderTemplateBanner();go('input');
   toast('Editing template '+t.name+' — version '+(t.currentVersion||1));
@@ -5654,6 +5762,7 @@ async function createTemplate(){
   const d=src&&src.doc?JSON.parse(JSON.stringify(src.doc)):(doc?JSON.parse(JSON.stringify(doc)):null);
   if(!d){toast('No template document to start from');return;}
   d.name=name;d.type=name;
+  d.guardrailAcks=[];             // overrides belong to a budget, never a template
   try{
     await api('templates',{method:'POST',body:JSON.stringify({templateKey:key,name,budgetType:name,
       description:'Created from '+(base?base.name:'the open budget'),doc:d,changeSummary:'Initial version'})});
@@ -5684,6 +5793,12 @@ async function duplicateBudgetAs(fromId,newId,projectKey){
   // A copy is not the original's history: it starts its own.
   delete doc.templateVersionId;
   docIsNew=true;                  // its first save must create, not overwrite
+  docOriginalId=null;             // ...under the NEW id, which it does not have yet
+  // An override was recorded on the original by someone allowed to; carrying
+  // it into a copy is recording it again, so only someone with that authority
+  // keeps it (the API refuses a new override from anyone else). Without it the
+  // copy's rails get their say, exactly as the note above intends.
+  if(!canAckGuardrail())doc.guardrailAcks=[];
   fillForms();
   markDirty();
   go('input');
@@ -5715,9 +5830,14 @@ async function applyTemplateBudget(key){
   // on its first paint.
   (d.lines||[]).forEach(l=>{l.lineId=newLineId();});   // fresh identity per budget
   stampCurrentPricing(d);
+  // An override is a decision about one budget's numbers, recorded by someone
+  // allowed to make it — a template is not a budget and must not hand one to
+  // every budget made from it (the API would refuse it as a new override).
+  d.guardrailAcks=[];
   d.created=new Date().toISOString();d.updated=d.created;
   templateEdit=null;renderTemplateBanner();
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
+  docOriginalId=null;
   enableDocNav();resetUndo();
   return true;
 }
@@ -5729,6 +5849,7 @@ function newBudget(kind){
 /* The discard prompt has already been answered by the caller. */
 function applyNewBudget(kind){
   doc=blankDoc(kind);dirty=false;lastSaved=null;selected.clear();
+  docOriginalId=null;             // nothing on the server yet: the id is still choosable
   templateEdit=null;renderTemplateBanner();
   enableDocNav();fillForms();resetUndo();go('input');
   if(kind==='blank')toast('Blank budget — build the scope from the CSI catalog on the Budget page');
@@ -5738,6 +5859,28 @@ function applyNewBudget(kind){
    exists replaced that budget and versioned the replacement as its next
    revision, and the original survived only in history. */
 let docIsNew=false;
+/* The id the open budget EXISTS under on the server — set when one is opened
+   or first saved, null for anything not yet written. Two jobs:
+
+   - The Budget ID field locks once it is set. Editing it used to re-point the
+     next save at whatever budget had the new id: the save was an update (not
+     a create), so the occupied-id guard never ran and the other budget was
+     overwritten and versioned as its own next revision (BUDGET-SYSTEM.md D13).
+   - Every full save sends it as meta.originalId, and the API refuses an
+     update whose route id is not the id the budget was opened as — so a
+     forced field (or a hand-built request) still cannot land on another
+     budget. A save that legitimately goes to a new id is a create
+     (New Budget, Add Alternate), and those start with this null. */
+let docOriginalId=null;
+function paintIdLock(){
+  const el=document.getElementById('pId'),note=document.getElementById('pIdLocked');
+  if(!el)return;
+  const locked=!!(doc&&docOriginalId&&!templateEdit);
+  el.readOnly=locked;
+  el.classList.toggle('set-locked',locked);
+  el.title=locked?'Budget IDs are fixed once saved.':'';
+  if(note)note.style.display=locked?'block':'none';
+}
 /* Where the budget currently open was reached FROM.
 
    Deliberately route state rather than browser history: history holds every
@@ -5768,6 +5911,7 @@ async function openBudget(pid,page,origin){
   if(!d){toast('Could not load '+pid);return;}
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
   docIsNew=false;                 // it exists: saving it is an update
+  docOriginalId=String(pid).toUpperCase();   // ...and only ever of THIS id
   budgetOrigin=origin&&origin.page?origin:null;
   templateEdit=null;renderTemplateBanner();      // opening a budget leaves template mode
   enableDocNav();fillForms();resetUndo();
@@ -5942,6 +6086,150 @@ function closeVersions(){
   versionsReturn=null;
 }
 
+/* ---- Budget Assistant ----
+   One dialog, two focuses. On a budget it reads the budget, its rule-based
+   review and the pro formas built from it; on an investment analysis it reads
+   the analysis, its drivers and the budget it came from. One conversation per
+   focus, held in memory only: reopening on the same budget or analysis
+   continues it, opening another starts fresh. Only the visible text of earlier
+   turns goes back as history — the server rebuilds the facts on every
+   question, so they are never stale. Unsaved edits go along as a draft,
+   because "why is this number what it is" is about the number on screen. */
+let aiThread={key:null,turns:[]},aiFocus=null,aiBusy=false;
+const AI_SUGGEST={
+  budget:['How was the total project cost calculated?','Where might this budget be wrong, or what is it missing?',
+    'What other ways could this property make money?','How does the pro forma look, and what is hurting the returns?',
+    'What changed since the previous version, and why did the total move?',
+    'How does this compare to my other budgets on a per-unit and per-SF basis?'],
+  analysis:['Why are the returns what they are? What is hurting them most?','What would most improve the IRR?',
+    'What other ways could this property make money?','Is this pro forma consistent with its budget?',
+    'Which assumptions here are aggressive or risky?','Is the debt sized sensibly for this NOI?']
+};
+function openAssistant(){
+  if(!doc||!doc.projectId){toast('Open a budget first');return;}
+  const pid=doc.projectId;
+  showAssistant({kind:'budget',id:pid,key:'budget:'+pid,title:pid,name:doc.name||pid,
+    getDraft:()=>(dirty&&doc&&doc.projectId===pid)?doc:null});
+}
+/* The investment-analysis module calls this through its adapter. ctx is
+   {id, name, getDraft}; an analysis not yet saved has no id and is asked
+   about from its on-screen input alone. */
+function openAnalysisAssistant(ctx){
+  if(!ctx)return;
+  showAssistant({kind:'analysis',id:ctx.id||null,key:'analysis:'+(ctx.id||'unsaved'),
+    title:ctx.name||'Investment Analysis',name:ctx.name||'this analysis',getDraft:ctx.getDraft||(()=>null)});
+}
+function showAssistant(f){
+  aiFocus=f;
+  if(aiThread.key!==f.key)aiThread={key:f.key,turns:[]};
+  document.getElementById('assistantTitle').textContent='Budget Assistant — '+f.title;
+  renderAssistant();
+  openDialog('assistantModal','#aiQ');
+}
+function resetAssistant(){
+  if(aiBusy||!aiFocus)return;
+  aiThread={key:aiFocus.key,turns:[]};renderAssistant();
+  document.getElementById('aiQ').focus();
+}
+function renderAssistant(){
+  const log=document.getElementById('aiLog'),f=aiFocus;if(!f)return;
+  const unsaved=!!f.getDraft();
+  document.getElementById('aiBasis').textContent=f.kind==='budget'
+    ?(unsaved?'This budget has unsaved changes — the assistant will read what is on screen, not the last save.'
+      :'The assistant reads this budget as last saved, its version history, and the pro formas built from it.')
+    :(unsaved?'This analysis has unsaved changes — the assistant will read the assumptions on screen.'
+      :'The assistant reads this analysis as last saved, plus the budget it was built from.');
+  if(!aiThread.turns.length){
+    const sug=AI_SUGGEST[f.kind];
+    log.innerHTML='<div class="note">Ask anything about '+esc(f.name)
+      +(f.kind==='budget'
+        ?' — how a figure was built, where it may be wrong or missing scope, what changed, how its pro forma performs, and how the property could earn more.'
+        :' — what is driving its returns, which assumptions are risky, how it squares with its budget, and how the property could earn more.')
+      +'</div><div class="ai-suggest">'+sug.map((q,i)=>'<button class="btn btn-ghost btn-sm" data-ai-suggest="'+i+'">'+esc(q)+'</button>').join('')+'</div>';
+    log.querySelectorAll('[data-ai-suggest]').forEach(b=>{b.onclick=()=>{
+      document.getElementById('aiQ').value=sug[+b.dataset.aiSuggest];sendAssistant();};});
+    return;
+  }
+  log.innerHTML=aiThread.turns.map(t=>{
+    if(t.role==='user')return '<div class="ai-msg user">'+esc(t.content)+'</div>';
+    if(t.error)return '<div class="ai-msg err">'+esc(t.content)+'</div>';
+    return '<div class="ai-msg bot">'+aiMarkdown(t.content)
+      +(t.meta?'<div class="ai-meta">'+esc(t.meta)+'</div>':'')+'</div>';
+  }).join('')+(aiBusy?'<div class="ai-msg bot"><span class="note">Working through the numbers…</span></div>':'');
+  const sc=document.getElementById('aiScroll');sc.scrollTop=sc.scrollHeight;
+}
+async function sendAssistant(){
+  const box=document.getElementById('aiQ'),q=box.value.trim(),f=aiFocus;
+  if(!q||aiBusy||!f)return;
+  const key=aiThread.key;
+  // History is the visible conversation only — never an error bubble.
+  const history=aiThread.turns.filter(t=>!t.error).map(t=>({role:t.role,content:t.content}));
+  aiThread.turns.push({role:'user',content:q});
+  box.value='';aiBusy=true;
+  document.getElementById('aiSend').disabled=true;
+  renderAssistant();
+  const draft=f.getDraft();
+  let url,body;
+  if(f.kind==='budget'){
+    url='/api/budget/'+encodeURIComponent(f.id)+'?scope=ask';
+    body={question:q,history};if(draft)body.draft=draft;
+  }else{
+    url='/api/investment-calculations?scope=ask';
+    body={question:q,history,analysisId:f.id};if(draft)body.draftInput=draft;
+  }
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    // An expired session comes back as a redirect to the sign-in page (see api()).
+    if(r.redirected&&/\/login\.html(\?|#|$)/.test(r.url))throw new Error('Your session has ended — sign in again, then ask.');
+    let d=null;try{d=await r.json();}catch(_){}
+    if(!r.ok||!d||!d.ok)throw new Error((d&&d.message)||('The assistant could not answer (HTTP '+r.status+').'));
+    if(aiThread.key!==key)return;      // the focus changed underneath; drop the late answer
+    aiThread.turns.push({role:'assistant',content:d.answer+(d.truncated?'\n\n_(Answer cut short.)_':''),
+      meta:(d.basedOn==='unsaved-draft'?'From unsaved changes · ':'')+(d.toolsUsed&&d.toolsUsed.length?'Looked up: '
+        +[...new Set(d.toolsUsed)].map(t=>t.replace(/_/g,' ')).join(', ')+' · ':'')+'Claude'});
+  }catch(e){
+    if(aiThread.key===key)aiThread.turns.push({role:'assistant',error:true,content:e.message});
+  }finally{
+    aiBusy=false;document.getElementById('aiSend').disabled=false;
+    if(aiThread.key===key)renderAssistant();
+  }
+}
+/* Markdown for the assistant's answers: ESCAPE FIRST, then a fixed set of
+   tags (paragraphs, ### headings, bullet and numbered lists, pipe tables,
+   **bold**, `code`). Escaping first is the XSS boundary — the model's text is
+   untrusted like any other user-visible string. */
+function aiMarkdown(md){
+  const inline=t=>t.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+    .replace(/(^|[^\w])_([^_]+)_(?=[^\w]|$)/g,'$1<i>$2</i>');
+  const lines=esc(String(md||'')).split(/\r?\n/);
+  let html='',para=[],list=null;
+  const flushP=()=>{if(para.length){html+='<p>'+inline(para.join(' '))+'</p>';para=[];}};
+  const flushL=()=>{if(list){html+='<'+list.tag+'>'+list.items.map(i=>'<li>'+inline(i)+'</li>').join('')+'</'+list.tag+'>';list=null;}};
+  for(let i=0;i<lines.length;i++){
+    const ln=lines[i];
+    if(/^\s*\|.*\|\s*$/.test(ln)){
+      flushP();flushL();
+      const rows=[];
+      while(i<lines.length&&/^\s*\|.*\|\s*$/.test(lines[i]))rows.push(lines[i++]);
+      i--;
+      const cells=r=>r.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+      const body=rows.filter(r=>!/^\s*\|[\s:|-]+\|\s*$/.test(r));
+      const hasHead=rows.length>1&&/^\s*\|[\s:|-]+\|\s*$/.test(rows[1]);
+      html+='<table>'+body.map((r,j)=>'<tr>'+cells(r).map(c=>(hasHead&&j===0?'<th>':'<td>')+inline(c)
+        +(hasHead&&j===0?'</th>':'</td>')).join('')+'</tr>').join('')+'</table>';
+      continue;
+    }
+    let m;
+    if((m=ln.match(/^#{1,6}\s+(.*)$/))){flushP();flushL();html+='<h4>'+inline(m[1])+'</h4>';continue;}
+    if((m=ln.match(/^\s*[-*]\s+(.*)$/))){flushP();if(!list||list.tag!=='ul'){flushL();list={tag:'ul',items:[]};}list.items.push(m[1]);continue;}
+    if((m=ln.match(/^\s*\d+[.)]\s+(.*)$/))){flushP();if(!list||list.tag!=='ol'){flushL();list={tag:'ol',items:[]};}list.items.push(m[1]);continue;}
+    if(!ln.trim()){flushP();flushL();continue;}
+    flushL();para.push(ln.trim());
+  }
+  flushP();flushL();
+  return html;
+}
+
 async function deleteBudget(pid){
   // Deletion is recoverable now: the API flags the budget, keeps its saved
   // version history, and restores it if the same project ID is saved again.
@@ -5954,6 +6242,7 @@ async function deleteBudget(pid){
 /* ============ FORMS ============ */
 function fillForms(){
   document.getElementById('pId').value=doc.projectId;
+  paintIdLock();
   document.getElementById('pName').value=doc.name;
   document.getElementById('pAddr').value=doc.address;
   // A budget saved before projects had their own ids carries no link yet; it
@@ -6168,6 +6457,20 @@ function expenseMonthly(e,incomeMo){
   if(e.per==='pctIncome')return nz(incomeMo)*nz(e.rate)/100;
   return nz(e.rate)*(e.per==='fixed'?(nz(e.count)||1):(e.auto?tu:nz(e.count)));
 }
+/* One expense row as every export prints it — print report, engine PDF,
+   legacy PDF and Excel all build their rows here. Each used to compute
+   rate × count itself, which printed $0 for a % of income row (its count is 0)
+   under a total that was right, so the rows did not add up to it. The amount
+   is expenseMonthly()'s, the same number the total sums; a % of income row
+   carries its rate as a percent and no count, as the screen shows it. */
+function expenseExportRow(e,incomeMo){
+  const pct=e.per==='pctIncome',mo=expenseMonthly(e,incomeMo);
+  return {label:e.label,pct,rate:nz(e.rate),
+    basis:pct?'% of income':e.per==='fixed'?'fixed / mo':'per unit',
+    rateText:pct?(+nz(e.rate).toFixed(4))+'%':null,
+    count:pct?null:e.per==='fixed'?(nz(e.count)||1):(e.auto?totUnits():nz(e.count)),
+    monthly:mo,yearly:12*mo};
+}
 function grossIncome(){
   const tu=totUnits();
   const rent=doc.units.reduce((s,u)=>s+u.rent*u.count,0);
@@ -6323,33 +6626,36 @@ function renderBudget(){
           <td class="calc r strong">${usd(gSum)}</td><td class="calc r">${scSum?(100*gSum/scSum).toFixed(1)+'%':'—'}</td>
           <td class="no-print"></td></tr>`);}
       if(collapsed.has(sc+'|'+it.grp))return;
-      const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0,ed=isEdited(it);
+      const q=lineQty(it),tot=q*it.unit,pct=scSum?100*tot/scSum:0,fl=lineFlag(it),ed=fl==='edited';
       // Every interactive control keys off lineId, not the array index: a code edit
       // can move this line to another group and a batch delete can shift every
-      // index below it, but the key stays valid across both.
-      const id=it.lineId;
-      const sel=selected.has(id);
+      // index below it, but the key stays valid across both. The id is stored
+      // data, so it is escaped into data-id and read back as this.dataset.id —
+      // never spliced into handler source, where esc() cannot help (the HTML
+      // parser decodes &#39; back into a quote before the JS runs).
+      const id=esc(it.lineId);
+      const sel=selected.has(it.lineId);
       b.insertAdjacentHTML('beforeend',`<tr class="${ed?'edited ':''}${sel?'sel':''}">
-        <td class="no-print selcell"><input type="checkbox" data-k="line.${id}.sel" ${sel?'checked':''}
-          aria-label="Select ${esc(it.desc)}" onchange="toggleSelect('${id}',this.checked,this)"></td>
+        <td class="no-print selcell"><input type="checkbox" data-k="line.${id}.sel" data-id="${id}" ${sel?'checked':''}
+          aria-label="Select ${esc(it.desc)}" onchange="toggleSelect(this.dataset.id,this.checked,this)"></td>
         <td><div class="lineitem">
-          <span class="editdot${ed?' on':''}"${ed?' title="'+esc(editReason(it))+'"':''}></span>
-          <input type="text" class="codein" data-k="line.${id}.code"
+          <span class="editdot${ed?' on':fl?' derived':''}"${fl?' title="'+esc(editReason(it))+'"':''}></span>
+          <input type="text" class="codein" data-k="line.${id}.code" data-id="${id}"
             value="${esc(it.code)}" title="CSI code — changing it files the line under the matching division"
-            aria-label="CSI code for ${esc(it.desc)}" onchange="setLineCode('${id}',this.value)">
-          <input type="text" class="descin" data-k="line.${id}.desc" value="${esc(it.desc)}" oninput="setLineDesc('${id}',this.value)">
+            aria-label="CSI code for ${esc(it.desc)}" onchange="setLineCode(this.dataset.id,this.value)">
+          <input type="text" class="descin" data-k="line.${id}.desc" data-id="${id}" value="${esc(it.desc)}" oninput="setLineDesc(this.dataset.id,this.value)">
         </div></td>
-        <td><select class="basisin" data-k="line.${id}.basis" onchange="setBasis('${id}',this.value)">
+        <td><select class="basisin" data-k="line.${id}.basis" data-id="${id}" onchange="setBasis(this.dataset.id,this.value)">
           <option value="sf" ${it.basis==='sf'?'selected':''}>Per Res SF</option>
           <option value="asf" ${it.basis==='asf'?'selected':''}>Per Amen SF</option>
           <option value="unit" ${it.basis==='unit'?'selected':''}>Per Unit</option>
           <option value="ls" ${it.basis==='ls'?'selected':''}>Lump Sum</option></select></td>
-        <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span><input type="number" data-k="line.${id}.qty" value="${q}" min="0" style="width:88px"
-          onchange="setLineQty('${id}',this.value)"></td>
-        <td class="r"><input type="number" data-k="line.${id}.unit" value="${it.unit}" min="0" step="0.01" style="width:96px"
-          onchange="setLineRate('${id}',this.value)"></td>
+        <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span><input type="number" data-k="line.${id}.qty" data-id="${id}" value="${q}" min="0" style="width:88px"
+          onchange="setLineQty(this.dataset.id,this.value)"></td>
+        <td class="r"><input type="number" data-k="line.${id}.unit" data-id="${id}" value="${it.unit}" min="0" step="0.01" style="width:96px"
+          onchange="setLineRate(this.dataset.id,this.value)"></td>
         <td class="calc r strong">${usd(tot)}</td><td class="calc r">${pct.toFixed(1)}%</td>
-        <td class="no-print"><button class="btn-x" title="Remove line item" aria-label="Remove ${esc(it.desc)}" onclick="removeLine('${id}')">×</button></td></tr>`);
+        <td class="no-print"><button class="btn-x" title="Remove line item" aria-label="Remove ${esc(it.desc)}" data-id="${id}" onclick="removeLine(this.dataset.id)">×</button></td></tr>`);
     });
   });
   renderEditLegend();
@@ -6478,7 +6784,8 @@ function csiSchedule(){
   const p=parts(),divs=new Map(),soft=[],orphans=[];
   doc.lines.filter(l=>scopeActive(l.scope)).forEach(l=>{
     const row={code:l.code,desc:l.desc,scope:l.scope,grp:l.grp,basis:l.basis,
-               qty:lineQty(l),rate:l.unit,total:lineQty(l)*l.unit,edited:isEdited(l)};
+               qty:lineQty(l),rate:l.unit,total:lineQty(l)*l.unit,
+               edited:lineFlag(l)==='edited',derived:isDerived(l)};
     if(l.scope==='soft'){soft.push(row);return;}
     const k=csiDivKey(l.code);
     if(!k){orphans.push(row);return;}
@@ -6749,8 +7056,9 @@ function renderSummary(){
 /* ============ GUARD RAILS ============
    The rail arithmetic lives in guardrails.js, which the API requires as a
    byte-identical copy — the browser never owns a threshold or a formula, only
-   the presentation. The policy travels with the budget template (doc.guardrails)
-   so publishing a template publishes the rails. */
+   the presentation. The browser judges by the document's own type; the API
+   judges by DEFAULT_POLICY for the type it has STORED and ignores
+   doc.guardrails, so a hand-built document cannot pick its own rails. */
 /* " (3% of total project cost)" — appended to a fee label wherever the number
    alone would hide that it is a rate, which is every export. */
 function feeBasisNote(k){
@@ -6797,7 +7105,7 @@ function renderGuardrails(){
         :b.severity==='error'?'<span class="badge bad">Blocking</span>'
         :'<span class="badge warn">Review</span>'}</td>
       <td class="no-print r">${b.ok||b.acked?''
-        :`<button class="btn btn-ghost btn-sm" onclick="openAckDialog('${esc(b.id)}')">Override…</button>`}</td>
+        :`<button class="btn btn-ghost btn-sm" data-id="${esc(b.id)}" onclick="openAckDialog(this.dataset.id)">Override…</button>`}</td>
     </tr>`;
   host.innerHTML=
     (r.blocking?`<div class="gr-alert bad"><b>${r.blocking} guard rail${r.blocking===1?'':'s'} block${r.blocking===1?'s':''} this save.</b>
@@ -6808,13 +7116,17 @@ function renderGuardrails(){
     +`<div style="overflow-x:auto"><table class="tbl gr-tbl">
       <thead><tr><th style="width:42%">Rail</th><th class="r">Actual</th><th class="r">Guard Rail</th><th class="r">State</th><th class="no-print"></th></tr></thead>
       <tbody>${r.rails.map(row).join('')}</tbody></table></div>`
-    +`<div class="note" style="margin-top:10px">Thresholds ship with the budget template, so publishing a template version publishes the rails. A rail whose denominator is zero is not evaluated and never blocks.</div>`;
+    +`<div class="note" style="margin-top:10px">Thresholds are the built-in ones for the budget’s type, and the server applies the same table when it saves. A rail with nothing to judge yet is not evaluated and never blocks.</div>`;
 }
 /* An override needs a reason, and the reason is the point: it rides into the
    budget summary and every export so the decision is never invisible. Gated to
    director / super_admin — a rail anyone can wave through is not a rail. */
 function canAckGuardrail(){
-  return US.appRole==='director'||US.appRole==='super_admin';
+  if(US.appRole==='director'||US.appRole==='super_admin')return true;
+  // The platform super_admin role counts too — the same rule the API applies
+  // when it decides whether to accept a new override on save.
+  const roles=(principal&&principal.userRoles)||[];
+  return roles.includes('super_admin');
 }
 function openAckDialog(id){
   if(!canAckGuardrail()){
@@ -6914,11 +7226,16 @@ async function saveBudget(show){
     // carries one: a save that does not mention a project leaves the existing
     // link alone, which is what every edit of an older budget does.
     projectKey:doc.projectKey||undefined,
+    // The id this budget exists under. The API refuses an update to any other
+    // id (409 budget_id_changed), so a changed Budget ID can never overwrite
+    // a different budget. Absent until the first save, when it is a create.
+    originalId:docOriginalId||undefined,
     guardrailStatus:gr.status,guardrailBreachCount:gr.breaches.length};
   try{
     await api('budget/'+encodeURIComponent(doc.projectId),
       {method:'PUT',body:JSON.stringify({meta,doc,create:docIsNew||undefined})});
     saving=false;docIsNew=false;markSaved();
+    docOriginalId=doc.projectId;paintIdLock();   // it exists now: the id is fixed
     if(window.FSProjects)FSProjects.invalidate();   // its counts and money just moved
     if(show)toast('Saved '+doc.projectId);
   }catch(e){
@@ -6929,6 +7246,24 @@ async function saveBudget(show){
     if(e.status===422&&e.body&&e.body.error==='guardrail_breach'){
       go('budget');renderGuardrails();
       document.getElementById('sec-guardrails').scrollIntoView({block:'start'});
+      toast(e.message);
+      return;
+    }
+    // A guard-rail override this account is not allowed to record. The
+    // dialog already refuses it; reaching here means the document carried one
+    // in anyway. Show the server's reason against the card it concerns.
+    if(e.status===403&&e.body&&e.body.error==='override_not_allowed'){
+      go('budget');renderGuardrails();
+      document.getElementById('sec-guardrails').scrollIntoView({block:'start'});
+      toast(e.message);
+      return;
+    }
+    // The Budget ID was changed on a budget that already exists. The field
+    // is locked, so this is a forced edit; put the id back rather than let
+    // the next save try again.
+    if(e.status===409&&e.body&&e.body.error==='budget_id_changed'){
+      if(docOriginalId){doc.projectId=docOriginalId;fillForms();validateId();}
+      go('input');
       toast(e.message);
       return;
     }
@@ -7007,18 +7342,18 @@ function renderPricing(){
     let lastGrp=null;
     scLines.forEach(({l,i})=>{
       if(l.grp!==lastGrp){lastGrp=l.grp;
-        b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4">${l.grp}</td></tr>`);}
+        b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4">${esc(l.grp)}</td></tr>`);}
       b.insertAdjacentHTML('beforeend', adminUnlocked
-        ?`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${l.code}</span>
+        ?`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${esc(l.code)}</span>
             <input type="text" value="${esc(l.desc)}" style="width:72%" oninput="pricing.lines[${i}].desc=this.value"></td>
           <td><select onchange="pricing.lines[${i}].basis=this.value" style="width:104px;font-size:12px;padding:5px 8px">
             <option value="sf" ${l.basis==='sf'?'selected':''}>Per Res SF</option>
             <option value="asf" ${l.basis==='asf'?'selected':''}>Per Amen SF</option>
             <option value="unit" ${l.basis==='unit'?'selected':''}>Per Unit</option>
             <option value="ls" ${l.basis==='ls'?'selected':''}>Lump Sum</option></select></td>
-          <td class="r"><input type="number" value="${l.unit}" min="0" step="0.01" style="width:110px" oninput="pricing.lines[${i}].unit=+this.value"></td>
+          <td class="r"><input type="number" value="${esc(l.unit)}" min="0" step="0.01" style="width:110px" oninput="pricing.lines[${i}].unit=+this.value"></td>
           <td class="no-print"><button class="btn-x" onclick="pricing.lines.splice(${i},1);renderPricing()">×</button></td></tr>`
-        :`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${l.code}</span>${esc(l.desc)}</td>
+        :`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${esc(l.code)}</span>${esc(l.desc)}</td>
           <td><span class="badge">${l.basis==='sf'?'per res SF':l.basis==='asf'?'per amen SF':l.basis==='unit'?'per unit':'lump sum'}</span></td>
           <td class="calc r">${usd2(l.unit)}</td><td></td></tr>`);
     });
@@ -7221,9 +7556,10 @@ function buildReport(s){
     doc.other.forEach(o=>{const c=o.auto?tu:o.count;h+='<tr><td>'+esc(o.label)+'</td><td class="muted">gross income</td>'
       +'<td class="r mono">'+usd(o.rate)+'</td><td class="r mono">'+num(c)+'</td><td class="r mono">'+usd(o.rate*c)+'</td><td class="r mono">'+usd(12*o.rate*c)+'</td></tr>';});
     h+='<tr class="sub-tot"><td>Total gross other income</td><td></td><td></td><td></td><td class="r mono">'+usd(g.otherMo)+'</td><td class="r mono">'+usd(12*g.otherMo)+'</td></tr>';
-    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-      h+='<tr><td>'+esc(e.label)+'</td><td class="muted">'+(e.per==='fixed'?'fixed / mo':'per unit')+'</td>'
-      +'<td class="r mono">'+usd(e.rate)+'</td><td class="r mono">'+num(c)+'</td><td class="r mono">('+usd(e.rate*c)+')</td><td class="r mono">('+usd(12*e.rate*c)+')</td></tr>';});
+    doc.expenses.forEach(e=>{const x=expenseExportRow(e,g.incomeMo);
+      h+='<tr><td>'+esc(x.label)+'</td><td class="muted">'+x.basis+'</td>'
+      +'<td class="r mono">'+(x.pct?x.rateText:usd(x.rate))+'</td><td class="r mono">'+(x.pct?'':num(x.count))+'</td>'
+      +'<td class="r mono">('+usd(x.monthly)+')</td><td class="r mono">('+usd(x.yearly)+')</td></tr>';});
     h+='<tr class="sub-tot"><td>Total Operating Expenses</td><td></td><td></td><td></td><td class="r mono">('+usd(g.expMo)+')</td><td class="r mono">('+usd(12*g.expMo)+')</td></tr>';
     h+='<tr class="tot"><td>Net income (rent + net other)</td><td></td><td></td><td></td><td class="r mono">'+usd(g.rentMo+g.netOtherMo)+'</td><td class="r mono">'+usd(g.netYr)+'</td></tr>';
     h+='</tbody></table></section>';
@@ -7240,8 +7576,11 @@ function buildReport(s){
         if(it.grp!==last){last=it.grp;
           const gs=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
           h+='<tr class="grp"><td colspan="4">'+esc(it.grp)+'</td><td class="r mono">'+usd(gs)+'</td></tr>';}
-        const q=lineQty(it);
-        h+='<tr><td><span class="mono code">'+esc(it.code)+'</span> '+esc(it.desc)+(s.edits&&isEdited(it)?' <span class="edited-mark">edited</span>':'')+'</td>'
+        const q=lineQty(it),fl=s.edits?lineFlag(it):'';
+        // The derived line's provenance is already in its description, so its
+        // mark only has to say it is not a manual edit.
+        h+='<tr><td><span class="mono code">'+esc(it.code)+'</span> '+esc(it.desc)
+          +(fl==='edited'?' <span class="edited-mark">edited</span>':fl==='derived'?' <span class="derived-mark">derived</span>':'')+'</td>'
           +'<td class="muted">'+esc(BASIS_LABEL[it.basis]||it.basis)+'</td><td class="r mono">'+num(q)+'</td>'
           +'<td class="r mono">'+usd2(it.unit)+'</td><td class="r mono">'+usd(q*it.unit)+'</td></tr>';
       });
@@ -7398,9 +7737,11 @@ function buildBudgetFsdoc(s){
     }
     if(doc.expenses.length){
       blocks.push({kind:'table',columns:cols,
-        rows:doc.expenses.map(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-          return {line:e.label,basis:e.per==='fixed'?'fixed / mo':'per unit',rate:e.rate,count:c,
-            monthly:-e.rate*c,yearly:-12*e.rate*c};}),
+        // A % of income row's rate is a preformatted '12%' string (strings pass
+        // every renderer verbatim) and its count null, which prints as a dash.
+        rows:doc.expenses.map(e=>{const x=expenseExportRow(e,g.incomeMo);
+          return {line:x.label,basis:x.basis,rate:x.pct?x.rateText:x.rate,count:x.count,
+            monthly:-x.monthly,yearly:-x.yearly};}),
         totals:{line:'Total Operating Expenses',monthly:-g.expMo,yearly:-12*g.expMo}});
     }
     blocks.push({kind:'kv',rows:[kv('Net Income (Rent + Net Other), Monthly',g.rentMo+g.netOtherMo,'money'),
@@ -7411,21 +7752,24 @@ function buildBudgetFsdoc(s){
   if(s.budget){
     const cols=[{key:'item',label:'Line Item'},{key:'basis',label:'Basis'},
       {key:'qty',label:'Qty',fmt:'qty'},{key:'rate',label:'Rate',fmt:'money2'},{key:'total',label:'Total',fmt:'money'}];
-    const blocks=[];let anyEdited=false;
+    const blocks=[];let anyEdited=false;const derived=[];
     activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
       blocks.push({kind:'group',label:SCOPES[sc].toUpperCase()+'   ·   '+usd(scopeSum(sc))});
       [...new Set(ls.map(l=>l.grp))].forEach(gp=>{
         const rows=ls.filter(l=>l.grp===gp).map(it=>{
-          const q=lineQty(it),ed=s.edits&&isEdited(it);if(ed)anyEdited=true;
-          return {item:it.code+'  '+it.desc+(ed?' *':''),basis:BASIS_LABEL[it.basis]||it.basis,
-            qty:q,rate:it.unit,total:q*it.unit};});
+          const q=lineQty(it),fl=s.edits?lineFlag(it):'';
+          if(fl==='edited')anyEdited=true;
+          if(fl==='derived')derived.push(it);
+          return {item:it.code+'  '+it.desc+(fl==='edited'?' *':fl==='derived'?' (derived)':''),
+            basis:BASIS_LABEL[it.basis]||it.basis,qty:q,rate:it.unit,total:q*it.unit};});
         const gs=ls.filter(l=>l.grp===gp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
         blocks.push({kind:'table',columns:cols,rows,
           totals:{item:gp,total:gs}});
       });
     });
     if(anyEdited)blocks.push({kind:'note',text:'* marks a line manually edited away from the pricing library.'});
+    derived.forEach(it=>blocks.push({kind:'note',text:derivedNote(it)}));
     sheets.push({key:'budget',name:'Budget Detail',title:'Budget Detail',blocks});
   }
 
@@ -7563,8 +7907,9 @@ function legacyBudgetPdfDoc(s){
     doc.other.forEach(o=>{const c=o.auto?tu:o.count;
       rows.push(tRow(o.label,['gross income',o.rate,c,o.rate*c,12*o.rate*c],F));});
     rows.push(tRow('Total Gross Other Income',[undefined,undefined,undefined,g.otherMo,12*g.otherMo],F,true));
-    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-      rows.push(tRow(e.label,[e.per==='fixed'?'fixed / mo':'per unit',e.rate,c,-e.rate*c,-12*e.rate*c],F));});
+    // undefined prints a blank cell: a % of income row has no count.
+    doc.expenses.forEach(e=>{const x=expenseExportRow(e,g.incomeMo);
+      rows.push(tRow(x.label,[x.basis,x.pct?x.rateText:x.rate,x.pct?undefined:x.count,-x.monthly,-x.yearly],F));});
     rows.push(tRow('Total Operating Expenses',[undefined,undefined,undefined,-g.expMo,-12*g.expMo],F,true));
     rows.push(tRow('Net Income (Rent + Net Other)',[undefined,undefined,undefined,g.rentMo+g.netOtherMo,g.netYr],F,true));
     sheets.push({key:'other',name:'Income',title:'Other Income & Operating Expenses',blocks:[
@@ -7573,7 +7918,7 @@ function legacyBudgetPdfDoc(s){
 
   if(s.budget){
     const F=['text','qty','money2','money'];
-    const rows=[];let anyEdited=false;
+    const rows=[];let anyEdited=false;const derived=[];
     activeScopes().forEach(sc=>{
       const ls=doc.lines.filter(l=>l.scope===sc);if(!ls.length)return;
       rows.push(band(SCOPES[sc],[null,null,null,scopeSum(sc)],F,true));
@@ -7582,13 +7927,16 @@ function legacyBudgetPdfDoc(s){
         if(it.grp!==last){last=it.grp;
           const gs=doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0);
           rows.push(band(it.grp,[null,null,null,gs],F,false));}
-        const q=lineQty(it),ed=s.edits&&isEdited(it);if(ed)anyEdited=true;
-        rows.push(tRow(it.code+'  '+it.desc+(ed?' *':''),
+        const q=lineQty(it),fl=s.edits?lineFlag(it):'';
+        if(fl==='edited')anyEdited=true;
+        if(fl==='derived')derived.push(it);
+        rows.push(tRow(it.code+'  '+it.desc+(fl==='edited'?' *':fl==='derived'?' (derived)':''),
           [BASIS_LABEL[it.basis]||it.basis,q,it.unit,q*it.unit],F));
       });
     });
     const blocks=[{kind:'table',headers:['Basis','Qty','Rate','Total'],rows}];
     if(anyEdited)blocks.push({kind:'note',text:'* marks a line manually edited away from the pricing library.'});
+    derived.forEach(it=>blocks.push({kind:'note',text:derivedNote(it)}));
     sheets.push({key:'budget',name:'Budget Detail',title:'Budget Detail',blocks});
   }
 
@@ -7959,8 +8307,11 @@ async function exportExcel(){
       styleBody(ws.addRow([o.label,'gross income',o.rate,c,o.rate*c,12*o.rate*c]),f);});
     groupRow(ws,'Total Gross Other Income',g.otherMo,6);
     groupRow(ws,'OPERATING EXPENSES',null,6,true);
-    doc.expenses.forEach(e=>{const c=e.per==='fixed'?(e.count||1):(e.auto?tu:e.count);
-      styleBody(ws.addRow([e.label,e.per==='fixed'?'fixed / mo':'per unit',e.rate,c,e.rate*c,12*e.rate*c]),f);});
+    // A % of income row keeps a NUMERIC rate cell — the fraction, under a
+    // percent format — and leaves Count empty, so the sheet still calculates.
+    doc.expenses.forEach(e=>{const x=expenseExportRow(e,g.incomeMo);
+      const r=styleBody(ws.addRow([x.label,x.basis,x.pct?x.rate/100:x.rate,x.count,x.monthly,x.yearly]),f);
+      if(x.pct){r.getCell(3).numFmt=Number.isInteger(x.rate)?'0%':'0.0#%';r.getCell(4).border=box;}});
     groupRow(ws,'Total Operating Expenses',g.expMo,6);
     ws.addRow([]);
     groupRow(ws,'Net Other Income (Gross − Expenses)',g.netOtherMo,6);
@@ -7989,11 +8340,16 @@ async function exportExcel(){
       ls.forEach(it=>{
         if(it.grp!==last){last=it.grp;
           groupRow(ws,it.grp,doc.lines.filter(x=>x.scope===sc&&x.grp===it.grp).reduce((a,x)=>a+lineQty(x)*x.unit,0),span);}
-        const q=lineQty(it),ed=isEdited(it);
+        // A derived line is 'Derived', never 'YES', and has no Library Rate: its
+        // baseUnit is the $/SF placeholder the fee replaced, not a rate it was
+        // edited away from. Its Provenance names the schedule it came from.
+        const q=lineQty(it),fl=lineFlag(it),ed=fl==='edited',dv=fl==='derived';
         const r=styleBody(ws.addRow([it.code,it.desc,BASIS_LABEL[it.basis]||it.basis,q,it.unit,q*it.unit,
-          ...(s.edits?[ed?'YES':'',ed?(+it.baseUnit||0):null]:[]),'parametric-estimate']),f);
+          ...(s.edits?[ed?'YES':dv?'Derived':'',ed?(+it.baseUnit||0):null]:[]),
+          dv?editReason(it):'parametric-estimate']),f);
         r.getCell(1).font=F(9,{name:'Consolas',color:{argb:'FF'+BRAND.green}});
         if(s.edits&&ed)r.getCell(7).font=F(9,{bold:true,color:{argb:'FF'+BRAND.edit}});
+        if(s.edits&&dv)r.getCell(7).font=F(9,{bold:true,color:{argb:'FF'+BRAND.green}});
       });
     });
     totalRow(ws,'CONSTRUCTION HARD COST',p.hard,span);
@@ -8335,7 +8691,9 @@ function endBoot(){
       exportDefaults:exportDefaultsFor,
       rememberExport:rememberExportOptions,
       activity:postActivity,
-      timeFormat:()=>window.__fsTimeFormat||'12h'
+      timeFormat:()=>window.__fsTimeFormat||'12h',
+      // The Budget Assistant, focused on the open analysis (index.html owns the dialog).
+      askAI:openAnalysisAssistant
     });
     await initAuth();
     await loadUserSettings();   // account settings apply before anything paints

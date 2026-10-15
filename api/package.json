@@ -6,8 +6,9 @@
     "node": ">=22 <23"
   },
   "dependencies": {
-    "mssql": "^10.0.2",
+    "@anthropic-ai/sdk": "0.131.0",
     "exceljs": "^4.4.0",
+    "mssql": "^10.0.2",
     "pdfmake": "^0.2.20"
   }
 }

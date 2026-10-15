@@ -285,6 +285,66 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       ===Math.round(2*318972.18*100),
     String(await p.evaluate(()=>doc.lines.find(x=>x.derived==='impactFees').unit)));
 
+ // ---- Exports: the derived line is DERIVED, not edited, and a % of income
+ // expense row prints the amount it is charged at (BUDGET-SYSTEM.md §17 D2, D3).
+ // Every producer is called with the same selection the modal would give.
+ const ex = await p.evaluate(()=>{
+   const s={stats:1,units:1,other:1,budget:1,csi:1,summary:1,edits:1,sign:0};
+   const g=grossIncome();
+   const want=doc.expenses.map(e=>({label:e.label,pct:e.per==='pctIncome',rate:e.rate,mo:expenseMonthly(e,g.incomeMo)}));
+   const html=buildReport(s);
+   const rptRow=lbl=>(html.split('<tr>').find(r=>r.indexOf('<td>'+lbl+'</td>')===0)||'');
+   const sc20=html.split('<tr>').find(r=>/SC-20/.test(r))||'';
+   const fs=buildBudgetFsdoc(s).fsdoc;
+   const inc=fs.sheets.find(x=>x.key==='other');
+   const expT=inc.blocks.find(b=>b.kind==='table'&&b.totals&&b.totals.line==='Total Operating Expenses');
+   const bud=fs.sheets.find(x=>x.key==='budget');
+   const fsItems=bud.blocks.filter(b=>b.kind==='table').flatMap(b=>b.rows.map(r=>r.item));
+   const fsNotes=bud.blocks.filter(b=>b.kind==='note').map(b=>b.text);
+   const lg=legacyBudgetPdfDoc(s);
+   const lRows=lg.sheets.find(x=>x.key==='other').blocks[0].rows;
+   const lBud=lg.sheets.find(x=>x.key==='budget');
+   const lItems=lBud.blocks[0].rows.map(r=>r.label);
+   const lNotes=lBud.blocks.filter(b=>b.kind==='note').map(b=>b.text);
+   return {want,expMo:g.expMo,usd:want.map(w=>usd(w.mo)),
+     rpt:want.map(w=>rptRow(w.label)),sc20,
+     fsRows:expT.rows,fsTot:expT.totals.monthly,fsItems,fsNotes,
+     lRows:lRows.filter(r=>!r.total&&want.some(w=>w.label===r.label)),
+     lTot:(lRows.find(r=>r.label==='Total Operating Expenses')||{values:[]}).values[3],lItems,lNotes,
+     editedCount:editedCount(),isEditedAll:doc.lines.filter(isEdited).length};
+ });
+ const pctIdx = ex.want.map((w,i)=>w.pct?i:-1).filter(i=>i>=0);
+ ok('the budget carries % of income expense rows to export', pctIdx.length>0 && pctIdx.every(i=>ex.want[i].mo>0),
+    JSON.stringify(ex.want.filter(w=>w.pct)));
+ ok('print: a % of income row prints its real monthly amount, its rate as a percent and its basis',
+    pctIdx.every(i=>ex.rpt[i].includes('('+ex.usd[i]+')') && ex.rpt[i].includes('>'+ex.want[i].rate+'%<')
+      && ex.rpt[i].includes('% of income') && !ex.rpt[i].includes('($0)')),
+    JSON.stringify(pctIdx.map(i=>ex.rpt[i])));
+ ok('print: the derived impact-fee line is marked derived, not edited',
+    /derived-mark/.test(ex.sc20) && !/edited-mark/.test(ex.sc20), ex.sc20.slice(0,300));
+ ok('engine PDF: expense rows are the charged amounts and sum to the operating-expense total',
+    ex.fsRows.every((r,i)=>Math.abs(r.monthly+ex.want[i].mo)<1e-6)
+    && Math.abs(ex.fsRows.reduce((a,r)=>a+r.monthly,0)-ex.fsTot)<0.01 && Math.abs(ex.fsTot+ex.expMo)<0.01,
+    JSON.stringify({rows:ex.fsRows.reduce((a,r)=>a+r.monthly,0),tot:ex.fsTot}));
+ ok('engine PDF: a % of income row shows a percent rate and no count',
+    pctIdx.every(i=>ex.fsRows[i].rate===ex.want[i].rate+'%'&&ex.fsRows[i].count===null&&ex.fsRows[i].basis==='% of income'),
+    JSON.stringify(pctIdx.map(i=>ex.fsRows[i])));
+ ok('engine PDF: SC-20 is flagged derived with its provenance, never with the edited asterisk',
+    ex.fsItems.some(t=>/^SC-20 .* \(derived\)$/.test(t)) && !ex.fsItems.some(t=>/^SC-20 .*\*$/.test(t))
+    && ex.fsNotes.some(n=>/SC-20 is not a manual edit\. Derived from the impact fee schedule — City of Waller, TX \(high side, v1\)/.test(n)),
+    JSON.stringify({items:ex.fsItems.filter(t=>/SC-20/.test(t)),notes:ex.fsNotes}));
+ ok('legacy PDF: expense rows are the charged amounts and sum to the total',
+    ex.lRows.every((r,i)=>Math.abs(r.values[3]+ex.want[i].mo)<1e-6)
+    && Math.abs(ex.lRows.reduce((a,r)=>a+r.values[3],0)-ex.lTot)<0.01
+    && pctIdx.every(i=>ex.lRows[i].values[1]===ex.want[i].rate+'%'&&ex.lRows[i].values[2]===undefined),
+    JSON.stringify({rows:ex.lRows.map(r=>r.values),tot:ex.lTot}));
+ ok('legacy PDF: SC-20 is flagged derived with its provenance',
+    ex.lItems.some(t=>/^SC-20 .* \(derived\)$/.test(t)) && !ex.lItems.some(t=>/^SC-20 .*\*$/.test(t))
+    && ex.lNotes.some(n=>/City of Waller, TX \(high side, v1\)/.test(n)),
+    JSON.stringify({items:ex.lItems.filter(t=>/SC-20/.test(t)),notes:ex.lNotes}));
+ ok('the edited-lines count leaves the derived line out, matching what is flagged',
+    ex.editedCount===ex.isEditedAll-1, ex.editedCount+' counted vs '+ex.isEditedAll+' isEdited');
+
  // "None" is a decision and must zero the line — NOT fall back to the template's
  // $7.50/SF allowance, which would charge a project that said it pays nothing.
  await p.selectOption('#feeSchedule','__none__'); await p.waitForTimeout(600);
@@ -339,6 +399,96 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('and states the per-EDU rates the impact fees come from',
     /3,689\.91.*water/i.test(await p.locator('#feeLibRates').textContent()),
     (await p.locator('#feeLibRates').textContent()).slice(0,120));
+
+ // ---- Stored XSS: row ids are data, never markup or code.
+ // A lineId used to break out of its data-k attribute (autofocus + onfocus ran
+ // on open, no click needed), and a manual-fee rowId sat inside a quoted string
+ // in an inline handler, where esc() is no defence — the HTML parser decodes
+ // &#39; back to a quote. Three layers: the API refuses, migrate() regenerates,
+ // and the render keeps ids out of handler source.
+ const HOSTILE_LINE='x" autofocus onfocus="window.__xss=1" data-z="';
+ const HOSTILE_FEE="x');window.__xss=2;('";
+ const refused=await p.evaluate(async a=>{
+   const stored=await (await fetch('/api/budget/TST-9999')).json();
+   const put=async d=>{
+     const r=await fetch('/api/budget/TST-9999',{method:'PUT',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({meta:{name:d.name,projectKey:'OP-0301',status:'Draft'},doc:d})});
+     return {status:r.status,body:await r.json().catch(()=>null)};
+   };
+   const d1=JSON.parse(JSON.stringify(stored));d1.lines[0].lineId=a.line;
+   const d2=JSON.parse(JSON.stringify(stored));
+   d2.impactFees=Object.assign({},d2.impactFees,{manual:[{rowId:a.fee,label:'Bad',amount:1}]});
+   const sched=await fetch('/api/pricing?scope=fee-schedule',{method:'PUT',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({doc:{scheduleKey:'tx-xss',name:'XSS City',meters:[{rowId:a.line,edu:1}],fees:[]}})});
+   return {line:await put(d1),fee:await put(d2),sched:sched.status};
+ },{line:HOSTILE_LINE,fee:HOSTILE_FEE});
+ ok('the API refuses a budget whose lineId could carry markup (400 bad_identifier)',
+    refused.line.status===400&&refused.line.body&&refused.line.body.error==='bad_identifier'
+    &&refused.line.body.field==='lines[0].lineId', JSON.stringify(refused.line));
+ ok('the API refuses a hostile manual-fee rowId',
+    refused.fee.status===400&&refused.fee.body&&refused.fee.body.field==='impactFees.manual[0].rowId',
+    JSON.stringify(refused.fee));
+ ok('a fee schedule cannot publish a hostile meter rowId', refused.sched===400, String(refused.sched));
+
+ // A budget saved before the fix can still hold such ids, so serve one
+ // directly — the mock would refuse to store it now.
+ const stored=await p.evaluate(async()=>(await fetch('/api/budget/TST-9999')).json());
+ const poisoned=JSON.parse(JSON.stringify(stored));
+ poisoned.lines[0].lineId=HOSTILE_LINE;
+ poisoned.impactFees=Object.assign({},poisoned.impactFees,{
+   meters:[{rowId:HOSTILE_LINE,qty:1}],extras:[{feeId:HOSTILE_FEE,qty:1}],
+   manual:[{rowId:HOSTILE_FEE,label:'Poisoned Fee',amount:10}]});
+ const p2=await b.newPage({viewport:{width:1400,height:1000}});
+ p2.on('dialog',d=>d.accept());
+ const errs2=[]; p2.on('pageerror',e=>errs2.push(e.message));
+ await p2.route('**/api/budget/TST-9999',r=>r.request().method()==='GET'
+   ?r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(poisoned)}):r.continue());
+ await p2.goto('http://127.0.0.1:8100/index.html#/budget/TST-9999',{waitUntil:'networkidle'});
+ await p2.waitForTimeout(1500);
+ ok('the poisoned budget opens', await p2.evaluate(()=>!!doc&&doc.projectId==='TST-9999'
+    &&document.querySelectorAll('#budBody input[data-k$=".sel"]').length>0));
+ ok('opening it runs no script', (await p2.evaluate(()=>window.__xss))===undefined,
+    String(await p2.evaluate(()=>window.__xss)));
+ ok('no injected attribute reached the page',
+    await p2.evaluate(()=>!document.querySelector('[data-z],[autofocus],[onfocus*="__xss"]')));
+ const SAFE_ID=/^[A-Za-z0-9_-]{1,64}$/;
+ const ids=await p2.evaluate(()=>({line:doc.lines[0].lineId,
+   fee:[...doc.impactFees.meters.map(m=>m.rowId),...doc.impactFees.extras.map(x=>x.feeId),
+        ...doc.impactFees.manual.map(m=>m.rowId)]}));
+ ok('the hostile lineId was regenerated on load',
+    SAFE_ID.test(ids.line)&&ids.line!==HOSTILE_LINE, ids.line);
+ ok('hostile fee row ids were regenerated on load',
+    ids.fee.length===3&&ids.fee.every(x=>SAFE_ID.test(x)), JSON.stringify(ids.fee));
+
+ await p2.evaluate(()=>go('fees')); await p2.waitForTimeout(700);
+ ok('the regenerated manual fee renders',
+    (await p2.locator('#feeOtherTbl input[data-k$=".label"]').count())===1);
+ await p2.click('#feeOtherTbl button:has-text("Remove")'); await p2.waitForTimeout(300);
+ ok('its Remove button finds the row through data-id',
+    (await p2.evaluate(()=>doc.impactFees.manual.length))===0);
+ ok('the fee step runs no script either', (await p2.evaluate(()=>window.__xss))===undefined);
+
+ // Once opened, the repaired document is clean enough for the API to accept.
+ const [savedResp]=await Promise.all([
+   p2.waitForResponse(r=>r.url().endsWith('/api/budget/TST-9999')&&r.request().method()==='PUT'),
+   p2.evaluate(()=>saveBudget())]);
+ ok('the repaired budget saves', savedResp.status()===200, String(savedResp.status()));
+
+ // Rendering is its own layer: an id that somehow skipped migrate() still
+ // renders inert and round-trips exactly through data-id.
+ await p2.evaluate(()=>go('budget')); await p2.waitForTimeout(400);
+ const rt=await p2.evaluate(h=>{
+   doc.lines[0].lineId=h; renderBudget();
+   const el=[...document.querySelectorAll('#budBody input[data-k$=".sel"]')].find(x=>x.dataset.id===h);
+   if(el)el.click();
+   const out={found:!!el,sel:selected.has(h),xss:window.__xss,injected:!!document.querySelector('[data-z]')};
+   selected.delete(h); doc.lines[0].lineId=newLineId(); renderBudget();
+   return out;
+ },HOSTILE_LINE);
+ ok('an unregenerated hostile lineId renders inert and round-trips through data-id',
+    rt.found&&rt.sel&&rt.xss===undefined&&!rt.injected, JSON.stringify(rt));
+ ok('no JS errors on the poisoned budget', errs2.length===0, errs2.join('|'));
+ await p2.close();
 
  ok('no JS errors', errs.length===0, errs.join('|'));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

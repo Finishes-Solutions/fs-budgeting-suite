@@ -141,7 +141,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('budget expenses shown with their total',
     /partial/i.test(expTxt)&&/7,800/.test(expTxt), expTxt.slice(0,120));
  ok('and the derived ratio shows the arithmetic it came from',
-    /449,820/.test(await p.locator('#invExpDerived').textContent()),
+    // GOI = rent × (1 − vacancy) + other income, as the engine computes it:
+    // 480,000 × 0.9 + 19,800 = 451,800 (vacancy on rent only — BUDGET-SYSTEM.md §15).
+    /451,800/.test(await p.locator('#invExpDerived').textContent())
+      && /rent less 10\.0% vacancy, plus \$19,800 other income/.test(await p.locator('#invExpDerived').textContent()),
     await p.locator('#invExpDerived').textContent());
  ok('with the source budget flagged as outside the guard rail',
     /guard rail/i.test(await p.locator('#invExpDerived').textContent()));
@@ -297,6 +300,32 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     JSON.stringify(resynced.input.expenses.derivedFrom));
  ok('the saved version is NOT restated by a re-sync',
     resynced.currentVersionNumber===1, String(resynced.currentVersionNumber));
+
+ // ---- Ask AI on the analysis page. The mock runs the real assistant module
+ // with a deterministic stand-in for Claude; what is pinned is that the
+ // analysis, its engine-computed drivers and its source budget reach the
+ // model, and that a what-if runs through the engine via run_scenario.
+ await p.click('#page-analysis button:has-text("Ask AI")'); await p.waitForTimeout(300);
+ ok('Ask AI opens the assistant on this analysis',
+    await p.locator('#assistantModal.on').count()===1
+    && /Budget Assistant — /.test(await p.locator('#assistantTitle').textContent())
+    && (await p.locator('#aiLog [data-ai-suggest]').count())===6);
+ await p.click('#aiLog [data-ai-suggest="0"]');
+ await p.waitForSelector('#aiLog .ai-msg.bot:has-text("mock pro forma answer")',{timeout:5000});
+ const aiA=await p.locator('#aiLog .ai-msg.bot').last().textContent();
+ ok('the answer carries the engine IRR, a ranked driver and the source budget',
+    /Equity IRR: -?\d+\.\d\d%/.test(aiA) && /Top driver: (?!none)/.test(aiA) && /Source budget: loaded/.test(aiA), aiA);
+ await p.fill('#aiQ','What would RUBS add?'); await p.press('#aiQ','Enter');
+ await p.waitForSelector('#aiLog .ai-msg.bot:has-text("With RUBS")',{timeout:5000});
+ ok('a what-if runs through the engine',
+    /Looked up: run scenario/.test(await p.locator('#aiLog .ai-msg.bot').last().textContent()));
+ await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+ // From the budget side, the same pro forma is in reach.
+ const proFormaCount=await p.evaluate(async()=>{
+   const r=await fetch('/api/budget/TST-9911?scope=ask',{method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({question:'How does the pro forma look?'})});
+   return (await r.json()).answer;});
+ ok('a budget question sees the pro forma built from it', /Pro formas: [1-9]/.test(proFormaCount), proFormaCount);
 
  // ---- Home-page creation: ONE button, the shared modal
  await p.click('#nav-home'); await p.waitForTimeout(600);
