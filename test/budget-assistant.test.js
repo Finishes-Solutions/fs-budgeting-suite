@@ -406,3 +406,65 @@ test('review: impact fees set to None are a decision to confirm, not a $0 mistak
   assert.ok(r.findings.some(f => f.area === 'impactFees' && /None/.test(f.finding)));
   assert.strictEqual(A.budgetFacts(d).impactFees.state, 'none — this project pays no impact fees');
 });
+
+/* ------------------- the clock: streaming, partial answers, diagnostics ------------------- */
+
+// A streaming client whose call never finishes on its own; it emits `text`
+// (if any) and then waits for the deadline to abort it.
+function stallingStreamClient(textSoFar) {
+  const calls = [];
+  return { calls, beta: { messages: {
+    create() { throw new Error('should stream'); },
+    stream(req) {
+      calls.push(req);
+      let onText = null, reject = null;
+      const p = new Promise((_, rj) => { reject = rj; });
+      return {
+        on(ev, fn) { if (ev === 'text') { onText = fn; if (textSoFar) setTimeout(() => onText(textSoFar), 5); } return this; },
+        finalMessage() { return p; },
+        abort() { reject(Object.assign(new Error('aborted'), { name: 'APIUserAbortError' })); }
+      };
+    } } } };
+}
+// Starts the clock 34 s into the 38 s window, so the deadline is ~2.5 s away.
+const lateClock = () => { let first = true; return () => (first ? (first = false, 0) : 34000); };
+
+test('a call cut off by the deadline keeps the answer written so far', async () => {
+  const r = await run({ client: stallingStreamClient('Total project cost is built from'), now: lateClock(),
+    body: { question: 'q' } });
+  assert.strictEqual(r.status, 200);
+  const b = bodyOf(r);
+  assert.strictEqual(b.answer, 'Total project cost is built from');
+  assert.strictEqual(b.cutShortForTime, true);
+  assert.strictEqual(b.truncated, true);
+});
+
+test('a call with no text by the deadline says where the time went', async () => {
+  const r = await run({ client: stallingStreamClient(''), now: lateClock(), body: { question: 'q' } });
+  assert.strictEqual(r.status, 504);
+  const b = bodyOf(r);
+  assert.strictEqual(b.error, 'ai_timeout');
+  assert.match(b.detail, /gathering context .*s; call 1: .*deadline/);
+});
+
+test('a turn that spent its tokens thinking is asked once for the answer', async () => {
+  const c = fakeClient([
+    { stop_reason: 'max_tokens', usage: { output_tokens: 16000 }, content: [{ type: 'thinking', thinking: '', signature: 's' }] },
+    text('The short answer.')]);
+  const r = await run({ client: c, body: { question: 'q' } });
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(bodyOf(r).answer, 'The short answer.');
+  const m = c.calls[1].req.messages;
+  assert.strictEqual(m.at(-2).role, 'assistant', 'the thinking turn is kept, append-only');
+  assert.match(m.at(-1).content, /answer now/);
+});
+
+test('the forced final answer runs at low effort', async () => {
+  let t = 0;
+  const c = fakeClient([
+    () => { t += 30000; return { stop_reason: 'tool_use', usage: {}, content: [{ type: 'tool_use', id: 't1', name: 'list_versions', input: { budget_id: 'TST-0001' } }] }; },
+    text('ok')]);
+  await run({ client: c, now: () => t, body: { question: 'q' } });
+  assert.deepStrictEqual(c.calls[0].req.output_config, { effort: 'medium' });
+  assert.deepStrictEqual(c.calls[1].req.output_config, { effort: 'low' });
+});

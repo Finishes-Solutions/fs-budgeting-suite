@@ -41,6 +41,13 @@ the app; we have no evidence it was ever used. It is fixed in three layers:
 
 ### The Budget Assistant reads your pro formas, reviews budgets and finds revenue
 
+**Answers no longer fail with "ran out of time" when the model is slow.** The
+assistant streams its answer. If the time limit arrives mid-answer, you get
+what it had written, marked as cut short, instead of an error. When it truly
+has nothing yet, the error says where the time went, so a slow answer can be
+diagnosed. Answers are also kept shorter and lean on the context already
+loaded.
+
 **The assistant now runs on Claude Haiku 5.5 by default**, at medium effort:
 fast, inexpensive, and well inside the time a request is allowed. To use a
 more capable model for deeper analysis, set the `ANTHROPIC_MODEL` application
