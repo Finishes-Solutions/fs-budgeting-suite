@@ -100,6 +100,18 @@ async function nbFinish(p,project,id,name){
  ok('and the expense card is marked',
     await p.evaluate(()=>!!document.querySelector('[data-gr="expenses"].gr-bad, [data-gr="expenses"].gr-warn'))
       || /Operating Expenses/.test(await p.locator('#grBody').textContent()));
+ // The rail's name is a way to the field that drives it.
+ ok('each rail name is a button',
+    (await p.locator('#grBody .gr-tbl tbody tr').count())
+      === (await p.locator('#grBody .gr-tbl tbody tr button.gr-jump').count()));
+ await p.click('#grBody button.gr-jump:has-text("Operating Expenses")'); await p.waitForTimeout(500);
+ const jumped=await p.evaluate(()=>({page:currentPage,
+   inCard:!!document.activeElement.closest('.card')
+     && !!document.activeElement.closest('.card').querySelector('[data-gr="expenses"]'),
+   flash:document.querySelector('#page-input [data-gr="expenses"]').classList.contains('fs-flash')}));
+ ok('it opens the Inputs page at the expense table', jumped.page==='input' && jumped.inCard, JSON.stringify(jumped));
+ ok('and flashes the field it landed on', jumped.flash);
+ await p.evaluate(()=>go('budget')); await p.waitForTimeout(300);
 
  // ---------- 4. the endpoint refuses independently of the button ----------
  const direct=await p.evaluate(async()=>{

@@ -81,6 +81,10 @@ try{
   --ink-500:#6b7174;--ink-400:#939a9d;--ink-300:#bcc2c4;--ink-200:#dde1e2;--ink-150:#e8ebeb;
   --ink-100:#f1f3f3;--ink-50:#f8f9f9;--white:#fff;
   --warn:#b7791f;--danger:#b42318;
+  /* Readable amber for text, chips and banners. --warn itself is a 3.4:1 accent
+     on its own tint, so it is kept for dots and borders only; anything a person
+     reads in amber uses --warn-ink on --warn-bg. */
+  --warn-ink:#8A6116;--warn-bg:#FBF3E4;--warn-bd:#EAD9B0;
   --edit:#2563c9;--edit-100:#d9e6fa;--edit-50:#f0f5fd;
   --fb:'Montserrat',system-ui,sans-serif;--fm:'IBM Plex Mono',ui-monospace,monospace;
   --r:4px;--rm:6px;
@@ -108,6 +112,7 @@ html[data-theme=dark]{
   --green-900:#0c2b1b;--green-800:#17693a;--green-700:#1e8a48;--green-600:#2a9c55;--green-500:#3fae66;
   --green-200:#2d6a45;--green-100:#1c3a29;--green-50:#182b20;
   --warn:#d9a441;--danger:#e06056;
+  --warn-ink:#D9A441;--warn-bg:#332A12;--warn-bd:#5C4715;
   --edit:#7fb0ea;--edit-100:#1c3049;--edit-50:#17263a;
   --chrome:#0d1110;--solid:#101513;--solid-2:#1d2521;
   --sh:0 1px 2px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);
@@ -244,7 +249,9 @@ html[data-theme=dark] .st-cancel{color:#E0685E;border-color:#6E2D28;background:#
 .set-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .set-grid .wide{grid-column:1/-1}
 .set-note{font-size:12px;color:var(--ink-500);margin-top:8px}
-input.set-locked{background:var(--ink-50);color:var(--ink-500);cursor:not-allowed}
+input.set-locked{background:var(--ink-50);color:var(--ink-500);cursor:not-allowed;border-style:dashed}
+/* Read-only means no focus ring promising an edit, either. */
+input.set-locked:focus{border-color:var(--ink-300);box-shadow:none}
 /* ---- toggle switch (Settings → Exports) ---- */
 .switch-row{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
 .switch{position:relative;flex:none;width:40px;height:22px;margin-top:1px;display:inline-block}
@@ -378,6 +385,9 @@ nav button[disabled]{opacity:.35;cursor:not-allowed}
 .nav-drop button.on{background:var(--green-700);color:#fff}
 
 main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
+/* Room under the editors for the bug button (bottom-left, feedback.css), so the
+   last row and the + Add buttons can always be scrolled out from under it. */
+body:has(#page-input.on,#page-budget.on,#page-csi.on,#page-pricing.on) main{padding-bottom:84px}
 .page{display:none}.page.on{display:block}
 .page-title{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px}
 .page-title h1{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--ink-950)}
@@ -422,6 +432,11 @@ main{max-width:1440px;margin:0 auto;padding:24px 32px 44px}
 .wf-steps button.flag:hover{background:#F6E9CE;border-color:#DFC98F;color:#5A400E}
 .wf-steps button.on.flag{background:#8A6116;border-color:#8A6116;color:#fff}
 .wf-steps button.on.flag:hover{background:#8A6116;border-color:#8A6116;color:#fff}
+/* The current step is --solid, which in dark is barely darker than the page;
+   it lifts to the raised ink surface the dark buttons use. */
+html[data-theme=dark] .wf-steps button.on:not(.flag),html[data-theme=dark] .wf-steps a.on,
+html[data-theme=dark] .wf-steps button.on:not(.flag):hover,html[data-theme=dark] .wf-steps a.on:hover{
+  background:var(--ink-200);border-color:var(--ink-400);color:var(--ink-950)}
 html[data-theme=dark] .wf-steps button.flag{background:#2a2317;border-color:#4d4026;color:#E8C97A}
 /* completed steps carry a green dot (owner preference: dot, not a check mark) */
 .wf-steps button.done::after,.wf-steps a.done::after{content:'';display:inline-block;width:7px;height:7px;
@@ -472,7 +487,10 @@ body.modal-open{overflow:hidden}
 @media(max-width:900px){.g4,.g5{grid-template-columns:1fr 1fr}}
 
 label.fld{display:block}
-label.fld .lab{display:block;margin-bottom:6px;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
+/* .fld, not label.fld: the fee fields (Developer Fee and friends) are div.fld
+   because they wrap a $/% toggle as well as the input, and they rendered their
+   labels in body type beside the mono labels of their neighbours. */
+.fld .lab{display:block;margin-bottom:6px;font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);font-weight:500}
 input[type=text],input[type=number],input[type=password],input[type=month],input[type=date],select,textarea{
   width:100%;padding:9px 12px;border:1px solid var(--ink-200);border-radius:var(--r);
   font-family:var(--fb);font-size:14px;color:var(--ink-900);background:var(--white);outline:none;
@@ -484,13 +502,16 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .fld-note{font-size:11.5px;color:var(--ink-500);margin-top:4px;line-height:1.45}
 
 .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:var(--r);
-  font-family:var(--fb);font-weight:600;font-size:13px;padding:8px 16px;cursor:pointer;transition:all .12s}
+  font-family:var(--fb);font-weight:600;font-size:13px;padding:8px 16px;cursor:pointer;transition:all .12s;
+  white-space:nowrap}
+/* One focus ring for every control that is not a text field. */
+.btn:focus-visible,.btn-x:focus-visible,.seg button:focus-visible{outline:none;box-shadow:var(--focus)}
 .btn-primary{background:var(--green-700);color:#fff}.btn-primary:hover{background:var(--green-800)}
 .btn-ghost{background:transparent;border-color:var(--ink-200);color:var(--ink-700)}
 .btn-ghost:hover{border-color:var(--ink-400);background:var(--ink-50)}
 .btn-dark{background:var(--solid);color:#fff}.btn-dark:hover{background:var(--solid-2)}
 .btn-sm{padding:5px 10px;font-size:12px}
-.btn-x{background:none;border:none;color:var(--ink-400);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:var(--r)}
+.btn-x{background:none;border:none;color:var(--ink-500);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:var(--r)}
 .btn-x:hover{color:var(--danger);background:var(--ink-100)}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 /* Announced as unavailable but still focusable, so the reason is discoverable by
@@ -535,9 +556,39 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .tbl td.calc.strong{color:var(--ink-950);font-weight:600}
 .tbl tr.total td{border-top:2px solid var(--ink-900);border-bottom:none;font-weight:700;color:var(--ink-950);padding-top:10px}
 .tbl input,.tbl select{border:1px solid transparent;background:transparent;padding:4px 8px}
+/* A resting underline is what tells an editable cell from a calculated one —
+   without it a rate and the total beside it looked identical. An inset shadow
+   rather than a border, so the hover and focus borders still own the edges
+   and :focus's ring replaces it outright. */
+.tbl input:not([type=checkbox]),.tbl select{box-shadow:inset 0 -1px 0 var(--ink-200)}
 .tbl input:hover,.tbl select:hover{border-color:var(--ink-200);background:var(--white)}
-.tbl input:focus,.tbl select:focus{border-color:var(--green-600);background:var(--white)}
-.tbl input[type=number]{font-family:var(--fm);font-size:13px;text-align:right}
+.tbl input:focus,.tbl select:focus{border-color:var(--green-600);background:var(--white);box-shadow:var(--focus)}
+.tbl input[type=number],.tbl input.qtyin{font-family:var(--fm);font-size:13px;text-align:right}
+/* Figures line up column to column whatever face a theme pack swaps in. */
+.tbl td.calc,.tbl input[type=number],.tbl input.qtyin,input.num,.stat .v,.sum-row .v,.metric .v{
+  font-variant-numeric:tabular-nums}
+.tbl td.r{white-space:nowrap}
+/* A field whose value no longer matches the pricing library (or the derived
+   quantity) says so itself, not only through the row's blue dot. */
+.tbl input.edited-val{color:var(--edit);background:var(--edit-50);box-shadow:inset 0 -1px 0 var(--edit)}
+.tbl input.edited-val:focus{box-shadow:var(--focus)}
+/* The reset control has a fixed slot on every row, like the dots, so a field
+   with a reset button lines up with one without. */
+.rst-slot{display:inline-block;width:20px;vertical-align:middle;text-align:center}
+.rst-btn{width:20px;height:20px;padding:0;border:none;border-radius:50%;background:transparent;cursor:pointer;
+  color:var(--edit);font-size:13px;line-height:20px;font-family:var(--fb)}
+.rst-btn:hover{background:var(--edit-100)}
+.rst-btn:focus-visible{outline:none;box-shadow:var(--focus)}
+/* A line just added from the catalog, and a field reached from a guard rail,
+   flash once so the eye lands on them. */
+@keyframes fsflash{0%{background:var(--warn-bg);box-shadow:0 0 0 3px var(--warn-bd)}
+  70%{background:var(--warn-bg);box-shadow:0 0 0 3px var(--warn-bd)}100%{box-shadow:0 0 0 3px transparent}}
+@keyframes fsflashrow{0%,70%{background:var(--warn-bg)}100%{background:transparent}}
+.fs-flash{animation:fsflash 1.8s ease-out;border-radius:var(--r)}
+tr.fs-flash{animation:none}
+tr.fs-flash td{animation:fsflashrow 1.8s ease-out}
+@media (prefers-reduced-motion:reduce){.fs-flash,tr.fs-flash td{animation-duration:.01s}
+  .fs-flash{box-shadow:0 0 0 3px var(--warn-bd)}}
 .scope-hd td{background:var(--solid);color:#fff;font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
   font-weight:600;padding:9px 12px}
 .scope-hd .div-sum{float:right;color:#fff}   /* white, not green — this sits on ink-900 */
@@ -585,6 +636,25 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
      them shrink instead stacks text on top of itself. */
   #page-budgets .tbl,.inv-table.inv-list{min-width:720px}
   #page-budget .tbl,#page-csi .tbl{min-width:760px}
+  /* The budget grid pans to reach Qty and Rate, and the line it belongs to
+     pans with it — so the Line Item column holds still at the left edge. */
+  #page-budget #sec-budget .tbl{min-width:880px}
+  #sec-budget thead th:nth-child(2),#budBody tr:not(.scope-hd):not(.grp-hd) td:nth-child(2){
+    position:sticky;left:0;z-index:1;background:var(--white);box-shadow:inset -1px 0 0 var(--ink-150)}
+  #sec-budget thead th:nth-child(2){z-index:3;box-shadow:inset -1px 0 0 var(--ink-150),inset 0 -1px 0 var(--ink-200)}
+  /* A narrow pinned column, so Qty or Rate still fits beside it on a phone.
+     A table cell treats width as a minimum, so the line-item box itself is
+     given the width; the code field narrows to fit (it still scrolls if a
+     custom code is longer). */
+  /* Sticky cells stick at the pane's padding edge, so the pane drops its side
+     padding here — otherwise panned cells showed through a 14px gutter at
+     the left of the pinned column. */
+  #sec-budget .budget-scroll{padding-left:0;padding-right:0}
+  #sec-budget th:nth-child(2){width:210px!important}
+  #budBody td:nth-child(2) .lineitem{width:190px}
+  #budBody .lineitem .codein{flex-basis:74px;width:74px}
+  #budBody tr.sel td:nth-child(2){background:var(--green-50)}
+  #budBody tr.edited:hover td:nth-child(2){background:var(--edit-50)}
   #page-input .tbl{min-width:640px}
   #page-pricing .tbl{min-width:640px}
   .stats{grid-template-columns:repeat(2,1fr)}
@@ -648,6 +718,8 @@ input.num{font-family:var(--fm);font-size:13px;text-align:right}
 .tbl input[type=checkbox]:focus-visible{outline:none;box-shadow:var(--focus)}
 .grp-hd td.calc,.grp-hd td.calc.strong{color:var(--ink-950)}
 tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
+.tbl tr.clickable:focus-visible{outline:none;box-shadow:var(--focus)}
+.tbl tr.clickable:focus-visible td{background:var(--green-50)}
 
 .stats{display:grid;grid-template-columns:repeat(5,1fr);background:var(--solid);border-radius:var(--rm);overflow:hidden;margin-bottom:20px}
 @media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
@@ -666,7 +738,7 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 
 .badge{display:inline-block;font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
   padding:3px 8px;border-radius:var(--r);border:1px solid var(--ink-200);color:var(--ink-600)}
-.badge.warn{border-color:#e6d3ae;background:#fdf6e8;color:var(--warn)}
+.badge.warn{border-color:var(--warn-bd);background:var(--warn-bg);color:var(--warn-ink)}
 .badge.ok{border-color:var(--green-200);background:var(--green-50);color:var(--green-700)}
 .badge.bad{border-color:#eccbc7;background:#fdf1f0;color:var(--danger)}
 
@@ -743,6 +815,25 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:var(--green-50)}
 .fld.gr-warn input.num{border-color:var(--warn)}
 [data-gr].gr-bad>.lab::after{content:' ▲';color:var(--danger);font-size:10px}
 [data-gr].gr-warn>.lab::after{content:' ▲';color:var(--warn);font-size:10px}
+[data-gr].gr-bad>.eyebrow::after{content:' ▲';color:var(--danger);font-size:10px}
+[data-gr].gr-warn>.eyebrow::after{content:' ▲';color:var(--warn);font-size:10px}
+/* Each rail's name is a way to the field that drives it — the pill look the
+   investment analysis uses for its own jump-to-the-assumption buttons. */
+.gr-jump{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  border:1px solid var(--ink-200);background:var(--white);color:var(--ink-800);border-radius:999px;
+  padding:2px 10px;cursor:pointer;transition:background .12s,border-color .12s;text-align:left}
+.gr-jump::after{content:' →';color:var(--ink-500)}
+.gr-jump:hover{background:var(--ink-50);border-color:var(--ink-300)}
+.gr-jump:focus-visible{outline:none;box-shadow:var(--focus)}
+.gr-r-warn .gr-jump{border-color:#E0C98F;color:#6E4E12}
+.gr-r-warn .gr-jump:hover{background:#F6E9CE;border-color:#C9A94F}
+.gr-r-bad .gr-jump{border-color:#e6b8b2;color:#8c2a20}
+.gr-r-bad .gr-jump:hover{background:#fbe4e1;border-color:#d79a92}
+html[data-theme=dark] .gr-jump{background:transparent;color:var(--ink-900)}
+html[data-theme=dark] .gr-r-warn .gr-jump{border-color:#4d4026;color:#E8C97A}
+html[data-theme=dark] .gr-r-bad .gr-jump{border-color:#6e2d28;color:#e9b6b1}
+html[data-theme=dark] .gr-jump:hover,html[data-theme=dark] .gr-r-warn .gr-jump:hover,
+html[data-theme=dark] .gr-r-bad .gr-jump:hover{background:rgba(255,255,255,.06)}
 /* A marked CARD header has no .lab to hang an arrow off, so it takes a stripe.
    Qualified to .card-hd on purpose: a broad [data-gr] rule would also hit the
    .fld blocks above and double up. */
@@ -769,6 +860,9 @@ html[data-theme=dark] .badge.bad{background:#2c1a19;border-color:#523030}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--solid);color:#fff;padding:12px 20px;border-radius:var(--rm);
   font-size:13px;box-shadow:0 8px 24px rgba(11,13,12,.25);opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:99}
 .toast.show{opacity:1;transform:none}
+@media(max-width:640px){.toast{left:12px;right:12px;bottom:60px;text-align:center}}
+/* --solid stays dark in the dark theme, so the toast takes an edge there. */
+html[data-theme=dark] .toast{border:1px solid var(--ink-300)}
 .empty{padding:48px;text-align:center;color:var(--ink-400)}
 .empty .big{font-size:15px;font-weight:600;color:var(--ink-600);margin-bottom:6px}
 .note{font-size:12.5px;color:var(--ink-500);line-height:1.55}
@@ -784,6 +878,16 @@ html[data-theme=dark] .badge.bad{background:#2c1a19;border-color:#523030}
 .banner.danger{border-color:#e8c4c0;background:#fdf2f1;color:#8c2a20}
 .banner.test{border-color:#cdd3e6;background:#f2f4fb;color:#3b4570}
 .badge.test{border-color:#cdd3e6;background:#f2f4fb;color:#3b4570;margin-left:6px}
+/* The banners are literal light tints, so the dark theme restates them; left
+   alone they sat as bright slabs on the dark page. */
+html[data-theme=dark] .banner{border-color:var(--warn-bd);background:var(--warn-bg);color:#e6cf9f}
+html[data-theme=dark] .banner.green{border-color:var(--green-200);background:var(--green-50);color:var(--green-500)}
+html[data-theme=dark] .banner.danger{border-color:#523030;background:#2c1a19;color:#e9b6b1}
+html[data-theme=dark] .banner.test,html[data-theme=dark] .badge.test{border-color:#3a4366;background:#1c2133;color:#b8c2ea}
+/* --solid stays near-black in dark, so a dark button on a dark card vanished
+   (1.06:1). In dark it lifts to a raised ink surface with a visible edge. */
+html[data-theme=dark] .btn-dark{background:var(--ink-200);border-color:var(--ink-300);color:var(--ink-950)}
+html[data-theme=dark] .btn-dark:hover{background:var(--ink-300)}
 
 /* ---- small read-only metric tiles (site efficiency etc.) ---- */
 .metric{border:1px solid var(--ink-150);border-left:3px solid var(--green-700);border-radius:var(--r);
@@ -822,8 +926,18 @@ tr.edited:hover td{background:var(--edit-50)}
 .tbl tr.scope-off td{background:var(--ink-50);color:var(--ink-500);font-family:var(--fm);font-size:11px;letter-spacing:.12em;
   text-transform:uppercase;font-weight:600;padding:9px 12px;border-bottom:1px dashed var(--ink-200)}
 .tbl tr.scope-off td .shut{opacity:1}
-.budget-scroll{max-height:72vh}
-.budget-scroll thead th{position:sticky;top:0;z-index:2;background:var(--white);box-shadow:inset 0 -1px 0 var(--ink-200)}
+/* .csi-scroll is the CSI Schedule's card: the same pane, its own class so the
+   suites' single .budget-scroll stays single. */
+.budget-scroll,.csi-scroll{max-height:72vh}
+.budget-scroll thead th,.csi-scroll thead th{position:sticky;top:0;z-index:2;background:var(--white);box-shadow:inset 0 -1px 0 var(--ink-200)}
+/* The running Contract Sum rides the bottom of the grid while it scrolls, so
+   an edit 80 rows down shows what it did to the total without a trip to the
+   summary card. */
+.budget-scroll tfoot td{position:sticky;bottom:0;z-index:2;background:var(--white);
+  box-shadow:inset 0 1px 0 var(--ink-300);padding-top:9px;padding-bottom:9px;border-bottom:none}
+.bud-foot .bf-k{font-weight:700;color:var(--ink-950)}
+.bud-foot .bf-sub{float:right;font-family:var(--fm);font-size:12px;color:var(--ink-500);white-space:nowrap}
+.bud-foot .bf-sub b{color:var(--ink-800);font-weight:600}
 
 /* ---- sortable table headers ---- */
 th.sortable{cursor:pointer;user-select:none}
@@ -883,8 +997,9 @@ th.sortable.sorted{color:var(--ink-900)}
   body.printing > header,body.printing > main{display:none!important}
   body.printing #printDoc{display:block}
   /* fall back to printing the app itself if someone hits Ctrl+P directly */
-  body:not(.printing) .budget-scroll{max-height:none!important;overflow:visible!important}
-  body:not(.printing) .budget-scroll thead th{position:static!important;box-shadow:none!important}
+  body:not(.printing) .budget-scroll,body:not(.printing) .csi-scroll{max-height:none!important;overflow:visible!important}
+  body:not(.printing) .budget-scroll thead th,body:not(.printing) .csi-scroll thead th,
+  body:not(.printing) .budget-scroll tfoot td{position:static!important;box-shadow:none!important}
   body:not(.printing) .card{box-shadow:none;break-inside:avoid}
   body:not(.printing) .caret{display:none!important}
 
@@ -1129,7 +1244,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= INPUTS ================= -->
 <div class="page" id="page-input">
   <div class="page-title">
-    <div><button class="btn-back" id="backInputs" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Inputs</h1><div class="sub">Step 1 of 2 — project, unit mix, income, profit &amp; contingency</div></div>
+    <div><button class="btn-back" id="backInputs" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Inputs</h1><div class="sub">Step 1 of 3 — project, unit mix, income, profit &amp; contingency</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="iStatusHost"></span>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save Draft</button>
@@ -1159,14 +1274,14 @@ th.sortable.sorted{color:var(--ink-900)}
            template), so it is not re-asked here. Site SF and Site Acreage are
            one measurement in two units: fill either and the other follows. -->
       <div class="grid g4" style="margin-top:14px">
-        <label class="fld"><span class="lab">Residential Buildable SF</span>
+        <label class="fld" data-gr="resSF"><span class="lab">Residential Buildable SF</span>
           <input type="number" class="num" id="pSF" value="51365" min="0" step="100"
             aria-describedby="pSizeErr" oninput="touch();validateSize()">
           <div class="fld-err" id="pSizeErr" style="display:none">Square footage is required — enter a building size greater than zero.</div></label>
         <label class="fld"><span class="lab">Amenity / Clubhouse SF</span>
           <input type="number" class="num" id="pASF" value="1200" min="0" step="50" aria-describedby="pASFNote" oninput="touch();validateSize()">
           <div class="fld-note" id="pASFNote" style="display:none"></div></label>
-        <label class="fld"><span class="lab">Total Site SF</span><input type="number" class="num" id="pSiteSF" value="0" min="0" step="1000" oninput="syncSiteFromSF()"></label>
+        <label class="fld" data-gr="siteSF"><span class="lab">Total Site SF</span><input type="number" class="num" id="pSiteSF" value="0" min="0" step="1000" oninput="syncSiteFromSF()"></label>
         <label class="fld"><span class="lab">Site Acreage</span><input type="number" class="num" id="pSiteAc" value="0" min="0" step="0.01" oninput="syncSiteFromAcres()"></label>
       </div>
       <div class="grid g4" style="margin-top:14px" id="siteMetrics">
@@ -1240,8 +1355,8 @@ th.sortable.sorted{color:var(--ink-900)}
           <tr class="total"><td>Total Operating Expenses</td><td></td><td></td><td></td>
             <td class="calc r strong" id="eMo">$0</td><td class="calc r strong" id="eYr">$0</td><td class="no-print"></td></tr>
           <tr><td colspan="4" style="border:none;padding-top:8px;font-weight:600;color:var(--ink-950)">Net Other Income (Gross − Expenses)</td>
-            <td class="calc r strong" id="nMo" style="border:none;padding-top:8px;color:var(--green-700)">$0</td>
-            <td class="calc r strong" id="nYr" style="border:none;padding-top:8px;color:var(--green-700)">$0</td><td class="no-print" style="border:none"></td></tr>
+            <td class="calc r strong" id="nMo" style="border:none;padding-top:8px">$0</td>
+            <td class="calc r strong" id="nYr" style="border:none;padding-top:8px">$0</td><td class="no-print" style="border:none"></td></tr>
         </tfoot>
       </table>
       <div class="note" style="margin-top:10px">Per-unit lines auto-count to total units (green dot). Fixed lines (e.g., City of Waller dumpster at $383/mo) apply once regardless of unit count.</div>
@@ -1253,11 +1368,11 @@ th.sortable.sorted{color:var(--ink-900)}
       <button class="btn btn-ghost btn-sm no-print" onclick="addCo()">+ Add Company</button></div>
     <div class="card-bd">
       <div class="grid" style="grid-template-columns:1.4fr 1fr;gap:32px">
-        <div>
+        <div data-gr="companies">
           <div class="eyebrow" style="margin-bottom:8px">Profit by company (% of construction hard cost)</div>
           <table class="tbl"><tbody id="coBody"></tbody></table>
         </div>
-        <div>
+        <div data-gr="contingency">
           <div class="eyebrow" style="margin-bottom:8px">Construction Contingency</div>
           <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
             <div class="seg">
@@ -1277,7 +1392,7 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="card-hd" data-gr="projectCosts"><h2>Land &amp; Project Costs</h2><span class="eyebrow">Outside the construction contract — rolls into total project cost</span></div>
     <div class="card-bd">
       <div class="grid g4">
-        <label class="fld"><span class="lab">Land Cost</span><input type="number" class="num" id="pcLand" min="0" step="10000" oninput="doc.projectCosts.land=+this.value;touch()"></label>
+        <label class="fld" data-gr="pcLand"><span class="lab">Land Cost</span><input type="number" class="num" id="pcLand" min="0" step="10000" oninput="doc.projectCosts.land=+this.value;touch()"></label>
         <div class="fld" data-gr="pcDev"><span class="lab">Developer Fee</span>
           <div class="fee-row">
             <div class="mini-seg fee-seg" role="group" aria-label="Developer Fee Basis">
@@ -1361,13 +1476,25 @@ th.sortable.sorted{color:var(--ink-900)}
       <button class="btn btn-ghost btn-sm" onclick="clearSelection()">Clear Selection</button>
       <button class="btn btn-sm selbar-danger" onclick="deleteSelected()">Delete Items</button>
     </div>
-    <div class="card-bd budget-scroll" style="overflow:auto;padding-top:8px">
+    <!-- No top or bottom padding: a sticky header (and the sticky Contract Sum
+         footer) sticks at the padding edge, so padding here left a strip of
+         rows scrolling visibly past them. -->
+    <div class="card-bd budget-scroll" style="overflow:auto;padding-top:0;padding-bottom:0">
       <table class="tbl">
         <thead><tr><th class="no-print" style="width:34px"><input type="checkbox" id="selAll"
             title="Select All Visible" aria-label="Select All Visible" onchange="selectAllVisible(this.checked)"></th>
           <th style="width:34%">Line Item</th><th>Basis</th><th class="r">Qty</th><th class="r">Rate</th>
           <th class="r">Total</th><th class="r">% Scope</th><th class="no-print"></th></tr></thead>
         <tbody id="budBody"></tbody>
+        <!-- Outside #budBody on purpose: the body is rebuilt on every render
+             and counted by the suites; this row is filled from parts() by
+             renderSummary(). -->
+        <tfoot class="bud-foot"><tr>
+          <td class="no-print"></td>
+          <td colspan="4"><span class="bf-k">Contract Sum</span>
+            <span class="bf-sub">Total Project Cost <b id="bfProject">$0</b></span></td>
+          <td class="calc r strong" id="bfContract">$0</td><td colspan="2"></td>
+        </tr></tfoot>
       </table>
       <div class="empty" id="budEmpty" style="display:none">
         <div class="big">No line items yet</div>
@@ -1439,7 +1566,7 @@ th.sortable.sorted{color:var(--ink-900)}
   <section class="card" id="sec-csi">
     <div class="card-hd"><h2>Construction Contract</h2>
       <span class="eyebrow" id="csiMeta">—</span></div>
-    <div class="card-bd" style="overflow:auto;padding-top:8px;max-height:72vh">
+    <div class="card-bd csi-scroll" style="overflow:auto;padding-top:0">
       <table class="tbl">
         <thead><tr><th style="width:112px">Code</th><th style="width:34%">Section</th><th>Scope</th><th>Basis</th>
           <th class="r">Qty</th><th class="r">Rate</th><th class="r">Total</th><th class="r">% Contract</th></tr></thead>
@@ -2344,8 +2471,8 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <!-- ================= EXPORT MODAL ================= -->
 <div id="exportModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
-  <div class="card mod-sheet" style="width:580px;max-width:92vw;margin:0">
-    <div class="card-hd"><h2 class="mod-title">Export Budget</h2><button class="btn-x" onclick="closeExport()">×</button></div>
+  <div class="card mod-sheet" style="width:580px;max-width:92vw;margin:0" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+    <div class="card-hd"><h2 class="mod-title" id="exportTitle">Export Budget</h2><button class="btn-x" onclick="closeExport()" aria-label="Close export">×</button></div>
     <div class="card-bd" style="padding:22px 26px">
       <div class="eyebrow" style="margin-bottom:12px">Include Sections</div>
       <div style="display:grid;gap:12px;margin-bottom:24px">
@@ -2387,7 +2514,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= GUIDE EXPORT MODAL ================= -->
 <div id="guideExportModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
   <div class="card mod-sheet" style="width:460px;max-width:92vw;margin:0">
-    <div class="card-hd"><h2 class="mod-title">Download Guide</h2><button class="btn-x" onclick="closeGuideExport()">×</button></div>
+    <div class="card-hd"><h2 class="mod-title">Download Guide</h2><button class="btn-x" onclick="closeGuideExport()" aria-label="Close download guide">×</button></div>
     <div class="card-bd" style="padding:22px 26px">
       <div class="eyebrow" style="margin-bottom:12px">Options</div>
       <div style="display:grid;gap:12px;margin-bottom:24px">
@@ -2402,8 +2529,8 @@ th.sortable.sorted{color:var(--ink-900)}
 
 <!-- ================= CSI PICKER MODAL ================= -->
 <div id="pickModal" style="display:none;position:fixed;inset:0;background:rgba(11,13,12,.55);z-index:50;align-items:center;justify-content:center">
-  <div class="card mod-sheet" style="width:640px;max-width:94vw;margin:0">
-    <div class="card-hd"><h2 class="mod-title">Add Line From CSI Catalog</h2>
+  <div class="card mod-sheet" style="width:640px;max-width:94vw;margin:0" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+    <div class="card-hd"><h2 class="mod-title" id="pickTitle">Add Line From CSI Catalog</h2>
       <button class="btn-x" onclick="closePick()" aria-label="Close"
         style="font-size:20px;padding:2px 8px">×</button></div>
     <div class="card-bd" style="padding-top:12px">
@@ -2425,7 +2552,10 @@ th.sortable.sorted{color:var(--ink-900)}
           <span class="lab">New Group Name</span>
           <input type="text" id="pickNewGroup" placeholder="e.g., Sitework Extras" style="font-size:12px;padding:6px 8px"></label>
       </div>
-      <input type="text" id="pickSearch" placeholder="Search code or title — e.g., 09 60, flooring, elevator…" oninput="renderPick()" style="margin-bottom:12px">
+      <!-- Enter adds the first match; ArrowDown walks into the list, where each
+           row takes Enter too. -->
+      <input type="text" id="pickSearch" placeholder="Search code or title — e.g., 09 60, flooring, elevator…" oninput="renderPick()" style="margin-bottom:12px"
+        aria-label="Search the CSI catalog" onkeydown="pickSearchKey(event)">
       <div style="max-height:380px;overflow:auto;border:1px solid var(--ink-150);border-radius:var(--r)">
         <table class="tbl"><tbody id="pickBody"></tbody></table>
       </div>
@@ -2875,7 +3005,7 @@ th.sortable.sorted{color:var(--ink-900)}
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 /* ============ HELPERS ============ */
@@ -2885,9 +3015,24 @@ th.sortable.sorted{color:var(--ink-900)}
    so nothing can ever render "$NaN", and at the arithmetic sources below so the
    sums are right rather than merely printable. */
 const nz=v=>Number.isFinite(+v)?+v:0;
-const usd=n=>'$'+Math.round(nz(n)).toLocaleString('en-US');
-const usd2=n=>'$'+nz(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+/* A negative amount reads −$31,866 (a true minus, before the sign), the same
+   convention the export renderer and the investment workflow use — not
+   "$-31,866". The sign is decided on the ROUNDED value, so −0.4 prints $0. */
+const usd=n=>{const v=Math.round(nz(n));return (v<0?'−$':'$')+Math.abs(v).toLocaleString('en-US');};
+const usd2=n=>{const v=nz(n);
+  return (v<=-0.005?'−$':'$')+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
 const num=n=>Math.round(nz(n)).toLocaleString('en-US');
+/* An editable rate's VALUE attribute: at least two decimals (7.50, not 7.5) so
+   a column of rates reads as money, but never fewer digits than were stored —
+   a 0.125 rate stays 0.125, because rounding the field would silently change
+   the rate the next time the row commits. Still a plain number, so a
+   type=number input parses it. */
+const fix2=n=>{const v=nz(n);return Math.abs(Math.round(v*100)-v*100)<1e-6?v.toFixed(2):String(v);};
+/* A quantity for display in its (text) input: thousands separators, decimals
+   kept as stored. parseQty() undoes it on commit — the separators are
+   decoration over a number, never stored. */
+const qtyFmt=n=>nz(n).toLocaleString('en-US',{maximumFractionDigits:4});
+const parseQty=v=>nz(String(v==null?'':v).replace(/[,\s]/g,''));
 /* ---- house timestamp format ----
    Every timestamp the app SHOWS is the viewer's local time as
    MM-DD-YYYY h:mm AM/PM (fmtWhen), or MM-DD-YYYY where only the day matters
@@ -5677,7 +5822,7 @@ function renderExpenses(){
     const mo=expenseMonthly(e,incomeMo);
     b.insertAdjacentHTML('beforeend',`<tr>
       <td><input type="text" data-k="exp.${i}.label" value="${esc(e.label)}" oninput="doc.expenses[${i}].label=this.value;markDirty()"></td>
-      <td><select data-k="exp.${i}.per" onchange="setExpenseBasis(${i},this.value)" style="width:110px;font-size:12px;padding:5px 8px">
+      <td><select class="basisin" data-k="exp.${i}.per" onchange="setExpenseBasis(${i},this.value)" aria-label="Basis for ${esc(e.label)}">
         <option value="unit" ${e.per==='unit'?'selected':''}>Per Unit</option>
         <option value="fixed" ${e.per==='fixed'?'selected':''}>Fixed / Mo</option>
         <option value="pctIncome" ${pct?'selected':''}>% of Income</option></select></td>
@@ -5686,13 +5831,16 @@ function renderExpenses(){
         ? '<span class="mut" style="font-size:12px">% of income</span>'
         : `<span class="autodot${e.auto&&e.per!=='fixed'?' on':''}" title="${e.auto&&e.per!=='fixed'?'Counts every unit automatically':'Manual count'}"></span><input type="number" data-k="exp.${i}.count" value="${cnt}" min="0" style="width:70px" onchange="doc.expenses[${i}].count=+this.value;doc.expenses[${i}].auto=false;touch()">`}</td>
       <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
-      <td class="no-print"><button class="btn-x" title="Remove expense" onclick="doc.expenses.splice(${i},1);touch()">×</button></td></tr>`);
+      <td class="no-print"><button class="btn-x" title="Remove expense" aria-label="Remove ${esc(e.label)}" onclick="doc.expenses.splice(${i},1);touch()">×</button></td></tr>`);
   });
   const gi=grossIncome();
   document.getElementById('eMo').textContent=usd(gi.expMo);
   document.getElementById('eYr').textContent=usd(gi.expMo*12);
-  document.getElementById('nMo').textContent=usd(gi.netOtherMo);
-  document.getElementById('nYr').textContent=usd(gi.netOtherMo*12);
+  // Net Other Income goes negative whenever expenses outrun other income, and
+  // a negative number in success green read as good news. Colour follows sign.
+  const netCol=Math.round(gi.netOtherMo)<0?'var(--danger)':'var(--green-700)';
+  ['nMo','nYr'].forEach((id,k)=>{const el=document.getElementById(id);
+    el.textContent=usd(gi.netOtherMo*(k?12:1));el.style.color=netCol;});
 }
 function addExpense(){doc.expenses.push({label:'New expense',per:'unit',rate:0,count:0,auto:true});touch();}
 /* Switching basis rewrites the fields that basis actually uses, so a row never
@@ -5742,7 +5890,7 @@ function renderUnits(){
       <td class="r"><input type="number" data-k="units.${i}.psf" value="${psf?psf.toFixed(2):''}" min="0" step="0.01" style="width:72px" title="Edit to derive rent = SF × rate (sheet formula direction)" onchange="unitRate(${i},+this.value)"></td>
       <td class="calc r">${num(tsf)}</td>
       <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
-      <td class="no-print"><button class="btn-x" title="Remove unit type" onclick="doc.units.splice(${i},1);touch()">×</button></td></tr>`);
+      <td class="no-print"><button class="btn-x" title="Remove unit type" aria-label="Remove ${esc(u.label)}" onclick="doc.units.splice(${i},1);touch()">×</button></td></tr>`);
   });
   const tu=totUnits();
   const rentSF=doc.units.reduce((s,u)=>s+u.sf*u.count,0);
@@ -5774,7 +5922,7 @@ function renderOther(){
       <td class="r"><input type="number" data-k="other.${i}.rate" value="${o.rate}" min="0" step="1" style="width:80px" onchange="doc.other[${i}].rate=+this.value;touch()"></td>
       <td class="r"><span class="autodot${o.auto?' on':''}" title="${o.auto?'Counts every unit automatically':'Manual count'}"></span><input type="number" data-k="other.${i}.count" value="${cnt}" min="0" style="width:76px" onchange="doc.other[${i}].count=+this.value;doc.other[${i}].auto=false;touch()"></td>
       <td class="calc r">${usd(mo)}</td><td class="calc r">${usd(mo*12)}</td>
-      <td class="no-print"><button class="btn-x" title="Remove income line" onclick="doc.other.splice(${i},1);touch()">×</button></td></tr>`);
+      <td class="no-print"><button class="btn-x" title="Remove income line" aria-label="Remove ${esc(o.label)}" onclick="doc.other.splice(${i},1);touch()">×</button></td></tr>`);
   });
   const mo=doc.other.reduce((s,o)=>s+o.rate*(o.auto?tu:o.count),0);
   document.getElementById('oMo').textContent=usd(mo);
@@ -5834,10 +5982,8 @@ function renderBudget(){
           <option value="asf" ${it.basis==='asf'?'selected':''}>Per Amen SF</option>
           <option value="unit" ${it.basis==='unit'?'selected':''}>Per Unit</option>
           <option value="ls" ${it.basis==='ls'?'selected':''}>Lump Sum</option></select></td>
-        <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span><input type="number" data-k="line.${id}.qty" value="${q}" min="0" style="width:88px"
-          onchange="setLineQty('${id}',this.value)"></td>
-        <td class="r"><input type="number" data-k="line.${id}.unit" value="${it.unit}" min="0" step="0.01" style="width:96px"
-          onchange="setLineRate('${id}',this.value)"></td>
+        <td class="r"><span class="autodot${it.auto&&it.basis!=='ls'?' on':''}" title="${it.auto&&it.basis!=='ls'?'Derived from the inputs':'Manual quantity'}"></span>${lineQtyCell(it,id,q)}</td>
+        <td class="r">${lineRateCell(it,id)}</td>
         <td class="calc r strong">${usd(tot)}</td><td class="calc r">${pct.toFixed(1)}%</td>
         <td class="no-print"><button class="btn-x" title="Remove line item" aria-label="Remove ${esc(it.desc)}" onclick="removeLine('${id}')">×</button></td></tr>`);
     });
@@ -5869,7 +6015,50 @@ function renderAmenNote(){
 function lineById(id){return doc?doc.lines.find(l=>l.lineId===id)||null:null;}
 function lineIndexById(id){return doc?doc.lines.findIndex(l=>l.lineId===id):-1;}
 function setLineDesc(id,v){const l=lineById(id);if(!l)return;l.desc=v;l.edited=true;markDirty();}
-function setLineQty(id,v){const l=lineById(id);if(!l)return;l.qty=+v;l.auto=false;touch();}
+function setLineQty(id,v){const l=lineById(id);if(!l)return;l.qty=parseQty(v);l.auto=false;touch();}
+/* The Qty and Rate cells. Each field says for itself when it no longer
+   matches what it would be untouched (class edited-val, the untouched value in
+   its title — which, beside the aria-label name, is also what a screen reader
+   reads as its description), and offers a reset beside it. The reset lives
+   in a fixed-width slot on every row so edited and untouched fields share one
+   right edge, as the dots do.
+   Qty is a text field so it can carry thousands separators (51,365);
+   setLineQty() strips them with parseQty(), so the document only ever holds a
+   number. Rate stays type=number, painted with two decimals by fix2().
+   The line id travels in an escaped data-line attribute, never inside an
+   inline JS string, so an id carrying a quote cannot break out of the handler. */
+function lineQtyCell(it,id,q){
+  const ed=it.auto===false&&it.basis!=='ls';
+  const autoQ=ed?lineQty({...it,auto:true}):0;
+  return `<span class="rst-slot">${ed?`<button type="button" class="rst-btn" data-reset="qty" data-line="${esc(id)}"
+      aria-label="Reset to Derived Quantity" title="Reset to the derived quantity (${num(autoQ)})">↺</button>`:''}</span><input
+    type="text" inputmode="decimal" class="qtyin${ed?' edited-val':''}" data-k="line.${esc(id)}.qty" data-line="${esc(id)}" value="${esc(qtyFmt(q))}"
+    style="width:88px" aria-label="Quantity for ${esc(it.desc)}"${ed?` title="Overridden — derived quantity ${num(autoQ)}"`:''}
+    onchange="setLineQty(this.dataset.line,this.value)">`;
+}
+function lineRateCell(it,id){
+  // A hand-added line has no library rate to go back to (its baseUnit is the
+  // 0 it was born with), so it is never marked against one.
+  const ed=!it.custom&&(+it.unit)!==(+it.baseUnit);
+  const lib=usd2(+it.baseUnit||0);
+  return `<span class="rst-slot">${ed?`<button type="button" class="rst-btn" data-reset="unit" data-line="${esc(id)}"
+      aria-label="Reset to Library Rate" title="Reset to the library rate (${lib})">↺</button>`:''}</span><input
+    type="number" class="${ed?'edited-val':''}" data-k="line.${esc(id)}.unit" data-line="${esc(id)}" value="${fix2(it.unit)}" min="0" step="0.01"
+    style="width:96px" aria-label="Rate for ${esc(it.desc)}"${ed?` title="Library ${lib}"`:''}
+    onchange="setLineRate(this.dataset.line,this.value)">`;
+}
+/* Resets go through touch() like any edit, so they undo, dirty the budget and
+   recalculate. Focus lands on the field that was reset — the button that was
+   clicked no longer exists once the row re-renders. */
+function resetLineField(id,field){
+  const l=lineById(id);if(!l)return;
+  if(field==='unit')l.unit=nz(l.baseUnit);
+  else if(field==='qty')l.auto=true;
+  else return;
+  touch();
+  const el=document.querySelector('#budBody [data-k="'+CSS.escape('line.'+id+'.'+field)+'"]');
+  if(el)el.focus();
+}
 function setLineRate(id,v){const l=lineById(id);if(!l)return;l.unit=+v;touch();}
 /* Deleting one line asks first. There is no undo, so the wording says so rather
    than implying the change is recoverable; it lands in the database on the next
@@ -6035,7 +6224,7 @@ function renderCsi(){
         <td><span class="badge">${r.scope==='amen'?'Amenity':'Residential'}</span></td>
         <td class="mono" style="font-size:12px;color:var(--ink-500)">${esc(BASIS_LABEL[r.basis]||r.basis)}</td>
         <td class="calc r">${num(r.qty)}</td><td class="calc r">${usd2(r.rate)}</td>
-        <td class="calc r strong">${usd(r.total)}</td><td class="calc r" style="color:var(--ink-400)">${pct(r.total)}</td></tr>`);
+        <td class="calc r strong">${usd(r.total)}</td><td class="calc r" style="color:var(--ink-500)">${pct(r.total)}</td></tr>`);
     });
   });
   if(sch.markups.length){
@@ -6045,7 +6234,7 @@ function renderCsi(){
       b.insertAdjacentHTML('beforeend',`<tr>
         <td class="mono" style="font-size:12px;color:var(--green-700)"><span class="editdot"></span>${esc(m.code)}</td>
         <td>${esc(m.desc)}</td><td></td><td></td><td></td><td></td>
-        <td class="calc r strong">${usd(m.total)}</td><td class="calc r" style="color:var(--ink-400)">${pct(m.total)}</td></tr>`);
+        <td class="calc r strong">${usd(m.total)}</td><td class="calc r" style="color:var(--ink-500)">${pct(m.total)}</td></tr>`);
     });
   }
   b.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="6">Contract Sum</td>
@@ -6063,7 +6252,7 @@ function renderCsi(){
         <td class="mono" style="font-size:12px;color:var(--ink-500)">${esc(BASIS_LABEL[r.basis]||r.basis)}</td>
         <td class="calc r">${num(r.qty)}</td><td class="calc r">${usd2(r.rate)}</td>
         <td class="calc r strong">${usd(r.total)}</td>
-        <td class="calc r" style="color:var(--ink-400)">${spct(r.total)}</td></tr>`);
+        <td class="calc r" style="color:var(--ink-500)">${spct(r.total)}</td></tr>`);
     });
   });
   sb.insertAdjacentHTML('beforeend',`<tr class="total"><td colspan="5">Total Soft Costs</td>
@@ -6092,7 +6281,9 @@ function collapseAll(){
 function setBasis(id,v){const l=lineById(id);if(!l)return;l.basis=v;l.auto=v!=='ls';l.edited=true;if(v==='ls')l.qty=l.qty||1;touch();}
 
 /* ---- add lines via CSI catalog ---- */
+let pickReturnFocus=null;
 function addLine(){
+  pickReturnFocus=document.activeElement;
   document.getElementById('pickSearch').value='';
   fillPickGroups();
   document.getElementById('pickModal').style.display='flex';
@@ -6144,13 +6335,56 @@ function togglePickNewGroup(){
   fld.style.display=on?'':'none';
   if(on)document.getElementById('pickNewGroup').focus();
 }
-function closePick(){document.getElementById('pickModal').style.display='none';}
+/* Escape closes this on every keydown whether or not it is open, so focus is
+   handed back only when it really was open. */
+function closePick(){
+  const m=document.getElementById('pickModal');
+  const was=m.style.display!=='none';
+  m.style.display='none';
+  if(was&&pickReturnFocus&&document.body.contains(pickReturnFocus))pickReturnFocus.focus();
+  pickReturnFocus=null;
+}
 function addBlankLine(){
   const scope=document.getElementById('pickScope').value;
   const grp=chosenGroup('Custom');
-  insertLine({lineId:newLineId(),code:'—',grp,scope,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1,baseUnit:0,custom:true});
+  const line={lineId:newLineId(),code:'—',grp,scope,desc:'New line item',basis:'ls',unit:0,auto:false,qty:1,baseUnit:0,custom:true};
+  insertLine(line);
   revealLine(scope,grp);
-  closePick();touch();toast('Blank line added');
+  closePick();touch();focusNewLine(line.lineId);toast('Blank line added');
+}
+/* A line just added is scrolled into view with its rate field focused — the
+   rate is the one thing every new line still needs — and flashes once. */
+function focusNewLine(id){
+  const el=document.querySelector('#budBody [data-k="'+CSS.escape('line.'+id+'.unit')+'"]');
+  if(!el)return;   // e.g. added to Amenity while amenity SF is 0 — the toast says so
+  const tr=el.closest('tr');
+  tr.scrollIntoView({block:'center'});
+  el.focus({preventScroll:true});
+  try{el.select();}catch(_){}
+  flashEl(tr);
+}
+/* Keyboard in the catalog: Enter in the search adds the first match, ArrowDown
+   steps into the results; on a row, Enter or Space adds it and the arrows move. */
+function pickRows(){return [...document.querySelectorAll('#pickBody tr[data-code]')];}
+function pickSearchKey(e){
+  if(e.key==='Enter'){
+    e.preventDefault();
+    const r=pickRows()[0];
+    if(r)pickCsi(r.dataset.code,r.dataset.title);
+  }else if(e.key==='ArrowDown'){
+    const r=pickRows()[0];
+    if(r){e.preventDefault();r.focus();}
+  }
+}
+function pickRowKey(e){
+  const row=e.target.closest&&e.target.closest('tr[data-code]');if(!row)return;
+  if(e.key==='Enter'||e.key===' '){e.preventDefault();pickCsi(row.dataset.code,row.dataset.title);return;}
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    const rows=pickRows(),i=rows.indexOf(row)+(e.key==='ArrowDown'?1:-1);
+    if(i<0)document.getElementById('pickSearch').focus();
+    else if(rows[i])rows[i].focus();
+  }
 }
 /* A new line dropped into a collapsed scope or group is invisible, which reads as
    "the button did nothing". Always open the section it landed in. */
@@ -6170,7 +6404,7 @@ function renderPick(){
   catalogFiltered(document.getElementById('pickSearch').value).forEach(([n,t,secs])=>{
     b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="2">Division ${esc(n)} — ${esc(t)}</td></tr>`);
     secs.forEach(([c,s])=>{
-      b.insertAdjacentHTML('beforeend',`<tr class="clickable" data-code="${esc(c)}" data-title="${esc(s)}">
+      b.insertAdjacentHTML('beforeend',`<tr class="clickable" tabindex="0" data-code="${esc(c)}" data-title="${esc(s)}">
         <td class="mono" style="font-size:12px;color:var(--green-700);width:110px">${esc(c)}</td><td style="font-size:13px">${esc(s)}</td></tr>`);
     });
   });
@@ -6179,9 +6413,10 @@ function pickCsi(code,title){
   const scope=document.getElementById('pickScope').value;
   const basis=scope==='amen'?'asf':'sf';
   const grp=chosenGroup(csiDivOf(code));
-  insertLine({lineId:newLineId(),code,grp,scope,desc:title,basis,unit:0,auto:true,qty:0,baseUnit:0,custom:true});
+  const lineId=newLineId();
+  insertLine({lineId,code,grp,scope,desc:title,basis,unit:0,auto:true,qty:0,baseUnit:0,custom:true});
   revealLine(scope,grp);
-  closePick();touch();
+  closePick();touch();focusNewLine(lineId);
   toast(scopeActive(scope)?code+' added — set the rate'
         :code+' added to Amenity, which is hidden until amenity SF is set');
 }
@@ -6194,9 +6429,9 @@ function renderCos(){
     b.insertAdjacentHTML('beforeend',`<tr>
       <td><input type="text" data-k="co.${i}.name" value="${esc(c.name)}" oninput="doc.companies[${i}].name=this.value;markDirty()"></td>
       <td class="r" style="width:118px;white-space:nowrap"><input type="number" data-k="co.${i}.pct" value="${c.pct}" min="0" step="0.5" style="width:74px"
-        onchange="doc.companies[${i}].pct=+this.value;touch()"><span class="mono" style="font-size:12px;color:var(--ink-400);margin-left:5px">%</span></td>
+        onchange="doc.companies[${i}].pct=+this.value;touch()"><span class="mono" style="font-size:12px;color:var(--ink-500);margin-left:5px">%</span></td>
       <td class="calc r" style="width:130px">${usd(hard*c.pct/100)}</td>
-      <td class="no-print" style="width:36px"><button class="btn-x" title="Remove company" onclick="doc.companies.splice(${i},1);touch()">×</button></td></tr>`);
+      <td class="no-print" style="width:36px"><button class="btn-x" title="Remove company" aria-label="Remove ${esc(c.name)}" onclick="doc.companies.splice(${i},1);touch()">×</button></td></tr>`);
   });
 }
 function addCo(){doc.companies.push({name:'Company',pct:0});touch();}
@@ -6223,6 +6458,10 @@ function renderSummary(){
     ?'Developer Fee · Marketing · Closing'
     :'Developer Fee · Marketing · Closing ('+(100*p.fee.pctRate).toFixed(2).replace(/\.?0+$/,'')+'% of total)';
   document.getElementById('rProject').textContent=usd(p.project);
+  // The Budget Detail grid's sticky footer — the same parts() as the card below.
+  const bfc=document.getElementById('bfContract'),bfp=document.getElementById('bfProject');
+  if(bfc)bfc.textContent=usd(p.contract);
+  if(bfp)bfp.textContent=usd(p.project);
   ['dev','mkt','cls'].forEach(paintFeeMode);
   renderGuardrails();
   document.getElementById('mMargin').textContent='Margin '+(p.contract?(100*p.profit/p.contract).toFixed(1)+'%':'—');
@@ -6244,11 +6483,11 @@ function renderSummary(){
     const grps=[...new Set(doc.lines.filter(l=>l.scope===sc).map(l=>l.grp))];
     grps.forEach(gp=>{
       const s=doc.lines.filter(l=>l.scope===sc&&l.grp===gp).reduce((x,l)=>x+lineQty(l)*l.unit,0);
-      if(s>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">${sc==='amen'?'Amenity — ':''}${gp}</td><td class="calc r">${usd(s)}</td><td class="calc r" style="color:var(--ink-400)">${(100*s/p.contract).toFixed(1)}%</td></tr>`);
+      if(s>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">${sc==='amen'?'Amenity — ':''}${esc(gp)}</td><td class="calc r">${usd(s)}</td><td class="calc r" style="color:var(--ink-500)">${(100*s/p.contract).toFixed(1)}%</td></tr>`);
     });
   });
-  doc.companies.forEach(c=>{if(c.pct>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">Profit — ${esc(c.name)}</td><td class="calc r">${usd(p.hard*c.pct/100)}</td><td class="calc r" style="color:var(--ink-400)">${(100*(p.hard*c.pct/100)/p.contract).toFixed(1)}%</td></tr>`);});
-  if(p.cont>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">99.03 Contingency</td><td class="calc r">${usd(p.cont)}</td><td class="calc r" style="color:var(--ink-400)">${(100*p.cont/p.contract).toFixed(1)}%</td></tr>`);
+  doc.companies.forEach(c=>{if(c.pct>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">Profit — ${esc(c.name)}</td><td class="calc r">${usd(p.hard*c.pct/100)}</td><td class="calc r" style="color:var(--ink-500)">${(100*(p.hard*c.pct/100)/p.contract).toFixed(1)}%</td></tr>`);});
+  if(p.cont>0)sb.insertAdjacentHTML('beforeend',`<tr><td style="font-size:13px">99.03 Contingency</td><td class="calc r">${usd(p.cont)}</td><td class="calc r" style="color:var(--ink-500)">${(100*p.cont/p.contract).toFixed(1)}%</td></tr>`);
   sb.insertAdjacentHTML('beforeend',`<tr class="total"><td>Contract Sum</td><td class="calc r strong">${usd(p.contract)}</td><td class="calc r">100%</td></tr>`);
   const stale=pricing&&doc.pricingVersion!==pricing.version&&!staleDismissed.has(doc.projectId);
   document.getElementById('staleBanner').style.display=stale?'flex':'none';
@@ -6298,7 +6537,10 @@ function renderGuardrails(){
   }
   const stale=r.breaches.some(b=>b.staleSchedule);
   const row=b=>`<tr class="${b.ok?'':(b.severity==='error'?'gr-r-bad':'gr-r-warn')}">
-      <td>${esc(b.label)}${b.acked?' <span class="badge warn" title="'+esc(b.ackReason)+'">Overridden</span>':''}
+      <td>${railCanJump(b.path)
+        ?`<button type="button" class="gr-jump" data-path="${esc(b.path)}" onclick="jumpToRail(this.dataset.path)"
+            title="${b.path==='soft'?'Show the soft cost lines':'Go to the field on the Inputs page'}">${esc(b.label)}</button>`
+        :esc(b.label)}${b.acked?' <span class="badge warn" title="'+esc(b.ackReason)+'">Overridden</span>':''}
         <div class="gr-measures">${esc(b.measures)}</div></td>
       <td class="calc r">${esc(b.display)}</td>
       <td class="calc r mut">${esc(b.range)}</td>
@@ -6318,6 +6560,41 @@ function renderGuardrails(){
       <thead><tr><th style="width:42%">Rail</th><th class="r">Actual</th><th class="r">Guard Rail</th><th class="r">State</th><th class="no-print"></th></tr></thead>
       <tbody>${r.rails.map(row).join('')}</tbody></table></div>`
     +`<div class="note" style="margin-top:10px">Thresholds ship with the budget template, so publishing a template version publishes the rails. A rail whose denominator is zero is not evaluated and never blocks.</div>`;
+}
+/* A rail's name leads to the field that drives it. The target is found the
+   way renderGuardrails marks it — by data-gr, never by position — on the
+   Inputs page; 'soft' is the one rail driven from the Budget grid itself (the
+   soft-cost lines), so it opens that scope instead. */
+function railCanJump(path){
+  return path==='soft'||!!document.querySelector('#page-input [data-gr="'+CSS.escape(String(path||''))+'"]');
+}
+function flashEl(el){
+  if(!el)return;
+  el.classList.remove('fs-flash');void el.offsetWidth;   // restart if already flashing
+  el.classList.add('fs-flash');
+  setTimeout(()=>el.classList.remove('fs-flash'),1900);
+}
+function jumpToRail(path){
+  if(!doc)return;
+  if(path==='soft'){
+    collapsed.delete('soft');
+    renderBudget();
+    const hd=document.querySelector('#budBody tr[data-toggle="scope:soft"]');
+    if(hd){hd.scrollIntoView({block:'start',behavior:'smooth'});flashEl(hd);}
+    return;
+  }
+  const t=document.querySelector('#page-input [data-gr="'+CSS.escape(String(path||''))+'"]');
+  if(!t)return;
+  go('input');
+  // A card header marks a whole table; the field to land in is the first
+  // editable one in that card — a figure if there is one, since every rail
+  // is a ratio of figures.
+  const scope=t.classList.contains('card-hd')?t.closest('.card'):t;
+  const f=scope&&(scope.querySelector('input[type=number]:not([readonly])')
+    ||scope.querySelector('input:not([readonly]):not([type=checkbox]),select,textarea'));
+  t.scrollIntoView({block:'center',behavior:'smooth'});
+  if(f)f.focus({preventScroll:true});
+  flashEl(t);
 }
 /* An override needs a reason, and the reason is the point: it rides into the
    budget summary and every export so the decision is never invisible. Gated to
@@ -6509,22 +6786,24 @@ function renderPricing(){
   ['res','amen','soft'].forEach(sc=>{
     const scLines=pricing.lines.map((l,i)=>({l,i})).filter(x=>x.l.scope===sc);
     if(!scLines.length)return;
-    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="4">${SCOPES[sc]}</td></tr>`);
+    b.insertAdjacentHTML('beforeend',`<tr class="scope-hd"><td colspan="4">${esc(SCOPES[sc])}</td></tr>`);
     let lastGrp=null;
+    // Codes, groups and descriptions are publishable data — escaped like any
+    // other user string.
     scLines.forEach(({l,i})=>{
       if(l.grp!==lastGrp){lastGrp=l.grp;
-        b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4">${l.grp}</td></tr>`);}
+        b.insertAdjacentHTML('beforeend',`<tr class="grp-hd"><td colspan="4">${esc(l.grp)}</td></tr>`);}
       b.insertAdjacentHTML('beforeend', adminUnlocked
-        ?`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${l.code}</span>
-            <input type="text" value="${esc(l.desc)}" style="width:72%" oninput="pricing.lines[${i}].desc=this.value"></td>
-          <td><select onchange="pricing.lines[${i}].basis=this.value" style="width:104px;font-size:12px;padding:5px 8px">
+        ?`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-500);margin-right:8px">${esc(l.code)}</span>
+            <input type="text" data-k="price.${i}.desc" value="${esc(l.desc)}" style="width:72%" aria-label="Description for ${esc(l.code)}" oninput="pricing.lines[${i}].desc=this.value"></td>
+          <td><select class="basisin" data-k="price.${i}.basis" onchange="pricing.lines[${i}].basis=this.value" aria-label="Basis for ${esc(l.desc)}">
             <option value="sf" ${l.basis==='sf'?'selected':''}>Per Res SF</option>
             <option value="asf" ${l.basis==='asf'?'selected':''}>Per Amen SF</option>
             <option value="unit" ${l.basis==='unit'?'selected':''}>Per Unit</option>
             <option value="ls" ${l.basis==='ls'?'selected':''}>Lump Sum</option></select></td>
-          <td class="r"><input type="number" value="${l.unit}" min="0" step="0.01" style="width:110px" oninput="pricing.lines[${i}].unit=+this.value"></td>
-          <td class="no-print"><button class="btn-x" onclick="pricing.lines.splice(${i},1);renderPricing()">×</button></td></tr>`
-        :`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-400);margin-right:8px">${l.code}</span>${esc(l.desc)}</td>
+          <td class="r"><input type="number" data-k="price.${i}.unit" value="${fix2(l.unit)}" min="0" step="0.01" style="width:110px" aria-label="Rate for ${esc(l.desc)}" oninput="pricing.lines[${i}].unit=+this.value"></td>
+          <td class="no-print"><button class="btn-x" title="Remove line" aria-label="Remove ${esc(l.desc)}" onclick="pricing.lines.splice(${i},1);renderPricing()">×</button></td></tr>`
+        :`<tr><td><span class="mono" style="font-size:11px;color:var(--ink-500);margin-right:8px">${esc(l.code)}</span>${esc(l.desc)}</td>
           <td><span class="badge">${l.basis==='sf'?'per res SF':l.basis==='asf'?'per amen SF':l.basis==='unit'?'per unit':'lump sum'}</span></td>
           <td class="calc r">${usd2(l.unit)}</td><td></td></tr>`);
     });
@@ -6597,9 +6876,21 @@ function openExport(){
     const e=document.getElementById('ex-'+k);
     if(e)e.checked=saved[k];
   }
+  exportReturnFocus=document.activeElement;
   document.getElementById('exportModal').style.display='flex';
+  // Focus enters the dialog (its first section checkbox) and goes back to the
+  // Export button when it closes.
+  const first=document.getElementById('ex-stats');
+  if(first)first.focus();
 }
-function closeExport(){document.getElementById('exportModal').style.display='none';}
+let exportReturnFocus=null;
+function closeExport(){
+  const m=document.getElementById('exportModal');
+  const was=m.style.display!=='none';
+  m.style.display='none';
+  if(was&&exportReturnFocus&&document.body.contains(exportReturnFocus))exportReturnFocus.focus();
+  exportReturnFocus=null;
+}
 function sel(){const c=id=>{const e=document.getElementById(id);return e?e.checked:false;};
   return {stats:c('ex-stats'),units:c('ex-units'),other:c('ex-other'),
           budget:c('ex-budget'),csi:c('ex-csi'),summary:c('ex-summary'),
@@ -7576,6 +7867,15 @@ function wireDelegates(){
     const row=e.target.closest('tr[data-code]');if(!row)return;
     pickCsi(row.dataset.code,row.dataset.title);
   });
+  document.getElementById('pickBody').addEventListener('keydown',pickRowKey);
+  // The ↺ beside an edited Qty or Rate puts back the derived quantity or the
+  // library rate. Carried in data attributes, like the collapse toggles.
+  document.getElementById('budBody').addEventListener('click',e=>{
+    const btn=e.target.closest('[data-reset]');if(!btn)return;
+    e.stopPropagation();
+    resetLineField(btn.dataset.line,btn.dataset.reset);
+  });
+  document.getElementById('budBody').addEventListener('keydown',lineNavKey);
   document.getElementById('catBody').addEventListener('click',e=>{
     const btn=e.target.closest('[data-cat-add]');if(!btn)return;
     catAdd(btn.dataset.code,btn.dataset.title);
@@ -7629,6 +7929,31 @@ function wireDelegates(){
     if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
     document.querySelectorAll('#helpToc a').forEach(x=>x.classList.remove('on'));a.classList.add('on');
   }));
+}
+
+/* Spreadsheet keys in the budget grid: Enter or ArrowDown on a Qty or Rate
+   field moves to the same field one visible row down, ArrowUp (or
+   Shift+Enter) one row up. Tab is untouched. A changed value commits first,
+   through the field's own onchange — touch() → recalc() → withFocus(), the
+   path every edit takes — and the grid that comes back is the one the next
+   field is looked up in, by its data-k. */
+function lineNavKey(e){
+  if(e.altKey||e.ctrlKey||e.metaKey)return;
+  const up=e.key==='ArrowUp'||(e.key==='Enter'&&e.shiftKey);
+  const down=(e.key==='Enter'&&!e.shiftKey)||e.key==='ArrowDown';
+  if(!up&&!down)return;
+  if(e.shiftKey&&e.key!=='Enter')return;
+  const el=e.target;
+  const m=/^line\.(.+)\.(qty|unit)$/.exec((el&&el.dataset&&el.dataset.k)||'');
+  if(!m)return;
+  e.preventDefault();   // also stops ArrowUp/Down stepping the number
+  const list=[...document.querySelectorAll('#budBody input[data-k$=".'+m[2]+'"]')];
+  const next=list[list.indexOf(el)+(up?-1:1)];
+  const key=next?next.dataset.k:el.dataset.k;
+  if(el.value!==el.defaultValue)el.dispatchEvent(new Event('change',{bubbles:true}));
+  const t=document.querySelector('#budBody [data-k="'+CSS.escape(key)+'"]');
+  if(t&&t!==document.activeElement)t.focus();
+  if(t)try{t.select();}catch(_){}
 }
 
 /* ============ GLOBAL SEARCH (Cmd/Ctrl+K) ============
