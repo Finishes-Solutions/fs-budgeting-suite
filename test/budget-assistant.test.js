@@ -191,6 +191,28 @@ test('ANTHROPIC_FALLBACKS=off and a configured model/effort are honoured', async
   assert.deepStrictEqual(req.output_config, { effort: 'low' });
 });
 
+test('the effort picked in the chat panel applies to that question only', async () => {
+  const c = fakeClient([text('ok'), text('ok')]);
+  const r = await run({ client: c, env: { ANTHROPIC_EFFORT: 'low' }, body: { question: 'q', effort: 'High' } });
+  assert.strictEqual(r.status, 200);
+  assert.deepStrictEqual(c.calls[0].req.output_config, { effort: 'high' });
+  assert.strictEqual(bodyOf(r).effort, 'high', 'the answer says which effort it was given');
+  assert.strictEqual(r.activity.effort, 'high');
+  const r2 = await run({ client: c, env: { ANTHROPIC_EFFORT: 'low' }, body: { question: 'q' } });
+  assert.deepStrictEqual(c.calls[1].req.output_config, { effort: 'low' }, 'absent: the configured default');
+  assert.strictEqual(bodyOf(r2).effort, 'low');
+});
+
+test('an effort the panel does not offer is refused, not replaced', async () => {
+  const c = fakeClient([]);
+  for (const effort of ['max', 'xhigh', 'turbo', 3]) {
+    const r = await run({ client: c, body: { question: 'q', effort } });
+    assert.strictEqual(r.status, 400, String(effort));
+    assert.match(bodyOf(r).message, /low, medium or high/);
+  }
+  assert.strictEqual(c.calls.length, 0);
+});
+
 test('the tool loop runs our read-only tools and feeds results back', async () => {
   const c = fakeClient([
     { stop_reason: 'tool_use', content: [

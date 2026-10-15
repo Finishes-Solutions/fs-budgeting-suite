@@ -307,8 +307,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // model, and that a what-if runs through the engine via run_scenario.
  await p.click('#page-analysis button:has-text("Ask AI")'); await p.waitForTimeout(300);
  ok('Ask AI opens the assistant on this analysis',
-    await p.locator('#assistantModal.on').count()===1
-    && /Budget Assistant — /.test(await p.locator('#assistantTitle').textContent())
+    await p.locator('#assistantPanel.on').count()===1
+    && /Investment analysis · /.test(await p.locator('#aiSub').textContent())
     && (await p.locator('#aiLog [data-ai-suggest]').count())===6);
  await p.click('#aiLog [data-ai-suggest="0"]');
  await p.waitForSelector('#aiLog .ai-msg.bot:has-text("mock pro forma answer")',{timeout:5000});
@@ -320,6 +320,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('a what-if runs through the engine',
     /Looked up: run scenario/.test(await p.locator('#aiLog .ai-msg.bot').last().textContent()));
  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+ ok('Escape closes the panel on the analysis page too', await p.locator('#assistantPanel.on').count()===0);
  // From the budget side, the same pro forma is in reach.
  const proFormaCount=await p.evaluate(async()=>{
    const r=await fetch('/api/budget/TST-9911?scope=ask',{method:'POST',headers:{'Content-Type':'application/json'},

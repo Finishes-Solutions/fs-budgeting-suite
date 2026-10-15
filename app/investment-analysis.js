@@ -897,7 +897,7 @@
           <span id="invStatusHost"></span>
           <span class="inv-statebar" id="invState"></span>
           <button class="btn btn-ghost" id="invAskBtn" onclick="FSInvestmentUI.askAI()"
-            title="Ask the Budget Assistant about this analysis">Ask AI</button>
+            title="Ask the Budget Assistant about this analysis"><svg class="ai-spark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9z"/><path d="M19 15l.9 2.6 2.6.9-2.6.9L19 22l-.9-2.6-2.6-.9 2.6-.9z" opacity=".7"/></svg>Ask AI</button>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
           <button class="btn btn-dark" data-inv-edit id="invExportBtn" onclick="FSInvestmentUI.openExport()">Export</button>

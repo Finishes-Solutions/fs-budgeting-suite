@@ -125,7 +125,8 @@ const mockClaude = { beta: { messages: { async create(req) {
     + '- Contract Sum: ' + usd(t.contractSum) + '\n- Total Project Cost: ' + usd(t.totalProjectCost)
     + '\n- Based on: ' + (m ? first.match(/basis="([^"]+)"/)[1] : 'unknown')
     + '\n- Review findings: ' + (review ? review.summary.findings : 'none')
-    + '\n- Pro formas: ' + (pf ? pf[1] : '0') + tail }] };
+    + '\n- Pro formas: ' + (pf ? pf[1] : '0')
+    + '\n- Reasoning: ' + (req.output_config && req.output_config.effort) + tail }] };
 } } } };
 // The pro forma half of the stand-in: quotes the engine's headline and top
 // driver, and a question about RUBS exercises run_scenario.

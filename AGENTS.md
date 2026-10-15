@@ -494,8 +494,13 @@ custom provider for sign-in.
 
 ## Budget Assistant (AI)
 
-- **What it is.** Ask AI opens one dialog (owned by `index.html`) with two
-  focuses. In the budget editor it posts to `POST /api/budget/{id}?scope=ask`;
+- **What it is.** Ask AI opens one panel docked to the right edge
+  (`#assistantPanel`, owned by `index.html`) with two focuses. It is NOT a
+  dialog: it is not in the `openDialog` stack, does not trap focus or lock the
+  page, and on screens ≥1180px `body.ai-docked` pads the page so nothing sits
+  under it. `aiFollowPage()` (called from `go()`) keeps it open across the
+  DOC_PAGES of the budget it is about, or on the analysis page, and closes it
+  otherwise. Escape is handled on the panel itself and stopped there. In the budget editor it posts to `POST /api/budget/{id}?scope=ask`;
   on an investment analysis (the button lives in `app/investment-analysis.js` and
   reaches the dialog only through the adapter's `askAI`) it posts to
   `POST /api/investment-calculations?scope=ask` with `analysisId`. Both are
@@ -531,7 +536,7 @@ custom provider for sign-in.
   the deadline fires mid-answer, the text so far is returned marked
   `cutShortForTime` rather than discarded. A turn that spent `max_tokens`
   thinking gets one appended "answer now" turn. Every timeout carries a
-  `detail` ("gathering context 1.2s; call 1: 33.0s, deadline") that the dialog
+  `detail` ("gathering context 1.2s; call 1: 33.0s, deadline") that the panel
   shows and the Functions log records — read it before tuning. Raising effort
   or adding tools trades directly against this window — measure before you do.
 - **The system prompt is byte-stable** (instructions + `budget-system.md`, no ids
@@ -542,12 +547,17 @@ custom provider for sign-in.
   `ai_not_configured` and the dialog says so), `ANTHROPIC_MODEL` (default
   `claude-haiku-5-5`), `ANTHROPIC_EFFORT` (default `medium`),
   `ANTHROPIC_FALLBACKS=off` (drops the server-side refusal fallback beta).
+  The panel's reasoning chip sends `body.effort` (`low`/`medium`/`high` only —
+  `ASK_EFFORTS`; anything else is a 400, never silently replaced) once a person
+  has picked one; until then nothing is sent and `ANTHROPIC_EFFORT` applies.
+  The response's `effort` says what was used. `xhigh`/`max` stay
+  setting-only because they outrun the request window.
   Haiku is the default because it answers fast and cheaply inside the request
   window, and the app computes every figure it explains; set `claude-opus-5-5`
   for deeper analysis. The refusal fallback is sent only to models that
   support it (`FALLBACK_MODELS`) — Haiku 5.5 does not, and sending it there is
   a 400. A dotted id (`claude-haiku-5.5`) is accepted and normalised.
-- **Errors never trip the global API banner.** The dialog uses its own `fetch`,
+- **Errors never trip the global API banner.** The panel uses its own `fetch`,
   not `api()`, because `api()` treats any 5xx as "the server is down"; an AI
   outage is not that.
 - **Logged as `ai_ask`** (question, model, token counts — never the answer), with

@@ -24,6 +24,28 @@ House rules for writing one:
 
 ## Unreleased
 
+### The Budget Assistant is now a chat panel on the right, with a reasoning control
+
+- **It docks to the right edge instead of covering the page.** On a wide
+  screen the page shifts left to make room, so the budget stays readable and
+  editable beside the conversation. It stays open as you move between Inputs,
+  Impact Fees, Budget and CSI Schedule for the same budget, and closes when you
+  leave for another page. On a narrow screen it covers the page. Escape closes
+  it when you are typing in it.
+- **A redesigned conversation.** Your question sits in a bubble on the right
+  and the answer reads as plain text beside the assistant's mark. Each answer
+  has a **Copy** button. Suggested questions show as cards when a conversation
+  is empty. The question box grows as you type.
+- **New conversation is now an icon** (pencil on a square) in the panel's
+  header, next to Close.
+- **Pick the reasoning effort as you chat.** The chip under the question box
+  offers **Low** (fastest), **Medium** (balanced) and **High** (most thorough,
+  and slower: a long answer may be cut short at the time limit). Your choice
+  applies from the next question and is remembered in your browser. Until you
+  pick one, the `ANTHROPIC_EFFORT` setting applies (Medium if unset). Each
+  answer says which effort it used. Extra-high and max are not offered: they
+  think longer than a request is allowed to run.
+
 ### Security: fixed a stored cross-site scripting flaw
 
 A specially crafted budget could run script in the browser of anyone who opened

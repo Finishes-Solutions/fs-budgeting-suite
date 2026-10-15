@@ -67,6 +67,10 @@ const FINAL_ANSWER_MS = 14000;
 // ANTHROPIC_MODEL (e.g. claude-opus-5-5) for deeper analysis.
 const DEFAULT_MODEL = 'claude-haiku-5-5';
 const EFFORTS = new Set(['low', 'medium', 'high', 'xhigh', 'max']);
+// What a person may pick per question in the chat panel. xhigh and max are
+// left to the ANTHROPIC_EFFORT setting: they think longer than the request
+// window allows and would mostly come back cut short.
+const ASK_EFFORTS = new Set(['low', 'medium', 'high']);
 // Models that accept the server-side refusal fallback (`fallbacks: 'default'`,
 // beta server-side-fallback-2026-07-01). Haiku 5.5 does NOT: a declined Haiku
 // request stays declined, and naming fallback models there is a 400 — so the
@@ -818,6 +822,8 @@ async function analysisContext(store, id, body) {
 //   focus 'budget' (default) — id is a budget id; body.draft is the unsaved doc
 //   focus 'analysis'         — id is an analysis GUID (or null for an unsaved
 //                              one); body.draftInput is the on-screen input
+// body.effort (optional) is the reasoning effort picked in the chat panel for
+// this question: low, medium or high. Absent, ANTHROPIC_EFFORT applies.
 // store is required: a store, or a function returning one (production passes
 // () => sqlStore(pool, principal), so a refused request never touches SQL).
 // client is an Anthropic-shaped object; when absent one is built from
@@ -844,6 +850,16 @@ async function ask(opts) {
     return reply(400, { error: 'bad_request', message: 'Invalid analysis ID.' });
   if (focus === 'analysis' && !id && !(body && body.draftInput))
     return reply(400, { error: 'bad_request', message: 'Open an analysis first.' });
+  // The reasoning effort picked in the chat panel, for this question only.
+  // Absent means the configured default; anything else is refused rather than
+  // silently replaced, so the panel never shows a setting that was not used.
+  let effort = cfg.effort;
+  if (body && body.effort !== undefined && body.effort !== null && body.effort !== '') {
+    const e = String(body.effort).trim().toLowerCase();
+    if (!ASK_EFFORTS.has(e))
+      return reply(400, { error: 'bad_request', message: 'Reasoning effort must be low, medium or high.' });
+    effort = e;
+  }
 
   if (throttled(principal && principal.userId, started))
     return reply(429, { error: 'rate_limited', message: 'Too many questions in a short time — wait a few minutes and ask again.' });
@@ -883,7 +899,7 @@ async function ask(opts) {
       max_tokens: cfg.maxTokens,
       // The forced final answer runs at low effort: by then the facts are all
       // in hand and what is left is writing, against the clock.
-      output_config: { effort: mustAnswer ? 'low' : cfg.effort },
+      output_config: { effort: mustAnswer ? 'low' : effort },
       system: [{ type: 'text', text: systemPrompt(), cache_control: { type: 'ephemeral' } }],
       tools: TOOLS,
       tool_choice: mustAnswer ? { type: 'none' } : { type: 'auto' },
@@ -955,14 +971,14 @@ async function ask(opts) {
   }
 
   const res = reply(200, {
-    ok: true, answer: finalText, focus, basedOn: c.basedOn, model: servedBy, toolsUsed,
+    ok: true, answer: finalText, focus, basedOn: c.basedOn, model: servedBy, effort, toolsUsed,
     truncated: stop === 'max_tokens' || cutShort, cutShortForTime: cutShort,
     usage, elapsedMs: now() - started, timing: diag
   });
   // For the activity log, which the endpoint writes after responding. Not part
   // of the response body.
   res.activity = Object.assign({}, c.activity, {
-    question: question.slice(0, 300), model: servedBy, basedOn: c.basedOn,
+    question: question.slice(0, 300), model: servedBy, effort, basedOn: c.basedOn,
     inputTokens: usage.input, outputTokens: usage.output, tools: toolsUsed.length });
   return res;
 }
