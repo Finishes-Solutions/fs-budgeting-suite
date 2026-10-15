@@ -89,6 +89,9 @@ async function nbFinish(p,project,id,name){
  ok('the header pill counts the blocker',
     /blocking/i.test(await p.locator('#mGuardrails').textContent()),
     await p.locator('#mGuardrails').textContent());
+ ok('the save pill says the rails are what is holding the save',
+    /^Unsaved · 1 Guard Rail Blocking$/.test(await p.locator('#saveState').textContent()),
+    await p.locator('#saveState').textContent());
 
  await p.click('.page.on button[data-save-btn]'); await p.waitForTimeout(800);
  ok('the save is refused', /guard rail/i.test(await p.locator('#toast').textContent()),

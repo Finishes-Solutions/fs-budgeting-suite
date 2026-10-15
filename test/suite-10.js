@@ -98,6 +98,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('contract sum still renders', /^\$[\d,]+$/.test(before), before);
 
  // --- Download Guide: export popup opens, PDF downloads through the engine
+ // Leaving for Help with "Leave without saving?" accepted now really discards a
+ // budget that was never saved, and the tests below come back to this one —
+ // so it is saved first.
+ await p.evaluate(() => saveBudget(false)); await p.waitForTimeout(600);
  await p.evaluate(() => go('help')); await p.waitForTimeout(400);
  ok('Download Guide button present', await p.locator('button:has-text("Download Guide")').isVisible());
  await p.click('button:has-text("Download Guide")');
