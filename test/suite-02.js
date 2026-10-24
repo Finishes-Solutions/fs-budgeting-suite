@@ -30,17 +30,18 @@ const BASE = 'http://127.0.0.1:8100';
      && (await p.locator('#page-home button:has-text("Multifamily")').count()) === 0
      && (await p.locator('#page-home button:has-text("+ Blank Budget")').count()) === 0);
   await p.click('button:has-text("+ New Budget")'); await p.waitForTimeout(200);
-  ok('the modal offers Multifamily and Blank, with future types on one muted line',
+  // Industrial, Retail and Mixed-Use used to be a muted "coming soon" line; the
+  // estimate option (budgeting v2) now covers them and every other type, and
+  // leads the list. Multifamily and Blank stay exactly as they were.
+  ok('the modal leads with Estimate Any Project Type, then Multifamily and Blank',
      await p.evaluate(() => {
        const rows = [...document.querySelectorAll('#newBudgetModal .tpl-row')];
-       const by = n => rows.find(r => r.textContent.includes(n));
-       const soon = document.getElementById('nbComingSoon');
-       return !!by('Multifamily') && !by('Multifamily').disabled
+       const name = r => r.querySelector('.tpl-name').textContent.trim();
+       const by = n => rows.find(r => name(r) === n);
+       return name(rows[0]) === 'Estimate Any Project Type'
+         && !!by('Multifamily') && !by('Multifamily').disabled
          && !!by('Blank Budget') && !by('Blank Budget').disabled
-         // not three dead buttons any more — one line of text naming all three
-         && !by('Industrial') && !by('Retail') && !by('Mixed-Use')
-         && !!soon && /Industrial/.test(soon.textContent) && /Retail/.test(soon.textContent)
-         && /Mixed-Use/.test(soon.textContent) && soon.tagName !== 'BUTTON';
+         && !document.getElementById('nbComingSoon');
      }));
   ok('custom templates show an empty state when none exist',
      /No custom templates yet/.test(await p.locator('#customTplList').textContent()));
@@ -135,7 +136,9 @@ const BASE = 'http://127.0.0.1:8100';
                pricingVersion: '2026.08-v2' }
       })
     });
-    await mk('BD-0001', 'Alpha Ridge', 9000000, 'Finalized', '2026-01-05T00:00:00Z');
+    // Noon UTC: the same calendar day in every US time zone (midnight UTC is
+    // the previous evening in the Americas, which made this test zone-dependent).
+    await mk('BD-0001', 'Alpha Ridge', 9000000, 'Finalized', '2026-01-05T12:00:00Z');
     await mk('BD-0002', 'Zephyr Landing', 3000000, 'Draft', '2026-06-20T00:00:00Z');
     await mk('AS-0007', 'Midtown Assessment', 6000000, 'In Review', '2026-03-10T00:00:00Z');
   });

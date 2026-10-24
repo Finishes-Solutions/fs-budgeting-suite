@@ -75,6 +75,9 @@ domain is `budgets.finishessolutions.ai`; staging is tested on the SWA staging U
 | `app/investment-analysis.js` / `.css` | The Investment Analysis workflow — external no-build IIFE behind `window.FSInvestmentUI`, wired through an adapter |
 | `app/theme-ramp.css` | The Editorial theme pack — presentation only, every rule scoped to `html[data-skin=ramp]`, loaded after the inline sheet |
 | `app/guardrails.js` / `api/shared/guardrails.js` | Budget guard rails — **byte-identical** UMD pair, enforced by `test/guardrails.test.js` |
+| `app/budget-engine.js` | The v2 estimate engine — pure UMD, no DOM/network/clock; the browser and Node run the same file (docs/BUDGET_ENGINE.md) |
+| `app/budget-v2.js` / `.css` | The estimate workspace (Inputs) and estimate detail (Budget page) behind `window.FSBudgetV2`, wired by an adapter in `index.html` |
+| `app/research-data.js` | **Generated** research bundle from `data/research/` (`tools/build-research-data.js`); `test/research-data.test.js` fails if stale |
 | `app/impact-fees.js` | The impact & tap fee calculator — a browser-only UMD module; there is no `api/` twin **on purpose** (see below) |
 | `CHANGELOG.md` | What changed and what to run — updated with every change that ships |
 | `BUDGET-SYSTEM.md` | **How a budget is formulated and how it changes** — every formula, keyed to its code; copied byte-for-byte to `api/shared/budget-system.md` for the Budget Assistant |
@@ -349,6 +352,46 @@ custom provider for sign-in.
   bar's `overflow-x` clips anything absolutely positioned inside it, which is
   why the More dropdown (`.nav-drop`) is `position:fixed` at ≤760px, placed by
   `placeNavDrop()`.
+
+## Budgeting v2 (estimates) — rules that bite
+
+- **No default lives in code.** Every researched number comes from `data/research/`
+  through `app/research-data.js`. Structural constants in `budget-engine.js` (draw
+  curves, which soft items are paid up front, the size-factor bounds) are named and
+  commented; anything that is a cost, a rate or a percentage belongs in research.
+  Never invent a source, URL, number or quote — unsourced values are `derived: true`
+  with a `method`, shown in the app as "derived estimate — verify".
+- **The engine is pure and works in integer cents.** Totals are sums of rounded lines
+  and every split is a largest-remainder allocation, so component, phase and project
+  totals add up exactly. Tests on a fixed synthetic bundle
+  (`test/fixtures/engine-data.js`) keep the math independent of research changes.
+- **An estimate is MATERIALIZED, like the Impact Fees line.** `doc.engine` holds the
+  inputs; every change recomputes and writes ordinary budget fields — lines
+  (`derived:'engine'`, basis `ls`), `contingency` (amt), `projectCosts` (land, dev, cls)
+  and `doc.engineSummary` (per component/phase totals and pro forma inputs). That is
+  why `parts()`, `budget-calc.js`, SovLines, the CSI page, guard rails and classic
+  exports need no changes. Invariant (tested for every type):
+  `parts(doc).project === engine total` to the cent. Never "improve" engine lines into
+  a term in `parts()`.
+- **Engine lines are owned by the engine.** The classic SOV grid and inputs are hidden
+  for estimates (`body.is-engine` + `.classic-only` / `.v2-only`); edits happen as
+  overrides in `doc.engine.overrides`, keyed by the line's stable engine key.
+- **A saved estimate is not re-priced on open.** If `doc.engine.dataVersion` differs from
+  the shipped bundle, the screen shows what current research gives next to the saved
+  total; the document changes only on an edit or "Update to current research".
+- **Engine ids are row ids.** Component, phase, shared, scenario and block ids render
+  into `data-*` attributes; `api/shared/identifiers.js` refuses unsafe ones and
+  `FSBudgetV2.migrate()` regenerates them on load. Delegated listeners only — never
+  interpolate data into inline handlers.
+- **Size for estimates.** The save refuses a budget with no building SF *unless* it is an
+  estimate sized in primary units (`engineSized()` in `budget-save-rules.js`) — an RV
+  park or solar farm has sites or MW, not building SF.
+- **The pro forma engine is frozen.** `test/proforma-golden.test.js` must pass unchanged.
+  Estimates reach it only through `from-budget.js` (`engineProjection()`, scope =
+  project | component | phase, carried in `input.source.scope` for re-sync).
+- **The type filter word "Multifamily" is a selector in older suites.** The estimate
+  row in New Budget deliberately says "apartments" so `has-text("Multifamily")` still
+  finds the classic template.
 
 ## Projects
 

@@ -3,13 +3,24 @@
    dark theme and accent themes follow automatically. Every rule is scoped to a
    v2 class so the classic pages cannot regress. */
 
+/* Accessible text colours for v2 surfaces. In the dark theme the app's
+   --ink-500 (#7e8884) is 4.4:1 on cards and --green-700 text is ~3.8:1 — both
+   below WCAG AA for small text — so v2 remaps them inside its own scope only
+   (tools/a11y-audit.js). The classic pages are untouched. */
+[data-v2],.v2-picker,.v2-drawer{--v2-accent:var(--green-700)}
+html[data-theme=dark] [data-v2],html[data-theme=dark] .v2-picker,html[data-theme=dark] .v2-drawer{
+  --ink-500:#9aa49f;--v2-accent:var(--green-500)}
+html[data-theme=dark] [data-v2] .btn-primary{background:var(--green-800)}
+html[data-theme=dark] [data-v2] .btn-primary:hover{background:var(--green-900)}
+[data-v2] a,.v2-drawer a{color:var(--v2-accent)}
+
 /* Which half of the inputs/budget pages is showing. */
 body.is-engine .classic-only{display:none!important}
 body:not(.is-engine) .v2-only{display:none!important}
 
 /* New Budget: the estimate option leads. */
 .tpl-row.tpl-feature{border-color:var(--green-700);background:var(--green-50)}
-.tpl-row.tpl-feature .tpl-name{color:var(--green-700)}
+.tpl-row.tpl-feature .tpl-name{color:var(--v2-accent)}
 
 .v2-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
 .v2-main{min-width:0}
@@ -19,7 +30,7 @@ body:not(.is-engine) .v2-only{display:none!important}
 .v2-mode{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;font:600 13px var(--fb);
   color:var(--ink-500);cursor:pointer;margin-bottom:-1px;border-radius:var(--r) var(--r) 0 0}
 .v2-mode:hover{color:var(--ink-900);background:var(--ink-50)}
-.v2-mode.on{color:var(--green-700);border-bottom-color:var(--green-700)}
+.v2-mode.on{color:var(--v2-accent);border-bottom-color:var(--v2-accent)}
 .v2-mode:focus-visible,.v2-type:focus-visible,.v2-blockbtn:focus-visible,.v2-tog:focus-visible,.v2-link:focus-visible,
 .v2-srcbtn:focus-visible,.v2-disclose:focus-visible{outline:none;box-shadow:var(--focus)}
 .v2-lede{font-size:15px;color:var(--ink-700);margin:0 0 14px;max-width:62ch;line-height:1.55}
@@ -27,14 +38,14 @@ body:not(.is-engine) .v2-only{display:none!important}
 .v2-help{display:block;margin-top:4px}
 .v2-typedesc{margin:0 0 14px;color:var(--ink-600);font-size:13px}
 .v2-sub{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);margin:18px 0 8px}
-.v2-sub-inline{font-family:var(--fm);font-size:10.5px;letter-spacing:.08em;color:var(--ink-500);margin-left:6px}
+.v2-sub-inline{font-family:var(--fm);font-size:10.5px;letter-spacing:.08em;color:var(--ink-600);margin-left:6px}
 .v2-hd-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .v2-comp .card-hd h2{flex:1;min-width:0;margin-right:12px}
 .v2-comp .card-hd h2 input{font:700 16px var(--fb);border:1px solid var(--ink-200);border-radius:var(--r);padding:4px 8px;width:100%;max-width:520px;
   background:var(--white);color:var(--ink-900)}
 .v2-in{width:100%}
 .v2-pricehelp{margin-top:10px;font-size:12.5px;color:var(--ink-600);line-height:1.5}
-.v2-link{appearance:none;background:none;border:0;padding:0 2px;color:var(--green-700);font:600 12px var(--fb);cursor:pointer;text-decoration:underline}
+.v2-link{appearance:none;background:none;border:0;padding:0 2px;color:var(--v2-accent);font:600 12px var(--fb);cursor:pointer;text-decoration:underline}
 .v2-disclose{appearance:none;background:none;border:0;padding:10px 0 4px;margin-top:10px;color:var(--ink-700);font:600 13px var(--fb);cursor:pointer}
 .v2-adv{border-top:1px solid var(--ink-150);margin-top:8px;padding-top:14px}
 .v2-comp-sum{margin-top:14px;padding-top:12px;border-top:1px solid var(--ink-150);font-size:13px;color:var(--ink-800);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -42,10 +53,10 @@ body:not(.is-engine) .v2-only{display:none!important}
 .v2-addrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .v2-shared,.v2-phase,.v2-scen{border:1px solid var(--ink-150);border-radius:var(--rm);padding:14px;margin-bottom:12px;background:var(--ink-50)}
 .v2-chip{display:inline-block;font:500 11px var(--fm);letter-spacing:.04em;padding:3px 8px;border-radius:999px;background:var(--ink-100);color:var(--ink-700)}
-.v2-chip-ok{background:var(--green-50);color:var(--green-700);border:1px solid var(--green-200)}
+.v2-chip-ok{background:var(--green-50);color:var(--v2-accent);border:1px solid var(--green-200)}
 .v2-chip-warn{background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-bd)}
 .v2-src{display:inline-block;font:500 10.5px var(--fm);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
-.v2-src-research{background:var(--green-50);color:var(--green-700);border:1px solid var(--green-200)}
+.v2-src-research{background:var(--green-50);color:var(--v2-accent);border:1px solid var(--green-200)}
 .v2-src-derived{background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-bd)}
 .v2-src-user{background:var(--edit-50);color:var(--edit);border:1px solid var(--edit-100)}
 .v2-srcbtn{appearance:none;background:none;border:0;padding:0;cursor:pointer}
@@ -87,7 +98,7 @@ body:not(.is-engine) .v2-only{display:none!important}
 .v2-type:hover{border-color:var(--green-700);background:var(--green-50)}
 .v2-type-name{font-weight:700;font-size:13.5px}
 .v2-type-desc{font-size:12px;color:var(--ink-600);line-height:1.4}
-.v2-type-meta{font-size:11px;color:var(--green-700)}
+.v2-type-meta{font-size:11px;color:var(--v2-accent)}
 
 /* Custom builder */
 .v2-blockadd{margin-top:14px}
@@ -165,3 +176,5 @@ body:not(.is-engine) .v2-only{display:none!important}
 .v2-line.v2-d1 td:first-child{padding-left:44px}
 .v2-modes-end{margin-left:auto;display:flex;gap:6px;align-items:center;padding-bottom:6px}
 @media(max-width:760px){.v2-modes-end{margin-left:0;width:100%}}
+.v2-seg{display:flex;gap:4px;flex-wrap:wrap}
+html[data-theme=dark] .v2-gantt-bar{background:var(--green-800)}

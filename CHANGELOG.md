@@ -22,6 +22,47 @@ House rules for writing one:
 
 ---
 
+## Unreleased — Budgeting v2: estimate any project type
+
+A new way to start a budget: **New Budget → Estimate Any Project Type**. Pick from
+94 researched project types — apartments of every kind, single-family and
+build-to-rent, hotels, offices, medical, retail, restaurants, car washes, food truck
+parks, RV resorts, glamping, marinas, warehouses, cold storage, self-storage, data
+centers, solar farms, battery storage, EV charging, schools, fire stations and more —
+enter the size, and a detailed, sourced budget appears immediately.
+
+- **Quick estimate:** type + size + baseline price per unit of measure ($/SF, $/unit,
+  $/key, $/bed, $/pad, $/site, $/slip, $/space, $/kW, $/MW, $/MWh…). The price box is
+  pre-filled with the researched default and shows its range and sources. Location,
+  quality tier, construction start and land are one screen.
+- **Mixed-use & phases:** several components of different types, shared elements
+  (a parking garage, a podium, roads, detention, an amenity center) split by SF, units,
+  revenue, cost, equally or by hand, and phases on a timeline — each with its own
+  escalation to its construction midpoint, draw schedule and construction loan.
+- **Custom builder:** assemble anything from 144 priced building blocks (site work,
+  paving, parking, utilities, amenities, marine, specialty MEP, energy, FF&E…) or your
+  own priced items.
+- **Detailed budget:** component → phase → CSI division → line, with an override on
+  every line, edited lines marked and resettable, and a source trail on every line
+  (researched, derived estimate — verify, computed, or edited).
+- **Draw schedules, scenarios side by side, and a sensitivity view** on the Budget page.
+- **Warnings** when a component's all-in cost falls outside the researched range for
+  its type.
+- **Pro forma per component or phase:** "Create pro forma" sends the chosen slice's
+  cost, size, unit count and revenue to a new investment analysis; re-sync keeps the
+  same slice. The investment calculations themselves are unchanged.
+- **Exports:** an estimate workbook and PDF with summary, components, phases, line
+  detail, draw schedules and sources & assumptions. **Project files:** download an
+  estimate's inputs as a file and open it into another budget.
+- Estimate budgets save, version, export and feed the lender SOV exactly like any
+  other budget. Multifamily-template and blank budgets are unchanged.
+- Research data ships with the app and is never fetched live. A budget keeps its
+  numbers until you edit it or choose **Update to current research**.
+
+### Migration required
+
+None. Everything rides in the budget document.
+
 ## Unreleased — Site-wide flow, saving and input-driven defaults
 
 A pass over the whole app: how a budget gets started, how work is kept safe

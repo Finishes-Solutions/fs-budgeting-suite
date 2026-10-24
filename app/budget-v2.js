@@ -298,11 +298,11 @@
     var p = doc.engine, r = result();
     var mode = p.mode || 'quick';
     var h = staleBanner() + '<div class="v2-wrap"><div class="v2-main">';
-    h += '<div class="v2-modes" role="tablist" aria-label="Estimate mode">'
+    h += '<div class="v2-modes"><div class="v2-seg" role="group" aria-label="Estimate mode">'
       + [['quick', 'Quick estimate'], ['mixed', 'Mixed-use & phases'], ['custom', 'Custom builder']].map(function (m) {
-        return '<button type="button" role="tab" aria-selected="' + (mode === m[0]) + '" class="v2-mode' + (mode === m[0] ? ' on' : '')
+        return '<button type="button" aria-pressed="' + (mode === m[0]) + '" class="v2-mode' + (mode === m[0] ? ' on' : '')
           + '" data-act="mode" data-mode="' + m[0] + '">' + m[1] + '</button>'; }).join('')
-      + '<span class="v2-modes-end">' + btn('save-file', 'Download project file', ' title="Save these estimate inputs as a .json file"')
+      + '</div><span class="v2-modes-end">' + btn('save-file', 'Download project file', ' title="Save these estimate inputs as a .json file"')
       + btn('open-file', 'Open project file', ' title="Replace these inputs with a saved .json project file"') + '</span></div>';
 
     if (!p.components.length && mode !== 'custom') {
@@ -645,9 +645,9 @@
     if (!host || !isEngine(doc)) return;
     var r = result(), p = doc.engine;
     var h = '<div class="v2-detail">';
-    h += '<div class="v2-toolbar no-print"><div class="v2-views" role="tablist" aria-label="Estimate views">'
+    h += '<div class="v2-toolbar no-print"><div class="v2-views" role="group" aria-label="Estimate views">'
       + [['detail', 'Budget detail'], ['draws', 'Draw schedule'], ['scenarios', 'Scenarios'], ['sensitivity', 'Sensitivity'], ['sources', 'Sources & assumptions']].map(function (v) {
-        return '<button type="button" role="tab" aria-selected="' + (st.view === v[0]) + '" class="v2-mode' + (st.view === v[0] ? ' on' : '') + '" data-act="view" data-view="' + v[0] + '">' + v[1] + '</button>';
+        return '<button type="button" aria-pressed="' + (st.view === v[0]) + '" class="v2-mode' + (st.view === v[0] ? ' on' : '') + '" data-act="view" data-view="' + v[0] + '">' + v[1] + '</button>';
       }).join('') + '</div><div class="v2-tool-actions">'
       + btn('export-xlsx', 'Excel', ' title="Download the estimate workbook"') + btn('export-pdf', 'PDF', ' title="Download the estimate report"')
       + '</div></div>';
@@ -775,7 +775,8 @@
     return '<tr class="v2-line v2-d' + depth + (l.overridden ? ' v2-edited' : '') + '"><td>' + esc(l.name) + (l.carveOut ? ' <span class="v2-note">(within baseline)</span>' : '') + '</td>'
       + '<td class="r mono">' + qty + '</td><td>' + esc(isPct ? l.uom : unitL(l.uom)) + '</td><td class="r mono">' + (isPct ? 'of ' : '') + rate + '</td>'
       + '<td class="r">' + input + (l.overridden ? '<button type="button" class="v2-link" data-act="reset-ov" data-key="' + esc(l.key) + '" title="Back to ' + money(l.baseAmount) + '">reset</button>' : '') + '</td>'
-      + '<td><button type="button" class="v2-srcbtn" data-act="source" data-key="' + esc(l.key) + '">' + srcBadge(l.source) + '</button></td></tr>';
+      + '<td><button type="button" class="v2-srcbtn" data-act="source" data-key="' + esc(l.key) + '" data-k="v2.src.' + esc(l.key) + '" aria-label="Source for '
+      + esc(l.name) + '">' + srcBadge(l.source) + '</button></td></tr>';
   }
 
   function drawsHTML(r) {
@@ -903,7 +904,7 @@
       if (ev.length) h += '<h3>All evidence for this type (' + ev.length + ')</h3><table class="tbl v2-tbl"><tbody>' + ev.map(function (k) { return evidenceRow(D.evidence[k]); }).join('') + '</tbody></table>';
     }
     return '<div class="v2-scrim" data-act="close-drawer"></div><aside class="v2-drawer" role="dialog" aria-modal="true" aria-label="Source details">'
-      + '<button type="button" class="btn-x v2-drawer-x" data-act="close-drawer" aria-label="Close">×</button>' + h + '</aside>';
+      + '<button type="button" class="btn-x v2-drawer-x" data-act="close-drawer" data-k="v2.drawerx" aria-label="Close">×</button>' + h + '</aside>';
   }
   function sourceChain(src, depth) {
     depth = depth || 0;
@@ -1015,7 +1016,9 @@
         var comp = p.components.filter(function (x) { return x.id === el.getAttribute('data-comp'); })[0];
         if (!comp) return;
         var item = el.getAttribute('data-item');
-        comp.blocks.push(item ? { id: newId('b'), itemId: item, qty: 1, unitCost: null }
+        var DEF_QTY = { sf: 1000, sy: 500, lf: 100, cy: 100, acre: 1, kw: 100, kwh: 500 };
+        var bu = item && D.blocks[item] ? D.blocks[item].unit : 'ea';
+        comp.blocks.push(item ? { id: newId('b'), itemId: item, qty: DEF_QTY[bu] || 1, unitCost: null }
           : { id: newId('b'), itemId: '', name: 'Priced item', qty: 1, unitCost: 0, unit: 'ls' });
         return changed();
       }
@@ -1043,9 +1046,9 @@
         return paint();
       }
       case 'reset-ov': delete p.overrides[el.getAttribute('data-key')]; return changed();
-      case 'source': st.drawer = { kind: 'line', key: el.getAttribute('data-key') }; return paint();
-      case 'source-type': st.drawer = { kind: 'type', type: el.getAttribute('data-type') }; return paint();
-      case 'close-drawer': st.drawer = null; return paint();
+      case 'source': st.drawer = { kind: 'line', key: el.getAttribute('data-key'), back: el.getAttribute('data-k') }; A.pendingFocus('v2.drawerx'); return paint();
+      case 'source-type': st.drawer = { kind: 'type', type: el.getAttribute('data-type') }; A.pendingFocus('v2.drawerx'); return paint();
+      case 'close-drawer': if (st.drawer && st.drawer.back) A.pendingFocus(st.drawer.back); st.drawer = null; return paint();
       case 'view': st.view = el.getAttribute('data-view'); return paint();
       case 'goto-detail': return A.go('budget');
       case 'goto-inputs': return A.go('input');
@@ -1202,6 +1205,7 @@
   function onKey(ev) {
     if (ev.key === 'Escape' && (st.picker || st.drawer)) {
       if (!document.querySelector('.page.on [data-v2]')) return;
+      if (st.drawer && st.drawer.back) A.pendingFocus(st.drawer.back);
       st.picker = null; st.drawer = null; paint();
     }
   }

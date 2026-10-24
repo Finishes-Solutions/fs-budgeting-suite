@@ -1991,6 +1991,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <a href="#help-firstproject">Your First Project</a>
       <a href="#help-projects">Projects</a>
       <a href="#help-ids">Project and Budget IDs</a>
+      <a href="#help-estimates">Estimates (Any Project Type)</a>
       <a href="#help-inputs">Inputs Reference</a>
       <a href="#help-budget">The Budget Page</a>
       <a href="#help-guardrails">Guard Rails</a>
@@ -2229,6 +2230,31 @@ th.sortable.sorted{color:var(--ink-900)}
         <div class="callout warn"><b>Test budgets are real rows.</b> Preview builds share the production database,
           so a <code>TST-</code> budget is written to the same tables as live projects. It is flagged with a Test
           badge everywhere it appears — delete it when you are finished.</div>
+      </div></section>
+
+      <section class="card"><div class="card-bd">
+        <h3 id="help-estimates">Estimates (Any Project Type)</h3>
+        <p><b>+ New Budget → Estimate Any Project Type</b> builds a budget for almost any project from researched
+          costs: pick a type (search or browse 94 types by category), enter its size in the type's own unit — SF,
+          units, keys, beds, pads, sites, slips, spaces, kW, MW… — and the total appears at once.</p>
+        <ul>
+          <li><b>Baseline price per unit</b> — blank uses the researched default; the line under it shows the
+            researched range and a <b>Sources</b> link. <b>Price basis: Already local</b> skips the location factor.</li>
+          <li><b>Quality, location, construction start, land and the construction loan</b> all have researched
+            defaults. Costs escalate to each phase's construction midpoint; interest comes from a monthly draw schedule.</li>
+          <li><b>Mixed-use &amp; phases</b> — several components, shared elements (a garage, roads, an amenity center)
+            split by SF, units, revenue, cost, equally or by hand, and phases on a timeline.</li>
+          <li><b>Custom builder</b> — assemble anything from priced building blocks or your own items.</li>
+          <li>On the <b>Budget</b> page every line can be overridden (edited lines turn blue and can be reset), and
+            every line shows where its number came from: <i>Sourced</i>, <i>Derived — verify</i>, <i>Computed</i> or
+            <i>Edited</i>. Draw schedule, scenarios, sensitivity and sources are tabs there, with Excel and PDF exports.</li>
+          <li><b>Create pro forma</b> sends the whole project, one component or one phase to a new investment analysis.
+            Enter revenue under each component's <b>Details</b> first.</li>
+          <li>A component whose all-in cost per unit is outside the researched range for its type is flagged.</li>
+        </ul>
+        <p>A saved estimate keeps its numbers when the app's research is updated — a banner offers
+          <b>Update to current research</b>. Impact fees default to national averages; pick the jurisdiction on the
+          Impact Fees step for real ones. Full guide: <span class="mono">docs/ESTIMATES_GUIDE.md</span>.</p>
       </div></section>
 
       <section class="card"><div class="card-bd">
@@ -9958,7 +9984,9 @@ function endBoot(){
       getDoc:()=>doc,esc,toast,withFocus,
       touch:()=>touch(),markDirty:()=>markDirty(),
       currentPage:()=>currentPage,go:p=>go(p),
-      pendingFocus:k=>{pendingFocusKey=k;},
+      // An explicit target wins over whatever has focus now (withFocus prefers
+      // the live element), so the clicked control is blurred first.
+      pendingFocus:k=>{pendingFocusKey=k;const a=document.activeElement;if(a&&a.blur&&a!==document.body)a.blur();},
       isDirty:()=>dirty||docIsNew,
       save:async()=>{await saveBudget(true);return !dirty&&!saveError&&!docIsNew;},
       createAnalysis:(pid,scope)=>window.FSInvestmentUI?FSInvestmentUI.createFromBudget(pid,null,null,scope):null,
