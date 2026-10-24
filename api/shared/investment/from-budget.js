@@ -16,11 +16,14 @@
 //     the version document rather than trusted from a stored column.
 //
 //  3. The expense ratio is DERIVED from the budget, against the same Gross
-//     Operating Income the engine's percentOfGOI mode multiplies — that is,
-//     after vacancy. Deriving against gross income instead would understate the
-//     ratio by exactly the vacancy factor.
+//     Operating Income the engine's percentOfGOI mode multiplies:
+//     rent × (1 − vacancy) + other income (investment/operating.js). Vacancy
+//     applies to RENT only — the engine never vacates other income. Deriving
+//     against gross income would understate the ratio by the vacancy factor;
+//     vacating other income too (as this once did) overstated it, so year-1
+//     operating expenses in the analysis came out above the budget's own.
 
-const { parts, grossIncome, totUnits, nz } = require('../budget-calc');
+const { parts, grossIncome, totUnits, expenseMonthly, nz } = require('../budget-calc');
 const D = require('./defaults');
 
 const round2 = x => Math.round(x * 100) / 100;
@@ -32,7 +35,7 @@ const round4 = x => Math.round(x * 10000) / 10000;
 function deriveExpenseRatio(doc, vacancy) {
   const g = grossIncome(doc);
   const vac = Number.isFinite(+vacancy) ? +vacancy : D.vacancy;
-  const goi = g.grossYr * (1 - vac);
+  const goi = 12 * g.rentMo * (1 - vac) + 12 * g.otherMo;
   if (!(goi > 0)) return null;
   const annualOpex = 12 * g.expMo;
   if (!(annualOpex > 0)) return null;
@@ -40,6 +43,7 @@ function deriveExpenseRatio(doc, vacancy) {
     value: round4(annualOpex / goi),
     annualOpex: round2(annualOpex),
     grossIncomeYr: round2(g.grossYr),
+    otherIncomeYr: round2(12 * g.otherMo),
     vacancy: vac,
     goi: round2(goi)
   };
@@ -85,6 +89,7 @@ function projectFromBudget(doc, v, opts) {
           derivedFrom: {
             projectId, budgetVersionNumber: v.VersionNumber,
             annualOpex: derived.annualOpex, grossIncomeYr: derived.grossIncomeYr,
+            otherIncomeYr: derived.otherIncomeYr,
             vacancy: derived.vacancy, goi: derived.goi,
             opexSchemaVersion: nz(doc.opexSchemaVersion) || 1
           } }
@@ -104,16 +109,12 @@ function projectFromBudget(doc, v, opts) {
     expenseRows: (doc.expenses || []).map(e => ({
       label: e.label,
       basis: e.per === 'pctIncome' ? '% of income' : e.per === 'fixed' ? 'fixed / mo' : 'per unit',
-      annualAmount: round2(12 * (e.per === 'pctIncome'
-        ? (gi.rentMo + gi.otherMo) * nz(e.rate) / 100
-        : nz(e.rate) * (e.per === 'fixed' ? (nz(e.count) || 1) : (e.auto ? tu : nz(e.count)))))
+      annualAmount: round2(12 * expenseMonthly(doc, e, gi.rentMo + gi.otherMo))
     })),
     // Kept under its old name too: existing analyses render from it.
     serviceExpenseRows: (doc.expenses || []).map(e => ({
       label: e.label,
-      annualAmount: round2(12 * (e.per === 'pctIncome'
-        ? (gi.rentMo + gi.otherMo) * nz(e.rate) / 100
-        : nz(e.rate) * (e.per === 'fixed' ? (nz(e.count) || 1) : (e.auto ? tu : nz(e.count)))))
+      annualAmount: round2(12 * expenseMonthly(doc, e, gi.rentMo + gi.otherMo))
     })),
     unitMix: (doc.units || []).map(u => ({ label: u.label, count: nz(u.count), rent: nz(u.rent) })),
     opexSchemaVersion: nz(doc.opexSchemaVersion) || 1

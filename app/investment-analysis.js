@@ -16,7 +16,19 @@
     // is a decision about the edit being made now, so it re-arms on load.
     overrideSource: false,
     // The canonical property area in square feet — see setSizeUnit().
-    sizeSF: null
+    sizeSF: null,
+    // Bumped by every edit. A save or calculate captures it on the way out
+    // and only clears dirty/stale if nothing moved while it was in flight —
+    // otherwise edits made during the request would read as saved.
+    editSeq: 0,
+    // The source as the server last stored it, and a re-sync applied in the
+    // browser but not yet saved ({ source }) — see applyResync().
+    loadedSource: null, pendingResync: null,
+    // A local draft found for this analysis on open, offered for restore.
+    draftOffer: null,
+    // Set by a calculation that finished away from step 6: the state bar
+    // offers View Results instead of yanking the user off the step they are on.
+    calcNotice: false
   };
 
   /* ---------- formatting (display only — never feeds arithmetic) ---------- */
@@ -392,7 +404,9 @@
   }
   function invRowMenuAction(act) {
     const aid = el('invRowMenu').dataset.aid;
-    closeInvRowMenu(act === 'delete');
+    // Focus goes back to the ⋮ before a dialog opens, so closing the dialog
+    // can return it there.
+    closeInvRowMenu(act === 'delete' || act === 'versions');
     if (act === 'fav') {
       // FSHome words the toast and repaints whichever page is showing; this
       // menu opens from the project page as well as the list.
@@ -402,7 +416,7 @@
     }
     if (act === 'open') location.hash = '#/analysis/' + aid;
     else if (act === 'versions') showVersions(aid);
-    else if (act === 'duplicate') duplicate(aid);
+    else if (act === 'duplicate') duplicateAndOpen(aid);
     else if (act === 'delete') softDelete(aid);
   }
 
@@ -438,26 +452,83 @@
     } catch (e) { A.toast('Could not create the analysis — ' + e.message); }
   }
 
+  /* The picker lists BUDGETS, grouped under the PROJECT each belongs to — the
+     two namespaces stay apart: the group heading is the project (OP-####,
+     name), each row is a budget id with its primary flag. Projects come from
+     the same ?scope=projects read the Projects tab uses; before that
+     migration (or for a budget with no project) the budgets sit in one
+     "Not Linked to a Project" group rather than pretending to be projects. */
+  const NO_PROJECT = 'Not Linked to a Project';
+  const budgetOrder = (a, z) => a.projectId.length - z.projectId.length || a.projectId.localeCompare(z.projectId);
+  function pickerGroups(budgets, projects) {
+    const byKey = new Map((projects || []).map(p => [p.projectId, p]));
+    const groups = new Map();
+    budgets.forEach((b, i) => {
+      const key = b.projectKey || '';
+      if (!groups.has(key)) groups.set(key, { key, project: key ? byKey.get(key) || null : null, rows: [] });
+      groups.get(key).rows.push({ b, i });
+    });
+    const out = [...groups.values()];
+    out.forEach(g => {
+      g.rows.sort((x, y) => budgetOrder(x.b, y.b));
+      g.latest = g.rows.reduce((m, r) => (String(r.b.updated || '') > m ? String(r.b.updated || '') : m), '');
+      // The same rule the server applies: the stated primary, else the
+      // shortest/lowest id — and only a project has a primary at all.
+      if (g.key) {
+        const stated = g.project && g.project.primaryBudgetId;
+        g.primaryId = g.rows.some(r => r.b.projectId === stated) ? stated : g.rows[0].b.projectId;
+        g.rows.sort((x, y) => (y.b.projectId === g.primaryId) - (x.b.projectId === g.primaryId) || budgetOrder(x.b, y.b));
+      }
+    });
+    // Most recently worked-on project first, as the flat list used to be;
+    // budgets with no project always last.
+    return out.sort((a, z) => (!a.key) - (!z.key) || z.latest.localeCompare(a.latest));
+  }
+
   /* THE creation flow — Home and the Investment Analysis tab both open this
      one modal (same pattern as the budget's New Budget modal): link the
-     analysis to a project's latest saved budget version, or start standalone. */
+     analysis to a budget's latest saved version, or start standalone. */
   async function openProjectPicker() {
-    let budgets = [];
-    try { budgets = await A.api('budgets'); }
-    catch (e) { A.toast('Could not load the project list — ' + e.message); return; }
-    const rows = budgets.map((b, i) => `<tr class="clickable" data-pick="${i}">
-        <td class="mono" style="color:var(--green-700);font-weight:600">${esc(b.projectId)}</td><td>${esc(b.name || '—')}</td>
-        <td>${stChipStatic(b.status)}</td>
-        <td>${esc(fmtDay(b.updated))}</td></tr>`).join('');
+    let budgets = [], projects = [];
+    try {
+      const got = await Promise.all([A.api('budgets'),
+        A.api('budgets?scope=projects').catch(() => null)]);
+      budgets = got[0] || [];
+      projects = (got[1] && got[1].available !== false && got[1].projects) || [];
+    } catch (e) { A.toast('Could not load the project list — ' + e.message); return; }
+    const groups = pickerGroups(budgets, projects);
+    const rows = groups.map(g => {
+      const head = g.key
+        ? `<span class="mono">${esc(g.key)}</span>${g.project && g.project.name ? ' · ' + esc(g.project.name) : ''}`
+        : esc(NO_PROJECT);
+      const q = [g.key, g.project ? g.project.name : '', g.key ? '' : NO_PROJECT].join(' ').toLowerCase();
+      return `<tr class="inv-pick-grp" data-pick-grp="${esc(g.key)}"><td colspan="4">${head}
+          <span class="shut">${g.rows.length} ${g.rows.length === 1 ? 'budget' : 'budgets'}</span></td></tr>`
+        + g.rows.map(({ b, i }) => {
+          const primary = g.key && b.projectId === g.primaryId;
+          return `<tr class="clickable" data-pick="${i}" data-pick-in="${esc(g.key)}" tabindex="0" role="button"
+            data-q="${esc((q + ' ' + b.projectId + ' ' + (b.name || '')).toLowerCase())}"
+            aria-label="Create from budget ${esc(b.projectId)}${b.name ? ' — ' + esc(b.name) : ''}${primary ? ' (primary)' : ''}">
+          <td class="mono" style="color:var(--green-700);font-weight:600;white-space:nowrap">${esc(b.projectId)}${primary
+            ? ' <span class="inv-primary" title="The primary budget — the one the project’s money is reported from">Primary</span>' : ''}</td>
+          <td>${esc(b.name || '—')}</td>
+          <td>${stChipStatic(b.status)}</td>
+          <td>${esc(fmtDay(b.updated))}</td></tr>`;
+        }).join('');
+    }).join('');
     openInvModal(`<h2 class="mod-title">New Investment Analysis</h2>
       <div class="set-lab">From Existing Budget</div>
-      <p style="font-size:12.5px;color:var(--ink-500);margin:0 0 10px">Select the project this analysis is
-      for. It is created from that project's latest saved budget version — an exact snapshot, so the budget
+      <p style="font-size:12.5px;color:var(--ink-500);margin:0 0 10px">Select the budget this analysis is
+      for. It is created from that budget's latest saved version — an exact snapshot, so the budget
       changing later never changes the analysis.</p>
       ${budgets.length
-        ? `<div style="max-height:300px;overflow:auto;border:1px solid var(--ink-150);border-radius:8px">
-           <table class="inv-table" id="invProjectPick"><thead><tr><th>Project ID</th><th>Name</th>
-           <th>Status</th><th>Updated</th></tr></thead><tbody>${rows}</tbody></table></div>`
+        ? `<input type="search" id="invPickQ" data-k="inv.pick.q" placeholder="Search project or budget…"
+             aria-label="Search projects and budgets" style="width:100%;margin:0 0 8px">
+           <div style="max-height:300px;overflow:auto;border:1px solid var(--ink-150);border-radius:8px">
+           <table class="inv-table" id="invProjectPick"><thead><tr><th>Budget</th><th>Name</th>
+           <th>Status</th><th>Updated</th></tr></thead><tbody>${rows}
+           <tr class="inv-pick-none" style="display:none"><td colspan="4">No budgets match this search.</td></tr>
+           </tbody></table></div>`
         : '<div class="empty">No budgets yet. Create a budget first, or start a standalone analysis below.</div>'}
       <div class="set-lab">Standalone Analysis</div>
       <p style="font-size:12.5px;color:var(--ink-500);margin:0 0 10px">Not linked to any budget — you enter
@@ -466,12 +537,50 @@
         <input type="text" id="invNewName" placeholder="Analysis name (optional)" style="flex:1;min-width:200px">
         <button class="btn btn-primary" onclick="FSInvestmentUI.createStandaloneFromModal()">Create Standalone Analysis</button>
       </div>`, 560);
-    el('invModal').querySelectorAll('[data-pick]').forEach(tr => tr.addEventListener('click', async () => {
+    const modal = el('invModal');
+    const pick = async tr => {
       const b = budgets[+tr.dataset.pick];
       closeInvModal();
       try { await createFromBudget(b.projectId); }
       catch (e) { A.toast('Could not create the analysis — ' + e.message); }
-    }));
+    };
+    const visibleRows = () => [...modal.querySelectorAll('[data-pick]')].filter(r => r.style.display !== 'none');
+    modal.querySelectorAll('[data-pick]').forEach(tr => {
+      tr.addEventListener('click', () => pick(tr));
+      tr.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(tr); return; }
+        if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+        e.preventDefault();
+        const vis = visibleRows(), i = vis.indexOf(tr);
+        const next = vis[i + (e.key === 'ArrowDown' ? 1 : -1)];
+        if (next) next.focus(); else if (e.key === 'ArrowUp' && el('invPickQ')) el('invPickQ').focus();
+      });
+    });
+    const q = el('invPickQ');
+    if (q) {
+      q.addEventListener('input', () => {
+        const t = q.value.trim().toLowerCase();
+        const shown = new Set();
+        modal.querySelectorAll('[data-pick]').forEach(tr => {
+          const hit = !t || tr.dataset.q.includes(t);
+          tr.style.display = hit ? '' : 'none';
+          if (hit) shown.add(tr.dataset.pickIn);
+        });
+        modal.querySelectorAll('[data-pick-grp]').forEach(g => {
+          g.style.display = shown.has(g.dataset.pickGrp) ? '' : 'none';
+        });
+        const none = modal.querySelector('.inv-pick-none');
+        if (none) none.style.display = shown.size ? 'none' : '';
+      });
+      q.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown') { const f = visibleRows()[0]; if (f) { e.preventDefault(); f.focus(); } }
+        else if (e.key === 'Enter') {
+          // One match left is an unambiguous answer.
+          const vis = visibleRows();
+          if (vis.length === 1) { e.preventDefault(); pick(vis[0]); }
+        }
+      });
+    }
   }
 
   async function createStandaloneFromModal() {
@@ -486,12 +595,15 @@
   }
 
   async function softDelete(id) {
-    if (!confirm('Delete this investment analysis?\n\nIt can be restored by an administrator; its version history is kept.')) return;
+    // No restore is promised: the app has no way to bring a deleted analysis
+    // back, and a confirm that says otherwise is a confirm nobody should trust.
+    if (!confirm('Delete this investment analysis?\n\nIt will be removed from every list, and it cannot be restored from the app.')) return;
     try {
       await A.api('investment-analysis/' + id, { method: 'DELETE' });
       A.toast('Analysis deleted.');
+      clearDraft(id);
       const wasOpen = st.id === id;
-      if (wasOpen) st.id = null;
+      if (wasOpen) { st.id = null; st.dirty = false; }
       refreshLists();
       // Only navigate away if the deleted analysis was the open editor page.
       if (wasOpen && /#\/analysis\//.test(location.hash)) A.navigate('#/analyses');
@@ -500,6 +612,8 @@
 
   /* ================= EDITOR ================= */
   async function open(id) {
+    // Whatever was being edited keeps its local draft before the state goes.
+    flushDraft();
     try {
       const r = await A.api('investment-analysis/' + id);
       st.id = r.analysisId; st.input = r.input; st.result = r.result;
@@ -509,8 +623,12 @@
       st.projectKey = r.projectKey || null;
       st.itemNumber = r.itemNumber || null;
       st.source = r.source; st.loadedVersion = r.currentVersionNumber;
+      st.loadedSource = r.source; st.pendingResync = null; st.calcNotice = false;
       st.dirty = false; st.stale = false; st.busy = ''; st.step = r.result ? 6 : 1;
       st.viewingVersion = null; st.conflict = null; st.errors = {};
+      // Unsaved edits this device kept for this analysis, if they differ from
+      // what the server now holds. Offered, never applied on their own.
+      st.draftOffer = findDraft(st.id, st.input);
       // Budget-derived fields relock every time the analysis is opened: an
       // override is a decision about the edit you are making now, not a
       // property of the record.
@@ -634,8 +752,14 @@
   function expDerivedNote() {
     const d = derivedExpenses();
     if (!d) return '';
-    const base = usd(d.annualOpex) + ' of operating expenses ÷ ' + usd(d.goi)
-      + ' gross operating income (' + usd(d.grossIncomeYr) + ' less ' + pctf(d.vacancy, 1) + ' vacancy)';
+    // Derivations since the engine-matching fix record otherIncomeYr: vacancy
+    // applied to rent only. An older one vacated all gross income; its note
+    // says so, because that is how its number was made.
+    const base = usd(d.annualOpex) + ' of operating expenses ÷ ' + usd(d.goi) + ' gross operating income ('
+      + (Number.isFinite(d.otherIncomeYr)
+        ? usd(d.grossIncomeYr - d.otherIncomeYr) + ' rent less ' + pctf(d.vacancy, 1) + ' vacancy, plus '
+          + usd(d.otherIncomeYr) + ' other income)'
+        : usd(d.grossIncomeYr) + ' less ' + pctf(d.vacancy, 1) + ' vacancy)');
     // A source budget that is itself outside the 35–55% rail cannot produce a
     // trustworthy ratio, and saying so here is the whole point of the rail.
     const ratio = d.goi > 0 ? d.annualOpex / d.goi : null;
@@ -672,20 +796,109 @@
       title="Re-import size, purchase price, income and the expense ratio from budget v${esc(s2.budgetCurrentVersionNumber)}">
       Budget Updated to v${esc(s2.budgetCurrentVersionNumber)} - Click to Re-Sync</button>`;
   }
+  /* A re-sync is a PROPOSAL until it is saved. The server projects the budget's
+     current version onto the inputs on screen and hands the result back
+     without storing anything; the user sees exactly which values move, then
+     applies it as ordinary unsaved changes, and the normal Save — with its
+     version check — is what records it. Discarding the edits therefore
+     discards the re-sync too, instead of leaving a half-restated analysis
+     behind on the server. */
+  const RESYNC_FIELDS = [
+    ['property.name', 'Property Name', v => v || '—'],
+    ['property.address', 'Address', v => v || '—'],
+    ['property.size', 'Property Size', v => (v && v.value !== null && v.value !== undefined ? fmtSizeIn(v.value, v.unit) : '—')],
+    ['property.unitCount', 'Unit Count', v => (v === null || v === undefined ? '—' : grp(v, 0, 0))],
+    ['acquisition.basis', 'Purchase Price', v => (!v || v.value === null || v.value === undefined ? '—'
+      : v.mode === 'acquisitionCapRate' ? pctf(v.value) + ' cap rate' : usd(v.value))],
+    ['income.year1PotentialIncome', 'Unit / Rental Income', v => usd(v)],
+    ['income.otherIncome', 'Other Income', v => {
+      const rows = Array.isArray(v) ? v : [];
+      return rows.length ? usd(rows.reduce((s, r) => s + nz(r.year1Amount), 0))
+        + ' (' + rows.length + (rows.length === 1 ? ' line)' : ' lines)') : 'None';
+    }],
+    // The ratio only: derivedFrom (its provenance) refreshes on every re-sync
+    // and is not a change anyone needs to approve.
+    ['expenses', 'Operating Expenses', v => (!v || v.value === null || v.value === undefined ? '—'
+      : v.mode === 'annualDollar' ? usd(v.value) + '/yr' : pctf(v.value) + ' of GOI')]
+  ];
+  const expKey = e => JSON.stringify(e ? [e.mode, e.value] : null);
+  function resyncDiff(from, to) {
+    const out = [];
+    for (const [path, label, fmt] of RESYNC_FIELDS) {
+      const a = getPath(from, path), b = getPath(to, path);
+      const same = path === 'expenses' ? expKey(a) === expKey(b) : JSON.stringify(a) === JSON.stringify(b);
+      if (same) continue;
+      // "Overridden" = the value on screen is no longer what the budget said
+      // when it was imported: someone typed over it, and the re-sync will
+      // replace their number — the change worth a second look.
+      const o = st.originVals && st.originVals[path];
+      const overridden = path === 'expenses' ? expensesOverridden()
+        : o !== undefined && JSON.stringify(a) !== o;
+      out.push({ label: path === 'acquisition.basis' && b && b.mode === 'acquisitionCapRate'
+        ? 'Acquisition Cap Rate %' : label, from: fmt(a), to: fmt(b), overridden });
+    }
+    return out;
+  }
+
+  let resyncOffer = null;
   async function resync() {
-    if (!st.id) return;
-    if (st.dirty && !confirm('Re-syncing replaces the imported values with the budget\u2019s current ones. Unsaved edits to those fields will be lost. Continue?')) return;
+    if (!st.id || st.busy) return;
+    let r;
     try {
-      const r = await A.api('investment-analysis/' + st.id + '?scope=resync', { method: 'PUT', body: '{}' });
-      st.input = r.input;
-      st.source = r.source;
-      st.dirty = true; st.stale = true; st.result = null;
-      snapshotOrigins();
-      renderEditor();
-      A.toast(r.message + (r.expensesOverridden ? ' The expense override was kept.' : ''));
+      r = await A.api('investment-analysis/' + st.id + '?scope=resync',
+        { method: 'PUT', body: JSON.stringify({ input: st.input }) });
     } catch (e) {
       A.toast('Could not re-sync — ' + e.message);
+      return;
     }
+    resyncOffer = r;
+    const changes = resyncDiff(st.input, r.input);
+    const was = st.source ? st.source.budgetVersionNumber : null;
+    const to = r.source.budgetVersionNumber;
+    openInvModal(`<h2 class="mod-title">Re-Sync From Budget v${esc(to)}</h2>
+      <p style="font-size:12.5px;color:var(--ink-500);margin:0 0 12px">This analysis was built from budget
+      <span class="mono">${esc(r.source.projectId)}</span>${was ? ' v' + esc(was) : ''}. Re-syncing replaces the
+      imported values below with v${esc(to)}'s; everything you entered yourself stays. Nothing is saved until
+      you Save, which records a new version.</p>
+      ${changes.length
+        ? `<ul class="inv-resync-list">${changes.map(c => `<li><b>${esc(c.label)}</b>
+            <span class="mono">${esc(c.from)}</span> → <span class="mono">${esc(c.to)}</span>${c.overridden
+              ? ' <span class="inv-origin inv-origin-warn" title="You changed this from the budget’s value; re-syncing replaces your number">Overridden</span>' : ''}</li>`).join('')}</ul>`
+        : `<p style="font-size:13px;margin:0 0 12px">None of the imported values change — re-syncing only
+            re-pins the analysis to v${esc(to)}.</p>`}
+      ${r.expensesOverridden
+        ? '<p class="inv-provenance">Your expense-ratio override is kept; only its budget reference moves to v' + esc(to) + '.</p>' : ''}
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+        <button class="btn btn-ghost" onclick="FSInvestmentUI.closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="invResyncApply" onclick="FSInvestmentUI.applyResync()">Apply Re-Sync</button>
+      </div>`, 560);
+    const apply = el('invResyncApply'); if (apply) apply.focus();
+  }
+
+  function applyResync() {
+    const r = resyncOffer;
+    resyncOffer = null;
+    closeInvModal();
+    if (!r || !st.id) return;
+    st.input = r.input;
+    st.pendingResync = { source: Object.assign({}, r.source, { drift: false }) };
+    st.source = st.pendingResync.source;
+    st.sizeSF = null; noteSizeCanonical();
+    snapshotOrigins();
+    markDirty();
+    renderEditor();
+    A.toast('Re-synced from budget v' + r.source.budgetVersionNumber + ' — Save to record it as a new version.'
+      + (r.expensesOverridden ? ' The expense override was kept.' : ''));
+  }
+
+  /* The re-sync rides along with a save only while the inputs still carry
+     it: undo back past it, and the save records the analysis as it was. */
+  function resyncPending() {
+    const p = st.pendingResync, src = st.input && st.input.source;
+    return p && src && String(src.budgetVersionId) === String(p.source.budgetVersionId) ? p : null;
+  }
+  function syncSourceFromInput() {
+    st.source = resyncPending() ? st.pendingResync.source : st.loadedSource;
   }
 
   /* The source budget, as a real link to its Inputs page rather than plain
@@ -705,7 +918,7 @@
     if (!pid) return '';
     return `<a class="inv-srclink" href="#/inputs/${esc(pid)}"
       aria-label="Open linked budget ${esc(pid)}" title="Open linked budget ${esc(pid)}"
-      onclick="event.preventDefault();FSInvestmentUI.openSourceBudget('${esc(pid)}')"
+      data-id="${esc(pid)}" onclick="event.preventDefault();FSInvestmentUI.openSourceBudget(this.dataset.id)"
       ><span class="mono">${esc(pid)}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
         ><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg></a>`;
@@ -871,6 +1084,8 @@
 
   function renderEditor() {
     const host = el('page-analysis'); if (!host) return;
+    // An open assistant panel follows the analysis on screen.
+    if (A && A.aiFocusChanged) setTimeout(A.aiFocusChanged, 0);
     const inp = st.input;
     const loan = (inp.financing && inp.financing.loans && inp.financing.loans[0]) || null;
     const dollarExp = inp.expenses && inp.expenses.mode === 'annualDollar';
@@ -890,12 +1105,15 @@
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
           <span id="invStatusHost"></span>
           <span class="inv-statebar" id="invState"></span>
+          <button class="btn btn-ghost" id="invAskBtn" onclick="FSInvestmentUI.askAI()"
+            title="Ask the Budget Assistant about this analysis"><svg class="ai-spark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9z"/><path d="M19 15l.9 2.6 2.6.9-2.6.9L19 22l-.9-2.6-2.6-.9 2.6-.9z" opacity=".7"/></svg>Ask AI</button>
           <button class="btn btn-ghost" data-inv-edit id="invCalcBtn" onclick="FSInvestmentUI.calculate()">Calculate</button>
           <button class="btn btn-ghost" data-inv-edit id="invSaveBtn" title="Save (Cmd/Ctrl+S)" onclick="FSInvestmentUI.save()">Save</button>
           <button class="btn btn-dark" data-inv-edit id="invExportBtn" onclick="FSInvestmentUI.openExport()">Export</button>
         </div>
       </div>
       <div id="invConflict"></div>
+      <div id="invDraftBanner"></div>
       <div class="wf-steps no-print" id="invSteps">${STEPS.map((s, i) =>
         `<button data-step="${i + 1}" class="${st.step === i + 1 ? 'on' : ''}" onclick="FSInvestmentUI.goStep(${i + 1})"><span class="n">${i + 1}</span>${s}</button>`).join('')}</div>
       <div id="invErrSummary"></div>
@@ -928,7 +1146,7 @@
           <label class="fld"><span class="lab">Size Value</span>
             <input type="text" inputmode="decimal" data-f="property.size.value" data-k="inv.size.value" value="${esc(fmtSizeIn(inp.property.size.value, inp.property.size.unit))}"${ro('property.size')}></label>
           <label class="fld"><span class="lab">Unit Count ${originBadge('property.unitCount')}</span>
-            <input type="number" min="0" step="1" data-f="property.unitCount" data-k="inv.unitCount" value="${inp.property.unitCount === null ? '' : inp.property.unitCount}"${ro('property.unitCount')}></label>
+            <input type="number" min="0" step="1" data-f="property.unitCount" data-k="inv.unitCount" value="${inp.property.unitCount === null ? '' : esc(inp.property.unitCount)}"${ro('property.unitCount')}></label>
           <label class="fld"><span class="lab">Purchase Month</span>
             <input type="month" data-f="property.purchaseMonth" data-k="inv.purchaseMonth" value="${esc(inp.property.purchaseMonth || '')}"></label>
           <label class="fld"><span class="lab">Projection Years</span>
@@ -1005,7 +1223,7 @@
             </select></label>
           <label class="fld"><span class="lab" id="invExpLab">${dollarExp ? 'Year-1 Operating Expenses $' : 'Operating Expenses % of GOI'}${expBadge()}</span>
             <input type="number" min="0" step="any" data-f="expenses.value" data-k="inv.expValue" ${expLocked ? 'readonly' : ''}
-              value="${inp.expenses.value === null ? '' : (dollarExp ? inp.expenses.value : toPct(inp.expenses.value))}"></label>
+              value="${inp.expenses.value === null ? '' : (dollarExp ? esc(inp.expenses.value) : toPct(inp.expenses.value))}"></label>
           <label class="fld" id="invExpGrowthFld" style="${dollarExp ? '' : 'display:none'}"><span class="lab">Expense Growth %</span>
             <input type="number" step="any" data-f="expenses.growth.value" data-k="inv.expGrowth" value="${toPct(inp.expenses.growth ? inp.expenses.growth.value : 0.03)}"></label>
           <!-- The provenance note is its own full-width row rather than a tail
@@ -1032,13 +1250,13 @@
               <option value="amount" ${loan && loan.amount.mode === 'amount' ? 'selected' : ''}>Dollar Amount</option>
             </select></label>
           <label class="fld"><span class="lab" id="invLoanAmtLab">${loan && loan.amount.mode === 'amount' ? 'Loan Amount' : 'LTV %'}</span>
-            <input type="number" min="0" step="any" data-f="loan.amount.value" data-k="inv.loan.value" value="${loan ? (loan.amount.mode === 'amount' ? loan.amount.value : toPct(loan.amount.value)) : toPct(0.65)}"></label>
+            <input type="number" min="0" step="any" data-f="loan.amount.value" data-k="inv.loan.value" value="${loan ? (loan.amount.mode === 'amount' ? esc(loan.amount.value) : toPct(loan.amount.value)) : toPct(0.65)}"></label>
           <label class="fld"><span class="lab">Annual Rate %</span>
             <input type="number" min="0" step="any" data-f="loan.annualRate" data-k="inv.loan.rate" value="${loan ? toPct(loan.annualRate) : '6.5'}"></label>
           <label class="fld"><span class="lab">Amortization (Years)</span>
-            <input type="number" min="1" step="1" data-f="loan.amortizationYears" data-k="inv.loan.amort" value="${loan ? loan.amortizationYears : 25}"></label>
+            <input type="number" min="1" step="1" data-f="loan.amortizationYears" data-k="inv.loan.amort" value="${loan ? esc(loan.amortizationYears) : 25}"></label>
           <label class="fld"><span class="lab">Loan Term (Years)</span>
-            <input type="number" min="1" step="1" data-f="loan.termYears" data-k="inv.loan.term" value="${loan ? loan.termYears : 5}"></label>
+            <input type="number" min="1" step="1" data-f="loan.termYears" data-k="inv.loan.term" value="${loan ? esc(loan.termYears) : 5}"></label>
           <label class="fld"><span class="lab">Loan Fees / Points %</span>
             <input type="number" min="0" step="any" data-f="loan.feePercent" data-k="inv.loan.fee" value="${loan ? toPct(loan.feePercent) : '1'}"></label>
           <label class="fld"><span class="lab">Interest Calculation</span>
@@ -1083,6 +1301,10 @@
     // the problem they describe is still there.
     if (Object.keys(st.errors || {}).length) showErrors(st.errors);
     paintStatusChip();
+    // Same for the two banners: a re-render must not quietly drop a conflict
+    // or a recoverable draft that is still true.
+    paintConflict();
+    paintDraftBanner();
   }
 
   function bindEditor(host) {
@@ -1213,6 +1435,11 @@
 
   function markDirty() {
     recordInvUndo();
+    st.editSeq++;
+    // Editing past the restore offer is an answer to it: the new edits are
+    // what this device keeps from here on, so the older draft's banner goes.
+    if (st.draftOffer) { st.draftOffer = null; paintDraftBanner(); }
+    scheduleDraft();
     if (!st.dirty || !st.stale) { st.dirty = true; st.stale = !!st.result; renderStateBar(); }
     updateStepUI();          // keep the Next buttons and step dots live as fields fill in
     pruneErrors();           // and the amber clears the moment its cause is answered
@@ -1244,6 +1471,9 @@
   function restoreInvSnap(snap, msg) {
     st.input = JSON.parse(snap);
     st.dirty = true; st.stale = !!st.result; st.errors = {};
+    st.editSeq++;
+    syncSourceFromInput();
+    scheduleDraft();
     renderEditor();
     A.toast(msg);
   }
@@ -1263,6 +1493,133 @@
     restoreInvSnap(snap, 'Redid the change.');
   }
 
+  /* ---- local draft recovery ----
+     Every save writes an immutable version and recalculates on the server, so
+     a timer that saved on its own would bury the version history in
+     keystrokes. Unsaved edits are kept on THIS DEVICE instead: debounced into
+     localStorage while the analysis is dirty, flushed when the tab is hidden
+     or closed, and offered back (never applied) the next time the analysis
+     opens. Cleared by a successful save or any discard. Storage can be full,
+     blocked or absent — every access is guarded, and a draft that cannot be
+     written is simply not written. */
+  const DRAFT_PREFIX = 'fsInvDraft:';
+  const DRAFT_KEEP = 10;
+  const DRAFT_DEBOUNCE_MS = 800;
+  let draftTimer = null;
+  function draftUser() {
+    // The account the draft belongs to, so a shared machine never offers one
+    // person's edits to another. The adapter may supply it; the app shell's
+    // signed-in principal is the fallback.
+    try {
+      const a = A && A.userId && A.userId();
+      if (a) return String(a);
+      /* global principal */
+      if (typeof principal !== 'undefined' && principal && principal.userId) return String(principal.userId);
+    } catch (e) { /* fall through */ }
+    return 'anon';
+  }
+  const draftKey = id => DRAFT_PREFIX + draftUser() + ':' + id;
+  function readDraft(id) {
+    try {
+      const raw = localStorage.getItem(draftKey(id));
+      const d = raw ? JSON.parse(raw) : null;
+      return d && d.v === 1 && d.input && typeof d.input === 'object' ? d : null;
+    } catch (e) { return null; }
+  }
+  function clearDraft(id) {
+    if (!id) return;
+    if (draftTimer && id === st.id) { clearTimeout(draftTimer); draftTimer = null; }
+    try { localStorage.removeItem(draftKey(id)); } catch (e) { /* storage unavailable */ }
+  }
+  function pruneDrafts(keep) {
+    try {
+      const all = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || k.indexOf(DRAFT_PREFIX) !== 0) continue;
+        let at = '';
+        try { at = String((JSON.parse(localStorage.getItem(k)) || {}).at || ''); } catch (e) { at = ''; }
+        all.push({ k, at });
+      }
+      all.sort((a, z) => z.at.localeCompare(a.at));
+      all.slice(keep).forEach(x => localStorage.removeItem(x.k));
+    } catch (e) { /* storage unavailable */ }
+  }
+  function writeDraft() {
+    if (!st.id || !st.input || !st.dirty) return;
+    const rs = resyncPending();
+    const rec = JSON.stringify({ v: 1, id: st.id, at: new Date().toISOString(),
+      baseVersion: st.loadedVersion, input: st.input,
+      pendingResync: rs ? { source: rs.source } : null });
+    try { localStorage.setItem(draftKey(st.id), rec); }
+    catch (e) {
+      // Most likely the quota: make room from the oldest drafts and try once more.
+      pruneDrafts(DRAFT_KEEP - 5);
+      try { localStorage.setItem(draftKey(st.id), rec); } catch (e2) { return; }
+    }
+    pruneDrafts(DRAFT_KEEP);
+  }
+  function scheduleDraft() {
+    if (draftTimer) clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => { draftTimer = null; writeDraft(); }, DRAFT_DEBOUNCE_MS);
+  }
+  function flushDraft() {
+    if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
+    writeDraft();
+  }
+  // A draft identical to what the server holds is not worth offering — it is
+  // left over from a save whose cleanup never ran — so it is dropped.
+  function findDraft(id, loadedInput) {
+    const d = readDraft(id);
+    if (!d) return null;
+    if (JSON.stringify(d.input) === JSON.stringify(loadedInput)) { clearDraft(id); return null; }
+    return d;
+  }
+  function paintDraftBanner() {
+    const h = el('invDraftBanner'); if (!h) return;
+    const d = st.draftOffer;
+    if (!d) { h.innerHTML = ''; return; }
+    const moved = nz(d.baseVersion) !== nz(st.loadedVersion);
+    h.innerHTML = `<div class="inv-warnings inv-draft no-print" role="status">
+      <b>Unsaved changes from ${esc(fmtWhen(d.at))} on this device.</b>${moved
+        ? ` They were made to v${esc(d.baseVersion || 0)}; v${esc(st.loadedVersion)} has been saved since, so saving them will ask which to keep.`
+        : ''}
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-dark" onclick="FSInvestmentUI.restoreDraft()">Restore</button>
+        <button class="btn btn-sm btn-ghost" onclick="FSInvestmentUI.discardDraft()">Discard</button></div></div>`;
+  }
+  function restoreDraft() {
+    const d = st.draftOffer;
+    if (!d || !st.id) return;
+    st.draftOffer = null;
+    st.input = JSON.parse(JSON.stringify(d.input));
+    st.pendingResync = d.pendingResync && d.pendingResync.source ? { source: d.pendingResync.source } : null;
+    syncSourceFromInput();
+    // Edits made to an older version keep that version as their base, so the
+    // save meets the version check instead of silently overwriting the newer one.
+    if (nz(d.baseVersion) !== nz(st.loadedVersion)) st.loadedVersion = nz(d.baseVersion);
+    st.dirty = true; st.stale = !!st.result; st.errors = {};
+    st.editSeq++;
+    st.sizeSF = null; noteSizeCanonical();
+    resetInvUndo();
+    renderEditor();
+    flushDraft();
+    A.toast('Restored your unsaved changes — Save to keep them.');
+  }
+  function discardDraft() {
+    clearDraft(st.id);
+    st.draftOffer = null;
+    paintDraftBanner();
+  }
+  // Discarding the open analysis's edits — a confirmed leave, a reload.
+  function discardEdits() {
+    clearDraft(st.id);
+    st.dirty = false;
+    st.pendingResync = null;
+  }
+  const onAnalysisPage = () => !A || !A.currentPage || A.currentPage() === 'analysis';
+  function isDirtyNow() { return !!(st.id && st.dirty && onAnalysisPage()); }
+
   function renderStateBar() {
     const bar = el('invState'); if (!bar) return;
     const pills = [];
@@ -1271,9 +1628,25 @@
     if (st.dirty) pills.push('<span class="inv-pill dirty">Unsaved changes</span>');
     if (st.stale && st.result) pills.push('<span class="inv-pill stale">Result is stale — recalculate</span>');
     if (!st.dirty && !st.busy && st.loadedVersion >= 1) pills.push('<span class="inv-pill saved">Saved</span>');
+    if (st.calcNotice && st.result && !st.stale && st.step !== 6)
+      pills.push('<button type="button" class="inv-pill view" onclick="FSInvestmentUI.goStep(6)">View Results →</button>');
     bar.innerHTML = pills.join('');
-    // Both exports must match the inputs: disabled while the result is stale.
-    const ex = el('invExportBtn'); if (ex) ex.disabled = !st.result || st.stale;
+    // Every export names the SAVED version it came from, so it must match one:
+    // disabled while the result is stale AND while there are unsaved changes —
+    // a Calculate that was never saved would otherwise print as "Saved
+    // Analysis Version vN" over numbers vN does not contain.
+    const ex = el('invExportBtn');
+    if (ex) {
+      const why = exportBlocker();
+      ex.disabled = !!why;
+      ex.title = why || 'Export the saved analysis';
+    }
+  }
+  function exportBlocker() {
+    if (!st.result) return 'Calculate and save the analysis to export it.';
+    if (st.dirty) return 'Save to export — an export carries the saved version it came from.';
+    if (st.stale) return 'Recalculate and save to export — the result no longer matches the inputs.';
+    return '';
   }
 
   /* ---- dynamic rows ---- */
@@ -1287,7 +1660,7 @@
         <td><input type="text" data-k="inv.other.${i}.label" value="${esc(r.label)}"${lock ? ' readonly aria-readonly="true"' : ''}
              onchange="FSInvestmentUI._other(${i},'label',this.value)"></td>
         <td class="r"><input type="${lock ? 'text' : 'number'}"${lock ? ' inputmode="decimal" readonly aria-readonly="true"' : ' min="0" step="any"'} style="width:120px" data-k="inv.other.${i}.amount"
-             value="${lock ? esc(fmtMoneyIn(r.year1Amount)) : (r.year1Amount === null ? '' : r.year1Amount)}" onchange="FSInvestmentUI._other(${i},'amount',this.value)"></td>
+             value="${lock ? esc(fmtMoneyIn(r.year1Amount)) : (r.year1Amount === null ? '' : esc(r.year1Amount))}" onchange="FSInvestmentUI._other(${i},'amount',this.value)"></td>
         <td class="r"><input type="number" step="any" style="width:80px" data-k="inv.other.${i}.growth"
              value="${toPct(r.growth.value)}" onchange="FSInvestmentUI._other(${i},'growth',this.value)"></td>
         ${lock ? '' : `<td class="no-print"><button class="btn-x" data-inv-edit title="Remove row"
@@ -1357,7 +1730,7 @@
         <td><input type="text" data-k="inv.capex.${i}.label" value="${esc(r.label)}"
              onchange="FSInvestmentUI._capex(${i},-1,this.value)"></td>
         ${r.annualAmounts.map((a, y) => `<td class="r"><input type="number" min="0" step="any" style="width:86px"
-             data-k="inv.capex.${i}.${y}" value="${a || ''}" onchange="FSInvestmentUI._capex(${i},${y},this.value)"></td>`).join('')}
+             data-k="inv.capex.${i}.${y}" value="${esc(a || '')}" onchange="FSInvestmentUI._capex(${i},${y},this.value)"></td>`).join('')}
         <td class="no-print"><button class="btn-x" data-inv-edit title="Remove row"
              onclick="FSInvestmentUI._capexRemove(${i})">×</button></td></tr>`).join('') +
       '</tbody></table>' : '<div style="font-size:12.5px;color:var(--ink-500);margin:6px 0 10px">No capital expenses or reserves.</div>';
@@ -1414,6 +1787,8 @@
     document.querySelectorAll('#invSteps button').forEach(b => b.classList.toggle('on', +b.dataset.step === n));
     document.querySelectorAll('#page-analysis .inv-step').forEach(p => p.classList.toggle('on', +p.dataset.steppane === n));
     if (n === 6 && st.result && st.stale) A.toast('Inputs changed since this result — recalculate to refresh it.');
+    if (n === 6) st.calcNotice = false;
+    renderStateBar();
     window.scrollTo(0, 0);
   }
 
@@ -1536,10 +1911,21 @@
   async function calculate() {
     if (st.busy) return;
     st.busy = 'Calculating…'; renderStateBar();
+    const seq = st.editSeq;
     try {
       const r = await A.api('investment-calculations', { method: 'POST', body: JSON.stringify(st.input) });
-      st.result = r.result; st.stale = false; showErrors(null);
-      renderReport(); goStep(6);
+      st.result = r.result;
+      // An edit made while the request was out means this result describes
+      // inputs that are already gone.
+      st.stale = st.editSeq !== seq;
+      showErrors(null);
+      renderReport();
+      // Only finish the form for someone who has finished it. Mid-form — on
+      // an earlier step, or with a step still incomplete — the result waits
+      // behind View Results instead of throwing them onto step 6.
+      if (st.step === 6) st.calcNotice = false;
+      else if (st.step === 5 && [1, 2, 3, 4, 5].every(stepComplete)) goStep(6);
+      else { st.calcNotice = true; A.toast('Calculated — View Results to see the report.'); }
       const pay = el('invMonthlyPay');
       if (pay) pay.value = st.result.loans[0] ? usd2(st.result.loans[0].monthlyPayment) : '—';
     } catch (e) {
@@ -1552,31 +1938,62 @@
   async function save() {
     if (st.busy || !st.id) return;
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-    st.busy = 'Saving…'; st.conflict = null; renderStateBar();
+    st.busy = 'Saving…'; st.conflict = null; paintConflict(); renderStateBar();
+    // What is being saved, captured now: edits that land while the request is
+    // out stay unsaved instead of being marked saved by its response.
+    const seq = st.editSeq;
+    const id = st.id;
+    const rs = resyncPending();
+    const body = { input: st.input, expectedVersionNumber: st.loadedVersion };
+    // A re-sync applied on screen moves the analysis to a newer budget version;
+    // the server verifies that version belongs to this analysis's budget.
+    if (rs) body.resyncBudgetVersionId = rs.source.budgetVersionId;
     try {
-      const r = await A.api('investment-analysis/' + st.id, { method: 'PUT',
-        body: JSON.stringify({ input: st.input, expectedVersionNumber: st.loadedVersion }) });
+      const r = await A.api('investment-analysis/' + id, { method: 'PUT', body: JSON.stringify(body) });
+      if (st.id !== id) return;   // the user moved on to another analysis
       st.result = r.result; st.loadedVersion = r.versionNumber;
-      st.dirty = false; st.stale = false; showErrors(null);
+      if (rs) { st.loadedSource = rs.source; if (st.pendingResync === rs) st.pendingResync = null; }
+      if (st.editSeq === seq) {
+        st.dirty = false; st.stale = false;
+        clearDraft(id);
+      } else {
+        st.dirty = true; st.stale = true;
+        flushDraft();
+      }
+      showErrors(null);
       renderReport();
       A.toast(r.versionCreated ? 'Saved — version ' + r.versionNumber + ' recorded.' : 'Saved — nothing meaningful changed, no new version.');
     } catch (e) {
+      if (st.id !== id) return;
       if (e.status === 409) {
         st.conflict = e.body || {};
-        el('invConflict').innerHTML = `<div class="inv-warnings"><b>Someone saved a newer version of this analysis
-          (now v${esc(st.conflict.currentVersionNumber)}).</b> Reload to see it — your current inputs will be discarded —
-          or duplicate this analysis from its three-dot menu on the list to keep your variant separate.
-          <div style="margin-top:8px"><button class="btn btn-sm btn-dark" onclick="FSInvestmentUI.reload()">Reload Latest</button></div></div>`;
+        paintConflict();
       } else if (e.fields) { showErrors(e.fields); A.toast('Fix the highlighted assumptions first.'); }
       else A.toast('Save failed — ' + e.message);
     }
     st.busy = ''; renderStateBar();
   }
 
-  function reload() { open(st.id); }
+  /* The conflict banner offers both ways out: take the other version, or keep
+     these inputs as a separate analysis. Save As Copy duplicates what is ON
+     SCREEN — the list's Duplicate would fetch the server's copy and lose the
+     very edits the conflict is about. */
+  function paintConflict() {
+    const h = el('invConflict'); if (!h) return;
+    h.innerHTML = st.conflict ? `<div class="inv-warnings"><b>Someone saved a newer version of this analysis
+      (now v${esc(st.conflict.currentVersionNumber)}).</b> Reload to see it — your current inputs will be discarded —
+      or save your inputs as a separate copy of this analysis.
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-dark" onclick="FSInvestmentUI.reload()">Reload Latest</button>
+        <button class="btn btn-sm btn-ghost" onclick="FSInvestmentUI.saveAsCopy()">Save As Copy</button></div></div>` : '';
+  }
+
+  // Reload is a discard: the inputs on screen (and their local draft) go.
+  function reload() { discardEdits(); open(st.id); }
 
   // Duplicates the open analysis by default; the list row menus pass an id,
-  // whose input is fetched rather than assumed loaded.
+  // whose input is fetched rather than assumed loaded. Resolves to the new
+  // analysis id, or null when it failed.
   async function duplicate(id) {
     try {
       let input = id && id !== st.id
@@ -1588,8 +2005,23 @@
       const r = await A.api('investment-analyses', { method: 'POST',
         body: JSON.stringify({ mode: 'standalone', analysisName: name, input }) });
       A.toast('Duplicated — you are now editing the copy.');
-      A.navigate('#/analysis/' + r.analysisId);
-    } catch (e) { A.toast('Duplicate failed — ' + e.message); }
+      return r.analysisId;
+    } catch (e) { A.toast('Duplicate failed — ' + e.message); return null; }
+  }
+  async function duplicateAndOpen(id) {
+    const nid = await duplicate(id);
+    if (nid) A.navigate('#/analysis/' + nid);
+  }
+  // The conflict's other exit. Once the copy exists the edits live there, so
+  // this analysis is no longer holding anything unsaved.
+  async function saveAsCopy() {
+    if (!st.id || st.busy) return;
+    const from = st.id;
+    const nid = await duplicate();
+    if (!nid) return;
+    if (st.id === from) { st.dirty = false; st.conflict = null; }
+    clearDraft(from);
+    A.navigate('#/analysis/' + nid);
   }
 
   /* ---------- versions (opened from the three-dot row menus) ---------- */
@@ -1598,7 +2030,9 @@
     versionsCtx = id || st.id;
     try {
       const r = await A.api('investment-analysis/' + versionsCtx + '/versions');
-      const rows = r.versions.map(v => `<tr onclick="FSInvestmentUI.viewVersion(${v.versionNumber})">
+      const rows = r.versions.map(v => `<tr class="clickable" tabindex="0" role="button"
+        aria-label="Open version ${v.versionNumber}" onclick="FSInvestmentUI.viewVersion(${v.versionNumber})"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();FSInvestmentUI.viewVersion(${v.versionNumber})}">
         <td class="mono">v${v.versionNumber}${v.isCurrent ? ' ·current' : ''}</td>
         <td>${esc(fmtWhen(v.createdAt))}</td>
         <td>${esc(v.createdByName || '—')}</td>
@@ -1623,25 +2057,56 @@
     } catch (e) { A.toast('Could not load the version — ' + e.message); }
   }
 
+  /* One dialog element serves New Analysis, Export, Versions and Re-Sync. It
+     behaves like the app's other dialogs: it is announced as a modal dialog,
+     focus moves into it, Escape and the backdrop close it, and closing hands
+     focus back to whatever opened it. Swapping content inside an open dialog
+     (a version opened from the history) keeps the original opener. */
+  let modalReturnTo = null;
   function openInvModal(html, maxWidth) {
     let m = el('invModal');
     if (!m) {
+      modalReturnTo = document.activeElement && document.activeElement !== document.body
+        ? document.activeElement : null;
       m = document.createElement('div');
       m.id = 'invModal';
       // Centered like the budget's export modal. margin:auto on the card (not
       // align-items:center here) so a taller-than-viewport modal — the version
       // history can be — scrolls from its top instead of clipping it.
       m.style.cssText = 'position:fixed;inset:0;background:rgba(22,25,26,.45);display:flex;z-index:60;padding:24px 16px;overflow:auto';
-      m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+      m.addEventListener('click', e => { if (e.target === m) closeInvModal(); });
       document.body.appendChild(m);
     }
     // .mod-sheet carries the shared dialog look (index.html): the card
     // system's corner radius, so this matches the New Budget popup exactly.
-    m.innerHTML = `<div class="mod-sheet" style="max-width:${maxWidth || 960}px;padding:22px 26px">
-      <button class="btn-x" style="position:absolute;top:14px;right:14px" title="Close" onclick="document.getElementById('invModal').remove()">×</button>
+    m.innerHTML = `<div class="mod-sheet" role="dialog" aria-modal="true" style="max-width:${maxWidth || 960}px;padding:22px 26px">
+      <button class="btn-x" style="position:absolute;top:14px;right:14px" title="Close" aria-label="Close"
+        onclick="FSInvestmentUI.closeModal()">×</button>
       ${html}</div>`;
+    const sheet = m.querySelector('.mod-sheet');
+    const title = sheet.querySelector('.mod-title');
+    if (title) { title.id = 'invModalTitle'; sheet.setAttribute('aria-labelledby', 'invModalTitle'); }
+    // First real control, not the close button: the search box, the first
+    // export option, the first version row.
+    const first = [...sheet.querySelectorAll('input,select,textarea,button,[tabindex="0"]')]
+      .find(x => !x.classList.contains('btn-x') && !x.disabled && x.offsetParent !== null);
+    (first || sheet.querySelector('.btn-x')).focus();
   }
-  function closeInvModal() { const m = el('invModal'); if (m) m.remove(); }
+  function closeInvModal() {
+    const m = el('invModal');
+    if (!m) return;
+    m.remove();
+    const back = modalReturnTo;
+    modalReturnTo = null;
+    if (back && document.body.contains(back) && typeof back.focus === 'function') back.focus();
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || !el('invModal')) return;
+    // A row or step menu open over the dialog takes the key first.
+    if (invMenuTrigger || stepMenuTrigger) return;
+    e.preventDefault();
+    closeInvModal();
+  });
 
   /* ================= REPORT ================= */
   function renderReport() {
@@ -1781,7 +2246,7 @@
     highlight: 'inv-ex-highlight', signature: 'inv-ex-signature' };
 
   function openExport() {
-    if (!st.result || st.stale) { A.toast('Calculate first so the exports match the inputs.'); return; }
+    if (exportBlocker()) { A.toast(exportBlocker()); return; }
     // Remembered export options (Settings → Exports) seed the checkboxes.
     const saved = A.exportDefaults && A.exportDefaults('analysis');
     if (saved) for (const k in EX_IDS) if (typeof saved[k] === 'boolean') exOpts[k] = saved[k];
@@ -1870,7 +2335,7 @@
      engine through pdfmake and downloaded directly, no print dialog. The
      Signature Needed approval page is a suite policy appended after. */
   function exportPDF() {
-    if (!st.result || st.stale) { A.toast('Calculate first so the PDF matches the inputs.'); return; }
+    if (exportBlocker()) { A.toast(exportBlocker()); return; }
     if (typeof pdfMake === 'undefined' || typeof fsRender === 'undefined') {
       A.toast('PDF library is unavailable — reload the page.'); return;
     }
@@ -1894,7 +2359,7 @@
   /* ---- Print: the original #printDoc pipeline via the adapter — the same
      print-styled classes the budget report uses. Kept as a third option. */
   function exportPrint() {
-    if (!st.result || st.stale) { A.toast('Calculate first so the print matches the inputs.'); return; }
+    if (exportBlocker()) { A.toast(exportBlocker()); return; }
     readExportOpts(); closeInvModal();
     A.print(printReportHTML(st.result, exOpts));
     if (A.activity) A.activity('export_print', 'analysis', st.id);
@@ -2082,7 +2547,7 @@
      branded bands, frozen headers, landscape fitted printing come from the
      engine's default preset. Tables only; no charts, no media, ever. */
   async function exportWorkbook() {
-    if (!st.result || st.stale) { A.toast('Calculate first so the workbook matches the inputs.'); return; }
+    if (exportBlocker()) { A.toast(exportBlocker()); return; }
     if (typeof ExcelJS === 'undefined' || typeof fsRender === 'undefined') {
       A.toast('Excel library is unavailable — reload the page.'); return;
     }
@@ -2099,25 +2564,67 @@
   }
 
   /* ================= public surface ================= */
+  /* Closing the tab is a way of leaving too. The browser shows its own
+     generic prompt (it allows no custom text); the draft is flushed first, so
+     even a confirmed close leaves the edits recoverable on this device. */
+  window.addEventListener('beforeunload', e => {
+    if (!isDirtyNow()) return;
+    flushDraft();
+    e.preventDefault();
+    e.returnValue = '';
+  });
+  // A hidden tab may never come back (mobile kills it, the laptop sleeps
+  // until the battery dies): write the draft now rather than on the timer.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushDraft();
+  });
+  window.addEventListener('pagehide', () => flushDraft());
+
   window.FSInvestmentUI = {
     init(adapter) { A = adapter; },
     renderList, renderListInto, open, createFromBudget, createStandalone,
-    openSourceBudget, backToList, resync, setExpenseOverride, setSourceOverride,
+    openSourceBudget, backToList, resync, applyResync, setExpenseOverride, setSourceOverride,
     openStepMenu, openInvRowMenu,
     createStandaloneFromModal, createBlank, openProjectPicker, softDelete,
-    calculate, save, reload, duplicate, showVersions, viewVersion, goStep, undo, redo,
+    calculate, save, reload, saveAsCopy, duplicate: duplicateAndOpen,
+    showVersions, viewVersion, goStep, undo, redo,
+    restoreDraft, discardDraft, closeModal: closeInvModal,
     openExport, emailSoon, exportWorkbook, exportPDF, exportPrint, addOtherIncome, addCapex,
     _other, _otherRemove, _capex, _capexRemove,
     _statusApplied(id, status) {
       if (st.id === id) { st.status = status; paintStatusChip(); }
     },
+    // The Budget Assistant, focused on this analysis. Unsaved assumptions go
+    // along as a draft so the answer is about what is on screen; the dialog
+    // itself belongs to index.html and is reached only through the adapter.
+    // What the Budget Assistant is told about the open analysis, or null when
+    // none is open. index.html reads it to follow you between pages.
+    aiContext() {
+      if (!st.input) return null;
+      const id = st.id;
+      return { id, name: st.input.analysisName || 'Investment Analysis',
+        getDraft: () => (st.id === id && st.dirty ? st.input : null) };
+    },
+    askAI() {
+      if (!A || !A.askAI) return;
+      const ctx = FSInvestmentUI.aiContext();
+      if (ctx) A.askAI(ctx);
+    },
     currentId: () => st.id,
-    isDirty: () => st.dirty,
+    // true while the OPEN analysis editor holds unsaved edits (index.html's
+    // beforeunload and router ask this).
+    isDirty: () => isDirtyNow(),
     // exposed for the suites, like the _-prefixed helpers above
     _state: () => st,
+    _draftKey: id => draftKey(id || st.id),
+    // true when there is nothing unsaved or the user agreed to discard it.
+    // Agreeing IS the discard: the edits and their local draft go, so a
+    // second check on the same navigation does not ask again.
     confirmLeave() {
       if (!st.dirty) return true;
-      return confirm('This analysis has unsaved changes that will be lost.\n\nLeave without saving?');
+      if (!confirm('This analysis has unsaved changes that will be lost.\n\nLeave without saving?')) return false;
+      discardEdits();
+      return true;
     }
   };
 })();

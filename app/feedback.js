@@ -154,7 +154,7 @@ function paintForm() {
   // The stylesheet hides both of these, so showing one means setting a value,
   // not clearing the inline style back to the rule that hides it.
   if (err) { err.textContent = lastError; err.style.display = lastError ? 'block' : 'none'; }
-  var fb = el('fbFallback'); if (fb && !lastError) fb.style.display = 'none';
+  var fb = el('fbFallback'); if (fb) fb.style.display = lastError && lastErrorOffersMail ? 'block' : 'none';
 }
 
 function paintContext() {
@@ -179,13 +179,23 @@ function readForm() {
   };
 }
 
-function fail(msg) {
+/* The email escape hatch says "Could not reach the server", so it is offered
+   only when that is what happened — the network, a 5xx, a session the
+   platform ended. A refusal the user can fix ("give it a short title", a 400
+   from the server's own validation) shows its message alone: offering to email
+   a report that only needs a longer title sends people the wrong way. */
+var lastErrorOffersMail = false;
+function fail(msg, offerMail) {
   lastError = msg;
+  lastErrorOffersMail = !!offerMail;
   var err = el('fbError');
   if (err) { err.textContent = msg; err.style.display = 'block'; }
   var fb = el('fbFallback');
-  if (fb) fb.style.display = 'block';
+  if (fb) fb.style.display = offerMail ? 'block' : 'none';
 }
+// The app's api() sets .status on a response the server actually gave; a
+// network failure or a 5xx arrives without one (or with one >= 500).
+function unreachable(e) { return !(e && e.status) || e.status >= 500; }
 
 async function submit() {
   if (busy) return;
@@ -209,7 +219,7 @@ async function submit() {
       ? 'Thanks — sent to Matthew.'
       : 'Thanks — saved. Email delivery is not switched on yet.');
   } catch (e) {
-    fail(String(e && e.message ? e.message : e));
+    fail(String(e && e.message ? e.message : e), unreachable(e));
   } finally {
     busy = false;
     if (btn) { btn.disabled = false; btn.textContent = 'Send Report'; }
@@ -317,7 +327,8 @@ async function loadBoard() {
     tb.innerHTML = '<tr><td colspan="6" style="padding:22px;color:var(--danger)">'
       + A.esc(pending
         ? 'The feedback board is not available yet — this database still needs '
-          + 'sql/migrate_feedback.sql to be run. The bug button stays hidden until it is.'
+          + 'sql/migrate_feedback.sql to be run. Until it is, the bug button still works: '
+          + 'it opens the reporter’s own email app instead of storing the report here.'
         : e.message) + '</td></tr>';
   }
 }

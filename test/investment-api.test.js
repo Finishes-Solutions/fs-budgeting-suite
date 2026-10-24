@@ -185,3 +185,79 @@ test('list filters by project and carries summary values', async () => {
   const other = await api('/api/investment-analyses?projectId=BD-0042');
   assert.equal(other.body.length, 0);
 });
+
+test('a full save keeps the stored status, and refuses one that is not a status', async () => {
+  const set = await api('/api/investment-analysis/' + analysisId, { method: 'PUT', body: { status: 'In Review' } });
+  assert.equal(set.status, 200);
+  const before = await api('/api/investment-analysis/' + analysisId);
+  const input = before.body.input;
+  input.vacancy.value = 0.09;
+  const saved = await api('/api/investment-analysis/' + analysisId, { method: 'PUT',
+    body: { input, expectedVersionNumber: before.body.currentVersionNumber } });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.body.versionCreated, true);
+  const after = await api('/api/investment-analysis/' + analysisId);
+  assert.equal(after.body.status, 'In Review', 'saving the assumptions did not reset the status to Draft');
+  const named = await api('/api/investment-analysis/' + analysisId, { method: 'PUT',
+    body: { input, expectedVersionNumber: after.body.currentVersionNumber, status: 'Completed' } });
+  assert.equal(named.status, 200);
+  assert.equal((await api('/api/investment-analysis/' + analysisId)).body.status, 'Completed',
+    'a status sent with the save is applied');
+  const bogus = await api('/api/investment-analysis/' + analysisId, { method: 'PUT',
+    body: { input, status: 'Shipped' } });
+  assert.equal(bogus.status, 400);
+});
+
+test('re-sync is a proposal: it stores nothing, and the save records it', async () => {
+  // Move the budget on to v2 so the analysis has something to re-sync to.
+  const moved = JSON.parse(JSON.stringify(budgetDoc));
+  moved.projectCosts.land = 900000;
+  const put = await api('/api/budget/TST-7101', { method: 'PUT',
+    body: { meta: { projectId: 'TST-7101', name: 'Mock Tower' }, doc: moved } });
+  assert.equal(put.status, 200);
+
+  const before = await api('/api/investment-analysis/' + analysisId);
+  assert.equal(before.body.source.budgetVersionNumber, 1);
+  assert.equal(before.body.source.drift, true, 'the budget moved past the analysis');
+
+  // The copy on screen carries an unsaved edit outside the imported fields.
+  const onScreen = JSON.parse(JSON.stringify(before.body.input));
+  onScreen.disposition.exitCapRate.value = 0.071;
+  const proposal = await api('/api/investment-analysis/' + analysisId + '?scope=resync', { method: 'PUT',
+    body: { input: onScreen } });
+  assert.equal(proposal.status, 200);
+  assert.equal(proposal.body.source.budgetVersionNumber, 2);
+  assert.ok(proposal.body.input.acquisition.basis.value > before.body.input.acquisition.basis.value,
+    'the proposal carries the budget’s new purchase price');
+  assert.equal(proposal.body.input.disposition.exitCapRate.value, 0.071,
+    'and keeps the unsaved edit it was sent');
+
+  const untouched = await api('/api/investment-analysis/' + analysisId);
+  assert.deepEqual(untouched.body.input, before.body.input, 'the stored inputs did not move');
+  assert.equal(untouched.body.source.budgetVersionNumber, 1, 'nor did the source');
+  assert.equal(untouched.body.source.drift, true, 'so the drift is still reported');
+  assert.equal(untouched.body.currentVersionNumber, before.body.currentVersionNumber,
+    'and no version was written');
+
+  const forged = await api('/api/investment-analysis/' + analysisId, { method: 'PUT',
+    body: { input: proposal.body.input, expectedVersionNumber: before.body.currentVersionNumber,
+            resyncBudgetVersionId: 99 } });
+  assert.equal(forged.status, 400, 'a version that is not this budget’s is refused');
+
+  const saved = await api('/api/investment-analysis/' + analysisId, { method: 'PUT',
+    body: { input: proposal.body.input, expectedVersionNumber: before.body.currentVersionNumber,
+            resyncBudgetVersionId: proposal.body.source.budgetVersionId } });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.body.versionCreated, true);
+  const after = await api('/api/investment-analysis/' + analysisId);
+  assert.equal(after.body.source.budgetVersionNumber, 2, 'the save re-pinned the analysis');
+  assert.equal(after.body.source.drift, false);
+  assert.equal(after.body.input.acquisition.basis.value, proposal.body.input.acquisition.basis.value);
+  assert.equal(after.body.result.summary.purchasePrice, proposal.body.input.acquisition.basis.value,
+    'and the stored result is the one calculated from the re-synced inputs');
+
+  const backwards = await api('/api/investment-analysis/' + analysisId, { method: 'PUT',
+    body: { input: after.body.input, expectedVersionNumber: after.body.currentVersionNumber,
+            resyncBudgetVersionId: 1 } });
+  assert.equal(backwards.status, 400, 're-syncing can only move forward');
+});

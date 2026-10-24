@@ -5,6 +5,8 @@ const { sovRows, writeSovLines, insertVersion } = require('../shared/versioning'
 const { parts, grossIncome } = require('../shared/budget-calc');
 const { features } = require('../shared/schema');
 const FSGuardrails = require('../shared/guardrails');
+const SaveRules = require('../shared/budget-save-rules');
+const { budgetIdentifierProblem, IDENTIFIER_RULE } = require('../shared/identifiers');
 const P = require('../shared/projects');
 const { updateProject, createProject, deleteProject, linkBudgetToProject,
         PROJECT_ID_RX } = P;
@@ -15,6 +17,19 @@ const { updateProject, createProject, deleteProject, linkBudgetToProject,
 const ID_RX = /^(OP|BD|BDG|AS|TST)-\d{4}(-\d{2})?$/;
 
 const DUP_KEY = new Set([2627, 2601]);   // unique constraint / unique index violation
+
+// The concurrency token for a budget: the canonical content hash of the Doc
+// as STORED on dbo.Budgets. GET hands it out (X-Budget-Hash), a PUT may hand
+// it back as `baseHash`, and the save refuses with 409 when the stored Doc no
+// longer hashes to it — someone else saved in between. It is computed on
+// read rather than stored, so it needs no column and no migration, and it
+// goes through the shared canonical hash so key order and `updated` never
+// count as a change.
+function storedHash(text) {
+  const d = parseDoc(text);
+  return contentHash(d !== null ? d : String(text || ''));
+}
+const HASH_RX = /^[0-9a-f]{64}$/;
 
 module.exports = async function (context, req) {
   const id = (context.bindingData.id || '').toUpperCase();
@@ -80,12 +95,38 @@ module.exports = async function (context, req) {
 
   if (!ID_RX.test(id)) { context.res = { status: 400, body: 'Invalid project ID (OP-#### / BD-#### / AS-#### / TST-####)' }; return; }
 
+  // ---- POST /api/budget/{id}?scope=ask — the Budget Assistant (Claude).
+  // A scope on an endpoint that already deploys, for the same reason as the
+  // project scopes above. Read-only: it never writes the budget. The signed-in
+  // check and the ownership rule live in shared/budget-assistant.js and are
+  // the real gate — a route rule cannot see the query string.
+  if (req.method === 'POST') {
+    if (String((req.query && req.query.scope) || '') !== 'ask') {
+      context.res = { status: 405, body: 'POST is only accepted with ?scope=ask' }; return;
+    }
+    const principal = getPrincipal(req);
+    const assistant = require('../shared/budget-assistant');
+    const out = await assistant.ask({
+      store: () => assistant.sqlStore(pool, principal), principal, id, body: req.body || {},
+      log: m => context.log && context.log.warn && context.log.warn(m) });
+    const activity = out.activity; delete out.activity;
+    context.res = out;
+    // Best-effort, like every activity row: who asked what, about which
+    // budget, and what it cost in tokens — never the answer itself.
+    if (activity) await require('../shared/users').recordActivity(pool, principal, 'ai_ask', 'budget', id, activity);
+    return;
+  }
+
   if (req.method === 'GET') {
     // Soft-deleted budgets are invisible to the app; the row and its history stay.
     const r = await pool.request().input('id', sql.VarChar(16), id)
       .query('SELECT Doc FROM dbo.Budgets WHERE ProjectId = @id AND IsDeleted = 0');
     if (!r.recordset.length) { context.res = { status: 404, body: 'Not found' }; return; }
-    context.res = { headers: { 'Content-Type': 'application/json' }, body: r.recordset[0].Doc };
+    // The body stays exactly the stored document; the concurrency token rides
+    // in a header so the response shape every caller parses is unchanged.
+    context.res = { headers: { 'Content-Type': 'application/json',
+                               'X-Budget-Hash': storedHash(r.recordset[0].Doc) },
+                    body: r.recordset[0].Doc };
     return;
   }
 
@@ -129,11 +170,16 @@ module.exports = async function (context, req) {
               UPDATE dbo.Budgets SET Status=@st, Doc=JSON_MODIFY(Doc,'$.status',@st),
                 UpdatedAt=SYSUTCDATETIME()
               WHERE ProjectId=@id AND IsDeleted=0;
-              SELECT @@ROWCOUNT AS N;`);
+              SELECT @@ROWCOUNT AS N;
+              SELECT Doc FROM dbo.Budgets WHERE ProjectId=@id AND IsDeleted=0;`);
     const was = (r.recordsets[0] || [])[0] || null;
     if (!(r.recordsets[1] || [])[0] || !r.recordsets[1][0].N) { context.res = { status: 404, body: 'Not found' }; return; }
+    // The status lives inside the stored Doc, so this moves the concurrency
+    // token; the editor holding this budget open adopts the new one.
+    const after = (r.recordsets[2] || [])[0] || null;
     context.res = { status: 200, headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ok: true, status: req.body.status }) };
+      body: JSON.stringify({ ok: true, status: req.body.status,
+                             docHash: after ? storedHash(after.Doc) : null }) };
     // A status change is a decision, and it recorded nothing before this.
     if (was && was.Was !== req.body.status) {
       await require('../shared/users').recordActivity(pool, getPrincipal(req),
@@ -150,6 +196,19 @@ module.exports = async function (context, req) {
   const { meta, doc } = req.body || {};
   if (!doc || !meta) { context.res = { status: 400, body: 'Body must be { meta, doc }' }; return; }
   if ((doc.projectId || '').toUpperCase() !== id) { context.res = { status: 400, body: 'Body projectId must match route' }; return; }
+
+  // Row identifiers are keys the page renders into attributes; a hostile one
+  // was a stored XSS that ran as whoever opened the budget. Refused here, at
+  // the door — see shared/identifiers.js.
+  {
+    const badId = budgetIdentifierProblem(doc);
+    if (badId) {
+      context.res = { status: 400, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'bad_identifier', field: badId,
+          message: 'Malformed row identifier at ' + badId + ' — use ' + IDENTIFIER_RULE + '.' }) };
+      return;
+    }
+  }
 
   // Building square footage is REQUIRED and must be greater than zero.
   //
@@ -171,12 +230,27 @@ module.exports = async function (context, req) {
     }
   }
 
+  // ---- Budget ID is fixed once saved (BUDGET-SYSTEM.md D13).
+  // An update whose route id is not the id the editor opened the budget as
+  // (meta.originalId) is refused before anything is read or written: it is a
+  // budget trying to land on another id, and only a create checks whether
+  // that id is taken. Rule and wording: shared/budget-save-rules.js.
+  {
+    const refusal = SaveRules.idChangeRefusal(meta, id, req.body.create === true);
+    if (refusal) { context.res = refusal; return; }
+  }
+
   // Which project this budget belongs to. A budget id can no longer name a
   // project, so the link has to be stated: the client sends it, and it is
   // checked against a real project row. It is only REQUIRED on a create —
   // budgets saved before sql/migrate_project_op_ids.sql already carry their
   // ProjectKey and must keep saving without one being resent.
   const wantsCreate = req.body.create === true;
+  // Optimistic concurrency, opt-in: the editor sends the X-Budget-Hash it
+  // opened the budget at. A save without one (an older page still open during
+  // a deploy, the API used directly) is last-write-wins, exactly as before.
+  const baseHash = typeof req.body.baseHash === 'string' && HASH_RX.test(req.body.baseHash)
+    ? req.body.baseHash : null;
   const projectKey = meta.projectKey ? String(meta.projectKey).toUpperCase() : null;
   if (projectKey && !PROJECT_ID_RX.test(projectKey)) {
     context.res = { status: 400, headers: { 'Content-Type': 'application/json' },
@@ -191,14 +265,59 @@ module.exports = async function (context, req) {
     return;
   }
 
+  // ---- Guard-rail trust (BUDGET-SYSTEM.md D7): what the rails are judged by,
+  // and who may switch one off, decided from the STORED row — never from the
+  // document under judgement. One read, outside the save transaction: it only
+  // ever tightens the gate, and the type never changes in normal use.
+  //   - the rail table comes from DEFAULT_POLICY by the type the row will
+  //     carry; doc.guardrails and doc.type are ignored, and an existing
+  //     budget cannot become Blank (shared/budget-save-rules.js railPolicy);
+  //   - a NEW override (not in the stored document) is accepted only from a
+  //     director / super admin — the rule the Override… dialog applies.
+  // A create has nothing stored to trust: its type is the one chosen in the
+  // New Budget dialog, every override on it is new, and if the id turns out
+  // to be taken the save refuses it (409 budget_id_taken) anyway.
+  let railPolicy;
+  {
+    const stored = wantsCreate ? null : ((await pool.request().input('id', sql.VarChar(16), id)
+      .query('SELECT TOP 1 Type, Doc FROM dbo.Budgets WHERE ProjectId = @id')).recordset[0] || null);
+    const rp = SaveRules.railPolicy({ exists: !!stored, storedType: stored ? stored.Type : null,
+                                      submittedType: meta.type });
+    if (rp.refusal) { context.res = rp.refusal; return; }
+    railPolicy = rp.policy;
+
+    const fresh = SaveRules.newAcks(stored ? parseDoc(stored.Doc) : null, doc);
+    if (fresh.length) {
+      const caller = getPrincipal(req);
+      const f = await features(pool);
+      let appRole = 'user';
+      // AppRole arrives with sql/migrate_roles_and_ownership.sql; before it,
+      // canOverride() keeps the pre-migration behaviour and nothing is read.
+      if (f.usersAppRole && caller && caller.userId) {
+        try {
+          const ur = await pool.request().input('uid', sql.NVarChar(128), caller.userId)
+            .query('SELECT TOP 1 AppRole FROM dbo.Users WHERE UserId = @uid');
+          appRole = (ur.recordset[0] && ur.recordset[0].AppRole) || 'user';
+        } catch (e) { appRole = 'user'; }   // a gate fails closed
+      }
+      if (!SaveRules.canOverride({ appRoleColumn: f.usersAppRole, appRole,
+                                   userRoles: caller && caller.userRoles })) {
+        context.res = SaveRules.overrideRefusal(fresh);
+        return;
+      }
+    }
+  }
+
   // Guard rails, re-evaluated from the SUBMITTED DOCUMENT — never from a
   // client-supplied verdict. The browser refuses the save first as a courtesy;
   // this is the gate. A rail whose denominator is zero is not evaluated, so a
   // half-built budget is never blocked, and an acknowledgement recorded on the
-  // document downgrades a blocking rail to a warning.
+  // document downgrades a blocking rail to a warning. The rail table is the
+  // trusted one chosen above, never the document's own.
   {
     const gp = parts(doc);
-    const gr = FSGuardrails.evaluate({ doc, parts: gp, gross: grossIncome(doc), fee: gp.fee });
+    const gr = FSGuardrails.evaluate({ doc, parts: gp, gross: grossIncome(doc), fee: gp.fee,
+                                       policy: railPolicy });
     if (gr.blocking) {
       context.res = { status: 422, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'guardrail_breach',
@@ -243,6 +362,13 @@ module.exports = async function (context, req) {
   for (let attempt = 0; ; attempt++) {
     try { result = await save(); break; }
     catch (e) {
+      if (e && e.fsBudgetConflict) {
+        context.res = { status: 409, headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ error: 'budget_conflict',
+            message: 'Someone saved ' + id + ' since you opened it.',
+            currentHash: e.currentHash, updatedAt: e.updatedAt || null }) };
+        return;
+      }
       if (e && e.fsBudgetIdTaken) {
         context.res = { status: 409, headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ error: 'budget_id_taken', field: 'projectId',
@@ -293,7 +419,7 @@ module.exports = async function (context, req) {
       // the key range so two first-saves of a new ProjectId cannot both proceed.
       const cur = await new sql.Request(tx).input('id', sql.VarChar(16), id)
         .query(`SELECT Name, Type, Status, ContractSum, ProjectCost, PricingVersion,
-                       TemplateKey, TemplateVersionId, Doc, IsDeleted
+                       TemplateKey, TemplateVersionId, Doc, IsDeleted, UpdatedAt
                 FROM dbo.Budgets WITH (UPDLOCK, HOLDLOCK) WHERE ProjectId = @id`);
       const existing = cur.recordset[0] || null;
 
@@ -305,6 +431,21 @@ module.exports = async function (context, req) {
         const err = new Error('Budget ' + id + ' already exists');
         err.fsBudgetIdTaken = true;
         throw err;
+      }
+
+      // Checked under the same UPDLOCK that serialises saves, so two editors
+      // holding the same base cannot both pass it: the second one sees the
+      // first one's Doc and is refused instead of silently replacing it.
+      if (baseHash && existing && !wantsCreate) {
+        const currentHash = storedHash(existing.Doc);
+        if (currentHash !== baseHash) {
+          await tx.rollback();
+          const err = new Error('Budget ' + id + ' changed since it was opened');
+          err.fsBudgetConflict = true;
+          err.currentHash = currentHash;
+          err.updatedAt = existing.UpdatedAt ? new Date(existing.UpdatedAt).toISOString() : null;
+          throw err;
+        }
       }
 
       const top = await new sql.Request(tx).input('id', sql.VarChar(16), id)
@@ -347,7 +488,8 @@ module.exports = async function (context, req) {
       const calc = parts(doc);
       const contractSum = Math.round(calc.contract * 100) / 100;
       const projectCost = Math.round(calc.project * 100) / 100;
-      const rails = FSGuardrails.evaluate({ doc, parts: calc, gross: grossIncome(doc), fee: calc.fee });
+      const rails = FSGuardrails.evaluate({ doc, parts: calc, gross: grossIncome(doc), fee: calc.fee,
+                                            policy: railPolicy });
 
       // Saving a soft-deleted ProjectId restores it: recreate means recover.
       await new sql.Request(tx)
@@ -430,12 +572,13 @@ module.exports = async function (context, req) {
       }
 
       await tx.commit();
+      // docHash is the new concurrency token: what a GET would now return.
       return { ok: true, versionNumber, versionCreated,
-               contractSum, projectCost, changedFields: changed };
+               contractSum, projectCost, changedFields: changed, docHash: incomingHash };
     } catch (e) {
-      // The id-taken path rolls back before throwing, so a second rollback
-      // here would fail on a transaction that is already gone.
-      if (!e || !e.fsBudgetIdTaken) { try { await tx.rollback(); } catch (_) { /* already rolled back */ } }
+      // The id-taken and conflict paths roll back before throwing, so a second
+      // rollback here would fail on a transaction that is already gone.
+      if (!e || (!e.fsBudgetIdTaken && !e.fsBudgetConflict)) { try { await tx.rollback(); } catch (_) { /* already rolled back */ } }
       throw e;
     }
   }

@@ -16,11 +16,16 @@
    Rates are decimal fractions throughout (35% is 0.35), matching
    api/shared/investment/defaults.js. Money rails are dollars.
 
-   THRESHOLDS ARE NOT A SOURCE OF TRUTH HERE. DEFAULT_POLICY is the
-   offline-only fallback, exactly as DEFAULT_PRICING is for the pricing
-   library: the live policy ships inside the budget template's published
-   version document (doc.guardrails), so publishing a template publishes the
-   rails. Never make this constant the source of a connected session. */
+   WHERE THE POLICY COMES FROM. The design was for the live policy to ship
+   inside the budget template's published version document
+   (doc.guardrails); nothing writes doc.guardrails today, so DEFAULT_POLICY
+   is what applies. The SERVER never reads doc.guardrails or doc.type for its
+   gate: both arrive in the very request being judged, so a hand-crafted save
+   could choose its own rails (BUDGET-SYSTEM.md D7). api/budget/index.js
+   passes an explicit `policy` instead — one type's rail table, chosen from
+   DEFAULT_POLICY by a type it trusts (see policyForType below). If templates
+   ever do carry a policy, it has to reach the server from the TEMPLATE, not
+   from the budget document. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.FSGuardrails = factory();
@@ -61,6 +66,15 @@
     }
   };
 
+  /* opexRatio: a budget with income but NO expense rows has not reached the
+     expenses yet — "not entered", like a zero developer fee — so it is not
+     judged. It used to read as 0% and block the save (BUDGET-SYSTEM.md D6).
+     Rows that are present but total zero ARE judged: that is a schedule
+     somebody filled in, and 0% operating cost is not a real building. */
+  function hasExpenseRows(doc) {
+    return !!(doc && Array.isArray(doc.expenses) && doc.expenses.length);
+  }
+
   /* Every rail: what it measures, how to read it, and which input to point
      at. `path` is the data-gr key the budget page outlines; `value` returns
      null when the rail cannot be judged yet. A rail that returns null is NOT
@@ -70,7 +84,8 @@
   var RAILS = [
     { id: 'opexRatio', label: 'Operating Expenses', unit: 'pct', path: 'expenses',
       measures: 'operating expenses ÷ gross income',
-      value: function (c) { return c.gross.grossYr > 0 ? (12 * c.gross.expMo) / c.gross.grossYr : null; } },
+      value: function (c) {
+        return c.gross.grossYr > 0 && hasExpenseRows(c.doc) ? (12 * c.gross.expMo) / c.gross.grossYr : null; } },
 
     { id: 'feeSum', label: 'Fee Percentages', unit: 'pct', path: 'projectCosts',
       measures: 'developer fee % + marketing % + closing %',
@@ -168,17 +183,33 @@
     return declared;
   }
 
-  function policyFor(doc, override) {
-    var pol = override || (doc && doc.guardrails) || DEFAULT_POLICY;
+  /* An explicit policy — ONE type's rail table, e.g. DEFAULT_POLICY.Blank —
+     wins outright and the document is not consulted at all. Without one,
+     the document's own type (and doc.guardrails, if it ever carries one)
+     decides, which is fine for the browser's courtesy check and never good
+     enough for the server's gate. */
+  function policyFor(doc, explicit) {
+    if (explicit && typeof explicit === 'object') return explicit;
+    var pol = (doc && doc.guardrails) || DEFAULT_POLICY;
     var type = (doc && doc.type) || 'Multifamily';
     return pol[type] || pol.Multifamily || {};
   }
 
-  /* evaluate({ doc, parts, gross, fee })
+  /* The built-in rail table for a budget type. A type with no table of its
+     own (a template-defined "Commercial", say) is judged as Multifamily: only
+     a budget that IS Blank gets the Blank table's two rails. */
+  function policyForType(type) {
+    return (typeof type === 'string' && Object.prototype.hasOwnProperty.call(DEFAULT_POLICY, type))
+      ? DEFAULT_POLICY[type] : DEFAULT_POLICY.Multifamily;
+  }
+
+  /* evaluate({ doc, parts, gross, fee, policy })
        doc    the budget document
        parts  the caller's parts()      — res/amen/soft/hard/profit/cont/contract/project
        gross  the caller's grossIncome()— rentMo/otherMo/expMo/grossYr
        fee    resolved fees { dev, mkt, cls, pctRate }
+       policy optional — one type's rail table (policyForType(type)). When
+              given, doc.type and doc.guardrails are ignored.
      Returns { rails, breaches, blocking, warnings, status }. `rails` holds
      only rails that could be judged; `breaches` only those outside range. */
   function evaluate(input) {
@@ -261,7 +292,7 @@
   }
 
   return {
-    evaluate: evaluate, pruneAcks: pruneAcks, fmt: fmt,
+    evaluate: evaluate, pruneAcks: pruneAcks, fmt: fmt, policyForType: policyForType,
     RAILS: RAILS, DEFAULT_POLICY: DEFAULT_POLICY, OPEX_SCHEMA_FULL: OPEX_SCHEMA_FULL
   };
 });

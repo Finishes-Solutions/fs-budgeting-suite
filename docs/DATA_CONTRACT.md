@@ -84,7 +84,16 @@ the pricing library and publish — do not hand-edit the constant and expect it 
 - Both are read-only and 404 for a soft-deleted budget. 400 on a malformed project ID
   or version number. There is no restore, rollback, compare or version deletion.
 
-`PUT /api/budget/{id}` returns `{ok, versionNumber, versionCreated}`. Version identity
+`PUT /api/budget/{id}` returns `{ok, versionNumber, versionCreated, docHash}`.
+
+**Optimistic concurrency, no migration.** `GET /api/budget/{id}` sends the canonical
+content hash of the stored document in an `X-Budget-Hash` response header (the body is
+unchanged). A PUT may carry it back as `baseHash`; inside the existing `UPDLOCK`
+transaction a mismatch returns `409 {error:'budget_conflict', currentHash, updatedAt}`
+and writes nothing. A PUT without `baseHash` is last-write-wins, as before, so an old
+client keeps working. The status-only PUT also returns `docHash`.
+
+Version identity
 is decided by deterministic JSON canonicalization (sorted keys, `updated` excluded)
 hashed with SHA-256; migration baselines fall back to normalized content comparison
 because their hash was computed by the database over raw stored text.
@@ -96,6 +105,14 @@ Every budget line carries a `lineId` (UUID, minted on creation, backfilled by
 `BudgetVersionSovLines.LineKey`, and is what selection, code editing, focus keys and
 batch deletion key off. Array positions are **not** row identity. `LineOrder` carries
 document order. Duplicate or missing IDs store `NULL` rather than failing a save.
+`migrate()` also re-mints any id that is not the shape `newLineId()` makes, because the
+editor interpolates it into inline handlers.
+
+A line in an inactive scope (amenity lines while `amenSF` is 0) keeps its `SovLines`
+row — `LineOrder` and `LineKey` are identity — but writes `Qty` 0 and `Total` 0, so the
+rows agree with `ContractSum`. Before 2026-10 such rows could carry a lump-sum or
+manual-quantity amount the contract sum excluded; they are corrected on the budget's
+next save, and historical versions are not rewritten.
 
 ## Deletion is recoverable
 
@@ -302,7 +319,8 @@ version into an analysis input, used by creation **and** by
 3. **The expense ratio is derived against Gross Operating Income** — after
    vacancy, other income included — because that is what the engine's
    `percentOfGOI` mode multiplies:
-   `derived = annualBudgetOpex / (budgetGrossIncomeYr × (1 − vacancy))`.
+   `derived = annualBudgetOpex / (rentYr × (1 − vacancy) + otherIncomeYr)` —
+   vacancy on rent only, as the engine applies it.
 
 `expenses.derivedFrom` records the project, the budget version, and the two
 figures the ratio came from. `expenses.override` is the user turning it off,
@@ -313,6 +331,12 @@ byte-identical; only the provenance of one input is new. A saved analysis is
 still never silently recalculated: the budget's current version number is
 reported so the client can *offer* a re-sync, and the user chooses.
 
+**A re-sync stores nothing.** `PUT …?scope=resync` takes the on-screen input and
+returns the re-derived one; the client lists the changed fields (flagging ones the
+user had overridden) and applies them as unsaved changes. The ordinary save persists
+them and carries `resyncBudgetVersionId`, which the server accepts only if it belongs
+to the analysis's own budget and is newer than the pinned version (else
+`400 bad_resync`). A full save without `status` keeps the stored status.
 ---
 
 # Impact & tap fees (added 2026-08)
@@ -337,11 +361,11 @@ stores `scheduleVersion` and is offered an update; it is never given one.
 { "scheduleKey": "tx-waller", "scheduleName": "City of Waller, TX",
   "scheduleVersion": 1, "effective": "2025-10-15",
   "basis": "high",                                    // 'low' | 'avg' | 'high'
-  "meters": [ { "rowId": "m-4-250", "qty": 2,
+  "meters": [ { "id": "…", "rowId": "m-2-100", "label": "Domestic", "qty": 1,
                 "includeMeter": true, "includeVault": true, "includeTaps": true } ],
   "extras": [ { "feeId": "…", "qty": 1 } ],           // generic fees the schedule publishes
   "manual": [ { "rowId": "…", "label": "…", "amount": 0 } ],
-  "override": null }                                  // {amount, reason, by, at}
+  "excluded": false }                                 // true = this project pays none
 ```
 
 ## The total is MATERIALIZED onto the SOV line — that is the whole design
@@ -369,6 +393,38 @@ Three rules in the derivation, each of which would be a real bug if dropped:
    `eduRates` is carried for display and for the admin editor's fill-down.
 3. **Clearing the jurisdiction restores the line, it does not delete it.** The
    line comes from the template; it goes back to its library `$/SF` basis.
+
+## Three states, not two
+
+`excluded` is not the same as "no jurisdiction picked yet", and collapsing them
+would charge real money to a project that said it pays none:
+
+| State | `scheduleKey` | `excluded` | The `SC-20` line |
+|---|---|---|---|
+| Not selected yet | `null` | `false` | The template's parametric `$/SF` allowance, untouched |
+| **None** | `null` | `true` | Carried at **zero**, described as "none for this project" |
+| Priced | `tx-waller` | `false` | The computed lump sum, with its provenance |
+
+The line is carried at zero rather than deleted: a missing line reads as an
+oversight, a zero line reads as a decision.
+
+## Meter selections are a LIST, keyed by their own id
+
+`doc.impactFees.meters` is a list, not a map keyed by meter size, and that is
+load-bearing. A project is commonly served by several meters — domestic,
+irrigation, fire line, or one per building — so the **same size legitimately
+appears more than once** with different `label`s. Keying by `rowId` would
+collapse the fire line into the domestic one and silently halve the fee.
+
+`id` is minted per selection and backfilled by `migrate()` for anything saved
+before the list existed.
+
+Size alone never identifies a schedule row either: `2"`, `3"`, `4"`, `6"`, `8"`
+and `10"` each appear twice in the Waller table at different continuous-duty
+rates, and the rate is what sets the EDU multiplier (2" @ 80 gpm is 8 EDU; 2" @
+100 gpm is 10 EDU — a $22,617 difference on the impact fees alone). Anything
+naming a meter to a person goes through `FSImpactFees.meterName()`, which always
+prints size, gpm and EDU together.
 
 ## Derived is not edited
 

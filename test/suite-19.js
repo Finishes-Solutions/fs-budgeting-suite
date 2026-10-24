@@ -108,8 +108,8 @@ const mailMode=async(p,m)=>p.evaluate(mm=>fetch('/api/_mock/mail-mode',{method:'
  await p.click('#fbFab'); await p.waitForTimeout(300);
  const fromBudgets=decodeURIComponent(await p.evaluate(()=>FSFeedback.pick('bug')));
  ok('the report names the page it was opened from',
-    /\[FS Suite · Bug\] Project Budgets/.test(fromBudgets)
-    && /Page: Project Budgets \(#\/budgets\)/.test(fromBudgets),
+    /\[FS Suite · Bug\] Budgets/.test(fromBudgets)
+    && /Page: Budgets \(#\/budgets\)/.test(fromBudgets),
     fromBudgets.split('&body=')[0]);
  await p.evaluate(()=>go('home')); await p.waitForTimeout(400);
 
@@ -162,6 +162,10 @@ const mailMode=async(p,m)=>p.evaluate(mm=>fetch('/api/_mock/mail-mode',{method:'
  ok('the refusal says what to do',
     /short title/i.test(await p.locator('#fbError').textContent()),
     await p.locator('#fbError').textContent());
+ // "Could not reach the server — send it as an email" is for the network,
+ // never for a title that is merely too short.
+ ok('a refusal the user can fix offers no email escape hatch',
+    !(await p.locator('#fbFallback').isVisible()));
  await p.fill('#fbTitle','Export does nothing on the budget page');
  await p.click('#fbSend'); await p.waitForTimeout(300);
  ok('a report with no description is refused too',
@@ -208,6 +212,23 @@ const mailMode=async(p,m)=>p.evaluate(mm=>fetch('/api/_mock/mail-mode',{method:'
  await p.click('#fbSend'); await p.waitForTimeout(800);
 
  // ---------- 4. a report nobody can lose ----------
+ // The server refusing the report (a 400 from its own validation) is the
+ // same kind of answer as the form's: the message, no email detour.
+ await p.route('**/api/user-settings?scope=feedback',r=>r.request().method()==='POST'
+   ? r.fulfill({status:400,contentType:'application/json',
+       body:JSON.stringify({error:'bad_request',message:'Title is too short.'})})
+   : r.continue());
+ await p.click('#fbFab'); await p.waitForTimeout(300);
+ await p.fill('#fbTitle','Server says no');
+ await p.fill('#fbBody','The server validates this and refuses it.');
+ await p.click('#fbSend'); await p.waitForTimeout(500);
+ ok('a server-side refusal shows its message',
+    /too short/i.test(await p.locator('#fbError').textContent()),
+    await p.locator('#fbError').textContent());
+ ok('without claiming the server could not be reached',
+    !(await p.locator('#fbFallback').isVisible()));
+ await p.unroute('**/api/user-settings?scope=feedback');
+ await p.evaluate(()=>FSFeedback.close()); await p.waitForTimeout(200);
  await p.route('**/api/user-settings?scope=feedback',r=>r.abort());
  await p.click('#fbFab'); await p.waitForTimeout(300);
  await p.fill('#fbTitle','Something failed while offline');
@@ -263,6 +284,18 @@ const mailMode=async(p,m)=>p.evaluate(mm=>fetch('/api/_mock/mail-mode',{method:'
       return rows.filter(x=>x.status==='Done').length===1;
     }));
  await p.click('#fbFilter-open'); await p.waitForTimeout(300);
+
+ // The activity log names both feedback events in words, with what they
+ // were about — an unlabelled event type printing as its raw keyword is a bug.
+ await p.evaluate(()=>go('dashboard')); await p.waitForTimeout(300);
+ await p.evaluate(()=>FSDashboard.refresh()); await p.waitForTimeout(900);
+ const logTxt=(await p.locator('#dashActivityBody').textContent()).replace(/\s+/g,' ');
+ ok('the Activity Log labels submitted feedback, with its kind and title',
+    /Feedback Submitted/.test(logTxt) && /Bug · Export does nothing on the budget page/.test(logTxt)
+    && !/feedback_submit/.test(logTxt), logTxt.slice(0,200));
+ ok('and a status change on the board',
+    /Feedback Updated/.test(logTxt) && /Status → Done/.test(logTxt) && !/feedback_update/.test(logTxt),
+    logTxt.slice(0,200));
 
  // ---------- 6. honest about delivery ----------
  // Mail goes away again mid-session: the store still works, and neither the

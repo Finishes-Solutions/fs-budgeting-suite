@@ -17,12 +17,149 @@ const INV_C = require('../api/shared/investment/constants');
 const INV_D = require('../api/shared/investment/defaults');
 const fromBudget = require('../api/shared/investment/from-budget');
 const FSGuardrails = require('../api/shared/guardrails');
+// The budget save's pre-write refusals (Budget ID change, rail policy by trusted
+// type, who may record an override) — the REAL module, so the mock decides
+// exactly as api/budget/index.js does.
+const SaveRules = require('../api/shared/budget-save-rules');
+// The SAME row-identifier rule as api/budget and api/pricing — required, not
+// copied, so the mock cannot drift from it.
+const { budgetIdentifierProblem, scheduleIdentifierProblem, IDENTIFIER_RULE } = require('../api/shared/identifiers');
 const crypto = require('crypto');
 // Per-user settings validation: the REAL contract module (dependency-free).
 const usc = require('../api/shared/user-settings-contract');
 // Same for feedback: the mock validates and words things through the module
 // the deployed endpoint uses, so a suite cannot pass against friendlier rules.
 const fbc = require('../api/shared/feedback');
+const budgetAssistant = require('../api/shared/budget-assistant');
+// The methods the deployed host lets through to /api/user-settings, read from
+// the real binding rather than restated, so the two cannot drift.
+const USER_SETTINGS_METHODS = new Set(
+  require('../api/user-settings/function.json').bindings
+    .filter(b => b.type === 'httpTrigger')
+    .flatMap(b => b.methods || []).map(m => String(m).toUpperCase()));
+
+// The Budget Assistant's view of this mock's records — the same shape
+// api/shared/budget-assistant.js's sqlStore returns from SQL.
+function mockAssistantStore() {
+  const row = (id, r) => ({ ProjectId: id, Name: r.meta.name || '', Type: r.meta.type || 'Multifamily',
+    Status: r.meta.status || 'Draft', ContractSum: r.meta.contractSum, ProjectCost: r.meta.projectCost,
+    PricingVersion: r.doc.pricingVersion || '', TemplateKey: r.doc.templateKey || null,
+    UpdatedAt: r.meta.updated || null, ProjectKey: r.projectKey || null });
+  const live = id => { const r = budgets.get(id); return r && !r.deleted ? r : null; };
+  return {
+    async loadBudget(id) { const r = live(id); return r ? { row: row(id, r), doc: r.doc } : null; },
+    async listVersions(id) {
+      const r = live(id); if (!r) return [];
+      return r.versions.slice().reverse().map(v => budgetAssistant.versionMeta({
+        VersionNumber: v.versionNumber, CreatedAt: v.createdAt, CreatedByName: v.createdByName,
+        ChangeSummary: v.changeSummary, Status: v.meta && v.meta.status,
+        ContractSum: v.meta && v.meta.contractSum, ProjectCost: v.meta && v.meta.projectCost,
+        PricingVersion: v.doc.pricingVersion, TemplateKey: v.doc.templateKey }));
+    },
+    async versionDoc(id, n) { const r = live(id); const v = r && r.versions[n - 1]; return v ? v.doc : null; },
+    async searchBudgets(q) {
+      const t = String(q || '').toLowerCase();
+      return [...budgets.entries()].filter(([, r]) => !r.deleted)
+        .filter(([id, r]) => !t || id.toLowerCase().includes(t) || String(r.meta.name || '').toLowerCase().includes(t)
+          || String(r.doc.address || '').toLowerCase().includes(t))
+        .map(([id, r]) => ({ row: row(id, r), doc: r.doc }));
+    },
+    async loadAnalysis(id) {
+      const a = invAnalyses.get(id);
+      return a && !a.deleted ? mockAnalysisRec(a) : null;
+    },
+    async listAnalyses(q) {
+      return [...invAnalyses.values()].filter(a => !a.deleted
+          && ((q.budgetId && a.projectId === q.budgetId) || (q.projectKey && a.projectKey === q.projectKey)))
+        .sort((x, y) => y.updatedAt.localeCompare(x.updatedAt)).slice(0, 10).map(mockAnalysisRec);
+    },
+    async pricingLibrary() { return pricing; },
+    async benchmarkBudgets(type, excludeId) {
+      return [...budgets.entries()].filter(([id, r]) => !r.deleted && id !== excludeId && !/^TST-/.test(id)
+          && (r.meta.type || 'Multifamily') === (type || 'Multifamily'))
+        .slice(0, 40).map(([id, r]) => ({ id, name: r.meta.name, doc: r.doc }));
+    },
+    async feeSchedule(key, n) {
+      const s = feeSchedules.get(key); if (!s) return null;
+      const v = n ? s.versions.find(x => x.versionNumber === n) : s.versions[s.versions.length - 1];
+      return v ? { scheduleKey: key, name: s.name, jurisdiction: s.jurisdiction, state: s.state,
+        version: v.versionNumber, effective: v.effective, changeSummary: v.changeSummary || null, schedule: v.doc } : null;
+    }
+  };
+}
+function mockAnalysisRec(a) {
+  const br = a.projectId ? budgets.get(a.projectId) : null;
+  return { id: a.id, budgetId: a.projectId || null, projectKey: a.projectKey || null, name: a.name,
+    status: a.status, savedVersion: a.currentVersionNumber, input: a.input, updatedAt: a.updatedAt,
+    sourceBudgetVersion: a.sourceBudgetVersionNumber || null,
+    budgetCurrentVersion: br && !br.deleted ? br.versions.length : null };
+}
+// A deterministic stand-in for Claude. It answers from the facts the real
+// module computed, so a suite can assert that real figures reached the model;
+// a question mentioning "version" exercises one round of the tool loop.
+const mockClaude = { beta: { messages: { async create(req) {
+  // The on-screen context rides on the latest question; earlier user turns
+  // are the conversation as asked (possibly about another screen).
+  const ctxAt = req.messages.map(m => typeof m.content === 'string' && /<(budget|analysis)_context/.test(m.content)).lastIndexOf(true);
+  const first = String(ctxAt >= 0 ? req.messages[ctxAt].content : req.messages[0].content);
+  const prior = req.messages.slice(0, Math.max(ctxAt, 0)).filter(m => m.role === 'user' && typeof m.content === 'string');
+  const earlier = '\n- Earlier questions: ' + prior.length
+    + (prior.some(m => /^\[Asked while viewing /.test(m.content)) ? ' (some from another screen)' : '');
+  const am = first.match(/<analysis_context[^>]*>\n[^\n]*\n(.*)\n<\/analysis_context>/);
+  if (am) return mockClaudeAnalysis(req, JSON.parse(am[1]), first, earlier);
+  const m = first.match(/<budget_context[^>]*>\n[^\n]*\n(.*)\n<\/budget_context>/);
+  const facts = m ? JSON.parse(m[1]) : null;
+  const rv = first.match(/<budget_review>\n(.*)\n<\/budget_review>/);
+  const review = rv ? JSON.parse(rv[1]) : null;
+  const pf = first.match(/<pro_formas count="(\d+)">/);
+  const last = req.messages[req.messages.length - 1];
+  const asked = typeof last.content === 'string' ? last.content : '';
+  const usage = { input_tokens: 1200, output_tokens: 80 };
+  // The question itself, without the context block in front of it.
+  const question = asked.replace(/^[\s\S]*<\/version_history>\n\n/, '');
+  if (/version/i.test(question) && req.tool_choice.type === 'auto' && facts) {
+    return { stop_reason: 'tool_use', model: 'mock-claude', usage, content: [{ type: 'tool_use', id: 'mock-t1',
+      name: 'list_versions', input: { budget_id: facts.identity.budgetId } }] };
+  }
+  const usd = n => '$' + Math.round(Number(n) || 0).toLocaleString('en-US');
+  let tail = '';
+  if (Array.isArray(last.content) && last.content[0] && last.content[0].type === 'tool_result') {
+    const v = JSON.parse(last.content[0].content);
+    tail = '\n\nThis budget has **' + (v.versions || []).length + ' saved versions**.';
+  }
+  const t = facts ? facts.totals : {};
+  return { stop_reason: 'end_turn', model: 'mock-claude', usage, content: [{ type: 'text', text:
+    '**' + (facts ? facts.identity.name || facts.identity.budgetId : 'Budget') + '** — mock assistant answer.\n\n'
+    + '- Contract Sum: ' + usd(t.contractSum) + '\n- Total Project Cost: ' + usd(t.totalProjectCost)
+    + '\n- Based on: ' + (m ? first.match(/basis="([^"]+)"/)[1] : 'unknown')
+    + '\n- Review findings: ' + (review ? review.summary.findings : 'none')
+    + '\n- Pro formas: ' + (pf ? pf[1] : '0')
+    + '\n- Reasoning: ' + (req.output_config && req.output_config.effort) + earlier + tail }] };
+} } } };
+// The pro forma half of the stand-in: quotes the engine's headline and top
+// driver, and a question about RUBS exercises run_scenario.
+function mockClaudeAnalysis(req, facts, first, earlier) {
+  const last = req.messages[req.messages.length - 1];
+  const asked = typeof last.content === 'string' ? last.content : '';
+  const usage = { input_tokens: 1500, output_tokens: 90 };
+  if (/rubs/i.test(asked) && req.tool_choice.type === 'auto')
+    return { stop_reason: 'tool_use', model: 'mock-claude', usage, content: [{ type: 'tool_use', id: 'mock-s1',
+      name: 'run_scenario', input: { changes: { addOtherIncome: [{ label: 'RUBS', annualAmount: 60000 }] } } }] };
+  const pct = v => (Number.isFinite(v) ? (v * 100).toFixed(2) + '%' : '—');
+  let tail = '';
+  if (Array.isArray(last.content) && last.content[0] && last.content[0].type === 'tool_result') {
+    const r = JSON.parse(last.content[0].content);
+    tail = r.error ? '\n\nScenario failed: ' + r.error
+      : '\n\nWith RUBS the equity IRR moves to **' + pct(r.after.finalYearEquityIRR) + '**.';
+  }
+  const h = facts.headline || {};
+  return { stop_reason: 'end_turn', model: 'mock-claude', usage, content: [{ type: 'text', text:
+    '**' + ((facts.meta && facts.meta.name) || 'Analysis') + '** — mock pro forma answer.\n\n'
+    + '- Equity IRR: ' + pct(h.finalYearEquityIRR) + '\n- Top driver: '
+    + ((facts.drivers || [])[0] ? facts.drivers[0].change : 'none')
+    + '\n- Source budget: ' + (/<source_budget>\nThe budget this analysis/.test(first) ? 'loaded' : 'none')
+    + earlier + tail }] };
+}
 const mockUsers = new Map();   // userId -> profile + settings row
 const mockFeedback = [];       // dbo.Feedback stand-in, newest first
 let nextFeedbackId = 1;
@@ -194,9 +331,11 @@ function logSettingsDiff(uid, before, after, body, beforeProfile, prof) {
 }
 
 // The same evaluation the browser and the real endpoint run, off one module.
-function evalGuardrails(doc) {
+// `policy` is the trusted rail table the save path chose; without one (the
+// list and seed paths) the document's own type decides, as in the browser.
+function evalGuardrails(doc, policy) {
   const gp = bcParts(doc);
-  return FSGuardrails.evaluate({ doc, parts: gp, gross: bcGross(doc), fee: gp.fee });
+  return FSGuardrails.evaluate({ doc, parts: gp, gross: bcGross(doc), fee: gp.fee, policy });
 }
 
 // Same canonicalization the API uses to decide whether a save changed anything
@@ -208,6 +347,10 @@ function canonical(v) {
   return '{' + Object.keys(v).filter(k => !VOLATILE.has(k) && v[k] !== undefined).sort()
     .map(k => JSON.stringify(k) + ':' + canonical(v[k])).join(',') + '}';
 }
+// The budget concurrency token, as api/budget/index.js computes it: the
+// canonical SHA-256 of the stored document. GET sends it as X-Budget-Hash; a
+// PUT carrying it as baseHash is refused with 409 once the stored doc moved.
+const budgetHash = d => crypto.createHash('sha256').update(canonical(d), 'utf8').digest('hex');
 let pricing = JSON.parse(fs.readFileSync(path.join(__dirname, 'pricing.json'), 'utf8'));
 
 // Fee schedules — behavior-parallel with api/pricing/index.js. Seeded with
@@ -238,24 +381,18 @@ const principal = {
   }
 };
 
-// Same SOV projection as api/shared/versioning.js, so a versioned snapshot in
-// the mock carries the same shape the real one does.
+// The REAL SOV projection (api/shared/sov.js), not a copy — a copy is what let
+// amenity suppression and the quantity rule drift. Shaped the way
+// api/budget-versions reads rows back: `desc` for Descr, the DECIMAL(18,2/4/2)
+// column rounding, and the provenance writeSovLines() stamps.
+const { sovRows: sovProjection } = require('../api/shared/sov');
+const dec = (v, dp) => Math.round(v * 10 ** dp) / 10 ** dp;
 function sovRows(doc) {
-  const units = (doc.units || []).reduce((s, u) => s + (u.count || 0), 0);
-  const seen = new Set();
-  return (doc.lines || []).map((l, i) => {
-    let key = typeof l.lineId === 'string' && l.lineId ? l.lineId : null;
-    if (key && seen.has(key)) key = null;
-    if (key) seen.add(key);
-    const qty = l.auto === false ? (l.qty || 0)
-      : l.basis === 'sf' ? (doc.resSF || 0)
-      : l.basis === 'asf' ? (doc.amenSF || 0)
-      : l.basis === 'unit' ? units : 1;
-    const rate = l.unit || 0;
-    return { lineOrder: i + 1, lineKey: key, scope: l.scope || 'res', grp: l.grp || '',
-             code: l.code || '', desc: l.desc || '', basis: l.basis || 'ls',
-             qty, rate, total: qty * rate, provenance: 'parametric-estimate' };
-  });
+  return sovProjection(doc).map(r => ({
+    lineOrder: r.lineOrder, lineKey: r.lineKey, scope: r.scope, grp: r.grp,
+    code: r.code, desc: r.descr, basis: r.basis,
+    qty: dec(r.qty, 2), rate: dec(r.rate, 4), total: dec(r.total, 2),
+    provenance: 'parametric-estimate' }));
 }
 
 // Templates, seeded with `multifamily` from test/pricing.json plus the same
@@ -401,6 +538,10 @@ http.createServer((req, res) => {
         if (!f || !f.feeId || !f.label) return json(res, 400, { error: 'every fee needs a feeId and a label' });
         if (!FEE_BASES.includes(f.basis)) return json(res, 400, { error: 'fee ' + f.feeId + ' has an unknown basis: ' + f.basis });
       }
+      {
+        const badId = scheduleIdentifierProblem(doc);
+        if (badId) return json(res, 400, { error: 'malformed identifier at ' + badId + ' — use ' + IDENTIFIER_RULE });
+      }
       let s = feeSchedules.get(k);
       if (!s) { s = { scheduleKey: k, name: doc.name, jurisdiction: doc.jurisdiction || doc.name,
                       state: doc.state || null, description: '', isActive: true, versions: [] };
@@ -517,6 +658,20 @@ http.createServer((req, res) => {
       });
     }
     const budgetList = [...budgets.values()].filter(b => !b.deleted && !b.meta.projectId.startsWith('TST-'));
+    // The money is one budget per project — its primary — plus every budget
+    // with no live project, exactly as the real query counts it. Summing every
+    // active budget double-counted each project priced with an alternate.
+    const liveProjects = [...projects.values()].filter(x => !x.deleted);
+    const counted = [];
+    [...budgets.values()].filter(b => !b.deleted
+      && !(b.projectKey && projects.get(b.projectKey) && !projects.get(b.projectKey).deleted))
+      .forEach(b => counted.push({ b, pr: null }));
+    liveProjects.forEach(pr => {
+      const bs = projectBudgets(pr.projectId);
+      const primary = bs.find(b => b.meta.projectId === pr.primaryBudgetId) || bs[0] || null;
+      if (primary) counted.push({ b: primary, pr });
+    });
+    const countedReal = counted.filter(c => !c.b.meta.projectId.startsWith('TST-'));
     const analysisList = [...invAnalyses.values()].filter(a => !a.deleted && !a.id.startsWith('TST-'));
     const bStatus = {};
     budgetList.forEach(b => { const s = b.meta.status || 'Draft'; bStatus[s] = (bStatus[s] || 0) + 1; });
@@ -529,7 +684,7 @@ http.createServer((req, res) => {
     // Projects. The converted totals read the SNAPSHOT columns, never a live
     // join — the same rule the real query follows, so reported backlog does not
     // move when a budget is edited after conversion.
-    const projectList = [...projects.values()].filter(x => !x.isDeleted && !x.projectId.startsWith('TST-'));
+    const projectList = [...projects.values()].filter(x => !x.deleted && !x.projectId.startsWith('TST-'));
     const pStatus = {};
     projectList.forEach(x => { const st = x.status || 'Lead'; pStatus[st] = (pStatus[st] || 0) + 1; });
     const convertedList = projectList.filter(x => x.status === CONVERTED);
@@ -555,8 +710,9 @@ http.createServer((req, res) => {
       budgets: {
         total: budgets.size, active: budgetList.length,
         deleted: [...budgets.values()].filter(b => b.deleted).length,
-        totalContractSum: budgetList.reduce((s, b) => s + (b.meta.contractSum || 0), 0),
-        totalProjectCost: budgetList.reduce((s, b) => s + (b.meta.projectCost || 0), 0),
+        totalContractSum: countedReal.reduce((s, c) => s + (c.b.meta.contractSum || 0), 0),
+        totalProjectCost: countedReal.reduce((s, c) => s + (c.b.meta.projectCost || 0), 0),
+        moneyBasis: 'primary', countedBudgets: countedReal.length,
         earliest: null, lastUpdated: null,
         statusBreakdown: Object.entries(bStatus).map(([status, count]) => ({ status, count }))
       },
@@ -599,7 +755,29 @@ http.createServer((req, res) => {
       topBudgets: budgetList
         .slice().sort((x, y) => (y.meta.projectCost || 0) - (x.meta.projectCost || 0)).slice(0, 8)
         .map(x => ({ projectId: x.meta.projectId, name: x.meta.name,
-          contractSum: x.meta.contractSum || 0, projectCost: x.meta.projectCost || 0 }))
+          contractSum: x.meta.contractSum || 0, projectCost: x.meta.projectCost || 0 })),
+      topProjects: countedReal.filter(c => c.pr)
+        .sort((x, y) => (y.b.meta.projectCost || 0) - (x.b.meta.projectCost || 0)).slice(0, 8)
+        .map(c => ({ projectId: c.pr.projectId, name: c.pr.name || '',
+          budgetId: c.b.meta.projectId, budgetName: c.b.meta.name || '',
+          contractSum: c.b.meta.contractSum || 0, projectCost: c.b.meta.projectCost || 0 }))
+    });
+  }
+
+  // Mock-only: lets a suite play an account WITHOUT override rights — drop the
+  // platform super_admin role and/or set the dbo.Users AppRole — which the
+  // seeded principal (deliberately all-powerful) can never be. Body is JSON
+  // { userRoles?, appRole? }; answers what is now in force. No counterpart in
+  // the real API.
+  if (p === '/api/_mock/roles') {
+    let b = ''; req.on('data', c => b += c);
+    return req.on('end', () => {
+      const body = b ? JSON.parse(b) : {};
+      if (Array.isArray(body.userRoles)) principal.clientPrincipal.userRoles = body.userRoles.map(String);
+      const u = mockUsers.get(principal.clientPrincipal.userId);
+      if (u && typeof body.appRole === 'string') u.appRole = body.appRole;
+      return json(res, 200, { userRoles: principal.clientPrincipal.userRoles,
+                              appRole: u ? (u.appRole || 'user') : null });
     });
   }
 
@@ -617,6 +795,11 @@ http.createServer((req, res) => {
   // ---- per-user settings + activity (dbo.Users / dbo.UserActivity stand-in).
   // Validation is the REAL contract module, so drift is impossible.
   if (p === '/api/user-settings') {
+    // The host answers a method the function.json does not bind with a 404
+    // before the code runs. Read from the real binding so the mock cannot
+    // accept what production refuses — it did, for the feedback POST, which
+    // is how bug reports passed every suite and never reached the server.
+    if (!USER_SETTINGS_METHODS.has(req.method)) { res.writeHead(404); return res.end('Not found'); }
     const uid = principal.clientPrincipal.userId;
     // ?scope=roles is the Admin page's role management, served from this
     // endpoint because a dedicated function did not register on the host.
@@ -642,6 +825,8 @@ http.createServer((req, res) => {
           const target = mockUsers.get(targetId);
           if (!target) return json(res, 404, { error: 'not_found', message: 'User not found.' });
           target.appRole = body.appRole;
+          // Same audit row the real endpoint writes for a role change.
+          act('settings_update', 'user', targetId, { roleChangedTo: body.appRole });
           return json(res, 200, { ok: true, userId: targetId, appRole: body.appRole });
         });
       }
@@ -691,6 +876,8 @@ http.createServer((req, res) => {
           row.status = parsed.update.status;
           if (parsed.update.notes !== undefined) row.adminNotes = parsed.update.notes || null;
           row.updatedAt = new Date().toISOString();
+          // Logged like the real endpoint logs it.
+          act('feedback_update', 'feedback', String(row.feedbackId), { status: row.status }, uid);
           return json(res, 200, { ok: true, feedbackId: row.feedbackId, status: row.status });
         });
       }
@@ -928,6 +1115,24 @@ http.createServer((req, res) => {
     const rec = budgets.get(id);
     const live = rec && !rec.deleted ? rec : null;
 
+    // POST ?scope=ask — the Budget Assistant. Behaviour-parallel by
+    // construction: this runs api/shared/budget-assistant.js itself, against
+    // an in-memory store and a deterministic stand-in for Claude, so every
+    // validation, limit and refusal is the real one. MOCK_AI=off answers as an
+    // API with no ANTHROPIC_API_KEY does.
+    if (req.method === 'POST') {
+      if (bScope !== 'ask') { res.writeHead(405); return res.end('POST is only accepted with ?scope=ask'); }
+      let ab = ''; req.on('data', c => ab += c);
+      return req.on('end', async () => {
+        let body = {};
+        try { body = ab ? JSON.parse(ab) : {}; } catch (e) { return json(res, 400, { error: 'bad_json' }); }
+        const out = await budgetAssistant.ask({ store: mockAssistantStore(), principal: principal.clientPrincipal,
+          id, body, env: {}, client: process.env.MOCK_AI === 'off' ? null : mockClaude });
+        if (out.activity) act('ai_ask', 'budget', id, out.activity);
+        res.writeHead(out.status, out.headers); res.end(out.body);
+      });
+    }
+
     // /api/budget/{id}/versions[/{n}] — read-only history
     if (seg[1] === 'versions') {
       if (req.method !== 'GET') { res.writeHead(405); return res.end('Method not allowed'); }
@@ -947,7 +1152,8 @@ http.createServer((req, res) => {
 
     if (req.method === 'GET') {
       if (!live) { res.writeHead(404); return res.end('Not found'); }
-      return json(res, 200, live.doc);
+      res.writeHead(200, { 'Content-Type': 'application/json', 'X-Budget-Hash': budgetHash(live.doc) });
+      return res.end(JSON.stringify(live.doc));
     }
     // Soft delete: the record and its history stay, the budget just goes invisible.
     if (req.method === 'DELETE') {
@@ -972,7 +1178,7 @@ http.createServer((req, res) => {
         if (wasStatus !== body.status) act('budget_status', 'budget', id,
           { name: live.meta.name || null, projectKey: live.projectKey || null,
             from: wasStatus, to: body.status });
-        return json(res, 200, { ok: true, status: body.status });
+        return json(res, 200, { ok: true, status: body.status, docHash: budgetHash(live.doc) });
       }
       // A malformed body must answer 400, exactly as api/budget/index.js does.
       // Throwing here would kill the whole mock and cascade into every suite
@@ -981,6 +1187,12 @@ http.createServer((req, res) => {
       const { meta, doc } = body || {};
       if (!doc || !meta) { res.writeHead(400); return res.end('Body must be { meta, doc }'); }
       if ((doc.projectId || '').toUpperCase() !== id) { res.writeHead(400); return res.end('id mismatch'); }
+      // Row identifiers render into attributes — refused exactly as api/budget does.
+      {
+        const badId = budgetIdentifierProblem(doc);
+        if (badId) return json(res, 400, { error: 'bad_identifier', field: badId,
+          message: 'Malformed row identifier at ' + badId + ' — use ' + IDENTIFIER_RULE + '.' });
+      }
       // Building square footage is required and must be greater than zero —
       // the analysis imports it, and a sizeless budget produced an analysis
       // that could never calculate. resSF + amenSF is the BUILDING; site area
@@ -989,7 +1201,14 @@ http.createServer((req, res) => {
         return json(res, 422, { error: 'size_required', field: 'resSF',
           message: 'Square footage is required — enter a building size greater than zero before saving.' });
       }
+      // Budget ID fixed once saved — same rule and wording as the real endpoint.
+      const send = r => { res.writeHead(r.status, r.headers); return res.end(r.body); };
+      { const refusal = SaveRules.idChangeRefusal(meta, id, body.create === true);
+        if (refusal) return send(refusal); }
       const wantsCreate = body.create === true;
+      // Optional, as in the real API: no baseHash means last-write-wins.
+      const baseHash = typeof body.baseHash === 'string' && /^[0-9a-f]{64}$/.test(body.baseHash)
+        ? body.baseHash : null;
       const wantsKey = meta.projectKey ? String(meta.projectKey).toUpperCase() : null;
       if (wantsKey && !PROJECT_ID_RX.test(wantsKey)) {
         return json(res, 400, { error: 'bad_project_id', field: 'projectKey',
@@ -998,6 +1217,20 @@ http.createServer((req, res) => {
       if (wantsCreate && !wantsKey) {
         return json(res, 400, { error: 'project_required', field: 'projectKey',
           message: 'Choose the project this budget belongs to.' });
+      }
+      // Guard-rail trust, parallel with api/budget/index.js: the rail table
+      // comes from the STORED type, and a new override needs the role. The
+      // mock always has the AppRole column (its users carry appRole).
+      const storedRec = wantsCreate ? null : (budgets.get(id) || null);   // a create trusts nothing stored
+      const rp = SaveRules.railPolicy({ exists: !!storedRec,
+        storedType: storedRec ? storedRec.meta.type : null, submittedType: meta.type });
+      if (rp.refusal) return send(rp.refusal);
+      const freshAcks = SaveRules.newAcks(storedRec ? storedRec.doc : null, doc);
+      if (freshAcks.length) {
+        const u = mockUsers.get(principal.clientPrincipal.userId);
+        if (!SaveRules.canOverride({ appRoleColumn: true, appRole: (u && u.appRole) || 'user',
+                                     userRoles: principal.clientPrincipal.userRoles }))
+          return send(SaveRules.overrideRefusal(freshAcks));
       }
       // A create must not land on an occupied id. Without this, a new budget
       // typed against an existing id replaced that budget and versioned the
@@ -1010,7 +1243,7 @@ http.createServer((req, res) => {
       // Behaviour-parallel with api/budget/index.js: the rails are re-evaluated
       // from the SUBMITTED document and refuse the write, never trusting a
       // client-supplied verdict.
-      const rails = evalGuardrails(doc);
+      const rails = evalGuardrails(doc, rp.policy);
       if (rails.blocking) {
         return json(res, 422, { error: 'guardrail_breach',
           message: rails.blocking + ' guard rail' + (rails.blocking === 1 ? '' : 's')
@@ -1018,6 +1251,14 @@ http.createServer((req, res) => {
           breaches: rails.breaches.filter(x => x.severity === 'error').map(x => ({
             id: x.id, label: x.label, actual: x.actual, display: x.display,
             min: x.min, max: x.max, range: x.range, message: x.message })) });
+      }
+      // The real API checks this inside the save transaction, after the rails,
+      // against the stored row — soft-deleted included, as there.
+      const stored = budgets.get(id);
+      if (baseHash && stored && !wantsCreate && budgetHash(stored.doc) !== baseHash) {
+        return json(res, 409, { error: 'budget_conflict',
+          message: 'Someone saved ' + id + ' since you opened it.',
+          currentHash: budgetHash(stored.doc), updatedAt: (stored.meta && stored.meta.updated) || null });
       }
       const calc = parts(doc);
       // The real API reads UpdatedAt off the row, so `updated` is always
@@ -1082,11 +1323,26 @@ http.createServer((req, res) => {
         pricingVersion: doc.pricingVersion || null,
         changed: changedFields.length ? changedFields : null
       });
-      json(res, 200, { ok: true, projectKey: linked, versionNumber: entry.versions.length, versionCreated });
+      json(res, 200, { ok: true, projectKey: linked, versionNumber: entry.versions.length, versionCreated,
+        docHash: budgetHash(doc) });
     });
   }
 
   // ---- investment analyses: same semantics as the four Azure Functions ----
+  // POST ?scope=ask — the Budget Assistant focused on a pro forma; the real
+  // module again, against the in-memory store.
+  if (p === '/api/investment-calculations' && req.method === 'POST' && q.get('scope') === 'ask') {
+    let ab = ''; req.on('data', c => ab += c);
+    return req.on('end', async () => {
+      let body = {};
+      try { body = ab ? JSON.parse(ab) : {}; } catch (e) { return json(res, 400, { error: 'bad_json' }); }
+      const out = await budgetAssistant.ask({ store: mockAssistantStore(), principal: principal.clientPrincipal,
+        id: body.analysisId ? String(body.analysisId).toLowerCase() : null, focus: 'analysis', body, env: {},
+        client: process.env.MOCK_AI === 'off' ? null : mockClaude });
+      if (out.activity) act('ai_ask', 'analysis', out.activity.entityId || null, out.activity);
+      res.writeHead(out.status, out.headers); res.end(out.body);
+    });
+  }
   if (p === '/api/investment-calculations' && req.method === 'POST') {
     let b = ''; req.on('data', c => b += c);
     return req.on('end', () => {
@@ -1213,8 +1469,13 @@ http.createServer((req, res) => {
 
     /* PUT ?scope=resync — refresh ONLY the imported fields from the budget's
        current version, leaving what the user typed alone. Behaviour-parallel
-       with api/investment-analysis/index.js, off the same projection module. */
+       with api/investment-analysis/index.js, off the same projection module:
+       a PROPOSAL that stores nothing — the save that follows records it. */
     if (req.method === 'PUT' && String(q.get('scope') || '') === 'resync') {
+      let rb = ''; req.on('data', c => rb += c);
+      return req.on('end', () => {
+      let rbody = {};
+      try { rbody = rb ? JSON.parse(rb) : {}; } catch (_) { rbody = {}; }
       if (!live) return json(res, 404, { error: 'not_found', message: 'Not found' });
       if (!live.projectId) return json(res, 400, { error: 'not_linked',
         message: 'This analysis is standalone — there is no budget to re-sync from.' });
@@ -1223,7 +1484,10 @@ http.createServer((req, res) => {
       const vn = bl ? bl.versions.length : 0;
       const v = bl ? bl.versions[vn - 1] : null;
       if (!v) return json(res, 404, { error: 'not_found', message: 'Budget version not found.' });
-      const input = live.input;
+      // The copy on screen when the browser sends one, else the stored input —
+      // copied either way, because nothing here may touch the stored row.
+      const input = JSON.parse(JSON.stringify(
+        rbody.input && typeof rbody.input === 'object' && !Array.isArray(rbody.input) ? rbody.input : live.input));
       const vac = input.vacancy && Number.isFinite(+input.vacancy.value) ? +input.vacancy.value : undefined;
       const proj = fromBudget.projectFromBudget(v.doc,
         { Id: vn, VersionNumber: vn, Name: v.meta.name }, { projectId: live.projectId, vacancy: vac });
@@ -1246,13 +1510,13 @@ http.createServer((req, res) => {
         // against the original import forever.
         originalValues: (input.source && input.source.originalValues) || {},
         importedAt: (input.source && input.source.importedAt) || new Date().toISOString() });
-      live.sourceBudgetVersionNumber = vn;
-      live.updatedAt = new Date().toISOString();
+      // Deliberately no write — the stored input and source stay as saved.
       return json(res, 200, { ok: true, input, expensesOverridden: overridden,
         source: { projectId: live.projectId, budgetVersionId: vn, budgetVersionNumber: vn,
                   budgetCurrentVersionNumber: vn, drift: false },
         message: 'Re-synced from budget ' + live.projectId + ' v' + vn
-          + '. Recalculate and save to fold the new numbers into a version.' });
+          + '. Nothing is stored until the analysis is saved.' });
+      });
     }
 
     // Server-rendered exports — the SAME shared renderer module the real
@@ -1402,11 +1666,31 @@ http.createServer((req, res) => {
       const input = body.input;
       if (!input || typeof input !== 'object')
         return json(res, 400, { error: 'bad_request', message: 'Body must be { input, expectedVersionNumber }.' });
+      // Same rules as the real save: an absent status keeps the stored one,
+      // a present one must be real; a re-sync must be a newer version of
+      // this analysis's own budget.
+      const STATUSES = ['Draft', 'In Review', 'Completed', 'Cancelled'];
+      if (body.status !== undefined && body.status !== null && !STATUSES.includes(body.status))
+        return json(res, 400, { error: 'bad_request', message: 'status must be one of: ' + STATUSES.join(', ') });
+      const resyncTo = body.resyncBudgetVersionId === undefined || body.resyncBudgetVersionId === null
+        ? null : String(body.resyncBudgetVersionId);
+      if (resyncTo !== null && !/^\d{1,18}$/.test(resyncTo))
+        return json(res, 400, { error: 'bad_request', message: 'resyncBudgetVersionId must be a budget version id.' });
       if (body.expectedVersionNumber !== undefined && body.expectedVersionNumber !== null
           && body.expectedVersionNumber !== a.currentVersionNumber)
         return json(res, 409, { error: 'version_conflict',
           message: 'Someone saved a newer version of this analysis after you loaded it.',
           currentVersionNumber: a.currentVersionNumber });
+      let sourceVn = a.sourceBudgetVersionNumber;
+      if (resyncTo !== null && +resyncTo !== a.sourceBudgetVersionNumber) {
+        // In the mock a budget version's id IS its number.
+        const br = a.projectId ? budgets.get(a.projectId) : null;
+        const n = +resyncTo;
+        if (!br || n < 1 || n > br.versions.length || (a.sourceBudgetVersionNumber && n <= a.sourceBudgetVersionNumber))
+          return json(res, 400, { error: 'bad_resync',
+            message: 'That budget version cannot be re-synced into this analysis. Re-sync again, then save.' });
+        sourceVn = n;
+      }
       let result;
       try { result = calculateInvestmentAnalysis(input); }
       catch (e) {
@@ -1415,8 +1699,8 @@ http.createServer((req, res) => {
         return json(res, 500, { error: 'calculation_failed', message: 'The calculation could not be completed.' });
       }
       if (input.source && typeof input.source === 'object')
-        input.source.budgetVersionId = a.sourceBudgetVersionNumber;   // provenance is server-owned
-      const hash = invHash(input, a.sourceBudgetVersionNumber);
+        input.source.budgetVersionId = sourceVn;   // provenance is server-owned
+      const hash = invHash(input, sourceVn);
       const unchanged = a.currentVersionNumber >= 1 && a.contentHash === hash;
       if (!unchanged) {
         a.currentVersionNumber += 1;
@@ -1429,7 +1713,8 @@ http.createServer((req, res) => {
           createdAt: new Date().toISOString() });
       }
       a.name = result.normalizedInput.analysisName;
-      a.status = typeof body.status === 'string' ? body.status.slice(0, 30) : 'Draft';
+      if (typeof body.status === 'string') a.status = body.status;
+      a.sourceBudgetVersionNumber = sourceVn;
       a.input = input; a.result = result; a.contentHash = hash;
       a.deleted = false; a.deletedAt = null;
       a.updatedAt = new Date().toISOString();
