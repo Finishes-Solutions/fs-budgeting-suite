@@ -102,5 +102,20 @@ function overrideRefusal(ids) {
       + '— bring the value back into range, or ask a director to record the override.' });
 }
 
-module.exports = { idChangeRefusal, railPolicy, newAcks, canOverride, overrideRefusal,
+/* ---- 4. Size for an estimate-engine budget.
+
+   The size check exists so an investment analysis built from the budget can
+   import a size. An engine budget carries its own (doc.engineSummary): building
+   SF when it has buildings, else its primary units (RV sites, slips, MW…), which
+   is what from-budget.js imports for it. A site-only estimate with positive
+   primary units is therefore sized even though resSF is 0. */
+function engineSized(doc) {
+  const pf = doc && doc.engineSummary && doc.engineSummary.proforma && doc.engineSummary.proforma.project;
+  if (!pf || typeof pf !== 'object') return false;
+  if (Number(pf.sizeSF) > 0) return true;
+  const pu = pf.primaryUnits && typeof pf.primaryUnits === 'object' ? pf.primaryUnits : {};
+  return Object.keys(pu).some(k => Number(pu[k]) > 0);
+}
+
+module.exports = { idChangeRefusal, railPolicy, newAcks, canOverride, overrideRefusal, engineSized,
                    OVERRIDE_ROLES };

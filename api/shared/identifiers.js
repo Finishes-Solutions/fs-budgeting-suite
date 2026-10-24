@@ -39,7 +39,23 @@ function budgetIdentifierProblem(doc) {
     // is rendered into the same attributes as rowId.
     || firstBad(f.meters, 'id', 'impactFees.meters')
     || firstBad(f.manual, 'rowId', 'impactFees.manual')
-    || firstBad(f.extras, 'feeId', 'impactFees.extras');
+    || firstBad(f.extras, 'feeId', 'impactFees.extras')
+    // The estimate engine's ids (app/budget-v2.js renders them into data-*
+    // attributes the same way lines are).
+    || engineIdentifierProblem(doc.engine);
+}
+
+function engineIdentifierProblem(e) {
+  if (!e || typeof e !== 'object') return null;
+  const bad = firstBad(e.components, 'id', 'engine.components') || firstBad(e.phases, 'id', 'engine.phases')
+    || firstBad(e.shared, 'id', 'engine.shared') || firstBad(e.scenarios, 'id', 'engine.scenarios');
+  if (bad) return bad;
+  const comps = Array.isArray(e.components) ? e.components : [];
+  for (let i = 0; i < comps.length; i++) {
+    const b = comps[i] && firstBad(comps[i].blocks, 'id', 'engine.components[' + i + '].blocks');
+    if (b) return b;
+  }
+  return null;
 }
 
 /* A fee schedule's row ids, which budgets reference and the Impact Fees step

@@ -286,3 +286,17 @@ test('pro forma handoff: from-budget reads the engine scope for engine budgets',
   assert.equal(fb.projectFromBudget({ units: [], lines: [], other: [], expenses: [] }, v, {}).scope, null);
   void r;
 });
+
+test('save rules: an engine budget sized in primary units saves; hostile engine ids are refused', () => {
+  const rules = require('../api/shared/budget-save-rules');
+  const ids = require('../api/shared/identifiers');
+  const p = E.newProject(D, { typeId: 'park', size: 12 });
+  const doc = Object.assign({ units: [], other: [], expenses: [] }, E.toBudgetDoc(E.calculate(p, D), p));
+  doc.engine = p;
+  assert.equal(doc.resSF, 0);
+  assert.equal(rules.engineSized(doc), true);
+  assert.equal(rules.engineSized({ resSF: 0 }), false);
+  assert.equal(ids.budgetIdentifierProblem(doc), null);
+  doc.engine.components[0].id = 'x" onfocus="alert(1)';
+  assert.equal(ids.budgetIdentifierProblem(doc), 'engine.components[0].id');
+});

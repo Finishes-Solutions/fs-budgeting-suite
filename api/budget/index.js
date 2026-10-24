@@ -6,6 +6,7 @@ const { parts, grossIncome } = require('../shared/budget-calc');
 const { features } = require('../shared/schema');
 const FSGuardrails = require('../shared/guardrails');
 const SaveRules = require('../shared/budget-save-rules');
+const { engineSized } = SaveRules;
 const { budgetIdentifierProblem, IDENTIFIER_RULE } = require('../shared/identifiers');
 const P = require('../shared/projects');
 const { updateProject, createProject, deleteProject, linkBudgetToProject,
@@ -222,7 +223,7 @@ module.exports = async function (context, req) {
   // imports — site area is land and has never counted toward it.
   {
     const bldgSF = (Number(doc.resSF) || 0) + (Number(doc.amenSF) || 0);
-    if (!(bldgSF > 0)) {
+    if (!(bldgSF > 0) && !engineSized(doc)) {
       context.res = { status: 422, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'size_required', field: 'resSF',
           message: 'Square footage is required — enter a building size greater than zero before saving.' }) };

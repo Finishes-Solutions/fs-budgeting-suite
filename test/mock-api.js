@@ -1197,7 +1197,7 @@ http.createServer((req, res) => {
       // the analysis imports it, and a sizeless budget produced an analysis
       // that could never calculate. resSF + amenSF is the BUILDING; site area
       // is land and has never counted toward it.
-      if (!((+doc.resSF || 0) + (+doc.amenSF || 0) > 0)) {
+      if (!((+doc.resSF || 0) + (+doc.amenSF || 0) > 0) && !require('../api/shared/budget-save-rules').engineSized(doc)) {
         return json(res, 422, { error: 'size_required', field: 'resSF',
           message: 'Square footage is required — enter a building size greater than zero before saving.' });
       }
