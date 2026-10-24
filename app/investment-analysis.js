@@ -430,10 +430,13 @@
     } catch (e) { A.toast('Could not create the analysis — ' + e.message); }
   }
 
-  async function createFromBudget(projectId, versionNumber, name) {
+  // scope (optional) — {kind:'project'|'component'|'phase', id} picks one slice
+  // of an estimate budget (from-budget.js); a classic budget ignores it.
+  async function createFromBudget(projectId, versionNumber, name, scope) {
     const body = { mode: 'fromBudget', projectId };
     if (versionNumber) body.budgetVersionNumber = versionNumber;
     if (name) body.analysisName = name;
+    if (scope && typeof scope === 'object') body.scope = { kind: String(scope.kind || ''), id: String(scope.id || '') };
     const r = await A.api('investment-analyses', { method: 'POST', body: JSON.stringify(body) });
     A.navigate('#/analysis/' + r.analysisId);
     return r.analysisId;

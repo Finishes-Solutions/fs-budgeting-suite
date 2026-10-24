@@ -69,6 +69,11 @@ try{
 <link rel="stylesheet" href="feedback.css">
 <script src="guardrails.js"></script>
 <script src="impact-fees.js"></script>
+<!-- Budgeting v2: the shipped research bundle, the pure estimate engine, and the estimate workspace. -->
+<script src="research-data.js"></script>
+<script src="budget-engine.js"></script>
+<link rel="stylesheet" href="budget-v2.css">
+<script src="budget-v2.js"></script>
 <script src="dashboard.js"></script>
 <script src="home.js"></script>
 <script src="projects.js"></script>
@@ -1411,7 +1416,7 @@ th.sortable.sorted{color:var(--ink-900)}
 <!-- ================= INPUTS ================= -->
 <div class="page" id="page-input">
   <div class="page-title">
-    <div><button class="btn-back" id="backInputs" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Inputs</h1><div class="sub">Step 1 of 4 — project, unit mix, income, profit &amp; contingency</div></div>
+    <div><button class="btn-back" id="backInputs" onclick="backFromBudget()" aria-label="Back" title="Back">&larr; Back</button><h1>Inputs</h1><div class="sub"><span class="classic-only">Step 1 of 4 — project, unit mix, income, profit &amp; contingency</span><span class="v2-only">Step 1 of 4 — project type, size, location, schedule &amp; land</span></div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" class="no-print">
       <span id="iStatusHost"></span>
       <button class="btn btn-ghost" data-save-btn onclick="saveBudget(true)" title="Save (Cmd/Ctrl+S)">Save</button>
@@ -1442,7 +1447,7 @@ th.sortable.sorted{color:var(--ink-900)}
       <!-- Property type is chosen when the budget is created (+ New Budget →
            template), so it is not re-asked here. Site SF and Site Acreage are
            one measurement in two units: fill either and the other follows. -->
-      <div class="grid g4" style="margin-top:14px">
+      <div class="grid g4 classic-only" style="margin-top:14px">
         <label class="fld" data-gr="resSF"><span class="lab">Residential Buildable SF</span>
           <input type="number" class="num" id="pSF" value="51365" min="0" step="100"
             aria-describedby="pSizeErr" oninput="touch();validateSize()">
@@ -1453,17 +1458,19 @@ th.sortable.sorted{color:var(--ink-900)}
         <label class="fld" data-gr="siteSF"><span class="lab">Total Site SF</span><input type="number" class="num" id="pSiteSF" value="0" min="0" step="1000" oninput="syncSiteFromSF()"></label>
         <label class="fld"><span class="lab">Site Acreage</span><input type="number" class="num" id="pSiteAc" value="0" min="0" step="0.01" oninput="syncSiteFromAcres()"></label>
       </div>
-      <div class="grid g4" style="margin-top:14px" id="siteMetrics">
+      <div class="grid g4 classic-only" style="margin-top:14px" id="siteMetrics">
         <div class="metric"><span class="k">Site Area</span><span class="v" id="mSiteAcres">—</span></div>
         <div class="metric" id="mSiteEffTile"><span class="k">Site Efficiency</span><span class="v" id="mSiteEff">—</span></div>
         <div class="metric"><span class="k">Density</span><span class="v" id="mDensity">—</span></div>
         <div class="metric" id="mBldgEffTile"><span class="k">Building Efficiency</span><span class="v" id="mBldgEff">—</span></div>
       </div>
-      <div class="note" style="margin-top:10px">Residential SF drives the per-SF construction and soft-cost lines. Amenity SF drives the clubhouse/leasing scope at its own (higher) rates — matching how the Finishes model prices the two buildings separately. Total site SF is the land itself; it prices nothing, it measures how hard the site is working. Site SF and Site Acreage are the same measurement — fill in either and the other fills itself (43,560 SF per acre). Leave both at 0 if you do not know them yet.</div>
+      <div class="note classic-only" style="margin-top:10px">Residential SF drives the per-SF construction and soft-cost lines. Amenity SF drives the clubhouse/leasing scope at its own (higher) rates — matching how the Finishes model prices the two buildings separately. Total site SF is the land itself; it prices nothing, it measures how hard the site is working. Site SF and Site Acreage are the same measurement — fill in either and the other fills itself (43,560 SF per acre). Leave both at 0 if you do not know them yet.</div>
     </div>
   </section>
 
-  <section class="card">
+  <div id="v2Inputs" class="v2-only" data-v2></div>
+
+  <section class="card classic-only">
     <div class="card-hd" data-gr="units"><h2>Unit Mix &amp; Rent Revenue</h2>
       <div style="display:flex;gap:10px;align-items:center">
         <span id="sfCheck" class="badge">—</span>
@@ -1493,7 +1500,7 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
   </section>
 
-  <section class="card">
+  <section class="card classic-only">
     <div class="card-hd"><h2>Other Income</h2>
       <div style="display:flex;gap:10px;align-items:center">
         <span class="eyebrow">Net $/mo per count — utilities, tech entity, parking, pet, admin…</span>
@@ -1510,7 +1517,7 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
   </section>
 
-  <section class="card">
+  <section class="card classic-only">
     <div class="card-hd" data-gr="expenses"><h2>Operating Expenses</h2>
       <div style="display:flex;gap:10px;align-items:center">
         <span class="eyebrow">Per-unit or fixed monthly costs netted against income</span>
@@ -1532,7 +1539,7 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
   </section>
 
-  <section class="card">
+  <section class="card classic-only">
     <div class="card-hd"><h2>Profit &amp; Contingency</h2>
       <button class="btn btn-ghost btn-sm no-print" onclick="addCo()">+ Add Company</button></div>
     <div class="card-bd">
@@ -1557,7 +1564,7 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
   </section>
 
-  <section class="card" id="sec-project">
+  <section class="card classic-only" id="sec-project">
     <div class="card-hd" data-gr="projectCosts"><h2>Land &amp; Project Costs</h2><span class="eyebrow">Outside the construction contract — rolls into total project cost</span></div>
     <div class="card-bd">
       <div class="grid g4">
@@ -1687,7 +1694,7 @@ th.sortable.sorted{color:var(--ink-900)}
       same database as real projects — delete this when you are done (<span class="mono">sql/cleanup_test_budgets.sql</span>).</span>
   </div>
 
-  <div class="banner" id="staleBanner" style="display:none">
+  <div class="banner classic-only" id="staleBanner" style="display:none">
     <span>This budget uses pricing library <b id="staleFrom"></b>; current is <b id="staleTo"></b>. Values are frozen until you update.</span>
     <span class="no-print" style="display:flex;gap:8px;align-items:center;flex:none">
       <button class="btn btn-sm btn-dark" onclick="repriceBudget()">Update to Current Pricing</button>
@@ -1696,7 +1703,9 @@ th.sortable.sorted{color:var(--ink-900)}
     </span>
   </div>
 
-  <div class="stats" id="sec-stats">
+  <div id="v2Detail" class="v2-only" data-v2></div>
+
+  <div class="stats classic-only" id="sec-stats">
     <div class="stat"><div class="k">Units</div><div class="v" id="sUnits">0</div></div>
     <div class="stat"><div class="k">Net Income / Yr</div><div class="v" id="sRev">$0</div></div>
     <div class="stat"><div class="k">Contract $/SF</div><div class="v" id="sCSF">—</div></div>
@@ -1704,7 +1713,7 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="stat"><div class="k">Cost / Unit</div><div class="v" id="sCPU">—</div></div>
   </div>
 
-  <section class="card" id="sec-budget">
+  <section class="card classic-only" id="sec-budget">
     <div class="card-hd"><h2>Budget Detail</h2>
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
         <span class="eyebrow legend" id="editLegend" style="color:var(--edit)"><span class="editdot on"></span><span id="editCount">no manual edits</span></span>
@@ -1755,7 +1764,7 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
   </section>
 
-  <section class="card" id="sec-summary">
+  <section class="card classic-only" id="sec-summary">
     <div class="card-hd"><h2>Contract &amp; Project Summary</h2></div>
     <div class="card-bd">
       <div class="grid" style="grid-template-columns:1fr 1.25fr;gap:40px">
@@ -1788,7 +1797,7 @@ th.sortable.sorted{color:var(--ink-900)}
     </div>
   </section>
 
-  <section class="card" id="sec-guardrails">
+  <section class="card classic-only" id="sec-guardrails">
     <div class="card-hd"><h2>Guard Rails</h2>
       <span class="eyebrow" id="grHeadline">Every ratio this budget is judged on</span></div>
     <div class="card-bd">
@@ -2958,13 +2967,15 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="card-bd" style="overflow:auto" id="nbStep1">
       <div class="set-lab">Budget Templates</div>
       <div class="tpl-list">
+        <button class="tpl-row tpl-feature" onclick="pickNewBudget('engine')">
+          <span class="tpl-name">Estimate Any Project Type</span>
+          <span class="tpl-sub">Pick from 90+ researched types — multifamily, hotels, retail, industrial, RV parks, marinas, data centers, mixed-use with phases, or a custom build — and get a detailed, sourced budget in under a minute</span></button>
         <button class="tpl-row" onclick="pickNewBudget('multifamily')">
           <span class="tpl-name">Multifamily</span>
           <span class="tpl-sub">The standard template — unit mix, income, expenses, and every priced line from the current pricing library</span></button>
         <button class="tpl-row" onclick="pickNewBudget('blank')">
           <span class="tpl-name">Blank Budget</span>
           <span class="tpl-sub">Genuinely empty — no units, no income, no scope. Build everything yourself from the CSI catalog</span></button>
-        <div class="tpl-soon" id="nbComingSoon">Industrial, Retail and Mixed-Use templates are coming soon.</div>
       </div>
       <div class="set-lab">Custom Templates</div>
       <div class="tpl-list" id="customTplList"></div>
@@ -3972,7 +3983,9 @@ function nbValidate(show){
 }
 async function pickNewBudget(key){
   nbTemplateKey=key;
-  document.getElementById('nbTplNote').textContent=key==='blank'
+  document.getElementById('nbTplNote').textContent=key==='engine'
+    ?'Starting a project-type estimate — you pick the type and size next, on the Inputs page.'
+    :key==='blank'
     ?'Starting from a blank budget — no units, no income, no scope.'
     :'Starting from the '+(key==='multifamily'?'Multifamily':key)+' template, on the current pricing library.';
   ['nbName','nbAddress'].forEach(id=>{const e=document.getElementById(id);e.value='';delete e.dataset.touched;});
@@ -4040,7 +4053,7 @@ async function nbCreate(){
   btn.disabled=true;btn.textContent='Creating…';
   try{
     await refreshPricing();     // born on the CURRENT library, never a cached one
-    if(nbTemplateKey==='blank')applyNewBudget('blank');
+    if(nbTemplateKey==='blank'||nbTemplateKey==='engine')applyNewBudget(nbTemplateKey);
     else if(!await applyTemplateBudget(nbTemplateKey))return;
     doc.projectId=id;
     doc.name=name;
@@ -5287,6 +5300,7 @@ function migrate(d){ // tolerate older saves
     l.unit=nz(l.unit);l.qty=nz(l.qty);l.baseUnit=nz(l.baseUnit??l.unit);
     if(!safeRowId(l.lineId))l.lineId=newLineId();});
   d.status=d.status||'Draft';
+  if(d.engine&&window.FSBudgetV2)FSBudgetV2.migrate(d);
   return d;
 }
 
@@ -5317,6 +5331,7 @@ function derivedNote(it){
   return '(derived) '+it.code+' is not a manual edit. '+editReason(it)+'.';
 }
 function editReason(it){
+  if(it&&it.derived==='engine')return 'Computed by the estimate engine from the shipped research data';
   if(isDerived(it)){
     const p=doc&&doc.impactFees?FSImpactFees.provenance(feeResult()):'';
     return 'Derived from the impact fee schedule'+(p?' — '+p:'');
@@ -5406,6 +5421,7 @@ function go(p){
   if(p==='version')renderVersionPage();
   if(p==='budget'||p==='input'||p==='csi')recalc();
   if(p==='fees')renderFeesPage();
+  if(!DOC_PAGES.includes(p))document.body.classList.remove('is-engine');
   window.scrollTo(0,0);
 }
 
@@ -6225,6 +6241,13 @@ function applyImpactFees(){
   if(f.scheduleKey&&!(feeDoc&&feeDoc.scheduleKey===f.scheduleKey
      &&(!f.scheduleVersion||feeDoc.__version===f.scheduleVersion)))return;
   const r=feeResult();
+  // An estimate prices fees itself from the national fee survey; a chosen
+  // jurisdiction schedule (or "none") replaces that estimate inside the engine
+  // rather than writing a line the engine would overwrite.
+  if(doc.engine&&window.FSBudgetV2){
+    FSBudgetV2.setImpactFees(doc,f.excluded?0:(r.hasSchedule?r.total:null));
+    return;
+  }
   let line=impactFeeLine();
 
   const ensureLine=()=>{
@@ -6607,7 +6630,9 @@ function newBudget(kind){
 }
 /* The discard prompt has already been answered by the caller. */
 function applyNewBudget(kind){
-  doc=blankDoc(kind);dirty=false;lastSaved=null;selected.clear();
+  doc=blankDoc(kind==='engine'?'blank':kind);dirty=false;lastSaved=null;selected.clear();
+  // A project-type estimate is a blank budget whose lines the v2 engine owns.
+  if(kind==='engine'&&window.FSBudgetV2){FSBudgetV2.reset();FSBudgetV2.startNew(doc);FSBudgetV2.materialize(doc);}
   resetDocState();
   templateEdit=null;renderTemplateBanner();
   enableDocNav();fillForms();resetUndo();go('input');
@@ -6667,6 +6692,7 @@ async function openBudget(pid,page,origin,opt){
     return;
   }
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
+  if(window.FSBudgetV2)FSBudgetV2.reset();
   resetDocState();
   docIsNew=false;                 // it exists: saving it is an update
   loadedId=pid;loadedSnap=JSON.stringify(doc);baseHash=h||null;
@@ -7248,9 +7274,12 @@ function pullForms(){
   doc.projectId=document.getElementById('pId').value.trim().toUpperCase();
   doc.name=document.getElementById('pName').value.trim();
   doc.address=document.getElementById('pAddr').value.trim();
-  doc.resSF=+document.getElementById('pSF').value||0;
-  doc.amenSF=+document.getElementById('pASF').value||0;
-  doc.siteSF=+document.getElementById('pSiteSF').value||0;
+  // An estimate's areas are the engine's output, not form fields (budget-v2.js).
+  if(!doc.engine){
+    doc.resSF=+document.getElementById('pSF').value||0;
+    doc.amenSF=+document.getElementById('pASF').value||0;
+    doc.siteSF=+document.getElementById('pSiteSF').value||0;
+  }
   // Property type is set at creation (template choice); no input re-asks it.
   doc.type=doc.type||'Multifamily';
   // projectKey is not an input — the read-only Project field mirrors it.
@@ -8262,6 +8291,14 @@ function recalc(){
   applyImpactFees();
   withFocus(()=>{renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();renderSiteMetrics();
     if(currentPage==='csi')renderCsi();});
+  paintEngineMode();
+}
+/* An estimate budget (doc.engine) shows the v2 workspace in place of the
+   classic multifamily inputs and SOV grid; everything else is shared. */
+function paintEngineMode(){
+  const on=!!(doc&&doc.engine);
+  document.body.classList.toggle('is-engine',on);
+  if(on&&window.FSBudgetV2)FSBudgetV2.paint();
 }
 
 /* ============ SAVE ============ */
@@ -8298,7 +8335,7 @@ function checkSaveable(){
   if(!ID_RX.test(id))return {ok:false,reason:'id',count,gr};
   if(loadedId&&id!==loadedId)return {ok:false,reason:'id-locked',count,gr};
   if(count)return {ok:false,reason:'guardrails',count,gr};
-  if(!(buildingSF()>0))return {ok:false,reason:'size',count,gr};
+  if(!(buildingSF()>0)&&!(doc.engine&&window.FSBudgetV2&&FSBudgetV2.sized(doc)))return {ok:false,reason:'size',count,gr};
   return {ok:true,reason:'',count,gr};
 }
 /* What a failed save says. Never the raw server text — a 500 can carry a
@@ -9917,6 +9954,16 @@ function endBoot(){
   startBoot();
   setTheme(currentTheme());   // marks the active choice in the dock and menu
   try{
+    if(window.FSBudgetV2)FSBudgetV2.init({
+      getDoc:()=>doc,esc,toast,withFocus,
+      touch:()=>touch(),markDirty:()=>markDirty(),
+      currentPage:()=>currentPage,go:p=>go(p),
+      pendingFocus:k=>{pendingFocusKey=k;},
+      isDirty:()=>dirty||docIsNew,
+      save:async()=>{await saveBudget(true);return !dirty&&!saveError&&!docIsNew;},
+      createAnalysis:(pid,scope)=>window.FSInvestmentUI?FSInvestmentUI.createFromBudget(pid,null,null,scope):null,
+      activity:postActivity
+    });
     if(window.FSInvestmentUI)FSInvestmentUI.init({
       api:invApi,toast,esc,
       displayChildId:displayChildId,
