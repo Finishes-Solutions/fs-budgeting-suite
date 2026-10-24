@@ -141,7 +141,8 @@ module.exports = async function (context, req) {
     // organisation default — the ratio is a share of GOI, and GOI is after
     // vacancy.
     const vacancy = input.vacancy && Number.isFinite(+input.vacancy.value) ? +input.vacancy.value : undefined;
-    const proj = projectFromBudget(bdoc, v, { projectId: row.ProjectId, vacancy });
+    const proj = projectFromBudget(bdoc, v, { projectId: row.ProjectId, vacancy,
+      scope: input.source && input.source.scope });
 
     input.property = Object.assign({}, input.property, {
       name: proj.imported.property.name,
@@ -165,7 +166,7 @@ module.exports = async function (context, req) {
     input.source = Object.assign({}, input.source || {}, {
       projectId: row.ProjectId, budgetVersionId: v.Id, budgetVersionNumber: v.VersionNumber,
       syncedAt: new Date().toISOString(),
-      fieldOrigins: proj.fieldOrigins, support: proj.support,
+      fieldOrigins: proj.fieldOrigins, support: proj.support, scope: proj.scope,
       // originalValues is deliberately NOT rewritten: the From Budget badges
       // compare against the ORIGINAL import forever.
       originalValues: (input.source && input.source.originalValues) || {},

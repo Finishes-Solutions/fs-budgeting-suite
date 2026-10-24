@@ -151,7 +151,7 @@ module.exports = async function (context, req) {
     // — see api/shared/investment/from-budget.js for why that distinction is
     // load-bearing.
     const proj = projectFromBudget(doc, v, { projectId, vacancy: D.vacancy,
-      projectName: v.ProjectName || '', projectAddress: v.ProjectAddress || '' });
+      projectName: v.ProjectName || '', projectAddress: v.ProjectAddress || '', scope: body.scope });
     input = {
       schemaVersion: 1,
       analysisName: typeof body.analysisName === 'string' && body.analysisName.trim()
@@ -163,7 +163,8 @@ module.exports = async function (context, req) {
         importedAt: new Date().toISOString(),
         syncedAt: new Date().toISOString(),
         fieldOrigins: proj.fieldOrigins,
-        support: proj.support
+        support: proj.support,
+        scope: proj.scope
       },
       property: {
         name: proj.imported.property.name,
@@ -180,7 +181,7 @@ module.exports = async function (context, req) {
         growth: { mode: 'constant', value: D.incomeGrowth },
         otherIncome: proj.imported.income.otherIncome
       },
-      vacancy: { mode: 'constant', value: D.vacancy },
+      vacancy: { mode: 'constant', value: proj.imported.vacancy !== undefined && proj.imported.vacancy !== null ? proj.imported.vacancy : D.vacancy },
       expenses: proj.imported.expenses,
       capitalExpenses: [],
       financing: { loans: [] },

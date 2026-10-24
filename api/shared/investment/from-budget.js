@@ -131,7 +131,72 @@ function projectFromBudget(doc, v, opts) {
   };
   if (derived) fieldOrigins['expenses'] = 'Budget operating expenses ÷ gross operating income';
 
-  return { imported, support, fieldOrigins, derived };
+  // A budget built by the v2 estimate engine carries its own per-component and
+  // per-phase pro forma inputs (doc.engineSummary, materialized at save). Those
+  // replace the unit-mix projection above; everything else about the handoff —
+  // the badges, the locks, the re-sync — is unchanged.
+  if (doc && doc.engineSummary && doc.engineSummary.proforma) {
+    return engineProjection(doc, p, imported, support, fieldOrigins, opts);
+  }
+  return { imported, support, fieldOrigins, derived, scope: null };
+}
+
+const SCOPE_KINDS = ['project', 'component', 'phase'];
+const SCOPE_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
+// Normalize a requested scope; anything unrecognised is the whole project.
+function normalizeScope(scope) {
+  if (!scope || typeof scope !== 'object' || !SCOPE_KINDS.includes(scope.kind)) return { kind: 'project', id: 'project' };
+  if (scope.kind === 'project') return { kind: 'project', id: 'project' };
+  return SCOPE_ID.test(String(scope.id || '')) ? { kind: scope.kind, id: String(scope.id) } : { kind: 'project', id: 'project' };
+}
+
+function engineProjection(doc, p, imported, support, fieldOrigins, opts) {
+  const pf = doc.engineSummary.proforma;
+  let scope = normalizeScope(opts.scope);
+  let s = pf.project;
+  if (scope.kind === 'component') s = (pf.components || []).find(c => c.id === scope.id) || null;
+  if (scope.kind === 'phase') s = (pf.phases || []).find(c => c.id === scope.id) || null;
+  if (!s) { scope = { kind: 'project', id: 'project' }; s = pf.project; }
+  // Rule 2 still holds for the whole project: the price is recomputed from the
+  // document. A component or phase price is its materialized share.
+  const price = scope.kind === 'project' ? round2(p.project) : round2(nz(s.totalCost));
+  const label = scope.kind === 'project' ? '' : ' — ' + String(s.name || scope.id).slice(0, 120);
+  imported.property.name = (imported.property.name + label).slice(0, 200);
+  imported.property.size = s.size && s.size.value > 0 ? { unit: s.size.unit, value: s.size.value }
+    : imported.property.size;
+  imported.property.unitCount = s.unitCount || null;
+  imported.acquisition = { basis: { mode: 'purchasePrice', value: price } };
+  imported.income = {
+    year1PotentialIncome: round2(nz(s.income && s.income.year1PotentialIncome)),
+    otherIncome: nz(s.income && s.income.otherIncome) > 0
+      ? [{ label: 'Other income', year1Amount: round2(nz(s.income.otherIncome)), growth: { mode: 'constant', value: D.otherIncomeGrowth } }]
+      : []
+  };
+  const ratio = Number.isFinite(+s.expenseRatio) && s.expenseRatio !== null ? round4(+s.expenseRatio) : null;
+  imported.expenses = ratio !== null
+    ? { mode: 'percentOfGOI', value: ratio, override: false,
+        derivedFrom: { projectId: opts.projectId, scope, source: 'estimate engine revenue inputs' } }
+    : { mode: 'percentOfGOI', value: null, override: false, derivedFrom: null };
+  imported.vacancy = Number.isFinite(+s.vacancy) && s.vacancy !== null ? round4(+s.vacancy) : null;
+  support.scope = scope;
+  support.scopeName = s.name || null;
+  support.projectCost = price;
+  support.buildingSquareFeet = s.sizeSF || null;
+  support.primaryUnits = s.primaryUnits || {};
+  support.engineDataVersion = doc.engineSummary.dataVersion || null;
+  const where = scope.kind === 'project' ? 'Estimate' : 'Estimate ' + scope.kind + ' "' + (s.name || scope.id) + '"';
+  const fo = {
+    'property.name': 'Budget name',
+    'property.address': 'Budget address',
+    'property.size': where + ' building SF (or units)',
+    'property.unitCount': where + ' primary units',
+    'acquisition.basis': where + ' total project cost',
+    'income.year1PotentialIncome': where + ' revenue inputs',
+    'income.otherIncome': where + ' other income'
+  };
+  if (ratio !== null) fo.expenses = where + ' expense ratio';
+  return { imported, support, fieldOrigins: fo, derived: null, scope };
 }
 
 /* A new analysis starts in the month it is created — the overwhelmingly common
@@ -141,4 +206,4 @@ function projectFromBudget(doc, v, opts) {
    user's, not ours. */
 function currentPurchaseMonth() { return new Date().toISOString().slice(0, 7); }
 
-module.exports = { projectFromBudget, deriveExpenseRatio, currentPurchaseMonth, round2, round4 };
+module.exports = { projectFromBudget, deriveExpenseRatio, currentPurchaseMonth, normalizeScope, round2, round4 };

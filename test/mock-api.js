@@ -1389,13 +1389,13 @@ http.createServer((req, res) => {
         const pr = projectKey ? projects.get(projectKey) : null;
         const proj = fromBudget.projectFromBudget(doc, { Id: vn, VersionNumber: vn, Name: v.meta.name },
           { projectId, vacancy: INV_D.vacancy,
-            projectName: pr ? pr.name : '', projectAddress: pr ? pr.address : '' });
+            projectName: pr ? pr.name : '', projectAddress: pr ? pr.address : '', scope: body.scope });
         input = {
           schemaVersion: 1,
           analysisName: (body.analysisName || (v.meta.name + ' — Investment Analysis')).slice(0, 200),
           source: { projectId, budgetVersionId: vn, budgetVersionNumber: vn,
             importedAt: new Date().toISOString(), syncedAt: new Date().toISOString(),
-            fieldOrigins: proj.fieldOrigins, support: proj.support },
+            fieldOrigins: proj.fieldOrigins, support: proj.support, scope: proj.scope },
           property: { name: proj.imported.property.name, address: proj.imported.property.address,
             size: proj.imported.property.size,
             unitCount: proj.imported.property.unitCount, purchaseMonth: fromBudget.currentPurchaseMonth() },
@@ -1405,7 +1405,7 @@ http.createServer((req, res) => {
             year1PotentialIncome: proj.imported.income.year1PotentialIncome,
             growth: { mode: 'constant', value: INV_D.incomeGrowth },
             otherIncome: proj.imported.income.otherIncome },
-          vacancy: { mode: 'constant', value: INV_D.vacancy },
+          vacancy: { mode: 'constant', value: proj.imported.vacancy !== undefined && proj.imported.vacancy !== null ? proj.imported.vacancy : INV_D.vacancy },
           expenses: proj.imported.expenses,
           capitalExpenses: [],
           financing: { loans: [] },
@@ -1490,7 +1490,8 @@ http.createServer((req, res) => {
         rbody.input && typeof rbody.input === 'object' && !Array.isArray(rbody.input) ? rbody.input : live.input));
       const vac = input.vacancy && Number.isFinite(+input.vacancy.value) ? +input.vacancy.value : undefined;
       const proj = fromBudget.projectFromBudget(v.doc,
-        { Id: vn, VersionNumber: vn, Name: v.meta.name }, { projectId: live.projectId, vacancy: vac });
+        { Id: vn, VersionNumber: vn, Name: v.meta.name }, { projectId: live.projectId, vacancy: vac,
+          scope: input.source && input.source.scope });
       input.property = Object.assign({}, input.property, {
         name: proj.imported.property.name, address: proj.imported.property.address,
         size: proj.imported.property.size, unitCount: proj.imported.property.unitCount });
@@ -1505,7 +1506,7 @@ http.createServer((req, res) => {
       input.source = Object.assign({}, input.source || {}, {
         projectId: live.projectId, budgetVersionId: vn, budgetVersionNumber: vn,
         syncedAt: new Date().toISOString(),
-        fieldOrigins: proj.fieldOrigins, support: proj.support,
+        fieldOrigins: proj.fieldOrigins, support: proj.support, scope: proj.scope,
         // originalValues is NOT rewritten — the From Budget badges compare
         // against the original import forever.
         originalValues: (input.source && input.source.originalValues) || {},

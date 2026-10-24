@@ -258,3 +258,31 @@ test('fsdoc export sheets validate against fs-render', () => {
   assert.ok(v.ok !== false && !(v.errors && v.errors.length), JSON.stringify(v.errors || v));
   assert.deepEqual(fsdoc.sheets.map(s => s.key), ['engine-summary', 'engine-components', 'engine-phases', 'engine-detail', 'engine-draws', 'engine-sources']);
 });
+
+test('pro forma handoff: from-budget reads the engine scope for engine budgets', () => {
+  const fb = require('../api/shared/investment/from-budget');
+  const p = mixed(); const r = E.calculate(p, D);
+  p.components[0].revenue = { mode: 'perUnitMonth', rate: 1500, vacancy: 0.06, expenseRatio: 0.38 };
+  const r2 = E.calculate(p, D);
+  const doc = Object.assign({ name: 'Station', address: 'x', units: [], other: [], expenses: [] }, E.toBudgetDoc(r2, p));
+  const v = { Id: 1, VersionNumber: 1, Name: 'Station' };
+  const whole = fb.projectFromBudget(doc, v, { projectId: 'BD-0001' });
+  assert.equal(whole.imported.acquisition.basis.value, Math.round(r2.totals.total * 100) / 100);
+  assert.deepEqual(whole.scope, { kind: 'project', id: 'project' });
+  const comp = fb.projectFromBudget(doc, v, { projectId: 'BD-0001', scope: { kind: 'component', id: 'res' } });
+  const rc = r2.components.find(c => c.id === 'res');
+  near(comp.imported.acquisition.basis.value, rc.totals.total, 0.01);
+  near(comp.imported.income.year1PotentialIncome, 200 * 1500 * 12, 0.01);
+  assert.equal(comp.imported.vacancy, 0.06);
+  assert.equal(comp.imported.expenses.value, 0.38);
+  assert.equal(comp.imported.property.unitCount, 200);
+  assert.match(comp.imported.property.name, /— /);
+  const ph = fb.projectFromBudget(doc, v, { projectId: 'BD-0001', scope: { kind: 'phase', id: 'p2' } });
+  near(ph.imported.acquisition.basis.value, r2.phases.find(x => x.id === 'p2').totals.total, 0.01);
+  // A hostile or unknown scope falls back to the whole project.
+  assert.deepEqual(fb.projectFromBudget(doc, v, { scope: { kind: 'phase', id: '<x>' } }).scope, { kind: 'project', id: 'project' });
+  assert.deepEqual(fb.projectFromBudget(doc, v, { scope: { kind: 'component', id: 'nope' } }).scope, { kind: 'project', id: 'project' });
+  // A classic budget still projects exactly as before (no scope).
+  assert.equal(fb.projectFromBudget({ units: [], lines: [], other: [], expenses: [] }, v, {}).scope, null);
+  void r;
+});
