@@ -1,0 +1,231 @@
+{
+  "schemaVersion": 1,
+  "note": "Units of measure. A research file may only use these ids. 'area' units are interchangeable with SF through factor (SF per unit).",
+  "units": [
+    {
+      "id": "sf",
+      "label": "SF",
+      "plural": "SF",
+      "name": "square foot (gross building area)",
+      "kind": "area"
+    },
+    {
+      "id": "nrsf",
+      "label": "NRSF",
+      "plural": "NRSF",
+      "name": "net rentable square foot",
+      "kind": "area"
+    },
+    {
+      "id": "acre",
+      "label": "acre",
+      "plural": "acres",
+      "name": "acre of site",
+      "kind": "land",
+      "sf": 43560
+    },
+    {
+      "id": "unit",
+      "label": "unit",
+      "plural": "units",
+      "name": "dwelling unit / home",
+      "kind": "count"
+    },
+    {
+      "id": "key",
+      "label": "key",
+      "plural": "keys",
+      "name": "hotel room / rentable key",
+      "kind": "count"
+    },
+    {
+      "id": "bed",
+      "label": "bed",
+      "plural": "beds",
+      "name": "bed",
+      "kind": "count"
+    },
+    {
+      "id": "pad",
+      "label": "pad",
+      "plural": "pads",
+      "name": "pad / lot with hookups",
+      "kind": "count"
+    },
+    {
+      "id": "site",
+      "label": "site",
+      "plural": "sites",
+      "name": "site (RV site, campsite, store site)",
+      "kind": "count"
+    },
+    {
+      "id": "slip",
+      "label": "slip",
+      "plural": "slips",
+      "name": "boat slip",
+      "kind": "count"
+    },
+    {
+      "id": "space",
+      "label": "space",
+      "plural": "spaces",
+      "name": "parking / storage space",
+      "kind": "count"
+    },
+    {
+      "id": "stall",
+      "label": "stall",
+      "plural": "stalls",
+      "name": "stall (horse stall, vendor stall)",
+      "kind": "count"
+    },
+    {
+      "id": "port",
+      "label": "port",
+      "plural": "ports",
+      "name": "EV charging port",
+      "kind": "count"
+    },
+    {
+      "id": "court",
+      "label": "court",
+      "plural": "courts",
+      "name": "sport court",
+      "kind": "count"
+    },
+    {
+      "id": "field",
+      "label": "field",
+      "plural": "fields",
+      "name": "sports field",
+      "kind": "count"
+    },
+    {
+      "id": "bay",
+      "label": "bay",
+      "plural": "bays",
+      "name": "bay (hitting bay, apparatus bay)",
+      "kind": "count"
+    },
+    {
+      "id": "seat",
+      "label": "seat",
+      "plural": "seats",
+      "name": "seat",
+      "kind": "count"
+    },
+    {
+      "id": "lane",
+      "label": "lane",
+      "plural": "lanes",
+      "name": "lane (boat ramp lane)",
+      "kind": "count"
+    },
+    {
+      "id": "door",
+      "label": "door",
+      "plural": "doors",
+      "name": "dock door",
+      "kind": "count"
+    },
+    {
+      "id": "container",
+      "label": "container",
+      "plural": "containers",
+      "name": "shipping container module",
+      "kind": "count"
+    },
+    {
+      "id": "student",
+      "label": "student",
+      "plural": "students",
+      "name": "student seat (capacity)",
+      "kind": "count"
+    },
+    {
+      "id": "child",
+      "label": "child",
+      "plural": "children",
+      "name": "licensed child capacity",
+      "kind": "count"
+    },
+    {
+      "id": "or",
+      "label": "OR",
+      "plural": "ORs",
+      "name": "operating room",
+      "kind": "count"
+    },
+    {
+      "id": "fueling-position",
+      "label": "fueling position",
+      "plural": "fueling positions",
+      "name": "fueling position (one side of a dispenser)",
+      "kind": "count"
+    },
+    {
+      "id": "kw",
+      "label": "kW",
+      "plural": "kW",
+      "name": "kilowatt (critical IT load or capacity)",
+      "kind": "power"
+    },
+    {
+      "id": "mw",
+      "label": "MW",
+      "plural": "MW",
+      "name": "megawatt (MWdc for PV, MW IT for data centers)",
+      "kind": "power"
+    },
+    {
+      "id": "mwh",
+      "label": "MWh",
+      "plural": "MWh",
+      "name": "megawatt-hour of storage",
+      "kind": "energy"
+    },
+    {
+      "id": "kwh",
+      "label": "kWh",
+      "plural": "kWh",
+      "name": "kilowatt-hour of storage",
+      "kind": "energy"
+    },
+    {
+      "id": "lf",
+      "label": "LF",
+      "plural": "LF",
+      "name": "linear foot",
+      "kind": "length"
+    },
+    {
+      "id": "sy",
+      "label": "SY",
+      "plural": "SY",
+      "name": "square yard",
+      "kind": "area"
+    },
+    {
+      "id": "cy",
+      "label": "CY",
+      "plural": "CY",
+      "name": "cubic yard",
+      "kind": "volume"
+    },
+    {
+      "id": "ea",
+      "label": "ea",
+      "plural": "ea",
+      "name": "each",
+      "kind": "count"
+    },
+    {
+      "id": "ls",
+      "label": "LS",
+      "plural": "LS",
+      "name": "lump sum",
+      "kind": "count"
+    }
+  ]
+}

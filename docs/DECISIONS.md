@@ -1,0 +1,15 @@
+# Decisions — budgeting-v2 upgrade
+
+One line per decision: what was chosen and why. Newest at the bottom.
+
+| # | Date | Decision | Reason |
+|---|---|---|---|
+| D1 | 2026-10-24 | The "pro forma engine" is the investment-analysis engine `api/shared/investment/` (`calculateInvestmentAnalysis`, `before-tax-1.1.0`). Goldens freeze its full output for 7 deals. | It is the only pro forma in the suite; the budget's own income/opex math is part of the budget engine. |
+| D2 | 2026-10-24 | Goldens were captured on staging @ 63ef1a4 before any merge or code change, then verified after merging `feature`. | "Before changing any code" — merging a branch changes code. |
+| D3 | 2026-10-24 | Merged `origin/feature` (staging + site-wide pass #19 + the vigilant-cerf assistant/security work) into the upgrade branch. | It is the newest line, 0 commits behind staging, includes real fixes (stored XSS via row ids, save integrity, expense-ratio derivation) and the input-driven defaults work; `matthew/adoring-gauss` and `matthew/vigilant-cerf` are fully contained in it. |
+| D4 | 2026-10-24 | Did NOT merge `claude/budgeting-suite-expansion-lwuc2e` (entities, financials, approval, contracts). | Different product scope, adds three schema migrations against the shared production database, was never merged into `feature` by the owner, and is 3 commits behind staging; bringing it to staging is the owner's call. Listed in PROGRESS "Things I need to do". |
+| D5 | 2026-10-24 | Research lives in `data/research/**.json` (sourced evidence + defaults), validated by `tools/validate-research.js`, compiled by `tools/build-research-data.js` into `app/research-data.js`. | `app/` is the only deployed folder and there is no build step at deploy time; a committed generated bundle (test-enforced fresh) keeps "no build step" true while keeping research human-editable. |
+| D6 | 2026-10-24 | Every money value carries its dollar year and region; one script escalates to 2026 and converts to a national baseline using `_indices/escalation.json` and `_indices/regional.json`. | One documented, repeatable normalization instead of each researcher adjusting by hand. |
+| D7 | 2026-10-24 | Research was split across 15 parallel sub-agents: 11 by project category (residential and commercial split in two), plus indices/financing, soft-cost/fee norms, and two building-block researchers. | Category agents as requested; shared norms and blocks are used by every type, so they needed owners. |
+| D8 | 2026-10-24 | "Baseline hard cost" is defined as the contractor price for a typical project incl. general conditions, OH&P and typical on-site work; excludes land, soft, FF&E, off-sites, impact/tap fees, financing. | Sources quote different scopes; one definition makes types comparable and lets the engine add the excluded pieces as their own lines without double counting. |
+| D9 | 2026-10-24 | CSI MasterFormat divisions are the split vocabulary for every type, including site-centric ones (31–35, 48 cover civil, marine and power). | One vocabulary reconciles with the existing CSI schedule and the lender SOV. |
