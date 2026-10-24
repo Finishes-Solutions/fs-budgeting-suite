@@ -301,7 +301,9 @@
     h += '<div class="v2-modes" role="tablist" aria-label="Estimate mode">'
       + [['quick', 'Quick estimate'], ['mixed', 'Mixed-use & phases'], ['custom', 'Custom builder']].map(function (m) {
         return '<button type="button" role="tab" aria-selected="' + (mode === m[0]) + '" class="v2-mode' + (mode === m[0] ? ' on' : '')
-          + '" data-act="mode" data-mode="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>';
+          + '" data-act="mode" data-mode="' + m[0] + '">' + m[1] + '</button>'; }).join('')
+      + '<span class="v2-modes-end">' + btn('save-file', 'Download project file', ' title="Save these estimate inputs as a .json file"')
+      + btn('open-file', 'Open project file', ' title="Replace these inputs with a saved .json project file"') + '</span></div>';
 
     if (!p.components.length && mode !== 'custom') {
       h += '<section class="card"><div class="card-hd"><h2>What are you building?</h2><span class="eyebrow">Step 1 — pick a type</span></div>'
@@ -1055,6 +1057,8 @@
         return changed();
       case 'del-scenario': p.scenarios = p.scenarios.filter(function (s) { return s.id !== id; }); return changed();
       case 'update-research': return changed();
+      case 'save-file': return saveFile();
+      case 'open-file': return openFile();
     }
   }
 
@@ -1092,6 +1096,43 @@
     try {
       await A.createAnalysis(doc.projectId, sc);
     } catch (e) { A.toast('Could not create the pro forma — ' + e.message); }
+  }
+
+  /* A project file is doc.engine on its own — the estimate inputs, portable
+     between budgets or kept offline. Opening one replaces this budget's
+     estimate inputs (after a confirm) and goes through migrate() like any
+     saved document, so a hostile file cannot smuggle unsafe ids. */
+  function saveFile() {
+    var doc = A.getDoc();
+    var body = JSON.stringify({ kind: 'fs-budgeting-estimate', version: 1, savedAt: new Date().toISOString(),
+      name: doc.name || '', engine: doc.engine }, null, 2);
+    download(new Blob([body], { type: 'application/json' }), baseName().replace(/_estimate$/, '') + '.estimate.json');
+  }
+  function openFile() {
+    var inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.json,application/json';
+    inp.onchange = function () {
+      var f = inp.files && inp.files[0];
+      if (!f) return;
+      if (f.size > 5e6) { A.toast('That file is too large to be a project file.'); return; }
+      var rd = new FileReader();
+      rd.onload = function () {
+        var j = null;
+        try { j = JSON.parse(rd.result); } catch (e) { j = null; }
+        if (!j || j.kind !== 'fs-budgeting-estimate' || !j.engine || typeof j.engine !== 'object') {
+          A.toast('Not a Budgeting Suite estimate file.'); return;
+        }
+        if (!window.confirm('Replace this budget’s estimate inputs with “' + String(j.name || f.name).slice(0, 80) + '”?')) return;
+        var doc = A.getDoc();
+        doc.engine = j.engine;
+        migrate(doc);
+        st.result = null;
+        changed();
+        A.toast('Project file opened — Save to keep it.');
+      };
+      rd.readAsText(f);
+    };
+    inp.click();
   }
 
   /* Scenario controls are friendlier than raw patches: a few named fields
@@ -1173,6 +1214,14 @@
   function paint() {
     var doc = A ? A.getDoc() : null;
     if (!isEngine(doc)) return;
+    if (!E || !D || !D.types) {
+      ['v2Inputs', 'v2Detail'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.innerHTML = '<section class="card"><div class="card-bd v2-emptystate" role="alert"><h2>The estimate data did not load</h2>'
+          + '<p>The research data or the estimate engine is missing from this page. Reload; if it keeps happening, report a bug — your saved budget is unaffected.</p></div></section>';
+      });
+      return;
+    }
     if (painting) { pendingPaint = true; return; }
     painting = true;
     var page = A.currentPage();

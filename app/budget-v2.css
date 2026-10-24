@@ -163,3 +163,5 @@ body:not(.is-engine) .v2-only{display:none!important}
 }
 .v2-src-computed{background:var(--ink-100);color:var(--ink-700);border:1px solid var(--ink-200)}
 .v2-line.v2-d1 td:first-child{padding-left:44px}
+.v2-modes-end{margin-left:auto;display:flex;gap:6px;align-items:center;padding-bottom:6px}
+@media(max-width:760px){.v2-modes-end{margin-left:0;width:100%}}
