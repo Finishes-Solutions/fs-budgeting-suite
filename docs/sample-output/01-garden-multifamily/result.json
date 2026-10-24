@@ -2,35 +2,35 @@
   "totals": {
     "hard": 41361566.46,
     "ffe": 316780.38,
-    "contingency": 4773082.59,
-    "soft": 12740263.83,
-    "financing": 2534307.05,
+    "contingency": 4754246.1,
+    "soft": 12347711.25,
+    "financing": 2509494.91,
     "land": 4928800,
-    "total": 66654800.31,
+    "total": 66218599.1,
     "hardContingency": 4255399.58,
-    "softContingency": 517683.01,
-    "fees": 3247841.28,
-    "developerFee": 2276603.59,
+    "softContingency": 498846.52,
+    "fees": 2871111.36,
+    "developerFee": 2260780.93,
     "hardAll": 45933746.42,
-    "softAll": 15792253.89,
-    "cents": 6665480031
+    "softAll": 15356052.68,
+    "cents": 6621859910
   },
   "metrics": {
     "sf": 252000,
     "acres": 10.909090909090908,
     "primaryUnits": 240,
     "unit": "unit",
-    "perSF": 264.50317583333333,
-    "perAcre": 6110023.361750001,
-    "perPrimaryUnit": 277728.334625,
+    "perSF": 262.77221865079366,
+    "perAcre": 6070038.2508333335,
+    "perPrimaryUnit": 275910.82958333334,
     "byUnit": {
       "unit": 240
     }
   },
   "split": {
-    "hard": 0.6891288580322805,
-    "soft": 0.23692598007274715,
-    "land": 0.0739451618949723
+    "hard": 0.6936683506492363,
+    "soft": 0.23189938912495053,
+    "land": 0.0744322602258132
   },
   "components": [
     {
@@ -42,32 +42,32 @@
       "totals": {
         "hard": 41361566.46,
         "ffe": 316780.38,
-        "contingency": 4773082.59,
-        "soft": 12740263.83,
-        "financing": 2534307.05,
+        "contingency": 4754246.1,
+        "soft": 12347711.25,
+        "financing": 2509494.91,
         "land": 4928800,
-        "total": 66654800.31,
+        "total": 66218599.1,
         "hardContingency": 4255399.58,
-        "softContingency": 517683.01,
-        "fees": 3247841.28,
-        "developerFee": 2276603.59,
+        "softContingency": 498846.52,
+        "fees": 2871111.36,
+        "developerFee": 2260780.93,
         "hardAll": 45933746.42,
-        "softAll": 15792253.89,
-        "cents": 6665480031
+        "softAll": 15356052.68,
+        "cents": 6621859910
       },
       "metrics": {
         "sf": 252000,
         "acres": 10.909090909090908,
         "primaryUnits": 240,
         "unit": "unit",
-        "perSF": 264.50317583333333,
-        "perAcre": 6110023.361750001,
-        "perPrimaryUnit": 277728.334625
+        "perSF": 262.77221865079366,
+        "perAcre": 6070038.2508333335,
+        "perPrimaryUnit": 275910.82958333334
       },
       "range": {
         "min": 150000,
         "max": 420000,
-        "value": 292281.3597722617,
+        "value": 290215.8852209736,
         "status": "within",
         "unit": "unit"
       }
@@ -84,29 +84,29 @@
       "totals": {
         "hard": 41361566.46,
         "ffe": 316780.38,
-        "contingency": 4773082.59,
-        "soft": 12740263.83,
-        "financing": 2534307.05,
+        "contingency": 4754246.1,
+        "soft": 12347711.25,
+        "financing": 2509494.91,
         "land": 4928800,
-        "total": 66654800.31,
+        "total": 66218599.1,
         "hardContingency": 4255399.58,
-        "softContingency": 517683.01,
-        "fees": 3247841.28,
-        "developerFee": 2276603.59,
+        "softContingency": 498846.52,
+        "fees": 2871111.36,
+        "developerFee": 2260780.93,
         "hardAll": 45933746.42,
-        "softAll": 15792253.89,
-        "cents": 6665480031
+        "softAll": 15356052.68,
+        "cents": 6621859910
       },
       "financing": {
         "enabled": true,
         "ltc": 0.6,
         "rate": 0.07,
         "feePct": 0.01,
-        "loan": 39992880.19,
-        "equity": 26661920.12,
-        "interest": 2134378.25,
-        "fee": 399928.8,
-        "iterations": 7
+        "loan": 39731159.46,
+        "equity": 26487439.64,
+        "interest": 2112183.32,
+        "fee": 397311.59,
+        "iterations": 8
       }
     }
   ],
@@ -118,7 +118,7 @@
         "kind": "project",
         "id": "project"
       },
-      "purchasePrice": 66654800.31,
+      "purchasePrice": 66218599.1,
       "year1PotentialIncome": 5184000,
       "size": {
         "unit": "squareFeet",
@@ -128,9 +128,9 @@
       "error": null,
       "summary": {
         "year1NOI": 3079776,
-        "yieldOnCost": 0.04620486425098406,
-        "equityIRR": -0.0467976372113921,
-        "equityMultiple": 0.7806214994764685,
+        "yieldOnCost": 0.046509229157039055,
+        "equityIRR": -0.042020093473425314,
+        "equityMultiple": 0.8015063807295657,
         "warnings": [
           "Year 1 cash flow before taxes is negative.",
           "Year 2 cash flow before taxes is negative.",
@@ -155,32 +155,32 @@
         {
           "year": 1,
           "NOI": 3079776,
-          "cashFlow": -430676.28358570347,
-          "equityIRR": -0.6057368705495801
+          "cashFlow": -407703.2414848227,
+          "equityIRR": -0.5903544120385642
         },
         {
           "year": 2,
           "NOI": 3172169.28,
-          "cashFlow": -338283.0035857037,
-          "equityIRR": -0.3044209812507864
+          "cashFlow": -315309.9614848229,
+          "equityIRR": -0.2928451168822346
         },
         {
           "year": 3,
           "NOI": 3267334.3584,
-          "cashFlow": -243117.92518570367,
-          "equityIRR": -0.16679625391212322
+          "cashFlow": -220144.8830848229,
+          "equityIRR": -0.1585725299066838
         },
         {
           "year": 4,
           "NOI": 3365354.389152,
-          "cashFlow": -145097.89443370327,
-          "equityIRR": -0.09218323583413604
+          "cashFlow": -122124.85233282251,
+          "equityIRR": -0.08605538022093155
         },
         {
           "year": 5,
           "NOI": 3466315.02082656,
-          "cashFlow": -44137.26275914349,
-          "equityIRR": -0.0467976372113921
+          "cashFlow": -21164.220658262726,
+          "equityIRR": -0.042020093473425314
         }
       ]
     }
