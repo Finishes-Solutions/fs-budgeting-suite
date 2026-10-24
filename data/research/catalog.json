@@ -1,120 +1,1379 @@
 {
   "schemaVersion": 1,
   "baseYear": 2026,
-  "note": "The list of project types. Each id has a research file at data/research/<category>/<id>.json. primaryUnit is the unit the baseline price is quoted in; altUnits are other units the engine reports. Unit ids are defined in data/research/units.json.",
+  "note": "The list of project types. Each id has a research file at data/research/<category>/<id>.json. primaryUnit is the unit the baseline price is quoted in; altUnits are other units the engine reports. Unit ids are defined in data/research/units.json. template.durationClass maps a type to a Census construction-duration category (_common/schedule.json); template.feeUse maps it to an impact-fee land use (_common/fees.json); feeUnitsPerPrimaryUnit converts beds to dwelling units for fees (derived: ~3.3 beds per student unit, ~4 per co-living unit, ~2 per assisted-living unit \u2014 verify locally). Public civic buildings, existing-building work and site-only infrastructure are 'none' (commonly exempt or not new floor area). template.constructionType / stories are the assumed basis of the researched baseline price; changing them applies the _common/adjustments.json factors relative to this default (types without a default do not offer the adjustment). template.feeDwellingsPerProject fixes the dwelling count for per-unit fees when the type is priced per SF (a custom home is one dwelling).",
   "categories": [
-    { "id": "residential", "name": "Residential" },
-    { "id": "specialty-residential", "name": "Specialty residential & lodging" },
-    { "id": "hospitality", "name": "Hospitality" },
-    { "id": "commercial", "name": "Commercial" },
-    { "id": "entertainment", "name": "Specialty commercial & entertainment" },
-    { "id": "industrial", "name": "Industrial" },
-    { "id": "agriculture-energy", "name": "Agriculture & energy" },
-    { "id": "civic", "name": "Civic & institutional" },
-    { "id": "marine-other", "name": "Marine, parking & other" }
+    {
+      "id": "residential",
+      "name": "Residential"
+    },
+    {
+      "id": "specialty-residential",
+      "name": "Specialty residential & lodging"
+    },
+    {
+      "id": "hospitality",
+      "name": "Hospitality"
+    },
+    {
+      "id": "commercial",
+      "name": "Commercial"
+    },
+    {
+      "id": "entertainment",
+      "name": "Specialty commercial & entertainment"
+    },
+    {
+      "id": "industrial",
+      "name": "Industrial"
+    },
+    {
+      "id": "agriculture-energy",
+      "name": "Agriculture & energy"
+    },
+    {
+      "id": "civic",
+      "name": "Civic & institutional"
+    },
+    {
+      "id": "marine-other",
+      "name": "Marine, parking & other"
+    }
   ],
   "types": [
-    { "id": "single-family", "category": "residential", "name": "Single-family home (production)", "primaryUnit": "unit", "altUnits": ["sf"], "description": "Production/spec detached homes built by a builder on finished or raw lots." },
-    { "id": "custom-home", "category": "residential", "name": "Custom home", "primaryUnit": "sf", "altUnits": ["unit"], "description": "One-off architect-designed detached home; priced per conditioned SF." },
-    { "id": "townhomes", "category": "residential", "name": "Townhomes", "primaryUnit": "unit", "altUnits": ["sf"], "description": "Attached for-sale or for-rent townhouses, 2–3 stories, wood frame." },
-    { "id": "duplex-fourplex", "category": "residential", "name": "Duplex / triplex / fourplex", "primaryUnit": "unit", "altUnits": ["sf"], "description": "Small 2–4 unit missing-middle residential buildings." },
-    { "id": "adu", "category": "residential", "name": "Accessory dwelling unit (ADU)", "primaryUnit": "unit", "altUnits": ["sf"], "description": "Detached or attached backyard unit on an existing residential lot." },
-    { "id": "garden-multifamily", "category": "residential", "name": "Garden multifamily", "primaryUnit": "unit", "altUnits": ["sf"], "description": "2–4 story walk-up apartments, Type V wood frame, surface parking." },
-    { "id": "wrap-midrise", "category": "residential", "name": "Wrap / mid-rise multifamily", "primaryUnit": "unit", "altUnits": ["sf"], "description": "4–5 story wood-frame apartments wrapping a structured parking garage." },
-    { "id": "podium-multifamily", "category": "residential", "name": "Podium multifamily (5-over-1/2)", "primaryUnit": "unit", "altUnits": ["sf"], "description": "Wood-frame residential floors over a concrete podium (retail/parking below)." },
-    { "id": "highrise-multifamily", "category": "residential", "name": "High-rise multifamily", "primaryUnit": "unit", "altUnits": ["sf"], "description": "Concrete or steel residential tower, typically 12+ stories, structured parking." },
-    { "id": "btr-detached", "category": "residential", "name": "Build-to-rent — detached", "primaryUnit": "unit", "altUnits": ["sf"], "description": "Purpose-built single-family rental community with detached homes and amenities." },
-    { "id": "btr-attached", "category": "residential", "name": "Build-to-rent — attached/horizontal", "primaryUnit": "unit", "altUnits": ["sf"], "description": "Horizontal apartments / attached cottages and townhome rentals." },
-    { "id": "student-housing", "category": "residential", "name": "Student housing", "primaryUnit": "bed", "altUnits": ["unit", "sf"], "description": "Purpose-built off-campus student housing, leased by the bed." },
-    { "id": "senior-independent-living", "category": "residential", "name": "Senior / independent living", "primaryUnit": "unit", "altUnits": ["sf"], "description": "Age-restricted independent living with common dining and amenities." },
-    { "id": "assisted-living-memory-care", "category": "residential", "name": "Assisted living / memory care", "primaryUnit": "bed", "altUnits": ["unit", "sf"], "description": "Licensed assisted living and secured memory care with commercial kitchen and care spaces." },
-    { "id": "affordable-lihtc", "category": "residential", "name": "Affordable / LIHTC multifamily", "primaryUnit": "unit", "altUnits": ["sf"], "description": "Income-restricted rental financed with low-income housing tax credits." },
-    { "id": "manufactured-home-community", "category": "residential", "name": "Manufactured / mobile home community", "primaryUnit": "pad", "altUnits": ["acre"], "description": "Land-lease community of manufactured-home pads with utilities and roads; homes optional." },
-    { "id": "modular-prefab-housing", "category": "residential", "name": "Modular / prefab housing", "primaryUnit": "unit", "altUnits": ["sf"], "description": "Factory-built volumetric modular or panelized residential, set on site." },
-    { "id": "co-living", "category": "residential", "name": "Co-living", "primaryUnit": "bed", "altUnits": ["unit", "sf"], "description": "Private bedrooms with shared kitchens and lounges, leased by the room." },
-
-    { "id": "tiny-home-community", "category": "specialty-residential", "name": "Tiny home community", "primaryUnit": "pad", "altUnits": ["acre", "unit"], "description": "Pads with utility hookups for tiny homes (on wheels or foundation), shared amenities." },
-    { "id": "cottage-court", "category": "specialty-residential", "name": "Cottage court / pocket neighborhood", "primaryUnit": "unit", "altUnits": ["sf", "acre"], "description": "Small detached cottages clustered around a shared green." },
-    { "id": "rv-park-resort", "category": "specialty-residential", "name": "RV park / resort", "primaryUnit": "site", "altUnits": ["acre"], "description": "Full-hookup RV sites (water, sewer, 30/50A power) with bathhouse, laundry and amenities." },
-    { "id": "campground", "category": "specialty-residential", "name": "Campground", "primaryUnit": "site", "altUnits": ["acre"], "description": "Tent and partial-hookup campsites with comfort stations." },
-    { "id": "glamping-resort", "category": "specialty-residential", "name": "Glamping resort", "primaryUnit": "unit", "altUnits": ["acre"], "description": "Safari tents, domes or yurts on platforms with utilities and a central lodge." },
-    { "id": "cabin-str-resort", "category": "specialty-residential", "name": "Cabin / short-term rental resort", "primaryUnit": "key", "altUnits": ["sf", "acre"], "description": "Clusters of furnished cabins operated as short-term rentals." },
-    { "id": "container-home-community", "category": "specialty-residential", "name": "Container home community", "primaryUnit": "unit", "altUnits": ["sf", "acre"], "description": "Homes built from converted shipping containers on prepared pads." },
-
-    { "id": "hotel-select-service", "category": "hospitality", "name": "Select-service hotel", "primaryUnit": "key", "altUnits": ["sf"], "description": "Branded upscale/upper-midscale select-service hotel (e.g., Hampton/Courtyard class)." },
-    { "id": "hotel-full-service", "category": "hospitality", "name": "Full-service hotel", "primaryUnit": "key", "altUnits": ["sf"], "description": "Full-service hotel with restaurants, meeting space and banquet." },
-    { "id": "hotel-extended-stay", "category": "hospitality", "name": "Extended-stay hotel", "primaryUnit": "key", "altUnits": ["sf"], "description": "Suite hotel with kitchenettes, limited public space." },
-    { "id": "hotel-boutique", "category": "hospitality", "name": "Boutique hotel", "primaryUnit": "key", "altUnits": ["sf"], "description": "Independent or lifestyle hotel with design-forward finishes and F&B." },
-    { "id": "motel-conversion", "category": "hospitality", "name": "Motel conversion / renovation", "primaryUnit": "key", "altUnits": ["sf"], "description": "Renovation of an existing motel (rooms, exterior, systems) — often to boutique or housing." },
-    { "id": "resort", "category": "hospitality", "name": "Resort", "primaryUnit": "key", "altUnits": ["sf", "acre"], "description": "Destination resort with extensive amenities, pools, spa and F&B." },
-
-    { "id": "office-core-shell", "category": "commercial", "name": "Office — core & shell", "primaryUnit": "sf", "altUnits": [], "description": "Multi-tenant office building shell, lobbies, core and base MEP; TI excluded." },
-    { "id": "office-ti", "category": "commercial", "name": "Office tenant improvement", "primaryUnit": "sf", "altUnits": [], "description": "Interior build-out of office space within an existing shell." },
-    { "id": "medical-office", "category": "commercial", "name": "Medical office building", "primaryUnit": "sf", "altUnits": [], "description": "Outpatient medical office with heavier MEP and exam-room build-out." },
-    { "id": "ambulatory-surgery-center", "category": "commercial", "name": "Outpatient / ambulatory surgery center", "primaryUnit": "sf", "altUnits": ["or"], "description": "Licensed ASC with operating rooms, pre/post-op and medical gases." },
-    { "id": "urgent-care", "category": "commercial", "name": "Urgent care clinic", "primaryUnit": "sf", "altUnits": [], "description": "Freestanding walk-in clinic with exam rooms and imaging." },
-    { "id": "life-science-lab", "category": "commercial", "name": "Life science / lab", "primaryUnit": "sf", "altUnits": [], "description": "Lab-ready building with high floor-to-floor, heavy HVAC and lab infrastructure." },
-    { "id": "retail-strip", "category": "commercial", "name": "Retail strip center", "primaryUnit": "sf", "altUnits": ["acre"], "description": "Neighborhood strip shopping center shell with surface parking." },
-    { "id": "retail-pad-qsr", "category": "commercial", "name": "Retail pad / QSR", "primaryUnit": "sf", "altUnits": ["site"], "description": "Freestanding quick-service restaurant on an outparcel, with drive-thru." },
-    { "id": "drive-thru-coffee", "category": "commercial", "name": "Drive-thru coffee", "primaryUnit": "site", "altUnits": ["sf"], "description": "Small-format drive-thru/walk-up coffee kiosk with double drive lanes." },
-    { "id": "restaurant-full-service", "category": "commercial", "name": "Restaurant — full service", "primaryUnit": "sf", "altUnits": ["seat"], "description": "Sit-down restaurant with full commercial kitchen and bar." },
-    { "id": "bar-brewery-taproom", "category": "commercial", "name": "Bar / brewery / taproom", "primaryUnit": "sf", "altUnits": [], "description": "Taproom with brewhouse equipment, cold storage and patio." },
-    { "id": "winery-tasting-room", "category": "commercial", "name": "Winery / tasting room", "primaryUnit": "sf", "altUnits": [], "description": "Tasting room with production/barrel space and event lawn." },
-    { "id": "grocery-anchored-center", "category": "commercial", "name": "Grocery-anchored shopping center", "primaryUnit": "sf", "altUnits": ["acre"], "description": "Neighborhood center anchored by a supermarket with in-line shops." },
-    { "id": "big-box-retail", "category": "commercial", "name": "Big box retail", "primaryUnit": "sf", "altUnits": ["acre"], "description": "Single-tenant large-format store (50k–200k SF)." },
-    { "id": "auto-dealership", "category": "commercial", "name": "Auto dealership", "primaryUnit": "sf", "altUnits": ["acre"], "description": "Showroom, service bays and large paved display lots." },
-    { "id": "car-wash", "category": "commercial", "name": "Car wash (express tunnel)", "primaryUnit": "site", "altUnits": ["sf"], "description": "Express exterior tunnel wash with vacuum stalls and equipment package." },
-    { "id": "gas-station-c-store", "category": "commercial", "name": "Gas station / convenience store", "primaryUnit": "sf", "altUnits": ["fueling-position"], "description": "C-store with fuel canopy, dispensers and underground storage tanks." },
-    { "id": "bank-branch", "category": "commercial", "name": "Bank branch", "primaryUnit": "sf", "altUnits": [], "description": "Freestanding branch with drive-up lanes and vault." },
-
-    { "id": "food-truck-park", "category": "entertainment", "name": "Food truck park", "primaryUnit": "pad", "altUnits": ["acre"], "description": "Truck pads with utility pedestals, grease handling, restrooms, seating and shade." },
-    { "id": "container-park", "category": "entertainment", "name": "Shipping container park", "primaryUnit": "container", "altUnits": ["sf", "acre"], "description": "Retail/F&B units built from shipping containers around shared open space." },
-    { "id": "food-hall", "category": "entertainment", "name": "Food hall", "primaryUnit": "sf", "altUnits": ["stall"], "description": "Multi-vendor food hall with shared seating, bar and back-of-house." },
-    { "id": "event-venue", "category": "entertainment", "name": "Event / wedding venue", "primaryUnit": "sf", "altUnits": ["seat", "acre"], "description": "Banquet/event hall with catering kitchen and grounds." },
-    { "id": "entertainment-venue", "category": "entertainment", "name": "Entertainment venue (bowling, golf sim, etc.)", "primaryUnit": "sf", "altUnits": [], "description": "Eatertainment: bowling, golf simulators, games and F&B." },
-    { "id": "pickleball-racquet-club", "category": "entertainment", "name": "Pickleball / racquet club", "primaryUnit": "court", "altUnits": ["sf"], "description": "Indoor or covered courts with clubhouse and F&B." },
-    { "id": "sports-complex", "category": "entertainment", "name": "Indoor / outdoor sports complex", "primaryUnit": "sf", "altUnits": ["field", "acre"], "description": "Fieldhouse with courts plus outdoor turf fields and lighting." },
-    { "id": "fitness-center", "category": "entertainment", "name": "Fitness center / gym", "primaryUnit": "sf", "altUnits": [], "description": "Health club with locker rooms and equipment package." },
-    { "id": "family-entertainment-center", "category": "entertainment", "name": "Trampoline / family entertainment center", "primaryUnit": "sf", "altUnits": [], "description": "Indoor FEC with trampolines, play structures and attractions." },
-    { "id": "golf-driving-range", "category": "entertainment", "name": "Golf driving range", "primaryUnit": "bay", "altUnits": ["acre"], "description": "Hitting bays (covered or multi-level) with netting, lighting and target field." },
-    { "id": "amphitheater", "category": "entertainment", "name": "Amphitheater", "primaryUnit": "seat", "altUnits": ["acre"], "description": "Outdoor performance venue with stage, shell and lawn/fixed seating." },
-    { "id": "farmers-market-pavilion", "category": "entertainment", "name": "Farmers market / open-air pavilion", "primaryUnit": "sf", "altUnits": ["stall"], "description": "Covered open-air pavilion structure with power, water and restrooms." },
-
-    { "id": "warehouse-distribution", "category": "industrial", "name": "Warehouse / distribution", "primaryUnit": "sf", "altUnits": ["acre"], "description": "Bulk tilt-wall distribution, 32–40' clear, cross-dock or rear-load." },
-    { "id": "last-mile-industrial", "category": "industrial", "name": "Last-mile / infill industrial", "primaryUnit": "sf", "altUnits": ["acre"], "description": "Smaller infill delivery stations with high trailer/van parking ratios." },
-    { "id": "flex-industrial", "category": "industrial", "name": "Flex / light industrial", "primaryUnit": "sf", "altUnits": [], "description": "Small-bay flex with office finish, grade and dock doors." },
-    { "id": "cold-storage", "category": "industrial", "name": "Cold storage", "primaryUnit": "sf", "altUnits": [], "description": "Refrigerated/freezer warehouse with insulated envelope and refrigeration." },
-    { "id": "self-storage-climate", "category": "industrial", "name": "Self-storage — climate controlled", "primaryUnit": "nrsf", "altUnits": ["sf"], "description": "Multi-story climate-controlled interior-access storage." },
-    { "id": "self-storage-drive-up", "category": "industrial", "name": "Self-storage — drive-up", "primaryUnit": "nrsf", "altUnits": ["sf", "acre"], "description": "Single-story exterior-access storage buildings." },
-    { "id": "boat-rv-storage", "category": "industrial", "name": "Boat / RV storage", "primaryUnit": "space", "altUnits": ["acre"], "description": "Covered canopy and enclosed boat/RV storage with paved drive aisles." },
-    { "id": "manufacturing", "category": "industrial", "name": "Manufacturing plant", "primaryUnit": "sf", "altUnits": [], "description": "Light/medium manufacturing building with process utilities (excl. process equipment)." },
-    { "id": "data-center", "category": "industrial", "name": "Data center", "primaryUnit": "kw", "altUnits": ["sf", "mw"], "description": "Colocation/hyperscale data center priced per kW of IT load (shell + MEP)." },
-    { "id": "truck-terminal-parking", "category": "industrial", "name": "Truck terminal / truck parking", "primaryUnit": "space", "altUnits": ["acre", "door"], "description": "Cross-dock terminal and/or secured paved truck & trailer parking." },
-    { "id": "industrial-outdoor-storage", "category": "industrial", "name": "Industrial outdoor storage (IOS)", "primaryUnit": "acre", "altUnits": [], "description": "Improved stabilized/paved yard with fencing, lighting and small office." },
-
-    { "id": "greenhouse", "category": "agriculture-energy", "name": "Commercial greenhouse", "primaryUnit": "sf", "altUnits": ["acre"], "description": "Glass or poly greenhouse with environmental controls." },
-    { "id": "vertical-farm", "category": "agriculture-energy", "name": "Vertical farm", "primaryUnit": "sf", "altUnits": [], "description": "Indoor controlled-environment farm with stacked grow systems." },
-    { "id": "cannabis-cultivation", "category": "agriculture-energy", "name": "Cannabis cultivation facility", "primaryUnit": "sf", "altUnits": [], "description": "Indoor licensed cultivation with HVAC/dehumidification, lighting and security." },
-    { "id": "equestrian-facility", "category": "agriculture-energy", "name": "Equestrian facility", "primaryUnit": "stall", "altUnits": ["sf", "acre"], "description": "Horse barns, covered arena, paddocks and fencing." },
-    { "id": "ev-charging-hub", "category": "agriculture-energy", "name": "EV charging hub", "primaryUnit": "port", "altUnits": [], "description": "DC fast-charging plaza with make-ready, switchgear and canopy." },
-    { "id": "solar-farm", "category": "agriculture-energy", "name": "Solar farm (utility / community)", "primaryUnit": "mw", "altUnits": ["acre", "kw"], "description": "Ground-mount PV priced per MWdc, incl. interconnection allowance." },
-    { "id": "battery-storage", "category": "agriculture-energy", "name": "Battery energy storage (BESS)", "primaryUnit": "mwh", "altUnits": ["mw"], "description": "Utility-scale lithium-ion battery storage priced per MWh." },
-
-    { "id": "childcare-center", "category": "civic", "name": "Childcare / daycare center", "primaryUnit": "sf", "altUnits": ["child"], "description": "Licensed early-education center with classrooms and playgrounds." },
-    { "id": "charter-school", "category": "civic", "name": "K-12 charter school", "primaryUnit": "sf", "altUnits": ["student"], "description": "Charter school building with classrooms, gym/cafetorium." },
-    { "id": "house-of-worship", "category": "civic", "name": "Church / house of worship", "primaryUnit": "sf", "altUnits": ["seat"], "description": "Sanctuary, fellowship hall, classrooms." },
-    { "id": "community-center", "category": "civic", "name": "Community / recreation center", "primaryUnit": "sf", "altUnits": [], "description": "Municipal community center with gym, multipurpose rooms." },
-    { "id": "library", "category": "civic", "name": "Public library", "primaryUnit": "sf", "altUnits": [], "description": "Branch library." },
-    { "id": "fire-station", "category": "civic", "name": "Fire station", "primaryUnit": "sf", "altUnits": ["bay"], "description": "Apparatus bays, living quarters and support spaces." },
-
-    { "id": "marina", "category": "marine-other", "name": "Marina", "primaryUnit": "slip", "altUnits": [], "description": "Floating/fixed docks, slips with power and water, fuel, bulkhead and dredging." },
-    { "id": "boat-ramp", "category": "marine-other", "name": "Boat ramp", "primaryUnit": "lane", "altUnits": [], "description": "Concrete launch ramp lanes with courtesy dock and trailer parking." },
-    { "id": "parking-lot", "category": "marine-other", "name": "Surface parking lot", "primaryUnit": "space", "altUnits": ["acre"], "description": "Paved surface lot with drainage, lighting and striping." },
-    { "id": "parking-garage", "category": "marine-other", "name": "Parking garage", "primaryUnit": "space", "altUnits": ["sf"], "description": "Freestanding above-grade precast or cast-in-place structured parking." },
-    { "id": "mixed-use", "category": "marine-other", "name": "Mixed-use (combined components)", "primaryUnit": "sf", "altUnits": [], "description": "Two or more component types on one site with shared elements and phases." },
-    { "id": "adaptive-reuse", "category": "marine-other", "name": "Adaptive reuse", "primaryUnit": "sf", "altUnits": ["unit"], "description": "Converting an existing building to a new use (e.g., office-to-residential)." },
-    { "id": "renovation-rehab", "category": "marine-other", "name": "Renovation / rehab", "primaryUnit": "sf", "altUnits": ["unit"], "description": "Same-use renovation of an existing building (interior, systems, envelope)." },
-    { "id": "interior-finish-out", "category": "marine-other", "name": "Interior finish-out / TI (general)", "primaryUnit": "sf", "altUnits": [], "description": "Generic interior build-out of a commercial shell (retail, restaurant, general)." },
-    { "id": "custom", "category": "marine-other", "name": "Custom (built from blocks)", "primaryUnit": "ls", "altUnits": [], "description": "Anything that doesn't fit a template — assembled from cost building blocks." }
+    {
+      "id": "single-family",
+      "category": "residential",
+      "name": "Single-family home (production)",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Production/spec detached homes built by a builder on finished or raw lots.",
+      "template": {
+        "durationClass": "singleFamily",
+        "feeUse": "singleFamily",
+        "constructionType": "VB",
+        "stories": 2
+      }
+    },
+    {
+      "id": "custom-home",
+      "category": "residential",
+      "name": "Custom home",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "unit"
+      ],
+      "description": "One-off architect-designed detached home; priced per conditioned SF.",
+      "template": {
+        "durationClass": "singleFamily",
+        "feeUse": "singleFamily",
+        "constructionType": "VB",
+        "stories": 2,
+        "feeDwellingsPerProject": 1
+      }
+    },
+    {
+      "id": "townhomes",
+      "category": "residential",
+      "name": "Townhomes",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Attached for-sale or for-rent townhouses, 2\u20133 stories, wood frame.",
+      "template": {
+        "durationClass": "singleFamily",
+        "feeUse": "singleFamily",
+        "constructionType": "VB",
+        "stories": 3
+      }
+    },
+    {
+      "id": "duplex-fourplex",
+      "category": "residential",
+      "name": "Duplex / triplex / fourplex",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Small 2\u20134 unit missing-middle residential buildings.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily",
+        "constructionType": "VB",
+        "stories": 2
+      }
+    },
+    {
+      "id": "adu",
+      "category": "residential",
+      "name": "Accessory dwelling unit (ADU)",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Detached or attached backyard unit on an existing residential lot.",
+      "template": {
+        "durationClass": "singleFamily",
+        "feeUse": "multifamily",
+        "constructionType": "VB",
+        "stories": 1
+      }
+    },
+    {
+      "id": "garden-multifamily",
+      "category": "residential",
+      "name": "Garden multifamily",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "2\u20134 story walk-up apartments, Type V wood frame, surface parking.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily",
+        "constructionType": "VA",
+        "stories": 3
+      }
+    },
+    {
+      "id": "wrap-midrise",
+      "category": "residential",
+      "name": "Wrap / mid-rise multifamily",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "4\u20135 story wood-frame apartments wrapping a structured parking garage.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily",
+        "constructionType": "VA",
+        "stories": 5
+      }
+    },
+    {
+      "id": "podium-multifamily",
+      "category": "residential",
+      "name": "Podium multifamily (5-over-1/2)",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Wood-frame residential floors over a concrete podium (retail/parking below).",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily",
+        "constructionType": "VA",
+        "stories": 6
+      }
+    },
+    {
+      "id": "highrise-multifamily",
+      "category": "residential",
+      "name": "High-rise multifamily",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Concrete or steel residential tower, typically 12+ stories, structured parking.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily",
+        "constructionType": "I",
+        "stories": 20
+      }
+    },
+    {
+      "id": "btr-detached",
+      "category": "residential",
+      "name": "Build-to-rent \u2014 detached",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Purpose-built single-family rental community with detached homes and amenities.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "singleFamily",
+        "constructionType": "VB",
+        "stories": 1
+      }
+    },
+    {
+      "id": "btr-attached",
+      "category": "residential",
+      "name": "Build-to-rent \u2014 attached/horizontal",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Horizontal apartments / attached cottages and townhome rentals.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily",
+        "constructionType": "VB",
+        "stories": 2
+      }
+    },
+    {
+      "id": "student-housing",
+      "category": "residential",
+      "name": "Student housing",
+      "primaryUnit": "bed",
+      "altUnits": [
+        "unit",
+        "sf"
+      ],
+      "description": "Purpose-built off-campus student housing, leased by the bed.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily",
+        "feeUnitsPerPrimaryUnit": 0.3,
+        "constructionType": "VA",
+        "stories": 4
+      }
+    },
+    {
+      "id": "senior-independent-living",
+      "category": "residential",
+      "name": "Senior / independent living",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Age-restricted independent living with common dining and amenities.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily",
+        "constructionType": "VA",
+        "stories": 3
+      }
+    },
+    {
+      "id": "assisted-living-memory-care",
+      "category": "residential",
+      "name": "Assisted living / memory care",
+      "primaryUnit": "bed",
+      "altUnits": [
+        "unit",
+        "sf"
+      ],
+      "description": "Licensed assisted living and secured memory care with commercial kitchen and care spaces.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily",
+        "feeUnitsPerPrimaryUnit": 0.5
+      }
+    },
+    {
+      "id": "affordable-lihtc",
+      "category": "residential",
+      "name": "Affordable / LIHTC multifamily",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Income-restricted rental financed with low-income housing tax credits.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily",
+        "constructionType": "VA",
+        "stories": 3
+      }
+    },
+    {
+      "id": "manufactured-home-community",
+      "category": "residential",
+      "name": "Manufactured / mobile home community",
+      "primaryUnit": "pad",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Land-lease community of manufactured-home pads with utilities and roads; homes optional.",
+      "template": {
+        "durationClass": "privateNonresidential",
+        "feeUse": "multifamily"
+      }
+    },
+    {
+      "id": "modular-prefab-housing",
+      "category": "residential",
+      "name": "Modular / prefab housing",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Factory-built volumetric modular or panelized residential, set on site.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily"
+      }
+    },
+    {
+      "id": "co-living",
+      "category": "residential",
+      "name": "Co-living",
+      "primaryUnit": "bed",
+      "altUnits": [
+        "unit",
+        "sf"
+      ],
+      "description": "Private bedrooms with shared kitchens and lounges, leased by the room.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily",
+        "feeUnitsPerPrimaryUnit": 0.25,
+        "constructionType": "VA",
+        "stories": 4
+      }
+    },
+    {
+      "id": "tiny-home-community",
+      "category": "specialty-residential",
+      "name": "Tiny home community",
+      "primaryUnit": "pad",
+      "altUnits": [
+        "acre",
+        "unit"
+      ],
+      "description": "Pads with utility hookups for tiny homes (on wheels or foundation), shared amenities.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily"
+      }
+    },
+    {
+      "id": "cottage-court",
+      "category": "specialty-residential",
+      "name": "Cottage court / pocket neighborhood",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf",
+        "acre"
+      ],
+      "description": "Small detached cottages clustered around a shared green.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily"
+      }
+    },
+    {
+      "id": "rv-park-resort",
+      "category": "specialty-residential",
+      "name": "RV park / resort",
+      "primaryUnit": "site",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Full-hookup RV sites (water, sewer, 30/50A power) with bathhouse, laundry and amenities.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "hotel"
+      }
+    },
+    {
+      "id": "campground",
+      "category": "specialty-residential",
+      "name": "Campground",
+      "primaryUnit": "site",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Tent and partial-hookup campsites with comfort stations.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "glamping-resort",
+      "category": "specialty-residential",
+      "name": "Glamping resort",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Safari tents, domes or yurts on platforms with utilities and a central lodge.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "hotel"
+      }
+    },
+    {
+      "id": "cabin-str-resort",
+      "category": "specialty-residential",
+      "name": "Cabin / short-term rental resort",
+      "primaryUnit": "key",
+      "altUnits": [
+        "sf",
+        "acre"
+      ],
+      "description": "Clusters of furnished cabins operated as short-term rentals.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "hotel"
+      }
+    },
+    {
+      "id": "container-home-community",
+      "category": "specialty-residential",
+      "name": "Container home community",
+      "primaryUnit": "unit",
+      "altUnits": [
+        "sf",
+        "acre"
+      ],
+      "description": "Homes built from converted shipping containers on prepared pads.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "multifamily"
+      }
+    },
+    {
+      "id": "hotel-select-service",
+      "category": "hospitality",
+      "name": "Select-service hotel",
+      "primaryUnit": "key",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Branded upscale/upper-midscale select-service hotel (e.g., Hampton/Courtyard class).",
+      "template": {
+        "durationClass": "privateNonresidential",
+        "feeUse": "hotel",
+        "constructionType": "VA",
+        "stories": 4
+      }
+    },
+    {
+      "id": "hotel-full-service",
+      "category": "hospitality",
+      "name": "Full-service hotel",
+      "primaryUnit": "key",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Full-service hotel with restaurants, meeting space and banquet.",
+      "template": {
+        "durationClass": "privateNonresidential",
+        "feeUse": "hotel",
+        "constructionType": "I",
+        "stories": 10
+      }
+    },
+    {
+      "id": "hotel-extended-stay",
+      "category": "hospitality",
+      "name": "Extended-stay hotel",
+      "primaryUnit": "key",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Suite hotel with kitchenettes, limited public space.",
+      "template": {
+        "durationClass": "privateNonresidential",
+        "feeUse": "hotel",
+        "constructionType": "VA",
+        "stories": 4
+      }
+    },
+    {
+      "id": "hotel-boutique",
+      "category": "hospitality",
+      "name": "Boutique hotel",
+      "primaryUnit": "key",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Independent or lifestyle hotel with design-forward finishes and F&B.",
+      "template": {
+        "durationClass": "privateNonresidential",
+        "feeUse": "hotel"
+      }
+    },
+    {
+      "id": "motel-conversion",
+      "category": "hospitality",
+      "name": "Motel conversion / renovation",
+      "primaryUnit": "key",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Renovation of an existing motel (rooms, exterior, systems) \u2014 often to boutique or housing.",
+      "template": {
+        "durationClass": "privateNonresidential",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "resort",
+      "category": "hospitality",
+      "name": "Resort",
+      "primaryUnit": "key",
+      "altUnits": [
+        "sf",
+        "acre"
+      ],
+      "description": "Destination resort with extensive amenities, pools, spa and F&B.",
+      "template": {
+        "durationClass": "privateNonresidential",
+        "feeUse": "hotel"
+      }
+    },
+    {
+      "id": "office-core-shell",
+      "category": "commercial",
+      "name": "Office \u2014 core & shell",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Multi-tenant office building shell, lobbies, core and base MEP; TI excluded.",
+      "template": {
+        "durationClass": "office",
+        "feeUse": "office",
+        "constructionType": "II",
+        "stories": 4
+      }
+    },
+    {
+      "id": "office-ti",
+      "category": "commercial",
+      "name": "Office tenant improvement",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Interior build-out of office space within an existing shell.",
+      "template": {
+        "durationClass": "office",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "medical-office",
+      "category": "commercial",
+      "name": "Medical office building",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Outpatient medical office with heavier MEP and exam-room build-out.",
+      "template": {
+        "durationClass": "healthCare",
+        "feeUse": "office",
+        "constructionType": "II",
+        "stories": 3
+      }
+    },
+    {
+      "id": "ambulatory-surgery-center",
+      "category": "commercial",
+      "name": "Outpatient / ambulatory surgery center",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "or"
+      ],
+      "description": "Licensed ASC with operating rooms, pre/post-op and medical gases.",
+      "template": {
+        "durationClass": "healthCare",
+        "feeUse": "office"
+      }
+    },
+    {
+      "id": "urgent-care",
+      "category": "commercial",
+      "name": "Urgent care clinic",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Freestanding walk-in clinic with exam rooms and imaging.",
+      "template": {
+        "durationClass": "healthCare",
+        "feeUse": "office"
+      }
+    },
+    {
+      "id": "life-science-lab",
+      "category": "commercial",
+      "name": "Life science / lab",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Lab-ready building with high floor-to-floor, heavy HVAC and lab infrastructure.",
+      "template": {
+        "durationClass": "office",
+        "feeUse": "office"
+      }
+    },
+    {
+      "id": "retail-strip",
+      "category": "commercial",
+      "name": "Retail strip center",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Neighborhood strip shopping center shell with surface parking.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "retail-pad-qsr",
+      "category": "commercial",
+      "name": "Retail pad / QSR",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "site"
+      ],
+      "description": "Freestanding quick-service restaurant on an outparcel, with drive-thru.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "drive-thru-coffee",
+      "category": "commercial",
+      "name": "Drive-thru coffee",
+      "primaryUnit": "site",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Small-format drive-thru/walk-up coffee kiosk with double drive lanes.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "restaurant-full-service",
+      "category": "commercial",
+      "name": "Restaurant \u2014 full service",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "seat"
+      ],
+      "description": "Sit-down restaurant with full commercial kitchen and bar.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "bar-brewery-taproom",
+      "category": "commercial",
+      "name": "Bar / brewery / taproom",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Taproom with brewhouse equipment, cold storage and patio.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "winery-tasting-room",
+      "category": "commercial",
+      "name": "Winery / tasting room",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Tasting room with production/barrel space and event lawn.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "grocery-anchored-center",
+      "category": "commercial",
+      "name": "Grocery-anchored shopping center",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Neighborhood center anchored by a supermarket with in-line shops.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "big-box-retail",
+      "category": "commercial",
+      "name": "Big box retail",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Single-tenant large-format store (50k\u2013200k SF).",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "auto-dealership",
+      "category": "commercial",
+      "name": "Auto dealership",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Showroom, service bays and large paved display lots.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "car-wash",
+      "category": "commercial",
+      "name": "Car wash (express tunnel)",
+      "primaryUnit": "site",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Express exterior tunnel wash with vacuum stalls and equipment package.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "gas-station-c-store",
+      "category": "commercial",
+      "name": "Gas station / convenience store",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "fueling-position"
+      ],
+      "description": "C-store with fuel canopy, dispensers and underground storage tanks.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "bank-branch",
+      "category": "commercial",
+      "name": "Bank branch",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Freestanding branch with drive-up lanes and vault.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "food-truck-park",
+      "category": "entertainment",
+      "name": "Food truck park",
+      "primaryUnit": "pad",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Truck pads with utility pedestals, grease handling, restrooms, seating and shade.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "container-park",
+      "category": "entertainment",
+      "name": "Shipping container park",
+      "primaryUnit": "container",
+      "altUnits": [
+        "sf",
+        "acre"
+      ],
+      "description": "Retail/F&B units built from shipping containers around shared open space.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "food-hall",
+      "category": "entertainment",
+      "name": "Food hall",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "stall"
+      ],
+      "description": "Multi-vendor food hall with shared seating, bar and back-of-house.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "event-venue",
+      "category": "entertainment",
+      "name": "Event / wedding venue",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "seat",
+        "acre"
+      ],
+      "description": "Banquet/event hall with catering kitchen and grounds.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "entertainment-venue",
+      "category": "entertainment",
+      "name": "Entertainment venue (bowling, golf sim, etc.)",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Eatertainment: bowling, golf simulators, games and F&B.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "pickleball-racquet-club",
+      "category": "entertainment",
+      "name": "Pickleball / racquet club",
+      "primaryUnit": "court",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Indoor or covered courts with clubhouse and F&B.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "sports-complex",
+      "category": "entertainment",
+      "name": "Indoor / outdoor sports complex",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "field",
+        "acre"
+      ],
+      "description": "Fieldhouse with courts plus outdoor turf fields and lighting.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "fitness-center",
+      "category": "entertainment",
+      "name": "Fitness center / gym",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Health club with locker rooms and equipment package.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "family-entertainment-center",
+      "category": "entertainment",
+      "name": "Trampoline / family entertainment center",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Indoor FEC with trampolines, play structures and attractions.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "golf-driving-range",
+      "category": "entertainment",
+      "name": "Golf driving range",
+      "primaryUnit": "bay",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Hitting bays (covered or multi-level) with netting, lighting and target field.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "amphitheater",
+      "category": "entertainment",
+      "name": "Amphitheater",
+      "primaryUnit": "seat",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Outdoor performance venue with stage, shell and lawn/fixed seating.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "farmers-market-pavilion",
+      "category": "entertainment",
+      "name": "Farmers market / open-air pavilion",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "stall"
+      ],
+      "description": "Covered open-air pavilion structure with power, water and restrooms.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "warehouse-distribution",
+      "category": "industrial",
+      "name": "Warehouse / distribution",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Bulk tilt-wall distribution, 32\u201340' clear, cross-dock or rear-load.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "industrial",
+        "constructionType": "II",
+        "stories": 1
+      }
+    },
+    {
+      "id": "last-mile-industrial",
+      "category": "industrial",
+      "name": "Last-mile / infill industrial",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Smaller infill delivery stations with high trailer/van parking ratios.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "industrial"
+      }
+    },
+    {
+      "id": "flex-industrial",
+      "category": "industrial",
+      "name": "Flex / light industrial",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Small-bay flex with office finish, grade and dock doors.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "industrial"
+      }
+    },
+    {
+      "id": "cold-storage",
+      "category": "industrial",
+      "name": "Cold storage",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Refrigerated/freezer warehouse with insulated envelope and refrigeration.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "industrial"
+      }
+    },
+    {
+      "id": "self-storage-climate",
+      "category": "industrial",
+      "name": "Self-storage \u2014 climate controlled",
+      "primaryUnit": "nrsf",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Multi-story climate-controlled interior-access storage.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "industrial",
+        "constructionType": "II",
+        "stories": 3
+      }
+    },
+    {
+      "id": "self-storage-drive-up",
+      "category": "industrial",
+      "name": "Self-storage \u2014 drive-up",
+      "primaryUnit": "nrsf",
+      "altUnits": [
+        "sf",
+        "acre"
+      ],
+      "description": "Single-story exterior-access storage buildings.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "industrial"
+      }
+    },
+    {
+      "id": "boat-rv-storage",
+      "category": "industrial",
+      "name": "Boat / RV storage",
+      "primaryUnit": "space",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Covered canopy and enclosed boat/RV storage with paved drive aisles.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "industrial"
+      }
+    },
+    {
+      "id": "manufacturing",
+      "category": "industrial",
+      "name": "Manufacturing plant",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Light/medium manufacturing building with process utilities (excl. process equipment).",
+      "template": {
+        "durationClass": "manufacturing",
+        "feeUse": "industrial"
+      }
+    },
+    {
+      "id": "data-center",
+      "category": "industrial",
+      "name": "Data center",
+      "primaryUnit": "kw",
+      "altUnits": [
+        "sf",
+        "mw"
+      ],
+      "description": "Colocation/hyperscale data center priced per kW of IT load (shell + MEP).",
+      "template": {
+        "durationClass": "office",
+        "feeUse": "industrial"
+      }
+    },
+    {
+      "id": "truck-terminal-parking",
+      "category": "industrial",
+      "name": "Truck terminal / truck parking",
+      "primaryUnit": "space",
+      "altUnits": [
+        "acre",
+        "door"
+      ],
+      "description": "Cross-dock terminal and/or secured paved truck & trailer parking.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "industrial"
+      }
+    },
+    {
+      "id": "industrial-outdoor-storage",
+      "category": "industrial",
+      "name": "Industrial outdoor storage (IOS)",
+      "primaryUnit": "acre",
+      "altUnits": [],
+      "description": "Improved stabilized/paved yard with fencing, lighting and small office.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "greenhouse",
+      "category": "agriculture-energy",
+      "name": "Commercial greenhouse",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Glass or poly greenhouse with environmental controls.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "industrial"
+      }
+    },
+    {
+      "id": "vertical-farm",
+      "category": "agriculture-energy",
+      "name": "Vertical farm",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Indoor controlled-environment farm with stacked grow systems.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "industrial"
+      }
+    },
+    {
+      "id": "cannabis-cultivation",
+      "category": "agriculture-energy",
+      "name": "Cannabis cultivation facility",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Indoor licensed cultivation with HVAC/dehumidification, lighting and security.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "industrial"
+      }
+    },
+    {
+      "id": "equestrian-facility",
+      "category": "agriculture-energy",
+      "name": "Equestrian facility",
+      "primaryUnit": "stall",
+      "altUnits": [
+        "sf",
+        "acre"
+      ],
+      "description": "Horse barns, covered arena, paddocks and fencing.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "ev-charging-hub",
+      "category": "agriculture-energy",
+      "name": "EV charging hub",
+      "primaryUnit": "port",
+      "altUnits": [],
+      "description": "DC fast-charging plaza with make-ready, switchgear and canopy.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "solar-farm",
+      "category": "agriculture-energy",
+      "name": "Solar farm (utility / community)",
+      "primaryUnit": "mw",
+      "altUnits": [
+        "acre",
+        "kw"
+      ],
+      "description": "Ground-mount PV priced per MWdc, incl. interconnection allowance.",
+      "template": {
+        "durationClass": "privateNonresidential",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "battery-storage",
+      "category": "agriculture-energy",
+      "name": "Battery energy storage (BESS)",
+      "primaryUnit": "mwh",
+      "altUnits": [
+        "mw"
+      ],
+      "description": "Utility-scale lithium-ion battery storage priced per MWh.",
+      "template": {
+        "durationClass": "privateNonresidential",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "childcare-center",
+      "category": "civic",
+      "name": "Childcare / daycare center",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "child"
+      ],
+      "description": "Licensed early-education center with classrooms and playgrounds.",
+      "template": {
+        "durationClass": "education",
+        "feeUse": "office"
+      }
+    },
+    {
+      "id": "charter-school",
+      "category": "civic",
+      "name": "K-12 charter school",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "student"
+      ],
+      "description": "Charter school building with classrooms, gym/cafetorium.",
+      "template": {
+        "durationClass": "education",
+        "feeUse": "office",
+        "constructionType": "II",
+        "stories": 2
+      }
+    },
+    {
+      "id": "house-of-worship",
+      "category": "civic",
+      "name": "Church / house of worship",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "seat"
+      ],
+      "description": "Sanctuary, fellowship hall, classrooms.",
+      "template": {
+        "durationClass": "religious",
+        "feeUse": "office"
+      }
+    },
+    {
+      "id": "community-center",
+      "category": "civic",
+      "name": "Community / recreation center",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Municipal community center with gym, multipurpose rooms.",
+      "template": {
+        "durationClass": "publicAmusement",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "library",
+      "category": "civic",
+      "name": "Public library",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Branch library.",
+      "template": {
+        "durationClass": "publicEducation",
+        "feeUse": "none",
+        "constructionType": "II",
+        "stories": 2
+      }
+    },
+    {
+      "id": "fire-station",
+      "category": "civic",
+      "name": "Fire station",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "bay"
+      ],
+      "description": "Apparatus bays, living quarters and support spaces.",
+      "template": {
+        "durationClass": "publicSafety",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "marina",
+      "category": "marine-other",
+      "name": "Marina",
+      "primaryUnit": "slip",
+      "altUnits": [],
+      "description": "Floating/fixed docks, slips with power and water, fuel, bulkhead and dredging.",
+      "template": {
+        "durationClass": "amusement",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "boat-ramp",
+      "category": "marine-other",
+      "name": "Boat ramp",
+      "primaryUnit": "lane",
+      "altUnits": [],
+      "description": "Concrete launch ramp lanes with courtesy dock and trailer parking.",
+      "template": {
+        "durationClass": "publicAmusement",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "parking-lot",
+      "category": "marine-other",
+      "name": "Surface parking lot",
+      "primaryUnit": "space",
+      "altUnits": [
+        "acre"
+      ],
+      "description": "Paved surface lot with drainage, lighting and striping.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "parking-garage",
+      "category": "marine-other",
+      "name": "Parking garage",
+      "primaryUnit": "space",
+      "altUnits": [
+        "sf"
+      ],
+      "description": "Freestanding above-grade precast or cast-in-place structured parking.",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "mixed-use",
+      "category": "marine-other",
+      "name": "Mixed-use (combined components)",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Two or more component types on one site with shared elements and phases.",
+      "template": {
+        "durationClass": "multifamily",
+        "feeUse": "retail"
+      }
+    },
+    {
+      "id": "adaptive-reuse",
+      "category": "marine-other",
+      "name": "Adaptive reuse",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "unit"
+      ],
+      "description": "Converting an existing building to a new use (e.g., office-to-residential).",
+      "template": {
+        "durationClass": "privateNonresidential",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "renovation-rehab",
+      "category": "marine-other",
+      "name": "Renovation / rehab",
+      "primaryUnit": "sf",
+      "altUnits": [
+        "unit"
+      ],
+      "description": "Same-use renovation of an existing building (interior, systems, envelope).",
+      "template": {
+        "durationClass": "privateNonresidential",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "interior-finish-out",
+      "category": "marine-other",
+      "name": "Interior finish-out / TI (general)",
+      "primaryUnit": "sf",
+      "altUnits": [],
+      "description": "Generic interior build-out of a commercial shell (retail, restaurant, general).",
+      "template": {
+        "durationClass": "commercial",
+        "feeUse": "none"
+      }
+    },
+    {
+      "id": "custom",
+      "category": "marine-other",
+      "name": "Custom (built from blocks)",
+      "primaryUnit": "ls",
+      "altUnits": [],
+      "description": "Anything that doesn't fit a template \u2014 assembled from cost building blocks.",
+      "template": {
+        "durationClass": "privateNonresidential",
+        "feeUse": "none"
+      }
+    }
   ]
 }

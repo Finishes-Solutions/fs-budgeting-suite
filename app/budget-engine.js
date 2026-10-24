@@ -145,17 +145,17 @@
   }
 
   /* Economies of scale on the size-variable part of the price:
-     factor = clamp((size / typical)^(-k), min, max). k and the clamps come
-     from _common/adjustments.json (sizeAdjustment); absent → no adjustment. */
+     factor = (size / typical)^e with the exponent e from _common/adjustments.json
+     (sizeAdjustment-exponent, negative: bigger is cheaper per unit). The
+     factor is held to SIZE_FACTOR_BOUNDS so a 50× extrapolation of a curve fit
+     on ordinary projects cannot run away; absent research → no adjustment. */
+  var SIZE_FACTOR_BOUNDS = [0.85, 1.2];
   function sizeFactor(D, type, size) {
-    var it = common(D, 'adjustments', 'sizeAdjustment');
+    var it = common(D, 'adjustments', 'sizeAdjustment-exponent');
     var typical = type && type.sizing && type.sizing.typicalSize && type.sizing.typicalSize.mid;
     if (!it || !it.range || !isNum(it.range.mid) || !(typical > 0) || !(size > 0)) return { factor: 1, source: null };
-    var ex = it.extra || {};
-    var lo = isNum(ex.minFactor) ? ex.minFactor : (isNum(it.range.low) && it.range.low > 0 && it.range.low < 1 && !isNum(ex.k) ? 0.85 : 0.85);
-    var hi = isNum(ex.maxFactor) ? ex.maxFactor : 1.2;
-    var k = it.range.mid;
-    return { factor: clamp(Math.pow(size / typical, -k), lo, hi), source: it.range.source, k: k };
+    var e = it.range.mid;
+    return { factor: clamp(Math.pow(size / typical, e), SIZE_FACTOR_BOUNDS[0], SIZE_FACTOR_BOUNDS[1]), source: it.range.source, exponent: e };
   }
 
   function relFactor(D, prefix, chosen, dflt) {
@@ -318,9 +318,9 @@
     var C = relFactor(D, 'constructionType-', comp.constructionType, t.template && t.template.constructionType);
     var H = { factor: 1 };
     if (isNum(comp.stories) && comp.stories && t.template && isNum(t.template.stories)) {
-      var per = commonMid(D, 'adjustments', 'storiesAdjustment');
+      var per = commonMid(D, 'adjustments', 'storiesAdjustment-perStory');
       if (per !== null) H = { factor: Math.max(0.5, 1 + per * (comp.stories - t.template.stories)),
-        source: srcOf(common(D, 'adjustments', 'storiesAdjustment').range) };
+        source: srcOf(common(D, 'adjustments', 'storiesAdjustment-perStory').range) };
     }
     if (Q.missing) warnings.push({ level: 'warn', code: 'quality-default', comp: comp.id,
       message: comp.name + ': no researched multiplier for "' + comp.quality + '" quality — priced at standard.' });
@@ -563,27 +563,59 @@
   }
 
   /* ------------------------------------------------------------ fees */
-  /* Impact + water/sewer tap fees from _common/fees.json by the type's land
-     use (template.feeUse). Rates are national averages; the Impact Fees step's
-     jurisdiction schedule replaces them via settings.impactFeesOverride. */
+  /* Impact + water/sewer capacity (tap) fees from _common/fees.json by the
+     type's land use (catalog template.feeUse). Rates are national averages;
+     the Impact Fees step's jurisdiction schedule replaces them through
+     settings.impactFeesOverride. Which fee item applies to which land use is
+     structure (FEE_USES); every rate and EDU factor is research. */
+  var FEE_USES = {
+    singleFamily: { impact: 'impactFee-singleFamily', per: 'unit', edu: 'eduPerUnit-singleFamily', eduPer: 'unit' },
+    multifamily: { impact: 'impactFee-multifamily', per: 'unit', edu: 'eduPerUnit-multifamily', eduPer: 'unit' },
+    retail: { impact: 'impactFee-retail', per: 'kSF', edu: 'eduPer1000SF-nonresidential', eduPer: 'kSF' },
+    office: { impact: 'impactFee-office', per: 'kSF', edu: 'eduPer1000SF-nonresidential', eduPer: 'kSF' },
+    industrial: { impact: 'impactFee-industrial', per: 'kSF', edu: 'eduPer1000SF-nonresidential', eduPer: 'kSF' },
+    hotel: { impact: 'impactFee-hotel', per: 'unit', edu: 'eduPer1000SF-nonresidential', eduPer: 'kSF' }
+  };
   function feeEstimate(D, t, geo) {
     var use = t && t.template && t.template.feeUse;
-    if (!use || use === 'none') return null;
-    var f = D.common && D.common.fees && D.common.fees.items;
-    if (!f) return null;
-    var map = (D.common.fees.items.feeUseMap && D.common.fees.items.feeUseMap.extra) || null;
-    var spec = map && map[use];
+    var spec = use && FEE_USES[use];
     if (!spec) return null;
-    var res = { cents: 0, parts: [] };
-    (spec.impact ? [spec.impact] : []).concat(spec.tap ? [spec.tap] : []).forEach(function (s) {
-      var it = f[s.item];
-      if (!it || !it.range || !isNum(it.range.mid)) return;
-      var q = s.per === 'kSF' ? geo.sf / 1000 : s.per === 'unit' ? geo.size * nz(s.ratio || 1)
-        : s.per === 'edu' ? (s.eduPer === 'unit' ? geo.size : geo.sf / nz(s.sfPerEdu || 1)) * nz(s.ratio || 1) : nz(s.qty || 1);
-      res.parts.push({ id: s.item, name: it.name, qty: q, rate: it.range.mid, source: it.range.source,
-        uom: s.per === 'kSF' ? '1,000 SF' : s.per === 'edu' ? 'EDU' : s.per });
+    var units = isNum(t.template.feeDwellingsPerProject) ? t.template.feeDwellingsPerProject
+      : geo.size * (isNum(t.template.feeUnitsPerPrimaryUnit) ? t.template.feeUnitsPerPrimaryUnit : 1);
+    var ksf = geo.sf / 1000;
+    var parts = [];
+    var imp = common(D, 'fees', spec.impact);
+    var q = spec.per === 'unit' ? units : ksf;
+    if (imp && imp.range && isNum(imp.range.mid) && q > 0)
+      parts.push({ id: spec.impact, name: imp.name || 'Impact fees', qty: q, uom: spec.per === 'unit' ? (t.primaryUnit === 'key' ? 'key' : 'unit') : '1,000 SF',
+        rate: imp.range.mid, source: imp.range.source });
+    var eduF = commonMid(D, 'fees', spec.edu);
+    var edus = eduF === null ? 0 : eduF * (spec.eduPer === 'unit' ? units : ksf);
+    ['waterCapacityFee', 'sewerCapacityFee'].forEach(function (id) {
+      var it = common(D, 'fees', id);
+      if (it && it.range && isNum(it.range.mid) && edus > 0)
+        parts.push({ id: id, name: it.name || id, qty: edus, uom: 'EDU', rate: it.range.mid, source: it.range.source });
     });
-    return res;
+    return parts.length ? { parts: parts } : null;
+  }
+
+  /* Construction months for a component: the Census start-to-completion
+     months for its category (catalog template.durationClass) in the value
+     band of its estimated hard cost (_common/schedule.json). */
+  function durationFor(D, t, hardDollars) {
+    var cls = t && t.template && t.template.durationClass;
+    var it = cls ? common(D, 'schedule', 'duration-' + cls) : null;
+    if (!it) it = common(D, 'schedule', 'constructionMonths-default');
+    if (!it || !it.range) return null;
+    var bands = it.extra && Array.isArray(it.extra.bands) ? it.extra.bands : null;
+    if (bands && bands.length && isNum(hardDollars) && hardDollars > 0) {
+      for (var i = 0; i < bands.length; i++) {
+        var mx = bands[i].maxValue;
+        if (mx === null || mx === undefined || hardDollars < mx) return { months: bands[i].months, source: it.range.source, cls: cls };
+      }
+      return { months: bands[bands.length - 1].months, source: it.range.source, cls: cls };
+    }
+    return isNum(it.range.mid) ? { months: it.range.mid, source: it.range.source, cls: cls } : null;
   }
 
   /* ------------------------------------------------------------ draws & financing */
@@ -681,16 +713,26 @@
 
     // Phases: start, length, midpoint, escalation.
     var phaseById = {};
+    // A first, unescalated estimate of each component's hard cost picks its
+    // Census duration band; a phase lasts as long as its longest component.
+    var roughHard = function (c) {
+      var t = typeOf(D, c.typeId), g = geometry(D, c, t);
+      var p0 = c.baseline && isNum(c.baseline.price) && c.baseline.price > 0 ? c.baseline.price
+        : (t && t.hardCost && t.hardCost.perPrimaryUnit ? t.hardCost.perPrimaryUnit.mid : 0);
+      return p0 * g.size * region.factor + sum(c.blocks || [], function (b) {
+        var bi = D.blocks && D.blocks[b.itemId];
+        return nz(b.qty) * (isNum(b.unitCost) && b.unitCost !== null ? b.unitCost : (bi && bi.cost ? bi.cost.mid : 0));
+      });
+    };
     var defaultMonths = function (comps) {
       var best = null;
       comps.forEach(function (c) {
-        var t = typeOf(D, c.typeId);
-        var mo = t && t.template && isNum(t.template.durationMonths) ? t.template.durationMonths : null;
-        if (mo !== null && (best === null || mo > best)) best = mo;
+        var d = durationFor(D, typeOf(D, c.typeId), roughHard(c));
+        if (d && (best === null || d.months > best)) best = d.months;
       });
       if (best !== null) return best;
-      var g = commonMid(D, 'schedule', 'constructionMonths-default');
-      return g !== null ? g : 12;
+      var g = durationFor(D, null, 0);
+      return g ? g.months : 1;
     };
     var ctx = { region: region, esc: {} };
     var phaseInfo = [];
@@ -896,6 +938,22 @@
           lines.add({ key: 'land:' + ll.id + '>' + c.id, comp: c.id, phase: c.phaseId, category: 'land', group: 'Land',
             code: 'LAND', name: ll.name, amountCents: sp[k], source: { kind: 'allocation', method: 'acres', of: whole.source } });
         });
+      });
+    }
+
+    // Property taxes during construction: the land's assessed value (taken as
+    // its price) × the researched annual rate × the phase's construction years.
+    var taxIt = common(D, 'soft-costs', 'propertyTaxesDuringConstruction');
+    if (landCents > 0 && taxIt && taxIt.range && isNum(taxIt.range.mid)) {
+      project.components.forEach(function (c) {
+        var landC = sum(lines.list.filter(function (l) { return l.comp === c.id && /^land:price>/.test(l.key); }), function (l) { return l.cents; });
+        var pi = phaseById[c.phaseId];
+        if (!(landC > 0) || !pi) return;
+        var lt = lines.add({ key: c.id + '@' + c.phaseId + ':soft:propertyTaxes', comp: c.id, phase: c.phaseId, category: 'soft',
+          group: 'Soft costs', code: 'SC', name: taxIt.name || 'Property taxes during construction',
+          qty: pi.months / 12, uom: 'years', rate: dollars(landC) * taxIt.range.mid,
+          source: { kind: taxIt.range.source && taxIt.range.source.derived ? 'derived' : 'research', ref: taxIt.range.source } });
+        lt.softId = 'propertyTaxesDuringConstruction';
       });
     }
 

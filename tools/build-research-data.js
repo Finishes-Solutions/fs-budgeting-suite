@@ -210,7 +210,7 @@ function build() {
       contingency: { design: pct(doc.contingency.design, rel), hard: pct(doc.contingency.hard, rel),
         soft: pct(doc.contingency.soft, rel) },
       rangeCheck: range,
-      template: doc.template || null,
+      template: Object.assign({}, cat.template || {}, doc.template || {}),
       evidenceCount: (doc.evidence || []).length,
       openQuestions: doc.openQuestions || []
     };
