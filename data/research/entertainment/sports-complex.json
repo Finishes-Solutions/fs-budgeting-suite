@@ -14,7 +14,7 @@
       "unit": "sf",
       "evidence": [],
       "derived": true,
-      "method": "Fieldhouses for 4–12 basketball/volleyball courts are ~40,000–130,000 SF; destination complexes reach 200,000+ SF. Mid 100,000 SF building. Derived."
+      "method": "Fieldhouses for 4\u201312 basketball/volleyball courts are ~40,000\u2013130,000 SF; destination complexes reach 200,000+ SF. Mid 100,000 SF building. Derived."
     },
     "primaryUnitsPerAcre": {
       "low": 5000,
@@ -24,7 +24,7 @@
         "e3"
       ],
       "derived": true,
-      "method": "Building SF per acre of whole campus including outdoor fields and parking. e3 outdoor complex covers 60 acres; a 100,000 SF fieldhouse with 4 fields and parking needs ~12–20 acres → ~5,000–8,000 SF/acre. Derived."
+      "method": "Building SF per acre of whole campus including outdoor fields and parking. e3 outdoor complex covers 60 acres; a 100,000 SF fieldhouse with 4 fields and parking needs ~12\u201320 acres \u2192 ~5,000\u20138,000 SF/acre. Derived."
     },
     "parkingPerPrimaryUnit": {
       "low": 0.002,
@@ -33,7 +33,7 @@
       "type": "surface",
       "evidence": [],
       "derived": true,
-      "method": "Spaces per building SF: ~40–60 spaces per court-equivalent tournament use ≈ 2–5 per 1,000 SF; fields add ~50–80 spaces each (not included here). Derived."
+      "method": "Spaces per building SF: ~40\u201360 spaces per court-equivalent tournament use \u2248 2\u20135 per 1,000 SF; fields add ~50\u201380 spaces each (not included here). Derived."
     }
   },
   "hardCost": {
@@ -48,7 +48,7 @@
         "e2"
       ],
       "derived": true,
-      "method": "Fieldhouse building incl. its sitework, 2025 dollars. RSMeans 2019 hard cost: gymnasium $177 union / $162 open shop (e1); racquetball club $172 / $155 (e2). ×~1.30 to 2025 ≈ $205–230/SF for masonry gyms, + ~8% on-site work; large pre-engineered fieldhouses achieve lower $/SF through scale. Mid $210; low $140 = PEMB fieldhouse with minimal finishes; high $320 = masonry, mezzanines, spectator seating and premium finishes."
+      "method": "Fieldhouse building incl. its sitework, 2025 dollars. RSMeans 2019 hard cost: gymnasium $177 union / $162 open shop (e1); racquetball club $172 / $155 (e2). \u00d7~1.30 to 2025 \u2248 $205\u2013230/SF for masonry gyms, + ~8% on-site work; large pre-engineered fieldhouses achieve lower $/SF through scale. Mid $210; low $140 = PEMB fieldhouse with minimal finishes; high $320 = masonry, mezzanines, spectator seating and premium finishes."
     },
     "scope": {
       "includesSitework": true,
@@ -147,7 +147,7 @@
     ],
     "evidence": [],
     "derived": true,
-    "method": "Derived for a pre-engineered/clear-span fieldhouse: building system in 13 (≈12%) with 05 for mezzanines; large slab-on-grade (03 ≈ 11%); sports flooring and indoor turf in 09; HVAC for large volumes 10%; on-site work 8%. Not sourced."
+    "method": "Derived for a pre-engineered/clear-span fieldhouse: building system in 13 (\u224812%) with 05 for mezzanines; large slab-on-grade (03 \u2248 11%); sports flooring and indoor turf in 09; HVAC for large volumes 10%; on-site work 8%. Not sourced."
   },
   "lineItems": [
     {
@@ -170,12 +170,12 @@
           "e4"
         ],
         "derived": true,
-        "method": "Turf replacement alone (reusing base) was ≈ $650k per field in a Dec 2024 municipal award (e4); a new field adds stone base, drainage, curbs, fencing and goals. Derived: ~80,000–90,000 SF of field area at ~$11–20/SF for stone base, drainage and turf system, plus fencing/goals. Cross-check: e3 complex ≈ $27M over 60 acres (≈ $450k/acre incl. roads, parking, amenities) is consistent with ~$1.5–2.5M per field all-in. Needs bid-tab verification."
+        "method": "Turf replacement alone (reusing base) was \u2248 $650k per field in a Dec 2024 municipal award (e4); a new field adds stone base, drainage, curbs, fencing and goals. Derived: ~80,000\u201390,000 SF of field area at ~$11\u201320/SF for stone base, drainage and turf system, plus fencing/goals. Cross-check: e3 complex \u2248 $27M over 60 acres (\u2248 $450k/acre incl. roads, parking, amenities) is consistent with ~$1.5\u20132.5M per field all-in. Needs bid-tab verification."
       },
       "inBaseline": false,
       "scales": true,
-      "optional": false,
-      "notes": "Count = number of outdoor fields (altUnit 'field')."
+      "optional": true,
+      "notes": "Count = number of outdoor fields (altUnit 'field'). Off by default (second pass): the type is priced per SF of fieldhouse and its range check excludes outdoor fields; switch on, or add an outdoor-fields component, when the project has them."
     },
     {
       "id": "field-lighting",
@@ -194,12 +194,12 @@
         "region": "US",
         "evidence": [],
         "derived": true,
-        "method": "Derived allowance per lighted full-size field (6–8 poles)."
+        "method": "Derived allowance per lighted full-size field (6\u20138 poles)."
       },
       "inBaseline": false,
       "scales": true,
-      "optional": false,
-      "notes": ""
+      "optional": true,
+      "notes": "Off by default (second pass): the type is priced per SF of fieldhouse and its range check excludes outdoor fields; switch on, or add an outdoor-fields component, when the project has them."
     },
     {
       "id": "natural-grass-field",
@@ -223,7 +223,7 @@
       "inBaseline": false,
       "scales": true,
       "optional": true,
-      "notes": "Use instead of synthetic where appropriate; qty defaults to 0."
+      "notes": "Use instead of synthetic where appropriate; qty defaults to 0. Off by default (second pass): the type is priced per SF of fieldhouse and its range check excludes outdoor fields; switch on, or add an outdoor-fields component, when the project has them."
     },
     {
       "id": "field-parking-roads",
@@ -244,12 +244,12 @@
           "e3"
         ],
         "derived": true,
-        "method": "Derived: ~60–80 surface spaces per field at $3–5k/space plus walks/roads."
+        "method": "Derived: ~60\u201380 surface spaces per field at $3\u20135k/space plus walks/roads."
       },
       "inBaseline": false,
       "scales": true,
-      "optional": false,
-      "notes": ""
+      "optional": true,
+      "notes": "Off by default (second pass): the type is priced per SF of fieldhouse and its range check excludes outdoor fields; switch on, or add an outdoor-fields component, when the project has them."
     },
     {
       "id": "concessions-restroom-building",
@@ -271,7 +271,7 @@
           "_blocks/amenities.json#e14"
         ],
         "derived": true,
-        "method": "Park restroom contracts $265k–$608k (amenities block) plus concessions kitchen."
+        "method": "Park restroom contracts $265k\u2013$608k (amenities block) plus concessions kitchen."
       },
       "inBaseline": false,
       "scales": false,
@@ -336,7 +336,7 @@
       "max": 420,
       "dollarYear": 2025,
       "region": "US",
-      "method": "Fieldhouse building only: low 140×1.1; high 320×1.3. Outdoor fields excluded."
+      "method": "Fieldhouse building only: low 140\u00d71.1; high 320\u00d71.3. Outdoor fields excluded."
     }
   },
   "evidence": [
@@ -355,7 +355,7 @@
         "accessed": "2026-10-24"
       },
       "quote": "Gymnasium with Concrete Block / Rigid Steel ... SubTotal 100% $141.48 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $35.37",
-      "scopeNotes": "2019 RSMeans national model, 20,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $176.85/SF; open shop = $162.05/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Fieldhouse/court building proxy.",
+      "scopeNotes": "2019 RSMeans national model, 20,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $176.85/SF; open shop = $162.05/SF. Building only: excludes the architectural fees (6\u20138%) shown on the page, sitework, FF&E. Fieldhouse/court building proxy.",
       "confidence": "medium",
       "low": 162.05,
       "high": 176.85
@@ -375,7 +375,7 @@
         "accessed": "2026-10-24"
       },
       "quote": "Racquetball Court with Brick Veneer / Rigid Steel ... SubTotal 100% $137.52 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $34.38",
-      "scopeNotes": "2019 RSMeans national model, 30,000 SF, 2 story, union labor. value = subtotal + 25% contractor fees = $171.9/SF; open shop = $155.06/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Multi-court athletic club proxy.",
+      "scopeNotes": "2019 RSMeans national model, 30,000 SF, 2 story, union labor. value = subtotal + 25% contractor fees = $171.9/SF; open shop = $155.06/SF. Building only: excludes the architectural fees (6\u20138%) shown on the page, sitework, FF&E. Multi-court athletic club proxy.",
       "confidence": "medium",
       "low": 155.06,
       "high": 171.9
@@ -395,7 +395,7 @@
         "accessed": "2026-10-24"
       },
       "quote": "Type Sports complex Surface Grass/Turf ... Construction Cost $ 27 million ... '60 acres of sports: Round Rock complex officially opens'",
-      "scopeNotes": "Municipal outdoor multi-sports complex (Wikipedia lists soccer, football, rugby tenants), established 2017; ≈ $450k per acre of complex. Field count not verified in this session. Likely project cost incl. some soft costs.",
+      "scopeNotes": "Municipal outdoor multi-sports complex (Wikipedia lists soccer, football, rugby tenants), established 2017; \u2248 $450k per acre of complex. Field count not verified in this session. Likely project cost incl. some soft costs.",
       "confidence": "medium"
     },
     {
@@ -413,7 +413,7 @@
         "accessed": "2026-10-24"
       },
       "quote": "The College Station city council at its December meeting awarded a $1.3 million dollar contract to replace artificial turf on two soccer fields at Veterans Park.",
-      "scopeNotes": "Turf replacement (existing base/drainage reused, no lighting) ≈ $650k per field; December 2024 award. New fields with stone base and drainage cost more.",
+      "scopeNotes": "Turf replacement (existing base/drainage reused, no lighting) \u2248 $650k per field; December 2024 award. New fields with stone base and drainage cost more.",
       "confidence": "high"
     }
   ],

@@ -233,7 +233,7 @@ function render(bundle) {
     + '  else root.FSResearchData = factory();\n'
     + '})(typeof self !== \'undefined\' ? self : this, function () {\n'
     + '  \'use strict\';\n'
-    + '  return ' + JSON.stringify(bundle, null, 1) + ';\n'
+    + '  return ' + JSON.stringify(bundle) + ';\n'
     + '});\n';
 }
 
