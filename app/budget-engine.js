@@ -963,7 +963,8 @@
       var tag = (g.comp || 'project') + '@' + g.phase + ':';
       var baseC = sum(lines.list.filter(function (l) { return l.comp === g.comp && l.phase === g.phase && l.category !== 'land'; }),
         function (l) { return l.cents; });
-      var dv = pctFrom(S.developerFeePct, c ? c.developerFeePct : null, null, 'soft-costs', 'developerFee');
+      var tdf = c ? typeOf(D, c.typeId) : null;
+      var dv = pctFrom(S.developerFeePct, c ? c.developerFeePct : null, tdf && tdf.softCosts ? tdf.softCosts.developerFee : null, 'soft-costs', 'developerFee');
       lines.add({ key: tag + 'dev', comp: g.comp, phase: g.phase, category: 'developerFee', group: 'Developer fee', code: 'DEV',
         name: 'Developer fee', amountCents: Math.round(baseC * dv.v), qty: dv.v, uom: '% of cost excl. land',
         rate: dollars(baseC), source: dv.source });

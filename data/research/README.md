@@ -145,7 +145,10 @@ Same as money but without `dollarYear`/`region`: `{ "low": 0.04, "mid": 0.05, "h
   "ffe": { "perPrimaryUnit": { "low": 0, "mid": 0, "high": 0, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "…" } },
 
   "softCosts": {
+    // EXCLUDES impact & tap fees, the developer fee, construction financing and contingency —
+    // the engine adds each of those as its own line.
     "pctOfHard": { "low": 0.18, "mid": 0.22, "high": 0.28, "evidence": [], "derived": false, "method": "…" },
+    "developerFee": { "low": 0, "mid": 0, "high": 0, "evidence": [], "derived": true, "method": "…" },  // optional; else _common developerFee
     "breakdown": {                      // optional per-type overrides of _common/soft-costs.json, pct of hard cost
       "architectureEngineering": 0.06
     },

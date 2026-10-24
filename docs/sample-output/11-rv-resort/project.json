@@ -1,0 +1,65 @@
+{
+  "sample": {
+    "id": "11-rv-resort",
+    "name": "Gulf Breeze RV Resort",
+    "address": "Florida (statewide factor)",
+    "exitCap": 0.075
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "quick",
+    "location": {
+      "region": "FL"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "perAcre",
+      "value": 60000
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "c1",
+        "typeId": "rv-park-resort",
+        "name": "RV resort",
+        "phaseId": "p1",
+        "size": 150,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perUnitYear",
+          "rate": 14500,
+          "otherIncome": 180000,
+          "vacancy": 0.3,
+          "expenseRatio": 0.45
+        }
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

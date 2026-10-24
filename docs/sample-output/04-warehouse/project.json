@@ -1,0 +1,65 @@
+{
+  "sample": {
+    "id": "04-warehouse",
+    "name": "I-20 Logistics Center — bulk warehouse",
+    "address": "Dallas–Fort Worth, TX",
+    "exitCap": 0.0575
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "quick",
+    "location": {
+      "region": "TX-DFW"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "perAcre",
+      "value": 260000,
+      "acres": 24
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "c1",
+        "typeId": "warehouse-distribution",
+        "name": "Building A",
+        "phaseId": "p1",
+        "size": 320000,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perSFYear",
+          "rate": 7.25,
+          "vacancy": 0.05,
+          "expenseRatio": 0.08
+        }
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

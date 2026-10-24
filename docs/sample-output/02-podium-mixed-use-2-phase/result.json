@@ -1,0 +1,437 @@
+{
+  "totals": {
+    "hard": 89017280.71,
+    "ffe": 611948.57,
+    "contingency": 10243511.41,
+    "soft": 26747372.68,
+    "financing": 5083474,
+    "land": 9722800,
+    "total": 141426387.37,
+    "hardContingency": 9154868.71,
+    "softContingency": 1088642.7,
+    "fees": 3995462.29,
+    "developerFee": 4870004.37,
+    "hardAll": 98784097.99,
+    "softAll": 32919489.38,
+    "cents": 14142638737
+  },
+  "metrics": {
+    "sf": 316000,
+    "acres": 3.2,
+    "primaryUnits": null,
+    "unit": null,
+    "perSF": 447.5518587658228,
+    "perAcre": 44195746.053125,
+    "perPrimaryUnit": null,
+    "byUnit": {
+      "unit": 280,
+      "sf": 22000
+    }
+  },
+  "split": {
+    "hard": 0.698484206710031,
+    "soft": 0.23276766091660084,
+    "land": 0.06874813237336813
+  },
+  "components": [
+    {
+      "id": "res",
+      "name": "Residential over podium",
+      "type": "Podium multifamily (5-over-1/2)",
+      "size": 280,
+      "unit": "unit",
+      "totals": {
+        "hard": 84280924.92,
+        "ffe": 611948.57,
+        "contingency": 9708803.38,
+        "soft": 25403847.66,
+        "financing": 4490465.29,
+        "land": 1237.29,
+        "total": 124497227.11,
+        "hardContingency": 8669392.24,
+        "softContingency": 1039411.14,
+        "fees": 3789148.16,
+        "developerFee": 4615597.1,
+        "hardAll": 93562265.73,
+        "softAll": 30933724.09,
+        "cents": 12449722711
+      },
+      "metrics": {
+        "sf": 294000,
+        "acres": 2.8,
+        "primaryUnits": 280,
+        "unit": "unit",
+        "perSF": 423.45995615646257,
+        "perAcre": 44463295.39642858,
+        "perPrimaryUnit": 444632.9539642857
+      },
+      "range": {
+        "min": 250000,
+        "max": 650000,
+        "value": 508604.78900386125,
+        "status": "within",
+        "unit": "unit"
+      }
+    },
+    {
+      "id": "ret",
+      "name": "Ground-floor retail",
+      "type": "Retail strip center",
+      "size": 22000,
+      "unit": "sf",
+      "totals": {
+        "hard": 4736355.79,
+        "ffe": 0,
+        "contingency": 534708.03,
+        "soft": 1343525.02,
+        "financing": 593008.71,
+        "land": 9721562.71,
+        "total": 16929160.26,
+        "hardContingency": 485476.47,
+        "softContingency": 49231.56,
+        "fees": 206314.13,
+        "developerFee": 254407.27,
+        "hardAll": 5221832.26,
+        "softAll": 1985765.29,
+        "cents": 1692916026
+      },
+      "metrics": {
+        "sf": 22000,
+        "acres": 0,
+        "primaryUnits": 22000,
+        "unit": "sf",
+        "perSF": 769.5072845454546,
+        "perAcre": null,
+        "perPrimaryUnit": 769.5072845454546
+      },
+      "range": {
+        "min": 140,
+        "max": 420,
+        "value": 353.34662968818685,
+        "status": "within",
+        "unit": "sf"
+      }
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "name": "Phase 1 — podium + residential",
+      "start": "2027-01",
+      "months": 25,
+      "midpoint": "2028-02",
+      "escalation": 1.066112495481632,
+      "totals": {
+        "hard": 85132153.13,
+        "ffe": 611948.57,
+        "contingency": 9802864.1,
+        "soft": 25583303.59,
+        "financing": 4532551.49,
+        "land": 1237.29,
+        "total": 125664058.17,
+        "hardContingency": 8756643.13,
+        "softContingency": 1046220.97,
+        "fees": 3789148.16,
+        "developerFee": 4658856.52,
+        "hardAll": 94500744.83,
+        "softAll": 31162076.05,
+        "cents": 12566405817
+      },
+      "financing": {
+        "enabled": true,
+        "ltc": 0.6,
+        "rate": 0.07,
+        "feePct": 0.01,
+        "loan": 75398434.9,
+        "equity": 50265623.27,
+        "interest": 3778567.14,
+        "fee": 753984.35,
+        "iterations": 7
+      }
+    },
+    {
+      "id": "p2",
+      "name": "Phase 2 — retail fit-out",
+      "start": "2029-02",
+      "months": 12,
+      "midpoint": "2029-08",
+      "escalation": 1.1307147109743556,
+      "totals": {
+        "hard": 3885127.58,
+        "ffe": 0,
+        "contingency": 440647.31,
+        "soft": 1164069.09,
+        "financing": 550922.51,
+        "land": 9721562.71,
+        "total": 15762329.2,
+        "hardContingency": 398225.58,
+        "softContingency": 42421.73,
+        "fees": 206314.13,
+        "developerFee": 211147.85,
+        "hardAll": 4283353.16,
+        "softAll": 1757413.33,
+        "cents": 1576232920
+      },
+      "financing": {
+        "enabled": true,
+        "ltc": 0.6,
+        "rate": 0.07,
+        "feePct": 0.01,
+        "loan": 9457397.52,
+        "equity": 6304931.68,
+        "interest": 456348.53,
+        "fee": 94573.98,
+        "iterations": 6
+      }
+    }
+  ],
+  "shared": [
+    {
+      "id": "garage",
+      "name": "Structured parking (shared)",
+      "amount": 12226732.48,
+      "method": "sf",
+      "phase": "p1",
+      "shares": [
+        {
+          "comp": "res",
+          "amount": 11375504.27
+        },
+        {
+          "comp": "ret",
+          "amount": 851228.21
+        }
+      ]
+    }
+  ],
+  "warnings": [],
+  "proformas": [
+    {
+      "scope": {
+        "kind": "project",
+        "id": "project"
+      },
+      "purchasePrice": 141426387.37,
+      "year1PotentialIncome": 9404000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 316000
+      },
+      "unitCount": null,
+      "error": null,
+      "summary": {
+        "year1NOI": 5898923.85888,
+        "yieldOnCost": 0.041710206762527444,
+        "equityIRR": -0.09772194586979613,
+        "equityMultiple": 0.5740798253243224,
+        "warnings": [
+          "Year 1 cash flow before taxes is negative.",
+          "Year 2 cash flow before taxes is negative.",
+          "Year 3 cash flow before taxes is negative.",
+          "Year 4 cash flow before taxes is negative.",
+          "Year 5 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate building SF (or units)",
+        "property.unitCount": "Estimate primary units",
+        "acquisition.basis": "Estimate total project cost",
+        "income.year1PotentialIncome": "Estimate revenue inputs",
+        "income.otherIncome": "Estimate other income",
+        "expenses": "Estimate expense ratio"
+      },
+      "irrRow": [
+        {
+          "year": 1,
+          "NOI": 5898923.85888,
+          "cashFlow": -1549460.6864684746,
+          "equityIRR": -0.7423833671333326
+        },
+        {
+          "year": 2,
+          "NOI": 6075891.5746464,
+          "cashFlow": -1372492.9707020745,
+          "equityIRR": -0.4187703245016001
+        },
+        {
+          "year": 3,
+          "NOI": 6258168.321885793,
+          "cashFlow": -1190216.2234626822,
+          "equityIRR": -0.2509623894772779
+        },
+        {
+          "year": 4,
+          "NOI": 6445913.371542366,
+          "cashFlow": -1002471.1738061085,
+          "equityIRR": -0.1563106335814315
+        },
+        {
+          "year": 5,
+          "NOI": 6639290.772688638,
+          "cashFlow": -809093.7726598363,
+          "equityIRR": -0.09772194586979613
+        }
+      ]
+    },
+    {
+      "scope": {
+        "kind": "component",
+        "id": "res"
+      },
+      "purchasePrice": 124497227.11,
+      "year1PotentialIncome": 8568000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 294000
+      },
+      "unitCount": 280,
+      "error": null,
+      "summary": {
+        "year1NOI": 5241430.4,
+        "yieldOnCost": 0.04210078024765093,
+        "equityIRR": -0.09025432039060069,
+        "equityMultiple": 0.6018229158910107,
+        "warnings": [
+          "Year 1 cash flow before taxes is negative.",
+          "Year 2 cash flow before taxes is negative.",
+          "Year 3 cash flow before taxes is negative.",
+          "Year 4 cash flow before taxes is negative.",
+          "Year 5 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate component \"Residential over podium\" building SF (or units)",
+        "property.unitCount": "Estimate component \"Residential over podium\" primary units",
+        "acquisition.basis": "Estimate component \"Residential over podium\" total project cost",
+        "income.year1PotentialIncome": "Estimate component \"Residential over podium\" revenue inputs",
+        "income.otherIncome": "Estimate component \"Residential over podium\" other income",
+        "expenses": "Estimate component \"Residential over podium\" expense ratio"
+      }
+    },
+    {
+      "scope": {
+        "kind": "component",
+        "id": "ret"
+      },
+      "purchasePrice": 16929160.26,
+      "year1PotentialIncome": 836000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 22000
+      },
+      "unitCount": null,
+      "error": null,
+      "summary": {
+        "year1NOI": 653752,
+        "yieldOnCost": 0.038616918379860615,
+        "equityIRR": -0.16553874866293522,
+        "equityMultiple": 0.35433023491852006,
+        "warnings": [
+          "Year 1 cash flow before taxes is negative.",
+          "Year 2 cash flow before taxes is negative.",
+          "Year 3 cash flow before taxes is negative.",
+          "Year 4 cash flow before taxes is negative.",
+          "Year 5 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate component \"Ground-floor retail\" building SF (or units)",
+        "property.unitCount": "Estimate component \"Ground-floor retail\" primary units",
+        "acquisition.basis": "Estimate component \"Ground-floor retail\" total project cost",
+        "income.year1PotentialIncome": "Estimate component \"Ground-floor retail\" revenue inputs",
+        "income.otherIncome": "Estimate component \"Ground-floor retail\" other income",
+        "expenses": "Estimate component \"Ground-floor retail\" expense ratio"
+      }
+    },
+    {
+      "scope": {
+        "kind": "phase",
+        "id": "p1"
+      },
+      "purchasePrice": 125664058.17,
+      "year1PotentialIncome": 8568000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 294000
+      },
+      "unitCount": 280,
+      "error": null,
+      "summary": {
+        "year1NOI": 5241430.4,
+        "yieldOnCost": 0.0417098610082234,
+        "equityIRR": -0.09773178189642237,
+        "equityMultiple": 0.5740441871919194,
+        "warnings": [
+          "Year 1 cash flow before taxes is negative.",
+          "Year 2 cash flow before taxes is negative.",
+          "Year 3 cash flow before taxes is negative.",
+          "Year 4 cash flow before taxes is negative.",
+          "Year 5 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate phase \"Phase 1 — podium + residential\" building SF (or units)",
+        "property.unitCount": "Estimate phase \"Phase 1 — podium + residential\" primary units",
+        "acquisition.basis": "Estimate phase \"Phase 1 — podium + residential\" total project cost",
+        "income.year1PotentialIncome": "Estimate phase \"Phase 1 — podium + residential\" revenue inputs",
+        "income.otherIncome": "Estimate phase \"Phase 1 — podium + residential\" other income",
+        "expenses": "Estimate phase \"Phase 1 — podium + residential\" expense ratio"
+      }
+    },
+    {
+      "scope": {
+        "kind": "phase",
+        "id": "p2"
+      },
+      "purchasePrice": 15762329.2,
+      "year1PotentialIncome": 836000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 22000
+      },
+      "unitCount": null,
+      "error": null,
+      "summary": {
+        "year1NOI": 653752,
+        "yieldOnCost": 0.04147559613207419,
+        "equityIRR": -0.10228932886710858,
+        "equityMultiple": 0.5574731582277118,
+        "warnings": [
+          "Year 1 cash flow before taxes is negative.",
+          "Year 2 cash flow before taxes is negative.",
+          "Year 3 cash flow before taxes is negative.",
+          "Year 4 cash flow before taxes is negative.",
+          "Year 5 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate phase \"Phase 2 — retail fit-out\" building SF (or units)",
+        "property.unitCount": "Estimate phase \"Phase 2 — retail fit-out\" primary units",
+        "acquisition.basis": "Estimate phase \"Phase 2 — retail fit-out\" total project cost",
+        "income.year1PotentialIncome": "Estimate phase \"Phase 2 — retail fit-out\" revenue inputs",
+        "income.otherIncome": "Estimate phase \"Phase 2 — retail fit-out\" other income",
+        "expenses": "Estimate phase \"Phase 2 — retail fit-out\" expense ratio"
+      }
+    }
+  ]
+}

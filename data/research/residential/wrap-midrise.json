@@ -312,15 +312,15 @@
   },
   "softCosts": {
     "pctOfHard": {
-      "low": 0.17,
-      "mid": 0.23,
-      "high": 0.33,
+      "low": 0.12,
+      "mid": 0.18,
+      "high": 0.28,
       "evidence": [
         "e13",
         "e14"
       ],
       "derived": false,
-      "method": "RAND market-rate soft/hard 0.19 (TX/CO) to 0.33 (CA), incl. financing (e13); Brookings 20-30% of total cost (e14). Mid slightly above garden (0.22) for structural/garage engineering and longer schedule; excludes construction interest."
+      "method": "RAND market-rate soft/hard 0.19 (TX/CO) to 0.33 (CA), incl. financing (e13); Brookings 20-30% of total cost (e14). Mid slightly above garden (0.22) for structural/garage engineering and longer schedule; excludes construction interest. | Second pass (2026-10-24, main session): Reduced 5 points: RAND-based, includes developer costs and fees. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
     },
     "breakdown": {
       "architectureEngineering": 0.045
@@ -399,7 +399,7 @@
         "publisher": "Apers",
         "accessed": "2026-10-24"
       },
-      "quote": "Cost basis runs $200–275 PSF in 2026; Density runs 50–90 units per acre; 1.2–1.5 spaces per unit, structured in the deck",
+      "quote": "Cost basis runs $200\u2013275 PSF in 2026; Density runs 50\u201390 units per acre; 1.2\u20131.5 spaces per unit, structured in the deck",
       "scopeNotes": "Educational article (Oct 2026), illustrative ranges citing RSMeans and others. A later section gives ~1.0-1.5 spaces/unit for the 'Texas Donut'.",
       "confidence": "low"
     },

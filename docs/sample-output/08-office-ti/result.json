@@ -1,0 +1,187 @@
+{
+  "totals": {
+    "hard": 4731691.21,
+    "ffe": 1779614.43,
+    "contingency": 816996.11,
+    "soft": 1137203.02,
+    "financing": 155894.71,
+    "land": 0,
+    "total": 8621399.48,
+    "hardContingency": 776415.78,
+    "softContingency": 40580.33,
+    "fees": 0,
+    "developerFee": 325596.34,
+    "hardAll": 7287721.42,
+    "softAll": 1333678.06,
+    "cents": 862139948
+  },
+  "metrics": {
+    "sf": 22000,
+    "acres": 0,
+    "primaryUnits": 22000,
+    "unit": "sf",
+    "perSF": 391.88179454545457,
+    "perAcre": null,
+    "perPrimaryUnit": 391.88179454545457,
+    "byUnit": {
+      "sf": 22000
+    }
+  },
+  "split": {
+    "hard": 0.8453060824876658,
+    "soft": 0.15469391751233408,
+    "land": 0
+  },
+  "components": [
+    {
+      "id": "c1",
+      "name": "Tenant improvement — floors 6–7",
+      "type": "Office tenant improvement",
+      "size": 22000,
+      "unit": "sf",
+      "totals": {
+        "hard": 4731691.21,
+        "ffe": 1779614.43,
+        "contingency": 816996.11,
+        "soft": 1137203.02,
+        "financing": 155894.71,
+        "land": 0,
+        "total": 8621399.48,
+        "hardContingency": 776415.78,
+        "softContingency": 40580.33,
+        "fees": 0,
+        "developerFee": 325596.34,
+        "hardAll": 7287721.42,
+        "softAll": 1333678.06,
+        "cents": 862139948
+      },
+      "metrics": {
+        "sf": 22000,
+        "acres": 0,
+        "primaryUnits": 22000,
+        "unit": "sf",
+        "perSF": 391.88179454545457,
+        "perAcre": null,
+        "perPrimaryUnit": 391.88179454545457
+      },
+      "range": {
+        "min": 90,
+        "max": 450,
+        "value": 308.7904845358093,
+        "status": "within",
+        "unit": "sf"
+      }
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "name": "Phase 1",
+      "start": "2027-03",
+      "months": 11,
+      "midpoint": "2027-09",
+      "escalation": 1.0488317092326087,
+      "totals": {
+        "hard": 4731691.21,
+        "ffe": 1779614.43,
+        "contingency": 816996.11,
+        "soft": 1137203.02,
+        "financing": 155894.71,
+        "land": 0,
+        "total": 8621399.48,
+        "hardContingency": 776415.78,
+        "softContingency": 40580.33,
+        "fees": 0,
+        "developerFee": 325596.34,
+        "hardAll": 7287721.42,
+        "softAll": 1333678.06,
+        "cents": 862139948
+      },
+      "financing": {
+        "enabled": true,
+        "ltc": 0.6,
+        "rate": 0.07,
+        "feePct": 0.01,
+        "loan": 5172839.69,
+        "equity": 3448559.79,
+        "interest": 104166.31,
+        "fee": 51728.4,
+        "iterations": 5
+      }
+    }
+  ],
+  "shared": [],
+  "warnings": [],
+  "proformas": [
+    {
+      "scope": {
+        "kind": "project",
+        "id": "project"
+      },
+      "purchasePrice": 8621399.48,
+      "year1PotentialIncome": 0,
+      "size": {
+        "unit": "squareFeet",
+        "value": 22000
+      },
+      "unitCount": null,
+      "error": null,
+      "summary": {
+        "year1NOI": 0,
+        "yieldOnCost": 0,
+        "equityIRR": null,
+        "equityMultiple": -2.3898593411198696,
+        "warnings": [
+          "An IRR could not be calculated for at least one sale year (no valid sign change) — the affected cells are shown as not available.",
+          "Year 1 cash flow before taxes is negative.",
+          "Year 2 cash flow before taxes is negative.",
+          "Year 3 cash flow before taxes is negative.",
+          "Year 4 cash flow before taxes is negative.",
+          "Year 5 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate building SF (or units)",
+        "property.unitCount": "Estimate primary units",
+        "acquisition.basis": "Estimate total project cost",
+        "income.year1PotentialIncome": "Estimate revenue inputs",
+        "income.otherIncome": "Estimate other income"
+      },
+      "irrRow": [
+        {
+          "year": 1,
+          "NOI": 0,
+          "cashFlow": -454055.99223931716,
+          "equityIRR": null
+        },
+        {
+          "year": 2,
+          "NOI": 0,
+          "cashFlow": -454055.99223931716,
+          "equityIRR": null
+        },
+        {
+          "year": 3,
+          "NOI": 0,
+          "cashFlow": -454055.99223931716,
+          "equityIRR": null
+        },
+        {
+          "year": 4,
+          "NOI": 0,
+          "cashFlow": -454055.99223931716,
+          "equityIRR": null
+        },
+        {
+          "year": 5,
+          "NOI": 0,
+          "cashFlow": -454055.99223931716,
+          "equityIRR": null
+        }
+      ]
+    }
+  ]
+}

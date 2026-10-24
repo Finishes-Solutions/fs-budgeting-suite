@@ -1,0 +1,183 @@
+{
+  "totals": {
+    "hard": 5675760.77,
+    "ffe": 0,
+    "contingency": 777185.29,
+    "soft": 1242569.77,
+    "financing": 224805.75,
+    "land": 1460800,
+    "total": 9381121.58,
+    "hardContingency": 730754.2,
+    "softContingency": 46431.09,
+    "fees": 0,
+    "developerFee": 295981.38,
+    "hardAll": 6406514.97,
+    "softAll": 1513806.61,
+    "cents": 938112158
+  },
+  "metrics": {
+    "sf": 0,
+    "acres": 18,
+    "primaryUnits": 1,
+    "unit": "ls",
+    "perSF": null,
+    "perAcre": 521173.4211111111,
+    "perPrimaryUnit": 9381121.58,
+    "byUnit": {
+      "ls": 1
+    }
+  },
+  "split": {
+    "hard": 0.6829156743537269,
+    "soft": 0.16136733727311955,
+    "land": 0.15571698837315356
+  },
+  "components": [
+    {
+      "id": "k",
+      "name": "Event barn & retreat",
+      "type": "Custom (built from blocks)",
+      "size": 1,
+      "unit": "ls",
+      "totals": {
+        "hard": 5675760.77,
+        "ffe": 0,
+        "contingency": 777185.29,
+        "soft": 1242569.77,
+        "financing": 224805.75,
+        "land": 1460800,
+        "total": 9381121.58,
+        "hardContingency": 730754.2,
+        "softContingency": 46431.09,
+        "fees": 0,
+        "developerFee": 295981.38,
+        "hardAll": 6406514.97,
+        "softAll": 1513806.61,
+        "cents": 938112158
+      },
+      "metrics": {
+        "sf": 0,
+        "acres": 0,
+        "primaryUnits": 1,
+        "unit": "ls",
+        "perSF": null,
+        "perAcre": null,
+        "perPrimaryUnit": 9381121.58
+      },
+      "range": {
+        "min": 0,
+        "max": 1000000000000,
+        "value": 9179176.251609724,
+        "status": "within",
+        "unit": "ls"
+      }
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "name": "Phase 1",
+      "start": "2027-03",
+      "months": 14,
+      "midpoint": "2027-10",
+      "escalation": 1.0522653113239553,
+      "totals": {
+        "hard": 5675760.77,
+        "ffe": 0,
+        "contingency": 777185.29,
+        "soft": 1242569.77,
+        "financing": 224805.75,
+        "land": 1460800,
+        "total": 9381121.58,
+        "hardContingency": 730754.2,
+        "softContingency": 46431.09,
+        "fees": 0,
+        "developerFee": 295981.38,
+        "hardAll": 6406514.97,
+        "softAll": 1513806.61,
+        "cents": 938112158
+      },
+      "financing": {
+        "enabled": true,
+        "ltc": 0.6,
+        "rate": 0.07,
+        "feePct": 0.01,
+        "loan": 5628672.95,
+        "equity": 3752448.63,
+        "interest": 168519.02,
+        "fee": 56286.73,
+        "iterations": 6
+      }
+    }
+  ],
+  "shared": [],
+  "warnings": [],
+  "proformas": [
+    {
+      "scope": {
+        "kind": "project",
+        "id": "project"
+      },
+      "purchasePrice": 9381121.58,
+      "year1PotentialIncome": 1250000,
+      "size": {
+        "unit": "units",
+        "value": 1
+      },
+      "unitCount": null,
+      "error": null,
+      "summary": {
+        "year1NOI": 506250,
+        "yieldOnCost": 0.053964762708042846,
+        "equityIRR": -0.18393733381327337,
+        "equityMultiple": 0.3752355608155682,
+        "warnings": [
+          "An IRR could not be calculated for at least one sale year (no valid sign change) — the affected cells are shown as not available.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate building SF (or units)",
+        "property.unitCount": "Estimate primary units",
+        "acquisition.basis": "Estimate total project cost",
+        "income.year1PotentialIncome": "Estimate revenue inputs",
+        "income.otherIncome": "Estimate other income",
+        "expenses": "Estimate expense ratio"
+      },
+      "irrRow": [
+        {
+          "year": 1,
+          "NOI": 506250,
+          "cashFlow": 12182.363161465386,
+          "equityIRR": null
+        },
+        {
+          "year": 2,
+          "NOI": 521437.5,
+          "cashFlow": 27369.863161465386,
+          "equityIRR": -0.7929916247739723
+        },
+        {
+          "year": 3,
+          "NOI": 537080.625,
+          "cashFlow": 43012.988161465386,
+          "equityIRR": -0.48079302667952395
+        },
+        {
+          "year": 4,
+          "NOI": 553193.04375,
+          "cashFlow": 59125.40691146534,
+          "equityIRR": -0.2958120315559098
+        },
+        {
+          "year": 5,
+          "NOI": 569788.8350625,
+          "cashFlow": 75721.19822396536,
+          "equityIRR": -0.18393733381327337
+        }
+      ]
+    }
+  ]
+}

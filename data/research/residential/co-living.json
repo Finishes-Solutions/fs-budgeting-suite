@@ -269,14 +269,14 @@
   },
   "softCosts": {
     "pctOfHard": {
-      "low": 0.18,
-      "mid": 0.25,
-      "high": 0.35,
+      "low": 0.14,
+      "mid": 0.21,
+      "high": 0.31,
       "evidence": [
         "e5"
       ],
       "derived": true,
-      "method": "Derived: RAND market-rate soft/hard 0.19-0.33 incl. financing (e5); urban podium-like entitlement plus operator/brand technical services; mid 0.25 excluding construction interest."
+      "method": "Derived: RAND market-rate soft/hard 0.19-0.33 incl. financing (e5); urban podium-like entitlement plus operator/brand technical services; mid 0.25 excluding construction interest. | Second pass (2026-10-24, main session): Reduced 4 points: RAND-based, includes developer costs. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
     },
     "breakdown": {
       "architectureEngineering": 0.05

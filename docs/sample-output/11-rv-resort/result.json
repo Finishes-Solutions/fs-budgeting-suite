@@ -1,0 +1,180 @@
+{
+  "totals": {
+    "hard": 5476398.82,
+    "ffe": 224223.98,
+    "contingency": 1232935.26,
+    "soft": 1544394.85,
+    "financing": 209732.56,
+    "land": 799800,
+    "total": 9487485.47,
+    "hardContingency": 1172466.15,
+    "softContingency": 60469.11,
+    "fees": 503557.5,
+    "developerFee": 326075.11,
+    "hardAll": 6873088.95,
+    "softAll": 1814596.52,
+    "cents": 948748547
+  },
+  "metrics": {
+    "sf": 0,
+    "acres": 12.5,
+    "primaryUnits": 150,
+    "unit": "site",
+    "perSF": null,
+    "perAcre": 758998.8376000001,
+    "perPrimaryUnit": 63249.90313333334,
+    "byUnit": {
+      "site": 150
+    }
+  },
+  "split": {
+    "hard": 0.7244373624321345,
+    "soft": 0.1912621132056395,
+    "land": 0.08430052436222597
+  },
+  "components": [
+    {
+      "id": "c1",
+      "name": "RV resort",
+      "type": "RV park / resort",
+      "size": 150,
+      "unit": "site",
+      "totals": {
+        "hard": 5476398.82,
+        "ffe": 224223.98,
+        "contingency": 1232935.26,
+        "soft": 1544394.85,
+        "financing": 209732.56,
+        "land": 799800,
+        "total": 9487485.47,
+        "hardContingency": 1172466.15,
+        "softContingency": 60469.11,
+        "fees": 503557.5,
+        "developerFee": 326075.11,
+        "hardAll": 6873088.95,
+        "softAll": 1814596.52,
+        "cents": 948748547
+      },
+      "metrics": {
+        "sf": 0,
+        "acres": 12.5,
+        "primaryUnits": 150,
+        "unit": "site",
+        "perSF": null,
+        "perAcre": 758998.8376000001,
+        "perPrimaryUnit": 63249.90313333334
+      },
+      "range": {
+        "min": 19594.25,
+        "max": 152399.72,
+        "value": 63265.70089851801,
+        "status": "within",
+        "unit": "site"
+      }
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "name": "Phase 1",
+      "start": "2027-03",
+      "months": 13,
+      "midpoint": "2027-10",
+      "escalation": 1.0522653113239553,
+      "totals": {
+        "hard": 5476398.82,
+        "ffe": 224223.98,
+        "contingency": 1232935.26,
+        "soft": 1544394.85,
+        "financing": 209732.56,
+        "land": 799800,
+        "total": 9487485.47,
+        "hardContingency": 1172466.15,
+        "softContingency": 60469.11,
+        "fees": 503557.5,
+        "developerFee": 326075.11,
+        "hardAll": 6873088.95,
+        "softAll": 1814596.52,
+        "cents": 948748547
+      },
+      "financing": {
+        "enabled": true,
+        "ltc": 0.6,
+        "rate": 0.07,
+        "feePct": 0.01,
+        "loan": 5692491.28,
+        "equity": 3794994.19,
+        "interest": 152807.65,
+        "fee": 56924.91,
+        "iterations": 5
+      }
+    }
+  ],
+  "shared": [],
+  "warnings": [],
+  "proformas": [
+    {
+      "scope": {
+        "kind": "project",
+        "id": "project"
+      },
+      "purchasePrice": 9487485.47,
+      "year1PotentialIncome": 2175000,
+      "size": {
+        "unit": "units",
+        "value": 150
+      },
+      "unitCount": 150,
+      "error": null,
+      "summary": {
+        "year1NOI": 936375,
+        "yieldOnCost": 0.09869580332543054,
+        "equityIRR": 0.29862989678937946,
+        "equityMultiple": 3.1453401713759868,
+        "warnings": []
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate building SF (or units)",
+        "property.unitCount": "Estimate primary units",
+        "acquisition.basis": "Estimate total project cost",
+        "income.year1PotentialIncome": "Estimate revenue inputs",
+        "income.otherIncome": "Estimate other income",
+        "expenses": "Estimate expense ratio"
+      },
+      "irrRow": [
+        {
+          "year": 1,
+          "NOI": 936375,
+          "cashFlow": 436705.5856629957,
+          "equityIRR": 0.9479890507120776
+        },
+        {
+          "year": 2,
+          "NOI": 964466.25,
+          "cashFlow": 464796.8356629957,
+          "equityIRR": 0.513943546585043
+        },
+        {
+          "year": 3,
+          "NOI": 993400.2374999999,
+          "cashFlow": 493730.8231629956,
+          "equityIRR": 0.3911359518306335
+        },
+        {
+          "year": 4,
+          "NOI": 1023202.244625,
+          "cashFlow": 523532.83028799575,
+          "equityIRR": 0.3328399042538138
+        },
+        {
+          "year": 5,
+          "NOI": 1053898.31196375,
+          "cashFlow": 554228.8976267457,
+          "equityIRR": 0.29862989678937946
+        }
+      ]
+    }
+  ]
+}

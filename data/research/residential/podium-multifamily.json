@@ -341,15 +341,15 @@
   },
   "softCosts": {
     "pctOfHard": {
-      "low": 0.18,
-      "mid": 0.25,
-      "high": 0.35,
+      "low": 0.13,
+      "mid": 0.2,
+      "high": 0.3,
       "evidence": [
         "e17",
         "e18"
       ],
       "derived": false,
-      "method": "RAND market-rate soft/hard 0.19 (TX/CO) to 0.33 (CA, where podium is the dominant type) incl. financing (e17); Brookings 20-30% of total cost (e18). Mid 0.25 reflects heavier structural/MEP design, entitlement and urban permitting than garden; excludes construction interest."
+      "method": "RAND market-rate soft/hard 0.19 (TX/CO) to 0.33 (CA, where podium is the dominant type) incl. financing (e17); Brookings 20-30% of total cost (e18). Mid 0.25 reflects heavier structural/MEP design, entitlement and urban permitting than garden; excludes construction interest. | Second pass (2026-10-24, main session): Reduced 5 points: RAND-based, includes developer costs and fees. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
     },
     "breakdown": {
       "architectureEngineering": 0.05
@@ -428,7 +428,7 @@
         "publisher": "Apers",
         "accessed": "2026-10-24"
       },
-      "quote": "Cost basis in 2026 runs $235–350 PSF across the mid-rise tier; 1.0–1.5 spaces per unit, structured; Both produce 80–120+ units per acre",
+      "quote": "Cost basis in 2026 runs $235\u2013350 PSF across the mid-rise tier; 1.0\u20131.5 spaces per unit, structured; Both produce 80\u2013120+ units per acre",
       "scopeNotes": "Educational article (Oct 2026), illustrative ranges.",
       "confidence": "low"
     },
@@ -448,7 +448,7 @@
         "publisher": "Terrapin Construction Group",
         "accessed": "2026-10-24"
       },
-      "quote": "Type III Podium (4-over-1) ... $310k–$485k/unit; Mid-Rise Wood (5-over-1, 5-over-2) ... $340k–$525k/unit",
+      "quote": "Type III Podium (4-over-1) ... $310k\u2013$485k/unit; Mid-Rise Wood (5-over-1, 5-over-2) ... $340k\u2013$525k/unit",
       "scopeNotes": "Contractor marketing (2026); 'vertical hard cost' incl. podium concrete; land/soft/financing excluded; sitework not stated. Table per-SF: 4-over-1 $285-385, 5-over-1 $315-425 per residential SF.",
       "confidence": "low"
     },

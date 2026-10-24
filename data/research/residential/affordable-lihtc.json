@@ -316,7 +316,15 @@
     "breakdown": {
       "architectureEngineering": 0.05
     },
-    "notes": "Model the developer fee separately (Florida caps it at 16% of non-acquisition development cost; other states ~12-15%). Add tax-credit syndication, bond issuance, reserves (operating/replacement) and HFA fees as LIHTC-specific soft items."
+    "notes": "Model the developer fee separately (Florida caps it at 16% of non-acquisition development cost; other states ~12-15%). Add tax-credit syndication, bond issuance, reserves (operating/replacement) and HFA fees as LIHTC-specific soft items.",
+    "developerFee": {
+      "low": 0.1,
+      "mid": 0.12,
+      "high": 0.16,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived from the state caps in this file\u2019s soft-cost note: Florida caps the developer fee at 16% of non-acquisition development cost, other states ~12\u201315%; mid 12%."
+    }
   },
   "contingency": {
     "design": {
@@ -596,7 +604,7 @@
         "publisher": "Terrapin Construction Group",
         "accessed": "2026-10-24"
       },
-      "quote": "Affordable LIHTC Variant ... $240k–$380k/unit",
+      "quote": "Affordable LIHTC Variant ... $240k\u2013$380k/unit",
       "scopeNotes": "Contractor marketing (2026); vertical hard cost, land/soft excluded; sitework not stated.",
       "confidence": "low"
     },

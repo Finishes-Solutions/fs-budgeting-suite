@@ -1,0 +1,186 @@
+{
+  "totals": {
+    "hard": 1488070.39,
+    "ffe": 597153.72,
+    "contingency": 271072.53,
+    "soft": 413706.99,
+    "financing": 69862.25,
+    "land": 1208600,
+    "total": 4048465.88,
+    "hardContingency": 247173.73,
+    "softContingency": 23898.8,
+    "fees": 26258.17,
+    "developerFee": 106538.6,
+    "hardAll": 2332397.84,
+    "softAll": 507468.04,
+    "cents": 404846588
+  },
+  "metrics": {
+    "sf": 2800,
+    "acres": 0.9032258064516129,
+    "primaryUnits": 2800,
+    "unit": "sf",
+    "perSF": 1445.8806714285713,
+    "perAcre": 4482230.081428572,
+    "perPrimaryUnit": 1445.8806714285713,
+    "byUnit": {
+      "sf": 2800
+    }
+  },
+  "split": {
+    "hard": 0.576118932241069,
+    "soft": 0.12534823190852729,
+    "land": 0.2985328358504037
+  },
+  "components": [
+    {
+      "id": "c1",
+      "name": "QSR building",
+      "type": "Retail pad / QSR",
+      "size": 2800,
+      "unit": "sf",
+      "totals": {
+        "hard": 1488070.39,
+        "ffe": 597153.72,
+        "contingency": 271072.53,
+        "soft": 413706.99,
+        "financing": 69862.25,
+        "land": 1208600,
+        "total": 4048465.88,
+        "hardContingency": 247173.73,
+        "softContingency": 23898.8,
+        "fees": 26258.17,
+        "developerFee": 106538.6,
+        "hardAll": 2332397.84,
+        "softAll": 507468.04,
+        "cents": 404846588
+      },
+      "metrics": {
+        "sf": 2800,
+        "acres": 0.9032258064516129,
+        "primaryUnits": 2800,
+        "unit": "sf",
+        "perSF": 1445.8806714285713,
+        "perAcre": 4482230.081428572,
+        "perPrimaryUnit": 1445.8806714285713
+      },
+      "range": {
+        "min": 397.22,
+        "max": 1358.92,
+        "value": 1093.6613713236707,
+        "status": "within",
+        "unit": "sf"
+      }
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "name": "Phase 1",
+      "start": "2027-03",
+      "months": 8,
+      "midpoint": "2027-07",
+      "escalation": 1.0419980806124358,
+      "totals": {
+        "hard": 1488070.39,
+        "ffe": 597153.72,
+        "contingency": 271072.53,
+        "soft": 413706.99,
+        "financing": 69862.25,
+        "land": 1208600,
+        "total": 4048465.88,
+        "hardContingency": 247173.73,
+        "softContingency": 23898.8,
+        "fees": 26258.17,
+        "developerFee": 106538.6,
+        "hardAll": 2332397.84,
+        "softAll": 507468.04,
+        "cents": 404846588
+      },
+      "financing": {
+        "enabled": true,
+        "ltc": 0.6,
+        "rate": 0.07,
+        "feePct": 0.01,
+        "loan": 2429079.53,
+        "equity": 1619386.35,
+        "interest": 45571.45,
+        "fee": 24290.8,
+        "iterations": 5
+      }
+    }
+  ],
+  "shared": [],
+  "warnings": [],
+  "proformas": [
+    {
+      "scope": {
+        "kind": "project",
+        "id": "project"
+      },
+      "purchasePrice": 4048465.88,
+      "year1PotentialIncome": 210000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 2800
+      },
+      "unitCount": null,
+      "error": null,
+      "summary": {
+        "year1NOI": 203700,
+        "yieldOnCost": 0.050315355504490504,
+        "equityIRR": 0.012197738477209842,
+        "equityMultiple": 1.0627815685387687,
+        "warnings": [
+          "Year 1 cash flow before taxes is negative.",
+          "Year 2 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return.",
+          "The operating-expense ratio is unusually low."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate building SF (or units)",
+        "property.unitCount": "Estimate primary units",
+        "acquisition.basis": "Estimate total project cost",
+        "income.year1PotentialIncome": "Estimate revenue inputs",
+        "income.otherIncome": "Estimate other income",
+        "expenses": "Estimate expense ratio"
+      },
+      "irrRow": [
+        {
+          "year": 1,
+          "NOI": 203700,
+          "cashFlow": -9517.146062511427,
+          "equityIRR": -0.3979131509913574
+        },
+        {
+          "year": 2,
+          "NOI": 209811,
+          "cashFlow": -3406.146062511427,
+          "equityIRR": -0.16056427009556162
+        },
+        {
+          "year": 3,
+          "NOI": 216105.33,
+          "cashFlow": 2888.1839374885603,
+          "equityIRR": -0.06582432277916744
+        },
+        {
+          "year": 4,
+          "NOI": 222588.48990000002,
+          "cashFlow": 9371.343837488588,
+          "equityIRR": -0.016916016324177628
+        },
+        {
+          "year": 5,
+          "NOI": 229266.14459700003,
+          "cashFlow": 16048.998534488608,
+          "equityIRR": 0.012197738477209842
+        }
+      ]
+    }
+  ]
+}

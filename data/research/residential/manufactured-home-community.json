@@ -6,15 +6,53 @@
   "researchedAt": "2026-10-24",
   "primaryUnit": "pad",
   "summary": "Land-lease community of HUD-code manufactured-home pads. The baseline cost is horizontal: private streets, water/sewer/storm, electric distribution, pads with hookups, landscaping and common amenities. The homes themselves are an optional line item. Per-pad cost is very sensitive to scale, because fixed infrastructure is spread over the pad count; the Anchorage study halves per-unit site cost going from 20 to 40 units. Cost also depends on whether public utilities are at the boundary. The only public per-pad budgets found are small, high-cost projects (Vermont, Alaska), so the national default is derived downward for scale and region. Home prices are solid (Census MHS).",
-
   "sizing": {
-    "typicalSize": { "low": 40, "mid": 120, "high": 300, "unit": "pad", "evidence": ["e2"], "derived": true, "method": "Pads per community. Anchorage's existing stock: 12 large communities averaging ~300 units and 26 small ones averaging ~35 (e2). New greenfield communities are typically 100–250 pads to spread fixed infrastructure. Judgment for the mid." },
-    "primaryUnitsPerAcre": { "low": 4, "mid": 6, "high": 8, "evidence": [], "derived": true, "method": "Gross density incl. streets, open space and clubhouse. Typical zoning allows ~5–8 homes/acre for multi-section homes. Judgment; no source found this session." },
-    "parkingPerPrimaryUnit": { "low": 2, "mid": 2, "high": 3, "type": "surface", "evidence": ["e1"], "derived": true, "method": "Two-car driveway or carport pad per home (the Plainfield budget includes a driveway per lot, e1) plus guest parking. Judgment." }
+    "typicalSize": {
+      "low": 40,
+      "mid": 120,
+      "high": 300,
+      "unit": "pad",
+      "evidence": [
+        "e2"
+      ],
+      "derived": true,
+      "method": "Pads per community. Anchorage's existing stock: 12 large communities averaging ~300 units and 26 small ones averaging ~35 (e2). New greenfield communities are typically 100\u2013250 pads to spread fixed infrastructure. Judgment for the mid."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 4,
+      "mid": 6,
+      "high": 8,
+      "evidence": [],
+      "derived": true,
+      "method": "Gross density incl. streets, open space and clubhouse. Typical zoning allows ~5\u20138 homes/acre for multi-section homes. Judgment; no source found this session."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 2,
+      "mid": 2,
+      "high": 3,
+      "type": "surface",
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Two-car driveway or carport pad per home (the Plainfield budget includes a driveway per lot, e1) plus guest parking. Judgment."
+    }
   },
-
   "hardCost": {
-    "perPrimaryUnit": { "low": 35000, "mid": 65000, "high": 110000, "dollarYear": 2025, "region": "US", "evidence": ["e1", "e2", "e3"], "derived": true, "method": "Per pad, horizontal infrastructure only (no home), incl. GC general conditions and OH&P, excl. contingency. Evidence (2025$): Plainfield VT 45-lot community expansion (e1): infrastructure $49,111 + sitework $20,000 + landscaping/amenities $13,111 + pad/slab/hookups/driveway $667 + general conditions $7,530 + contractor markup $15,959 ≈ $106k/lot. Anchorage AK feasibility study (e2): site preparation of $91,750/unit for a 40-unit and $183,500/unit for a 20-unit community. Both are small projects in high-cost, difficult-site markets (Vermont wetlands/flood relocation; Alaska), so they set the HIGH end ($110k). Mid $65k assumes a 100–150 pad greenfield community with public utilities at the boundary: Plainfield's $106k with fixed costs spread over ~3× the pads (Anchorage shows ~50% per-pad reduction when the pad count doubles; a ~30% scale reduction is assumed here) and ~10% regional normalization (106k × 0.7 × 0.9 ≈ $67k, rounded to $65k). Low $35k is a Sun Belt expansion phase reusing existing roads and plant; it sits above the $10–20k/unit infrastructure-replacement cost for existing parks in Minnesota (e3). The scale and regional factors are judgments; verify." },
+    "perPrimaryUnit": {
+      "low": 35000,
+      "mid": 65000,
+      "high": 110000,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3"
+      ],
+      "derived": true,
+      "method": "Per pad, horizontal infrastructure only (no home), incl. GC general conditions and OH&P, excl. contingency. Evidence (2025$): Plainfield VT 45-lot community expansion (e1): infrastructure $49,111 + sitework $20,000 + landscaping/amenities $13,111 + pad/slab/hookups/driveway $667 + general conditions $7,530 + contractor markup $15,959 \u2248 $106k/lot. Anchorage AK feasibility study (e2): site preparation of $91,750/unit for a 40-unit and $183,500/unit for a 20-unit community. Both are small projects in high-cost, difficult-site markets (Vermont wetlands/flood relocation; Alaska), so they set the HIGH end ($110k). Mid $65k assumes a 100\u2013150 pad greenfield community with public utilities at the boundary: Plainfield's $106k with fixed costs spread over ~3\u00d7 the pads (Anchorage shows ~50% per-pad reduction when the pad count doubles; a ~30% scale reduction is assumed here) and ~10% regional normalization (106k \u00d7 0.7 \u00d7 0.9 \u2248 $67k, rounded to $65k). Low $35k is a Sun Belt expansion phase reusing existing roads and plant; it sits above the $10\u201320k/unit infrastructure-replacement cost for existing parks in Minnesota (e3). The scale and regional factors are judgments; verify."
+    },
     "scope": {
       "includesSitework": true,
       "includesStructuredParking": false,
@@ -22,34 +60,70 @@
       "notes": "Per-pad share of internal streets and paving, earthwork, water/sewer/storm mains and laterals, electric distribution and pedestals, concrete pads/runners and driveways, landscaping, mailboxes and modest common-area amenities, incl. GC general conditions and OH&P. Excludes land, the manufactured home and its transport/installation (see line items), off-site utility extensions, lift stations/treatment plants, a clubhouse building, impact/tap fees and soft costs."
     }
   },
-
   "qualityTiers": {
-    "economy": 0.65, "standard": 1.0, "premium": 1.35, "luxury": 1.7,
-    "evidence": [], "derived": true,
-    "method": "Economy = low/mid (35/65 ≈ 0.54), tempered to 0.65 because economy communities still need code-minimum utilities. Premium/luxury (55+ resort-style communities with curb and gutter, underground utilities and larger pads) are judgment, with luxury ≈ the high/mid ratio (110/65 = 1.7)."
+    "economy": 0.65,
+    "standard": 1.0,
+    "premium": 1.35,
+    "luxury": 1.7,
+    "evidence": [],
+    "derived": true,
+    "method": "Economy = low/mid (35/65 \u2248 0.54), tempered to 0.65 because economy communities still need code-minimum utilities. Premium/luxury (55+ resort-style communities with curb and gutter, underground utilities and larger pads) are judgment, with luxury \u2248 the high/mid ratio (110/65 = 1.7)."
   },
-
   "systemSplit": {
     "lines": [
-      { "division": "01", "pct": 0.17 },
-      { "division": "03", "pct": 0.05 },
-      { "division": "26", "pct": 0.12 },
-      { "division": "31", "pct": 0.12 },
-      { "division": "32", "pct": 0.22 },
-      { "division": "33", "pct": 0.32 }
+      {
+        "division": "01",
+        "pct": 0.17
+      },
+      {
+        "division": "03",
+        "pct": 0.05
+      },
+      {
+        "division": "26",
+        "pct": 0.12
+      },
+      {
+        "division": "31",
+        "pct": 0.12
+      },
+      {
+        "division": "32",
+        "pct": 0.22
+      },
+      {
+        "division": "33",
+        "pct": 0.32
+      }
     ],
-    "evidence": ["e1"], "derived": true,
+    "evidence": [
+      "e1"
+    ],
+    "derived": true,
     "method": "From the Plainfield VT budget (e1), per lot: infrastructure (water/wastewater/storm/electric) $49,111, split 75% to Div 33 and 25% to Div 26 (electric), an assumption; sitework (excavation/grading/undergrounding/paving) $20,000, split 50/50 to 31 and 32; landscaping and amenities $13,111 to 32; general conditions plus 17.5% contractor markup to 01. Div 03 was raised from Plainfield's $667 (pad replacement only) to ~5% for new concrete pads/runners and driveways on every site. Then normalized to 1.000."
   },
-
   "lineItems": [
     {
       "id": "manufactured-home",
       "name": "New manufactured home (HUD-code), dealer price",
       "division": "13",
       "unit": "ea",
-      "qty": { "per": "primaryUnit", "value": 1 },
-      "cost": { "low": 82200, "mid": 130500, "high": 166600, "dollarYear": 2026, "region": "US", "evidence": ["e4"], "derived": false, "method": "Census Manufactured Housing Survey, May 2026 average sales price (e4): single-section $82,200 (low), all homes $130,500 (mid), double-section $166,600 (high)." },
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 82200,
+        "mid": 130500,
+        "high": 166600,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": false,
+        "method": "Census Manufactured Housing Survey, May 2026 average sales price (e4): single-section $82,200 (low), all homes $130,500 (mid), double-section $166,600 (high)."
+      },
       "inBaseline": false,
       "scales": true,
       "optional": true,
@@ -60,8 +134,22 @@
       "name": "Home transport, installation, foundation/tie-downs, utility hookup and skirting",
       "division": "13",
       "unit": "ea",
-      "qty": { "per": "primaryUnit", "value": 1 },
-      "cost": { "low": 10000, "mid": 15000, "high": 25000, "dollarYear": 2025, "region": "US", "evidence": ["e2"], "derived": true, "method": "Anchorage study uses $20,000 shipping per home (e2), which includes long-haul from the Lower 48 and sets the high end. The lower-48 mid/low are judgment for regional delivery, set-up crew, piers/anchors, hookups, skirting and steps. Census MHS price scope does not state whether delivery/setup is included, so this is carried separately; verify against dealer quotes." },
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 10000,
+        "mid": 15000,
+        "high": 25000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e2"
+        ],
+        "derived": true,
+        "method": "Anchorage study uses $20,000 shipping per home (e2), which includes long-haul from the Lower 48 and sets the high end. The lower-48 mid/low are judgment for regional delivery, set-up crew, piers/anchors, hookups, skirting and steps. Census MHS price scope does not state whether delivery/setup is included, so this is carried separately; verify against dealer quotes."
+      },
       "inBaseline": false,
       "scales": true,
       "optional": true,
@@ -72,8 +160,20 @@
       "name": "Community clubhouse / office building",
       "division": "13",
       "unit": "ls",
-      "qty": { "per": "project", "value": 1 },
-      "cost": { "low": 300000, "mid": 750000, "high": 2000000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Judgment: 1,500–5,000 SF clubhouse at ~$200–400/SF, plus a pool in resort-style communities. No source found." },
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 300000,
+        "mid": 750000,
+        "high": 2000000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Judgment: 1,500\u20135,000 SF clubhouse at ~$200\u2013400/SF, plus a pool in resort-style communities. No source found."
+      },
       "inBaseline": false,
       "scales": false,
       "optional": true,
@@ -84,17 +184,37 @@
       "name": "Sewer lift station",
       "division": "33",
       "unit": "ea",
-      "qty": { "per": "project", "value": 1 },
-      "cost": { "low": 150000, "mid": 350000, "high": 750000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Judgment for a packaged duplex-pump station sized for 100–300 homes. Verify with civil engineer." },
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 350000,
+        "high": 750000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Judgment for a packaged duplex-pump station sized for 100\u2013300 homes. Verify with civil engineer."
+      },
       "inBaseline": false,
       "scales": false,
       "optional": true,
       "notes": "Where gravity sewer to the public main is not possible."
     }
   ],
-
   "softCosts": {
-    "pctOfHard": { "low": 0.12, "mid": 0.18, "high": 0.3, "evidence": ["e1"], "derived": false, "method": "Plainfield VT budget per lot (e1): civil engineering $10,667 + other design $2,000 + survey $1,667 + permits $889 + legal $333 + environmental/NEPA/archaeology ~$311 + loan fees, inspection, interest and insurance $1,356 + marketing $667 ≈ $17,900. That is ~17% of the ~$106k pre-contingency hard cost. Adding owner project management ($12,000/lot) brings it to ~28% (high). Mid 18%. Low assumes larger scale and a simpler permitting path." },
+    "pctOfHard": {
+      "low": 0.11,
+      "mid": 0.17,
+      "high": 0.29,
+      "evidence": [
+        "e1"
+      ],
+      "derived": false,
+      "method": "Plainfield VT budget per lot (e1): civil engineering $10,667 + other design $2,000 + survey $1,667 + permits $889 + legal $333 + environmental/NEPA/archaeology ~$311 + loan fees, inspection, interest and insurance $1,356 + marketing $667 \u2248 $17,900. That is ~17% of the ~$106k pre-contingency hard cost. Adding owner project management ($12,000/lot) brings it to ~28% (high). Mid 18%. Low assumes larger scale and a simpler permitting path. | Second pass (2026-10-24, main session): Reduced 1 point to remove loan fees and interest in the Plainfield budget. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
     "breakdown": {
       "architectureEngineering": 0.12,
       "permitsAndFees": 0.01,
@@ -105,17 +225,47 @@
     },
     "notes": "Civil engineering dominates; there is little building architecture. Utility tap/impact fees per pad vary widely and are not included."
   },
-
   "contingency": {
-    "design": { "low": 0.05, "mid": 0.1, "high": 0.12, "evidence": ["e1"], "derived": false, "method": "Plainfield budget carries a 12% design/estimating contingency (e1), the high end. Mid 10% (judgment) once the civil design is advanced." },
-    "hard": { "low": 0.07, "mid": 0.1, "high": 0.15, "evidence": ["e1"], "derived": false, "method": "Plainfield carries a 15% construction contingency (e1) on a wetlands/flood-relocation site, the high end. Mid 10% for typical greenfield sites (judgment)." },
-    "soft": { "low": 0.05, "mid": 0.08, "high": 0.1, "evidence": ["e1"], "derived": false, "method": "Plainfield soft cost contingency 8% (e1) used as the mid." }
+    "design": {
+      "low": 0.05,
+      "mid": 0.1,
+      "high": 0.12,
+      "evidence": [
+        "e1"
+      ],
+      "derived": false,
+      "method": "Plainfield budget carries a 12% design/estimating contingency (e1), the high end. Mid 10% (judgment) once the civil design is advanced."
+    },
+    "hard": {
+      "low": 0.07,
+      "mid": 0.1,
+      "high": 0.15,
+      "evidence": [
+        "e1"
+      ],
+      "derived": false,
+      "method": "Plainfield carries a 15% construction contingency (e1) on a wetlands/flood-relocation site, the high end. Mid 10% for typical greenfield sites (judgment)."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [
+        "e1"
+      ],
+      "derived": false,
+      "method": "Plainfield soft cost contingency 8% (e1) used as the mid."
+    }
   },
-
   "rangeCheck": {
-    "perPrimaryUnit": { "min": 40000, "max": 220000, "dollarYear": 2025, "region": "US", "method": "Per pad, hard + soft, excl. land and home. Min ≈ low $35k × 1.12. Max ≈ the Anchorage 20-unit site prep of $183,500 (e2) plus soft cost." }
+    "perPrimaryUnit": {
+      "min": 40000,
+      "max": 220000,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Per pad, hard + soft, excl. land and home. Min \u2248 low $35k \u00d7 1.12. Max \u2248 the Anchorage 20-unit site prep of $183,500 (e2) plus soft cost."
+    }
   },
-
   "evidence": [
     {
       "id": "e1",
@@ -125,7 +275,12 @@
       "region": "Plainfield, Vermont",
       "regionKey": "VT",
       "dataYear": 2025,
-      "source": { "title": "East Village Expansion — Proposed Grant Budget (CDBG-DR), 9/25/2025", "url": "https://www.plainfieldvt.gov/uploads/8/1/0/6/81063668/plainfield_cdbg-dr_budget.pdf", "publisher": "Town of Plainfield, Vermont", "accessed": "2026-10-24" },
+      "source": {
+        "title": "East Village Expansion \u2014 Proposed Grant Budget (CDBG-DR), 9/25/2025",
+        "url": "https://www.plainfieldvt.gov/uploads/8/1/0/6/81063668/plainfield_cdbg-dr_budget.pdf",
+        "publisher": "Town of Plainfield, Vermont",
+        "accessed": "2026-10-24"
+      },
       "quote": "Infrastructure - W/WW/SW/Elect 2,210,000 49,111 This aligns with industry standards for per lot infrastructure construction; Sitework ... 900,000 20,000; Landscaping & site ammenities 590,000 13,111",
       "scopeNotes": "45-lot manufactured-home community expansion (flood-recovery relocation). Value computed by the researcher: infrastructure + sitework + landscaping/amenities + pad/driveway ($667) + general conditions ($7,530) + 17.5% contractor markup ($15,959) per lot. Excludes the 12% design and 15% construction contingencies, owner's rep, demolition and the home line. Total hard construction is $144,359/lot including those items; total development cost is $222,368/lot.",
       "confidence": "medium"
@@ -140,7 +295,12 @@
       "region": "Anchorage, Alaska",
       "regionKey": "AK-Anchorage",
       "dataYear": 2025,
-      "source": { "title": "Manufactured Housing Feasibility Study — Key Findings (prepared for Anchorage Assembly Community and Economic Development Committee), January 9, 2025", "url": "https://muni.org/Departments/Assembly/SiteAssets/Pages/Community%20and%20Economic%20Development%20Committee/MRG%20Manufactured%20Housing%20Key%20Findings.pdf", "publisher": "McKinley Research Group for the Municipality of Anchorage", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Manufactured Housing Feasibility Study \u2014 Key Findings (prepared for Anchorage Assembly Community and Economic Development Committee), January 9, 2025",
+        "url": "https://muni.org/Departments/Assembly/SiteAssets/Pages/Community%20and%20Economic%20Development%20Committee/MRG%20Manufactured%20Housing%20Key%20Findings.pdf",
+        "publisher": "McKinley Research Group for the Municipality of Anchorage",
+        "accessed": "2026-10-24"
+      },
       "quote": "Site Preparation (earthworks, utilities, surface infrastructure etc.) $183,500 [20 Unit MHC] $91,750 [40 Unit MHC]; Unit Costs $85,000; Shipping $20,000",
       "scopeNotes": "Feasibility model, not a bid. The same total site-prep budget is spread over 20 vs 40 units, showing scale sensitivity. Alaska is high-cost, and the study notes Title 21 added infrastructure/landscaping requirements. Existing Anchorage stock: 12 large MHCs (~3,680 units), 26 small (~920 units).",
       "confidence": "medium"
@@ -155,7 +315,12 @@
       "region": "Minnesota",
       "regionKey": "MN",
       "dataYear": 2023,
-      "source": { "title": "Manufactured Housing Infrastructure Fund — HF 1282 / SF 1083 fact sheet", "url": "https://www.house.mn.gov/comm/docs/UKEFgt4vXkub_L8CcQfP4A.pdf", "publisher": "Minnesota House of Representatives (committee document)", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Manufactured Housing Infrastructure Fund \u2014 HF 1282 / SF 1083 fact sheet",
+        "url": "https://www.house.mn.gov/comm/docs/UKEFgt4vXkub_L8CcQfP4A.pdf",
+        "publisher": "Minnesota House of Representatives (committee document)",
+        "accessed": "2026-10-24"
+      },
       "quote": "For a one-time investment of $10,000 to $20,000 per unit, these communities can be preserved in perpetuity.",
       "scopeNotes": "Repair/replacement of failing infrastructure in existing parks, not greenfield development; a floor reference. The data year is assumed to be ~2023 (2023 session bill numbers); not stated in the extracted text.",
       "confidence": "low"
@@ -170,13 +335,17 @@
       "region": "United States",
       "regionKey": "US",
       "dataYear": 2026,
-      "source": { "title": "Average Sales Price of New Manufactured Homes by Region and Size of Home, by Month of Shipment (mhstabavgsls.xlsx)", "url": "https://www2.census.gov/programs-surveys/mhs/tables/time-series/mhstabavgsls.xlsx", "publisher": "U.S. Census Bureau, Manufactured Housing Survey (sponsored by HUD)", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Average Sales Price of New Manufactured Homes by Region and Size of Home, by Month of Shipment (mhstabavgsls.xlsx)",
+        "url": "https://www2.census.gov/programs-surveys/mhs/tables/time-series/mhstabavgsls.xlsx",
+        "publisher": "U.S. Census Bureau, Manufactured Housing Survey (sponsored by HUD)",
+        "accessed": "2026-10-24"
+      },
       "quote": "2026 May: United States Total 130500, Single 82200, Double 166600",
       "scopeNotes": "Dealer-reported sales or intended sales price of new manufactured homes placed for residential use; excludes land. The methodology page does not define whether delivery/setup is included. December 2025: $134,500 total.",
       "confidence": "high"
     }
   ],
-
   "openQuestions": [
     "No large-scale greenfield per-pad budget was found. REIT disclosures (Sun Communities, ELS, UMH expansion-site costs) or state HFA-funded new MHC budgets would replace the derived mid. Web search budget ran out before these could be checked.",
     "Units per acre is unsourced; zoning-code minimum lot sizes for MH parks in several states would anchor it.",

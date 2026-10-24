@@ -5,7 +5,7 @@
   "category": "commercial",
   "researchedAt": "2026-10-24",
   "primaryUnit": "sf",
-  "summary": "Single-tenant 50,000–200,000 SF store: tilt-up or CMU walls, steel joist roof, large clear spans, loading docks and a big parking field. Very price-efficient per SF; retailer prototypes drive scope. Evidence is thin (RSMeans department-store model and national retail quartiles); value is a reasoned derivation.",
+  "summary": "Single-tenant 50,000\u2013200,000 SF store: tilt-up or CMU walls, steel joist roof, large clear spans, loading docks and a big parking field. Very price-efficient per SF; retailer prototypes drive scope. Evidence is thin (RSMeans department-store model and national retail quartiles); value is a reasoned derivation.",
   "sizing": {
     "typicalSize": {
       "low": 50000,
@@ -16,7 +16,7 @@
         "e1"
       ],
       "derived": true,
-      "method": "Catalog definition (50k–200k SF); RSMeans department store model uses 110,000 SF (e1)."
+      "method": "Catalog definition (50k\u2013200k SF); RSMeans department store model uses 110,000 SF (e1)."
     },
     "primaryUnitsPerAcre": {
       "low": 9000,
@@ -25,7 +25,7 @@
       "unit": "sf",
       "evidence": [],
       "derived": true,
-      "method": "Derived: FAR ≈ 0.2–0.3 with 4–5 spaces/1,000 SF and truck court."
+      "method": "Derived: FAR \u2248 0.2\u20130.3 with 4\u20135 spaces/1,000 SF and truck court."
     },
     "parkingPerPrimaryUnit": {
       "low": 0.0035,
@@ -34,7 +34,7 @@
       "type": "surface",
       "evidence": [],
       "derived": true,
-      "method": "Spaces per GSF (judgment; big-box retailers typically 4–5/1,000)."
+      "method": "Spaces per GSF (judgment; big-box retailers typically 4\u20135/1,000)."
     }
   },
   "hardCost": {
@@ -51,7 +51,7 @@
         "e5"
       ],
       "derived": true,
-      "method": "RSMeans 2019 1-story department store (110,000 SF, complete basic building, excl. site) $113.46–123.00 (e1) × ≈1.3 = $147–160; + sitework ≈$25–35/SF for 4–5/1,000 parking and truck court (Kirksey one-story 5/1,000 sitework $16–37, e6) → ≈$175–190. Mid = $180. Low = $130 ≈ RSMeans retail 1/4 quartile ($96, 2022, e2) escalated + site. High = $260 ≈ RLB strip Dallas high ($270, e4) — big boxes rarely exceed small-shop strip costs. RSMeans model escalation 2019→2026 ≈ ×1.3, inferred from RSMeans' own office 2–4 story model: 2019 total $187.02 (open) / $204.43 (union) vs. 2026 national $253.63 (BD+C) = ×1.24–1.36. This is only used to compare evidence; the build script escalates from the stated dollarYear."
+      "method": "RSMeans 2019 1-story department store (110,000 SF, complete basic building, excl. site) $113.46\u2013123.00 (e1) \u00d7 \u22481.3 = $147\u2013160; + sitework \u2248$25\u201335/SF for 4\u20135/1,000 parking and truck court (Kirksey one-story 5/1,000 sitework $16\u201337, e6) \u2192 \u2248$175\u2013190. Mid = $180. Low = $130 \u2248 RSMeans retail 1/4 quartile ($96, 2022, e2) escalated + site. High = $260 \u2248 RLB strip Dallas high ($270, e4) \u2014 big boxes rarely exceed small-shop strip costs. RSMeans model escalation 2019\u21922026 \u2248 \u00d71.3, inferred from RSMeans' own office 2\u20134 story model: 2019 total $187.02 (open) / $204.43 (union) vs. 2026 national $253.63 (BD+C) = \u00d71.24\u20131.36. This is only used to compare evidence; the build script escalates from the stated dollarYear."
     },
     "scope": {
       "includesSitework": true,
@@ -181,7 +181,7 @@
           "e6"
         ],
         "derived": true,
-        "method": "Derived: 20% of mid; Kirksey one-story 5/1,000 sitework $16–37/SF (e6) plus truck court and detention."
+        "method": "Derived: 20% of mid; Kirksey one-story 5/1,000 sitework $16\u201337/SF (e6) plus truck court and detention."
       },
       "inBaseline": true,
       "scales": true,
@@ -233,7 +233,7 @@
         "region": "US",
         "evidence": [],
         "derived": true,
-        "method": "From _blocks/energy.json rooftop-solar-commercial; qty ≈ 5 W per SF of roof (judgment)."
+        "method": "From _blocks/energy.json rooftop-solar-commercial; qty \u2248 5 W per SF of roof (judgment)."
       },
       "inBaseline": false,
       "scales": true,
@@ -243,12 +243,12 @@
   ],
   "softCosts": {
     "pctOfHard": {
-      "low": 0.1,
-      "mid": 0.14,
-      "high": 0.2,
+      "low": 0.07,
+      "mid": 0.11,
+      "high": 0.17,
       "evidence": [],
       "derived": true,
-      "method": "Derived: prototype designs keep A/E at 4–6% (RSMeans department store model carries 6%); permits/platting 1–2%, survey/geotech 1%, insurance/legal 2%, developer fee 2–4%."
+      "method": "Derived: prototype designs keep A/E at 4\u20136% (RSMeans department store model carries 6%); permits/platting 1\u20132%, survey/geotech 1%, insurance/legal 2%, developer fee 2\u20134%. | Second pass (2026-10-24, main session): Reduced 3 points to remove the developer fee (2\u20134%). The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
     },
     "breakdown": {
       "architectureEngineering": 0.05
@@ -287,7 +287,7 @@
       "max": 350,
       "dollarYear": 2026,
       "region": "US",
-      "method": "Min ≈ $110 × 1.1; max ≈ $290 high-cost metro × 1.2."
+      "method": "Min \u2248 $110 \u00d7 1.1; max \u2248 $290 high-cost metro \u00d7 1.2."
     }
   },
   "evidence": [
@@ -322,7 +322,7 @@
       "regionKey": "US",
       "dataYear": 2022,
       "source": {
-        "title": "2022 Project Costs — 50 17 00 Project Costs per S.F.",
+        "title": "2022 Project Costs \u2014 50 17 00 Project Costs per S.F.",
         "url": "https://www.rsmeans.com/media/wysiwyg/quarterly_updates/2022-Project-Costs-per-Square-Foot.pdf",
         "publisher": "Gordian / RSMeans",
         "accessed": "2026-10-24"
@@ -367,8 +367,8 @@
         "publisher": "Rider Levett Bucknall (RLB)",
         "accessed": "2026-10-24"
       },
-      "quote": "Indicative construction costs, Retail Shopping — Strip: Dallas 200–270; Phoenix 135–220; Charlotte 205–290 (USD/SF GFA, hard construction costs).",
-      "scopeNotes": "Values are the Dallas column; Phoenix 135–220; 18-US-city median 202.5–295. RLB does not say whether strip figures are shell-only or include sitework.",
+      "quote": "Indicative construction costs, Retail Shopping \u2014 Strip: Dallas 200\u2013270; Phoenix 135\u2013220; Charlotte 205\u2013290 (USD/SF GFA, hard construction costs).",
+      "scopeNotes": "Values are the Dallas column; Phoenix 135\u2013220; 18-US-city median 202.5\u2013295. RLB does not say whether strip figures are shell-only or include sitework.",
       "confidence": "high"
     },
     {
@@ -385,8 +385,8 @@
         "publisher": "Building Design + Construction (data: Gordian RSMeans)",
         "accessed": "2026-10-24"
       },
-      "quote": "Square Foot Costs: Office Building, 2-4 Story — National Average Q2 2026 $253.63.",
-      "scopeNotes": "Used only to infer RSMeans model escalation 2019→2026 (vs. 2019 office 2–4 story model total $187.02–204.43).",
+      "quote": "Square Foot Costs: Office Building, 2-4 Story \u2014 National Average Q2 2026 $253.63.",
+      "scopeNotes": "Used only to infer RSMeans model escalation 2019\u21922026 (vs. 2019 office 2\u20134 story model total $187.02\u2013204.43).",
       "confidence": "medium"
     },
     {
@@ -400,13 +400,13 @@
       "regionKey": "TX-Houston",
       "dataYear": 2025,
       "source": {
-        "title": "Construction Cost Trends / 2025 — Houston",
+        "title": "Construction Cost Trends / 2025 \u2014 Houston",
         "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=1c8a21ff-de0e-4629-b9b0-7f38f62c502b",
         "publisher": "Kirksey Architecture",
         "accessed": "2026-10-24"
       },
       "quote": "ONE-STORY FLEX OFFICE BUILDINGS $103 to $122/SF ... Cost includes $16 to $22/sf for sitework, assuming five spaces/1,000 sf in a surface parking lot.",
-      "scopeNotes": "One-story building with 5/1,000 surface parking — closest published proxy for retail sitework per building SF (Austin $21–30, Dallas $23–37 for the same building).",
+      "scopeNotes": "One-story building with 5/1,000 surface parking \u2014 closest published proxy for retail sitework per building SF (Austin $21\u201330, Dallas $23\u201337 for the same building).",
       "confidence": "medium"
     }
   ],

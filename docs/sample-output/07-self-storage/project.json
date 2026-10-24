@@ -1,0 +1,65 @@
+{
+  "sample": {
+    "id": "07-self-storage",
+    "name": "Bayside Climate Storage",
+    "address": "Tampa, FL",
+    "exitCap": 0.0625
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "quick",
+    "location": {
+      "region": "FL-Tampa"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "amount",
+      "value": 2400000
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "c1",
+        "typeId": "self-storage-climate",
+        "name": "Climate-controlled storage",
+        "phaseId": "p1",
+        "size": 88000,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perUnitYear",
+          "rate": 19.5,
+          "otherIncome": 90000,
+          "vacancy": 0.12,
+          "expenseRatio": 0.35
+        }
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

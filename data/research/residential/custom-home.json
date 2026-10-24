@@ -6,14 +6,44 @@
   "researchedAt": "2026-10-24",
   "primaryUnit": "sf",
   "summary": "One-off architect-designed detached home on the owner's lot, priced per finished SF. Cost is driven by design complexity, finishes, glazing, site conditions (slopes, hillside foundations) and region. Census contract-price data gives a solid national floor ($172 median, $198 average per SF, 2025), but it covers all contractor-built homes, including plan-book houses. Architect-designed work runs higher. The default mid is a derived premium over the Census average; the only architect-grade evidence is from high-cost Los Angeles fire rebuilds.",
-
   "sizing": {
-    "typicalSize": { "low": 2400, "mid": 3500, "high": 6000, "unit": "sf", "evidence": ["e5"], "derived": true, "method": "Census 2025 contractor-built completions: median 2,433 SF, average 2,773 SF (e5). Architect-designed homes skew larger, so the mid is set at ~1.25× the average. High covers estate homes. The low/high are judgment." },
-    "parkingPerPrimaryUnit": { "low": 0.0006, "mid": 0.0008, "high": 0.001, "type": "garage", "evidence": [], "derived": true, "method": "Garage spaces per finished SF. A 2–3 car garage on a ~3,500 SF home ≈ 0.0008 spaces/SF. Garage area is not in finished SF but its cost is inside the hard cost." }
+    "typicalSize": {
+      "low": 2400,
+      "mid": 3500,
+      "high": 6000,
+      "unit": "sf",
+      "evidence": [
+        "e5"
+      ],
+      "derived": true,
+      "method": "Census 2025 contractor-built completions: median 2,433 SF, average 2,773 SF (e5). Architect-designed homes skew larger, so the mid is set at ~1.25\u00d7 the average. High covers estate homes. The low/high are judgment."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0006,
+      "mid": 0.0008,
+      "high": 0.001,
+      "type": "garage",
+      "evidence": [],
+      "derived": true,
+      "method": "Garage spaces per finished SF. A 2\u20133 car garage on a ~3,500 SF home \u2248 0.0008 spaces/SF. Garage area is not in finished SF but its cost is inside the hard cost."
+    }
   },
-
   "hardCost": {
-    "perPrimaryUnit": { "low": 180, "mid": 260, "high": 450, "dollarYear": 2025, "region": "US", "evidence": ["e1", "e2", "e3", "e4"], "derived": true, "method": "Per finished SF. Low ≈ Census 2025 contractor-built median contract price ($171.57/SF, e1), rounded up for an architect-designed scope. Mid = Census 2025 average ($198.33/SF, e1) × ~1.3 for one-off architect-designed complexity (custom glazing, millwork, structure, more site work) ≈ $258, rounded to $260. The 1.3 premium is a judgment, not sourced. High $450 ≈ national luxury and high-cost-region custom work. LA fire-rebuild custom homes run $500/SF (LA County budget, e3) to $640–710/SF (design-builder, e4) in CA-LosAngeles dollars, which regionalize down to roughly $400–550 nationally. Census custom median/average by region (e1): NE $179/$246, MW $194/$202, South $157/$180, West $177/$214." },
+    "perPrimaryUnit": {
+      "low": 180,
+      "mid": 260,
+      "high": 450,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4"
+      ],
+      "derived": true,
+      "method": "Per finished SF. Low \u2248 Census 2025 contractor-built median contract price ($171.57/SF, e1), rounded up for an architect-designed scope. Mid = Census 2025 average ($198.33/SF, e1) \u00d7 ~1.3 for one-off architect-designed complexity (custom glazing, millwork, structure, more site work) \u2248 $258, rounded to $260. The 1.3 premium is a judgment, not sourced. High $450 \u2248 national luxury and high-cost-region custom work. LA fire-rebuild custom homes run $500/SF (LA County budget, e3) to $640\u2013710/SF (design-builder, e4) in CA-LosAngeles dollars, which regionalize down to roughly $400\u2013550 nationally. Census custom median/average by region (e1): NE $179/$246, MW $194/$202, South $157/$180, West $177/$214."
+    },
     "scope": {
       "includesSitework": true,
       "includesStructuredParking": false,
@@ -21,44 +51,114 @@
       "notes": "Contractor price incl. general conditions and OH&P for the house, attached garage, typical on-lot work (excavation, driveway, flatwork, utility laterals, basic landscaping). Excludes land, design fees, permits, special foundations (caissons/retaining on hillside lots), pools, wells/septic, solar, wildfire hardening and FF&E (see line items). Census contract prices exclude the lot."
     }
   },
-
   "qualityTiers": {
-    "economy": 0.7, "standard": 1.0, "premium": 1.35, "luxury": 1.75,
-    "evidence": ["e1", "e3", "e4"], "derived": true,
-    "method": "Economy ≈ Census median contract price / mid (172/260 ≈ 0.66, rounded to 0.7). Premium/luxury are judgment: $350 and $455/SF nationally. Luxury ≈ the regionalized LA rebuild evidence (e3, e4)."
+    "economy": 0.7,
+    "standard": 1.0,
+    "premium": 1.35,
+    "luxury": 1.75,
+    "evidence": [
+      "e1",
+      "e3",
+      "e4"
+    ],
+    "derived": true,
+    "method": "Economy \u2248 Census median contract price / mid (172/260 \u2248 0.66, rounded to 0.7). Premium/luxury are judgment: $350 and $455/SF nationally. Luxury \u2248 the regionalized LA rebuild evidence (e3, e4)."
   },
-
   "systemSplit": {
     "lines": [
-      { "division": "01", "pct": 0.14 },
-      { "division": "03", "pct": 0.08 },
-      { "division": "04", "pct": 0.02 },
-      { "division": "05", "pct": 0.01 },
-      { "division": "06", "pct": 0.15 },
-      { "division": "07", "pct": 0.095 },
-      { "division": "08", "pct": 0.07 },
-      { "division": "09", "pct": 0.09 },
-      { "division": "10", "pct": 0.007 },
-      { "division": "11", "pct": 0.025 },
-      { "division": "12", "pct": 0.05 },
-      { "division": "22", "pct": 0.075 },
-      { "division": "23", "pct": 0.055 },
-      { "division": "26", "pct": 0.07 },
-      { "division": "31", "pct": 0.03 },
-      { "division": "32", "pct": 0.033 }
+      {
+        "division": "01",
+        "pct": 0.14
+      },
+      {
+        "division": "03",
+        "pct": 0.08
+      },
+      {
+        "division": "04",
+        "pct": 0.02
+      },
+      {
+        "division": "05",
+        "pct": 0.01
+      },
+      {
+        "division": "06",
+        "pct": 0.15
+      },
+      {
+        "division": "07",
+        "pct": 0.095
+      },
+      {
+        "division": "08",
+        "pct": 0.07
+      },
+      {
+        "division": "09",
+        "pct": 0.09
+      },
+      {
+        "division": "10",
+        "pct": 0.007
+      },
+      {
+        "division": "11",
+        "pct": 0.025
+      },
+      {
+        "division": "12",
+        "pct": 0.05
+      },
+      {
+        "division": "22",
+        "pct": 0.075
+      },
+      {
+        "division": "23",
+        "pct": 0.055
+      },
+      {
+        "division": "26",
+        "pct": 0.07
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.033
+      }
     ],
-    "evidence": ["residential/single-family.json#e3"], "derived": true,
+    "evidence": [
+      "residential/single-family.json#e3"
+    ],
+    "derived": true,
     "method": "Starts from the production single-family split (NAHB 2024 Table 1 mapped to CSI). Adjustments, all judgment: Div 01 up to 14% (one-off GC supervision and higher fee); 08 up to 7% (more and larger glazing); 11 and 12 up (premium appliances and custom cabinetry); 04 and 05 up slightly (veneer, steel beams for open spans); 06, 09, 22 and 32 trimmed to keep the sum at 1.000."
   },
-
   "lineItems": [
     {
       "id": "wildfire-hardening",
       "name": "Fire-code and wildfire-resilience upgrades (WUI zones)",
       "division": "07",
       "unit": "ea",
-      "qty": { "per": "project", "value": 1 },
-      "cost": { "low": 25740, "mid": 45000, "high": 65740, "dollarYear": 2025, "region": "CA-LosAngeles", "evidence": ["e3"], "derived": false, "method": "LA County Altadena budget (e3): fire code upgrades $40,000 + fire-resilient upgrades $25,740 = $65,740 (high). Low = the resilience upgrades alone. Mid ≈ midpoint, rounded." },
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 25740,
+        "mid": 45000,
+        "high": 65740,
+        "dollarYear": 2025,
+        "region": "CA-LosAngeles",
+        "evidence": [
+          "e3"
+        ],
+        "derived": false,
+        "method": "LA County Altadena budget (e3): fire code upgrades $40,000 + fire-resilient upgrades $25,740 = $65,740 (high). Low = the resilience upgrades alone. Mid \u2248 midpoint, rounded."
+      },
       "inBaseline": false,
       "scales": false,
       "optional": true,
@@ -69,8 +169,22 @@
       "name": "Rooftop solar PV system",
       "division": "48",
       "unit": "ea",
-      "qty": { "per": "project", "value": 1 },
-      "cost": { "low": 12000, "mid": 15200, "high": 30000, "dollarYear": 2025, "region": "CA-LosAngeles", "evidence": ["e3"], "derived": false, "method": "Mid = LA County Altadena budget line ($15,200, e3) for a 1,650 SF home. Low/high is a judgment for system size." },
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 12000,
+        "mid": 15200,
+        "high": 30000,
+        "dollarYear": 2025,
+        "region": "CA-LosAngeles",
+        "evidence": [
+          "e3"
+        ],
+        "derived": false,
+        "method": "Mid = LA County Altadena budget line ($15,200, e3) for a 1,650 SF home. Low/high is a judgment for system size."
+      },
       "inBaseline": false,
       "scales": false,
       "optional": true,
@@ -81,8 +195,22 @@
       "name": "Underground utility service connection",
       "division": "33",
       "unit": "ea",
-      "qty": { "per": "project", "value": 1 },
-      "cost": { "low": 10000, "mid": 20000, "high": 35000, "dollarYear": 2025, "region": "CA-LosAngeles", "evidence": ["e3"], "derived": false, "method": "Mid = LA County Altadena line 'Utilities Undergrounding Connection $20,000' (e3). Low/high is a judgment." },
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 10000,
+        "mid": 20000,
+        "high": 35000,
+        "dollarYear": 2025,
+        "region": "CA-LosAngeles",
+        "evidence": [
+          "e3"
+        ],
+        "derived": false,
+        "method": "Mid = LA County Altadena line 'Utilities Undergrounding Connection $20,000' (e3). Low/high is a judgment."
+      },
       "inBaseline": false,
       "scales": false,
       "optional": true,
@@ -93,8 +221,22 @@
       "name": "Hillside caisson foundations and retaining walls",
       "division": "31",
       "unit": "ea",
-      "qty": { "per": "project", "value": 1 },
-      "cost": { "low": 100000, "mid": 175000, "high": 300000, "dollarYear": 2026, "region": "CA-LosAngeles", "evidence": ["e4"], "derived": false, "method": "Letter Four: 'Caisson foundations and retaining walls can add $100K–$300K' on hillside lots (e4). Mid ≈ midpoint, rounded down." },
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 100000,
+        "mid": 175000,
+        "high": 300000,
+        "dollarYear": 2026,
+        "region": "CA-LosAngeles",
+        "evidence": [
+          "e4"
+        ],
+        "derived": false,
+        "method": "Letter Four: 'Caisson foundations and retaining walls can add $100K\u2013$300K' on hillside lots (e4). Mid \u2248 midpoint, rounded down."
+      },
       "inBaseline": false,
       "scales": false,
       "optional": true,
@@ -105,8 +247,22 @@
       "name": "On-site septic system",
       "division": "33",
       "unit": "ea",
-      "qty": { "per": "project", "value": 1 },
-      "cost": { "low": 8986, "mid": 12500, "high": 16350, "dollarYear": 2024, "region": "US", "evidence": ["residential/single-family.json#e11"], "derived": false, "method": "Fixr 3-bedroom septic range (single-family e11). Engineered/mound systems can exceed this." },
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 8986,
+        "mid": 12500,
+        "high": 16350,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "residential/single-family.json#e11"
+        ],
+        "derived": false,
+        "method": "Fixr 3-bedroom septic range (single-family e11). Engineered/mound systems can exceed this."
+      },
       "inBaseline": false,
       "scales": false,
       "optional": true,
@@ -117,17 +273,40 @@
       "name": "Private water well",
       "division": "33",
       "unit": "ea",
-      "qty": { "per": "project", "value": 1 },
-      "cost": { "low": 2500, "mid": 10000, "high": 25000, "dollarYear": 2024, "region": "US", "evidence": ["residential/single-family.json#e11"], "derived": false, "method": "Fixr well drilling range (single-family e11)." },
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 2500,
+        "mid": 10000,
+        "high": 25000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "residential/single-family.json#e11"
+        ],
+        "derived": false,
+        "method": "Fixr well drilling range (single-family e11)."
+      },
       "inBaseline": false,
       "scales": false,
       "optional": true,
       "notes": "Rural lots only."
     }
   ],
-
   "softCosts": {
-    "pctOfHard": { "low": 0.15, "mid": 0.22, "high": 0.32, "evidence": ["e6", "e7"], "derived": false, "method": "LA County Altadena budget (e6): architecture & design 10–15% of construction ($82,500), soils/survey/civil $8,450, permits $21,500. That is $112,450 = 12.1% of the $925,940 construction subtotal, plus financing & legal $109,594 (11.8%), for 24% total. Letter Four (e7) puts design & engineering at 12–18% of hard cost. Mid 22% = A&E ~13% + permits/surveys ~3% + financing/legal/insurance ~6%. Low assumes a design-build or stock-plan basis and cash funding. High = full-service architecture + interior design + construction loan." },
+    "pctOfHard": {
+      "low": 0.11,
+      "mid": 0.18,
+      "high": 0.28,
+      "evidence": [
+        "e6",
+        "e7"
+      ],
+      "derived": false,
+      "method": "LA County Altadena budget (e6): architecture & design 10\u201315% of construction ($82,500), soils/survey/civil $8,450, permits $21,500. That is $112,450 = 12.1% of the $925,940 construction subtotal, plus financing & legal $109,594 (11.8%), for 24% total. Letter Four (e7) puts design & engineering at 12\u201318% of hard cost. Mid 22% = A&E ~13% + permits/surveys ~3% + financing/legal/insurance ~6%. Low assumes a design-build or stock-plan basis and cash funding. High = full-service architecture + interior design + construction loan. | Second pass (2026-10-24, main session): Reduced 4 points to remove construction-loan financing; developer fee 0 (owner-built). The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
     "breakdown": {
       "architectureEngineering": 0.13,
       "permitsAndFees": 0.025,
@@ -135,19 +314,53 @@
       "financing": 0.04,
       "legalInsurance": 0.015
     },
-    "notes": "Owner-builder custom homes carry no developer overhead or sales costs. Full architectural service (10–18%) dominates soft cost."
+    "notes": "Owner-builder custom homes carry no developer overhead or sales costs. Full architectural service (10\u201318%) dominates soft cost.",
+    "developerFee": {
+      "low": 0,
+      "mid": 0,
+      "high": 0,
+      "evidence": [],
+      "derived": true,
+      "method": "Owner-built custom home: no developer fee."
+    }
   },
-
   "contingency": {
-    "design": { "low": 0.05, "mid": 0.08, "high": 0.12, "evidence": [], "derived": true, "method": "One-off designs change during documentation. A judgment above production-home norms; no type-specific source found." },
-    "hard": { "low": 0.05, "mid": 0.1, "high": 0.15, "evidence": ["e7"], "derived": false, "method": "Letter Four advises to 'Budget 10–15% above your estimate' for custom rebuilds (e7). Low 5% for fully bid, simple designs." },
-    "soft": { "low": 0.03, "mid": 0.05, "high": 0.1, "evidence": [], "derived": true, "method": "General development norm; no type-specific source found." }
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "One-off designs change during documentation. A judgment above production-home norms; no type-specific source found."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.1,
+      "high": 0.15,
+      "evidence": [
+        "e7"
+      ],
+      "derived": false,
+      "method": "Letter Four advises to 'Budget 10\u201315% above your estimate' for custom rebuilds (e7). Low 5% for fully bid, simple designs."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "General development norm; no type-specific source found."
+    }
   },
-
   "rangeCheck": {
-    "perPrimaryUnit": { "min": 190, "max": 1000, "dollarYear": 2025, "region": "US", "method": "Per finished SF, hard + soft, excl. land. Min ≈ $172 Census median × 1.1 soft. Max ≈ LA hillside/luxury rebuilds ($640–930 hard per e4) plus soft costs. National luxury rarely exceeds $1,000/SF all-in outside the top coastal markets." }
+    "perPrimaryUnit": {
+      "min": 190,
+      "max": 1000,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Per finished SF, hard + soft, excl. land. Min \u2248 $172 Census median \u00d7 1.1 soft. Max \u2248 LA hillside/luxury rebuilds ($640\u2013930 hard per e4) plus soft costs. National luxury rarely exceeds $1,000/SF all-in outside the top coastal markets."
+    }
   },
-
   "evidence": [
     {
       "id": "e1",
@@ -159,7 +372,12 @@
       "region": "United States",
       "regionKey": "US",
       "dataYear": 2025,
-      "source": { "title": "Characteristics of New Housing — Median and Average Contract Price per Square Foot of New Contractor-Built Single-Family Houses Started (contractpricesqft_cust.xls)", "url": "https://www.census.gov/construction/chars/xls/contractpricesqft_cust.xls", "publisher": "U.S. Census Bureau, Survey of Construction", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Characteristics of New Housing \u2014 Median and Average Contract Price per Square Foot of New Contractor-Built Single-Family Houses Started (contractpricesqft_cust.xls)",
+        "url": "https://www.census.gov/construction/chars/xls/contractpricesqft_cust.xls",
+        "publisher": "U.S. Census Bureau, Survey of Construction",
+        "accessed": "2026-10-24"
+      },
       "quote": "Sheet ContractMedAvgPriceSqFt, row 2025: United States median 171.57, average 198.33; Northeast 179.3 / 246.26; Midwest 194.09 / 202.13; South 157.3 / 179.96; West 176.87 / 213.85",
       "scopeNotes": "Contract price to a general contractor for a home on the owner's land (excludes improved lot). Covers all contractor-built homes, not only architect-designed ones. Likely excludes the owner's separate design fees.",
       "confidence": "high"
@@ -172,7 +390,12 @@
       "region": "United States",
       "regionKey": "US",
       "dataYear": 2025,
-      "source": { "title": "Custom Home Premium Highest Since 2011", "url": "https://eyeonhousing.org/2026/09/custom-home-premium-highest-since-2011/", "publisher": "NAHB Eye on Housing", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Custom Home Premium Highest Since 2011",
+        "url": "https://eyeonhousing.org/2026/09/custom-home-premium-highest-since-2011/",
+        "publisher": "NAHB Eye on Housing",
+        "accessed": "2026-10-24"
+      },
       "quote": "For custom single-family detached (SFD) homes started in 2025, the median price climbed to $171 per square foot.",
       "scopeNotes": "NAHB analysis of the same Census data as e1. The custom premium over spec homes (lot excluded) was 12.6%.",
       "confidence": "high"
@@ -185,9 +408,14 @@
       "region": "Altadena (Los Angeles County), CA",
       "regionKey": "CA-LosAngeles",
       "dataYear": 2025,
-      "source": { "title": "Rebuilding Together – Addressing the Funding Gaps (Updated Slides)", "url": "https://file.lacounty.gov/SDSInter/lac/1195397_RebuildingTogether-AddressingtheFundingGapsUpdatedSlides.pdf", "publisher": "County of Los Angeles", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Rebuilding Together \u2013 Addressing the Funding Gaps (Updated Slides)",
+        "url": "https://file.lacounty.gov/SDSInter/lac/1195397_RebuildingTogether-AddressingtheFundingGapsUpdatedSlides.pdf",
+        "publisher": "County of Los Angeles",
+        "accessed": "2026-10-24"
+      },
       "quote": "Hard Cost Per Square Foot Architect & builder estimates $500 ... Total Sq Ft of New House x Hard Cost per Sq Ft $825,000 Fire Code Upgrades $40,000 Rooftop Solar $15,200 Fire Resilient Upgrades $25,740 Utilities Undergrounding Connection $20,000",
-      "scopeNotes": "Estimated rebuild budget for a 1,650 SF single-family home in Altadena (deck dated Nov 2025). Hard cost excludes the listed upgrades and soft costs. Sensitivity scenarios run $425–$650/SF.",
+      "scopeNotes": "Estimated rebuild budget for a 1,650 SF single-family home in Altadena (deck dated Nov 2025). Hard cost excludes the listed upgrades and soft costs. Sensitivity scenarios run $425\u2013$650/SF.",
       "confidence": "medium"
     },
     {
@@ -200,8 +428,13 @@
       "region": "Los Angeles fire areas, CA",
       "regionKey": "CA-LosAngeles",
       "dataYear": 2026,
-      "source": { "title": "Fire Rebuild Cost Guide · 2026", "url": "https://www.letterfour.com/fire-rebuild-cost-guide", "publisher": "Letter Four (design-build firm)", "accessed": "2026-10-24" },
-      "quote": "Stick-built wood frame: $640–$710 [per sq ft] ... Caisson foundations and retaining walls can add $100K–$300K",
+      "source": {
+        "title": "Fire Rebuild Cost Guide \u00b7 2026",
+        "url": "https://www.letterfour.com/fire-rebuild-cost-guide",
+        "publisher": "Letter Four (design-build firm)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Stick-built wood frame: $640\u2013$710 [per sq ft] ... Caisson foundations and retaining walls can add $100K\u2013$300K",
       "scopeNotes": "Builder marketing guide (Q2 2026) for WUI-compliant custom homes, hard cost before soft costs. High-cost market with post-fire demand surge.",
       "confidence": "low"
     },
@@ -215,7 +448,12 @@
       "region": "United States",
       "regionKey": "US",
       "dataYear": 2025,
-      "source": { "title": "Characteristics of New Housing — Median and Average Square Feet of Floor Area in New Single-Family Houses Completed: Contractor-Built (squarefeet_cust.xls)", "url": "https://www.census.gov/construction/chars/xls/squarefeet_cust.xls", "publisher": "U.S. Census Bureau, Survey of Construction", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Characteristics of New Housing \u2014 Median and Average Square Feet of Floor Area in New Single-Family Houses Completed: Contractor-Built (squarefeet_cust.xls)",
+        "url": "https://www.census.gov/construction/chars/xls/squarefeet_cust.xls",
+        "publisher": "U.S. Census Bureau, Survey of Construction",
+        "accessed": "2026-10-24"
+      },
       "quote": "Sheet SFContrMedAvgSqFt, row 2025: United States median 2433, average 2773",
       "scopeNotes": "Finished floor area of contractor-built homes completed in 2025.",
       "confidence": "high"
@@ -228,7 +466,12 @@
       "region": "Altadena (Los Angeles County), CA",
       "regionKey": "CA-LosAngeles",
       "dataYear": 2025,
-      "source": { "title": "Rebuilding Together – Addressing the Funding Gaps (Updated Slides)", "url": "https://file.lacounty.gov/SDSInter/lac/1195397_RebuildingTogether-AddressingtheFundingGapsUpdatedSlides.pdf", "publisher": "County of Los Angeles", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Rebuilding Together \u2013 Addressing the Funding Gaps (Updated Slides)",
+        "url": "https://file.lacounty.gov/SDSInter/lac/1195397_RebuildingTogether-AddressingtheFundingGapsUpdatedSlides.pdf",
+        "publisher": "County of Los Angeles",
+        "accessed": "2026-10-24"
+      },
       "quote": "Architecture & Design Usually between 10-15% of construction costs $82,500 ... Permitting & Plan Check $21,500 SUBTOTAL $112,450 ... Financing & Legal $109,594 TOTAL ESTIMATED REBUILD COST $1,147,984",
       "scopeNotes": "Value = (112,450 + 109,594) / 925,940 construction subtotal, computed by the researcher.",
       "confidence": "medium"
@@ -243,15 +486,19 @@
       "region": "Los Angeles fire areas, CA",
       "regionKey": "CA-LosAngeles",
       "dataYear": 2026,
-      "source": { "title": "Fire Rebuild Cost Guide · 2026", "url": "https://www.letterfour.com/fire-rebuild-cost-guide", "publisher": "Letter Four (design-build firm)", "accessed": "2026-10-24" },
-      "quote": "Design and engineering: 12–18% of hard cost ... Budget 10–15% above your estimate.",
+      "source": {
+        "title": "Fire Rebuild Cost Guide \u00b7 2026",
+        "url": "https://www.letterfour.com/fire-rebuild-cost-guide",
+        "publisher": "Letter Four (design-build firm)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Design and engineering: 12\u201318% of hard cost ... Budget 10\u201315% above your estimate.",
       "scopeNotes": "Design & engineering share and contingency advice from a design-build firm.",
       "confidence": "low"
     }
   ],
-
   "openQuestions": [
-    "No national source isolates architect-designed custom homes. The 1.3× premium over the Census contractor-built average is a judgment; custom-builder association surveys (e.g., NAHB Custom Builder Council) or RSMeans 'Custom' class square-foot models would anchor it.",
+    "No national source isolates architect-designed custom homes. The 1.3\u00d7 premium over the Census contractor-built average is a judgment; custom-builder association surveys (e.g., NAHB Custom Builder Council) or RSMeans 'Custom' class square-foot models would anchor it.",
     "Census contract prices may or may not include site work and design fees for each home; scope varies by contract."
   ]
 }

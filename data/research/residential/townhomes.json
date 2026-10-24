@@ -5,18 +5,77 @@
   "category": "residential",
   "researchedAt": "2026-10-24",
   "primaryUnit": "unit",
-  "summary": "Attached 2–3 story wood-frame townhouses, for sale or rent. Shared party walls save exterior envelope and lot area. Rated fire separations, more stairs and higher kitchen/bath density per SF offset part of that, so per-SF cost is close to detached homes. National data is indirect: Census sale prices for attached homes, translated with NAHB cost shares. The only direct cost points are permit valuations and a builder survey from Washington State. Confidence is medium.",
-
+  "summary": "Attached 2\u20133 story wood-frame townhouses, for sale or rent. Shared party walls save exterior envelope and lot area. Rated fire separations, more stairs and higher kitchen/bath density per SF offset part of that, so per-SF cost is close to detached homes. National data is indirect: Census sale prices for attached homes, translated with NAHB cost shares. The only direct cost points are permit valuations and a builder survey from Washington State. Confidence is medium.",
   "sizing": {
-    "typicalSize": { "low": 12, "mid": 50, "high": 150, "unit": "unit", "evidence": [], "derived": true, "method": "Units per project. A judgment: small infill rows of 6–12 units (see the Snohomish County permits in e4, 6–10 units per building) up to master-planned townhome sections of 100+." },
-    "sfPerPrimaryUnit": { "low": 1450, "mid": 1800, "high": 2200, "evidence": ["e2", "e4", "e5"], "derived": false, "method": "Census 2025 attached new homes sold: median 1,824 SF, average 1,948 SF (e2). Snohomish County permits give 1,456–2,071 SF/unit (e4). BIAW reports a 1,568 SF WA average (e5). Mid ≈ the Census median, rounded." },
-    "primaryUnitsPerAcre": { "low": 8, "mid": 12, "high": 18, "evidence": [], "derived": true, "method": "Gross density with private drives and guest parking. A judgment: a 20–24 ft wide unit on a ~1,500–2,500 SF lot gives ~17–25 net du/ac. ~40% for drives, open space and detention gives ~10–15 gross." },
-    "parkingPerPrimaryUnit": { "low": 1.5, "mid": 2, "high": 2.5, "type": "garage", "evidence": [], "derived": true, "method": "Tuck-under or attached 1–2 car garage plus guest stalls. Common suburban zoning; not sourced." }
+    "typicalSize": {
+      "low": 12,
+      "mid": 50,
+      "high": 150,
+      "unit": "unit",
+      "evidence": [],
+      "derived": true,
+      "method": "Units per project. A judgment: small infill rows of 6\u201312 units (see the Snohomish County permits in e4, 6\u201310 units per building) up to master-planned townhome sections of 100+."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 1450,
+      "mid": 1800,
+      "high": 2200,
+      "evidence": [
+        "e2",
+        "e4",
+        "e5"
+      ],
+      "derived": false,
+      "method": "Census 2025 attached new homes sold: median 1,824 SF, average 1,948 SF (e2). Snohomish County permits give 1,456\u20132,071 SF/unit (e4). BIAW reports a 1,568 SF WA average (e5). Mid \u2248 the Census median, rounded."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 8,
+      "mid": 12,
+      "high": 18,
+      "evidence": [],
+      "derived": true,
+      "method": "Gross density with private drives and guest parking. A judgment: a 20\u201324 ft wide unit on a ~1,500\u20132,500 SF lot gives ~17\u201325 net du/ac. ~40% for drives, open space and detention gives ~10\u201315 gross."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 1.5,
+      "mid": 2,
+      "high": 2.5,
+      "type": "garage",
+      "evidence": [],
+      "derived": true,
+      "method": "Tuck-under or attached 1\u20132 car garage plus guest stalls. Common suburban zoning; not sourced."
+    }
   },
-
   "hardCost": {
-    "perPrimaryUnit": { "low": 160000, "mid": 270000, "high": 440000, "dollarYear": 2025, "region": "US", "evidence": ["e1", "e3", "e4"], "derived": false, "method": "= perSF × sfPerPrimaryUnit: mid $150 × 1,800 = $270k; low $115 × 1,400 ≈ $160k; high $200 × 2,200 = $440k. Cross-check: Snohomish County (WA-Seattle) 2025 permit valuations run $275k–$374k per unit (e4)." },
-    "perSF": { "low": 115, "mid": 150, "high": 200, "dollarYear": 2025, "region": "US", "evidence": ["e1", "e3", "e4", "e5"], "derived": false, "method": "National anchor: Census 2025 attached homes sold at a median $165.59/SF excluding lot (e1). Times the NAHB construction share of non-lot price (0.746, see single-family e1/e9) = $123.5/SF incl. fees, or ≈ $116/SF net of fees: the builder direct cost for a typical production townhome. Add ~10% GC/OH&P for a contractor price ≈ $128. WA evidence: Snohomish County permit valuations $180–189/SF (e4, Seattle metro, where costs run roughly 15–25% above national) and the BIAW builder survey at $404/SF (e5, outlier; likely includes items beyond hard cost). Mid $150 sits between the national derived figure (~$128) and the regionalized WA permit figure (~$155), slightly above the single-family mid ($145) to reflect rated party walls and more stairs per SF. Low = the Census-derived direct cost. High = high-cost metros and premium finishes. The NAHB construction-share conversion is borrowed from detached homes (see the derivation in single-family.json)." },
+    "perPrimaryUnit": {
+      "low": 160000,
+      "mid": 270000,
+      "high": 440000,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e3",
+        "e4"
+      ],
+      "derived": false,
+      "method": "= perSF \u00d7 sfPerPrimaryUnit: mid $150 \u00d7 1,800 = $270k; low $115 \u00d7 1,400 \u2248 $160k; high $200 \u00d7 2,200 = $440k. Cross-check: Snohomish County (WA-Seattle) 2025 permit valuations run $275k\u2013$374k per unit (e4)."
+    },
+    "perSF": {
+      "low": 115,
+      "mid": 150,
+      "high": 200,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e3",
+        "e4",
+        "e5"
+      ],
+      "derived": false,
+      "method": "National anchor: Census 2025 attached homes sold at a median $165.59/SF excluding lot (e1). Times the NAHB construction share of non-lot price (0.746, see single-family e1/e9) = $123.5/SF incl. fees, or \u2248 $116/SF net of fees: the builder direct cost for a typical production townhome. Add ~10% GC/OH&P for a contractor price \u2248 $128. WA evidence: Snohomish County permit valuations $180\u2013189/SF (e4, Seattle metro, where costs run roughly 15\u201325% above national) and the BIAW builder survey at $404/SF (e5, outlier; likely includes items beyond hard cost). Mid $150 sits between the national derived figure (~$128) and the regionalized WA permit figure (~$155), slightly above the single-family mid ($145) to reflect rated party walls and more stairs per SF. Low = the Census-derived direct cost. High = high-cost metros and premium finishes. The NAHB construction-share conversion is borrowed from detached homes (see the derivation in single-family.json)."
+    },
     "scope": {
       "includesSitework": true,
       "includesStructuredParking": false,
@@ -24,46 +83,116 @@
       "notes": "Contractor price for the buildings, attached/tuck-under garages and typical on-site work (private drives, guest parking, utilities within the property, landscaping) incl. GC general conditions and OH&P. Excludes land, off-site improvements, impact/tap fees, A&E, financing, marketing/sales and FF&E."
     }
   },
-
   "qualityTiers": {
-    "economy": 0.8, "standard": 1.0, "premium": 1.25, "luxury": 1.6,
-    "evidence": [], "derived": true,
-    "method": "Low/mid of the per-SF range (115/150 ≈ 0.77, rounded to 0.8). Premium and luxury follow the single-family tiers (urban luxury townhomes with elevators and rooftop decks reach $240+/SF). Judgment."
+    "economy": 0.8,
+    "standard": 1.0,
+    "premium": 1.25,
+    "luxury": 1.6,
+    "evidence": [],
+    "derived": true,
+    "method": "Low/mid of the per-SF range (115/150 \u2248 0.77, rounded to 0.8). Premium and luxury follow the single-family tiers (urban luxury townhomes with elevators and rooftop decks reach $240+/SF). Judgment."
   },
-
   "systemSplit": {
     "lines": [
-      { "division": "01", "pct": 0.12 },
-      { "division": "03", "pct": 0.07 },
-      { "division": "04", "pct": 0.012 },
-      { "division": "05", "pct": 0.005 },
-      { "division": "06", "pct": 0.165 },
-      { "division": "07", "pct": 0.1 },
-      { "division": "08", "pct": 0.05 },
-      { "division": "09", "pct": 0.095 },
-      { "division": "10", "pct": 0.006 },
-      { "division": "11", "pct": 0.02 },
-      { "division": "12", "pct": 0.045 },
-      { "division": "21", "pct": 0.01 },
-      { "division": "22", "pct": 0.085 },
-      { "division": "23", "pct": 0.06 },
-      { "division": "26", "pct": 0.075 },
-      { "division": "31", "pct": 0.025 },
-      { "division": "32", "pct": 0.045 },
-      { "division": "33", "pct": 0.012 }
+      {
+        "division": "01",
+        "pct": 0.12
+      },
+      {
+        "division": "03",
+        "pct": 0.07
+      },
+      {
+        "division": "04",
+        "pct": 0.012
+      },
+      {
+        "division": "05",
+        "pct": 0.005
+      },
+      {
+        "division": "06",
+        "pct": 0.165
+      },
+      {
+        "division": "07",
+        "pct": 0.1
+      },
+      {
+        "division": "08",
+        "pct": 0.05
+      },
+      {
+        "division": "09",
+        "pct": 0.095
+      },
+      {
+        "division": "10",
+        "pct": 0.006
+      },
+      {
+        "division": "11",
+        "pct": 0.02
+      },
+      {
+        "division": "12",
+        "pct": 0.045
+      },
+      {
+        "division": "21",
+        "pct": 0.01
+      },
+      {
+        "division": "22",
+        "pct": 0.085
+      },
+      {
+        "division": "23",
+        "pct": 0.06
+      },
+      {
+        "division": "26",
+        "pct": 0.075
+      },
+      {
+        "division": "31",
+        "pct": 0.025
+      },
+      {
+        "division": "32",
+        "pct": 0.045
+      },
+      {
+        "division": "33",
+        "pct": 0.012
+      }
     ],
-    "evidence": ["residential/single-family.json#e3"], "derived": true,
+    "evidence": [
+      "residential/single-family.json#e3"
+    ],
+    "derived": true,
     "method": "Starts from the single-family split (NAHB 2024 Table 1 mapped to CSI). Adjustments, all judgment: 03 slightly lower (shared foundations); 07 and 09 up (rated party-wall assemblies, more gypsum layers); 22 and 26 up (more fixtures/circuits per SF in smaller units); 21 at 1% for NFPA 13D/13R sprinklers, which many jurisdictions require in attached product; 31 and 32 down (smaller lots), with 33 added for shared on-site utility mains."
   },
-
   "lineItems": [
     {
       "id": "fire-sprinklers",
       "name": "Residential fire sprinklers (NFPA 13D/13R)",
       "division": "21",
       "unit": "sf",
-      "qty": { "per": "sf", "value": 1 },
-      "cost": { "low": 2, "mid": 3, "high": 5, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Set to equal the 1% Div 21 share of the systemSplit at ~$150/SF ≈ $1.5–3/SF, widened to $2–5/SF for 13R systems. No direct source found; verify locally." },
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 2,
+        "mid": 3,
+        "high": 5,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Set to equal the 1% Div 21 share of the systemSplit at ~$150/SF \u2248 $1.5\u20133/SF, widened to $2\u20135/SF for 13R systems. No direct source found; verify locally."
+      },
       "inBaseline": true,
       "scales": true,
       "optional": false,
@@ -74,17 +203,38 @@
       "name": "Attached/tuck-under garage (2 car)",
       "division": "06",
       "unit": "ea",
-      "qty": { "per": "primaryUnit", "value": 1 },
-      "cost": { "low": 20000, "mid": 30000, "high": 45000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "~400–450 SF unfinished garage at ~50–60% of finished $/SF ($150 mid) ≈ $30k. Judgment; unsourced." },
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 20000,
+        "mid": 30000,
+        "high": 45000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "~400\u2013450 SF unfinished garage at ~50\u201360% of finished $/SF ($150 mid) \u2248 $30k. Judgment; unsourced."
+      },
       "inBaseline": true,
       "scales": true,
       "optional": false,
       "notes": "Garage SF is not counted in finished SF but is inside the per-unit hard cost."
     }
   ],
-
   "softCosts": {
-    "pctOfHard": { "low": 0.15, "mid": 0.2, "high": 0.28, "evidence": ["residential/single-family.json#e9", "residential/single-family.json#e10"], "derived": true, "method": "Same NAHB 2024 for-sale structure as production single-family (A&E, permits/impact/utility fees, financing, builder G&A, marketing ≈ 20% of direct cost). Townhomes add HOA/condo documentation and slightly more engineering (rated assemblies). Mid held at 20%. Commissions are excluded." },
+    "pctOfHard": {
+      "low": 0.095,
+      "mid": 0.145,
+      "high": 0.225,
+      "evidence": [
+        "residential/single-family.json#e9",
+        "residential/single-family.json#e10"
+      ],
+      "derived": true,
+      "method": "Same NAHB 2024 for-sale structure as production single-family (A&E, permits/impact/utility fees, financing, builder G&A, marketing \u2248 20% of direct cost). Townhomes add HOA/condo documentation and slightly more engineering (rated assemblies). Mid held at 20%. Commissions are excluded. | Second pass (2026-10-24, main session): Reduced 5.5 points: same NAHB structure as single-family (fees and financing removed); developer fee 0. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
     "breakdown": {
       "architectureEngineering": 0.025,
       "permitsAndFees": 0.05,
@@ -92,19 +242,51 @@
       "developerOverhead": 0.08,
       "marketing": 0.015
     },
-    "notes": "For build-to-rent townhomes use btr-attached. Impact fees per unit are often charged at the single-family rate."
+    "notes": "For build-to-rent townhomes use btr-attached. Impact fees per unit are often charged at the single-family rate.",
+    "developerFee": {
+      "low": 0,
+      "mid": 0,
+      "high": 0,
+      "evidence": [],
+      "derived": true,
+      "method": "Same as production single-family."
+    }
   },
-
   "contingency": {
-    "design": { "low": 0.02, "mid": 0.03, "high": 0.06, "evidence": [], "derived": true, "method": "Repeatable building types; small design contingency. Judgment." },
-    "hard": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "Production norm. Judgment." },
-    "soft": { "low": 0.03, "mid": 0.05, "high": 0.1, "evidence": [], "derived": true, "method": "General development norm. Judgment." }
+    "design": {
+      "low": 0.02,
+      "mid": 0.03,
+      "high": 0.06,
+      "evidence": [],
+      "derived": true,
+      "method": "Repeatable building types; small design contingency. Judgment."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Production norm. Judgment."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "General development norm. Judgment."
+    }
   },
-
   "rangeCheck": {
-    "perPrimaryUnit": { "min": 170000, "max": 600000, "dollarYear": 2025, "region": "US", "method": "Low hard $160k × 1.1 ≈ $175k; high $440k × 1.3 ≈ $570k, plus headroom for urban luxury product. Excludes land." }
+    "perPrimaryUnit": {
+      "min": 170000,
+      "max": 600000,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Low hard $160k \u00d7 1.1 \u2248 $175k; high $440k \u00d7 1.3 \u2248 $570k, plus headroom for urban luxury product. Excludes land."
+    }
   },
-
   "evidence": [
     {
       "id": "e1",
@@ -114,7 +296,12 @@
       "region": "United States",
       "regionKey": "US",
       "dataYear": 2025,
-      "source": { "title": "Characteristics of New Housing — Median and Average Price per Square Foot of Floor Area in Attached New Single-Family Houses Sold (soldpricesqft_cust.xls)", "url": "https://www.census.gov/construction/chars/xls/soldpricesqft_cust.xls", "publisher": "U.S. Census Bureau, Survey of Construction", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Characteristics of New Housing \u2014 Median and Average Price per Square Foot of Floor Area in Attached New Single-Family Houses Sold (soldpricesqft_cust.xls)",
+        "url": "https://www.census.gov/construction/chars/xls/soldpricesqft_cust.xls",
+        "publisher": "U.S. Census Bureau, Survey of Construction",
+        "accessed": "2026-10-24"
+      },
       "quote": "Sheet SoldMedAvgPPSFAttach, row 2025: United States median 165.59, average 184.79; Northeast 210.45; Midwest 122.5; South 151.5; West 214.03 (excludes value of improved lot)",
       "scopeNotes": "Sale price, not cost. It includes builder construction cost, fees, overhead, financing, sales and profit, and excludes the lot. Converted to cost using NAHB shares in the method.",
       "confidence": "medium"
@@ -129,7 +316,12 @@
       "region": "United States",
       "regionKey": "US",
       "dataYear": 2025,
-      "source": { "title": "Characteristics of New Housing — Median and Average Square Feet of Floor Area in Attached New Single-Family Houses Sold (soldsquarefeet_cust.xls)", "url": "https://www.census.gov/construction/chars/xls/soldsquarefeet_cust.xls", "publisher": "U.S. Census Bureau, Survey of Construction", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Characteristics of New Housing \u2014 Median and Average Square Feet of Floor Area in Attached New Single-Family Houses Sold (soldsquarefeet_cust.xls)",
+        "url": "https://www.census.gov/construction/chars/xls/soldsquarefeet_cust.xls",
+        "publisher": "U.S. Census Bureau, Survey of Construction",
+        "accessed": "2026-10-24"
+      },
       "quote": "Sheet SoldMedAvgSFAttach, row 2025: United States median 1824, average 1948",
       "scopeNotes": "Finished floor area of attached single-family (townhouse) homes sold.",
       "confidence": "high"
@@ -144,7 +336,12 @@
       "region": "United States",
       "regionKey": "US",
       "dataYear": 2025,
-      "source": { "title": "Characteristics of New Housing — Median and Average Sales Price of Attached New Single-Family Houses Sold (soldprice_cust.xls)", "url": "https://www.census.gov/construction/chars/xls/soldprice_cust.xls", "publisher": "U.S. Census Bureau, Survey of Construction", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Characteristics of New Housing \u2014 Median and Average Sales Price of Attached New Single-Family Houses Sold (soldprice_cust.xls)",
+        "url": "https://www.census.gov/construction/chars/xls/soldprice_cust.xls",
+        "publisher": "U.S. Census Bureau, Survey of Construction",
+        "accessed": "2026-10-24"
+      },
       "quote": "Sheet SoldMedAvgPriceAtt, row 2025: United States median 398800, average 478100",
       "scopeNotes": "Sale price including the lot, builder costs and profit. A ceiling check on per-unit hard cost.",
       "confidence": "medium"
@@ -159,7 +356,12 @@
       "region": "Unincorporated Snohomish County (Seattle metro), WA",
       "regionKey": "WA-Seattle",
       "dataYear": 2025,
-      "source": { "title": "Issued Residential Building Permits — September 2025, Unincorporated Snohomish County", "url": "https://snohomishcountywa.gov/Archive.asp?ADID=7313", "publisher": "Snohomish County Planning and Development Services", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Issued Residential Building Permits \u2014 September 2025, Unincorporated Snohomish County",
+        "url": "https://snohomishcountywa.gov/Archive.asp?ADID=7313",
+        "publisher": "Snohomish County Planning and Development Services",
+        "accessed": "2026-10-24"
+      },
       "quote": "$1,925,963 Construction of a 7 unit townhouse development ... for 10,191 square feet. $2,243,044 ... 6 unit townhouse development ... 12,428 square feet. $2,459,017 ... 8 unit ... 13,647 square feet. $3,245,668 ... 10 unit ... 17,596 square feet.",
       "scopeNotes": "Building permit valuations, computed by the researcher: $189, $180, $180 and $184/SF; $275k, $374k, $307k and $325k/unit. Permit valuations usually reflect building construction value from a county table and typically exclude site work, so they are a proxy.",
       "confidence": "medium"
@@ -172,13 +374,17 @@
       "region": "Washington State",
       "regionKey": "WA",
       "dataYear": 2024,
-      "source": { "title": "Cost of Constructing New Homes in Washington State in 2024", "url": "https://housingstudies.biaw.com/reports/cost-of-constructing-new-homes-in-washington-state-in-2024", "publisher": "Building Industry Association of Washington (BIAW)", "accessed": "2026-10-24" },
+      "source": {
+        "title": "Cost of Constructing New Homes in Washington State in 2024",
+        "url": "https://housingstudies.biaw.com/reports/cost-of-constructing-new-homes-in-washington-state-in-2024",
+        "publisher": "Building Industry Association of Washington (BIAW)",
+        "accessed": "2026-10-24"
+      },
       "quote": "Townhome construction, on average, costs $404 per square foot.",
       "scopeNotes": "Builder survey (NAHB format). BIAW says the figure covers the entire attached structure. The average new townhome was 1,568 SF. Outlier versus the WA single-family figure ($309) and permit valuations; kept as the high spread.",
       "confidence": "low"
     }
   ],
-
   "openQuestions": [
     "No national cost survey isolates townhomes. NAHB's Cost of Constructing a Home covers detached only. A townhome cost breakdown from a large public builder or a cost consultant would firm this up.",
     "The BIAW $404/SF figure conflicts with WA permit valuations (~$185/SF). Its scope should be checked against the full PDF tables."

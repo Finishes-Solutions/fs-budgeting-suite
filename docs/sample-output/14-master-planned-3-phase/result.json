@@ -1,0 +1,722 @@
+{
+  "totals": {
+    "hard": 108856805.46,
+    "ffe": 2687919.04,
+    "contingency": 12082577.02,
+    "soft": 30139995.28,
+    "financing": 5446337.24,
+    "land": 11100600,
+    "total": 170314234.04,
+    "hardContingency": 10824388.35,
+    "softContingency": 1258188.67,
+    "fees": 7011058.45,
+    "developerFee": 4781769.74,
+    "hardAll": 122369112.85,
+    "softAll": 36844521.19,
+    "cents": 17031423404
+  },
+  "metrics": {
+    "sf": 592200,
+    "acres": 62,
+    "primaryUnits": null,
+    "unit": null,
+    "perSF": 287.59580216143195,
+    "perAcre": 2747003.7748387097,
+    "perPrimaryUnit": null,
+    "byUnit": {
+      "unit": 380,
+      "sf": 65000,
+      "key": 110
+    }
+  },
+  "split": {
+    "hard": 0.7184902280173505,
+    "soft": 0.21633260072288904,
+    "land": 0.06517717125976044
+  },
+  "components": [
+    {
+      "id": "mf",
+      "name": "Garden apartments",
+      "type": "Garden multifamily",
+      "size": 300,
+      "unit": "unit",
+      "totals": {
+        "hard": 55165353.79,
+        "ffe": 406961.35,
+        "contingency": 6351201.59,
+        "soft": 16667741.77,
+        "financing": 3261626.45,
+        "land": 5219172.5,
+        "total": 87072057.45,
+        "hardContingency": 5674796.83,
+        "softContingency": 676404.76,
+        "fees": 4059801.6,
+        "developerFee": 3022740.71,
+        "hardAll": 61247111.97,
+        "softAll": 20605772.98,
+        "cents": 8707205745
+      },
+      "metrics": {
+        "sf": 315000,
+        "acres": 13.636363636363637,
+        "primaryUnits": 300,
+        "unit": "unit",
+        "perSF": 276.41923,
+        "perAcre": 6385284.213,
+        "perPrimaryUnit": 290240.1915
+      },
+      "range": {
+        "min": 150000,
+        "max": 420000,
+        "value": 301697.75727914897,
+        "status": "within",
+        "unit": "unit"
+      }
+    },
+    {
+      "id": "th",
+      "name": "Rental townhomes",
+      "type": "Townhomes",
+      "size": 80,
+      "unit": "unit",
+      "totals": {
+        "hard": 22277626.31,
+        "ffe": 0,
+        "contingency": 2068770.59,
+        "soft": 5094886.84,
+        "financing": 805244.46,
+        "land": 2551595.44,
+        "total": 32798123.64,
+        "hardContingency": 1815626.55,
+        "softContingency": 253144.04,
+        "fees": 1811624.8,
+        "developerFee": 0,
+        "hardAll": 24093252.86,
+        "softAll": 6153275.34,
+        "cents": 3279812364
+      },
+      "metrics": {
+        "sf": 144000,
+        "acres": 6.666666666666667,
+        "primaryUnits": 80,
+        "unit": "unit",
+        "perSF": 227.7647475,
+        "perAcre": 4919718.546,
+        "perPrimaryUnit": 409976.5455
+      },
+      "range": {
+        "min": 177704.38,
+        "max": 627191.92,
+        "value": 392894.0362568789,
+        "status": "within",
+        "unit": "unit"
+      }
+    },
+    {
+      "id": "rt",
+      "name": "Grocery-anchored center",
+      "type": "Grocery-anchored shopping center",
+      "size": 65000,
+      "unit": "sf",
+      "totals": {
+        "hard": 13984291.69,
+        "ffe": 0,
+        "contingency": 1576792.45,
+        "soft": 3637670.89,
+        "financing": 562459.69,
+        "land": 2487805.56,
+        "total": 22249020.28,
+        "hardContingency": 1433389.89,
+        "softContingency": 143402.56,
+        "fees": 609564.48,
+        "developerFee": 738413.66,
+        "hardAll": 15417681.58,
+        "softAll": 4343533.14,
+        "cents": 2224902028
+      },
+      "metrics": {
+        "sf": 65000,
+        "acres": 6.5,
+        "primaryUnits": 65000,
+        "unit": "sf",
+        "perSF": 342.2926196923077,
+        "perAcre": 3422926.196923077,
+        "perPrimaryUnit": 342.2926196923077
+      },
+      "range": {
+        "min": 130,
+        "max": 400,
+        "value": 315.92949415157216,
+        "status": "within",
+        "unit": "sf"
+      }
+    },
+    {
+      "id": "ht",
+      "name": "Select-service hotel",
+      "type": "Select-service hotel",
+      "size": 110,
+      "unit": "key",
+      "totals": {
+        "hard": 17429533.67,
+        "ffe": 2280957.69,
+        "contingency": 2085812.39,
+        "soft": 4739695.78,
+        "financing": 817006.64,
+        "land": 842026.5,
+        "total": 28195032.67,
+        "hardContingency": 1900575.08,
+        "softContingency": 185237.31,
+        "fees": 530067.57,
+        "developerFee": 1020615.37,
+        "hardAll": 21611066.44,
+        "softAll": 5741939.73,
+        "cents": 2819503267
+      },
+      "metrics": {
+        "sf": 68200,
+        "acres": 2.2,
+        "primaryUnits": 110,
+        "unit": "key",
+        "perSF": 413.4169013196481,
+        "perAcre": 12815923.940909091,
+        "perPrimaryUnit": 256318.47881818184
+      },
+      "range": {
+        "min": 146344.78,
+        "max": 334502.36,
+        "value": 244439.6796736128,
+        "status": "within",
+        "unit": "key"
+      }
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "name": "Phase 1 — infrastructure + apartments",
+      "start": "2027-04",
+      "months": 25,
+      "midpoint": "2028-05",
+      "escalation": 1.076617335326548,
+      "totals": {
+        "hard": 58707753.02,
+        "ffe": 406961.35,
+        "contingency": 6713235.94,
+        "soft": 17325577.57,
+        "financing": 3439174.98,
+        "land": 5219172.5,
+        "total": 91811875.36,
+        "hardContingency": 6009505.8,
+        "softContingency": 703730.14,
+        "fees": 4059801.6,
+        "developerFee": 3134069.03,
+        "hardAll": 65124220.17,
+        "softAll": 21468482.69,
+        "cents": 9181187536
+      },
+      "financing": {
+        "enabled": true,
+        "ltc": 0.6,
+        "rate": 0.07,
+        "feePct": 0.01,
+        "loan": 55087125.22,
+        "equity": 36724750.14,
+        "interest": 2888303.73,
+        "fee": 550871.25,
+        "iterations": 7
+      }
+    },
+    {
+      "id": "p2",
+      "name": "Phase 2 — townhomes + retail",
+      "start": "2029-05",
+      "months": 14,
+      "midpoint": "2029-12",
+      "escalation": 1.1455942424614822,
+      "totals": {
+        "hard": 33187310.41,
+        "ffe": 0,
+        "contingency": 3335219.66,
+        "soft": 8173341.76,
+        "financing": 1214210.13,
+        "land": 5039401,
+        "total": 50949482.96,
+        "hardContingency": 2962256.11,
+        "softContingency": 372963.55,
+        "fees": 2421189.28,
+        "developerFee": 650858.51,
+        "hardAll": 36149566.52,
+        "softAll": 9760515.44,
+        "cents": 5094948296
+      },
+      "financing": {
+        "enabled": true,
+        "ltc": 0.6,
+        "rate": 0.07,
+        "feePct": 0.01,
+        "loan": 30569689.78,
+        "equity": 20379793.18,
+        "interest": 908513.23,
+        "fee": 305696.9,
+        "iterations": 6
+      }
+    },
+    {
+      "id": "p3",
+      "name": "Phase 3 — hotel",
+      "start": "2030-07",
+      "months": 19,
+      "midpoint": "2031-05",
+      "escalation": 1.2110480822847622,
+      "totals": {
+        "hard": 16961742.03,
+        "ffe": 2280957.69,
+        "contingency": 2034121.42,
+        "soft": 4641075.95,
+        "financing": 792952.13,
+        "land": 842026.5,
+        "total": 27552875.72,
+        "hardContingency": 1852626.44,
+        "softContingency": 181494.98,
+        "fees": 530067.57,
+        "developerFee": 996842.2,
+        "hardAll": 21095326.16,
+        "softAll": 5615523.06,
+        "cents": 2755287572
+      },
+      "financing": {
+        "enabled": true,
+        "ltc": 0.6,
+        "rate": 0.07,
+        "feePct": 0.01,
+        "loan": 16531725.43,
+        "equity": 11021150.29,
+        "interest": 627634.88,
+        "fee": 165317.25,
+        "iterations": 6
+      }
+    }
+  ],
+  "shared": [
+    {
+      "id": "roads",
+      "name": "Spine road (private, 2-lane)",
+      "amount": 1139491.79,
+      "method": "sf",
+      "phase": "p1",
+      "shares": [
+        {
+          "comp": "mf",
+          "amount": 606112.65
+        },
+        {
+          "comp": "th",
+          "amount": 277080.07
+        },
+        {
+          "comp": "rt",
+          "amount": 125070.87
+        },
+        {
+          "comp": "ht",
+          "amount": 131228.2
+        }
+      ]
+    },
+    {
+      "id": "detention",
+      "name": "Regional detention",
+      "amount": 2903680.45,
+      "method": "sf",
+      "phase": "p1",
+      "shares": [
+        {
+          "comp": "mf",
+          "amount": 1544510.88
+        },
+        {
+          "comp": "th",
+          "amount": 706062.12
+        },
+        {
+          "comp": "rt",
+          "amount": 318708.59
+        },
+        {
+          "comp": "ht",
+          "amount": 334398.86
+        }
+      ]
+    },
+    {
+      "id": "utils",
+      "name": "Off-site water & sewer extension",
+      "amount": 1288710.95,
+      "method": "units",
+      "phase": "p1",
+      "shares": [
+        {
+          "comp": "mf",
+          "amount": 5903.39
+        },
+        {
+          "comp": "th",
+          "amount": 1574.24
+        },
+        {
+          "comp": "rt",
+          "amount": 1279068.74
+        },
+        {
+          "comp": "ht",
+          "amount": 2164.58
+        }
+      ]
+    },
+    {
+      "id": "amen",
+      "name": "Resident amenity center (MF + townhomes)",
+      "amount": 1468171.86,
+      "method": "manual",
+      "phase": "p1",
+      "shares": [
+        {
+          "comp": "mf",
+          "amount": 1101128.9
+        },
+        {
+          "comp": "th",
+          "amount": 367042.96
+        }
+      ]
+    }
+  ],
+  "warnings": [],
+  "proformas": [
+    {
+      "scope": {
+        "kind": "project",
+        "id": "project"
+      },
+      "purchasePrice": 170314234.04,
+      "year1PotentialIncome": 16124000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 592200
+      },
+      "unitCount": null,
+      "error": null,
+      "summary": {
+        "year1NOI": 7727876.115999999,
+        "yieldOnCost": 0.04537422347321264,
+        "equityIRR": -0.08679040891597671,
+        "equityMultiple": 0.6220594003476227,
+        "warnings": [
+          "Year 1 cash flow before taxes is negative.",
+          "Year 2 cash flow before taxes is negative.",
+          "Year 3 cash flow before taxes is negative.",
+          "Year 4 cash flow before taxes is negative.",
+          "Year 5 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate building SF (or units)",
+        "property.unitCount": "Estimate primary units",
+        "acquisition.basis": "Estimate total project cost",
+        "income.year1PotentialIncome": "Estimate revenue inputs",
+        "income.otherIncome": "Estimate other income",
+        "expenses": "Estimate expense ratio"
+      },
+      "irrRow": [
+        {
+          "year": 1,
+          "NOI": 7727876.115999999,
+          "cashFlow": -1241920.3432532111,
+          "equityIRR": -0.7379554622403118
+        },
+        {
+          "year": 2,
+          "NOI": 7959712.39948,
+          "cashFlow": -1010084.0597732104,
+          "equityIRR": -0.40992698306586195
+        },
+        {
+          "year": 3,
+          "NOI": 8198503.771464398,
+          "cashFlow": -771292.6877888124,
+          "equityIRR": -0.24047164839888518
+        },
+        {
+          "year": 4,
+          "NOI": 8444458.884608332,
+          "cashFlow": -525337.5746448785,
+          "equityIRR": -0.14536120507404177
+        },
+        {
+          "year": 5,
+          "NOI": 8697792.651146583,
+          "cashFlow": -272003.8081066273,
+          "equityIRR": -0.08679040891597671
+        }
+      ]
+    },
+    {
+      "scope": {
+        "kind": "component",
+        "id": "mf"
+      },
+      "purchasePrice": 87072057.45,
+      "year1PotentialIncome": 6300000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 315000
+      },
+      "unitCount": 300,
+      "error": null,
+      "summary": {
+        "year1NOI": 3745200,
+        "yieldOnCost": 0.04301265078237795,
+        "equityIRR": -0.13220796862350298,
+        "equityMultiple": 0.4653043872301004,
+        "warnings": [
+          "Year 1 cash flow before taxes is negative.",
+          "Year 2 cash flow before taxes is negative.",
+          "Year 3 cash flow before taxes is negative.",
+          "Year 4 cash flow before taxes is negative.",
+          "Year 5 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate component \"Garden apartments\" building SF (or units)",
+        "property.unitCount": "Estimate component \"Garden apartments\" primary units",
+        "acquisition.basis": "Estimate component \"Garden apartments\" total project cost",
+        "income.year1PotentialIncome": "Estimate component \"Garden apartments\" revenue inputs",
+        "income.otherIncome": "Estimate component \"Garden apartments\" other income",
+        "expenses": "Estimate component \"Garden apartments\" expense ratio"
+      }
+    },
+    {
+      "scope": {
+        "kind": "component",
+        "id": "th"
+      },
+      "purchasePrice": 32798123.64,
+      "year1PotentialIncome": 2544000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 144000
+      },
+      "unitCount": 80,
+      "error": null,
+      "summary": {
+        "year1NOI": 1570920,
+        "yieldOnCost": 0.04789664241902346,
+        "equityIRR": -0.04521582187684512,
+        "equityMultiple": 0.7894888581482793,
+        "warnings": [
+          "Year 1 cash flow before taxes is negative.",
+          "Year 2 cash flow before taxes is negative.",
+          "Year 3 cash flow before taxes is negative.",
+          "Year 4 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate component \"Rental townhomes\" building SF (or units)",
+        "property.unitCount": "Estimate component \"Rental townhomes\" primary units",
+        "acquisition.basis": "Estimate component \"Rental townhomes\" total project cost",
+        "income.year1PotentialIncome": "Estimate component \"Rental townhomes\" revenue inputs",
+        "income.otherIncome": "Estimate component \"Rental townhomes\" other income",
+        "expenses": "Estimate component \"Rental townhomes\" expense ratio"
+      }
+    },
+    {
+      "scope": {
+        "kind": "component",
+        "id": "rt"
+      },
+      "purchasePrice": 22249020.28,
+      "year1PotentialIncome": 1560000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 65000
+      },
+      "unitCount": null,
+      "error": null,
+      "summary": {
+        "year1NOI": 1233180,
+        "yieldOnCost": 0.05542626077376203,
+        "equityIRR": 0.053273902998807285,
+        "equityMultiple": 1.28936345743473,
+        "warnings": [
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate component \"Grocery-anchored center\" building SF (or units)",
+        "property.unitCount": "Estimate component \"Grocery-anchored center\" primary units",
+        "acquisition.basis": "Estimate component \"Grocery-anchored center\" total project cost",
+        "income.year1PotentialIncome": "Estimate component \"Grocery-anchored center\" revenue inputs",
+        "income.otherIncome": "Estimate component \"Grocery-anchored center\" other income",
+        "expenses": "Estimate component \"Grocery-anchored center\" expense ratio"
+      }
+    },
+    {
+      "scope": {
+        "kind": "component",
+        "id": "ht"
+      },
+      "purchasePrice": 28195032.67,
+      "year1PotentialIncome": 5720000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 68200
+      },
+      "unitCount": 110,
+      "error": null,
+      "summary": {
+        "year1NOI": 1446360,
+        "yieldOnCost": 0.05129839773297911,
+        "equityIRR": 0.0030370835317094936,
+        "equityMultiple": 1.0152615285600137,
+        "warnings": [
+          "Year 1 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate component \"Select-service hotel\" building SF (or units)",
+        "property.unitCount": "Estimate component \"Select-service hotel\" primary units",
+        "acquisition.basis": "Estimate component \"Select-service hotel\" total project cost",
+        "income.year1PotentialIncome": "Estimate component \"Select-service hotel\" revenue inputs",
+        "income.otherIncome": "Estimate component \"Select-service hotel\" other income",
+        "expenses": "Estimate component \"Select-service hotel\" expense ratio"
+      }
+    },
+    {
+      "scope": {
+        "kind": "phase",
+        "id": "p1"
+      },
+      "purchasePrice": 91811875.36,
+      "year1PotentialIncome": 6300000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 315000
+      },
+      "unitCount": 300,
+      "error": null,
+      "summary": {
+        "year1NOI": 3745200,
+        "yieldOnCost": 0.040792108703964935,
+        "equityIRR": -0.18347042655676615,
+        "equityMultiple": 0.3179056316491695,
+        "warnings": [
+          "Year 1 cash flow before taxes is negative.",
+          "Year 2 cash flow before taxes is negative.",
+          "Year 3 cash flow before taxes is negative.",
+          "Year 4 cash flow before taxes is negative.",
+          "Year 5 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate phase \"Phase 1 — infrastructure + apartments\" building SF (or units)",
+        "property.unitCount": "Estimate phase \"Phase 1 — infrastructure + apartments\" primary units",
+        "acquisition.basis": "Estimate phase \"Phase 1 — infrastructure + apartments\" total project cost",
+        "income.year1PotentialIncome": "Estimate phase \"Phase 1 — infrastructure + apartments\" revenue inputs",
+        "income.otherIncome": "Estimate phase \"Phase 1 — infrastructure + apartments\" other income",
+        "expenses": "Estimate phase \"Phase 1 — infrastructure + apartments\" expense ratio"
+      }
+    },
+    {
+      "scope": {
+        "kind": "phase",
+        "id": "p2"
+      },
+      "purchasePrice": 50949482.96,
+      "year1PotentialIncome": 4104000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 209000
+      },
+      "unitCount": null,
+      "error": null,
+      "summary": {
+        "year1NOI": 2807884.5696,
+        "yieldOnCost": 0.05511114944590205,
+        "equityIRR": 0.04968742946764623,
+        "equityMultiple": 1.2684044643824723,
+        "warnings": [
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate phase \"Phase 2 — townhomes + retail\" building SF (or units)",
+        "property.unitCount": "Estimate phase \"Phase 2 — townhomes + retail\" primary units",
+        "acquisition.basis": "Estimate phase \"Phase 2 — townhomes + retail\" total project cost",
+        "income.year1PotentialIncome": "Estimate phase \"Phase 2 — townhomes + retail\" revenue inputs",
+        "income.otherIncome": "Estimate phase \"Phase 2 — townhomes + retail\" other income",
+        "expenses": "Estimate phase \"Phase 2 — townhomes + retail\" expense ratio"
+      }
+    },
+    {
+      "scope": {
+        "kind": "phase",
+        "id": "p3"
+      },
+      "purchasePrice": 27552875.72,
+      "year1PotentialIncome": 5720000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 68200
+      },
+      "unitCount": 110,
+      "error": null,
+      "summary": {
+        "year1NOI": 1446360,
+        "yieldOnCost": 0.05249397611698733,
+        "equityIRR": 0.018384281308205266,
+        "equityMultiple": 1.0946224654827525,
+        "warnings": [
+          "Year 1 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate phase \"Phase 3 — hotel\" building SF (or units)",
+        "property.unitCount": "Estimate phase \"Phase 3 — hotel\" primary units",
+        "acquisition.basis": "Estimate phase \"Phase 3 — hotel\" total project cost",
+        "income.year1PotentialIncome": "Estimate phase \"Phase 3 — hotel\" revenue inputs",
+        "income.otherIncome": "Estimate phase \"Phase 3 — hotel\" other income",
+        "expenses": "Estimate phase \"Phase 3 — hotel\" expense ratio"
+      }
+    }
+  ]
+}

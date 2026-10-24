@@ -136,6 +136,7 @@ function check(file) {
 
   if (doc.ffe) range('ffe.perPrimaryUnit', doc.ffe.perPrimaryUnit, true, false);
   range('softCosts.pctOfHard', (doc.softCosts || {}).pctOfHard, false, true);
+  range('softCosts.developerFee', (doc.softCosts || {}).developerFee, false, false);
   const c = doc.contingency || {};
   ['design', 'hard', 'soft'].forEach(k => range('contingency.' + k, c[k], false, true));
   const rc = (doc.rangeCheck || {}).perPrimaryUnit;

@@ -5,7 +5,7 @@
   "category": "residential",
   "researchedAt": "2026-10-24",
   "primaryUnit": "unit",
-  "summary": "Factory-built volumetric modules or panelized building systems, built to state/IRC/IBC codes (not HUD-code; see manufactured-home-community), then shipped and craned onto site-built foundations. The factory package is ~55–65% of hard cost. Transport, crane/set, foundations, mate-line finishing and site utilities are the rest. Published claims are of up to 20% hard-cost savings and 40–50% schedule savings (Terner Center 2017), but in practice cost is often near parity with site-built. No national cost series exists, so the default is derived as a ratio to site-built residential. Confidence is low-medium.",
+  "summary": "Factory-built volumetric modules or panelized building systems, built to state/IRC/IBC codes (not HUD-code; see manufactured-home-community), then shipped and craned onto site-built foundations. The factory package is ~55\u201365% of hard cost. Transport, crane/set, foundations, mate-line finishing and site utilities are the rest. Published claims are of up to 20% hard-cost savings and 40\u201350% schedule savings (Terner Center 2017), but in practice cost is often near parity with site-built. No national cost series exists, so the default is derived as a ratio to site-built residential. Confidence is low-medium.",
   "sizing": {
     "typicalSize": {
       "low": 4,
@@ -14,7 +14,7 @@
       "unit": "unit",
       "evidence": [],
       "derived": true,
-      "method": "Units per project: from a few infill homes/ADUs to 3–4 story modular apartment buildings (100+ units, per the Terner Bay Area example of ~100 units in e1). Judgment."
+      "method": "Units per project: from a few infill homes/ADUs to 3\u20134 story modular apartment buildings (100+ units, per the Terner Bay Area example of ~100 units in e1). Judgment."
     },
     "sfPerPrimaryUnit": {
       "low": 800,
@@ -25,7 +25,7 @@
         "residential/single-family.json#e5"
       ],
       "derived": true,
-      "method": "Blend of modular apartments (~900 SF sample unit in e1) and modular single-family/townhomes (~1,500–2,000 SF; the Census site-built for-sale median of 2,216 SF caps the high). Module shipping widths (≤16 ft) favor compact plans. Judgment."
+      "method": "Blend of modular apartments (~900 SF sample unit in e1) and modular single-family/townhomes (~1,500\u20132,000 SF; the Census site-built for-sale median of 2,216 SF caps the high). Module shipping widths (\u226416 ft) favor compact plans. Judgment."
     },
     "primaryUnitsPerAcre": {
       "low": 6,
@@ -33,7 +33,7 @@
       "high": 40,
       "evidence": [],
       "derived": true,
-      "method": "Detached modular at single-family densities (4–6/acre) up to 3–4 story modular walk-ups (30–40/acre). Mid reflects the townhome/small-multifamily mix. Judgment."
+      "method": "Detached modular at single-family densities (4\u20136/acre) up to 3\u20134 story modular walk-ups (30\u201340/acre). Mid reflects the townhome/small-multifamily mix. Judgment."
     },
     "parkingPerPrimaryUnit": {
       "low": 1,
@@ -57,7 +57,7 @@
         "e2"
       ],
       "derived": true,
-      "method": "= perSF × sfPerPrimaryUnit: mid $160 × 1,200 = $192k ≈ $190k; low $120 × 900 ≈ $110k; high $230 × 1,800 = $414k ≈ $415k."
+      "method": "= perSF \u00d7 sfPerPrimaryUnit: mid $160 \u00d7 1,200 = $192k \u2248 $190k; low $120 \u00d7 900 \u2248 $110k; high $230 \u00d7 1,800 = $414k \u2248 $415k."
     },
     "perSF": {
       "low": 120,
@@ -72,7 +72,7 @@
         "residential/townhomes.json#e1"
       ],
       "derived": true,
-      "method": "Ratio to site-built. The site-built residential baseline is ~$145–160/SF national (single-family mid $145, townhomes $150, duplex $160, per this category's files; 2025$). The modular/site-built ratio is 0.80–1.05. The low end is Terner's 'up to 20 percent' hard-cost saving (e1). The high end comes from LA 2026 builder pricing (e2): factory-only modular at ~$430/SF versus $640–710/SF stick-built. That is ~63% of site-built for the factory package, and adding foundation, set, utilities and site work (typically 30–45% of the module price) gives ~0.85–0.95× site-built. Mid ≈ 1.0× a $160 blended baseline, because published savings are mostly 'up to' claims and the industry 'has struggled to scale' (Terner 2026). Low $120 ≈ 0.8 × $150. High $230 for premium, design-forward prefab and high-cost-region delivery. Labeled 2026$ because the most recent evidence (e2) is 2026; the site-built baselines are 2025$."
+      "method": "Ratio to site-built. The site-built residential baseline is ~$145\u2013160/SF national (single-family mid $145, townhomes $150, duplex $160, per this category's files; 2025$). The modular/site-built ratio is 0.80\u20131.05. The low end is Terner's 'up to 20 percent' hard-cost saving (e1). The high end comes from LA 2026 builder pricing (e2): factory-only modular at ~$430/SF versus $640\u2013710/SF stick-built. That is ~63% of site-built for the factory package, and adding foundation, set, utilities and site work (typically 30\u201345% of the module price) gives ~0.85\u20130.95\u00d7 site-built. Mid \u2248 1.0\u00d7 a $160 blended baseline, because published savings are mostly 'up to' claims and the industry 'has struggled to scale' (Terner 2026). Low $120 \u2248 0.8 \u00d7 $150. High $230 for premium, design-forward prefab and high-cost-region delivery. Labeled 2026$ because the most recent evidence (e2) is 2026; the site-built baselines are 2025$."
     },
     "scope": {
       "includesSitework": true,
@@ -88,7 +88,7 @@
     "luxury": 1.65,
     "evidence": [],
     "derived": true,
-    "method": "Economy = low/mid (120/160). Premium ≈ high/mid (230/160 = 1.44) tempered to 1.3. Luxury is judgment, for architect-designed prefab."
+    "method": "Economy = low/mid (120/160). Premium \u2248 high/mid (230/160 = 1.44) tempered to 1.3. Luxury is judgment, for architect-designed prefab."
   },
   "systemSplit": {
     "lines": [
@@ -142,7 +142,7 @@
       "e2"
     ],
     "derived": true,
-    "method": "Div 13 (Special Construction: modular/pre-engineered structures) holds the factory package incl. transport at ~60%. That reflects the e2 factory-only price at ~63% of comparable site-built cost; Terner (e1) notes materials are ~60% of module cost. Div 01 holds GC general conditions plus crane/set. 03 = foundations/crawlspace; 07/09 = mate-line roofing and finishing; 22/23/26 = site MEP tie-ins between modules; 31–33 = site work and utilities. The site-side allocations are judgment."
+    "method": "Div 13 (Special Construction: modular/pre-engineered structures) holds the factory package incl. transport at ~60%. That reflects the e2 factory-only price at ~63% of comparable site-built cost; Terner (e1) notes materials are ~60% of module cost. Div 01 holds GC general conditions plus crane/set. 03 = foundations/crawlspace; 07/09 = mate-line roofing and finishing; 22/23/26 = site MEP tie-ins between modules; 31\u201333 = site work and utilities. The site-side allocations are judgment."
   },
   "lineItems": [
     {
@@ -162,7 +162,7 @@
         "region": "US",
         "evidence": [],
         "derived": true,
-        "method": "Per module (≈2 modules per unit). Oversize-load trucking within ~250–500 miles of the factory. Judgment; no public source found. Verify with the manufacturer's quote."
+        "method": "Per module (\u22482 modules per unit). Oversize-load trucking within ~250\u2013500 miles of the factory. Judgment; no public source found. Verify with the manufacturer's quote."
       },
       "inBaseline": true,
       "scales": true,
@@ -196,14 +196,14 @@
   ],
   "softCosts": {
     "pctOfHard": {
-      "low": 0.14,
-      "mid": 0.18,
-      "high": 0.25,
+      "low": 0.09,
+      "mid": 0.13,
+      "high": 0.2,
       "evidence": [
         "e1"
       ],
       "derived": true,
-      "method": "Starts from the site-built residential soft-cost norm (~20%, see single-family). Less construction interest from a 40–50% shorter schedule: Terner cites ~2% of total construction cost saved on a $40M Bay Area project (e1). Offset by earlier design freeze, factory engineering and third-party inspection. Mid 18%. Judgment."
+      "method": "Starts from the site-built residential soft-cost norm (~20%, see single-family). Less construction interest from a 40\u201350% shorter schedule: Terner cites ~2% of total construction cost saved on a $40M Bay Area project (e1). Offset by earlier design freeze, factory engineering and third-party inspection. Mid 18%. Judgment. | Second pass (2026-10-24, main session): Reduced 5 points to follow the single-family norm with fees and financing removed. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
     },
     "breakdown": {
       "architectureEngineering": 0.06,
@@ -246,7 +246,7 @@
       "max": 550000,
       "dollarYear": 2026,
       "region": "US",
-      "method": "Low: compact modular unit ~$100k hard × 1.14. High: large premium prefab home ~$415k × 1.3."
+      "method": "Low: compact modular unit ~$100k hard \u00d7 1.14. High: large premium prefab home ~$415k \u00d7 1.3."
     }
   },
   "evidence": [
@@ -277,13 +277,13 @@
       "regionKey": "CA-LosAngeles",
       "dataYear": 2026,
       "source": {
-        "title": "Fire Rebuild Cost Guide · 2026",
+        "title": "Fire Rebuild Cost Guide \u00b7 2026",
         "url": "https://www.letterfour.com/fire-rebuild-cost-guide",
         "publisher": "Letter Four (design-build firm)",
         "accessed": "2026-10-24"
       },
       "quote": "The ~$430/sq ft is factory cost only. Foundation, utility connections, craning, site improvements, and decks are separate.",
-      "scopeNotes": "Modular/steel-chassis custom home in a high-cost market, compared with stick-built at $640–710/SF hard in the same guide. Used for the factory/site-built ratio, not as an absolute.",
+      "scopeNotes": "Modular/steel-chassis custom home in a high-cost market, compared with stick-built at $640\u2013710/SF hard in the same guide. Used for the factory/site-built ratio, not as an absolute.",
       "confidence": "low"
     },
     {
@@ -302,8 +302,8 @@
         "publisher": "Block Renovation",
         "accessed": "2026-10-24"
       },
-      "quote": "Prefab/modular ADU ($80,000–$250,000+ total)",
-      "scopeNotes": "Small prefab ADUs (~400–900 SF); total project including installation. Corroborates the low end of the per-unit range.",
+      "quote": "Prefab/modular ADU ($80,000\u2013$250,000+ total)",
+      "scopeNotes": "Small prefab ADUs (~400\u2013900 SF); total project including installation. Corroborates the low end of the per-unit range.",
       "confidence": "low"
     }
   ],

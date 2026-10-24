@@ -43,7 +43,7 @@
         "e6"
       ],
       "derived": false,
-      "method": "Apers: '1.5–2.0 spaces per unit, surface, uncovered'; mid set slightly below midpoint reflecting typical 1.6-1.75 suburban zoning minimums.",
+      "method": "Apers: '1.5\u20132.0 spaces per unit, surface, uncovered'; mid set slightly below midpoint reflecting typical 1.6-1.75 suburban zoning minimums.",
       "type": "surface"
     }
   },
@@ -360,15 +360,15 @@
   },
   "softCosts": {
     "pctOfHard": {
-      "low": 0.15,
-      "mid": 0.22,
-      "high": 0.32,
+      "low": 0.1,
+      "mid": 0.17,
+      "high": 0.27,
       "evidence": [
         "e15",
         "e16"
       ],
       "derived": false,
-      "method": "RAND market-rate soft/hard ratios: TX 0.19, CO 0.19 (efficient institutional developer, includes financing), CA 0.33 (e15). Brookings: soft 20-30% of total cost incl. financing (e16) => ~0.30-0.45 of hard. Because the engine treats construction interest separately, mid set at 0.22 (A&E, permits/fees, legal, insurance, taxes, marketing/lease-up, developer overhead) with the range bracketing RAND's state ratios."
+      "method": "RAND market-rate soft/hard ratios: TX 0.19, CO 0.19 (efficient institutional developer, includes financing), CA 0.33 (e15). Brookings: soft 20-30% of total cost incl. financing (e16) => ~0.30-0.45 of hard. Because the engine treats construction interest separately, mid set at 0.22 (A&E, permits/fees, legal, insurance, taxes, marketing/lease-up, developer overhead) with the range bracketing RAND's state ratios. | Second pass (2026-10-24, main session): Reduced 5 points: the RAND ratios it rests on include developer costs (~3 pts) and permits/fees (~2 pts). The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
     },
     "breakdown": {
       "architectureEngineering": 0.04
@@ -527,8 +527,8 @@
         "publisher": "Apers",
         "accessed": "2026-10-24"
       },
-      "quote": "This article uses $150–210 PSF of hard cost for garden in 2026",
-      "scopeNotes": "Educational article (Oct 2026); describes ranges as illustrative, citing RSMeans and others. Also: 'Density runs 15–30 units per acre' and '1.5–2.0 spaces per unit, surface'.",
+      "quote": "This article uses $150\u2013210 PSF of hard cost for garden in 2026",
+      "scopeNotes": "Educational article (Oct 2026); describes ranges as illustrative, citing RSMeans and others. Also: 'Density runs 15\u201330 units per acre' and '1.5\u20132.0 spaces per unit, surface'.",
       "confidence": "low"
     },
     {
@@ -547,7 +547,7 @@
         "publisher": "Terrapin Construction Group",
         "accessed": "2026-10-24"
       },
-      "quote": "Type V-B Garden Walk-Up ... $195k–$265k/unit; Type V-A Garden, 3-Story ... Market-rate runs $290k–$425k/unit",
+      "quote": "Type V-B Garden Walk-Up ... $195k\u2013$265k/unit; Type V-A Garden, 3-Story ... Market-rate runs $290k\u2013$425k/unit",
       "scopeNotes": "Contractor marketing article (2026). 'Vertical hard cost' - land, soft, financing, developer fee on top; sitework treatment not stated. Likely skewed to higher-cost markets.",
       "confidence": "low"
     },

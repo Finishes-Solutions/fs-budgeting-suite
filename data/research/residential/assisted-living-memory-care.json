@@ -291,14 +291,14 @@
   },
   "softCosts": {
     "pctOfHard": {
-      "low": 0.2,
-      "mid": 0.28,
-      "high": 0.38,
+      "low": 0.16,
+      "mid": 0.24,
+      "high": 0.34,
       "evidence": [
         "e5"
       ],
       "derived": true,
-      "method": "Derived: RAND multifamily soft/hard 0.19-0.33 incl. financing (e5) plus healthcare-specific items (licensing/CON consultants, operator technical services, life-safety/state health plan review); mid 0.28 excluding construction interest and operating pre-opening."
+      "method": "Derived: RAND multifamily soft/hard 0.19-0.33 incl. financing (e5) plus healthcare-specific items (licensing/CON consultants, operator technical services, life-safety/state health plan review); mid 0.28 excluding construction interest and operating pre-opening. | Second pass (2026-10-24, main session): Reduced 4 points: RAND-based, includes developer costs. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
     },
     "breakdown": {
       "architectureEngineering": 0.06

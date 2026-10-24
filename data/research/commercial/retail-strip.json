@@ -14,7 +14,7 @@
       "unit": "sf",
       "evidence": [],
       "derived": true,
-      "method": "Judgment: neighborhood/convenience strip centers 10,000–60,000 SF GLA."
+      "method": "Judgment: neighborhood/convenience strip centers 10,000\u201360,000 SF GLA."
     },
     "primaryUnitsPerAcre": {
       "low": 8000,
@@ -23,7 +23,7 @@
       "unit": "sf",
       "evidence": [],
       "derived": true,
-      "method": "Derived: FAR ≈ 0.18–0.28 for single-story retail with 4–5 spaces/1,000 SF."
+      "method": "Derived: FAR \u2248 0.18\u20130.28 for single-story retail with 4\u20135 spaces/1,000 SF."
     },
     "parkingPerPrimaryUnit": {
       "low": 0.004,
@@ -34,7 +34,7 @@
         "e6"
       ],
       "derived": true,
-      "method": "Spaces per GSF; typical retail zoning 4–5/1,000 SF (Kirksey prices one-story buildings at 5/1,000, e6)."
+      "method": "Spaces per GSF; typical retail zoning 4\u20135/1,000 SF (Kirksey prices one-story buildings at 5/1,000, e6)."
     }
   },
   "hardCost": {
@@ -52,7 +52,7 @@
         "e7"
       ],
       "derived": false,
-      "method": "Landlord shell + full sitework. RLB 2026 strip: Phoenix $135–220 (mid 178), Dallas $200–270 (mid 235), 18-city median $202–295 (e1, e2). RSMeans 2019 small store (complete, excl. site) $134–151 (e4) × ≈1.3 = $175–197 complete; shell ≈ 75% → ≈$131–148; + ≈$30–40 sitework → ≈$165–185. Mid = $185 (between the RSMeans build-up and RLB lower-cost metros). Low = $125 ≈ RLB Phoenix low / RSMeans 1/4 quartile (e3). High = $290 ≈ RLB 18-city median high. RSMeans model escalation 2019→2026 ≈ ×1.3, inferred from RSMeans' own office 2–4 story model: 2019 total $187.02 (open) / $204.43 (union) vs. 2026 national $253.63 (BD+C) = ×1.24–1.36. This is only used to compare evidence; the build script escalates from the stated dollarYear."
+      "method": "Landlord shell + full sitework. RLB 2026 strip: Phoenix $135\u2013220 (mid 178), Dallas $200\u2013270 (mid 235), 18-city median $202\u2013295 (e1, e2). RSMeans 2019 small store (complete, excl. site) $134\u2013151 (e4) \u00d7 \u22481.3 = $175\u2013197 complete; shell \u2248 75% \u2192 \u2248$131\u2013148; + \u2248$30\u201340 sitework \u2192 \u2248$165\u2013185. Mid = $185 (between the RSMeans build-up and RLB lower-cost metros). Low = $125 \u2248 RLB Phoenix low / RSMeans 1/4 quartile (e3). High = $290 \u2248 RLB 18-city median high. RSMeans model escalation 2019\u21922026 \u2248 \u00d71.3, inferred from RSMeans' own office 2\u20134 story model: 2019 total $187.02 (open) / $204.43 (union) vs. 2026 national $253.63 (BD+C) = \u00d71.24\u20131.36. This is only used to compare evidence; the build script escalates from the stated dollarYear."
     },
     "scope": {
       "includesSitework": true,
@@ -141,7 +141,7 @@
       "e6"
     ],
     "derived": true,
-    "method": "Derived. Sitework 25% (≈$46/SF on $185): one-story retail carries 1.5–2× the site area per building SF of a 2–3 story office (Kirksey one-story 5/1,000 sitework $16–37/SF, e6) plus storefront drives and stormwater. MEP below RSMeans complete-retail medians (plumbing 5.45%, mechanical 6.15%, electrical 11.25%, e3) because the shell carries stub-outs only. Shell split by judgment (slab/foundations, steel/masonry, storefront 08)."
+    "method": "Derived. Sitework 25% (\u2248$46/SF on $185): one-story retail carries 1.5\u20132\u00d7 the site area per building SF of a 2\u20133 story office (Kirksey one-story 5/1,000 sitework $16\u201337/SF, e6) plus storefront drives and stormwater. MEP below RSMeans complete-retail medians (plumbing 5.45%, mechanical 6.15%, electrical 11.25%, e3) because the shell carries stub-outs only. Shell split by judgment (slab/foundations, steel/masonry, storefront 08)."
   },
   "lineItems": [
     {
@@ -189,7 +189,7 @@
           "e5"
         ],
         "derived": true,
-        "method": "Derived judgment: allowances typically cover ≈10–40% of the $157/SF in-line fit-out (e5)."
+        "method": "Derived judgment: allowances typically cover \u224810\u201340% of the $157/SF in-line fit-out (e5)."
       },
       "inBaseline": false,
       "scales": true,
@@ -242,7 +242,7 @@
           "e6"
         ],
         "derived": true,
-        "method": "Derived: 25% of the $185 mid; Kirksey one-story office sitework $16–37/SF at 5/1,000 (e6) scaled for retail drive aisles, landscaping islands and detention."
+        "method": "Derived: 25% of the $185 mid; Kirksey one-story office sitework $16\u201337/SF at 5/1,000 (e6) scaled for retail drive aisles, landscaping islands and detention."
       },
       "inBaseline": true,
       "scales": true,
@@ -252,12 +252,12 @@
   ],
   "softCosts": {
     "pctOfHard": {
-      "low": 0.15,
-      "mid": 0.2,
-      "high": 0.28,
+      "low": 0.11,
+      "mid": 0.16,
+      "high": 0.24,
       "evidence": [],
       "derived": true,
-      "method": "Derived: A/E 6–8% (RSMeans retail store model carries 8%), permits/platting 1–2%, survey/geotech/testing 1%, insurance/legal 2%, developer fee 3–5%, leasing commissions 3–6%."
+      "method": "Derived: A/E 6\u20138% (RSMeans retail store model carries 8%), permits/platting 1\u20132%, survey/geotech/testing 1%, insurance/legal 2%, developer fee 3\u20135%, leasing commissions 3\u20136%. | Second pass (2026-10-24, main session): Reduced 4 points to remove the developer fee (3\u20135%). The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
     },
     "breakdown": {
       "architectureEngineering": 0.07
@@ -296,7 +296,7 @@
       "max": 420,
       "dollarYear": 2026,
       "region": "US",
-      "method": "Min ≈ $125 × 1.15; max ≈ upper RLB strip values outside gateway metros (Denver/Minneapolis high $340–350) × 1.2."
+      "method": "Min \u2248 $125 \u00d7 1.15; max \u2248 upper RLB strip values outside gateway metros (Denver/Minneapolis high $340\u2013350) \u00d7 1.2."
     }
   },
   "evidence": [
@@ -316,8 +316,8 @@
         "publisher": "Rider Levett Bucknall (RLB)",
         "accessed": "2026-10-24"
       },
-      "quote": "Indicative construction costs, Retail Shopping — Strip: Dallas 200–270; Phoenix 135–220; Charlotte 205–290 (USD/SF GFA, hard construction costs).",
-      "scopeNotes": "Values are the Dallas column; Phoenix 135–220; 18-US-city median 202.5–295. RLB does not say whether strip figures are shell-only or include sitework.",
+      "quote": "Indicative construction costs, Retail Shopping \u2014 Strip: Dallas 200\u2013270; Phoenix 135\u2013220; Charlotte 205\u2013290 (USD/SF GFA, hard construction costs).",
+      "scopeNotes": "Values are the Dallas column; Phoenix 135\u2013220; 18-US-city median 202.5\u2013295. RLB does not say whether strip figures are shell-only or include sitework.",
       "confidence": "high"
     },
     {
@@ -336,7 +336,7 @@
         "publisher": "Rider Levett Bucknall (RLB)",
         "accessed": "2026-10-24"
       },
-      "quote": "Indicative construction costs, Retail Shopping — Strip: Phoenix 135–220; Center: Phoenix 225–380 (USD/SF GFA).",
+      "quote": "Indicative construction costs, Retail Shopping \u2014 Strip: Phoenix 135\u2013220; Center: Phoenix 225\u2013380 (USD/SF GFA).",
       "scopeNotes": "Lowest-cost US city in the RLB strip column.",
       "confidence": "high"
     },
@@ -351,7 +351,7 @@
       "regionKey": "US",
       "dataYear": 2022,
       "source": {
-        "title": "2022 Project Costs — 50 17 00 Project Costs per S.F.",
+        "title": "2022 Project Costs \u2014 50 17 00 Project Costs per S.F.",
         "url": "https://www.rsmeans.com/media/wysiwyg/quarterly_updates/2022-Project-Costs-per-Square-Foot.pdf",
         "publisher": "Gordian / RSMeans",
         "accessed": "2026-10-24"
@@ -411,13 +411,13 @@
       "regionKey": "TX-Houston",
       "dataYear": 2025,
       "source": {
-        "title": "Construction Cost Trends / 2025 — Houston",
+        "title": "Construction Cost Trends / 2025 \u2014 Houston",
         "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=1c8a21ff-de0e-4629-b9b0-7f38f62c502b",
         "publisher": "Kirksey Architecture",
         "accessed": "2026-10-24"
       },
       "quote": "ONE-STORY FLEX OFFICE BUILDINGS $103 to $122/SF ... Cost includes $16 to $22/sf for sitework, assuming five spaces/1,000 sf in a surface parking lot.",
-      "scopeNotes": "One-story building with 5/1,000 surface parking — closest published proxy for retail sitework per building SF (Austin $21–30, Dallas $23–37 for the same building).",
+      "scopeNotes": "One-story building with 5/1,000 surface parking \u2014 closest published proxy for retail sitework per building SF (Austin $21\u201330, Dallas $23\u201337 for the same building).",
       "confidence": "medium"
     },
     {
@@ -434,8 +434,8 @@
         "publisher": "Building Design + Construction (data: Gordian RSMeans)",
         "accessed": "2026-10-24"
       },
-      "quote": "Square Foot Costs: Office Building, 2-4 Story — National Average Q2 2026 $253.63.",
-      "scopeNotes": "Used only to infer RSMeans model escalation 2019→2026 (vs. 2019 office 2–4 story model total $187.02–204.43).",
+      "quote": "Square Foot Costs: Office Building, 2-4 Story \u2014 National Average Q2 2026 $253.63.",
+      "scopeNotes": "Used only to infer RSMeans model escalation 2019\u21922026 (vs. 2019 office 2\u20134 story model total $187.02\u2013204.43).",
       "confidence": "medium"
     }
   ],

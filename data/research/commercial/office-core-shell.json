@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "office-core-shell",
-  "name": "Office — core & shell",
+  "name": "Office \u2014 core & shell",
   "category": "commercial",
   "researchedAt": "2026-10-24",
   "primaryUnit": "sf",
@@ -14,7 +14,7 @@
       "unit": "sf",
       "evidence": [],
       "derived": true,
-      "method": "Judgment: suburban low/mid-rise spec office 2–6 floors; Kirksey mid/high-rise examples use 25,000-SF floor plates (e4) — 4 floors ≈ 100,000 SF."
+      "method": "Judgment: suburban low/mid-rise spec office 2\u20136 floors; Kirksey mid/high-rise examples use 25,000-SF floor plates (e4) \u2014 4 floors \u2248 100,000 SF."
     },
     "primaryUnitsPerAcre": {
       "low": 10000,
@@ -25,7 +25,7 @@
         "e11"
       ],
       "derived": true,
-      "method": "Derived: at 4 spaces/1,000 SF (e11) × ≈350 SF/space incl. aisles = 1,400 SF of parking per 1,000 SF office; a 3-story building at 50% site coverage for building+parking+landscape gives ≈ 13,000–17,000 GSF/acre. Mid-rise with a garage reaches ≈25,000."
+      "method": "Derived: at 4 spaces/1,000 SF (e11) \u00d7 \u2248350 SF/space incl. aisles = 1,400 SF of parking per 1,000 SF office; a 3-story building at 50% site coverage for building+parking+landscape gives \u2248 13,000\u201317,000 GSF/acre. Mid-rise with a garage reaches \u224825,000."
     },
     "parkingPerPrimaryUnit": {
       "low": 0.003,
@@ -59,7 +59,7 @@
         "e10"
       ],
       "derived": false,
-      "method": "Baseline = speculative low/mid-rise (2–6 story) core & shell incl. typical surface-parked sitework, standard quality. Direct scope matches: Kirksey 2025 low-rise Houston $115–139 (e1), Austin $133–161 (e3), Dallas $190–235 (e2); mid-rise Dallas $225–280 (e4). Average of the three Texas low-rise midpoints ≈ $171; Texas metros price below national, so national ≈ $190–200. Cross-check: RSMeans 2026 complete 2–4 story office $253.63 (e8) less ≈9% A/E fee and ≈20% basic interiors ≈ $185, plus ≈$20–25 sitework ≈ $205–210. Mid = $210. Low = $140 ≈ Houston/Austin low-rise (cheapest open-shop suburban shells). High = $360 = Cumming 10-metro median low for urban shell & core excl. sitework (e5); prime high-rise in gateway metros exceeds this (RLB prime median $357–588, e6). RSMeans 2019/2022 whole-building figures (e7, e9) are kept as evidence but not used directly because they include interiors and are older dollars."
+      "method": "Baseline = speculative low/mid-rise (2\u20136 story) core & shell incl. typical surface-parked sitework, standard quality. Direct scope matches: Kirksey 2025 low-rise Houston $115\u2013139 (e1), Austin $133\u2013161 (e3), Dallas $190\u2013235 (e2); mid-rise Dallas $225\u2013280 (e4). Average of the three Texas low-rise midpoints \u2248 $171; Texas metros price below national, so national \u2248 $190\u2013200. Cross-check: RSMeans 2026 complete 2\u20134 story office $253.63 (e8) less \u22489% A/E fee and \u224820% basic interiors \u2248 $185, plus \u2248$20\u201325 sitework \u2248 $205\u2013210. Mid = $210. Low = $140 \u2248 Houston/Austin low-rise (cheapest open-shop suburban shells). High = $360 = Cumming 10-metro median low for urban shell & core excl. sitework (e5); prime high-rise in gateway metros exceeds this (RLB prime median $357\u2013588, e6). RSMeans 2019/2022 whole-building figures (e7, e9) are kept as evidence but not used directly because they include interiors and are older dollars."
     },
     "scope": {
       "includesSitework": true,
@@ -79,7 +79,7 @@
       "e6"
     ],
     "derived": true,
-    "method": "economy ≈ low/mid (140/210 ≈ 0.67, rounded up to 0.75 for small-building premium); premium ≈ Cumming urban shell & core mid ($405) / 300 region-adjusted ≈ 1.35; luxury ≈ RLB prime-office median midpoint ($472) / 270 ≈ 1.75."
+    "method": "economy \u2248 low/mid (140/210 \u2248 0.67, rounded up to 0.75 for small-building premium); premium \u2248 Cumming urban shell & core mid ($405) / 300 region-adjusted \u2248 1.35; luxury \u2248 RLB prime-office median midpoint ($472) / 270 \u2248 1.75."
   },
   "systemSplit": {
     "lines": [
@@ -166,7 +166,7 @@
       "e9"
     ],
     "derived": true,
-    "method": "Derived. Sitework (31+32+33) = 14% from Kirksey: sitework $14–20 of $115–139 (≈13–14%, e1) and $21–33 of $190–235 (≈11–14%, e2). MEP shares scaled down from RSMeans whole-office medians (plumbing 3.78%, mechanical 8.2%, electrical 10%, e9) because core & shell carries base-building MEP only. Remaining building shell split by typical steel-frame/precast-or-glass spec office proportions (judgment): structure (03+05) 24%, envelope (07+08) 20%, GC/fee 9%, elevators 3%, core/lobby finishes 4%."
+    "method": "Derived. Sitework (31+32+33) = 14% from Kirksey: sitework $14\u201320 of $115\u2013139 (\u224813\u201314%, e1) and $21\u201333 of $190\u2013235 (\u224811\u201314%, e2). MEP shares scaled down from RSMeans whole-office medians (plumbing 3.78%, mechanical 8.2%, electrical 10%, e9) because core & shell carries base-building MEP only. Remaining building shell split by typical steel-frame/precast-or-glass spec office proportions (judgment): structure (03+05) 24%, envelope (07+08) 20%, GC/fee 9%, elevators 3%, core/lobby finishes 4%."
   },
   "lineItems": [
     {
@@ -190,7 +190,7 @@
           "e3"
         ],
         "derived": false,
-        "method": "Kirksey 2025 low-rise sitework per GSF: Houston $14–20, Austin $20–27, Dallas $21–33. Mid ≈ average of midpoints (17, 23.5, 27) ≈ $22."
+        "method": "Kirksey 2025 low-rise sitework per GSF: Houston $14\u201320, Austin $20\u201327, Dallas $21\u201333. Mid \u2248 average of midpoints (17, 23.5, 27) \u2248 $22."
       },
       "inBaseline": true,
       "scales": true,
@@ -216,7 +216,7 @@
           "e12"
         ],
         "derived": true,
-        "method": "Cumming Q4 2025 above-grade garage per stall: Nashville $24k–41k, Dallas $26k–45k, Boston $34k–59k. Mid ≈ Dallas/Nashville midpoint average (≈$34k) rounded. Kirksey Dallas 2025 garages $62–125/SF ≈ $21k–41k/stall at 330 SF/stall (same order)."
+        "method": "Cumming Q4 2025 above-grade garage per stall: Nashville $24k\u201341k, Dallas $26k\u201345k, Boston $34k\u201359k. Mid \u2248 Dallas/Nashville midpoint average (\u2248$34k) rounded. Kirksey Dallas 2025 garages $62\u2013125/SF \u2248 $21k\u201341k/stall at 330 SF/stall (same order)."
       },
       "inBaseline": false,
       "scales": true,
@@ -248,7 +248,7 @@
       "inBaseline": true,
       "scales": false,
       "optional": false,
-      "notes": "Inside baseline; use traction (≈$250k each, building-systems block) above ~5 floors."
+      "notes": "Inside baseline; use traction (\u2248$250k each, building-systems block) above ~5 floors."
     },
     {
       "id": "monument-sign",
@@ -280,19 +280,19 @@
   ],
   "softCosts": {
     "pctOfHard": {
-      "low": 0.18,
-      "mid": 0.24,
-      "high": 0.3,
+      "low": 0.14,
+      "mid": 0.2,
+      "high": 0.26,
       "evidence": [
         "e13"
       ],
       "derived": true,
-      "method": "Derived. A/E 6–7% (RSMeans office models, e13) + permits/inspections 1–2% + survey/geotech/testing 1% + legal/insurance/taxes during construction 2–3% + developer fee 3–5% + leasing/marketing of spec space 3–5% + owner's rep/PM 1–2%. Financing excluded."
+      "method": "Derived. A/E 6\u20137% (RSMeans office models, e13) + permits/inspections 1\u20132% + survey/geotech/testing 1% + legal/insurance/taxes during construction 2\u20133% + developer fee 3\u20135% + leasing/marketing of spec space 3\u20135% + owner's rep/PM 1\u20132%. Financing excluded. | Second pass (2026-10-24, main session): Reduced 4 points to remove the developer fee (3\u20135%). The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
     },
     "breakdown": {
       "architectureEngineering": 0.065
     },
-    "notes": "Leasing commissions for speculative office can add 4–8% of hard cost if included in the budget; tenant improvement allowances belong to office-ti."
+    "notes": "Leasing commissions for speculative office can add 4\u20138% of hard cost if included in the budget; tenant improvement allowances belong to office-ti."
   },
   "contingency": {
     "design": {
@@ -301,7 +301,7 @@
       "high": 0.1,
       "evidence": [],
       "derived": true,
-      "method": "Industry norm for conceptual budgets: 5% at schematic, falling to ~2–3% by CDs."
+      "method": "Industry norm for conceptual budgets: 5% at schematic, falling to ~2\u20133% by CDs."
     },
     "hard": {
       "low": 0.03,
@@ -326,7 +326,7 @@
       "max": 600,
       "dollarYear": 2025,
       "region": "US",
-      "method": "Hard low ($140) × (1 + 0.18 soft) ≈ $165 rounded down for rural tilt-up; max ≈ Cumming urban shell & core high ($520 NYC, e5) × 1.15 soft ≈ $600."
+      "method": "Hard low ($140) \u00d7 (1 + 0.18 soft) \u2248 $165 rounded down for rural tilt-up; max \u2248 Cumming urban shell & core high ($520 NYC, e5) \u00d7 1.15 soft \u2248 $600."
     }
   },
   "evidence": [
@@ -341,7 +341,7 @@
       "regionKey": "TX-Houston",
       "dataYear": 2025,
       "source": {
-        "title": "Construction Cost Trends / 2025 — Houston",
+        "title": "Construction Cost Trends / 2025 \u2014 Houston",
         "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=1c8a21ff-de0e-4629-b9b0-7f38f62c502b",
         "publisher": "Kirksey Architecture",
         "accessed": "2026-10-24"
@@ -361,7 +361,7 @@
       "regionKey": "TX-Dallas",
       "dataYear": 2025,
       "source": {
-        "title": "Construction Cost Trends / 2025 — Dallas",
+        "title": "Construction Cost Trends / 2025 \u2014 Dallas",
         "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=c5a9a83b-478c-495a-a4b2-cbb2a99377dc",
         "publisher": "Kirksey Architecture",
         "accessed": "2026-10-24"
@@ -381,7 +381,7 @@
       "regionKey": "TX-Austin",
       "dataYear": 2025,
       "source": {
-        "title": "Construction Cost Trends / 2025 — Austin",
+        "title": "Construction Cost Trends / 2025 \u2014 Austin",
         "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=7cfddae4-aa86-4325-b4d1-2084432c2273",
         "publisher": "Kirksey Architecture",
         "accessed": "2026-10-24"
@@ -401,13 +401,13 @@
       "regionKey": "TX-Dallas",
       "dataYear": 2025,
       "source": {
-        "title": "Construction Cost Trends / 2025 — Dallas",
+        "title": "Construction Cost Trends / 2025 \u2014 Dallas",
         "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=c5a9a83b-478c-495a-a4b2-cbb2a99377dc",
         "publisher": "Kirksey Architecture",
         "accessed": "2026-10-24"
       },
       "quote": "MID-RISE OFFICE BUILDINGS $225 to $280/SF ... Four- to six-story ... Cost includes $17 to $24/sf for sitework and minimal (visitor) surface parking.",
-      "scopeNotes": "4–6 story shell; parking in separate garage (excluded). Houston mid-rise same report family: $141–$162; Austin $155–$194.",
+      "scopeNotes": "4\u20136 story shell; parking in separate garage (excluded). Houston mid-rise same report family: $141\u2013$162; Austin $155\u2013$194.",
       "confidence": "high"
     },
     {
@@ -421,13 +421,13 @@
       "regionKey": "TX-Dallas",
       "dataYear": 2025,
       "source": {
-        "title": "Market Analysis Q4 2025 — Typical Construction Cost Range (Cost Per Unit 2025)",
+        "title": "Market Analysis Q4 2025 \u2014 Typical Construction Cost Range (Cost Per Unit 2025)",
         "url": "https://cumming-group.com/wp-content/uploads/2025/12/CummingGroup_Q4_2025_MarketingAnalysis_2.13.26.pdf",
         "publisher": "Cumming Group",
         "accessed": "2026-10-24"
       },
-      "quote": "Office | Shell & Core | SF: Dallas $290–$360; Nashville $260–$330; Chicago $380–$470. Notes: \"Land acquisition, professional fees, permits, FF&E and soft costs are not included.\"",
-      "scopeNotes": "Values are the Dallas column; same table: Nashville $260–330, Chicago $380–470, 10-metro median of lows/highs $360/$450. Excludes sitework (\"excludes sitework\").",
+      "quote": "Office | Shell & Core | SF: Dallas $290\u2013$360; Nashville $260\u2013$330; Chicago $380\u2013$470. Notes: \"Land acquisition, professional fees, permits, FF&E and soft costs are not included.\"",
+      "scopeNotes": "Values are the Dallas column; same table: Nashville $260\u2013330, Chicago $380\u2013470, 10-metro median of lows/highs $360/$450. Excludes sitework (\"excludes sitework\").",
       "confidence": "high"
     },
     {
@@ -446,8 +446,8 @@
         "publisher": "Rider Levett Bucknall (RLB)",
         "accessed": "2026-10-24"
       },
-      "quote": "Indicative construction costs, Offices: Dallas Prime 265–445, Secondary 165–240; Phoenix Secondary 185–250 (USD/SF of gross floor area, hard construction costs).",
-      "scopeNotes": "RLB does not state whether office figures are shell or fitted-out; \"hard construction costs\". 18-US-city median: Prime 357–588, Secondary 250–365.",
+      "quote": "Indicative construction costs, Offices: Dallas Prime 265\u2013445, Secondary 165\u2013240; Phoenix Secondary 185\u2013250 (USD/SF of gross floor area, hard construction costs).",
+      "scopeNotes": "RLB does not state whether office figures are shell or fitted-out; \"hard construction costs\". 18-US-city median: Prime 357\u2013588, Secondary 250\u2013365.",
       "confidence": "medium"
     },
     {
@@ -484,8 +484,8 @@
         "publisher": "Building Design + Construction (data: Gordian RSMeans)",
         "accessed": "2026-10-24"
       },
-      "quote": "Square Foot Costs: Office Building, 2-4 Story — National Average Q2 2026 $253.63 (Q2 2025 $244.80; YoY 3.61%).",
-      "scopeNotes": "RSMeans square-foot model for a complete building (shell + basic interiors); RSMeans models exclude sitework and, on the public model pages, add an architectural fee — so not directly our scope.",
+      "quote": "Square Foot Costs: Office Building, 2-4 Story \u2014 National Average Q2 2026 $253.63 (Q2 2025 $244.80; YoY 3.61%).",
+      "scopeNotes": "RSMeans square-foot model for a complete building (shell + basic interiors); RSMeans models exclude sitework and, on the public model pages, add an architectural fee \u2014 so not directly our scope.",
       "confidence": "medium"
     },
     {
@@ -499,7 +499,7 @@
       "regionKey": "US",
       "dataYear": 2022,
       "source": {
-        "title": "2022 Project Costs — 50 17 00 Project Costs per S.F.",
+        "title": "2022 Project Costs \u2014 50 17 00 Project Costs per S.F.",
         "url": "https://www.rsmeans.com/media/wysiwyg/quarterly_updates/2022-Project-Costs-per-Square-Foot.pdf",
         "publisher": "Gordian / RSMeans",
         "accessed": "2026-10-24"
@@ -524,8 +524,8 @@
         "publisher": "Gordian / RSMeans",
         "accessed": "2026-10-24"
       },
-      "quote": "Office, 2–4 Story | 4,250–92,000 | $247–$498",
-      "scopeNotes": "Range across RSMeans 2–4 story office models; scope (sitework, fees, interiors) not stated.",
+      "quote": "Office, 2\u20134 Story | 4,250\u201392,000 | $247\u2013$498",
+      "scopeNotes": "Range across RSMeans 2\u20134 story office models; scope (sitework, fees, interiors) not stated.",
       "confidence": "low"
     },
     {
@@ -538,7 +538,7 @@
       "region": "Houston, TX",
       "regionKey": "TX-Houston",
       "source": {
-        "title": "Construction Cost Trends / 2025 — Houston",
+        "title": "Construction Cost Trends / 2025 \u2014 Houston",
         "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=1c8a21ff-de0e-4629-b9b0-7f38f62c502b",
         "publisher": "Kirksey Architecture",
         "accessed": "2026-10-24"
@@ -558,13 +558,13 @@
       "regionKey": "TX-Dallas",
       "dataYear": 2025,
       "source": {
-        "title": "Market Analysis Q4 2025 — Typical Construction Cost Range (Cost Per Unit 2025)",
+        "title": "Market Analysis Q4 2025 \u2014 Typical Construction Cost Range (Cost Per Unit 2025)",
         "url": "https://cumming-group.com/wp-content/uploads/2025/12/CummingGroup_Q4_2025_MarketingAnalysis_2.13.26.pdf",
         "publisher": "Cumming Group",
         "accessed": "2026-10-24"
       },
-      "quote": "Parking Structures | Above Grade-Multi-Level (330 SF / Stall) | Stalls: Nashville $24,000–$41,000; Dallas $26,000–$45,000; Boston $34,000–$59,000",
-      "scopeNotes": "Values are the Dallas column; Nashville $24k–41k, Boston $34k–59k. Above-grade structured parking per stall, excl. sitework/soft costs.",
+      "quote": "Parking Structures | Above Grade-Multi-Level (330 SF / Stall) | Stalls: Nashville $24,000\u2013$41,000; Dallas $26,000\u2013$45,000; Boston $34,000\u2013$59,000",
+      "scopeNotes": "Values are the Dallas column; Nashville $24k\u201341k, Boston $34k\u201359k. Above-grade structured parking per stall, excl. sitework/soft costs.",
       "confidence": "high"
     },
     {
@@ -581,13 +581,13 @@
         "accessed": "2026-10-24"
       },
       "quote": "Architectural Fees 7% $13.37",
-      "scopeNotes": "A/E fee as % of building cost in RSMeans office models (5–10 story model shows 6%).",
+      "scopeNotes": "A/E fee as % of building cost in RSMeans office models (5\u201310 story model shows 6%).",
       "confidence": "medium"
     }
   ],
   "openQuestions": [
     "No public national core-&-shell-only benchmark was found; national mid is inferred from Texas (Kirksey) and gateway-metro (Cumming, RLB) data.",
-    "RLB office figures do not state whether they are shell-only or fitted-out — confirm with RLB notes.",
-    "Kirksey Dallas 2025 low-rise ($190–235) is ~50% above Houston ($115–139) for the same building description; worth confirming."
+    "RLB office figures do not state whether they are shell-only or fitted-out \u2014 confirm with RLB notes.",
+    "Kirksey Dallas 2025 low-rise ($190\u2013235) is ~50% above Houston ($115\u2013139) for the same building description; worth confirming."
   ]
 }

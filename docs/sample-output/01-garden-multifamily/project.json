@@ -1,0 +1,65 @@
+{
+  "sample": {
+    "id": "01-garden-multifamily",
+    "name": "Cedar Hollow — garden multifamily",
+    "address": "Katy, TX",
+    "exitCap": 0.0575
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "quick",
+    "location": {
+      "region": "TX-Houston"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "amount",
+      "value": 4800000
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "c1",
+        "typeId": "garden-multifamily",
+        "name": "Cedar Hollow apartments",
+        "phaseId": "p1",
+        "size": 240,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perUnitMonth",
+          "rate": 1800,
+          "otherIncome": 260000,
+          "vacancy": 0.06,
+          "expenseRatio": 0.4
+        }
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

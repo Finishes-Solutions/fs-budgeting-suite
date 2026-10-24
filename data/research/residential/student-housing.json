@@ -265,15 +265,15 @@
   },
   "softCosts": {
     "pctOfHard": {
-      "low": 0.17,
-      "mid": 0.23,
-      "high": 0.32,
+      "low": 0.13,
+      "mid": 0.19,
+      "high": 0.28,
       "evidence": [
         "e2",
         "e6"
       ],
       "derived": false,
-      "method": "Utah public project soft/hard 0.20 incl. FF&E and IT (e2, no developer fee); RAND market-rate multifamily 0.19-0.33 incl. financing (e6). Mid 0.23 for a private developer excl. construction interest; FF&E carried separately here."
+      "method": "Utah public project soft/hard 0.20 incl. FF&E and IT (e2, no developer fee); RAND market-rate multifamily 0.19-0.33 incl. financing (e6). Mid 0.23 for a private developer excl. construction interest; FF&E carried separately here. | Second pass (2026-10-24, main session): Reduced 4 points: RAND-based, includes developer costs. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
     },
     "breakdown": {
       "architectureEngineering": 0.045

@@ -339,15 +339,15 @@
   },
   "softCosts": {
     "pctOfHard": {
-      "low": 0.2,
-      "mid": 0.27,
-      "high": 0.38,
+      "low": 0.15,
+      "mid": 0.22,
+      "high": 0.33,
       "evidence": [
         "e15",
         "e16"
       ],
       "derived": false,
-      "method": "RAND market-rate soft/hard 0.19-0.33 incl. financing (e15) across a mostly low/mid-rise sample; Brookings 20-30% of total (e16). High-rise carries more structural/facade/MEP engineering, longer entitlement and insurance (builder's risk, wrap-up), so mid 0.27; excludes construction interest."
+      "method": "RAND market-rate soft/hard 0.19-0.33 incl. financing (e15) across a mostly low/mid-rise sample; Brookings 20-30% of total (e16). High-rise carries more structural/facade/MEP engineering, longer entitlement and insurance (builder's risk, wrap-up), so mid 0.27; excludes construction interest. | Second pass (2026-10-24, main session): Reduced 5 points: RAND-based, includes developer costs and fees. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
     },
     "breakdown": {
       "architectureEngineering": 0.055
@@ -426,7 +426,7 @@
         "publisher": "Apers",
         "accessed": "2026-10-24"
       },
-      "quote": "Cost basis runs $400–675 PSF in 2026 across most institutional U.S. high-rise multifamily; 0.7–1.2 spaces per unit, structured; Density runs 140–300+ units per acre",
+      "quote": "Cost basis runs $400\u2013675 PSF in 2026 across most institutional U.S. high-rise multifamily; 0.7\u20131.2 spaces per unit, structured; Density runs 140\u2013300+ units per acre",
       "scopeNotes": "Educational article (Oct 2026), illustrative ranges citing RSMeans and others; worked example implies ~$594k/unit hard for a 200-unit tower.",
       "confidence": "low"
     },

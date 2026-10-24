@@ -205,7 +205,7 @@ function build() {
         block: li.block || null, unit: li.unit, qty: li.qty, cost: money(li.cost, N, rel, warn),
         inBaseline: li.inBaseline, scales: li.scales, optional: li.optional, notes: li.notes || '' })),
       ffe: doc.ffe && doc.ffe.perPrimaryUnit ? { perPrimaryUnit: money(doc.ffe.perPrimaryUnit, N, rel, warn) } : null,
-      softCosts: { pctOfHard: pct(doc.softCosts.pctOfHard, rel), breakdown: doc.softCosts.breakdown || null,
+      softCosts: { pctOfHard: pct(doc.softCosts.pctOfHard, rel), developerFee: pct(doc.softCosts.developerFee, rel), breakdown: doc.softCosts.breakdown || null,
         notes: doc.softCosts.notes || '' },
       contingency: { design: pct(doc.contingency.design, rel), hard: pct(doc.contingency.hard, rel),
         soft: pct(doc.contingency.soft, rel) },
