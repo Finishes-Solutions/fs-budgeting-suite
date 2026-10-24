@@ -1,0 +1,473 @@
+{
+  "schemaVersion": 1,
+  "id": "specialty-mep",
+  "name": "Specialty MEP (cold storage, data center power, labs, commercial kitchens, medical gas)",
+  "researchedAt": "2026-10-24",
+  "items": [
+    {
+      "id": "cold-storage-refrigeration",
+      "name": "Cold-storage refrigeration system (per SF of refrigerated floor area)",
+      "division": "23",
+      "unit": "sf",
+      "cost": {
+        "low": 30,
+        "mid": 55,
+        "high": 90,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e1",
+          "e2"
+        ],
+        "derived": false,
+        "method": "Low/high = e1 refrigeration line ($30–$90/SF). Cross-check e2: refrigeration = 25–35% of a $175–$275/SF frozen facility = $44–$96/SF. Mid = $55, near the overlap of e1 and the lower half of e2 (cooler space sits at the low end, freezer at the high end)."
+      },
+      "notes": "Packaged or central (NH3 / CO2 / HFC) plant, evaporators, piping and controls. Excludes insulated envelope (see freezer-insulated-envelope) and sub-slab heat (see freezer-subslab-heating). Coolers (+34°F) toward low; freezers (−10°F) toward high; blast freezing above range."
+    },
+    {
+      "id": "freezer-insulated-envelope",
+      "name": "Insulated metal panel (IMP) cold-storage envelope (per SF of panel area)",
+      "division": "13",
+      "unit": "sf",
+      "cost": {
+        "low": 15,
+        "mid": 24,
+        "high": 35,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e3",
+          "e4",
+          "e1"
+        ],
+        "derived": false,
+        "method": "e3 supply-and-install IMP $12–$35/SF, freezer walls (5–6 in, R-40–48) $18–$30/SF, ceiling panels $14–$28/SF (e4); e1 IMPs $15–$40/SF. Low = $15 (cooler-grade panels, both sources' overlap); high = $35 (top of e3 and within e1); mid = $24 = midpoint of the freezer-wall range in e3."
+      },
+      "notes": "Priced per SF of wall + ceiling panel surface, not floor area. A box-shaped freezer has roughly 1.6–2.2 SF of panel per SF of floor (judgment, depends on clear height). Includes panels, trims, sealants; excludes doors (budget $8k–$25k+ per opening per e1) and the slab."
+    },
+    {
+      "id": "freezer-subslab-heating",
+      "name": "Freezer floor: sub-slab heating, insulation and vapor barrier package (per SF of freezer floor)",
+      "division": "23",
+      "unit": "sf",
+      "cost": {
+        "low": 8,
+        "mid": 11,
+        "high": 15,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e5",
+          "e1"
+        ],
+        "derived": false,
+        "method": "e5 sub-slab heating $8–$12/SF; e1 underslab heating and slab package $5–$15/SF for freezer areas. Low = $8 (heating alone, e5), high = $15 (e1 package incl. insulation/vapor layers), mid = $11."
+      },
+      "notes": "Only for areas held below freezing (frost-heave protection). Structural slab itself is in the building shell."
+    },
+    {
+      "id": "data-center-mep",
+      "name": "Data center MEP (electrical + mechanical) per kW of critical IT load",
+      "division": "26",
+      "unit": "kw",
+      "cost": {
+        "low": 5000,
+        "mid": 8000,
+        "high": 11500,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e6",
+          "e7",
+          "e8",
+          "e9",
+          "e10"
+        ],
+        "derived": false,
+        "method": "Bottom-up: e6 mechanical $2–4M/MW + e7 electrical $3–5M/MW = $5,000–$9,000/kW (2026 US avg, total $11.3M/MW). Top-down: T&T US$12.9–13.3/W (e9 New Jersey, e8 Silicon Valley, 2025) × MEP share 70–87% (e10: electrical 48–54% + mechanical 22–33%) = ≈$9,000–$11,600/kW in high-cost markets. Low = $5,000 (e6+e7 low), high = $11,500 (T&T × upper share), mid = $8,000 = between the bottom-up midpoint ($7,000) and the high-market top-down midpoint (~$10,000). 2025 and 2026 evidence mixed (gap ≤1 yr), expressed in 2026 dollars."
+      },
+      "notes": "Air-cooled, Tier III-ish, 2N/N+1 power. Includes switchgear, UPS, generators, PDUs/busway, cooling plant and CRAH/CRAC. Excludes shell, sitework, utility substation/interconnection, land and IT equipment. Liquid-cooled / AI halls run ~7–10% higher per T&T methodology notes. Do not stack with emergency-generator or ups-system for the same load."
+    },
+    {
+      "id": "emergency-generator",
+      "name": "Permanent standby / emergency generator, installed (per kW)",
+      "division": "26",
+      "unit": "kw",
+      "cost": {
+        "low": 350,
+        "mid": 550,
+        "high": 750,
+        "dollarYear": 2014,
+        "region": "US",
+        "evidence": [
+          "e11",
+          "e12"
+        ],
+        "derived": false,
+        "method": "e11 (NJ OEM, 2014): $450–$650/kW for a permanent emergency generator incl. transfer switch and wiring of critical loads; e12 (DoD microgrid study via CleanTechnica, 2012): $300–$600/kW for 100+ kW gen-sets. Expressed in 2014 dollars (anchor e11); e12 is 2012 dollars and was used only to set the low end. Mid = $550 = midpoint of e11. High extended to $750 for sound-attenuated enclosure, sub-base fuel tank and longer feeder runs. The build script escalates from 2014; generator equipment prices have risen faster than general construction since 2021, so verify current quotes."
+      },
+      "notes": "Diesel or natural gas, ~100 kW–1 MW, incl. ATS. Large units (1 MW+) trend lower per kW, small (<100 kW) higher. Not for data centers when data-center-mep is used."
+    },
+    {
+      "id": "ups-system",
+      "name": "UPS system with batteries, installed (per kW)",
+      "division": "26",
+      "unit": "kw",
+      "cost": {
+        "low": 600,
+        "mid": 1000,
+        "high": 1500,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e7"
+        ],
+        "derived": true,
+        "method": "No clean public UPS-only $/kW found. Derived as a share of data-center electrical cost: e7 electrical $3,000–$5,000/kW; UPS modules + batteries + bypass taken as ~20–30% of that electrical package (judgment) ≈ $600–$1,500/kW, mid $1,000. Applies to N capacity with 5–15 min battery; 2N doubles."
+      },
+      "notes": "Three-phase double-conversion UPS, batteries (VRLA or Li-ion), maintenance bypass, installation. Lithium-ion carries an initial premium. Do not add when data-center-mep is used."
+    },
+    {
+      "id": "lab-hvac-upgrade",
+      "name": "Laboratory HVAC premium over office HVAC (per SF of lab area)",
+      "division": "23",
+      "unit": "sf",
+      "cost": {
+        "low": 45,
+        "mid": 70,
+        "high": 110,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived (no public source fetched). Office HVAC ≈ $30–$45/SF vs. wet-lab HVAC ≈ $90–$150/SF (once-through 100% outside air, 6–10 ACH, fume hood exhaust, energy recovery, tighter controls) — judgment based on typical cost-consultant elemental ratios of lab vs. office MEP. Premium = difference ≈ $45–$110/SF, mid $70."
+      },
+      "notes": "Add on top of a shell + standard-TI budget when converting office to wet lab. Dry lab / tech space toward low; vivarium or high fume-hood density above high. Excludes lab casework and fume hoods themselves (Division 11/12)."
+    },
+    {
+      "id": "commercial-kitchen",
+      "name": "Commercial kitchen equipment package, installed (per SF of kitchen area)",
+      "division": "11",
+      "unit": "sf",
+      "cost": {
+        "low": 100,
+        "mid": 160,
+        "high": 250,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived (no public source fetched). Typical full-service restaurant cooking line, prep, dish and storage equipment package ≈ $150k–$400k for a 1,500–2,000 SF back-of-house (judgment from franchise-style equipment budgets) ≈ $100–$250/SF, mid $160. Quick-service/fast-casual lines toward low; hotel/banquet or scratch kitchens toward high."
+      },
+      "notes": "Equipment, stainless tables/shelving, dish machine, smallwares rough-in and setting. Excludes hood/exhaust (kitchen-hood-system), walk-ins (walk-in-cooler), grease interceptor and the building MEP rough-in."
+    },
+    {
+      "id": "kitchen-hood-system",
+      "name": "Type I kitchen hood system incl. fire suppression, exhaust fan, make-up air and grease duct (per LF of hood)",
+      "division": "23",
+      "unit": "lf",
+      "cost": {
+        "low": 1500,
+        "mid": 2800,
+        "high": 4500,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived (no public source fetched). A 12–16 LF Type I hood with wet-chemical suppression, upblast exhaust fan, tempered make-up air unit and welded grease duct to roof typically totals ≈ $25k–$70k installed (judgment) ≈ $1,500–$4,500 per LF of hood, mid $2,800. Short duct runs/untempered MUA toward low; multi-story grease duct shafts or tempered MUA toward high."
+      },
+      "notes": "Per linear foot of hood canopy. Includes hood, Ansul-type suppression, exhaust fan, MUA, grease duct and controls."
+    },
+    {
+      "id": "medical-gas",
+      "name": "Medical gas & vacuum systems per operating room (incl. allocated source equipment)",
+      "division": "22",
+      "unit": "or",
+      "cost": {
+        "low": 40000,
+        "mid": 75000,
+        "high": 150000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived (no public source fetched). Per OR: O2/N2O/medical air/vacuum/WAGD/N2 outlets, zone valve box, area alarm and piping ≈ $25k–$50k; plus allocated share of manifolds, med-air compressor and vacuum pump plant in a 2–6 OR ambulatory surgery center ≈ $15k–$100k per OR (judgment). Total ≈ $40k–$150k, mid $75k."
+      },
+      "notes": "Excludes ceiling booms/equipment management systems (FF&E/medical equipment). Hospitals spread source plant over many more outlets; use the low end per OR plus building-wide medical gas allowance."
+    },
+    {
+      "id": "grease-interceptor",
+      "name": "In-ground grease interceptor, 1,000–1,500 gal precast, installed",
+      "division": "22",
+      "unit": "ea",
+      "cost": {
+        "low": 15000,
+        "mid": 25000,
+        "high": 45000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived (no public source fetched). Precast concrete tank ≈ $5k–$12k delivered plus excavation, traffic-rated lids, inlet/outlet piping, sampling port and restoration ≈ $10k–$30k (judgment). Total ≈ $15k–$45k, mid $25k. Large (2,500+ gal) or deep/dewatering installs exceed the high."
+      },
+      "notes": "Per interceptor. Under-sink hydromechanical traps are far cheaper ($1k–$5k) and not covered here."
+    },
+    {
+      "id": "walk-in-cooler",
+      "name": "Walk-in cooler or freezer box with refrigeration (≈ 8×10 to 10×12), installed",
+      "division": "11",
+      "unit": "ea",
+      "cost": {
+        "low": 12000,
+        "mid": 20000,
+        "high": 35000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": true,
+        "method": "Derived. Box: 8×10×8 ft ≈ 450 SF of panel; prefab walk-in panels run below site-built IMP (e4 freezer walls $18–$30/SF) at ≈ $10–$25/SF ≈ $5k–$11k; plus condensing unit/evaporator, door, floor and electrical ≈ $7k–$24k (judgment). Total ≈ $12k–$35k, mid $20k. Freezers toward high."
+      },
+      "notes": "Restaurant/retail walk-in. Remote condensing units, combo cooler/freezer boxes or boxes >150 SF exceed the high."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "coldStorageComponentCostPerSF",
+      "value": null,
+      "low": 30,
+      "high": 90,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "How Do I Budget a Cold Storage Warehouse Buildout?",
+        "url": "https://pulserevops.com/knowledge/q13803",
+        "publisher": "Pulse RevOps",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Refrigeration system: $30–$90/SF. … Insulated metal panels: $15–$40/SF. … Underslab heating and the slab package: $5–$15/SF for freezer areas. … Doors, dock seals, and openings: $8,000–$25,000+ per opening.",
+      "scopeNotes": "Component budgeting ranges for a cold storage buildout; low/high recorded are for the refrigeration line. Not a primary cost consultant.",
+      "confidence": "low"
+    },
+    {
+      "id": "e2",
+      "metric": "refrigerationShareOfConstructionCost",
+      "value": null,
+      "low": 0.25,
+      "high": 0.35,
+      "unit": "pct",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Average Cost to Build a Cold Storage Facility in the USA",
+        "url": "https://terrapincg.com/news/average-cost-to-build-cold-storage-facility-usa",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Frozen Storage (-10°F to 32°F): $175 to $275 Per Square Foot … The refrigeration system component alone accounts for 25 to 35% of total construction cost at this temperature level",
+      "scopeNotes": "Contractor article; share applies to frozen storage. The page's own headline ranges are internally inconsistent ($125–$450/SF).",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "impSupplyInstallPerSF",
+      "value": null,
+      "low": 12,
+      "high": 35,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "IMP Subcontractor for General Contractors: Scope, Cost, and Schedule (2026)",
+        "url": "https://terrapincg.com/news/imp-subcontractor-for-general-contractors-2026",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Supply and installation runs $12 to $35 per square foot in 2026.",
+      "scopeNotes": "Per SF of panel surface, supply + install, all IMP grades.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "impFreezerWallPerSF",
+      "value": null,
+      "low": 18,
+      "high": 30,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "IMP Subcontractor for General Contractors: Scope, Cost, and Schedule (2026)",
+        "url": "https://terrapincg.com/news/imp-subcontractor-for-general-contractors-2026",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Freezer walls at 5 to 6 inch and R-40 to R-48 run $18 to $30/SF. … Ceiling panels run $14 to $28/SF.",
+      "scopeNotes": "Per SF of panel surface; freezer-grade wall panels and ceiling panels.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "subSlabHeatingPerSF",
+      "value": null,
+      "low": 8,
+      "high": 12,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Average Cost to Build a Cold Storage Facility in the USA",
+        "url": "https://terrapincg.com/news/average-cost-to-build-cold-storage-facility-usa",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Sub-slab heating systems run $8 to $12 per square foot of warehouse area.",
+      "scopeNotes": "Heating system only, per SF of freezer floor.",
+      "confidence": "low"
+    },
+    {
+      "id": "e6",
+      "metric": "dataCenterMechanicalPerMW",
+      "value": null,
+      "low": 2000000,
+      "high": 4000000,
+      "unit": "USD/mw",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Data Centre Costs Explained",
+        "url": "https://www.datacentres.com/guides/data-centre-costs-explained",
+        "publisher": "Datacentres.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Mechanical (cooling): $2-4M/MW … Total average: $11.3M/MW (US national average)",
+      "scopeNotes": "Per MW of IT load; mechanical/cooling only. Trade/media guide, sources not itemized.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "dataCenterElectricalPerMW",
+      "value": null,
+      "low": 3000000,
+      "high": 5000000,
+      "unit": "USD/mw",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Data Centre Costs Explained",
+        "url": "https://www.datacentres.com/guides/data-centre-costs-explained",
+        "publisher": "Datacentres.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Electrical (power distribution): $3-5M/MW",
+      "scopeNotes": "Per MW of IT load; electrical/power distribution incl. UPS and generators presumably. Trade/media guide.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "dataCenterConstructionCostPerWatt",
+      "value": 13300,
+      "unit": "USD/kw",
+      "region": "Silicon Valley, CA",
+      "regionKey": "CA-SanJose",
+      "dataYear": 2025,
+      "source": {
+        "title": "AI data centre rush raises alarm over construction supply chain",
+        "url": "https://www.turnerandtownsend.com/news/ai-data-centre-rush-raises-alarm-over-construction-supply-chain",
+        "publisher": "Turner & Townsend",
+        "accessed": "2026-10-24"
+      },
+      "quote": "US$13.3 per watt (Silicon Valley; ranking table, Construction cost per watt (US$/W))",
+      "scopeNotes": "US$ per watt of IT load (= $13,300/kW) for a typical air-cooled build-to-suit hyperscale facility; whole construction cost (shell + MEP + GC fees), not MEP only. Value converted from US$/W to USD/kW (×1,000).",
+      "confidence": "high"
+    },
+    {
+      "id": "e9",
+      "metric": "dataCenterConstructionCostPerWatt",
+      "value": 12900,
+      "unit": "USD/kw",
+      "region": "New Jersey",
+      "regionKey": "NJ",
+      "dataYear": 2025,
+      "source": {
+        "title": "AI data centre rush raises alarm over construction supply chain",
+        "url": "https://www.turnerandtownsend.com/news/ai-data-centre-rush-raises-alarm-over-construction-supply-chain",
+        "publisher": "Turner & Townsend",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Ranking table row 'New Jersey 6 5 12.9' under 'Construction cost per watt (US$/W)'",
+      "scopeNotes": "US$ per watt of IT load (= $12,900/kW); whole construction cost, not MEP only. Value converted from US$/W to USD/kW (×1,000).",
+      "confidence": "high"
+    },
+    {
+      "id": "e10",
+      "metric": "dataCenterMEPShareOfConstruction",
+      "value": null,
+      "low": 0.7,
+      "high": 0.87,
+      "unit": "pct",
+      "region": "Global (Turner & Townsend index)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Data center construction input costs rise significantly",
+        "url": "https://news.constructconnect.com/data-center-construction-input-costs-rise-significantly",
+        "publisher": "ConstructConnect",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Electrical systems account for 48-54% of construction costs, mechanical systems make up 22-33%, and core and shell make up 9-14%.",
+      "scopeNotes": "Citing Turner & Townsend 2025 Data Center Cost Index. low/high recorded = electrical+mechanical combined (48+22, 54+33).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e11",
+      "metric": "emergencyGeneratorInstalledPerKW",
+      "value": null,
+      "low": 450,
+      "high": 650,
+      "unit": "USD/kw",
+      "region": "New Jersey",
+      "regionKey": "NJ",
+      "dataYear": 2014,
+      "source": {
+        "title": "Permissible Uses of Energy Allocation Initiative Funding",
+        "url": "https://nj.gov/njoem/programs/pdf/hmgp/062414_hmgp_permlist.pdf",
+        "publisher": "New Jersey Office of Emergency Management",
+        "accessed": "2026-10-24"
+      },
+      "quote": "This includes a transfer switch and wiring of critical loads with a lock box. … The approximate cost for the installation of a permanent emergency generator is in the $450 per kW to $650 per kW range.",
+      "scopeNotes": "Government planning figure (HMGP), typically ≤100 kW units but 'could be larger'; diesel, natural gas or propane. File dated June 2014.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e12",
+      "metric": "gensetInstalledPerKW",
+      "value": null,
+      "low": 300,
+      "high": 600,
+      "unit": "USD/kw",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2012,
+      "source": {
+        "title": "Microgrid Backbone Generation Assets, Part 1: Gen-Sets",
+        "url": "https://cleantechnica.com/2012/12/13/microgrid-backbone-generation-assets-part-1-gen-sets/",
+        "publisher": "CleanTechnica (Riverview Consulting)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "$300 – $600/kW installed range for a gen-set of 100+ kW",
+      "scopeNotes": "Attributed to a Department of Defense microgrid study; 2012 dollars; diesel or natural gas gen-sets.",
+      "confidence": "low"
+    }
+  ]
+}

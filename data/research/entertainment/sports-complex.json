@@ -1,0 +1,424 @@
+{
+  "schemaVersion": 1,
+  "id": "sports-complex",
+  "name": "Indoor / outdoor sports complex",
+  "category": "entertainment",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Youth/amateur sports campus: a clear-span fieldhouse (courts, indoor turf) priced per building SF, plus outdoor synthetic or grass fields with lighting carried as per-field line items. Fieldhouse $/SF is anchored on RSMeans gymnasium/athletic-club models (2019) escalated by reasoning; outdoor field costs are derived allowances cross-checked against one municipal complex ($27M for 60 acres, 2017). Turf-field and lighting unit costs still need sourced bid tabs.",
+  "sizing": {
+    "typicalSize": {
+      "low": 40000,
+      "mid": 100000,
+      "high": 200000,
+      "unit": "sf",
+      "evidence": [],
+      "derived": true,
+      "method": "Fieldhouses for 4–12 basketball/volleyball courts are ~40,000–130,000 SF; destination complexes reach 200,000+ SF. Mid 100,000 SF building. Derived."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 5000,
+      "mid": 8000,
+      "high": 12000,
+      "evidence": [
+        "e3"
+      ],
+      "derived": true,
+      "method": "Building SF per acre of whole campus including outdoor fields and parking. e3 outdoor complex covers 60 acres; a 100,000 SF fieldhouse with 4 fields and parking needs ~12–20 acres → ~5,000–8,000 SF/acre. Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.002,
+      "mid": 0.003,
+      "high": 0.005,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per building SF: ~40–60 spaces per court-equivalent tournament use ≈ 2–5 per 1,000 SF; fields add ~50–80 spaces each (not included here). Derived."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 140,
+      "mid": 210,
+      "high": 320,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2"
+      ],
+      "derived": true,
+      "method": "Fieldhouse building incl. its sitework, 2025 dollars. RSMeans 2019 hard cost: gymnasium $177 union / $162 open shop (e1); racquetball club $172 / $155 (e2). ×~1.30 to 2025 ≈ $205–230/SF for masonry gyms, + ~8% on-site work; large pre-engineered fieldhouses achieve lower $/SF through scale. Mid $210; low $140 = PEMB fieldhouse with minimal finishes; high $320 = masonry, mezzanines, spectator seating and premium finishes."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Fieldhouse building with courts/indoor turf surfaces and its on-site work and parking. Outdoor fields, field lighting and field parking are separate lineItems (not in baseline). Excludes land, soft costs, FF&E (scoreboards, bleachers if loose, equipment), off-sites."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.67,
+    "standard": 1.0,
+    "premium": 1.25,
+    "luxury": 1.52,
+    "evidence": [],
+    "derived": true,
+    "method": "economy = low/mid (140/210); luxury = high/mid (320/210); premium interpolated."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "03",
+        "pct": 0.11
+      },
+      {
+        "division": "04",
+        "pct": 0.02
+      },
+      {
+        "division": "05",
+        "pct": 0.06
+      },
+      {
+        "division": "07",
+        "pct": 0.07
+      },
+      {
+        "division": "08",
+        "pct": 0.03
+      },
+      {
+        "division": "09",
+        "pct": 0.1
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.03
+      },
+      {
+        "division": "13",
+        "pct": 0.12
+      },
+      {
+        "division": "21",
+        "pct": 0.03
+      },
+      {
+        "division": "22",
+        "pct": 0.04
+      },
+      {
+        "division": "23",
+        "pct": 0.1
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "27",
+        "pct": 0.01
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.04
+      },
+      {
+        "division": "33",
+        "pct": 0.01
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived for a pre-engineered/clear-span fieldhouse: building system in 13 (≈12%) with 05 for mezzanines; large slab-on-grade (03 ≈ 11%); sports flooring and indoor turf in 09; HVAC for large volumes 10%; on-site work 8%. Not sourced."
+  },
+  "lineItems": [
+    {
+      "id": "synthetic-turf-field",
+      "name": "Outdoor full-size synthetic turf field (base, drainage, turf, infill, goals)",
+      "division": "32",
+      "unit": "field",
+      "qty": {
+        "per": "project",
+        "value": 4
+      },
+      "cost": {
+        "low": 900000,
+        "mid": 1300000,
+        "high": 1900000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e3",
+          "e4"
+        ],
+        "derived": true,
+        "method": "Turf replacement alone (reusing base) was ≈ $650k per field in a Dec 2024 municipal award (e4); a new field adds stone base, drainage, curbs, fencing and goals. Derived: ~80,000–90,000 SF of field area at ~$11–20/SF for stone base, drainage and turf system, plus fencing/goals. Cross-check: e3 complex ≈ $27M over 60 acres (≈ $450k/acre incl. roads, parking, amenities) is consistent with ~$1.5–2.5M per field all-in. Needs bid-tab verification."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": false,
+      "notes": "Count = number of outdoor fields (altUnit 'field')."
+    },
+    {
+      "id": "field-lighting",
+      "name": "LED sports lighting per field (poles, fixtures, controls)",
+      "division": "26",
+      "unit": "field",
+      "qty": {
+        "per": "project",
+        "value": 4
+      },
+      "cost": {
+        "low": 300000,
+        "mid": 500000,
+        "high": 750000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance per lighted full-size field (6–8 poles)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "natural-grass-field",
+      "name": "Outdoor natural grass field with irrigation (alternative to synthetic)",
+      "division": "32",
+      "unit": "field",
+      "qty": {
+        "per": "project",
+        "value": 0
+      },
+      "cost": {
+        "low": 200000,
+        "mid": 350000,
+        "high": 600000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance: grading, sand-cap or native soil, irrigation, sod."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Use instead of synthetic where appropriate; qty defaults to 0."
+    },
+    {
+      "id": "field-parking-roads",
+      "name": "Field parking, internal roads and walks (per field)",
+      "division": "32",
+      "unit": "field",
+      "qty": {
+        "per": "project",
+        "value": 4
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 300000,
+        "high": 500000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e3"
+        ],
+        "derived": true,
+        "method": "Derived: ~60–80 surface spaces per field at $3–5k/space plus walks/roads."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "concessions-restroom-building",
+      "name": "Concessions / restroom building at fields",
+      "division": "22",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 250000,
+        "mid": 500000,
+        "high": 900000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "_blocks/amenities.json#e13",
+          "_blocks/amenities.json#e14"
+        ],
+        "derived": true,
+        "method": "Park restroom contracts $265k–$608k (amenities block) plus concessions kitchen."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 5,
+      "mid": 12,
+      "high": 25,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Scoreboards, bleachers, divider curtains, basketball goals, volleyball systems, furniture. Derived."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.12,
+      "mid": 0.17,
+      "high": 0.22,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Clear-span buildings and fields have modest A&E (RSMeans model architectural fee ~7% of hard cost on e1), plus civil/stormwater for large impervious/turf areas, geotech, permits, testing. Derived."
+    },
+    "notes": "Feasibility/market studies (common for municipal complexes) and tournament-operator selection are extra soft items."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Municipal programs often change field counts/amenities during design."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Large earthwork/stormwater carries site risk."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 150,
+      "max": 420,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Fieldhouse building only: low 140×1.1; high 320×1.3. Outdoor fields excluded."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "buildingHardCostPerSF",
+      "value": 176.85,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Gymnasium - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/gymnasium",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Gymnasium with Concrete Block / Rigid Steel ... SubTotal 100% $141.48 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $35.37",
+      "scopeNotes": "2019 RSMeans national model, 20,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $176.85/SF; open shop = $162.05/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Fieldhouse/court building proxy.",
+      "confidence": "medium",
+      "low": 162.05,
+      "high": 176.85
+    },
+    {
+      "id": "e2",
+      "metric": "buildingHardCostPerSF",
+      "value": 171.9,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Racquetball Court - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/racquetball-court",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Racquetball Court with Brick Veneer / Rigid Steel ... SubTotal 100% $137.52 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $34.38",
+      "scopeNotes": "2019 RSMeans national model, 30,000 SF, 2 story, union labor. value = subtotal + 25% contractor fees = $171.9/SF; open shop = $155.06/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Multi-court athletic club proxy.",
+      "confidence": "medium",
+      "low": 155.06,
+      "high": 171.9
+    },
+    {
+      "id": "e3",
+      "metric": "projectCost",
+      "value": 27000000,
+      "unit": "USD/ls",
+      "region": "Round Rock, TX",
+      "regionKey": "TX-Austin",
+      "dataYear": 2017,
+      "source": {
+        "title": "Round Rock Multipurpose Complex",
+        "url": "https://en.wikipedia.org/wiki/Round_Rock_Multipurpose_Complex",
+        "publisher": "Wikipedia (citing Austin American-Statesman, May 19, 2017: '60 acres of sports: Round Rock complex officially opens')",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Type Sports complex Surface Grass/Turf ... Construction Cost $ 27 million ... '60 acres of sports: Round Rock complex officially opens'",
+      "scopeNotes": "Municipal outdoor multi-sports complex (Wikipedia lists soccer, football, rugby tenants), established 2017; ≈ $450k per acre of complex. Field count not verified in this session. Likely project cost incl. some soft costs.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "turfReplacementPerField",
+      "value": 650000,
+      "unit": "USD/field",
+      "region": "College Station, TX",
+      "regionKey": "TX",
+      "dataYear": 2024,
+      "source": {
+        "title": "College Station City Council Awards A $1.3 Million Dollar Contract To Replace Artificial Turf At Two Fields At Veterans Park",
+        "url": "https://wtaw.com/college-station-city-council-awards-a-1-3-million-dollar-contract-to-replace-artificial-turf-at-two-fields-at-veterans-park/",
+        "publisher": "WTAW News",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The College Station city council at its December meeting awarded a $1.3 million dollar contract to replace artificial turf on two soccer fields at Veterans Park.",
+      "scopeNotes": "Turf replacement (existing base/drainage reused, no lighting) ≈ $650k per field; December 2024 award. New fields with stone base and drainage cost more.",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "Need municipal bid tabs for synthetic turf fields and LED field lighting (per field).",
+    "Need a public fieldhouse budget (city sports complex feasibility study) to replace the RSMeans-escalated $/SF."
+  ]
+}

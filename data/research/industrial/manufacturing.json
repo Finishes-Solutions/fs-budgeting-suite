@@ -1,0 +1,447 @@
+{
+  "schemaVersion": 1,
+  "id": "manufacturing",
+  "name": "Manufacturing plant",
+  "category": "industrial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Light-to-medium manufacturing buildings (single-story, 24–36' clear) cost more than warehouses because of heavier/reinforced slabs, higher electrical service and distribution, process utilities (compressed air, process water, exhaust), more HVAC, and larger office/support areas — MEP is 25–45% of cost. Process equipment is excluded. Public evidence is limited to an RSMeans 2019 model and contractor ranges, so the default is a derived midpoint; heavy, clean or crane-served plants need a separate estimate.",
+  "sizing": {
+    "typicalSize": {
+      "low": 50000,
+      "mid": 150000,
+      "high": 400000,
+      "unit": "sf",
+      "evidence": [
+        "e5"
+      ],
+      "derived": true,
+      "method": "Terrapin lists light-manufacturing tilt-up at 50k–400k SF (e5); RSMeans model is 30k SF (e1). Mid 150k SF (judgment)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 10000,
+      "mid": 13000,
+      "high": 17000,
+      "evidence": [],
+      "derived": true,
+      "method": "FAR ~0.23–0.39 (larger employee parking, utility yards, expansion land); mid 0.30 × 43,560 ≈ 13,000 SF/acre."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.001,
+      "mid": 0.0015,
+      "high": 0.0025,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Shift-worker parking ≈ 1–2.5 spaces per 1,000 SF (judgment; much higher than distribution)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 130,
+      "mid": 185,
+      "high": 300,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e5",
+        "e6",
+        "e7"
+      ],
+      "derived": true,
+      "method": "RSMeans 2019 1-story factory $108–$120/SF building only incl. contractor fees (e1); escalated to 2026 by ~40–45% (construction inflation 2019–2026) ≈ $152–$174, + ~8–10% for typical sitework ≈ $165–$190. Contractor ranges: light manufacturing $100–$220 (e2) and tilt-up light-manufacturing shell $155–$205 (e5); mid-range production with process utilities $180–$350 (e3). Mid $185 = escalated RSMeans with sitework, ≈ midpoint of e5 and the low end of e3. Low $130 ≈ C&W small distribution shell ($144, e6) less ~10% for a plain assembly box in a low-cost market. High $300 = within e3 for crane-served, heavy-power plants (above this use a process-specific estimate)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P; building shell, reinforced slab, office/locker/break areas (~10%), HVAC, electrical service and distribution to equipment, process-utility mains (compressed air, process water, exhaust), fire protection, and typical sitework. Excludes process equipment and its installation, cranes (optional line), cleanrooms, land, soft costs, off-site utilities and fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.72,
+    "standard": 1,
+    "premium": 1.35,
+    "luxury": 1.65,
+    "evidence": [
+      "e3"
+    ],
+    "derived": true,
+    "method": "economy = low/mid (130/185 = 0.70); premium ≈ (mid+high)/2/mid = 1.31; luxury ≈ high/mid (1.62) for heavy-process tier (e3 $250–$500)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.1
+      },
+      {
+        "division": "03",
+        "pct": 0.15
+      },
+      {
+        "division": "05",
+        "pct": 0.12
+      },
+      {
+        "division": "07",
+        "pct": 0.07
+      },
+      {
+        "division": "08",
+        "pct": 0.03
+      },
+      {
+        "division": "09",
+        "pct": 0.04
+      },
+      {
+        "division": "10",
+        "pct": 0.01
+      },
+      {
+        "division": "21",
+        "pct": 0.035
+      },
+      {
+        "division": "22",
+        "pct": 0.06
+      },
+      {
+        "division": "23",
+        "pct": 0.11
+      },
+      {
+        "division": "26",
+        "pct": 0.12
+      },
+      {
+        "division": "27",
+        "pct": 0.015
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.045
+      },
+      {
+        "division": "32",
+        "pct": 0.055
+      },
+      {
+        "division": "33",
+        "pct": 0.03
+      }
+    ],
+    "evidence": [
+      "e4"
+    ],
+    "derived": true,
+    "method": "MEP (21–28) set to 35%, the middle of Terrapin's 25–45% (e4); electrical 12% and HVAC/process exhaust 11% largest. Structure/envelope (03/05/07) 34%, interiors 8%, sitework 13%, GC 10%. Judgment — verify against a plant estimate."
+  },
+  "lineItems": [
+    {
+      "id": "process-utilities",
+      "name": "Process utility mains (compressed air, process water, exhaust) – allowance",
+      "division": "22",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 6,
+        "mid": 12,
+        "high": 25,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e3"
+        ],
+        "derived": true,
+        "method": "No unit-price source fetched. Allowance for distribution mains, compressor room and process-water piping excluding tools: judgment $6–$25/SF; scales with the gap between light ($100–$220) and mid-range ($180–$350) manufacturing (e2/e3)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "electrical-service",
+      "name": "High-capacity electrical service & distribution to equipment (above warehouse level)",
+      "division": "26",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 8,
+        "mid": 15,
+        "high": 30,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Judgment: manufacturing loads of 15–40 W/SF vs ~3–5 W/SF for warehouse require larger switchgear, busway and drops; incremental $8–$30/SF."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "office-support-areas",
+      "name": "Office, locker, break and QA areas (~10% of area)",
+      "division": "09",
+      "block": "vertical-building",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 0.1
+      },
+      "cost": {
+        "low": 80,
+        "mid": 120,
+        "high": 165,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/vertical-building.json#e20",
+          "_blocks/vertical-building.json#e23"
+        ],
+        "derived": true,
+        "method": "Per SF of finished area: between vertical-building TI-basic ($45–$120) and C&W 2026 office fit-out low markets ~$108 (e23) / US avg $162 (e20); plant offices include locker/restroom plumbing."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "overhead-crane",
+      "name": "Bridge crane incl. runway (optional)",
+      "division": "41",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 2
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 300000,
+        "high": 500000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": true,
+        "method": "Terrapin: cranes \"$150K–$500K+ per crane\" (e4); mid = midpoint. Count 2 per crane-served plant (judgment). Runway columns/foundations may add 10–20%."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional; turn on for metal/fabrication plants."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.12,
+      "mid": 0.16,
+      "high": 0.22,
+      "evidence": [],
+      "derived": true,
+      "method": "Industrial A/E with process coordination 6–8% (RSMeans models carry 7% architectural fees, see e1 source) + permits, air/stormwater permits, testing, commissioning and owner overhead 6–14% (judgment)."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.07
+    },
+    "notes": "Type-specific soft items: air permits, process engineering coordination, commissioning. Excludes process equipment procurement and financing."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.04,
+      "mid": 0.07,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Process layouts often change during design (judgment)."
+    },
+    "hard": {
+      "low": 0.04,
+      "mid": 0.06,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Utility and electrical gear lead-time risk (judgment)."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard 5–10% of soft costs (judgment)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 135,
+      "max": 420,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "min ≈ hard low $130 × 1.05; max ≈ hard high $300 × 1.4. Advanced/clean manufacturing ($400–$1,000+/SF per Terrapin) is out of scope."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 108.2,
+      "low": 108.2,
+      "high": 120.29,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Factory, 1 Story Construction Cost Model",
+        "url": "https://www.rsmeans.com/model-pages/factory-1-story",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Factory, 1 Story with Concrete Block / Bearing Walls … Cost per S.F. (subtotal) $86.56 open shop … Contractor fees (25%) $21.64 … Total building cost $115.78 (open shop) / $128.71 (union)",
+      "scopeNotes": "value = open-shop subtotal + 25% contractor fees ($86.56 + $21.64), architectural fee removed; high = union ($96.23 + $24.06). 30,000-SF, 20-ft story height; building only, sitework and process equipment not shown. 2019 dollars.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 100,
+      "high": 220,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Industrial & Advanced Manufacturing Construction",
+        "url": "https://terrapincg.com/industrial-advanced-manufacturing-construction",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Light manufacturing and assembly: $100–$220/SF — \"standard slab, no cranes, basic HVAC\"",
+      "scopeNotes": "Contractor service page (© 2026); inclusions (sitework, process equipment) not stated. Low confidence.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 180,
+      "high": 350,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Industrial & Advanced Manufacturing Construction",
+        "url": "https://terrapincg.com/industrial-advanced-manufacturing-construction",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Mid-range production: $180–$350/SF, for facilities with \"cranes, process utilities, and reinforced slabs.\" Heavy process manufacturing: $250–$500/SF",
+      "scopeNotes": "Same page; medium/heavy tiers.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "mepShareOfCost",
+      "value": null,
+      "low": 0.25,
+      "high": 0.45,
+      "unit": "pct",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Industrial & Advanced Manufacturing Construction",
+        "url": "https://terrapincg.com/industrial-advanced-manufacturing-construction",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "MEP systems \"typically represent 25%–45% of total manufacturing construction cost\"; cranes at \"$150K–$500K+ per crane\"",
+      "scopeNotes": "Same page; used for the system split and the crane line item.",
+      "confidence": "low"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 155,
+      "high": 205,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Tilt-Up Concrete Construction Cost Per Square Foot (2026)",
+        "url": "https://terrapincg.com/news/tilt-up-concrete-construction-cost-per-square-foot-2026",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Building-type table row 'Light manufacturing' $155–$205/SF total shell, typical size 50k–400k SF",
+      "scopeNotes": "Tilt-up shell basis per table note (excl. MEP/finishes, conflicting FAQ). Low confidence.",
+      "confidence": "low"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostPerSF",
+      "value": 144,
+      "unit": "USD/sf",
+      "region": "Americas average (46 markets)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "2026 Americas Industrial Construction Cost Guide (landing page)",
+        "url": "https://www.cushmanwakefield.com/en/united-states/insights/industrial-construction-cost-guide",
+        "publisher": "Cushman & Wakefield",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Small projects averaged $144 psf (+3.6% YOY), medium $87 psf (+2.8% YOY), and large $78 psf (+2.3% YOY).",
+      "scopeNotes": "Model 109,200-SF distribution building (size per CRE Daily); ground-up core and shell. Average of 46 Americas markets incl. Canada, Mexico, Costa Rica, so not a pure US figure.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 140,
+      "high": 228,
+      "unit": "USD/sf",
+      "region": "United States (18 RLB metros)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Industrial - Warehouse column, 18 U.S. city rows (Austin 75-155 … Washington, D.C. 140-225; full range 75-370).",
+      "scopeNotes": "low/high here = median of the 18 U.S. city LOW values (140) and median of the HIGH values (227.5), computed by the researcher; un-weighted, coastal-heavy city sample, so above a true national average.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "No cost-consultant or public-budget source for manufacturing buildings was fetchable; economic-development incentive filings (building cost separate from equipment) would provide better anchors.",
+    "Consider splitting into light assembly vs. heavy/crane-served vs. food processing."
+  ]
+}

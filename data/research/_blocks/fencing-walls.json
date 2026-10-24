@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 1,
+  "id": "fencing-walls",
+  "name": "Fencing, gates & site walls",
+  "researchedAt": "2026-10-24",
+  "notes": "Fence and wall unit prices from DOT weighted-average bid prices (FDOT, ArDOT, MDT) plus Fixr consumer guides (low confidence, residential) as bounds. DOT chain-link is right-of-way fencing in long runs (cheap per LF); small DOT quantities (MDT) are outliers. Automatic gates and masonry screen walls are derived.",
+  "items": [
+    {
+      "id": "chain-link-fence",
+      "name": "Chain-link fence, 6' galvanized, commercial grade (top rail, line posts)",
+      "division": "32",
+      "unit": "lf",
+      "cost": {
+        "low": 22, "mid": 35, "high": 60,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e1", "e2", "e3", "e4"],
+        "derived": false,
+        "method": "FDOT fencing type B 5.1-6.0' $22.55/LF (14 contracts, 36,760 LF, e1); ArDOT 6' steel chain link $38.08/LF and 4'-5' $37.55-$38.18/LF (e2); Fixr 6' residential $15.25-$25.40/LF (e4). MDT small-quantity prices ($152-$200/LF, e3) are outliers. Mid $35 ~ ArDOT 6' less a little for longer private runs; low = FDOT long-run price; high = 8' or vinyl-coated with barbed wire on short runs."
+      },
+      "notes": "Storage yards, utility enclosures, RV/boat storage perimeters, solar farms (solar perimeter often 7-8' with barbed wire)."
+    },
+    {
+      "id": "ornamental-metal-fence",
+      "name": "Ornamental metal fence, 5-6' steel/aluminum picket (commercial)",
+      "division": "32",
+      "unit": "lf",
+      "cost": {
+        "low": 45, "mid": 75, "high": 130,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e2", "e6"],
+        "derived": true,
+        "method": "Fixr: ornamental aluminum material $15-$55/LF plus labor $15-$40/LF (= $30-$95 installed) and wrought iron $25-$75/LF (e6); ArDOT 'steel fence' $52.88/LF (single contract, e2). Commercial-grade galvanized/powder-coated steel picket on concrete-set posts runs above residential aluminum: mid $75; low $45 = residential-grade aluminum; high $130 = heavy commercial/anti-climb steel."
+      },
+      "notes": "Multifamily amenity areas, pool enclosures, storefront/retail frontage. Pool code fences need self-closing gates (add)."
+    },
+    {
+      "id": "wood-privacy-fence",
+      "name": "Wood privacy fence, 6' (board-on-board/shadowbox, steel or wood posts)",
+      "division": "32",
+      "unit": "lf",
+      "cost": {
+        "low": 20, "mid": 32, "high": 50,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e2", "e5"],
+        "derived": false,
+        "method": "Fixr wood privacy fence $17-$37/LF installed (e5); ArDOT board fence $31.73/LF (single contract, e2). Mid $32 ~ ArDOT and the upper Fixr midpoint; low = Fixr low with long runs; high = board-on-board with steel posts / cedar."
+      },
+      "notes": "Residential subdivision perimeters, BTR communities, buffers adjacent to single-family zones."
+    },
+    {
+      "id": "security-gate-automatic",
+      "name": "Automatic security gate (20-30' cantilever slide, operator, access control, safety loops)",
+      "division": "32",
+      "unit": "ea",
+      "cost": {
+        "low": 15000, "mid": 30000, "high": 60000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e7"],
+        "derived": true,
+        "method": "FDOT manual chain-link cantilever gates (gate leaf only) $6,537 for 20-24' and $8,496 for 24-30' openings (e7). An automatic installation adds a commercial slide operator ($4k-$10k), keypad/card reader or call box and intercom ($2k-$8k), safety loops/photo eyes, electrical feed and concrete ($2k-$6k), and usually an ornamental rather than chain-link leaf: $15k-$30k for a single gate; $60k for an entry/exit pair or heavy-duty ornamental gates with full access control."
+      },
+      "notes": "Self-storage, RV/boat storage, gated multifamily. Per gate (one opening)."
+    },
+    {
+      "id": "retaining-wall-segmental",
+      "name": "Segmental (SRW) retaining wall, geogrid-reinforced, ≤10' (per SF of exposed face)",
+      "division": "32",
+      "unit": "sf",
+      "cost": {
+        "low": 30, "mid": 45, "high": 65,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e8"],
+        "derived": true,
+        "method": "FDOT retaining wall system, permanent (excluding barrier) $49.66/SF on 865,419 SF over 12 contracts (e8) - predominantly MSE panel walls on highway projects. Private segmental block walls with geogrid typically price slightly below DOT MSE: mid $45/SF; low $30 = short (<4') gravity block walls; high $65 = tall walls with extensive geogrid, select backfill and drainage."
+      },
+      "notes": "Measure exposed face area (length x exposed height). Engineering and global stability analysis are soft costs."
+    },
+    {
+      "id": "retaining-wall-cast-in-place",
+      "name": "Cast-in-place concrete retaining wall (cantilever, ≤12') (per SF of exposed face)",
+      "division": "03",
+      "unit": "sf",
+      "cost": {
+        "low": 65, "mid": 95, "high": 150,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e9", "e10"],
+        "derived": true,
+        "method": "ArDOT retaining wall $68.67/SF (single contract, 19,290 SF, e9). FDOT concrete class IV for retaining walls $1,113.85/CY (e10): a 10' cantilever wall uses ~0.05-0.08 CY of concrete per SF of face (stem + footing) = $56-$89/SF, plus rebar (~$1.52/lb, FDOT), excavation/backfill and drainage ~$15-$30/SF -> $80-$120. Mid $95; low = ArDOT price; high $150 = tall/surcharged walls, architectural finish."
+      },
+      "notes": "Measure exposed face. Loading-dock walls, grade-change walls next to buildings, tight lots where SRW geogrid does not fit."
+    },
+    {
+      "id": "screen-wall-masonry",
+      "name": "Masonry screen wall, 6-8' CMU on continuous footing (stucco or split-face, with cap)",
+      "division": "04",
+      "unit": "lf",
+      "cost": {
+        "low": 250, "mid": 350, "high": 500,
+        "dollarYear": 2026, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived (no public unit price captured). 7' average height x $30-$50/SF of wall face for reinforced, grouted CMU with finish on both sides = $210-$350/LF, plus continuous footing ~$40-$80/LF and pilaster/cap allowance -> $250-$500/LF; mid $350."
+      },
+      "notes": "Dumpster enclosures (≈30-40 LF each), sound/screen walls along residential frontages, loading-area screening."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "chainLinkFencePerLF",
+      "value": 22.55, "low": 19.26, "high": 54.48,
+      "unit": "USD/lf",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0550 10220: 14 contracts, $22.55, 36,760.000 LF - FENCING, TYPE B, 5.1-6.0', STANDARD",
+      "scopeNotes": "FDOT Type B = chain link. low = type B 7.1-8.0' standard $19.26; high = type A 10.1-12.0' special features $54.48. Vinyl-coated 5.1-6.0' $20.06 on 94,115 LF.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "fencePerLF",
+      "value": 38.08, "low": 31.73, "high": 52.88,
+      "unit": "USD/lf",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "619 6' STL CHAIN LINK FENCE LF 100.00 38.08 38.08 38.08 * ... 619 BOARD FENCE LF 100.00 31.73 31.73 31.73 * ... 619 STEEL FENCE LF 100.00 52.88 52.88 52.88 *",
+      "scopeNotes": "Single-contract items (asterisked). value = 6' chain link; low = board (wood) fence; high = steel fence. 4' steel chain link $38.18/LF on 3,283 LF; 16' steel gates $1,635.29 each.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "chainLinkFencePerLF",
+      "value": 152.29, "low": 48.00, "high": 200.00,
+      "unit": "USD/lf",
+      "region": "Montana statewide",
+      "regionKey": "MT",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Prices Catalog (2025)",
+        "url": "https://mdt.mt.gov/other/webdata/external/contractplans/contract/Archives/Average_prices/2025.pdf",
+        "publisher": "Montana Department of Transportation, Construction Contracting Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "607000004 20 FENCE-CHAIN LINK LNFT 100 $152.29 ... 607000030 20 FENCE-CHAIN LINK 4 FT LNFT 404 $48.00 ... 607000050 20 FENCE-CHAIN LINK 6 FT LNFT 52 $200.00",
+      "scopeNotes": "Very small quantities (52-404 LF); shows small-job premium, not used for the mid.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "chainLinkFencePerLF",
+      "low": 15.25, "high": 25.40,
+      "unit": "USD/lf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Cost to Install a Chain Link Fence | Chain Link Fence Prices",
+        "url": "https://www.fixr.com/costs/chain-link-fence",
+        "publisher": "Fixr.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Installed cost for a 6 ft. chain link fence: $15.25 to $25.40 per linear foot (page table, 9-gauge galvanized, 2 in. diamonds)",
+      "scopeNotes": "Residential consumer guide (Updated: January 31, 2025); table reference rather than verbatim sentence.",
+      "confidence": "low"
+    },
+    {
+      "id": "e5",
+      "metric": "woodFencePerLF",
+      "low": 17, "high": 37,
+      "unit": "USD/lf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Wood Fence Installation Cost | Cost to Build Wood Fence",
+        "url": "https://www.fixr.com/costs/wood-fence",
+        "publisher": "Fixr.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Wood privacy fence installed cost per linear foot: $17 to $37 (page's average range for privacy fences)",
+      "scopeNotes": "Residential consumer guide (Updated: January 31, 2025); table reference.",
+      "confidence": "low"
+    },
+    {
+      "id": "e6",
+      "metric": "ornamentalFencePerLF",
+      "low": 15, "high": 75,
+      "unit": "USD/lf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Aluminum Fence Cost | Cost to Install Aluminum Fence",
+        "url": "https://www.fixr.com/costs/aluminum-fence",
+        "publisher": "Fixr.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "price of ornamental aluminum fence ranges from $15-$55 per foot ... with a cost of $25 to $75 per foot",
+      "scopeNotes": "Updated: August 29, 2025. The $15-$55 ornamental aluminum figure is materials only; labor is separately $15-$40/LF. $25-$75/LF is the page's wrought iron figure.",
+      "confidence": "low"
+    },
+    {
+      "id": "e7",
+      "metric": "gatePerEach",
+      "value": 6537.01, "low": 2697.75, "high": 8495.61,
+      "unit": "USD/ea",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0550 60235: 1 contract, $6,537.01, 3.000 EA - FENCE GATE, TYPE B, SLIDING/CANTILEVER, 20.1-24' OPENING; 0550 60236: $8,495.61 - 24.1-30'; 0550 60232: $2,697.75 - 6.1-12'",
+      "scopeNotes": "Manual chain-link gates (no operator or access control); small samples.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "retainingWallPerSF",
+      "value": 49.66, "low": 15.48, "high": 149.39,
+      "unit": "USD/sf",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0548 12: 12 contracts, $49.66, 865,419.000 SF - RETAINING WALL SYSTEM, PERMANENT, EXCLUDING BARRIER",
+      "scopeNotes": "Proprietary wall systems (mostly MSE) on highway projects. low = temporary wall system $15.48/SF; high = permanent widening attached to existing $149.39/SF.",
+      "confidence": "high"
+    },
+    {
+      "id": "e9",
+      "metric": "retainingWallPerSF",
+      "value": 68.67,
+      "unit": "USD/sf",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "802 RETAINING WALL SQFT 19,290.00 68.67 68.67 68.67 *",
+      "scopeNotes": "Single contract; wall type not stated (listed under 802 structural concrete).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e10",
+      "metric": "wallConcretePerCY",
+      "value": 1113.85, "low": 875.86, "high": 1130.36,
+      "unit": "USD/cy",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0400 4 11: 8 contracts, $1,113.85, 8,191.500 CY - CONC CLASS IV, RETAINING WALLS; 0400 0 11: 30 contracts, $875.86 - CONCRETE CLASS NS, GRAVITY WALL",
+      "scopeNotes": "Concrete in place (forms incl.), reinforcing paid separately ($1.52/lb, item 0415 1 3).",
+      "confidence": "high"
+    }
+  ]
+}

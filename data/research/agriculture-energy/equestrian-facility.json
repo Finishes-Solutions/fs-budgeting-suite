@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "id": "equestrian-facility",
+  "name": "Equestrian facility",
+  "category": "agriculture-energy",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "stall",
+  "summary": "Boarding/training facility with a stall barn, covered riding arena, outdoor arena, paddocks/fencing and site work, priced per stall. The barn (~300 SF per stall incl. aisles, tack, feed and wash) and the covered arena (a fixed ~20,000 SF clear-span structure spread over the stall count) are each roughly a third of cost, so per-stall cost falls as stall count rises. ALL VALUES ARE DERIVED: no fetchable authoritative source was found this session (cost-guide sites returned 403 and the web search budget was exhausted). Verify with a barn builder/arena quote.",
+
+  "sizing": {
+    "typicalSize": { "low": 10, "mid": 30, "high": 100, "unit": "stall", "evidence": [], "derived": true, "method": "Judgment: small private/boarding barn 10 stalls; typical commercial boarding/training facility 30 stalls; large show/training center 100+." },
+    "sfPerPrimaryUnit": { "low": 250, "mid": 950, "high": 1400, "evidence": [], "derived": true, "method": "Roofed area per stall: barn ≈ 250–350 SF/stall (12×12 stall + share of 12–14 ft aisle, tack, feed, wash, office) plus a 100×200 ft (20,000 SF) covered arena ÷ 30 stalls ≈ 667 SF → ~950 SF. Low = barn only (no covered arena); high = 400 SF barn + 1,000 SF arena share (smaller facility or larger arena)." },
+    "primaryUnitsPerAcre": { "low": 0.5, "mid": 1, "high": 3, "evidence": [], "derived": true, "method": "Boarding facilities with daily turnout need ~1 acre or more of paddock/pasture per horse; dry-lot/show facilities pack 2–3 stalls per gross acre." },
+    "parkingPerPrimaryUnit": { "low": 0.3, "mid": 0.5, "high": 1, "type": "surface", "evidence": [], "derived": true, "method": "Boarder, staff and trailer parking (gravel); show facilities need far more event/trailer parking (high)." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 35000, "mid": 70000, "high": 160000,
+      "dollarYear": 2026, "region": "US",
+      "evidence": ["_blocks/vertical-building.json#e1", "_blocks/vertical-building.json#e2", "_blocks/vertical-building.json#e19"],
+      "derived": true,
+      "method": "Build-up per stall at a 30-stall facility (2026$): barn 300 SF × $85/SF = $25.5k (pre-engineered/post-frame building in the shared PEMB block range $70–160/SF, toward the low end because stalls are unconditioned, plus stall fronts/partitions and waterers); covered arena 20,000 SF × $35/SF (open-sided clear-span steel incl. lighting and arena base/footing) = $700k ÷ 30 = $23.3k; paddock/perimeter board or vinyl fencing ≈ $8k/stall; site work (grading, gravel drives and trailer parking, water/electric distribution, manure pad, stormwater) ≈ $12k/stall. Total ≈ $68.8k → $70k. Low $35k = barn at ~$60/SF × 250 SF + fencing + site, no covered arena. High $160k = premium barn (~$150/SF × 400 SF), enclosed/insulated arena share ~$50k, larger site and fencing. All assumptions — verify."
+    },
+    "perSF": {
+      "low": 50, "mid": 74, "high": 115,
+      "dollarYear": 2026, "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "perPrimaryUnit ÷ sfPerPrimaryUnit (roofed barn + arena share): mid $70k ÷ 950 SF ≈ $74/SF; low/high bracket open-sided vs enclosed construction (not a simple ratio of the stall range because the low stall case has no arena)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Stall barn, covered arena with footing, outdoor arena/paddocks, fencing, on-site utilities and drives, GC/OH&P. Excludes land, well/septic where no utilities (optional line), off-site road/utility work, horse equipment (hot walker, jumps), soft costs."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.6, "standard": 1.0, "premium": 1.5, "luxury": 2.3,
+    "evidence": [], "derived": true,
+    "method": "Economy ≈ pole barn with outdoor arena only; premium ≈ steel barn with enclosed arena; luxury ≈ high/mid ($160k/$70k) show-quality facility."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.08 },
+      { "division": "03", "pct": 0.08 },
+      { "division": "05", "pct": 0.2 },
+      { "division": "06", "pct": 0.06 },
+      { "division": "07", "pct": 0.1 },
+      { "division": "08", "pct": 0.03 },
+      { "division": "10", "pct": 0.02 },
+      { "division": "11", "pct": 0.04 },
+      { "division": "22", "pct": 0.04 },
+      { "division": "23", "pct": 0.02 },
+      { "division": "26", "pct": 0.06 },
+      { "division": "31", "pct": 0.1 },
+      { "division": "32", "pct": 0.14 },
+      { "division": "33", "pct": 0.03 }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "From the mid build-up: steel/post frame of barn and arena (05) 0.20; roofing/siding (07) 0.10; slab, aisles, wash rack and footings (03) 0.08; stall fronts/wood linings (06) 0.06; doors (08) 0.03; specialties (10) 0.02; stall equipment/waterers (11) 0.04; plumbing/hydrants (22) 0.04; fans/ventilation (23) 0.02; electrical/lighting (26) 0.06; grading and arena base (31) 0.10; footing, fencing, gravel drives/parking (32) 0.14; site utilities (33) 0.03; general conditions (01) 0.08. Judgment — verify."
+  },
+
+  "lineItems": [
+    {
+      "id": "covered-arena",
+      "name": "Covered riding arena, open-sided clear-span (100×200 ft), incl. base & footing",
+      "division": "05",
+      "unit": "sf",
+      "qty": { "per": "project", "value": 20000 },
+      "cost": { "low": 20, "mid": 35, "high": 60, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Assumption: clear-span steel or post-frame roof structure with lighting ~$20–45/SF plus arena base and footing ~$3–10/SF. Verify with builder quote." },
+      "inBaseline": true, "scales": false, "optional": false,
+      "notes": "Carve-out; fixed per project — per-stall cost falls with more stalls."
+    },
+    {
+      "id": "enclosed-arena-upgrade",
+      "name": "Enclose and insulate arena (walls, doors, ventilation; premium over open-sided)",
+      "division": "07",
+      "unit": "sf",
+      "qty": { "per": "project", "value": 20000 },
+      "cost": { "low": 10, "mid": 20, "high": 40, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Assumption: wall cladding, insulation, sliding doors, ridge/side ventilation and dust control. Verify." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Common in northern climates."
+    },
+    {
+      "id": "stall-barn",
+      "name": "Stall barn (stalls, aisles, tack/feed/wash), per stall",
+      "division": "05",
+      "unit": "stall",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 15000, "mid": 25500, "high": 60000, "dollarYear": 2026, "region": "US", "evidence": ["_blocks/vertical-building.json#e1", "_blocks/vertical-building.json#e19"], "derived": true, "method": "250–400 SF per stall × $60–150/SF (shared pre-engineered metal building block $70–160/SF as anchor, lower end for unconditioned post-frame barns). Verify." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "fencing",
+      "name": "Paddock / perimeter fencing (board, vinyl or no-climb wire)",
+      "division": "32",
+      "unit": "lf",
+      "qty": { "per": "primaryUnit", "value": 400 },
+      "cost": { "low": 10, "mid": 20, "high": 35, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Assumption: ≈ 400 LF of fence per stall (individual/group paddocks + perimeter) at $10–35/LF installed. Verify." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out (~$8k/stall at mid)."
+    },
+    {
+      "id": "well-septic",
+      "name": "Water well and septic system (rural sites without utilities)",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 25000, "mid": 50000, "high": 100000, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Assumption: agricultural well + pump + small commercial septic for barn restroom/wash. Verify locally." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Rural sites."
+    },
+    {
+      "id": "manure-storage",
+      "name": "Manure storage pad / bunker with runoff control",
+      "division": "03",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 10000, "mid": 30000, "high": 75000, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Assumption: concrete pad with push walls, sized ~1–2 SF per stall-day of storage. Verify." },
+      "inBaseline": true, "scales": false, "optional": false,
+      "notes": "Inside the site-work allowance of the baseline; often required by state nutrient-management rules."
+    }
+  ],
+
+  "ffe": { "perPrimaryUnit": { "low": 1000, "mid": 3000, "high": 8000, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Tack lockers, feed/hay equipment, jumps/arena equipment, hot walker, office/lounge furniture spread per stall. Assumption — verify." } },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.06, "mid": 0.1, "high": 0.15, "evidence": [], "derived": true, "method": "Agricultural buildings are often permit-exempt or lightly regulated and use builder-engineered packages; mid 10% covers civil engineering, structural stamps, permits, surveys and PM. Higher for public/commercial show facilities." },
+    "notes": "Ag-exemption status varies by state/county."
+  },
+
+  "contingency": {
+    "design": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "Simple building types; builder-designed." },
+    "hard": { "low": 0.05, "mid": 0.07, "high": 0.1, "evidence": [], "derived": true, "method": "Rural sitework and drainage uncertainty." },
+    "soft": { "low": 0.05, "mid": 0.05, "high": 0.1, "evidence": [], "derived": true, "method": "Standard soft-cost contingency." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 25000, "max": 250000, "dollarYear": 2026, "region": "US", "method": "All-in hard + soft: from a basic pole barn with paddocks (~$25k/stall) to a show-quality facility with enclosed arena (~$250k/stall). Derived." }
+  },
+
+  "evidence": [],
+
+  "openQuestions": [
+    "No sourced evidence: need public equestrian-center budgets (county fairgrounds/parks bond projects, university equine centers) or builder pricing for barns per stall and covered arenas per SF.",
+    "Covered vs enclosed arena and stall count drive cost most — consider exposing arena size as an input.",
+    "Cost-guide sites (HomeAdvisor, HomeGuide) blocked automated fetch (403); a human could capture their per-stall and per-SF ranges as low-confidence evidence."
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "id": "mixed-use",
+  "name": "Mixed-use (combined components)",
+  "category": "marine-other",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Quick-mode fallback for vertical mixed-use (residential over ground-floor retail with podium/structured parking). There is no published 'mixed-use' $/SF benchmark; the blended default is derived from component costs (RLB Q3 2026 multifamily and retail ranges, the podium-multifamily file in this database) weighted ~85% residential / 15% retail, plus a small mixed-occupancy premium. For detailed budgets the engine should build mixed-use from its component types instead.",
+
+  "sizing": {
+    "typicalSize": { "low": 50000, "mid": 150000, "high": 500000, "unit": "sf", "evidence": [], "derived": true, "method": "Typical 4-7 story podium mixed-use block of ~120-250 units at ~1,050 SF/unit plus 10-25k SF retail -> ~150k SF GFA (judgment, consistent with podium-multifamily sizing)." },
+    "primaryUnitsPerAcre": { "low": 87000, "mid": 130000, "high": 220000, "evidence": [], "derived": true, "method": "Building SF per acre of site = FAR x 43,560: FAR 2 (87k), 3 (130k), 5 (218k) for podium/wrap mixed-use (judgment)." },
+    "parkingPerPrimaryUnit": { "low": 0.0006, "mid": 0.001, "high": 0.0015, "type": "structured", "evidence": [], "derived": true, "method": "Spaces per SF of GFA: ~1.0 space per residential unit (~1,050 SF) plus 2-4 per 1,000 SF retail blended ~1.0 per 1,000 SF; 0.6-1.5 per 1,000 SF by market/parking reform (judgment)." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 225, "mid": 295, "high": 450, "dollarYear": 2026, "region": "US", "evidence": ["e1", "e2", "residential/podium-multifamily.json#e1", "residential/podium-multifamily.json#e5", "commercial/retail-strip.json#e1"], "derived": true, "method": "Blend per SF of GFA (parking area excluded from SF, its cost included): 0.85 x residential podium mid $290 (podium-multifamily.json) + 0.15 x ground-floor retail shell $249 (median of RLB Q3 2026 18-city 'Retail - Strip' midpoints, e2) = $284; x 1.04 mixed-occupancy premium (fire separation/transfer level, split MEP, acoustic separation, separate egress/loading — judgment) = $295. Low: 0.85 x $235 (podium low) + 0.15 x $178 (RLB Phoenix strip midpoint) = $226. High: tower mixed-use, 0.85 x $410 (highrise-multifamily mid) + 0.15 x $300 x 1.05 = ~$413, rounded up to $450 for gateway cities. RLB 18-city multifamily median midpoint is $347.5/SF (e1), so the mid sits at the lower-cost-market end of RLB, consistent with the sibling residential files." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": true,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P for residential over cold/warm-shell retail with podium parking (~1 space/unit) and on-site work. Excludes retail and residential FF&E, tenant improvements (line item), land, soft costs, off-sites, impact/tap fees. SF = gross building area excluding parking-deck area."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.8, "standard": 1.0, "premium": 1.25, "luxury": 1.55,
+    "evidence": [], "derived": true,
+    "method": "low/mid = 225/295 = 0.76 (rounded 0.8); high/mid = 450/295 = 1.53 (luxury 1.55); premium interpolated."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.117 },
+      { "division": "03", "pct": 0.140 },
+      { "division": "04", "pct": 0.019 },
+      { "division": "05", "pct": 0.043 },
+      { "division": "06", "pct": 0.121 },
+      { "division": "07", "pct": 0.060 },
+      { "division": "08", "pct": 0.040 },
+      { "division": "09", "pct": 0.077 },
+      { "division": "10", "pct": 0.007 },
+      { "division": "11", "pct": 0.019 },
+      { "division": "12", "pct": 0.025 },
+      { "division": "14", "pct": 0.017 },
+      { "division": "21", "pct": 0.020 },
+      { "division": "22", "pct": 0.064 },
+      { "division": "23", "pct": 0.049 },
+      { "division": "26", "pct": 0.081 },
+      { "division": "27", "pct": 0.008 },
+      { "division": "28", "pct": 0.008 },
+      { "division": "31", "pct": 0.029 },
+      { "division": "32", "pct": 0.038 },
+      { "division": "33", "pct": 0.018 }
+    ],
+    "evidence": ["residential/podium-multifamily.json#e5", "commercial/retail-strip.json#e1"], "derived": true,
+    "method": "Weighted blend 0.85 x podium-multifamily.json systemSplit + 0.15 x retail-strip.json systemSplit (both derived in those files), renormalized to 1.000 (01 trimmed by 0.001 for rounding)."
+  },
+
+  "lineItems": [
+    {
+      "id": "retail-ti-allowance",
+      "name": "Retail tenant improvement allowance (landlord-funded TI)",
+      "division": "09",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 0.15 },
+      "cost": { "low": 40, "mid": 75, "high": 150, "dollarYear": 2026, "region": "US", "evidence": ["marine-other/interior-finish-out.json#e4"], "derived": true, "method": "Landlord TI allowances typically fund part of the $75-400/SF tenant fit-out (interior-finish-out e4); $40-150/SF of retail area is judgment. Qty = retail share of GFA (0.15 SF retail per SF GFA)." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Often carried as a soft/leasing cost; leave off if TI is tenant-funded."
+    },
+    {
+      "id": "additional-structured-parking",
+      "name": "Additional above-grade structured parking (beyond podium)",
+      "division": "03",
+      "unit": "space",
+      "qty": { "per": "project", "value": 0 },
+      "cost": { "low": 27800, "mid": 33300, "high": 52000, "dollarYear": 2026, "region": "US", "evidence": ["marine-other/parking-garage.json#e1", "marine-other/parking-garage.json#e4"], "derived": false, "method": "Per-space garage cost from parking-garage.json (WGI 2026 median $33,300; Houston $27,806; RLB/UCLA above-ground average $52,000)." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Enter spaces above the ~1 per unit already in the podium baseline."
+    },
+    {
+      "id": "below-grade-parking-premium",
+      "name": "Below-grade parking premium (per space)",
+      "division": "31",
+      "unit": "space",
+      "qty": { "per": "project", "value": 0 },
+      "cost": { "low": 15000, "mid": 21000, "high": 40000, "dollarYear": 2025, "region": "US", "evidence": ["marine-other/parking-garage.json#e4"], "derived": true, "method": "UCLA ITS / RLB 2025 underground $73,000 vs above-ground $52,000 per space -> ~$21,000 premium (parking-garage e4)." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Enter number of below-grade spaces."
+    },
+    {
+      "id": "public-realm-plaza",
+      "name": "Public plaza / streetscape enhancements inside the property line",
+      "division": "32",
+      "unit": "sf",
+      "qty": { "per": "project", "value": 0 },
+      "cost": { "low": 30, "mid": 60, "high": 120, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Specialty paving, planters, seating, lighting — estimating judgment per SF of plaza." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Common entitlement condition for mixed-use."
+    }
+  ],
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.20, "mid": 0.25, "high": 0.32, "evidence": ["residential/podium-multifamily.json#e17"], "derived": true, "method": "Same basis as podium-multifamily (RAND market-rate soft/hard 0.19-0.33, mid 0.25) — mixed-use adds retail leasing/legal and condo/REA documents, so the range is shifted up slightly at the low end (judgment)." },
+    "breakdown": { "architectureEngineering": 0.07 },
+    "notes": "Excludes retail leasing commissions and TI (see line item)."
+  },
+
+  "contingency": {
+    "design": { "low": 0.03, "mid": 0.06, "high": 0.10, "evidence": [], "derived": true, "method": "Multi-occupancy coordination adds design risk over single-use podium (judgment)." },
+    "hard": { "low": 0.04, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "New-construction norm, same as podium-multifamily (judgment)." },
+    "soft": { "low": 0.03, "mid": 0.05, "high": 0.10, "evidence": [], "derived": true, "method": "General norm (judgment)." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 250, "max": 650, "dollarYear": 2026, "region": "US", "method": "Hard low $225 x 1.20 soft = $270 (min rounded to $250); hard high $450 x 1.32 soft x 1.08 contingency = ~$640 -> $650." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1", "metric": "hardCostPerSF", "value": 347.5, "low": 190, "high": 700, "unit": "USD/sf",
+      "region": "18 U.S. cities (RLB; median of city midpoints)", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "RLB Construction Cost Report North America Q3 2026 (PDF), Indicative Construction Costs — Residential: Multi-Family", "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf", "publisher": "Rider Levett Bucknall", "accessed": "2026-10-24" },
+      "quote": "MULTI-FAMILY (USD/SF GFA): Austin 190-285; Dallas 195-285; Phoenix 205-305; Chicago 235-505; New York 260-510; San Francisco 420-700",
+      "scopeNotes": "Hard construction cost per SF of gross floor area, all multifamily types. Median of the 18 US city midpoints = $347.5 (our arithmetic).", "confidence": "high"
+    },
+    {
+      "id": "e2", "metric": "hardCostPerSF", "value": 248.75, "low": 135, "high": 795, "unit": "USD/sf",
+      "region": "18 U.S. cities (RLB; median of city midpoints)", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "RLB Construction Cost Report North America Q3 2026 (PDF), Indicative Construction Costs — Retail: Strip", "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf", "publisher": "Rider Levett Bucknall", "accessed": "2026-10-24" },
+      "quote": "RETAIL STRIP (USD/SF GFA): Austin 200-265; Dallas 200-270; Phoenix 135-220; Chicago 170-280; New York 395-795; San Francisco 360-720",
+      "scopeNotes": "Stand-alone strip retail; used as a proxy for ground-floor retail shell in a podium. Median of 18 US city midpoints = $248.75 (our arithmetic).", "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "Find a public cost breakdown (e.g., city-assisted mixed-use project pro forma or LIHTC mixed-use application) to test the 4% mixed-occupancy premium.",
+    "Engine design: should quick-mode mixed-use defer to a weighted blend of the user's chosen components rather than this single fallback?"
+  ]
+}

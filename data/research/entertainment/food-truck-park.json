@@ -1,0 +1,550 @@
+{
+  "schemaVersion": 1,
+  "id": "food-truck-park",
+  "name": "Food truck park",
+  "category": "entertainment",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "pad",
+  "summary": "Cost is driven by fixed shared amenities (restroom building, shade pavilion, seating plaza, lighting, grease handling) spread over a small number of truck pads, so cost per pad falls steeply with pad count. Public data are thin: a few municipal budgets/bids (Moses Lake WA, Albert Lea MN, Tyrone GA, North Summit UT) and Texas TDLR project registrations give a wide $30k–$200k+/pad spread; the mid is a reasoned build-up and should be verified.",
+  "sizing": {
+    "typicalSize": {
+      "low": 4,
+      "mid": 10,
+      "high": 20,
+      "unit": "pad",
+      "evidence": [
+        "e1",
+        "e2",
+        "e4",
+        "e9"
+      ],
+      "derived": true,
+      "method": "Public examples range from 3 pads (Albert Lea e2, Universal City e9) through 6 (Moses Lake e1) to 6–9 (San Antonio e4); purpose-built private parks commonly run 8–20. Mid of 10 is a judgment for a stand-alone commercial park."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 8,
+      "mid": 12,
+      "high": 18,
+      "evidence": [],
+      "derived": true,
+      "method": "Each truck pad ~12x40 ft (~500 SF, cf. 425 SF pad in e5) plus service drive, seating plaza, restroom/shade and ~4–6 parking spaces per pad. ~2,500–5,000 SF of site per pad gives ~9–17 pads/acre; rounded."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 3,
+      "mid": 5,
+      "high": 8,
+      "type": "surface",
+      "evidence": [
+        "e10"
+      ],
+      "derived": true,
+      "method": "Universal City TX 2026 agenda (e10) planned 3 trucks with 10 parking spaces (~3.3/pad). Suburban stand-alone parks typically need more; mid 5 spaces per pad is a judgment, local zoning governs."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 35000,
+      "mid": 90000,
+      "high": 200000,
+      "dollarYear": 2024,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "e7",
+        "e8"
+      ],
+      "derived": true,
+      "method": "Sourced anchors: minimal court (pad + power, no restrooms) Albert Lea e2 = $92,693/3 pads = ~$31k/pad (2023); full-amenity 6-truck plaza Moses Lake e1 low bid $598k/6 = ~$100k/pad, high bid ~$200k/pad (2023); San Antonio e4 $2.7M for 6–9 trucks (~$300k–$450k/pad, multi-story structure, treated as outlier above high). Cross-check build-up for 10 pads: pad + pedestal + trenching ~$25k/pad (e5: 425 SF pad $8k + $10k electrical) = $250k; restroom building ~$200k (e7 $180k, e8 $250k); shade pavilion ~$250k (e6); paving/parking/lighting/landscape ~$250k; grease handling ~$40k; total ~$1.0M = ~$100k/pad. Mid $90k sits between the Moses Lake low bid and the build-up, slightly discounted for national (Moses Lake is WA). Low = minimal court with off-site restrooms (e2, e3); high = Moses Lake upper bid level."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Per pad, includes pro-rata share of shared amenities (restroom building, shade, seating plaza hardscape, lighting, on-site utilities, parking). Contractor price incl. GC and OH&P; excludes land, soft costs, loose furniture, off-site utility extensions, impact/tap fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.45,
+    "standard": 1.0,
+    "premium": 1.6,
+    "luxury": 2.2,
+    "evidence": [
+      "e2",
+      "e1",
+      "e4"
+    ],
+    "derived": true,
+    "method": "Economy = low/mid (35k/90k ≈ 0.4, rounded up); premium = high/mid (200/90 ≈ 2.2) treated as luxury; premium interpolated. The wide spread reflects whether restrooms, shade and a bar building are included."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.1
+      },
+      {
+        "division": "03",
+        "pct": 0.1
+      },
+      {
+        "division": "05",
+        "pct": 0.06
+      },
+      {
+        "division": "06",
+        "pct": 0.02
+      },
+      {
+        "division": "07",
+        "pct": 0.02
+      },
+      {
+        "division": "08",
+        "pct": 0.01
+      },
+      {
+        "division": "09",
+        "pct": 0.02
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "13",
+        "pct": 0.05
+      },
+      {
+        "division": "22",
+        "pct": 0.07
+      },
+      {
+        "division": "26",
+        "pct": 0.12
+      },
+      {
+        "division": "31",
+        "pct": 0.07
+      },
+      {
+        "division": "32",
+        "pct": 0.2
+      },
+      {
+        "division": "33",
+        "pct": 0.14
+      }
+    ],
+    "evidence": [
+      "e5"
+    ],
+    "derived": true,
+    "method": "Derived from the 10-pad build-up in hardCost.method: site paving/hardscape/landscape (32) and site utilities/pedestal feeders (33) dominate; electrical (26) covers pedestals, lighting and service; restroom building split across 03/06/07/08/09/10/22; shade structure in 05/13. General conditions ~15% in e5 bid, reduced to 10% here because GC fee is partly in trades' OH&P."
+  },
+  "lineItems": [
+    {
+      "id": "truck-pad-pedestal",
+      "name": "Truck pad (concrete, ~450 SF) with utility pedestal (power, water) and trenching",
+      "division": "26",
+      "unit": "pad",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 12000,
+        "mid": 22000,
+        "high": 35000,
+        "dollarYear": 2023,
+        "region": "US",
+        "evidence": [
+          "e5"
+        ],
+        "derived": true,
+        "method": "e5 (UT, 2023): 425 SF pad at $18.86/SF = $8,016 plus $10,000 LS electrical for the truck = ~$18k before 15% GC; ~$21k with GC. Mid rounded to $22k; high adds water/sewer stub and 50A+ service with longer runs; low = power-only pedestal with gravel pad."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of the baseline; shown for reference."
+    },
+    {
+      "id": "restroom-building",
+      "name": "Restroom building (site-built or prefab, ~400–600 SF)",
+      "division": "22",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 120000,
+        "mid": 190000,
+        "high": 300000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e7",
+          "e8"
+        ],
+        "derived": false,
+        "method": "e7 Edinburg TX: $180,000 for 510 SF restroom building + restriping (2025); e8 Brownsville TX: $250,000 for 559 SF restrooms/storage plus slabs, sidewalks and parking (2024). Mid ~$190k; low for a small prefab unit; high for larger/full-finish buildings outside Texas."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Included in baseline at typical size; parks that use adjacent public restrooms (e3) can omit it."
+    },
+    {
+      "id": "shade-pavilion",
+      "name": "Shade structure / covered seating pavilion",
+      "division": "13",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 4000
+      },
+      "cost": {
+        "low": 25,
+        "mid": 41,
+        "high": 70,
+        "dollarYear": 2022,
+        "region": "US",
+        "evidence": [
+          "e6"
+        ],
+        "derived": true,
+        "method": "e6 Walsh (Fort Worth TX, 2022): $250,000 / 6,100 SF ≈ $41/SF for a fully covered shade structure with concrete/DG seating area, furniture and planting. Low = fabric shade sails; high = steel-framed metal-roof pavilion. Per SF of covered area."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Qty default ~4,000 SF for 10 pads."
+    },
+    {
+      "id": "grease-interceptor",
+      "name": "Shared grease interceptor / grease disposal station (~1,000 gal)",
+      "division": "22",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 15000,
+        "mid": 30000,
+        "high": 60000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No reliable public bid found. Forum anecdotes put a 1,000-gal tank at $5–8k plus $10–20k install (not cited as evidence, low quality). Mid assumes precast in-ground unit with excavation, traffic lid and connections; high where sewer drops to each pad and a larger unit are required. Verify against local utility requirements."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Only needed where trucks discharge grey/grease water on site; many parks require trucks to self-contain."
+    },
+    {
+      "id": "commissary-building",
+      "name": "Shared commissary kitchen / cold storage",
+      "division": "11",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 800
+      },
+      "cost": {
+        "low": 300,
+        "mid": 450,
+        "high": 650,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: small commercial kitchen building cost ($/SF) by analogy to restaurant/QSR shell plus kitchen fit-out; not sourced specifically. Applies to parks that offer commissary services (e.g., e4 includes a commissary and cold storage)."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional; some jurisdictions require trucks to operate from a licensed commissary."
+    },
+    {
+      "id": "bar-building",
+      "name": "Central bar / beer garden building",
+      "division": "13",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 300000,
+        "high": 600000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: 600–1,200 SF bar building with walk-in and bar equipment at ~$250–500/SF. Not sourced; common revenue anchor for private parks."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional upgrade."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 2000,
+      "mid": 5000,
+      "high": 10000,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Picnic tables, umbrellas, trash/recycling receptacles, string lights and games: ~4–8 tables per pad at $500–1,200 each. Derived."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.1,
+      "mid": 0.15,
+      "high": 0.22,
+      "evidence": [],
+      "derived": true,
+      "method": "Site-centric project with simple buildings: civil/site design, small-building architecture, permits, survey/geotech, testing. Lower than buildings (~20–25%) because architecture scope is small. Derived; Tyrone GA used design-build (e3), which compresses separate design fees."
+    },
+    "notes": "Add health-department plan review, food-truck park zoning/SUP and utility capacity studies where required."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Small public projects have run well over early estimates: Moses Lake bids were 18%–140% over the $505k earmark (e1). Use a higher-than-normal design contingency at concept stage."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Sitework-heavy scope with utility unknowns; typical 5–10% construction contingency."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 30000,
+      "max": 300000,
+      "dollarYear": 2024,
+      "region": "US",
+      "method": "Min ≈ Albert Lea minimal court (e2, ~$31k/pad); max ≈ Moses Lake high bid ($200k/pad, e1) plus soft costs and allowance; e4 (~$300k+/pad, multi-story) sits at the top edge."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerUnit",
+      "value": 598000,
+      "low": 598000,
+      "high": 1200000,
+      "unit": "USD/ls",
+      "region": "Moses Lake, WA",
+      "regionKey": "WA",
+      "dataYear": 2023,
+      "source": {
+        "title": "Moses Lake Scraps Food Truck Park Project Amid Rising Costs, City Manager Confirms",
+        "url": "https://www.yoursourceone.com/columbia_basin/moses-lake-scraps-food-truck-park-project-amid-rising-costs-city-manager-confirms/article_2e89da62-c7b2-47dc-8ca6-6cd778494c26.html",
+        "publisher": "Source ONE News",
+        "accessed": "2026-10-24"
+      },
+      "quote": "space for six food trucks, seating, shade structures, and restroom facilities. The city had earmarked around $505,000 ... proposals ranging from approximately $598,000 to over $1.2 million.",
+      "scopeNotes": "Bid prices (hard cost) for a 6-truck municipal plaza with restrooms and shade; bids rejected in 2023. $100k–$200k per pad.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerUnit",
+      "value": 92693,
+      "unit": "USD/ls",
+      "region": "Albert Lea, MN",
+      "regionKey": "MN",
+      "dataYear": 2023,
+      "source": {
+        "title": "Albert Lea City Council gives green light for food truck court",
+        "url": "https://www.kaaltv.com/news/local-news/albert-lea-city-council-gives-green-light-for-food-truck-court/",
+        "publisher": "KAAL ABC 6 News",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The City Council accepted the bid of $92,693 to create the food truck court. ... landscaping, power hook-ups and a concrete pad for up to three food trucks.",
+      "scopeNotes": "Minimal court: no restrooms or shade; city parks crews supplied most landscaping and benches. ~$31k per pad. Published 2023-03-03.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerUnit",
+      "value": 150000,
+      "unit": "USD/ls",
+      "region": "Tyrone, GA",
+      "regionKey": "GA-Atlanta",
+      "dataYear": 2025,
+      "source": {
+        "title": "Addendum Number 1, Design-Build Food Truck Park, Project Number DDA-2025-01",
+        "url": "https://tyronega.gov/sites/default/files/uploads/Admin/dda-2025-01_addendum_number_1.pdf",
+        "publisher": "Downtown Development Authority of Tyrone / Town of Tyrone, GA",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The budget for this project has been established not to exceed $150,000.",
+      "scopeNotes": "Design-build NTE budget; compacted aggregate (no paving) for trucks, restrooms are next door (not built), single hose bib, stage alternate. Pad count not stated.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "totalDevelopmentCost",
+      "value": 2700000,
+      "unit": "USD/ls",
+      "region": "San Antonio, TX",
+      "regionKey": "TX-SanAntonio",
+      "dataYear": 2018,
+      "source": {
+        "title": "Brothers plan to open $2.7M food truck park east of downtown by Fiesta",
+        "url": "https://www.ksat.com/news/2018/10/04/brothers-plan-to-open-27m-food-truck-park-east-of-downtown-by-fiesta/",
+        "publisher": "KSAT 12",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The project started out as a $500,000 project, and four years later, it's nearly a $2.7 million project. ... space for about six to nine food trucks",
+      "scopeNotes": "Total project cost (likely incl. soft costs) for a three-story open-air structure with commissary and cold storage; outlier, used only to bound the high end.",
+      "confidence": "low"
+    },
+    {
+      "id": "e5",
+      "metric": "lineItemCost",
+      "value": 18.86,
+      "unit": "USD/sf",
+      "region": "North Summit, UT",
+      "regionKey": "UT",
+      "dataYear": 2023,
+      "source": {
+        "title": "North Summit Recreation SSD - Beacon Hill Park estimated costs for Food Truck Facilities and Basketball Courts (Restaurant Tax Grant packet)",
+        "url": "https://www.utah.gov/pmn/files/1031179.pdf",
+        "publisher": "Utah Public Notice Website / North Summit Recreation Special Service District",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Food Truck Pad 425 SF 18.86 $8,015.50 ... Electrical For Food Truck 1 LS 10,000.00 ... Genereal Conditions around 15%",
+      "scopeNotes": "Contractor NTE estimate dated 9/28/23; excludes permits and engineering. Gives unit costs for one truck pad and its electrical.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "lineItemCost",
+      "value": 250000,
+      "unit": "USD/ls",
+      "region": "Fort Worth, TX",
+      "regionKey": "TX-DFW",
+      "dataYear": 2022,
+      "source": {
+        "title": "TABS2022015844 - Walsh Food Truck Pavilion",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2022015844",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $250,000 ... Food Truck area with fully covered shade structure, seating area on concrete and decomposed granite, with site furniture and planting Square Footage: 6,100 ft 2",
+      "scopeNotes": "Owner-reported estimate filed for accessibility review; ~$41/SF for shade + seating area.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "lineItemCost",
+      "value": 180000,
+      "unit": "USD/ls",
+      "region": "Edinburg, TX",
+      "regionKey": "TX",
+      "dataYear": 2025,
+      "source": {
+        "title": "TABS2026001089 - Vaquero Food Truck",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2026001089",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $180,000 ... Addition of Restroom building and restriping of existing parking lot. Square Footage: 510 ft 2",
+      "scopeNotes": "Owner-reported estimate; restroom building for a food truck site.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "lineItemCost",
+      "value": 250000,
+      "unit": "USD/ls",
+      "region": "Brownsville, TX",
+      "regionKey": "TX",
+      "dataYear": 2024,
+      "source": {
+        "title": "TABS2024016109 - Portable Restrooms, Food Truck Park",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2024016109",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Facility Name: Food Truck Park ... Estimated Cost: $250,000 ... Restrooms, Storage Concrete Slabs, Sidewalks, and Parking Lot Square Footage: 559 ft 2",
+      "scopeNotes": "Owner-reported estimate; restrooms plus slabs, sidewalks and parking.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9",
+      "metric": "hardCostPerUnit",
+      "value": 123900,
+      "unit": "USD/ls",
+      "region": "Universal City, TX",
+      "regionKey": "TX-SanAntonio",
+      "dataYear": 2021,
+      "source": {
+        "title": "TABS2021017072 - 122 W Lindbergh Food Truck Park",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2021017072",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $123,900 ... new parking lot, food truck pads and drive, utilities, landscaping, outdoor restrooms, and interior remodel of existing building.",
+      "scopeNotes": "Owner-reported estimate, small park reusing an existing building; pad count not stated in the filing.",
+      "confidence": "low"
+    },
+    {
+      "id": "e10",
+      "metric": "parkingPerPad",
+      "value": 3.33,
+      "unit": "ratio",
+      "region": "Universal City, TX",
+      "regionKey": "TX-SanAntonio",
+      "source": {
+        "title": "Universal City looks to approve development agreement for food truck park",
+        "url": "https://communityimpact.com/san-antonio/northeast-san-antonio-metrocom/government/2026/03/10/universal-city-looks-to-approve-development-agreement-for-food-truck-park/",
+        "publisher": "Community Impact",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The food truck park will have space for three food trucks along with 10 parking spaces.",
+      "scopeNotes": "Program only, no cost. 10/3 = 3.3 spaces per pad.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "Need 2–3 more completed (not bid/estimate) private food truck park budgets with pad counts, especially 8–20 pad parks.",
+    "Grease interceptor and per-pad sewer requirements vary by utility; a sourced installed cost is still missing.",
+    "Parking ratio per pad is assumed; check zoning codes in target markets."
+  ]
+}

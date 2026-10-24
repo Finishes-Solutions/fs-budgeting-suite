@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 1,
+  "id": "parking",
+  "name": "Parking",
+  "researchedAt": "2026-10-24",
+  "notes": "Per-space construction cost for each parking typology. Structured parking is anchored on WGI's annual Parking Structure Cost Outlook (national median of above-grade, precast, naturally ventilated, unsprinklered-typical garages; excludes below-grade and parking beneath occupied buildings). Below-grade and podium values lean on the UCLA ITS / RLB 2025 17-city study and the 2020 Hawai'i RLB study, and are derived where no national median exists. All values are hard construction cost (contractor price incl. GCs and OH&P) and exclude land and soft costs unless noted.",
+  "items": [
+    {
+      "id": "parking-surface",
+      "name": "Surface parking (asphalt, per space incl. drive aisles)",
+      "division": "32",
+      "unit": "space",
+      "cost": {
+        "low": 3500,
+        "mid": 6500,
+        "high": 12000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e5",
+          "e6",
+          "e7",
+          "e8",
+          "_blocks/paving.json#e1",
+          "_blocks/paving.json#e2"
+        ],
+        "derived": true,
+        "method": "Bottom-up check: ~360 gross SF/space (Hawai'i study e6 uses 360 SF/stall) = 40 SY of pavement. At the paving block's asphalt-paving mid ($45/SY, from FDOT Superpave + optional base, paving.json) = $1,800/space for pavement; add curb, striping, storm inlets/pipe, lighting, landscape islands and fine grading (typically 1.5-3x pavement alone on small lots) -> ~$4,500-$7,500 typical. Evidence spread: Hawai'i O'ahu on-grade construction $3,100-$6,500/stall incl. soft costs in 2020 (e6), Fixr consumer guide $1,500-$10,000 with ~$5,000 common (e7), and a small 59-space university lot at $15,505/space construction incl. heavy earthwork, lighting, landscape and irrigation (e5) as an upper bound. Mid $6,500 = bottom-up mid rounded up toward the 2025-26 public evidence; low $3,500 = large flat lot with minimal landscaping; high $12,000 = small lot with substantial earthwork/lighting/stormwater (below the UCF outlier)."
+      },
+      "notes": "Includes pavement section, curb, striping, wheel stops/signage allowance, lighting, landscape islands and local storm drainage within the lot. Excludes mass grading beyond normal balance, detention, and land. Multiply by spaces; ~110-130 spaces per acre of parking field."
+    },
+    {
+      "id": "parking-structured-above",
+      "name": "Structured parking, above grade (free-standing precast/PT garage)",
+      "division": "03",
+      "unit": "space",
+      "cost": {
+        "low": 27800,
+        "mid": 33300,
+        "high": 52000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e1",
+          "e2",
+          "e3",
+          "e4"
+        ],
+        "derived": false,
+        "method": "Mid = WGI 2026 national median $33,300/space (e1/e2), the industry's annual anchor (2024 median $29,900, e3). Low = WGI 2026 lowest major market (Houston $27,806). High = UCLA ITS / RLB 2025 17-city average for above-ground structures ($52,000, e4), which reflects higher-cost urban markets and richer specifications (PT, architectural facades, sprinklers); WGI's own high market (San Francisco $43,000) sits inside this range."
+      },
+      "notes": "WGI median garage: 8'-6\"-8'-9\" stalls, precast superstructure, simple precast facade, spread footings, all above grade, open/naturally ventilated, generally not fully sprinklered, minimal ground-floor retail (e3). Add for sprinklers, architectural facade, deep foundations, EV charging, PARCS. ~$98.75/SF and ~337 SF/space at the 2026 median. Soft costs add 15-25% (WGI)."
+    },
+    {
+      "id": "parking-structured-below",
+      "name": "Structured parking, below grade (underground garage)",
+      "division": "03",
+      "unit": "space",
+      "cost": {
+        "low": 45000,
+        "mid": 65000,
+        "high": 110000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e4",
+          "e6",
+          "e7"
+        ],
+        "derived": true,
+        "method": "UCLA ITS / RLB 2025 17-city average underground cost is $73,000/space excluding land (e4). WGI excludes below-grade garages from its median because they are 'usually significantly higher' (e3) - a common rule of thumb is ~1.6-2.0x the above-grade median, i.e. $33,300 x 1.6-2.0 = $53k-$67k. Mid $65,000 = blend of the WGI-ratio estimate (~$60k) and the RLB average ($73k), weighted toward the national (WGI) basis since the RLB sample is big-city heavy. Low $45,000 = single-level basement in good soils/low-cost market (Fixr's 2022 $25k-$50k consumer range, e7, escalated, sits at/below this). High $110,000 = multi-level excavation with dewatering/shoring in a high-cost metro (Portland was the reported top of the UCLA range)."
+      },
+      "notes": "Includes excavation/shoring, waterproofing, mechanical ventilation, sprinklers, ramps. Excludes land. Highly sensitive to water table, rock, and number of levels below grade."
+    },
+    {
+      "id": "parking-podium",
+      "name": "Podium parking (at/near grade beneath an occupied building)",
+      "division": "03",
+      "unit": "space",
+      "cost": {
+        "low": 32000,
+        "mid": 40000,
+        "high": 55000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e1",
+          "e6"
+        ],
+        "derived": true,
+        "method": "Start from the WGI 2026 above-grade median $33,300 (e1) and apply a 1.1-1.4x premium for conditions WGI excludes: parking beneath occupied buildings requires fire-rated construction, full sprinklers, heavier/transfer-ready structure (transfer slab itself is usually carried in the building), more enclosure and often partial mechanical ventilation -> $36.6k-$46.6k; mid $40,000. Cross-check: RLB's 2020 urban Honolulu podium estimate was $42,000/stall construction (e6), in a high-cost market and 2020 dollars. Low $32,000 = single open podium level in a low-cost market; high $55,000 = multi-level enclosed podium in a high-cost metro."
+      },
+      "notes": "Per space for the parking levels only; the podium transfer slab and building above are carried in the building hard cost. Use parking-structured-below for floors that are below grade."
+    },
+    {
+      "id": "parking-tuck-under",
+      "name": "Tuck-under parking (ground-floor garage/open stalls beneath walk-up residential)",
+      "division": "03",
+      "unit": "space",
+      "cost": {
+        "low": 12000,
+        "mid": 20000,
+        "high": 32000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No public per-space benchmark found (the Hawai'i study explicitly did not evaluate tuck-under stalls). Derived: a tuck-under stall occupies ~300-350 SF of ground-floor footprint that is already structured/roofed by the building above. Incremental cost = slab-on-grade, garage walls/doors or open-bay framing, fire separation from units, plus loss of foundation/structure efficiency - estimated at $40-$90/SF x 300-350 SF = $12k-$32k. Mid $20,000 ~= 60% of the WGI 2026 free-standing garage median ($33,300, e1), reflecting that the structure above is paid for by the building."
+      },
+      "notes": "Incremental cost of the parking stall within the building footprint; the residential floors above are carried in the building hard cost. Common in townhomes and 3-story walk-up garden apartments."
+    },
+    {
+      "id": "parking-carport-covered",
+      "name": "Covered parking carport (steel canopy over a surface space; add to parking-surface)",
+      "division": "13",
+      "unit": "space",
+      "cost": {
+        "low": 3500,
+        "mid": 5500,
+        "high": 9000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No authoritative public per-space figure found. Derived: one stall ~9 ft x 18-20 ft = 162-180 SF of canopy; pre-engineered steel cantilever or T-frame carport with metal deck roof, drilled pier footings and canopy lighting typically prices at ~$22-$50/SF of canopy in 2025-26 -> $3.6k-$9k per stall; mid ~$32/SF x 170 SF = ~$5,500. Excludes the pavement beneath (use parking-surface) and solar PV (see energy block)."
+      },
+      "notes": "Additive to parking-surface. Multi-family covered parking, shade structures at retail/office. Solar carports cost materially more (structure + PV)."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "parkingStructureCostPerSpace",
+      "value": 33300,
+      "low": 27806,
+      "high": 43000,
+      "unit": "USD/space",
+      "region": "United States (national median); low = Houston, high = San Francisco",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "WGI releases 2026 parking structure cost outlook",
+        "url": "https://www.parking-mobility.org/news/wgi-releases-2026-parking-structure-cost-outlook/",
+        "publisher": "National Parking Association / Parking & Mobility (reporting WGI)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "the national median construction cost for a new parking structure has increased to $33,300 per parking space, or $98.75 per square foot.",
+      "scopeNotes": "Hard construction cost only; the study excludes statistical outliers such as underground parking facilities and parking located beneath occupied buildings. Houston $27,806 and San Francisco $43,000 per space reported in the same release.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "parkingStructureCostPerSpace",
+      "value": 33300,
+      "low": 27806,
+      "high": 43000,
+      "unit": "USD/space",
+      "region": "United States (national median)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Parking structure construction cost up 6% in 2026",
+        "url": "https://www.bdcnetwork.com/building-sector-reports/transportation-parking-facilities/article/55403221/parking-structure-construction-cost-up-6-in-2026",
+        "publisher": "Building Design + Construction",
+        "accessed": "2026-10-24"
+      },
+      "quote": "San Francisco remains the nation's highest-cost market at $43,000 per space and $126.40 per square foot ... Houston remains the most economical major market at $27,806 per space and $82.46 per square foot.",
+      "scopeNotes": "Same WGI 2026 dataset as e1, independent publication of the city figures.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "parkingStructureCostPerSpace",
+      "value": 29900,
+      "low": 25475,
+      "high": 38093,
+      "unit": "USD/space",
+      "region": "United States (national median); low = Dallas, high = New York",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "Parking Structure Cost Outlook for 2024",
+        "url": "https://publications.wginc.com/hubfs/WGIs%20Parking%20Structure%20Cost%20Outlook%20for%202024.pdf",
+        "publisher": "WGI",
+        "accessed": "2026-10-24"
+      },
+      "quote": "the median construction cost for a new parking structure is $29,900 per space, or $89.45 per square foot ... Soft costs typically add about 15% to 25% to the actual construction costs.",
+      "scopeNotes": "p.2: WGI omits 'parking structures that are entirely or significantly below grade since their construction cost is usually significantly higher'. p.4 median garage: precast, all above grade, open/natural ventilation, without fire sprinklers. City table p.5: Dallas $25,475 (lowest), New York $38,093 (highest).",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "parkingCostPerSpace",
+      "value": 52000,
+      "high": 73000,
+      "unit": "USD/space",
+      "region": "17 U.S. cities (average)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "New UCLA report looks into the high cost to build parking",
+        "url": "https://cal.streetsblog.org/2026/03/02/new-ucla-report-looks-into-the-high-cost-to-build-parking",
+        "publisher": "Streetsblog California (reporting UCLA ITS, 'No Such Thing as Free Parking: Construction Costs in 17 U.S. Cities')",
+        "accessed": "2026-10-24"
+      },
+      "quote": "the 2025 construction cost for new parking was on average $73,000 per space underground, and $52,000 per space aboveground",
+      "scopeNotes": "value/low = above-ground average; high = underground average. Excludes land ('Not counting the cost of the land'); article does not say whether soft costs are included. Sample is large, mostly high-cost cities, so it runs well above the WGI national median.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "surfaceParkingCostPerSpace",
+      "value": 15505,
+      "high": 18947,
+      "unit": "USD/space",
+      "region": "Orlando, FL (University of Central Florida)",
+      "regionKey": "FL-Orlando",
+      "dataYear": 2025,
+      "source": {
+        "title": "Project Cost Sheet - Creation of E-1 Surface Parking Lot (Project 24134001)",
+        "url": "https://fp.ucf.edu/wp-content/uploads/projects/costs/2026/24134001%20Creation%20of%20E-1%20Surface%20Parking%20Lot.pdf",
+        "publisher": "University of Central Florida, Facilities Planning & Construction",
+        "accessed": "2026-10-24"
+      },
+      "quote": "NUMBER OF NEW PARKING SPACES: 59 ... CONSTRUCTION COST 914,812.78 ... TOTAL PROJECT COST 1,117,848.03 ... COST PER PARKING SPACE: $18,946.58",
+      "scopeNotes": "value = construction cost / 59 = $15,505 (my arithmetic); high = published total project cost per space incl. design, permitting and PM fees. Small lot; scope includes Div 31 earthwork $296,306, lighting poles, landscaping islands, perimeter trees, sod and irrigation. Completed Jan 2026; bid ~2025.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "parkingConstructionCostPerStall",
+      "value": 42000,
+      "low": 3100,
+      "high": 59000,
+      "unit": "USD/space",
+      "region": "Hawai'i (urban Honolulu, Other O'ahu, Maui, Kaua'i, Hawai'i Island)",
+      "regionKey": "HI",
+      "dataYear": 2020,
+      "source": {
+        "title": "The Costs of Parking in Hawai'i (August 2020)",
+        "url": "https://www.ulupono.com/media/ivcfs2pu/the-cost-of-parking-in-hawaii-report-2020-08.pdf",
+        "publisher": "Ulupono Initiative (cost estimates by Rider Levett Bucknall; land by PBR Hawaii)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 1: Representative Cost Estimates, In 2020 1Q dollars ... Cost per stall: Construction $42,000 $3,100 $3,600 $3,800 $3,400 $5,400 $6,200 $6,500 $5,900 $42,000 $49,000 $56,500 $59,000 $54,000",
+      "scopeNotes": "value = urban Honolulu podium (RLB, contractor bids for 5 facilities). On-grade residential $3,100-$3,800 and on-grade commercial $5,400-$6,500 construction per stall; commercial free-standing garages $42,000-$59,000. Construction figures include soft costs per the report text ('including hard and soft construction'); 330-360 GFA SF per stall. Hawai'i is a high-cost market.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "parkingCostPerSpace",
+      "value": 5000,
+      "low": 1500,
+      "high": 50000,
+      "unit": "USD/space",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2022,
+      "source": {
+        "title": "How much does it cost to build a parking garage?",
+        "url": "https://www.fixr.com/costs/build-parking-garage",
+        "publisher": "Fixr.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Many people find that $5,000 per space is the average price. ... The average underground parking garage cost per space is $25,000 to $50,000.",
+      "scopeNotes": "Consumer cost guide (Updated: August 17, 2022). value = surface lot typical; low = surface lot low end ($1,500-$10,000 per space range); high = underground top. Multi-level garages quoted at $19,000-$30,000 per space.",
+      "confidence": "low"
+    },
+    {
+      "id": "e8",
+      "metric": "parkingStructureCostPerSpace",
+      "value": 31400,
+      "unit": "USD/space",
+      "region": "United States (national median)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "WGI releases 2026 parking structure cost outlook",
+        "url": "https://www.parking-mobility.org/news/wgi-releases-2026-parking-structure-cost-outlook/",
+        "publisher": "National Parking Association / Parking & Mobility (reporting WGI)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "This represents a 6% increase over the 2025 median cost of $31,400 per space.",
+      "scopeNotes": "Prior-year (2025) WGI median, for escalation context.",
+      "confidence": "high"
+    }
+  ]
+}

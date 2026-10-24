@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "id": "cottage-court",
+  "name": "Cottage court / pocket neighborhood",
+  "category": "specialty-residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "unit",
+  "summary": "Small detached cottages (typically 500-1,100 SF, 1-1.5 stories) around a shared green. Cost behaves like small single-family construction - high $/SF because kitchens, baths and envelope don't shrink with floor area - plus shared courtyard, walks, parking and individual utility services. No published cottage-court construction budget was retrieved; the default is derived from Census single-family contract prices and NAHB cost-share data with a small-home premium. Confidence low-medium.",
+
+  "sizing": {
+    "typicalSize": { "low": 5, "mid": 8, "high": 16, "unit": "unit", "evidence": ["k1"], "derived": true, "method": "Missing Middle Housing typical spec is 5-10 units per cottage court lot (k1); larger pocket neighborhoods combine two courts (high 16)." },
+    "sfPerPrimaryUnit": { "low": 600, "mid": 850, "high": 1100, "evidence": ["k1"], "derived": true, "method": "Missing Middle typical unit size 500-800 SF (k1); market-rate pocket neighborhoods commonly add lofts/second floors at the rear (1-1.5 stories, rear building sometimes 2), so mid set at 850 SF gross and high 1,100." },
+    "primaryUnitsPerAcre": { "low": 10, "mid": 16, "high": 25, "evidence": ["k1"], "derived": false, "method": "Missing Middle gross density 10-20 du/acre front-loaded and 15-31 du/acre alley-loaded (k1); mid 16 = blend." },
+    "parkingPerPrimaryUnit": { "low": 1.0, "mid": 1.0, "high": 2.0, "type": "surface", "evidence": ["k1"], "derived": false, "method": "Missing Middle parking ratio '1-2 per unit', off-street '1 per unit max.' (k1)." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 140000, "mid": 245000, "high": 420000,
+      "dollarYear": 2025, "region": "US",
+      "evidence": ["k2", "k3"],
+      "derived": true,
+      "method": "Base: Census 2025 median contract price for contractor-built single-family homes $404,000 (k2) / median completed home size 2,142 SF (k2) = ~$189/SF (sizes are for all completed homes, so approximate). Contract price excludes land and is a builder price incl. OH&P. Small-home premium: fixed-cost kitchen/bath/MEP spread over ~850 SF instead of ~2,100 SF -> x1.35 = ~$255/SF. Shared cottage-court site work (green, walks, shared parking, individual utility services) adds ~$30k/unit (~$35/SF) beyond the ~7.6% site work in a typical single-family build (k3). Mid = 850 SF x ~$290/SF = ~$245k. Low = 600 SF economy/modular (~$235/SF); high = 1,100 SF premium in a high-cost market (~$380/SF)."
+    },
+    "perSF": {
+      "low": 210, "mid": 290, "high": 420,
+      "dollarYear": 2025, "region": "US",
+      "evidence": ["k2", "k3"],
+      "derived": true,
+      "method": "See perPrimaryUnit method: $189/SF Census-derived base x small-home premium (1.1-1.6) + shared site work ($20-$45/SF)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. general conditions and OH&P, including on-site utilities, shared green, walks, surface parking and landscaping. Excludes land, soft costs, off-site improvements, impact/tap fees and financing. Appliances included (Div 11)."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.8, "standard": 1.0, "premium": 1.3, "luxury": 1.7,
+    "evidence": [], "derived": true,
+    "method": "From the $/SF range: low/mid = 210/290 = 0.72 tempered to 0.8; high/mid = 420/290 = 1.45 for premium/luxury spread."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.07 },
+      { "division": "03", "pct": 0.09 },
+      { "division": "06", "pct": 0.16 },
+      { "division": "07", "pct": 0.08 },
+      { "division": "08", "pct": 0.05 },
+      { "division": "09", "pct": 0.11 },
+      { "division": "10", "pct": 0.01 },
+      { "division": "11", "pct": 0.02 },
+      { "division": "12", "pct": 0.03 },
+      { "division": "22", "pct": 0.07 },
+      { "division": "23", "pct": 0.06 },
+      { "division": "26", "pct": 0.06 },
+      { "division": "31", "pct": 0.04 },
+      { "division": "32", "pct": 0.08 },
+      { "division": "33", "pct": 0.07 }
+    ],
+    "evidence": ["k3"],
+    "derived": true,
+    "method": "Mapped from NAHB 2024 construction-cost stages (k3): site work 7.6%, foundations 10.5%, framing 16.6%, exterior finishes 13.4%, major system rough-ins 19.2%, interior finishes 24.1%, final steps 6.5%, other 2.1%. Foundations -> 03; framing -> 06; exterior -> 07/08; rough-ins -> 22/23/26; interior finishes -> 09/12/11/06 trim; final steps -> 32 landscaping/driveways. Site/utilities raised from 7.6% to ~19% (31+32+33) for the shared green, walks, parking and individual utility runs; general conditions 7% added (NAHB stages exclude builder overhead)."
+  },
+
+  "lineItems": [
+    {
+      "id": "shared-green",
+      "name": "Shared courtyard green, walks, lighting and landscaping",
+      "division": "32",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 60000, "mid": 150000, "high": 300000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Judgment: ~4,000-8,000 SF central green at $15-$35/SF incl. walks, pedestrian lighting, planting and irrigation." },
+      "inBaseline": true, "scales": false, "optional": false,
+      "notes": "Carve-out of the site share."
+    },
+    {
+      "id": "utility-service-per-cottage",
+      "name": "Individual water, sewer and electric services per cottage",
+      "division": "33",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 8000, "mid": 15000, "high": 25000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Judgment: on-site laterals and meter sets for detached units on a shared lot; excludes tap/impact fees." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out. Some jurisdictions allow a single master meter."
+    },
+    {
+      "id": "common-house",
+      "name": "Common house (shared kitchen/gathering room, 600-1,200 SF)",
+      "division": "06",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 150000, "mid": 280000, "high": 450000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "600-1,200 SF at the cottage $/SF range (~$250-$375/SF). Judgment." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Typical of pocket neighborhoods / cohousing, rare in small infill courts."
+    },
+    {
+      "id": "carport-shared-parking",
+      "name": "Shared carport / detached garage structure",
+      "division": "13",
+      "unit": "space",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 8000, "mid": 15000, "high": 30000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Judgment: open carport (low) to enclosed detached garage bay (high)." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Surface parking is in baseline; covered parking optional."
+    },
+    {
+      "id": "residential-sprinklers",
+      "name": "NFPA 13D residential sprinklers (where fire access requires)",
+      "division": "21",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 1 },
+      "cost": { "low": 2.5, "mid": 4, "high": 7, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Judgment for 13D systems in small dwellings; often triggered when cottages exceed fire-access distance from the street." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Per SF of cottage floor area."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 0, "mid": 0, "high": 15000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "For-sale/long-term rental cottages are unfurnished (appliances are in hard cost). High applies if furnished as rentals." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.15, "mid": 0.20, "high": 0.28, "evidence": ["k4"], "derived": true, "method": "Small infill projects carry design, survey, civil, permits, subdivision/condo mapping and legal over few units. NAHB 2024: builder overhead/general expenses 5.7% and marketing 0.8% of price vs. construction 64.4% (k4) = ~10% of construction just for overhead/marketing; plus A&E ~7% and permits/legal ~3-5%. Mid 20%." },
+    "breakdown": { "architectureEngineering": 0.07 },
+    "notes": "Excludes sales commissions and financing."
+  },
+
+  "contingency": {
+    "design": { "low": 0.05, "mid": 0.08, "high": 0.12, "evidence": [], "derived": true, "method": "Residential norms; judgment." },
+    "hard": { "low": 0.05, "mid": 0.07, "high": 0.10, "evidence": [], "derived": true, "method": "Residential norms; judgment." },
+    "soft": { "low": 0.03, "mid": 0.05, "high": 0.10, "evidence": [], "derived": true, "method": "General norm." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 150000, "max": 600000, "dollarYear": 2025, "region": "US", "method": "Min = low hard $140k + 10% soft; max = high hard $420k + 28% soft + contingency headroom for coastal metros." }
+  },
+
+  "evidence": [
+    {
+      "id": "k1", "metric": "typeSpecifications", "unit": "text",
+      "region": "United States (typology guidance)",
+      "source": { "title": "Cottage Court", "url": "https://missingmiddlehousing.com/types/bungalow-court/", "publisher": "Missing Middle Housing (Opticos Design)", "accessed": "2026-10-24" },
+      "quote": "Typical Specifications: Number of units 5-10; Typical unit size 500-800 sq. ft.; Density (gross) 10-20 du/acre front-loaded, 15-31 du/acre alley-loaded; Parking ratio 1-2 per unit",
+      "scopeNotes": "Also: lot area 11,500-24,000 SF front-loaded / 10,000-22,500 SF alley-loaded; net density 13-38 / 19-44 du/acre; 1-1.5 stories (rear-most building sometimes 2). No cost data.",
+      "confidence": "high"
+    },
+    {
+      "id": "k2", "metric": "contractPricePerUnit", "value": 404000, "unit": "USD/unit",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Highlights of 2025 Characteristics of New Housing", "url": "https://www.census.gov/construction/chars/highlights.html", "publisher": "U.S. Census Bureau", "accessed": "2026-10-24" },
+      "quote": "The median contract price was $404,000. ... The median size of a completed single-family home was 2,142 square feet.",
+      "scopeNotes": "Contract price applies to contractor-built homes started in 2025 (on the owner's land, excludes land); the 2,142 SF median is for all completed single-family homes, so $/SF (~$189) is approximate.",
+      "confidence": "medium"
+    },
+    {
+      "id": "k3", "metric": "constructionCostShares", "unit": "text",
+      "region": "United States",
+      "source": { "title": "Cost of Constructing a Home in 2024", "url": "https://eyeonhousing.org/2025/01/cost-of-constructing-a-home-in-2024/", "publisher": "NAHB Eye on Housing", "accessed": "2026-10-24" },
+      "quote": "Construction costs account for 64.4% of the average price of a home.",
+      "scopeNotes": "Stage shares of construction cost: interior finishes 24.1%, major system rough-ins 19.2%, framing 16.6%, exterior finishes 13.4%, foundations 10.5%, site work 7.6%, final steps 6.5%, other 2.1%. Dated Jan 23, 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "k4", "metric": "priceShares", "value": 0.057, "unit": "pct",
+      "region": "United States",
+      "source": { "title": "Cost of Constructing a Home in 2024", "url": "https://eyeonhousing.org/2025/01/cost-of-constructing-a-home-in-2024/", "publisher": "NAHB Eye on Housing", "accessed": "2026-10-24" },
+      "quote": "Construction costs account for 64.4% of the average price of a home.",
+      "scopeNotes": "Other shares of sales price reported in the same post: finished lot 13.7%, builder profit 11.0%, overhead and general expenses 5.7%, sales commission 2.8%, financing 1.5%, marketing 0.8%. Value = overhead share.",
+      "confidence": "high"
+    }
+  ],
+
+  "openQuestions": [
+    "No actual cottage-court construction budget was retrieved (web search budget exhausted). Candidates: Sightline Institute cottage cluster cost studies, Ross Chapin pocket neighborhood pro formas, Habitat for Humanity cottage communities, city pre-approved cottage plan programs.",
+    "Small-home $/SF premium (x1.35) is judgment; verify against RSMeans small residential models.",
+    "NAHB stage shares are for a typical (much larger) single-family home; verify for sub-1,000 SF cottages."
+  ]
+}

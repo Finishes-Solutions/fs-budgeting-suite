@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "id": "greenhouse",
+  "name": "Commercial greenhouse",
+  "category": "agriculture-energy",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Gutter-connected poly/polycarbonate or glass production greenhouse with heating, cooling, ventilation, irrigation and controls, priced per SF of growing-house footprint. Cost spans an order of magnitude: single-bay poly Quonset houses run ~$9–10/SF, wholesale gutter-connected houses ~$20/SF installed, retail and high-tech glass houses with lighting $40–60+/SF. Public data are mostly manufacturer/extension anecdotes (no cost-consultant benchmarks found), so confidence is medium-low.",
+
+  "sizing": {
+    "typicalSize": { "low": 10000, "mid": 100000, "high": 1000000, "unit": "sf", "evidence": ["e1", "e4"], "derived": true, "method": "Low 10,000 SF ≈ two-house small grower (MSU recommends ≥5,500 SF for a one-person business, e1); mid ~100,000 SF (≈2.3 acres) regional wholesale/produce grower; e4 cites wholesale projects of 37,800 and 181,440 SF; high ≈ 23 acres for large hydroponic produce operations." },
+    "primaryUnitsPerAcre": { "low": 24000, "mid": 30000, "high": 35000, "evidence": [], "derived": true, "method": "Greenhouse footprint covers ~55–80% of the site after headhouse, loading, stormwater, roads and setbacks: 43,560 × 0.55–0.80." },
+    "parkingPerPrimaryUnit": { "low": 0.0001, "mid": 0.0002, "high": 0.0005, "type": "surface", "evidence": [], "derived": true, "method": "Production staff ≈ 1 worker per 5,000–10,000 SF; retail garden-center greenhouses need more (≈1 per 2,000 SF → high)." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 15, "mid": 32, "high": 60,
+      "dollarYear": 2024, "region": "US",
+      "evidence": ["e1", "e2", "e3", "e4"],
+      "derived": true,
+      "method": "Installed greenhouse + systems: e4 wholesale gutter-connected projects $14–18/SF materials, 'under $20/SF' with labor; e2 Prospiant $10/SF structure rising to $20–30/SF fully outfitted; e3 Fixr commercial $25–35/SF; e4 retail gutter-connected $41–45/SF materials. Typical production house with heating/cooling/irrigation/benches ≈ $25/SF (midpoint of e2 outfitted range and e3 low end) + ~25% for GC/OH&P, site grading, gravel/partial concrete floors, drainage and on-site utilities ≈ $32/SF. Low $15 = e1 basic Quonset $8.60/SF (2019, owner-assisted, no site prep) grossed up for contractor install and sitework. High $60 = high-tech glass with supplemental lighting/retail (e4 $41–45 materials + labor). Evidence years 2019–2025 (e1 2019, e3 2022, e2/e4 2025 publications); stated in 2024$ without index escalation — verify."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Greenhouse structure and glazing, heating, ventilation/evaporative cooling, irrigation/fertigation, benches or floor growing, controls, electrical, footings/curbs, grading, gravel/concrete floors, on-site utilities, GC/OH&P. Excludes supplemental grow lighting (optional line), headhouse building (line item), land, off-site utilities, soft costs."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.5, "standard": 1.0, "premium": 1.4, "luxury": 1.9,
+    "evidence": ["e1", "e3", "e4"], "derived": true,
+    "method": "Economy ≈ low/mid ($15/$32, poly hoop/Quonset — e1, e3 hoop $5–10/SF); premium ≈ polycarbonate or glass gutter-connected with energy curtains; luxury ≈ high/mid ($60/$32) high-tech glass or retail conservatory (e4)."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.07 },
+      { "division": "03", "pct": 0.06 },
+      { "division": "11", "pct": 0.1 },
+      { "division": "13", "pct": 0.43 },
+      { "division": "22", "pct": 0.06 },
+      { "division": "23", "pct": 0.12 },
+      { "division": "25", "pct": 0.02 },
+      { "division": "26", "pct": 0.06 },
+      { "division": "31", "pct": 0.03 },
+      { "division": "32", "pct": 0.02 },
+      { "division": "33", "pct": 0.03 }
+    ],
+    "evidence": ["e1"],
+    "derived": true,
+    "method": "Anchored on e1 MSU itemized Quonset budget: frame + double poly cover = 25% of total, fans/shutters/heaters/HAF/thermostats = 35%, cooling pads + irrigation 12%, benches 11%. For a contractor-built gutter-connected house: greenhouse structure, glazing, shade/energy curtains and vents (MasterFormat 13 34 13 glazed structures) 0.43; heating/ventilation/cooling 23 = 0.12; irrigation/fertigation and water 22 = 0.06; benches/growing systems 11 = 0.10; electrical 26 = 0.06; environmental controls 25 = 0.02; footings/curbs/floors 03 = 0.06; sitework 31/32/33 = 0.08; general conditions 01 = 0.07. Proportions are estimates (verify)."
+  },
+
+  "lineItems": [
+    {
+      "id": "benches",
+      "name": "Growing benches (metal frame, movable tops)",
+      "division": "11",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 0.64 },
+      "cost": { "low": 1.5, "mid": 3, "high": 6, "dollarYear": 2019, "region": "MS", "evidence": ["e1"], "derived": false, "method": "e1: wood bench frames with mesh tops $1.50/SF of bench; metal-frame movable benches 'starting at $3 per square foot' (can cost more than triple wood). Qty = 64% bench-to-floor ratio per e1. High assumed for rolling/ebb-and-flood benches." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out; floor-grown crops or hydroponic gutters replace benches."
+    },
+    {
+      "id": "grow-lighting",
+      "name": "Supplemental LED grow lighting",
+      "division": "26",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 1 },
+      "cost": { "low": 6, "mid": 10, "high": 18, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Assumption: ~15–40 W/SF installed LED top-lighting at roughly $0.35–0.50 per installed watt including power distribution. Not sourced — verify with fixture quote and utility rebate." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Common for year-round leafy greens/tomatoes in northern latitudes."
+    },
+    {
+      "id": "headhouse",
+      "name": "Headhouse / packing & work building (≈10% of greenhouse area)",
+      "division": "13",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 0.1 },
+      "cost": { "low": 60, "mid": 100, "high": 160, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Pre-engineered metal building with slab, restrooms, cooler/packing area, priced like light-industrial/agricultural buildings ($60–160/SF). Area ratio 5–15% of greenhouse assumed. Verify." },
+      "inBaseline": false, "scales": true, "optional": false,
+      "notes": "Most commercial operations need one; set qty to 0 if existing."
+    },
+    {
+      "id": "energy-curtain",
+      "name": "Energy / blackout curtain system",
+      "division": "13",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 1 },
+      "cost": { "low": 1.5, "mid": 2.5, "high": 4, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Assumption: motorized curtain systems in gutter-connected houses. Not sourced — verify." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Often in premium tier; reduces heating cost ~20–30%."
+    },
+    {
+      "id": "water-well-lp",
+      "name": "Water well and LP gas storage (where no utility service)",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 15000, "mid": 35000, "high": 80000, "dollarYear": 2024, "region": "US", "evidence": ["e1"], "derived": true, "method": "e1 notes cost increases if a water well and LP gas tanks are needed (no value given). Amount assumed. Verify locally." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Rural sites only."
+    }
+  ],
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.06, "mid": 0.1, "high": 0.15, "evidence": [], "derived": true, "method": "Greenhouses are largely manufacturer-engineered packages (design included in the kit) with agricultural permitting; soft costs below commercial-building norms (≈15–25%). Mid 10% = site/civil engineering, permits, structural stamp, PM, builder's risk." },
+    "notes": "Agricultural building exemptions in some states reduce permit cost."
+  },
+
+  "contingency": {
+    "design": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "Pre-engineered package; design risk mainly site/civil and utilities." },
+    "hard": { "low": 0.05, "mid": 0.07, "high": 0.1, "evidence": [], "derived": true, "method": "Typical agricultural/pre-engineered construction; higher for remote sites and steel price volatility." },
+    "soft": { "low": 0.05, "mid": 0.05, "high": 0.1, "evidence": [], "derived": true, "method": "Standard soft-cost contingency." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 10, "max": 90, "dollarYear": 2024, "region": "US", "method": "All-in hard + soft (excl. land): $10/SF hoop-style production house up to ~$90/SF high-tech glass with lighting and headhouse." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerUnit",
+      "value": 8.6,
+      "unit": "USD/sf",
+      "region": "Mississippi",
+      "regionKey": "MS",
+      "dataYear": 2019,
+      "source": {
+        "title": "Starting a Greenhouse Business (Publication 1957)",
+        "url": "https://extension.msstate.edu/sites/default/files/publications/P1957_web.pdf",
+        "publisher": "Mississippi State University Extension Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The construction cost in 2019 for this type of greenhouse, fully assembled, is $24,770 or $8.60 per square foot. (Table 1: 30-by-96-foot, double-layered polyethylene, Quonset-style greenhouse, 2,880 sq. ft.; land cost and site preparation are not included)",
+      "scopeNotes": "Single-bay poly Quonset with fans, gas heaters, cooling pads, drip irrigation, wood benches; installation at 90 hr × $16/hr (owner-assisted); excludes site prep and land. Low-end bound.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerUnit",
+      "value": null,
+      "low": 10,
+      "high": 30,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "How Much Does a Commercial Greenhouse Cost?",
+        "url": "https://www.prospiant.com/how-much-does-a-commercial-greenhouse-cost/",
+        "publisher": "Prospiant (commercial greenhouse manufacturer)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "For example, a $10 per square foot structure may rise to $20-$30 per square foot when fully outfitted with advanced systems. ... installation costs ... run as much as two times higher than the material and equipment costs alone.",
+      "scopeNotes": "Vendor marketing page (published 2022, updated Dec 2025); scope of figures not defined.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerUnit",
+      "value": null,
+      "low": 25,
+      "high": 35,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2022,
+      "source": {
+        "title": "How much does it cost to build a greenhouse?",
+        "url": "https://www.fixr.com/costs/build-greenhouse",
+        "publisher": "Fixr",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Commercial greenhouses cost around $25 to $35 a square foot on average ... Hoop greenhouses cost between $5 and $10 a square foot on average.",
+      "scopeNotes": "Consumer cost-guide figure (updated Aug 2022); scope unclear.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerUnit",
+      "value": null,
+      "low": 14,
+      "high": 45,
+      "unit": "USD/sf",
+      "region": "United States (project examples; one in rural Wisconsin)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Looking at the cost of running a greenhouse",
+        "url": "https://www.hortidaily.com/article/9717563/looking-at-the-cost-of-running-a-greenhouse/",
+        "publisher": "HortiDaily",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Zephyr Wholesale (37,800 sq ft): 'The cost breakdown is $14 per square foot for materials' (under $20/SF incl. labor); Dual Atriums (181,440 sq ft): 'close to $18 per square foot'; Gutter-Connected Vail retail (6,600 sq ft): 'close to $45 per square foot'.",
+      "scopeNotes": "Manufacturer project examples, mostly materials only, build years not stated (article March 2025).",
+      "confidence": "medium"
+    }
+  ],
+
+  "openQuestions": [
+    "No cost-consultant or public-bid data found for large (5–30 acre) hydroponic glass greenhouses; public company filings (e.g., produce CEA growers) would anchor the high end.",
+    "University enterprise budgets (Penn State, Cornell, UMass) for gutter-connected houses were not retrieved this session (web search budget exhausted).",
+    "Supplemental lighting, headhouse and curtain costs are assumptions."
+  ]
+}

@@ -1,0 +1,402 @@
+{
+  "schemaVersion": 1,
+  "id": "food-hall",
+  "name": "Food hall",
+  "category": "entertainment",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Multi-vendor food halls are usually adaptive reuse of an existing building; cost is driven by kitchen MEP density (hoods, grease, gas, power per stall), how fully the landlord builds out stalls, and the condition of the host building. Evidence spans TI-only operator budgets (~$15–175/SF, low confidence) to full public-market conversions ($367–$536/SF in 2014–15 dollars). Mid is a reasoned midpoint; no recent cost-consultant food hall benchmark was found.",
+  "sizing": {
+    "typicalSize": {
+      "low": 10000,
+      "mid": 20000,
+      "high": 35000,
+      "unit": "sf",
+      "evidence": [
+        "e1",
+        "e2",
+        "e4"
+      ],
+      "derived": false,
+      "method": "e4: 'generally occupies between 10,000 and 25,000 square feet'; e1 28,000 SF; e2 30,000 SF hall. Mid 20,000 SF."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 8000,
+      "mid": 15000,
+      "high": 30000,
+      "evidence": [],
+      "derived": true,
+      "method": "Building SF per acre of site: urban infill/ground-floor halls have high FAR; stand-alone suburban halls with surface parking ~0.2–0.35 FAR (≈ 9,000–15,000 SF/acre). Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0,
+      "mid": 0.008,
+      "high": 0.012,
+      "type": "surface",
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Spaces per SF: restaurant-type parking ~8–12 per 1,000 SF where required; urban halls often rely on shared/structured parking (Boston Public Market lists 325 spaces for 28,000 SF ≈ 0.0116/SF). Derived."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 175,
+      "mid": 375,
+      "high": 650,
+      "dollarYear": 2024,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4"
+      ],
+      "derived": true,
+      "method": "2024 dollars, mixing evidence years: e3 RSMeans 2019 new restaurant $205/SF (≈ $260 in 2024); e2 Krog Street 2014 ≤ $367/SF of hall (≈ $530 in 2024, but spread over a larger building so lower in practice); e1 Boston 2015 $536/SF (≈ $750 in 2024, high-cost metro, may include soft). e4 TI-only budgets are far lower ($15–175/SF) because the shell and building systems already exist. Mid $375/SF = full conversion of an existing shell with landlord-built stalls, shared seating, bar and BOH; low $175 = second-generation restaurant/market space; high $650 = high-cost metro or ground-up with full stall fit-out. Escalation ratios are rough (~1.3x 2014/15→2024 and 2019→2024) and only used to position the mid; the build script handles formal escalation."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Conversion of an existing shell including MEP upgrades, common areas, central bar, BOH and landlord stall build-outs; minimal on-site work. For ground-up add a shell (see restaurant/retail types). Excludes land, soft costs, vendor kitchen equipment, seating FF&E."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.55,
+    "standard": 1.0,
+    "premium": 1.35,
+    "luxury": 1.75,
+    "evidence": [],
+    "derived": true,
+    "method": "economy ≈ low/mid (175/375 ≈ 0.47, rounded up); luxury ≈ high/mid (650/375 ≈ 1.73); premium interpolated."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.1
+      },
+      {
+        "division": "02",
+        "pct": 0.03
+      },
+      {
+        "division": "03",
+        "pct": 0.03
+      },
+      {
+        "division": "05",
+        "pct": 0.04
+      },
+      {
+        "division": "06",
+        "pct": 0.04
+      },
+      {
+        "division": "07",
+        "pct": 0.03
+      },
+      {
+        "division": "08",
+        "pct": 0.05
+      },
+      {
+        "division": "09",
+        "pct": 0.12
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.06
+      },
+      {
+        "division": "12",
+        "pct": 0.02
+      },
+      {
+        "division": "21",
+        "pct": 0.03
+      },
+      {
+        "division": "22",
+        "pct": 0.12
+      },
+      {
+        "division": "23",
+        "pct": 0.15
+      },
+      {
+        "division": "26",
+        "pct": 0.12
+      },
+      {
+        "division": "27",
+        "pct": 0.02
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "32",
+        "pct": 0.01
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived for an adaptive-reuse food hall: MEP-heavy (22 plumbing/grease ≈ 12%, 23 HVAC + kitchen exhaust/makeup air ≈ 15%, 26 electrical ≈ 12%) because each stall needs hood, grease and power; 09 finishes for a design-led dining hall; 02 selective demolition; 11 includes shared/landlord kitchen equipment and hoods. Ratios based on typical restaurant fit-out profiles; not sourced from a published food-hall estimate."
+  },
+  "lineItems": [
+    {
+      "id": "vendor-stall-buildout",
+      "name": "Landlord-built vendor stall (hood, grease, utilities, counters)",
+      "division": "11",
+      "unit": "stall",
+      "qty": {
+        "per": "sf",
+        "value": 0.0008
+      },
+      "cost": {
+        "low": 30000,
+        "mid": 55000,
+        "high": 80000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": false,
+        "method": "e4: fully equipped stalls 'can add $30,000 to $80,000 per stall'. Mid = midpoint. Qty ≈ 1 stall per 1,250 SF of hall (16 stalls in 20,000 SF)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "kitchen-exhaust-shared",
+      "name": "Shared kitchen exhaust / makeup air / HVAC systems",
+      "division": "23",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 50000,
+        "mid": 125000,
+        "high": 200000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": false,
+        "method": "e4 range 'Shared HVAC and commercial hood systems $50,000 – $200,000'; mid = midpoint. Likely low for 20,000+ SF halls."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "grease-interceptor",
+      "name": "Grease interceptor",
+      "division": "22",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 10000,
+        "mid": 30000,
+        "high": 50000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": false,
+        "method": "e4 'Grease trap installation $10,000 – $50,000'."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "central-bar",
+      "name": "Central bar build-out (millwork, draft system, back bar)",
+      "division": "12",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 300000,
+        "high": 600000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance for a 40–80 LF center bar with draft system and coolers."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 10,
+      "mid": 25,
+      "high": 45,
+      "dollarYear": 2024,
+      "region": "US",
+      "evidence": [
+        "e4"
+      ],
+      "derived": true,
+      "method": "Common-area seating, tables, POS/tech: e4 lists dining furniture $20k–$80k and POS $10k–$30k for 10–25k SF (≈ $2–11/SF); designed halls with lounge seating run higher. Vendor kitchen equipment excluded. Derived."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.15,
+      "mid": 0.2,
+      "high": 0.25,
+      "evidence": [
+        "e4"
+      ],
+      "derived": true,
+      "method": "A&E for kitchen-heavy interiors (food-service consultant, MEP) plus permits, health dept review, leasing/curation. e4 lists A&E $15k–$50k for TI-scope projects. Derived from typical restaurant/retail soft-cost ranges."
+    },
+    "notes": "Add tenant allowances / vendor incentives and pre-opening marketing separately; these are operating/leasing costs."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Adaptive reuse with uncertain existing conditions."
+    },
+    "hard": {
+      "low": 0.07,
+      "mid": 0.1,
+      "high": 0.15,
+      "evidence": [],
+      "derived": true,
+      "method": "Existing-building conversions commonly carry 10%+ construction contingency; e4-type operator guides advise 15–20% overall."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 150,
+      "max": 900,
+      "dollarYear": 2024,
+      "region": "US",
+      "method": "Low hard × 1.15 soft rounded down (second-generation space) to Boston-type full fit-out with soft (e1 escalated ≈ $750) plus margin."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "constructionCost",
+      "value": 15000000,
+      "unit": "USD/ls",
+      "region": "Boston, MA",
+      "regionKey": "MA-Boston",
+      "dataYear": 2015,
+      "source": {
+        "title": "Boston Public Market",
+        "url": "https://en.wikipedia.org/wiki/Boston_Public_Market",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The estimated construction cost of $15 million was funded with $6 million in grants ... Other dimensions 28,000 square feet retail space",
+      "scopeNotes": "Indoor public market/food hall fitted into the ground floor of an existing state building; opened 2015. ≈ $536/SF of retail space. Likely includes vendor stall build-outs and some soft costs.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "constructionCost",
+      "value": 11000000,
+      "unit": "USD/ls",
+      "region": "Atlanta, GA",
+      "regionKey": "GA-Atlanta",
+      "dataYear": 2014,
+      "source": {
+        "title": "Krog Street Market",
+        "url": "https://en.wikipedia.org/wiki/Krog_Street_Market",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The conversion of the 99 Krog Street building to Krog Street Market cost $11 million ... centered on a 30,000-square-foot ... food hall with various vendor stalls, five full-service restaurants and three larger traditional retail spaces.",
+      "scopeNotes": "Adaptive-reuse conversion of a warehouse; cost covers the whole building (food hall + restaurants + retail), so ≤ ~$367/SF if only the 30,000 SF hall is counted; actual building area is larger. Opened 2014.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "buildingHardCostPerSF",
+      "value": 205.16,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Restaurant - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/restaurant",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Restaurant with Brick Veneer / Wood Frame ... SubTotal 100% $164.13 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $41.03",
+      "scopeNotes": "2019 RSMeans national model, 5,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $205.16/SF; open shop = $186.33/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. New-build single restaurant; lower bound for kitchen-heavy space.",
+      "confidence": "medium",
+      "low": 186.33,
+      "high": 205.16
+    },
+    {
+      "id": "e4",
+      "metric": "startupCostBreakdown",
+      "value": null,
+      "low": 250000,
+      "high": 1500000,
+      "unit": "USD/ls",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "How to Start a Food Hall Business",
+        "url": "https://www.zenbusiness.com/start-a-business/hospitality/food-hall-business/",
+        "publisher": "ZenBusiness",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Construction and vendor stall build-outs $250,000 – $1,500,000 ... Shared HVAC and commercial hood systems $50,000 – $200,000 ... Grease trap installation $10,000 – $50,000",
+      "scopeNotes": "Operator startup budget for a leased 10,000–25,000 SF space (page: 'A food hall generally occupies between 10,000 and 25,000 square feet'); tenant-improvement scope only, ≈ $15–$175/SF. Undated blog, dollars assumed current. Also: fully equipped stalls 'can add $30,000 to $80,000 per stall'.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Find recent (2022+) food hall development budgets with SF (developer press, TIF/city incentive packets).",
+    "Separate ground-up vs. adaptive-reuse food halls; the type may need a shell add-on when ground-up."
+  ]
+}

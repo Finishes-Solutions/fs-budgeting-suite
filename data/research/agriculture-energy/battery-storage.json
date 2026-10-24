@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "id": "battery-storage",
+  "name": "Battery energy storage (BESS)",
+  "category": "agriculture-energy",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "mwh",
+  "summary": "Utility-scale lithium-ion (LFP) BESS priced per MWh of energy capacity, default 4-hour duration. The DC block (cells, racks, containers) is 50–65% of cost and has fallen sharply since 2023, so 2023-dollar engineering estimates (EIA/S&L ≈ $414k/MWh EPC) now sit at the top of the range while 2025 market ranges (Lazard LCOS v10 ≈ $140–365k/MWh installed) define the middle. Data quality: good, but prices are moving fast and are tariff-sensitive — verify against current quotes.",
+
+  "sizing": {
+    "typicalSize": { "low": 20, "mid": 400, "high": 1200, "unit": "mwh", "evidence": ["e1", "e2"], "derived": true, "method": "Mid = Lazard utility-scale standalone reference 100 MW / 400 MWh (e2); EIA reference 150 MW / 600 MWh (e1). Low 20 MWh ≈ 5 MW distribution-connected project; high 1,200 MWh ≈ 300 MW / 4 h large ISO project." },
+    "primaryUnitsPerAcre": { "low": 60, "mid": 100, "high": 150, "evidence": ["e1"], "derived": true, "method": "e1 estimated land requirement 6 acres for 600 MWh = 100 MWh/acre incl. substation. Range ±40–50% for fire-code spacing (NFPA 855 / AHJ), setbacks and container density." },
+    "parkingPerPrimaryUnit": { "low": 0, "mid": 0, "high": 0.01, "type": "surface", "evidence": [], "derived": true, "method": "Unstaffed facility; a few gravel spaces at the control building only." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 150000, "mid": 265000, "high": 415000,
+      "dollarYear": 2025, "region": "US",
+      "evidence": ["e1", "e2", "e3"],
+      "derived": false,
+      "method": "Hard cost = EPC/turnkey installed price per MWh (4-hr). e2 Lazard LCOS v10 (2025): total initial installed cost $56–146M for 100 MW/400 MWh = $140k–365k/MWh, midpoint $253k (DC block + PCS + EPC; excludes interconnection, development). e3 DOE/NREL 2025Q1: PV+ESS minus PV-only MMP = $0.69/Wdc × 100 MWdc / 240 MWh = $288k/MWh (2024$, incl. developer margin; × 0.90 ≈ $259k hard). e1 EIA/S&L EPC $248.1M / 600 MWh = $414k/MWh in 2023$ (pre-2024 cell-price decline; includes $10.5M substation). Mid = average of the two current points ($253k, $259k) ≈ $256k, nudged up to $265k for US tariff exposure on Chinese cells. Low = Lazard low ($140k) rounded to $150k; high = EIA 2023 EPC ($414k → $415k) as an upper bound representing small/complex or domestic-content projects. Evidence years 2023–2025 (EIA is >1 yr older; used only for the high bound)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Turnkey EPC: battery containers/enclosures, PCS/inverters, MV transformers, collection cabling, foundations, SCADA/EMS, on-site project substation, civil work, EPC indirects/fee/contingency. Excludes land, interconnection line and network upgrades, developer soft costs, augmentation and financing."
+    }
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.1629 },
+      { "division": "03", "pct": 0.0149 },
+      { "division": "25", "pct": 0.0074 },
+      { "division": "26", "pct": 0.1263 },
+      { "division": "31", "pct": 0.0087 },
+      { "division": "32", "pct": 0.0052 },
+      { "division": "33", "pct": 0.0423 },
+      { "division": "48", "pct": 0.6323 }
+    ],
+    "evidence": ["e1"],
+    "derived": true,
+    "method": "From EIA/S&L Case 19 EPC components (total $248.144M): 48 = BESS unit supply 151.7 + 60% of BESS installation (8.672); BOP equipment supply 36.857 (inverters, MV transformers, cabling, foundations, SCADA per note 2) split 26 = 85%, 03 = 10%, 25 = 5%; remaining installation split 31 = 25%, 32 = 15%; 33 = main power transformer & substation 10.5; 01 = indirects 17.345 + EPC fee 11.254 + EPC contingency 11.816. The BOP and installation sub-splits are assumptions (verify). Note that with 2025 cell prices the 48 share is likely lower (~0.55) than this 2023 estimate."
+  },
+
+  "lineItems": [
+    {
+      "id": "dc-block",
+      "name": "DC block — LFP cells, racks, containers, BMS, HVAC/fire suppression",
+      "division": "48",
+      "unit": "mwh",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 107000, "mid": 170000, "high": 232000, "dollarYear": 2025, "region": "US", "evidence": ["e2"], "derived": false, "method": "e2 Lazard 'Initial Capital Cost—DC' $107–232/kWh for utility-scale standalone 100 MW/400 MWh; mid = midpoint rounded." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out of the baseline; most tariff-sensitive line."
+    },
+    {
+      "id": "pcs",
+      "name": "Power conversion system (inverters/PCS), per kW at 4-hr duration",
+      "division": "26",
+      "unit": "kw",
+      "qty": { "per": "primaryUnit", "value": 250 },
+      "cost": { "low": 25, "mid": 46, "high": 67, "dollarYear": 2025, "region": "US", "evidence": ["e2"], "derived": false, "method": "e2 Lazard 'Initial Capital Cost—AC' $25–67/kW (100 MW/400 MWh); qty 250 kW per MWh = 4-hour duration." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out. Shorter-duration (2-h) systems need 500 kW per MWh."
+    },
+    {
+      "id": "epc-install",
+      "name": "EPC installation, BOS and indirects",
+      "division": "01",
+      "unit": "mwh",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 28000, "mid": 72000, "high": 116000, "dollarYear": 2025, "region": "US", "evidence": ["e2"], "derived": false, "method": "e2 Lazard 'EPC Costs' $28–116/kWh (100 MW/400 MWh); mid = midpoint." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out of the baseline."
+    },
+    {
+      "id": "project-substation",
+      "name": "Project substation & main power transformer",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 4000000, "mid": 10500000, "high": 15000000, "dollarYear": 2023, "region": "US", "evidence": ["e1"], "derived": true, "method": "e1 'Main Power Transformer & Substation' $10.5M for 150 MW. Low for small distribution-connected projects; high for 345 kV+ class." },
+      "inBaseline": true, "scales": false, "optional": false,
+      "notes": "Inside the baseline for transmission-connected projects."
+    },
+    {
+      "id": "gen-tie-line",
+      "name": "Generator tie / transmission line to POI",
+      "division": "33",
+      "unit": "lf",
+      "qty": { "per": "project", "value": 5280 },
+      "cost": { "low": 300, "mid": 457, "high": 700, "dollarYear": 2023, "region": "US", "evidence": ["e1"], "derived": true, "method": "e1 transmission line $2,412,000/mile ÷ 5,280 = $457/LF; default 1 mile. Range ±35% assumed." },
+      "inBaseline": false, "scales": false, "optional": false,
+      "notes": "Owner's interconnection cost, outside the property line."
+    },
+    {
+      "id": "augmentation",
+      "name": "Capacity augmentation reserve (future cells to hold rated MWh)",
+      "division": "48",
+      "unit": "mwh",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 10000, "mid": 25000, "high": 50000, "dollarYear": 2025, "region": "US", "evidence": ["e1", "e2"], "derived": true, "method": "Lazard excludes augmentation from capital cost (e2); EIA notes ~1.5% average annual degradation (e1). Allowance ≈ 10–20% of DC block cost ($107–232k) for first augmentation; present-valued placeholder. Verify with the LTSA/warranty structure." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Often capitalized later; include only if the budget must carry it."
+    }
+  ],
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.05, "mid": 0.08, "high": 0.12, "evidence": ["e1"], "derived": true, "method": "e1 owner's services = 4% of EPC; total owner's costs (services, land, 1-mile interconnection, contingency) $13.522M = 5.4% of EPC → low. Mid 8% / high 12% add developer fees, interconnection studies, financing fees and fire-code/AHJ studies typical of merchant or smaller projects." },
+    "notes": "Network upgrades and gen-tie are separate line items."
+  },
+
+  "contingency": {
+    "design": { "low": 0.02, "mid": 0.03, "high": 0.05, "evidence": [], "derived": true, "method": "Containerized, repetitive design; main design risks are fire-code layout and geotech." },
+    "hard": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": ["e1"], "derived": true, "method": "e1 EPC contingency 5% of EPC costs used as mid; high for tariff/supply-chain exposure." },
+    "soft": { "low": 0.05, "mid": 0.05, "high": 0.1, "evidence": ["e1"], "derived": true, "method": "e1 owner's contingency 5% of owner's costs." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 140000, "max": 500000, "dollarYear": 2025, "region": "US", "method": "All-in hard + soft (excl. land): low end = Lazard low $140k/MWh; high end = EIA 2023 total capital cost $436/kWh plus margin for small or 2-hour systems (higher $/MWh because PCS is spread over fewer MWh)." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerUnit",
+      "value": 413573,
+      "unit": "USD/mwh",
+      "region": "United States (national reference)",
+      "regionKey": "US",
+      "dataYear": 2023,
+      "source": {
+        "title": "Capital Cost and Performance Characteristic Estimates for Utility Scale Electric Power Generating Technologies (Sargent & Lundy for EIA), Case 19 Battery Energy Storage System, 150 MW | 600 MWh",
+        "url": "https://www.eia.gov/analysis/studies/powerplants/capitalcost/pdf/capital_cost_AEO2025.pdf",
+        "publisher": "U.S. Energy Information Administration / Sargent & Lundy",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 19-1 — Case 19 Capital Cost Estimate (2023 $): BESS Unit Supply $151,700,000 ... EPC Subtotal $248,144,000 ... Total Capital Cost $261,666,000; $/kW net 1,744; $/kWh 436; Estimated Land Requirement 6 acres.",
+      "scopeNotes": "Value = EPC subtotal / 600 MWh. Includes MPT & substation ($10.5M), EPC fee 5% and contingency 5%. Owner's costs (services 4%, land, interconnection, contingency) excluded. Priced before the 2024–2025 LFP cell price drop.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerUnit",
+      "value": null,
+      "low": 140000,
+      "high": 365000,
+      "unit": "USD/mwh",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Lazard's Levelized Cost of Energy+ (June 2025) — Levelized Cost of Storage Analysis, Version 10.0, key assumptions (Utility-Scale Standalone 100 MW / 400 MWh)",
+        "url": "https://www.lazard.com/media/eijnqja3/lazards-lcoeplus-june-2025.pdf",
+        "publisher": "Lazard",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Utility-Scale Standalone (100 MW/400 MWh): Initial Capital Cost—DC $107 – $232 /kWh; Initial Capital Cost—AC $25 – $67 /kW; EPC Costs $28 – $116 /kWh; Total Initial Installed Cost $56 – $146 M $.",
+      "scopeNotes": "Capital costs include storage module, BOS, power conversion equipment and EPC; excludes augmentation, interconnection/network upgrades and development costs. Range = $56M/400 MWh to $146M/400 MWh.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerUnit",
+      "value": 287500,
+      "unit": "USD/mwh",
+      "region": "United States (national bottom-up benchmark)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "Solar Photovoltaic System Cost Benchmarks (2025Q1 benchmarks)",
+        "url": "https://www.energy.gov/eere/solar/solar-photovoltaic-system-cost-benchmarks",
+        "publisher": "U.S. Department of Energy, Solar Energy Technologies Office (NREL modeling)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Representative UPV system 100 MWdc; Table 1 PV + ESS (240 MWh): MMP $1.81/Wdc; Table 2 PV-only: MMP $1.12/Wdc. All dollar values are inflation-adjusted to 2024 U.S. dollars.",
+      "scopeNotes": "Derived: ($1.81 − $1.12)/Wdc × 100 MWdc = $69M for 240 MWh = $287.5k/MWh. Co-located (shares some BOS), modeled market price incl. developer overhead/profit.",
+      "confidence": "medium"
+    }
+  ],
+
+  "openQuestions": [
+    "NREL ATB / 'Cost Projections for Utility-Scale Battery Storage: 2025 Update' and BNEF US turnkey survey figures could not be retrieved (nrel.gov unreachable; BNEF coverage 403). Add them.",
+    "Ember (Oct 2025) puts a full grid-connected 4-h system outside China/US at ~$125/kWh — the US premium (tariffs, FEOC rules) should be quantified.",
+    "Fire-code (NFPA 855) spacing and large-scale fire testing costs vary by AHJ.",
+    "Split between energy-related ($/kWh) and power-related ($/kW) costs matters for 2-h vs 8-h systems; engine assumes 4-h."
+  ]
+}

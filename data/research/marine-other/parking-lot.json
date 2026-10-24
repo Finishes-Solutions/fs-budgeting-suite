@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "id": "parking-lot",
+  "name": "Surface parking lot",
+  "category": "marine-other",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "space",
+  "summary": "Surface lot cost per space is driven by paved area per space (250-350 SF incl. aisles), pavement section (asphalt vs. concrete), storm drainage/detention, lighting and code landscaping. Public data is thin: one 2024 municipal engineer's estimate (~$5.3k/space), a VTPI calculator default ($5k suburban / $10k urban, 2022) and a 2025-26 university lot with full campus standards (~$15.5k/space). Default is a reasoned midpoint — medium-low confidence.",
+
+  "sizing": {
+    "typicalSize": { "low": 50, "mid": 150, "high": 500, "unit": "space", "evidence": ["e1", "e2"], "derived": true, "method": "Public examples: La Vista NE 86 spaces (e1), UCF 59 spaces (e2). Commercial/retail lots commonly 100-500 spaces. Mid 150 is judgment." },
+    "sfPerPrimaryUnit": { "low": 250, "mid": 330, "high": 400, "evidence": ["e4"], "derived": false, "method": "VTPI: off-street parking 'typically requires 250-350 square feet ... per space, including access lanes and landscaping' (e4). High 400 allows for perimeter landscape/detention on small or odd-shaped lots. SF here = paved/lot area, not building area." },
+    "primaryUnitsPerAcre": { "low": 85, "mid": 115, "high": 150, "evidence": ["e4"], "derived": false, "method": "VTPI: 125-175 spaces per acre by design, but a survey of six typical lots averaged 85 per acre (e4). Mid 115 between the practical average and design efficiency." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 4000, "mid": 6500, "high": 15500, "dollarYear": 2025, "region": "US", "evidence": ["e1", "e2", "e3"], "derived": true, "method": "Evidence: La Vista NE engineer's estimate 2024 $452,243 / 86 = $5,259/space (e1); VTPI 2022 calculator: suburban surface $5,000, urban/CBD surface $10,000 construction per space (e3); UCF E-1 lot 2025 $914,813 / 59 = $15,505/space (e2, full campus standards, small lot). Bottom-up check at 330 SF/space: grading/base/asphalt ~$7-9/SF + curb, storm drainage ~$3-5/SF + lighting/striping/landscape ~$2-4/SF = ~$12-18/SF -> ~$4,000-6,000; plus detention/stormwater quality typical of new lots -> mid $6,500. Low = suburban asphalt on flat site with existing drainage; high = UCF-type small lot with concrete, full stormwater, lighting and landscape." },
+    "perSF": { "low": 13, "mid": 20, "high": 40, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "perPrimaryUnit / sfPerPrimaryUnit of paved lot area: 4,000/300 = ~13; 6,500/330 = ~20; 15,500/390 = ~40. $/SF of lot area, not building area." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price for clearing/grading, aggregate base, asphalt paving, curb & gutter, on-site storm drainage, LED pole lighting, striping/signage and code landscaping islands, incl. GC and OH&P. Excludes land, design, off-site improvements, impact fees, PARCS and EV charging (line items)."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.65, "standard": 1.0, "premium": 1.5, "luxury": 2.4,
+    "evidence": [], "derived": true,
+    "method": "low/mid = 4,000/6,500 = 0.62 (rounded 0.65); premium ~ urban surface (VTPI $10,000 vs $6,500 ~ 1.5); luxury = high/mid 15,500/6,500 = 2.4 (concrete, pervious pavers, heavy landscape, full stormwater)."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.08 },
+      { "division": "26", "pct": 0.12 },
+      { "division": "31", "pct": 0.20 },
+      { "division": "32", "pct": 0.45 },
+      { "division": "33", "pct": 0.15 }
+    ],
+    "evidence": [], "derived": true,
+    "method": "Derived from the bottom-up per-space build in hardCost.method: paving/base/curb/striping/landscape (32) ~45%; clearing, grading, erosion control (31) ~20%; storm drainage and detention (33) ~15%; site lighting (26) ~12%; general conditions/mobilization (01) ~8%. Verify against a local bid tab."
+  },
+
+  "lineItems": [
+    {
+      "id": "stormwater-detention",
+      "name": "Stormwater detention / water-quality BMP (pond, underground vault or bioretention)",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 50000, "mid": 150000, "high": 500000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment: varies with impervious area and local criteria; underground vaults at the high end. Typical new lots over ~1 acre trigger detention. Not separately sourced — verify with civil engineer." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Switch on where the jurisdiction requires on-site detention not already captured by the default mid."
+    },
+    {
+      "id": "concrete-pavement-upgrade",
+      "name": "Upgrade asphalt to concrete pavement",
+      "division": "32",
+      "unit": "space",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 1000, "mid": 1800, "high": 3000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment: concrete typically ~$3-9/SF more than asphalt over ~330 SF/space. Verify locally." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Common in Texas/Florida and for heavy-truck areas."
+    },
+    {
+      "id": "ev-charging-l2",
+      "name": "EV charging — Level 2 port incl. conduit, trenching and electrical service share",
+      "division": "26",
+      "unit": "port",
+      "qty": { "per": "primaryUnit", "value": 0.05 },
+      "cost": { "low": 6000, "mid": 11000, "high": 18000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment for networked L2 in a surface lot (trenching adds cost vs. garage). Default 5% of spaces; set to local mandate." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Many codes now require EV-capable conduit for a share of spaces."
+    },
+    {
+      "id": "parcs-surface",
+      "name": "Paid-parking equipment (pay stations / gated lanes)",
+      "division": "11",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 2 },
+      "cost": { "low": 15000, "mid": 40000, "high": 100000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment: pay station ~$15k each to gated lane ~$75-100k. Only for paid lots." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Off by default."
+    }
+  ],
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.10, "mid": 0.15, "high": 0.20, "evidence": ["e2"], "derived": true, "method": "UCF E-1 lot: design cost $131,236 on construction $914,813 = 14.3% (e2). Small municipal lots run lower (civil design + survey + geotech + permits ~10%); small/complex lots up to 20%." },
+    "breakdown": { "architectureEngineering": 0.08 },
+    "notes": "Mostly civil engineering, survey, geotech, stormwater permitting and materials testing."
+  },
+
+  "contingency": {
+    "design": { "low": 0.03, "mid": 0.05, "high": 0.10, "evidence": [], "derived": true, "method": "Simple horizontal construction; typical norms (judgment)." },
+    "hard": { "low": 0.05, "mid": 0.08, "high": 0.12, "evidence": [], "derived": true, "method": "Unforeseen subgrade (undercut/replacement) is the main risk in surface lots; 5-12% typical owner contingency (judgment)." },
+    "soft": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "General norm (judgment)." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 4000, "max": 22000, "dollarYear": 2025, "region": "US", "method": "Hard low $4,000 x 1.10 soft ~ $4,400 (min 4,000 allows for very simple lots); UCF all-in $18,947/space (e2) plus contingency headroom -> max ~$22,000." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerUnit",
+      "value": 5259,
+      "unit": "USD/space",
+      "region": "La Vista, NE (Omaha metro)",
+      "regionKey": "NE-Omaha",
+      "dataYear": 2024,
+      "source": { "title": "Agenda Item C — Advertisement for Bids: Surface Parking Lot, La Vista City Centre Replat Three (July 2, 2024)", "url": "https://www.cityoflavista.org/DocumentCenter/View/24319/Agenda-Item-C", "publisher": "City of La Vista, Nebraska", "accessed": "2026-10-24" },
+      "quote": "The proposed parking lot will provide 86 additional surface parking spaces for the La Vista City Centre area. The Engineer's estimate for the proposed work is $452,242.56.",
+      "scopeNotes": "Engineer's estimate (not award). $452,242.56 / 86 = $5,259/space (our arithmetic). Quote text seen in the search excerpt of the staff report; the resolution page confirming the July 2024 bid schedule was read directly.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerUnit",
+      "value": 15505,
+      "unit": "USD/space",
+      "region": "Orlando, FL (University of Central Florida)",
+      "regionKey": "FL-Orlando",
+      "dataYear": 2025,
+      "source": { "title": "Project cost sheet — Creation of E-1 Surface Parking Lot (Project 24134001)", "url": "https://fp.ucf.edu/wp-content/uploads/projects/costs/2026/24134001%20Creation%20of%20E-1%20Surface%20Parking%20Lot.pdf", "publisher": "University of Central Florida Facilities & Safety", "accessed": "2026-10-24" },
+      "quote": "NUMBER OF NEW PARKING SPACES: 59 ... COST PER PARKING SPACE: $18,946.58 ... DESIGN COST 131,235.65 ... CONSTRUCTION COST 914,812.78",
+      "scopeNotes": "Construction $914,812.78 / 59 = $15,505/space (our arithmetic); $18,947/space is total incl. design. University standards, small lot; completed ~Jan 2026 so dollars treated as 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerUnit",
+      "value": 5000, "low": 5000, "high": 10000,
+      "unit": "USD/space",
+      "region": "United States (typical; suburban $5,000, urban/CBD $10,000)",
+      "regionKey": "US",
+      "dataYear": 2022,
+      "source": { "title": "Parking Costs — Transportation Cost and Benefit Analysis II (Comprehensive Parking Supply, Cost and Pricing Analysis)", "url": "https://vtpi.org/pscp.pdf", "publisher": "Victoria Transport Policy Institute (Todd Litman)", "accessed": "2026-10-24" },
+      "quote": "Table 11 Typical Parking Costs, 2022 (Parking Calculator): Suburban, Surface ... Construction Costs Per Space $5,000 ... Urban, Surface ... $10,000 ... CBD, Surface ... $10,000",
+      "scopeNotes": "Calculator default values, construction only (land separate). Secondary/modelled, not bid data.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "sfPerSpace",
+      "value": null, "low": 250, "high": 350,
+      "unit": "ratio",
+      "region": "North America",
+      "regionKey": "US",
+      "source": { "title": "Parking Costs — Transportation Cost and Benefit Analysis II (Comprehensive Parking Supply, Cost and Pricing Analysis)", "url": "https://vtpi.org/pscp.pdf", "publisher": "Victoria Transport Policy Institute (Todd Litman)", "accessed": "2026-10-24" },
+      "quote": "Off-street parking typically requires 250-350 square feet (25-35 square meters) per space, including access lanes and landscaping, allowing 125-175 spaces per acre ... One survey of six typical parking lots found that they average of 85 spaces per acre",
+      "scopeNotes": "Sizing only.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "Collect 3-5 awarded municipal surface-lot bid tabs (with space counts) across regions to replace the derived mid.",
+    "Confirm the La Vista award amount (bids opened July 26, 2024) vs. the engineer's estimate.",
+    "Source stormwater detention and EV per-port costs (currently judgment)."
+  ]
+}

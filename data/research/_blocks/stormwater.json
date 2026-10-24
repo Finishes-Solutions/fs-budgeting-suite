@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "id": "stormwater",
+  "name": "Stormwater management",
+  "researchedAt": "2026-10-24",
+  "notes": "Pond, swale and bioretention costs are from EPA's December 2021 NPDES Stormwater BMP fact sheets, which cite King & Hagan (2011) adjusted for inflation; their dollars are treated as 2021 dollars and are expressed per acre of IMPERVIOUS surface treated. The per-disturbed-acre and per-LF items convert those figures with stated impervious-cover and geometry assumptions. Underground detention and proprietary water-quality units had no public unit price available in this session and are derived.",
+  "items": [
+    {
+      "id": "detention-pond",
+      "name": "Detention pond, dry or wet (per acre of disturbed/developed site)",
+      "division": "33",
+      "unit": "acre",
+      "cost": {
+        "low": 20000, "mid": 40000, "high": 70000,
+        "dollarYear": 2021, "region": "US",
+        "evidence": ["e1", "e2"],
+        "derived": true,
+        "method": "EPA: dry detention $45,000-$80,000 per acre of impervious surface treated (e1); wet ponds $35,000-$75,000 per impervious acre (e2). Converted to per acre of developed site with typical impervious cover: mid 65% x ~$60k (blended midpoint) = $39k -> $40k; low 50% x $40k = $20k (large regional ponds, low-imperviousness sites); high 85% x ~$80k = $68k -> $70k (small ponds on highly impervious commercial sites)."
+      },
+      "notes": "Per acre of site draining to the pond. Excludes land consumed by the pond (typically 1-3% of drainage area for wet ponds per EPA, often 5-10% for dry detention on commercial sites). Where land is scarce, use underground-detention."
+    },
+    {
+      "id": "detention-per-impervious-acre",
+      "name": "Dry detention / extended detention pond (per acre of impervious surface treated)",
+      "division": "33",
+      "unit": "acre",
+      "cost": {
+        "low": 45000, "mid": 62500, "high": 80000,
+        "dollarYear": 2021, "region": "US",
+        "evidence": ["e1"],
+        "derived": false,
+        "method": "EPA dry detention range $45,000-$80,000 per impervious acre treated (e1); mid = arithmetic midpoint. EPA notes larger systems fall at the low end (economies of scale)."
+      },
+      "notes": "Use when impervious area is known. Wet ponds run slightly lower ($35k-$75k, e2)."
+    },
+    {
+      "id": "underground-detention",
+      "name": "Underground detention (chamber, pipe or precast vault system, incl. excavation, stone, backfill) - per CY of storage",
+      "division": "33",
+      "unit": "cy",
+      "cost": {
+        "low": 150, "mid": 300, "high": 600,
+        "dollarYear": 2026, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived (no public bid-tab captured). Plastic chamber or corrugated pipe systems typically install at ~$6-$12 per cubic foot of storage including excavation, washed stone, geotextile, backfill and inlet/outlet structures ($160-$325 per CY); precast concrete vaults (needed under heavy traffic or for deeper storage) at ~$15-$22 per CF ($400-$600 per CY). Mid $300/CY assumes chambers under parking; high = concrete vault."
+      },
+      "notes": "Storage volume from the drainage study (rule of thumb on commercial sites: 0.5-1.5 in. of runoff over the impervious area, i.e. ~70-200 CY per impervious acre). Excludes the paving restored above."
+    },
+    {
+      "id": "bioswale",
+      "name": "Bioswale / vegetated swale with amended soil (≈6-10' wide)",
+      "division": "32",
+      "unit": "lf",
+      "cost": {
+        "low": 40, "mid": 85, "high": 160,
+        "dollarYear": 2021, "region": "US",
+        "evidence": ["e3", "e4"],
+        "derived": true,
+        "method": "EPA: grassed channels $0.85-$2.30 per cubic foot of storage, and swales $25,000-$50,000 per impervious acre treated with bioswales at the higher end (e3); bioretention $50,000-$200,000 per impervious acre (e4). A bioswale treating ~1 impervious acre is commonly ~400-700 LF, so $25k-$50k / 500 LF = $50-$100/LF for vegetated swales; bioswales with engineered media and underdrain trend toward bioretention costs ($100-$160/LF). Low $40 = simple grass channel (~10-15 CF/LF at EPA's $2.30/CF plus seeding); mid $85."
+      },
+      "notes": "Parking-lot islands and perimeter swales; can reduce pipe and pond sizes. Check-dams and curb cuts included at mid."
+    },
+    {
+      "id": "bioretention-per-impervious-acre",
+      "name": "Bioretention / rain garden (per acre of impervious surface treated)",
+      "division": "32",
+      "unit": "acre",
+      "cost": {
+        "low": 50000, "mid": 100000, "high": 200000,
+        "dollarYear": 2021, "region": "US",
+        "evidence": ["e4"],
+        "derived": false,
+        "method": "EPA bioretention $50,000-$200,000 per impervious acre treated (e4). Mid $100k = geometric midpoint, since EPA notes smaller systems are much more expensive per acre."
+      },
+      "notes": "Low-impact-development (LID) requirement in many jurisdictions; may substitute for part of detention volume."
+    },
+    {
+      "id": "water-quality-unit",
+      "name": "Proprietary water-quality unit (hydrodynamic separator / filter manhole), installed",
+      "division": "33",
+      "unit": "ea",
+      "cost": {
+        "low": 15000, "mid": 40000, "high": 90000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived (vendor pricing is not public). Small hydrodynamic separators (4-6' dia) cost roughly in line with 1.5-2.5 large manholes plus the proprietary insert ($15k-$30k installed); 8-10' units and media-filter vaults $50k-$90k. FDOT manhole prices ($7k-$26k each, see utilities.json#e7) provide the structure-cost floor. Mid $40k for a mid-size separator on a 3-10 acre commercial site."
+      },
+      "notes": "Often required for TSS removal before discharge or upstream of underground detention. Annual maintenance (vactor cleaning) not included."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "dryDetentionPerImperviousAcre",
+      "low": 45000, "high": 80000,
+      "unit": "USD/acre",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Stormwater Best Management Practice: Dry Detention Ponds (EPA-832-F-21-031A, December 2021)",
+        "url": "https://www.epa.gov/system/files/documents/2021-11/bmp-dry-detention-ponds.pdf",
+        "publisher": "U.S. Environmental Protection Agency, Office of Water (NPDES)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Adjusted for inflation, a reported range for dry detention ponds and dry extended detention ponds is $45,000 to $80,000 per acre of impervious surface treated (King & Hagan, 2011).",
+      "scopeNotes": "Construction cost per acre of impervious surface treated; source study is Maryland counties (2011) inflated to ~2021. Annual maintenance 2-6% of construction cost.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "wetPondPerImperviousAcre",
+      "low": 35000, "high": 75000,
+      "unit": "USD/acre",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Stormwater Best Management Practice: Wet Ponds (EPA-832-F-21-031BB, December 2021)",
+        "url": "https://www.epa.gov/system/files/documents/2021-11/bmp-wet-ponds.pdf",
+        "publisher": "U.S. Environmental Protection Agency, Office of Water (NPDES)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "King and Hagan (2011) estimate that the construction cost of a wet pond can range from $35,000 to $75,000 per acre of impervious surface treated.",
+      "scopeNotes": "Ponds typically occupy 1-3% of the contributing drainage area (same page, citing MPCA 2019).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "swaleCost",
+      "low": 25000, "high": 50000,
+      "unit": "USD/acre",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Stormwater Best Management Practice: Grassed Swales (EPA-832-F-21-031P, December 2021)",
+        "url": "https://www.epa.gov/system/files/documents/2021-11/bmp-grassed-swales.pdf",
+        "publisher": "U.S. Environmental Protection Agency, Office of Water (NPDES)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "estimated the construction cost of grassed channels as being between $0.85 to $2.30 per cubic foot of storage capacity. Another study estimated total initial costs, including design and construction, as $25,000 to $50,000 per acre of impervious surface treated",
+      "scopeNotes": "Per impervious acre incl. design; 'higher costs reflecting smaller practices such as bioswales'. Pre-construction (design/permitting) 20-40% of construction.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "bioretentionPerImperviousAcre",
+      "low": 50000, "high": 200000,
+      "unit": "USD/acre",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Stormwater Best Management Practice: Bioretention (Rain Gardens) (EPA-832-F-21-031L, December 2021)",
+        "url": "https://www.epa.gov/system/files/documents/2021-11/bmp-bioretention-rain-gardens.pdf",
+        "publisher": "U.S. Environmental Protection Agency, Office of Water (NPDES)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Costs can range from $50,000 to $200,000 per acre of impervious surface treated, with smaller systems being more expensive per acre.",
+      "scopeNotes": "Retrofits with complex existing infrastructure may cost more than new construction.",
+      "confidence": "medium"
+    }
+  ]
+}

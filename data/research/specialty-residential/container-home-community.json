@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "id": "container-home-community",
+  "name": "Container home community",
+  "category": "specialty-residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "unit",
+  "summary": "Homes built from converted shipping containers (typically 1-2 forty-foot high-cube boxes, 320-640 SF) set on piers or slabs with individual utility hookups, plus shared roads, parking and landscaping. The container shell is cheap but conversion (cutting, reinforcement, spray-foam insulation, windows, MEP) and code compliance bring $/SF close to small conventional homes. Only consumer cost-guide data was retrieved in this session; the community default is derived. Confidence low.",
+
+  "sizing": {
+    "typicalSize": { "low": 8, "mid": 20, "high": 50, "unit": "unit", "evidence": [], "derived": true, "method": "Judgment: container housing communities and supportive projects typically 10-40 homes." },
+    "sfPerPrimaryUnit": { "low": 320, "mid": 640, "high": 960, "evidence": ["x1"], "derived": true, "method": "Bob Vila size table: 320 SF = 1 or 2 containers (1 bed, 1 bath); 1,280 SF = 4 containers (x1). Mid 640 SF = two 40-ft containers; high three." },
+    "primaryUnitsPerAcre": { "low": 8, "mid": 14, "high": 24, "evidence": ["specialty-residential/cottage-court.json#k1"], "derived": true, "method": "Detached small homes on a shared site behave like cottage courts (gross 10-31 du/acre, cottage-court k1); container homes are smaller, mid 14." },
+    "parkingPerPrimaryUnit": { "low": 0.5, "mid": 1.0, "high": 1.5, "type": "surface", "evidence": [], "derived": true, "method": "Judgment; supportive projects lower, market-rate ~1 per home." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 95000, "mid": 185000, "high": 330000,
+      "dollarYear": 2024, "region": "US",
+      "evidence": ["x1", "x2", "x3"],
+      "derived": true,
+      "method": "Home + site build-up. Home: Bob Vila prefab container homes $150-$300/SF, custom $250-$400/SF; 320 SF (1-2 containers) $25k-$82k; 1,280 SF (4 containers) $150k-$220k (x1, x2). Mid home = 640 SF x ~$225/SF (midpoint of prefab range; site-installed, code-compliant) = ~$144k. Site per home ~$40k: foundation $3,000-$19,350 (x3), utility connections, shared roads/parking, landscaping, crane set - benchmarked to the tiny-home pad infrastructure (~$45k mid, tiny-home-community). Mid = ~$185k. Low = 320 SF single container at ~$200/SF ($64k) + $30k site; high = 960 SF custom at ~$300/SF (~$290k) + $40k site. Consumer-guide data only; verify with modular/container builder bids."
+    },
+    "perSF": {
+      "low": 230, "mid": 290, "high": 345,
+      "dollarYear": 2024, "region": "US",
+      "evidence": ["x2"],
+      "derived": true,
+      "method": "perPrimaryUnit / sfPerPrimaryUnit (95k/320 ~ $297 is skewed by fixed site cost; 185k/640 = $289; 330k/960 = $344); low set at $230 to reflect larger economy units. Includes site work."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor/manufacturer price incl. container conversion, delivery and crane set, foundation, finishes, MEP, and on-site work (grading, roads, parking, utilities, landscaping), incl. general conditions and OH&P. Excludes land, soft costs, FF&E, off-site utilities, tap/impact fees."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.6, "standard": 1.0, "premium": 1.35, "luxury": 1.8,
+    "evidence": [], "derived": true,
+    "method": "low/mid = 0.51 tempered to 0.6; high/mid = 1.78."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.07 },
+      { "division": "03", "pct": 0.05 },
+      { "division": "05", "pct": 0.12 },
+      { "division": "06", "pct": 0.06 },
+      { "division": "07", "pct": 0.08 },
+      { "division": "08", "pct": 0.06 },
+      { "division": "09", "pct": 0.09 },
+      { "division": "10", "pct": 0.01 },
+      { "division": "11", "pct": 0.02 },
+      { "division": "12", "pct": 0.03 },
+      { "division": "22", "pct": 0.07 },
+      { "division": "23", "pct": 0.05 },
+      { "division": "26", "pct": 0.06 },
+      { "division": "31", "pct": 0.05 },
+      { "division": "32", "pct": 0.08 },
+      { "division": "33", "pct": 0.10 }
+    ],
+    "evidence": ["specialty-residential/cottage-court.json#k3"],
+    "derived": true,
+    "method": "Started from the cottage-court split (NAHB stage shares, cottage-court k3) and moved framing to Div 05 (container shell, cutting, steel reinforcement, lintels ~12%) with a smaller 06 for interior framing; foundations reduced (piers); spray-foam/roofing 07; site/utility share ~23% (31+32+33) because units are small."
+  },
+
+  "lineItems": [
+    {
+      "id": "container-shell",
+      "name": "40-ft high-cube container shell, cutouts and steel reinforcement",
+      "division": "05",
+      "unit": "container",
+      "qty": { "per": "primaryUnit", "value": 2 },
+      "cost": { "low": 6000, "mid": 12000, "high": 20000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment: used/one-trip high-cube container ($3k-$7k) plus cutting, framing of openings and reinforcement. No source retrieved; verify with suppliers." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "foundation",
+      "name": "Foundation (concrete piers or slab)",
+      "division": "03",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 3000, "mid": 9000, "high": 19350, "dollarYear": 2024, "region": "US", "evidence": ["x3"], "derived": false, "method": "Bob Vila: container home foundation $3,000-$19,350 on average (x3)." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "crane-set-delivery",
+      "name": "Delivery and crane set",
+      "division": "01",
+      "unit": "container",
+      "qty": { "per": "primaryUnit", "value": 2 },
+      "cost": { "low": 1000, "mid": 2500, "high": 5000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment: trucking plus crane day rate shared across containers set per day." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "utility-connections",
+      "name": "Per-home utility connections (electric, water line, sewer)",
+      "division": "33",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 4000, "mid": 9000, "high": 16000, "dollarYear": 2024, "region": "US", "evidence": ["x4", "specialty-residential/rv-park-resort.json#e8"], "derived": true, "method": "Bob Vila: electrical grid connection $250-$1,500, water line $32-$53/LF (x4); community-scale laterals per RV/tiny-home pad (~$9k, rv e8)." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "septic",
+      "name": "Shared septic system (no municipal sewer)",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 60000, "mid": 150000, "high": 350000, "dollarYear": 2024, "region": "US", "evidence": ["x4", "specialty-residential/rv-park-resort.json#e14"], "derived": true, "method": "Bob Vila single-home septic $3,300-$5,000 (x4) is a floor; community system scaled from RV park evidence (~$100k small park, rv e14). Judgment." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Rural sites."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 0, "mid": 0, "high": 15000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Unfurnished for sale/long-term rent; high if furnished (STR or supportive housing)." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.12, "mid": 0.18, "high": 0.28, "evidence": [], "derived": true, "method": "Judgment: structural engineering of modified containers, code approval (often alternative-materials review or state modular approval), site civil, permits. Higher than conventional because approvals are less routine." },
+    "breakdown": { "architectureEngineering": 0.08 },
+    "notes": "Third-party inspection for factory-built modules may apply."
+  },
+
+  "contingency": {
+    "design": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": [], "derived": true, "method": "Judgment; code-approval risk for non-standard construction." },
+    "hard": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": [], "derived": true, "method": "Judgment; container condition and rust/remediation risk." },
+    "soft": { "low": 0.03, "mid": 0.05, "high": 0.10, "evidence": [], "derived": true, "method": "General norm." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 80000, "max": 450000, "dollarYear": 2024, "region": "US", "method": "Min = single-container home + basic site + low soft; max = 3-container custom home ($400/SF, x2) + site + soft." }
+  },
+
+  "evidence": [
+    {
+      "id": "x1", "metric": "homeCostBySize", "low": 25000, "high": 220000, "unit": "USD/unit",
+      "region": "United States", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "How Much Does a Container Home Cost? These Are the Main Factors", "url": "https://www.bobvila.com/articles/container-home-cost.md", "publisher": "Bob Vila (BobVila.com)", "accessed": "2026-10-24" },
+      "quote": "| 320 | 1 or 2 | 1 bed, 1 bath home | $25,000 to $82,000 | ... | 1,280 | 4 | 3 bed, 2 bath home | $150,000 to $220,000 |",
+      "scopeNotes": "Consumer guide (published 2023-07-20, modified 2024-06-27) citing HomeGuide: 'the cost to build a container home ranges from $25,000 to $250,000.' Building cost; land and most site work excluded.",
+      "confidence": "low"
+    },
+    {
+      "id": "x2", "metric": "homeCostPerSF", "low": 150, "high": 400, "unit": "USD/sf",
+      "region": "United States", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "How Much Does a Container Home Cost? These Are the Main Factors", "url": "https://www.bobvila.com/articles/container-home-cost.md", "publisher": "Bob Vila (BobVila.com)", "accessed": "2026-10-24" },
+      "quote": "Typically, prefabricated container houses cost between $150 and $300 per square foot. ... This type of container home costs a bit more at about $250 to $400 per square foot.",
+      "scopeNotes": "Prefab $150-$300/SF; custom $250-$400/SF.",
+      "confidence": "low"
+    },
+    {
+      "id": "x3", "metric": "foundationCost", "low": 3000, "high": 19350, "unit": "USD/unit",
+      "region": "United States", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "How Much Does a Container Home Cost? These Are the Main Factors", "url": "https://www.bobvila.com/articles/container-home-cost.md", "publisher": "Bob Vila (BobVila.com)", "accessed": "2026-10-24" },
+      "quote": "Typically, a shipping container home foundation costs between $3,000 to $19,350 on average.",
+      "scopeNotes": "Slab alternative: $5.75-$13.50 per SF.",
+      "confidence": "low"
+    },
+    {
+      "id": "x4", "metric": "utilityConnections", "low": 250, "high": 5000, "unit": "USD/unit",
+      "region": "United States", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "How Much Does a Container Home Cost? These Are the Main Factors", "url": "https://www.bobvila.com/articles/container-home-cost.md", "publisher": "Bob Vila (BobVila.com)", "accessed": "2026-10-24" },
+      "quote": "| Electrical grid connection | $250 to $1,500 | ... | Septic system | $3,300 to $5,000 | ... | Water line | $32 to $53 per linear foot |",
+      "scopeNotes": "Single-home figures; low/high span the electrical low to septic high.",
+      "confidence": "low"
+    }
+  ],
+
+  "openQuestions": [
+    "No public container-housing project budget was retrieved (web search budget exhausted). Candidates: Potter's Lane (Midway City, CA), container supportive housing projects in Los Angeles/San Diego, Detroit, Denver; HUD or state HFA cost reports.",
+    "Container shell and crane-set costs are judgment; get supplier quotes.",
+    "Evidence is consumer-guide only (low confidence); the hard cost should be verified before use."
+  ]
+}

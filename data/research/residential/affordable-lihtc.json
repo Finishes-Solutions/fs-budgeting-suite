@@ -1,0 +1,646 @@
+{
+  "schemaVersion": 1,
+  "id": "affordable-lihtc",
+  "name": "Affordable / LIHTC multifamily",
+  "category": "residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "unit",
+  "summary": "Income-restricted new-construction rental financed with 9% or 4% LIHTC, usually garden or mid-rise. Hard costs per SF run above market-rate (smaller units, durability/green standards, accessibility, community space, sometimes prevailing wage) and soft costs are much heavier (syndication, legal, developer fee, reserves). Strong public data: Florida Housing's 2026 hard-cost-per-unit factors by building type, RAND's LIHTC vs market-rate cost decomposition for TX/CO/CA, and California TCAC-based TDC medians; national hard-cost averages are older.",
+  "sizing": {
+    "typicalSize": {
+      "low": 50,
+      "mid": 100,
+      "high": 220,
+      "evidence": [],
+      "derived": true,
+      "method": "9% deals commonly 50-100 units (Florida's TDC template has '=<50 Units' and '51-80 Units' multipliers for 9% NC); 4% bond deals 150-300. Mid 100."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 850,
+      "mid": 1000,
+      "high": 1150,
+      "evidence": [
+        "e15"
+      ],
+      "derived": true,
+      "method": "Gross SF per unit incl. community/service space; LIHTC unit mixes are smaller than market-rate on average (RAND) but family deals carry 2-3BR units; Census median new rental unit 1,000 net SF (e15)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 16,
+      "mid": 25,
+      "high": 60,
+      "evidence": [],
+      "derived": true,
+      "method": "Garden deals ~16-30 units/acre (see garden-multifamily.json); urban mid-rise LIHTC 40-80+. Mid reflects the garden/mid-rise mix."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.8,
+      "mid": 1.5,
+      "high": 2.0,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical suburban family LIHTC 1.5-2.0 surface spaces/unit; senior and urban deals 0.5-1.0 (judgment).",
+      "type": "surface"
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 185000,
+      "mid": 255000,
+      "high": 400000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e6",
+        "e7",
+        "e8",
+        "e13"
+      ],
+      "derived": false,
+      "method": "Mid anchored on Florida Housing's 2026/27 new-construction hard-cost-per-unit factors (e1-e4): garden $256-284k, mid-rise $284-311k, high-rise $338k outside South Florida. Those are ceilings, so the national typical (garden/mid-rise mix) mid is set at ~$255k, in line with Terrapin's LIHTC range $240-380k (e13). RAND 2019 per-NRSF hard costs (TX $173, CO $183, CA $427; e6-e8) show LIHTC at ~1.5x Texas market rate per SF and the large California premium; low = Sun Belt garden 4% deal, high = coastal/prevailing-wage mid-rise (California LIHTC TDCs ~$555-573k/unit, e11)."
+    },
+    "perSF": {
+      "low": 195,
+      "mid": 255,
+      "high": 380,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e6",
+        "e7",
+        "e8"
+      ],
+      "derived": false,
+      "method": "perPrimaryUnit / sfPerPrimaryUnit (1,000 GSF): mid ~$255/GSF, low ~$195 (185k/950), high ~$380 (400k/1,050). Cross-check: RAND LIHTC hard per NRSF (2019 $) TX $173 / CO $183 / CA $427 (e6-e8) - roughly 1.0-1.5x the market-rate garden per-SF in the same markets."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. general requirements, overhead and profit (HFA-capped builder fees), on-site work and community building; excludes land, soft costs, developer fee, reserves, FF&E, off-sites, impact/tap fees and financing. Mid-rise/podium LIHTC with structured parking should use the podium file's parking items."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.9,
+    "standard": 1.0,
+    "premium": 1.15,
+    "luxury": 1.3,
+    "evidence": [
+      "e1",
+      "e2"
+    ],
+    "derived": true,
+    "method": "LIHTC specifications are standardized by HFA design standards, so the spread is narrower than market-rate; Florida's ESSC (concrete/masonry) vs non-ESSC garden factor is +11% (e1) and mid-rise ESSC vs non-ESSC +10% (e2)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.132
+      },
+      {
+        "division": "03",
+        "pct": 0.08
+      },
+      {
+        "division": "04",
+        "pct": 0.019
+      },
+      {
+        "division": "05",
+        "pct": 0.025
+      },
+      {
+        "division": "06",
+        "pct": 0.172
+      },
+      {
+        "division": "07",
+        "pct": 0.054
+      },
+      {
+        "division": "08",
+        "pct": 0.03
+      },
+      {
+        "division": "09",
+        "pct": 0.089
+      },
+      {
+        "division": "10",
+        "pct": 0.006
+      },
+      {
+        "division": "11",
+        "pct": 0.027
+      },
+      {
+        "division": "12",
+        "pct": 0.035
+      },
+      {
+        "division": "14",
+        "pct": 0.008
+      },
+      {
+        "division": "21",
+        "pct": 0.015
+      },
+      {
+        "division": "22",
+        "pct": 0.069
+      },
+      {
+        "division": "23",
+        "pct": 0.042
+      },
+      {
+        "division": "26",
+        "pct": 0.084
+      },
+      {
+        "division": "27",
+        "pct": 0.006
+      },
+      {
+        "division": "28",
+        "pct": 0.006
+      },
+      {
+        "division": "31",
+        "pct": 0.038
+      },
+      {
+        "division": "32",
+        "pct": 0.044
+      },
+      {
+        "division": "33",
+        "pct": 0.019
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived: 60% garden split (sourced from RAND Table 3.4 Texas garden data, see garden-multifamily.json) + 40% podium split (derived, see podium-multifamily.json), reflecting the garden/mid-rise mix of new-construction LIHTC; division 01 absorbs rounding."
+  },
+  "lineItems": [
+    {
+      "id": "community-building",
+      "name": "Community room / resident services and leasing space",
+      "division": "01",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 500000,
+        "mid": 900000,
+        "high": 1500000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: 2,000-4,000 SF community/services building or ground-floor space required by most QAPs, at ~$250-375/SF (2026)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out; QAP-required amenity."
+    },
+    {
+      "id": "prevailing-wage-premium",
+      "name": "Prevailing wage (Davis-Bacon / state) premium",
+      "division": "01",
+      "unit": "unit",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 12000,
+        "mid": 25000,
+        "high": 100000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e12"
+        ],
+        "derived": true,
+        "method": "Derived: Davis-Bacon (HOME/HUD funds) or state prevailing wage typically adds ~5-15% to hard cost outside California (~$12-38k on the $255k mid); UCLA estimates ~$100,000 per unit in California (e12) as the high end."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Switch on when federal/state funds or local rules trigger prevailing wage."
+    },
+    {
+      "id": "green-certification",
+      "name": "Green building / energy certification requirements (EGC, NGBS, ENERGY STAR)",
+      "division": "01",
+      "unit": "unit",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 2000,
+        "mid": 5000,
+        "high": 10000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: incremental envelope, mechanical and verification costs to meet QAP green standards ~1-4% of hard cost (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out; most QAPs require a green standard."
+    },
+    {
+      "id": "accessible-units",
+      "name": "Accessible (UFAS/Section 504) and adaptable unit upgrades",
+      "division": "12",
+      "unit": "unit",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 0.1
+      },
+      "cost": {
+        "low": 5000,
+        "mid": 10000,
+        "high": 18000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: roll-in showers, lowered counters, grab bars, wider clearances for ~5-10% of units (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 800,
+      "mid": 1500,
+      "high": 2500,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: community room, computer lab, fitness and office furniture/equipment ~ $100-250k per deal (2026)."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.25,
+      "mid": 0.33,
+      "high": 0.45,
+      "evidence": [
+        "e5",
+        "e9"
+      ],
+      "derived": false,
+      "method": "Florida's TDC cap implies soft = 1/3 of hard before developer fee (e5); RAND LIHTC soft/hard 0.35 (TX), 0.41 (CO), 0.44 (CA) including financing and developer costs (e9). Mid 0.33 excludes developer fee and construction interest; low = lean 4% bond deal, high = coastal 9% deal with layered public funding."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.05
+    },
+    "notes": "Model the developer fee separately (Florida caps it at 16% of non-acquisition development cost; other states ~12-15%). Add tax-credit syndication, bond issuance, reserves (operating/replacement) and HFA fees as LIHTC-specific soft items."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: HFAs commonly require/allow 5% (rehab higher) hard contingency; investors/lenders often push 5-10% for new construction."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 230000,
+      "max": 750000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Hard low $185k x 1.25 ~= $230k; hard high $400k x 1.6 (heavy soft + dev fee + contingency) ~= $640k, extended to $750k to admit California prevailing-wage deals (TCAC median TDC ~$555-573k incl. land in 2018-24 dollars, e11). Abt/NCSHA median TDC $164,757 (2011-16, e10) shows how far costs have risen."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerUnit",
+      "value": null,
+      "low": 256000,
+      "high": 284000,
+      "unit": "USD/unit",
+      "region": "Florida (Except BMP)",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Total Development Cost per Unit Limitation Template, Version 09-30-2026 (for all RFAs starting July 2023), 'Data' sheet",
+        "url": "https://www.floridahousing.org/docs/default-source/programs/developers-multifamily-programs/competitive/total-development-cost-per-unit-limitation-template-effective-september-30-2026-for-all-rfa-s-starting-july-2023.xlsx",
+        "publisher": "Florida Housing Finance Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Data sheet, table 'Hard Cost Per Unit Factor:', 2026/2027 cycle, 'Except BMP': Garden-Non ESSC (NC) 256000; Garden-ESSC (NC) 284000",
+      "scopeNotes": "Florida Housing (LIHTC) hard-cost-per-unit factor used to set the TDC-per-unit cap for new construction, 2026/2027 RFA cycle - a ceiling for affordable deals, not an average; 'Except BMP' = all counties but Broward, Miami-Dade, Palm Beach. ESSC = enhanced structural systems construction.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerUnit",
+      "value": null,
+      "low": 284000,
+      "high": 311000,
+      "unit": "USD/unit",
+      "region": "Florida (Except BMP)",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Total Development Cost per Unit Limitation Template, Version 09-30-2026 (for all RFAs starting July 2023), 'Data' sheet",
+        "url": "https://www.floridahousing.org/docs/default-source/programs/developers-multifamily-programs/competitive/total-development-cost-per-unit-limitation-template-effective-september-30-2026-for-all-rfa-s-starting-july-2023.xlsx",
+        "publisher": "Florida Housing Finance Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Data sheet, table 'Hard Cost Per Unit Factor:', 2026/2027 cycle, 'Except BMP': Mid-Rise-Non ESSC (NC) 284000; Mid-Rise-ESSC (NC) 311000",
+      "scopeNotes": "Florida Housing (LIHTC) hard-cost-per-unit factor used to set the TDC-per-unit cap for new construction, 2026/2027 RFA cycle - a ceiling for affordable deals, not an average; 'Except BMP' = all counties but Broward, Miami-Dade, Palm Beach. ESSC = enhanced structural systems construction.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerUnit",
+      "value": 338000,
+      "low": 338000,
+      "high": 338000,
+      "unit": "USD/unit",
+      "region": "Florida (Except BMP)",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Total Development Cost per Unit Limitation Template, Version 09-30-2026 (for all RFAs starting July 2023), 'Data' sheet",
+        "url": "https://www.floridahousing.org/docs/default-source/programs/developers-multifamily-programs/competitive/total-development-cost-per-unit-limitation-template-effective-september-30-2026-for-all-rfa-s-starting-july-2023.xlsx",
+        "publisher": "Florida Housing Finance Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Data sheet, table 'Hard Cost Per Unit Factor:', 2026/2027 cycle, 'Except BMP': High-Rise (NC) 338000",
+      "scopeNotes": "Florida Housing (LIHTC) hard-cost-per-unit factor used to set the TDC-per-unit cap for new construction, 2026/2027 RFA cycle - a ceiling for affordable deals, not an average; 'Except BMP' = all counties but Broward, Miami-Dade, Palm Beach. ESSC = enhanced structural systems construction.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerUnit",
+      "value": null,
+      "low": 284000,
+      "high": 366000,
+      "unit": "USD/unit",
+      "region": "Florida (Broward, Miami-Dade, Palm Beach)",
+      "regionKey": "FL-Miami",
+      "dataYear": 2026,
+      "source": {
+        "title": "Total Development Cost per Unit Limitation Template, Version 09-30-2026 (for all RFAs starting July 2023), 'Data' sheet",
+        "url": "https://www.floridahousing.org/docs/default-source/programs/developers-multifamily-programs/competitive/total-development-cost-per-unit-limitation-template-effective-september-30-2026-for-all-rfa-s-starting-july-2023.xlsx",
+        "publisher": "Florida Housing Finance Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Data sheet, 'Hard Cost Per Unit Factor:', 2026/2027 cycle, 'BMP': Garden-Non ESSC (NC) 284000 ... High-Rise (NC) 366000",
+      "scopeNotes": "Florida Housing (LIHTC) hard-cost-per-unit factor used to set the TDC-per-unit cap for new construction, 2026/2027 RFA cycle - a ceiling for affordable deals, not an average; 'Except BMP' = all counties but Broward, Miami-Dade, Palm Beach. ESSC = enhanced structural systems construction.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "softToHardCapRatio",
+      "value": 0.333,
+      "unit": "ratio",
+      "region": "Florida",
+      "regionKey": "FL",
+      "source": {
+        "title": "Total Development Cost per Unit Limitation Template, Version 09-30-2026 (for all RFAs starting July 2023), 'RFA' sheet",
+        "url": "https://www.floridahousing.org/docs/default-source/programs/developers-multifamily-programs/competitive/total-development-cost-per-unit-limitation-template-effective-september-30-2026-for-all-rfa-s-starting-july-2023.xlsx",
+        "publisher": "Florida Housing Finance Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "NC: (f) = {  [  (a)  / 75%  ]  +  (c)  }  / (d) *  [  1  +  (e)  ]  - where (a) = 'Hard Cost Factor Per Unit' and (f) = 'Max Non-Acquisition Development Cost for Developer Fee'",
+      "scopeNotes": "Florida's cap treats hard cost as 75% of non-acquisition hard+soft cost, i.e., soft ~= 1/3 of hard (0.333) before the developer fee (16% max per the CUR sheet) and land.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostPerNRSF",
+      "value": 173,
+      "unit": "USD/nrsf",
+      "region": "Texas",
+      "regionKey": "TX",
+      "dataYear": 2019,
+      "source": {
+        "title": "The High Cost of Producing Multifamily Housing in California (RAND RR-A3743-1, Ward & Schlake, 2025) - copy hosted by San Diego Housing Commission",
+        "url": "https://sdhc.org/wp-content/uploads/2025/04/Att-2_RAND_RRA3743-1.pdf",
+        "publisher": "RAND Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 3.1 Panel A. Hard Costs: Texas LIHTC $173 (ratio to TX market rate 1.5); Colorado LIHTC $183; California LIHTC $427",
+      "scopeNotes": "Regression-adjusted means of LIHTC projects from state allocating-agency records (TX), 2019 dollars, per net rentable SF. Mixed building types.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerNRSF",
+      "value": 183,
+      "unit": "USD/nrsf",
+      "region": "Colorado",
+      "regionKey": "CO",
+      "dataYear": 2019,
+      "source": {
+        "title": "The High Cost of Producing Multifamily Housing in California (RAND RR-A3743-1, Ward & Schlake, 2025) - copy hosted by San Diego Housing Commission",
+        "url": "https://sdhc.org/wp-content/uploads/2025/04/Att-2_RAND_RRA3743-1.pdf",
+        "publisher": "RAND Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 3.1 Panel A. Hard Costs: Colorado LIHTC $183 (0.8x Colorado market rate)",
+      "scopeNotes": "Same basis as e6.",
+      "confidence": "high"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerNRSF",
+      "value": 427,
+      "unit": "USD/nrsf",
+      "region": "California",
+      "regionKey": "CA",
+      "dataYear": 2019,
+      "source": {
+        "title": "The High Cost of Producing Multifamily Housing in California (RAND RR-A3743-1, Ward & Schlake, 2025) - copy hosted by San Diego Housing Commission",
+        "url": "https://sdhc.org/wp-content/uploads/2025/04/Att-2_RAND_RRA3743-1.pdf",
+        "publisher": "RAND Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 3.1 Panel A. Hard Costs: California LIHTC $427 ... 3.7 (ratio to Texas market rate)",
+      "scopeNotes": "Same basis as e6; CA LIHTC carries prevailing wage and design requirements.",
+      "confidence": "high"
+    },
+    {
+      "id": "e9",
+      "metric": "softCostPctOfHard",
+      "value": null,
+      "low": 0.35,
+      "high": 0.44,
+      "unit": "ratio",
+      "region": "Texas / Colorado / California",
+      "regionKey": "US",
+      "source": {
+        "title": "The High Cost of Producing Multifamily Housing in California (RAND RR-A3743-1, Ward & Schlake, 2025) - copy hosted by San Diego Housing Commission",
+        "url": "https://sdhc.org/wp-content/uploads/2025/04/Att-2_RAND_RRA3743-1.pdf",
+        "publisher": "RAND Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 3.1 Panel C. Soft Costs: Texas LIHTC $60; Colorado LIHTC $75; California LIHTC $187 (vs LIHTC hard costs $173 / $183 / $427 per NRSF)",
+      "scopeNotes": "Soft/hard ratios derived: TX 0.35, CO 0.41, CA 0.44. RAND soft costs include A&E, legal, fees, developer costs and financing.",
+      "confidence": "high"
+    },
+    {
+      "id": "e10",
+      "metric": "tdcPerUnit",
+      "value": 164757,
+      "unit": "USD/unit",
+      "region": "US (2,500 LIHTC projects)",
+      "regionKey": "US",
+      "dataYear": 2016,
+      "source": {
+        "title": "Report Analyzes Development Costs for LIHTC Projects (Memo to Members, Sept 17, 2018)",
+        "url": "https://nlihc.org/node/11145",
+        "publisher": "National Low Income Housing Coalition",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Overall, they found that the median per-unit TDC for LIHTC properties was $164,757.",
+      "scopeNotes": "Abt Associates study for NCSHA of projects placed in service 2011-2016; total development cost incl. land, soft costs; new construction and rehab mixed. Dollar year approximate (study period end).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e11",
+      "metric": "tdcPerUnit",
+      "value": null,
+      "low": 555343,
+      "high": 572967,
+      "unit": "USD/unit",
+      "region": "California",
+      "regionKey": "CA",
+      "dataYear": 2021,
+      "source": {
+        "title": "How does neighborhood location affect the cost of producing affordable housing? (Barrall & Lens, UCLA Lewis Center policy brief)",
+        "url": "https://escholarship.org/content/qt66q1h5td/qt66q1h5td.pdf",
+        "publisher": "UCLA Lewis Center for Regional Policy Studies (eScholarship)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 1 ... 2018 and Later, TDC per Unit ($) Median: Low Resource $572,738; Moderate $565,326; High $572,967; Highest $555,343",
+      "scopeNotes": "California TCAC LIHTC applications 2018-2024 (nominal dollars; dataYear set to period midpoint 2021); TDC incl. land and soft costs.",
+      "confidence": "high"
+    },
+    {
+      "id": "e12",
+      "metric": "prevailingWagePremiumPerUnit",
+      "value": 100000,
+      "unit": "USD/unit",
+      "region": "California",
+      "regionKey": "CA",
+      "dataYear": 2024,
+      "source": {
+        "title": "How does neighborhood location affect the cost of producing affordable housing? (Barrall & Lens, UCLA Lewis Center policy brief)",
+        "url": "https://escholarship.org/content/qt66q1h5td/qt66q1h5td.pdf",
+        "publisher": "UCLA Lewis Center for Regional Policy Studies (eScholarship)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "We estimate that prevailing wage agreements account for about $100,000 per unit.",
+      "scopeNotes": "California LIHTC regression estimate (TDC effect).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e13",
+      "metric": "hardCostPerUnit",
+      "value": null,
+      "low": 240000,
+      "high": 380000,
+      "unit": "USD/unit",
+      "region": "US (contractor article)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Multi-Family Wood-Frame Construction Cost Per Unit (2026): Type V, Podium, and Mid-Rise",
+        "url": "https://terrapincg.com/news/multi-family-wood-frame-construction-cost-per-unit-2026",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Affordable LIHTC Variant ... $240k–$380k/unit",
+      "scopeNotes": "Contractor marketing (2026); vertical hard cost, land/soft excluded; sitework not stated.",
+      "confidence": "low"
+    },
+    {
+      "id": "e14",
+      "metric": "tdcPerUnit",
+      "value": null,
+      "low": 85000,
+      "high": 401000,
+      "unit": "USD/unit",
+      "region": "Texas / Colorado / California",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "The High Cost of Producing Multifamily Housing in California (RAND RR-A3743-1, Ward & Schlake, 2025) - copy hosted by San Diego Housing Commission",
+        "url": "https://sdhc.org/wp-content/uploads/2025/04/Att-2_RAND_RRA3743-1.pdf",
+        "publisher": "RAND Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Figure 3.1 Panel B, Average Total Development Cost per Unit ($1,000s of 2019 Dollars), LIHTC: California $401, Colorado $94, Texas $85",
+      "scopeNotes": "LIHTC TDC per unit incl. land, 2019 dollars; RAND notes LIHTC units are smaller, so per-unit costs understate per-SF differences.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e15",
+      "metric": "unitSizeNetSF",
+      "value": 1000,
+      "unit": "sf",
+      "region": "US",
+      "regionKey": "US",
+      "source": {
+        "title": "Characteristics of New Housing - Highlights",
+        "url": "https://www.census.gov/construction/chars/highlights.html",
+        "publisher": "U.S. Census Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The median size of multifamily units completed that were built for rent was 1,000 square feet",
+      "scopeNotes": "All new multifamily rental units completed in 2025 (all building types); net unit area.",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "A current national LIHTC new-construction hard-cost median (e.g., an updated Abt/NCSHA study or HUD LIHTC database with costs) would replace the Florida-anchored mid.",
+    "Per-state HFA cost caps (TDHCA, CTCAC, NYS HCR, WSHFC) could supply regional ranges.",
+    "Community building, green, accessibility and prevailing-wage line items are derived."
+  ]
+}

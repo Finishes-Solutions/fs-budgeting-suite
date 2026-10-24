@@ -1,0 +1,438 @@
+{
+  "schemaVersion": 1,
+  "id": "boat-rv-storage",
+  "name": "Boat / RV storage",
+  "category": "industrial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "space",
+  "summary": "Fenced, paved lots of 7–10 acres with a mix of open, canopy-covered (three- or four-sided) and fully enclosed 12–14 ft wide × 35–50 ft deep spaces; building coverage only 35–45% because of wide drive aisles. Cost per space is driven by the covered/enclosed mix and paving spec. Evidence is trade-press supplier pricing per SF of canopy/enclosure (Inside Self Storage); the per-space total is a derived build-up and should be verified.",
+  "sizing": {
+    "typicalSize": {
+      "low": 120,
+      "mid": 250,
+      "high": 450,
+      "unit": "space",
+      "evidence": [
+        "e4"
+      ],
+      "derived": true,
+      "method": "Typical 7–10 acre sites (e4) × ~25–40 spaces/acre (below) ≈ 175–400 spaces; widened for 4–5 acre infill and 12+ acre sites. Mid 250."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 400,
+      "mid": 480,
+      "high": 600,
+      "evidence": [],
+      "derived": true,
+      "method": "Covered/enclosed footprint per space: 12×35 = 420 SF to 14×45 = 630 SF; mid 12×40 = 480 SF (typical class-A canopy bay)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 25,
+      "mid": 33,
+      "high": 40,
+      "evidence": [
+        "e4",
+        "e5"
+      ],
+      "derived": true,
+      "method": "Coverage 35–45% (e4/e5) × 43,560 SF ÷ 480 SF/space ≈ 32–41 spaces/acre; less detention/landscape/office → 25–40, mid 33."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 13000,
+      "mid": 28000,
+      "high": 45000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "_blocks/paving.json#e1",
+        "_blocks/paving.json#e2"
+      ],
+      "derived": true,
+      "method": "Bottom-up per space. Site: ~1,100 SF paved per space (43,560/33 spaces less 15% landscape/detention) = 122 SY × asphalt $45/SY (paving block; heavier base for RVs) ≈ $5.5k–$8.5k + grading/drainage $1.5k–$3k + fence/gate/lighting/security share $1k–$2k ≈ $8k–$13.5k (mid $10.5k). Structures: canopy ≥$36/SF turnkey (e1), mid $40 × 480 SF = $19.2k; enclosed ≥$56/SF (e2), mid $60 × 560 SF = $33.6k. Standard mix 60% canopy / 20% enclosed / 20% open: 10.5 + 0.6×19.2 + 0.2×33.6 ≈ $28.7k → mid $28k. Low $13k = mostly open paved with 30% canopy (8 + 0.3×17.3). High $45k = 60% enclosed/40% canopy with concrete aisles (13.5 + 0.6×36 + 0.4×21). Supplier figures are 2025 and paving block 2026 (≤1 year gap) → stated in 2026 dollars without escalation."
+    },
+    "perSF": {
+      "low": 30,
+      "mid": 58,
+      "high": 75,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2"
+      ],
+      "derived": true,
+      "method": "perPrimaryUnit ÷ covered SF per space (13,000/440 ≈ $30, 28,000/480 ≈ $58, 45,000/600 = $75); this is per SF of covered/enclosed footprint and includes the paved site."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P; grading, paving of aisles and spaces, drainage/detention, perimeter fence and gate, lighting, canopies and enclosed units with doors, small office/kiosk. Excludes land, soft costs, off-sites, fees, solar, dump station and wash bays (optional lines)."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.5,
+    "standard": 1,
+    "premium": 1.35,
+    "luxury": 1.6,
+    "evidence": [
+      "e1",
+      "e2",
+      "e3"
+    ],
+    "derived": true,
+    "method": "economy ≈ low/mid (13/28 = 0.46; open paved/gravel lot with some canopy); premium ≈ (mid+high)/2/mid for enclosed-heavy; luxury ≈ high/mid uplifted for condo-style units (>$72/SF, e3)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.06
+      },
+      {
+        "division": "05",
+        "pct": 0.22
+      },
+      {
+        "division": "07",
+        "pct": 0.05
+      },
+      {
+        "division": "08",
+        "pct": 0.05
+      },
+      {
+        "division": "26",
+        "pct": 0.05
+      },
+      {
+        "division": "28",
+        "pct": 0.03
+      },
+      {
+        "division": "31",
+        "pct": 0.12
+      },
+      {
+        "division": "32",
+        "pct": 0.28
+      },
+      {
+        "division": "33",
+        "pct": 0.06
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "From the bottom-up mid: site ≈ $10.5k of $28k (31–33 ≈ 38% incl. fence in 32) and structures ≈ $18k (steel canopy/enclosed frames 05 22%, roof/wall panels 07 5%, roll-up doors 08 5%, pier footings 03 6%), lighting/electrical 5%, security 3%, GC 8%. Judgment."
+  },
+  "lineItems": [
+    {
+      "id": "rv-canopy",
+      "name": "Steel RV/boat canopy (turnkey, per SF of canopy)",
+      "division": "05",
+      "block": "vertical-building",
+      "unit": "sf",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 288
+      },
+      "cost": {
+        "low": 36,
+        "mid": 40,
+        "high": 50,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e1"
+        ],
+        "derived": true,
+        "method": "Turnkey canopy \"at least $36\" per SF (e1) → low $36; mid $40 and high $50 add three-sided walls (+$3–$5/SF per e1) and taller/longer bays (judgment). Quantity: 60% of spaces × 480 SF = 288 SF per space."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "enclosed-units",
+      "name": "Fully enclosed RV/boat units incl. doors (per SF)",
+      "division": "05",
+      "unit": "sf",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 112
+      },
+      "cost": {
+        "low": 56,
+        "mid": 60,
+        "high": 72,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e2",
+          "e3"
+        ],
+        "derived": true,
+        "method": "Enclosed \"at least $56\" per SF incl. door packages (e2); high $72 = condo-style threshold (e3). Quantity: 20% of spaces × 560 SF = 112 SF per space."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out; raise the share for enclosed-heavy projects."
+    },
+    {
+      "id": "security-system",
+      "name": "Monitored security system (cameras, access control, alarms)",
+      "division": "28",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 30000,
+        "mid": 50000,
+        "high": 100000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "e6"
+        ],
+        "derived": true,
+        "method": "Operator anecdote: a $50,000 monitored system after repeated break-ins (e6) = mid; range by site size (judgment)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "canopy-solar",
+      "name": "Solar PV on canopies (optional)",
+      "division": "48",
+      "block": "energy",
+      "unit": "kw",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 4
+      },
+      "cost": {
+        "low": 2600,
+        "mid": 3200,
+        "high": 4300,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "From _blocks/energy.json carport-solar ($2,600/$3,200/$4,300 per kW, 2026). Quantity ≈ 288 SF canopy per space × ~14 W/SF ≈ 4 kW per space (judgment)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Optional revenue add; canopies may need structural upgrade."
+    },
+    {
+      "id": "dump-wash-station",
+      "name": "RV dump station and wash bay (optional)",
+      "division": "22",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 40000,
+        "mid": 90000,
+        "high": 200000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No source fetched. Dump station (holding tank/sewer tie-in, pad) $15k–$50k plus a covered wash bay with water reclaim $25k–$150k (judgment)."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional amenity common in class-A facilities."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.08,
+      "mid": 0.11,
+      "high": 0.16,
+      "evidence": [],
+      "derived": true,
+      "method": "Simple site-plan and pre-engineered canopy permits; civil engineering, survey, geotech, permits and lease-up marketing ≈ 8–16% of hard cost (judgment, below self-storage 15–28%)."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.04
+    },
+    "notes": "Excludes financing."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.02,
+      "mid": 0.03,
+      "high": 0.06,
+      "evidence": [],
+      "derived": true,
+      "method": "Simple program (judgment)."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Earthwork/drainage and steel-price risk (judgment)."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard 5–10% of soft costs (judgment)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 10000,
+      "max": 60000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "min ≈ gravel/asphalt open lot with minimal canopy; max ≈ enclosed/condo-heavy facility at high × 1.3."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "canopyTurnkeyCostPerSF",
+      "value": 36,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Emulating the Success of the Self-Storage Industry, Boat/RV Storage Development Is Cruising Along",
+        "url": "https://www.insideselfstorage.com/vehicle-boat-rv-storage/emulating-the-success-of-the-self-storage-industry-boat-rv-storage-development-is-cruising-along",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Standard canopy storage. … Structural costs average $9 to more than $14 per square foot. Turnkey costs are at least $36 per square foot.",
+      "scopeNotes": "Per SF of canopy. \"Structural\" = steel package only; \"turnkey\" = installed incl. foundations/erection (sitework/paving not stated as included). Industry trade article (Toy Storage Nation editor, Nov 12 2025) quoting suppliers.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "enclosedUnitCostPerSF",
+      "value": 56,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Emulating the Success of the Self-Storage Industry, Boat/RV Storage Development Is Cruising Along",
+        "url": "https://www.insideselfstorage.com/vehicle-boat-rv-storage/emulating-the-success-of-the-self-storage-industry-boat-rv-storage-development-is-cruising-along",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Fully enclosed units. … They run at least $56 per square foot to build, including door packages.",
+      "scopeNotes": "Per SF of enclosed building; \"at least\" — a floor, not a midpoint.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "condoUnitCostPerSF",
+      "value": 72,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Emulating the Success of the Self-Storage Industry, Boat/RV Storage Development Is Cruising Along",
+        "url": "https://www.insideselfstorage.com/vehicle-boat-rv-storage/emulating-the-success-of-the-self-storage-industry-boat-rv-storage-development-is-cruising-along",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Condo-style storage. … They top the charts at more than $72 per square foot to build.",
+      "scopeNotes": "Climate/electric/wash-bay condo garages; premium tier.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "siteCoverage",
+      "value": null,
+      "low": 0.35,
+      "high": 0.4,
+      "unit": "pct",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Emulating the Success of the Self-Storage Industry, Boat/RV Storage Development Is Cruising Along",
+        "url": "https://www.insideselfstorage.com/vehicle-boat-rv-storage/emulating-the-success-of-the-self-storage-industry-boat-rv-storage-development-is-cruising-along",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "developers need a location typically between 7 and 10 acres, with buildable coverage of approximately 35% to 40% per acre",
+      "scopeNotes": "Supplier (MakoRabco) guidance on typical site size and coverage.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "siteCoverage",
+      "value": null,
+      "low": 0.35,
+      "high": 0.45,
+      "unit": "pct",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "Hopping on the Boat and RV Storage Bandwagon? Follow These Tips to Build the Product Successfully",
+        "url": "https://www.insideselfstorage.com/vehicle-boat-rv-storage/hopping-on-the-boat-and-rv-storage-bandwagon-follow-these-tips-to-build-the-product-successfully",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "On average, there’s a 35% to 45% coverage ratio per acre. This is lower than the ratio for traditional self-storage due to the need for larger drive aisles.",
+      "scopeNotes": "MakoRabco marketing coordinator article, March 7 2024.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "securitySystemCost",
+      "value": 50000,
+      "unit": "USD/ls",
+      "region": "Fort Worth, TX",
+      "regionKey": "TX-DFW",
+      "dataYear": 2024,
+      "source": {
+        "title": "Should You Build Boat/RV Storage? Considerations for Market Entry, Facility Design and Ongoing Success",
+        "url": "https://www.insideselfstorage.com/vehicle-boat-rv-storage/should-you-build-boat-rv-storage-considerations-for-market-entry-facility-design-and-ongoing-success",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "My facility in Fort Worth was broken into five times, so I installed a $50,000 monitored security system.",
+      "scopeNotes": "Single operator anecdote (Dec 21 2024).",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "No per-space total project cost found; a public site-plan budget or lender underwriting for a boat/RV facility would validate the build-up.",
+    "Confirm whether \"turnkey\" canopy pricing includes footings and electrical."
+  ]
+}

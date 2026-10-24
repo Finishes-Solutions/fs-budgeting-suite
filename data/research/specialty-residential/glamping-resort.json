@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "id": "glamping-resort",
+  "name": "Glamping resort",
+  "category": "specialty-residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "unit",
+  "summary": "Safari tents, domes or yurts on raised platforms with power (and often water/ensuite bath), linked by paths to a central lodge/bathhouse. Per-unit cost swings mainly on whether units have ensuite plumbing and HVAC versus a shared bathhouse, and on the structure type (bell tent vs. safari tent vs. geodesic dome). No sourced glamping development budget could be retrieved in this session (web search budget exhausted); every value is a derived build-up from campground/RV infrastructure evidence and small-structure cost data. Confidence low.",
+
+  "sizing": {
+    "typicalSize": { "low": 8, "mid": 20, "high": 60, "unit": "unit", "evidence": [], "derived": true, "method": "Judgment: boutique glamping sites 6-15 units; branded resorts 30-100. Mid 20 (OH Weekly's illustrative premium-unit revenue model also uses 20 units, not retrieved as cost evidence)." },
+    "sfPerPrimaryUnit": { "low": 200, "mid": 350, "high": 550, "evidence": [], "derived": true, "method": "Interior floor area of the tent/dome/yurt (bell tent ~200 SF; safari tent 300-450 SF; large dome/yurt 500+ SF), excluding the open deck. Judgment." },
+    "primaryUnitsPerAcre": { "low": 2, "mid": 4, "high": 8, "evidence": [], "derived": true, "method": "Privacy spacing well below campground density (~9 sites/acre, campground file); judgment." },
+    "parkingPerPrimaryUnit": { "low": 1.0, "mid": 1.2, "high": 1.5, "type": "surface", "evidence": [], "derived": true, "method": "Central lot, one per unit plus staff; judgment." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 35000, "mid": 85000, "high": 200000,
+      "dollarYear": 2024, "region": "US",
+      "evidence": ["specialty-residential/rv-park-resort.json#e8", "specialty-residential/campground.json#c2", "specialty-residential/cabin-str-resort.json#b2"],
+      "derived": true,
+      "method": "Build-up for a mid-tier ensuite safari tent (~350 SF interior + ~150 SF deck): raised platform/deck ~$18k (~400 SF at ~$45/SF, judgment); tent structure delivered and erected ~$30k (judgment); ensuite bath pod and interior build-out ~$15k (judgment); per-unit power/water/sewer ~$9k (RV-site utilities $8.9k, rv e8); paths, landscaping, parking share ~$5k; share of lodge/bathhouse ~$10k (comfort station ~$0.7M, campground c2, spread over ~70 units, or a smaller lodge over 20). Total ~$87k -> $85k. Low $35k = bell tent on modest platform, power only, shared bathhouse. High $200k = luxury dome/safari suite with HVAC, hot tub and full ensuite, approaching small prefab cabin cost ($80-$230/SF, cabin b2). Not sourced; verify with tent/dome supplier quotes and a glamping feasibility study."
+    },
+    "perSF": {
+      "low": 175, "mid": 245, "high": 365,
+      "dollarYear": 2024, "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "perPrimaryUnit / sfPerPrimaryUnit (35k/200, 85k/350, 200k/550), rounded. Includes per-unit site work and amenity share."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. general conditions and OH&P: platforms, tent/dome/yurt structures erected, ensuite plumbing where provided, per-unit utilities, paths, parking, landscaping and a share of the lodge/bathhouse. Excludes land, soft costs, FF&E/OS&E, off-site utilities, tap/impact fees and on-site wastewater treatment (line item)."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.45, "standard": 1.0, "premium": 1.6, "luxury": 2.35,
+    "evidence": [], "derived": true,
+    "method": "low/mid = 0.41 tempered to 0.45; high/mid = 2.35."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.07 },
+      { "division": "03", "pct": 0.04 },
+      { "division": "06", "pct": 0.18 },
+      { "division": "07", "pct": 0.03 },
+      { "division": "09", "pct": 0.04 },
+      { "division": "10", "pct": 0.01 },
+      { "division": "13", "pct": 0.25 },
+      { "division": "22", "pct": 0.09 },
+      { "division": "23", "pct": 0.03 },
+      { "division": "26", "pct": 0.07 },
+      { "division": "31", "pct": 0.04 },
+      { "division": "32", "pct": 0.07 },
+      { "division": "33", "pct": 0.08 }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Allocated from the mid build-up: tent/dome structure ($30k) -> 13 special construction (0.25 after lodge share); platform/deck and lodge framing -> 06 (0.18); ensuite plumbing -> 22; per-unit utilities -> 26/33; paths/parking/landscape -> 32; lodge share spread over 03/07/09/23; general conditions 7%."
+  },
+
+  "lineItems": [
+    {
+      "id": "tent-structure",
+      "name": "Safari tent / geodesic dome / yurt structure, delivered and erected",
+      "division": "13",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 8000, "mid": 30000, "high": 70000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment: canvas bell tent (low) to engineered safari tent or insulated dome with windows (high). No supplier pricing retrieved; verify." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out. Canvas replacement cycle 5-10 years is an operating/capex item."
+    },
+    {
+      "id": "platform-deck",
+      "name": "Raised timber platform and deck",
+      "division": "06",
+      "unit": "sf",
+      "qty": { "per": "primaryUnit", "value": 450 },
+      "cost": { "low": 25, "mid": 45, "high": 80, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment: pressure-treated platform on piers (low) to composite deck with railings and stairs (high)." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out; qty = SF of platform per unit."
+    },
+    {
+      "id": "ensuite-bath-pod",
+      "name": "Ensuite bathroom (pod or framed), water heater and fixtures",
+      "division": "22",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 8000, "mid": 15000, "high": 35000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Remove (and enable shared-bathhouse) for economy tier."
+    },
+    {
+      "id": "unit-utilities",
+      "name": "Per-unit utility runs (power, water, sewer lateral)",
+      "division": "33",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 3000, "mid": 9000, "high": 16000, "dollarYear": 2024, "region": "US", "evidence": ["specialty-residential/rv-park-resort.json#e8", "specialty-residential/rv-park-resort.json#e9"], "derived": true, "method": "RV-site sewer $2.5k + water $2.4k + electrical $4.0k = $8.9k (rv e8/e9); low = power only." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "lodge",
+      "name": "Central lodge / check-in / guest lounge",
+      "division": "06",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 150000, "mid": 400000, "high": 1200000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment: 800-3,000 SF at ~$200-$400/SF." },
+      "inBaseline": true, "scales": false, "optional": false,
+      "notes": "Carve-out of the amenity share; resorts with food service need a commercial kitchen (add)."
+    },
+    {
+      "id": "shared-bathhouse",
+      "name": "Shared bathhouse (units without ensuite baths)",
+      "division": "22",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 300000, "mid": 700000, "high": 1100000, "dollarYear": 2024, "region": "US", "evidence": ["specialty-residential/campground.json#c2", "specialty-residential/campground.json#c3"], "derived": true, "method": "Public comfort station comparables: SD $705,540 (2023, campground c2); OR prototype $1.1M (2024, campground c3); low = smaller private building." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Switch on for economy tier (and remove ensuite pods)."
+    },
+    {
+      "id": "hot-tub",
+      "name": "Private hot tub per unit",
+      "division": "13",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 8000, "mid": 14000, "high": 25000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Same as cabin-str-resort hot tub line (judgment)." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Premium/luxury tier."
+    },
+    {
+      "id": "septic-drainfield",
+      "name": "Septic system / drainfield",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 60000, "mid": 150000, "high": 350000, "dollarYear": 2024, "region": "US", "evidence": ["specialty-residential/rv-park-resort.json#e14"], "derived": true, "method": "Scaled from RV park evidence (small park entire septic ~$100k, rv e14); judgment." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Rural sites without sewer."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 5000, "mid": 15000, "high": 35000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment: bed, linens, furniture, wood stove/heater or mini-split, outdoor furniture, fire pit; high for luxury suites." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.10, "mid": 0.15, "high": 0.22, "evidence": [], "derived": true, "method": "Judgment: site civil and septic design, land-use approval (often conditional use for campground/resort), structural review of tents/platforms; mid 15%." },
+    "breakdown": { "architectureEngineering": 0.07 },
+    "notes": "Excludes pre-opening, marketing and OS&E."
+  },
+
+  "contingency": {
+    "design": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": [], "derived": true, "method": "Judgment; code treatment of tents (temporary vs. permanent structure) varies by jurisdiction." },
+    "hard": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": [], "derived": true, "method": "Judgment; remote-site logistics." },
+    "soft": { "low": 0.03, "mid": 0.05, "high": 0.10, "evidence": [], "derived": true, "method": "General norm." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 30000, "max": 300000, "dollarYear": 2024, "region": "US", "method": "Min = bell tent + shared bathhouse with low soft; max = luxury dome suite with hot tub and lodge share plus soft costs." }
+  },
+
+  "evidence": [],
+
+  "openQuestions": [
+    "No sourced glamping development budget was retrieved (web search budget exhausted mid-session). Priority sources: public feasibility study summaries (e.g., state park glamping concession RFPs), tent/dome manufacturer price lists, Glamping Business / Hipcamp host cost guides, USDA B&I or SBA loan feasibility for glamping.",
+    "All values are derived estimates - verify before use."
+  ]
+}

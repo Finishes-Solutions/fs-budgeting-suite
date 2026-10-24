@@ -1,0 +1,225 @@
+{
+  "schemaVersion": 1,
+  "id": "landscaping",
+  "name": "Landscaping & irrigation",
+  "researchedAt": "2026-10-24",
+  "notes": "Turf and seeding prices come from DOT weighted-average bid prices (very large highway quantities, so they represent the floor). Planted landscape, trees and irrigation have no DOT equivalent; they are derived using consumer cost guides (Fixr, low confidence, residential scale) as bounds and a commercial assembly in each method.",
+  "items": [
+    {
+      "id": "landscaping-irrigation-commercial",
+      "name": "Commercial landscaping with irrigation (shrubs, groundcover, mulch, turf, drip/spray irrigation) - per SF of landscaped area",
+      "division": "32",
+      "unit": "sf",
+      "cost": {
+        "low": 3, "mid": 6, "high": 12,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e4", "e6"],
+        "derived": true,
+        "method": "Fixr residential landscaping $5-$20/SF (e6) brackets the top; commercial code-minimum landscape beds are less dense. Assembly per SF of landscaped area: ~50% turf at ~$1/SF (sod, e1/e4) + ~50% shrub/groundcover beds at ~$7-$10/SF (plants, soil prep, mulch, edging) + irrigation ~$1.25-$2/SF (controller, valves, spray/drip) = ~$5.25-$7.00; mid $6. Low $3 = mostly turf/xeriscape with minimal irrigation; high $12 = dense ornamental beds, specimen plantings, enhanced irrigation."
+      },
+      "notes": "Trees counted separately (tree-installed). Apply to landscaped area only (typically 15-25% of a commercial site)."
+    },
+    {
+      "id": "sod",
+      "name": "Sod, installed (incl. fine grading/soil prep allowance)",
+      "division": "32",
+      "unit": "sf",
+      "cost": {
+        "low": 0.50, "mid": 0.95, "high": 1.80,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e1", "e2", "e3", "e4"],
+        "derived": true,
+        "method": "DOT: FDOT performance turf, sod $4.37/SY = $0.49/SF on 6.3M SY (e1); ArDOT solid sodding $5.08/SY = $0.56/SF (e2); MDT sodding $36.16/SY = $4.02/SF on only 958 SY (e3, small-quantity outlier). Consumer: Fixr $0.85-$1.75/SF installed (e4). Mid $0.95 = between DOT large-quantity floor and the Fixr midpoint ($1.30), weighted toward commercial quantities; low = DOT; high = Fixr top."
+      },
+      "notes": "Bermuda/St. Augustine/fescue by region. Seeding/hydroseed is far cheaper (seeding)."
+    },
+    {
+      "id": "seeding",
+      "name": "Seeding / hydroseeding with mulch (permanent stabilization)",
+      "division": "32",
+      "unit": "acre",
+      "cost": {
+        "low": 700, "mid": 1400, "high": 3000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e7", "e8"],
+        "derived": false,
+        "method": "ArDOT seeding $1,365.47/acre (151.8 ac, e7) and mulch cover $1,038.62/acre; MDT seeding area no. 1 $769.04/acre (e8). Mid $1,400 ~ ArDOT seeding; low = MDT; high = hydroseed with bonded fiber matrix on small areas."
+      },
+      "notes": "For detention pond banks, open space, future-phase pads."
+    },
+    {
+      "id": "tree-installed",
+      "name": "Tree, installed (2-3\" caliper / 15-30 gal, incl. staking and 1-yr warranty)",
+      "division": "32",
+      "unit": "ea",
+      "cost": {
+        "low": 250, "mid": 600, "high": 1200,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e5"],
+        "derived": true,
+        "method": "Fixr: national average $350 per planted tree (range $200-$550); medium 5-9 ft trees $250-$650 and large 10-19 ft $650-$2,000 (e5). Commercial code trees are typically 2-3\" caliper (≈10-14 ft), so mid $600 sits between Fixr's medium and large classes; low = 15-gal/1.5\" caliper; high = 3-4\" caliper or 30-36\" box."
+      },
+      "notes": "Parking-lot islands commonly require 1 tree per 8-12 spaces; street trees ~1 per 30-40 LF of frontage."
+    },
+    {
+      "id": "landscaping-per-acre",
+      "name": "Landscaping & irrigation, all-in per gross site acre (typical commercial site)",
+      "division": "32",
+      "unit": "acre",
+      "cost": {
+        "low": 20000, "mid": 45000, "high": 90000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e6"],
+        "derived": true,
+        "method": "Per gross acre: landscaped share 15-25% x 43,560 SF = 6,500-10,900 SF; at landscaping-irrigation-commercial $3-$6/SF = $20k-$65k; plus trees (~10-20 per acre at $600 = $6k-$12k). Mid: 20% x 43,560 x $4.50 (blended with lower-cost turf areas) + 15 trees x $600 = ~$48k, rounded to $45k. Low $20k = turf-dominant; high $90k = 25% landscaped at $7.50/SF plus 20 trees. Fixr residential per-acre figures ($2k-$4k basic turf; ~$10k+ fully landscaped acre, e6) are below commercial practice and used only as a floor check."
+      },
+      "notes": "Use when landscaping is not itemized. Already included in site-development-light; do not stack."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "sodPerSY",
+      "value": 4.37,
+      "unit": "USD/sy",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0570 1 2: 229 contracts, $4.37, 6,343,359.000 SY - PERFORMANCE TURF, SOD",
+      "scopeNotes": "Highway right-of-way sod (bahia typical), massive quantities; floor price.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "sodPerSY",
+      "value": 5.08, "low": 4.28, "high": 20.16,
+      "unit": "USD/sy",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "624 SOLID SODDING SQYD 68,880.00 20.16 4.28 5.08",
+      "scopeNotes": "Columns: quantity, high, low, weighted average.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "sodPerSY",
+      "value": 36.16,
+      "unit": "USD/sy",
+      "region": "Montana statewide",
+      "regionKey": "MT",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Prices Catalog (2025)",
+        "url": "https://mdt.mt.gov/other/webdata/external/contractplans/contract/Archives/Average_prices/2025.pdf",
+        "publisher": "Montana Department of Transportation, Construction Contracting Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "610100470 20 SODDING SQYD 958.2 $36.16",
+      "scopeNotes": "Small quantity (958 SY) in a market with a short sod season; treated as a high outlier.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "sodPerSF",
+      "low": 0.85, "high": 1.75,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Sod Installation Cost | Cost to Lay Sod",
+        "url": "https://www.fixr.com/costs/sod-installation",
+        "publisher": "Fixr.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The price of sodding a yard ranges from $0.85 to $1.75 per sq.ft. when both the sod and installation are combined.",
+      "scopeNotes": "Residential consumer guide (Updated: January 31, 2025).",
+      "confidence": "low"
+    },
+    {
+      "id": "e5",
+      "metric": "treeInstalledPerEach",
+      "value": 350, "low": 200, "high": 2000,
+      "unit": "USD/ea",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Tree Planting Cost | Average Price to Plant a Tree",
+        "url": "https://www.fixr.com/costs/tree-planting",
+        "publisher": "Fixr.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "with a national average of $350",
+      "scopeNotes": "Residential consumer guide (Updated: January 31, 2025). Range $200-$550 typical; by height: medium (5-9 ft) $250-$650, large (10-19 ft) $650-$2,000; high = top of large class.",
+      "confidence": "low"
+    },
+    {
+      "id": "e6",
+      "metric": "landscapingPerSF",
+      "low": 5, "high": 20,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Landscaping Cost | Average Landscaping Cost per Sq.Ft.",
+        "url": "https://www.fixr.com/costs/landscaping",
+        "publisher": "Fixr.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "$5 to $20 a square foot, depending on what you do with the area",
+      "scopeNotes": "Residential consumer guide (Updated: January 31, 2025). Same page: per-acre costs 'start at between $2,000 and $4,000' for basic turf and soil; a fully landscaped acre 'closer to $10,000 or more'; sprinkler system $4,000-$7,000 (whole residential system).",
+      "confidence": "low"
+    },
+    {
+      "id": "e7",
+      "metric": "seedingPerAcre",
+      "value": 1365.47, "low": 10.00, "high": 8690.00,
+      "unit": "USD/acre",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "620 SEEDING ACRE 151.80 8,690.00 10.00 1,365.47",
+      "scopeNotes": "Columns: quantity, high, low, weighted average. Mulch cover $1,038.62/acre is a separate item.",
+      "confidence": "high"
+    },
+    {
+      "id": "e8",
+      "metric": "seedingPerAcre",
+      "value": 769.04,
+      "unit": "USD/acre",
+      "region": "Montana statewide",
+      "regionKey": "MT",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Prices Catalog (2025)",
+        "url": "https://mdt.mt.gov/other/webdata/external/contractplans/contract/Archives/Average_prices/2025.pdf",
+        "publisher": "Montana Department of Transportation, Construction Contracting Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "610100101 20 SEEDING AREA NO 1 ACRE 293.2 $769.04",
+      "scopeNotes": "Rural highway seeding.",
+      "confidence": "medium"
+    }
+  ]
+}

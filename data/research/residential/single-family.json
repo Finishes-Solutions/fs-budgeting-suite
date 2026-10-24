@@ -1,0 +1,325 @@
+{
+  "schemaVersion": 1,
+  "id": "single-family",
+  "name": "Single-family home (production)",
+  "category": "residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "unit",
+  "summary": "Production/spec detached homes. Cost is driven by finished floor area, finish level and region; framing, MEP rough-ins and interior finishes are ~60% of construction cost. The data is strong: NAHB's biennial Cost of Constructing a Home survey gives a full dollar breakdown, and Census Survey of Construction gives national medians for size and price per SF. The two disagree. NAHB's builder sample is not representative and runs higher than the large-builder Census medians, so the default sits between them.",
+
+  "sizing": {
+    "typicalSize": { "low": 20, "mid": 60, "high": 200, "unit": "unit", "evidence": [], "derived": true, "method": "Homes per subdivision phase or project. A judgment from typical production-builder phases, not sourced. Small infill builders do 5–20 lots; national builders run 100–300-lot communities in phases." },
+    "sfPerPrimaryUnit": { "low": 1800, "mid": 2300, "high": 2700, "evidence": ["e5", "e2"], "derived": false, "method": "Finished floor area per home. Mid sits between the Census 2025 built-for-sale median (2,216 SF) and average (2,427 SF) per e5. High ≈ NAHB 2024 survey home (2,647 SF, e2). Low ≈ entry-level product; per Census, 32% of 2025 completions were under 1,800 SF." },
+    "primaryUnitsPerAcre": { "low": 3, "mid": 4.5, "high": 7, "evidence": ["e12"], "derived": true, "method": "Gross density incl. streets and open space. Census reports 41% of 2025 for-sale homes on lots under 7,000 SF (e12), i.e. 6.2 lots/net acre. Applying ~25–30% for ROW and open space gives ~4.5 gross. Larger NAHB-sample lots (20,907 SF avg, e12) imply ~1.5–2/acre, so the low is for suburban/rural product." },
+    "parkingPerPrimaryUnit": { "low": 2, "mid": 2, "high": 3, "type": "garage", "evidence": [], "derived": true, "method": "Attached 2-car garage is standard on production homes. Garage area is excluded from finished SF but its cost is inside the hard cost (NAHB categories include garage doors)." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 220000, "mid": 335000, "high": 510000, "dollarYear": 2025, "region": "US", "evidence": ["e1", "e2", "e4", "e6", "e7", "e8"], "derived": false, "method": "= perSF × sfPerPrimaryUnit: mid $145 × 2,300 SF ≈ $335k; low $115 × 1,900 ≈ $220k; high $190 × 2,700 ≈ $510k. Cross-check: NAHB 2024 construction cost $428,215 (e1), less permit, impact and water/sewer fees and A&E ($26,747), = $401,468 for a 2,647 SF home. That is direct builder cost before builder overhead, so with ~8–10% overhead it lands at the high end of this range." },
+    "perSF": { "low": 115, "mid": 145, "high": 190, "dollarYear": 2025, "region": "US", "evidence": ["e2", "e4", "e6", "e7", "e8", "e13"], "derived": false, "method": "Two primary national anchors. (1) NAHB 2024 survey: $162/SF construction cost (e2); net of permit/impact/utility fees and A&E (6.25%) = $152/SF of builder direct cost. (2) Census 2025 detached spec homes: median sale price $153.65/SF excluding lot (e4). Times the NAHB construction share of non-lot price (64.4% / 86.3% = 0.746) and net of fees (×0.9375), that is ≈ $107/SF of direct cost. The NAHB sample is not representative and skews to smaller builders (NAHB says so in e2), so the midpoint of the two anchors ($130) is used. That gets ~10% for general conditions/OH&P to express a contractor price, giving ≈ $143, rounded to $145. Low $115 ≈ Census-implied large-builder cost with minimal markup, South/Midwest. High $190 sits between NAHB + 12% OH&P ($170) and the Census average contractor-built contract price ($198, e6), for high-cost metros. 2024 and 2025 evidence is mixed (≤1 year gap), so the range is labeled 2025. Regional evidence (WA $309, e7) and the consumer-site average (Fixr $203, e8) are kept as spread indicators, not defaults." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Vertical house plus on-lot work: excavation and backfill, driveway, landscaping, flatwork, patio/deck, clean-up (NAHB stages II and VII). Includes contractor/builder general conditions and OH&P. Excludes land and horizontal lot development (streets and subdivision utilities; see the optional line item), permit, impact and water/sewer tap fees, A&E, builder G&A, marketing, commissions, financing and profit. Standard kitchen appliances are inside the hard cost, as NAHB includes them in construction cost."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.8, "standard": 1.0, "premium": 1.25, "luxury": 1.6,
+    "evidence": ["e4", "e6"], "derived": true,
+    "method": "Economy ≈ low/mid of the per-SF range (115/145). Premium ≈ the Census 2025 contractor-built average ($198/SF, e6) relative to the detached spec median ($153.65, e4), a ×1.29 premium, rounded to 1.25. Luxury 1.6 is a judgment for semi-custom production at $230+/SF. For true one-off custom homes use the custom-home type."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.122 },
+      { "division": "03", "pct": 0.082 },
+      { "division": "04", "pct": 0.014 },
+      { "division": "05", "pct": 0.004 },
+      { "division": "06", "pct": 0.171 },
+      { "division": "07", "pct": 0.096 },
+      { "division": "08", "pct": 0.051 },
+      { "division": "09", "pct": 0.093 },
+      { "division": "10", "pct": 0.005 },
+      { "division": "11", "pct": 0.017 },
+      { "division": "12", "pct": 0.043 },
+      { "division": "22", "pct": 0.079 },
+      { "division": "23", "pct": 0.063 },
+      { "division": "26", "pct": 0.074 },
+      { "division": "31", "pct": 0.033 },
+      { "division": "32", "pct": 0.053 }
+    ],
+    "evidence": ["e3"], "derived": true,
+    "method": "Mapped from the NAHB 2024 Table 1 dollar breakdown (e3), excluding permit/impact/water-sewer fees and A&E ($401,468 direct). Then a 10% GC/OH&P markup was added to Div 01. Mapping: excavation/foundation/concrete 80% → 03 and 20% → 31; site-work 'other' → 31; framing, trusses, sheathing and half of interior trim/doors → 06; general metal → 05; exterior wall finish 25% → 04 (veneer) and 75% → 07, plus roofing and insulation → 07; windows/doors plus half of interior doors → 08; drywall, paint, flooring → 09; fireplace → 10; appliances → 11; cabinets/countertops → 12; plumbing plus fixtures → 22; HVAC → 23; electrical plus lighting → 26; landscaping, outdoor structures, driveway → 32; clean-up and 'other' → 01. The 04/07 and 03/31 allocations are assumptions."
+  },
+
+  "lineItems": [
+    {
+      "id": "lot-development",
+      "name": "Horizontal lot development (streets, subdivision utilities, storm) per lot",
+      "division": "33",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 30000, "mid": 50000, "high": 90000, "dollarYear": 2024, "region": "US", "evidence": ["e1"], "derived": true, "method": "NAHB 2024 finished lot cost $91,057 per home (e1) includes raw land plus development. Assumes development is ~45–65% of the finished-lot figure on greenfield suburban lots, so mid ≈ $50k. Low/high reflect small infill lots versus large lots with long utility runs. Verify against local lot-development budgets." },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Turn on when buying raw or entitled land instead of finished lots. Off-site and over-sizing improvements are extra."
+    },
+    {
+      "id": "septic-system",
+      "name": "On-site septic system (3-bedroom)",
+      "division": "33",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 8986, "mid": 12500, "high": 16350, "dollarYear": 2024, "region": "US", "evidence": ["e11"], "derived": false, "method": "Fixr range for a 3-bedroom septic system (e11). Mid ≈ midpoint." },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Census: 9% of 2025 for-sale homes used septic. Only for lots without public sewer."
+    },
+    {
+      "id": "water-well",
+      "name": "Private water well",
+      "division": "33",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 2500, "mid": 10000, "high": 25000, "dollarYear": 2024, "region": "US", "evidence": ["e11"], "derived": false, "method": "Fixr well drilling range (e11). Mid is a judgment toward the lower half, as most wells are shallow-to-moderate depth." },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Rural lots only."
+    },
+    {
+      "id": "appliance-package",
+      "name": "Kitchen appliance package",
+      "division": "11",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 5000, "mid": 7499, "high": 15000, "dollarYear": 2024, "region": "US", "evidence": ["e3"], "derived": false, "method": "Mid = NAHB 2024 appliances line ($7,499, e3). Low/high is a judgment for builder-grade versus upgraded packages." },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Already inside the hard cost; shown as a carve-out."
+    },
+    {
+      "id": "landscape-driveway",
+      "name": "Landscaping, driveway and outdoor structures (on-lot)",
+      "division": "32",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 15000, "mid": 23626, "high": 35000, "dollarYear": 2024, "region": "US", "evidence": ["e3"], "derived": false, "method": "Mid = NAHB 2024 landscaping ($9,269) + outdoor structures ($4,722) + driveway ($9,635) per e3. Low/high is a judgment." },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Already inside the hard cost; shown as a carve-out."
+    }
+  ],
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.14, "mid": 0.2, "high": 0.28, "evidence": ["e9", "e10"], "derived": false, "method": "From NAHB 2024 (e9, e10), as a % of the $401,468 direct construction cost: A&E $6,480 (1.6%); permit $7,640 + impact $6,367 + water/sewer $6,260 = $20,267 (5.0%); construction financing $10,220 (2.5%); builder overhead and G&A $38,248 (9.5%); marketing $5,633 (1.4%). Total 20.1%, used as the mid. Sales commission ($18,955, 4.7%) and builder profit (11% of price) are excluded. Low assumes low-fee jurisdictions and a lean overhead structure. High covers high-impact-fee jurisdictions (CA, WA) plus commissions." },
+    "breakdown": {
+      "architectureEngineering": 0.016,
+      "permitsAndFees": 0.05,
+      "financing": 0.025,
+      "developerOverhead": 0.095,
+      "marketing": 0.014
+    },
+    "notes": "NAHB 2024 per-home fees: building permit $7,640, impact fee $6,367, water and sewer fees/inspections $6,260 (e10). Add sales commissions (~2.8% of sales price) for for-sale product."
+  },
+
+  "contingency": {
+    "design": { "low": 0.0, "mid": 0.02, "high": 0.05, "evidence": [], "derived": true, "method": "Production builders reuse permitted plans, so design contingency is minimal. A judgment based on standard practice; no source found." },
+    "hard": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "Typical builder/lender hard-cost contingency for repeat production product. A judgment; no type-specific source found." },
+    "soft": { "low": 0.03, "mid": 0.05, "high": 0.1, "evidence": [], "derived": true, "method": "General development norm; no type-specific source found." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 200000, "max": 750000, "dollarYear": 2025, "region": "US", "method": "Hard low $220k × (1 + 14% soft) ≈ $250k, less ~20% for small entry-level homes in low-cost markets ≈ $200k. High $510k × 1.28 ≈ $650k, plus headroom for high-cost metros ≈ $750k. Excludes land and lot development." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerUnit",
+      "value": 428215,
+      "unit": "USD/unit",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": { "title": "Cost of Constructing a Home-2024 (Special Study for Housing Economics)", "url": "https://nahb.org/-/media/AB4EFC742624475A97A0A62189986FF8.ashx", "publisher": "National Association of Home Builders (Eric Lynch)", "accessed": "2026-10-24" },
+      "quote": "Table 1: B. Total Construction Cost $428,215 64.4%; A. Finished Lot Cost (including financing cost) $91,057 13.7%; Total Sales Price $665,298",
+      "scopeNotes": "Builder direct construction cost incl. subcontractors, labor and materials. It includes building permit, impact and water/sewer fees and A&E ($26,747), which are soft costs in our definition. It excludes builder overhead/G&A (5.7% of price), financing, marketing, commission, profit and the finished lot. The home averages 2,647 SF.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": 162,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": { "title": "Cost of Constructing a Home-2024 (Special Study for Housing Economics)", "url": "https://nahb.org/-/media/AB4EFC742624475A97A0A62189986FF8.ashx", "publisher": "National Association of Home Builders (Eric Lynch)", "accessed": "2026-10-24" },
+      "quote": "The average construction cost of a typical single-family home in the 2024 survey is $428,215 (Table 3), or about $162 per square foot – the highest in the history of this series.",
+      "scopeNotes": "Same scope as e1. Average finished area is 2,647 SF. NAHB says the survey is 'not designed to capture representative characteristics of the average home'.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "costBreakdownByStage",
+      "value": null,
+      "unit": "text",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": { "title": "Cost of Constructing a Home-2024 (Special Study for Housing Economics)", "url": "https://nahb.org/-/media/AB4EFC742624475A97A0A62189986FF8.ashx", "publisher": "National Association of Home Builders (Eric Lynch)", "accessed": "2026-10-24" },
+      "quote": "Table 1, II. Construction Cost Breakdown: Site Work $32,719 7.6%; Foundations $44,748 10.5%; Framing $70,982 16.6%; Exterior Finishes $57,510 13.4%; Major Systems Rough-ins $82,319 19.2%; Interior Finishes $103,391 24.1%; Final Steps $27,710 6.5%; Other $8,835 2.1%",
+      "scopeNotes": "Sub-line dollars used in the systemSplit and line items: Appliances $7,499; Landscaping $9,269; Outdoor Structures $4,722; Driveway $9,635; Cabinets, Countertops $19,056; HVAC $26,938.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "salePricePerSFExclLot",
+      "value": 153.65,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": { "title": "Characteristics of New Housing — Median and Average Price per Square Foot of Floor Area in Detached New Single-Family Houses Sold (soldpricesqft_cust.xls)", "url": "https://www.census.gov/construction/chars/xls/soldpricesqft_cust.xls", "publisher": "U.S. Census Bureau, Survey of Construction", "accessed": "2026-10-24" },
+      "quote": "Sheet SoldMedAvgPPSFDetach, row 2025: United States median 153.65, average 170.29 (price per SF excludes value of improved lot)",
+      "scopeNotes": "This is the sale price, not cost. It includes builder construction cost, fees, overhead, financing, marketing, commission and profit, and excludes the improved lot. Regional 2025 medians: NE $232.57, MW $160.00, South $143.85, West $211.98.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "sfPerUnit",
+      "value": 2216,
+      "low": 2216,
+      "high": 2427,
+      "unit": "count",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": { "title": "Characteristics of New Housing — Median and Average Square Feet of Floor Area in New Single-Family Houses Completed: Built For Sale (squarefeet_cust.xls)", "url": "https://www.census.gov/construction/chars/xls/squarefeet_cust.xls", "publisher": "U.S. Census Bureau, Survey of Construction", "accessed": "2026-10-24" },
+      "quote": "Sheet SFForSaleMedAvgSqFt, row 2025: United States median 2216, average 2427",
+      "scopeNotes": "Finished floor area of homes completed for sale; low = median, high = average. Overall 2025 completions median was 2,142 SF (Census highlights page).",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "contractPricePerSF",
+      "value": 171.57,
+      "low": 171.57,
+      "high": 198.33,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": { "title": "Characteristics of New Housing — Median and Average Contract Price per Square Foot of New Contractor-Built Single-Family Houses Started (contractpricesqft_cust.xls)", "url": "https://www.census.gov/construction/chars/xls/contractpricesqft_cust.xls", "publisher": "U.S. Census Bureau, Survey of Construction", "accessed": "2026-10-24" },
+      "quote": "Sheet ContractMedAvgPriceSqFt, row 2025: United States median 171.57, average 198.33 (Contract price excludes value of improved lot)",
+      "scopeNotes": "Contractor price (incl. GC OH&P) for homes built on the owner's land, i.e. custom homes. It is a proxy ceiling for production cost. Excludes the lot.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": 309,
+      "unit": "USD/sf",
+      "region": "Washington State",
+      "regionKey": "WA",
+      "dataYear": 2024,
+      "source": { "title": "Cost of Constructing New Homes in Washington State in 2024", "url": "https://housingstudies.biaw.com/reports/cost-of-constructing-new-homes-in-washington-state-in-2024", "publisher": "Building Industry Association of Washington (BIAW)", "accessed": "2026-10-24" },
+      "quote": "Single-family detached construction costs, on average, are $309 per square foot.",
+      "scopeNotes": "Builder survey in the NAHB format: 'includes all the costs paid by a builder' (GC work, subs, materials). Average home 2,505 SF. A high-cost state, so it marks the regional high end.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerSF",
+      "value": 203,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": { "title": "Cost to Build a House", "url": "https://www.fixr.com/costs/build-single-family-house", "publisher": "Fixr", "accessed": "2026-10-24" },
+      "quote": "The average cost to build a home by square footage is $203.",
+      "scopeNotes": "Consumer cost guide (updated Jan 30 2024). National average $506,618 for ~2,500 SF. Scope is unclear and likely includes some soft costs.",
+      "confidence": "low"
+    },
+    {
+      "id": "e9",
+      "metric": "salePriceShares",
+      "value": null,
+      "unit": "text",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": { "title": "Cost of Constructing a Home-2024 (Special Study for Housing Economics)", "url": "https://nahb.org/-/media/AB4EFC742624475A97A0A62189986FF8.ashx", "publisher": "National Association of Home Builders (Eric Lynch)", "accessed": "2026-10-24" },
+      "quote": "C. Financing Cost $10,220 1.5% D. Overhead and General Expenses $38,248 5.7% E. Marketing Cost $5,633 0.8% F. Sales Commission $18,955 2.8% G. Profit $72,971 11.0%",
+      "scopeNotes": "Shares of the $665,298 average sales price.",
+      "confidence": "high"
+    },
+    {
+      "id": "e10",
+      "metric": "feesPerUnit",
+      "value": 26747,
+      "unit": "USD/unit",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": { "title": "Cost of Constructing a Home-2024 (Special Study for Housing Economics)", "url": "https://nahb.org/-/media/AB4EFC742624475A97A0A62189986FF8.ashx", "publisher": "National Association of Home Builders (Eric Lynch)", "accessed": "2026-10-24" },
+      "quote": "A. Building Permit Fees $7,640 1.8% B. Impact Fee $6,367 1.5% C. Water & Sewer Fees Inspections $6,260 1.5% D. Architecture, Engineering $6,480 1.5%",
+      "scopeNotes": "Value is the sum of the four lines. These sit inside NAHB 'construction cost' but are soft costs/fees under our definition.",
+      "confidence": "high"
+    },
+    {
+      "id": "e11",
+      "metric": "lineItemCost",
+      "value": null,
+      "low": 2500,
+      "high": 25000,
+      "unit": "USD/unit",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": { "title": "Cost to Build a House", "url": "https://www.fixr.com/costs/build-single-family-house", "publisher": "Fixr", "accessed": "2026-10-24" },
+      "quote": "Septic system (three-bedroom home): $8,986 to $16,350; Well drilling: $2,500 to $25,000",
+      "scopeNotes": "Consumer guide line items (page lists these in its cost breakdown). Low/high here span the well range.",
+      "confidence": "low"
+    },
+    {
+      "id": "e12",
+      "metric": "lotSize",
+      "value": 20907,
+      "unit": "count",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": { "title": "Cost of Constructing a Home-2024 (Special Study for Housing Economics)", "url": "https://nahb.org/-/media/AB4EFC742624475A97A0A62189986FF8.ashx", "publisher": "National Association of Home Builders (Eric Lynch)", "accessed": "2026-10-24" },
+      "quote": "The average lot size in the 2024 NAHB Construction Cost Survey is 20,907 sq. ft., or slightly less than a half-acre",
+      "scopeNotes": "NAHB sample lots are large. Census highlights (2025): '41% built for sale had a lot size under 7,000 square feet.'",
+      "confidence": "medium"
+    },
+    {
+      "id": "e13",
+      "metric": "salePricePerSFExclLot",
+      "value": 152,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": { "title": "Custom Home Premium Highest Since 2011", "url": "https://eyeonhousing.org/2026/09/custom-home-premium-highest-since-2011/", "publisher": "NAHB Eye on Housing", "accessed": "2026-10-24" },
+      "quote": "For spec starts, after excluding improved lot values, the median was $152 per square foot",
+      "scopeNotes": "NAHB analysis of Census SOC. Sale price, not cost; corroborates e4.",
+      "confidence": "high"
+    }
+  ],
+
+  "openQuestions": [
+    "Public builder 10-K 'stick and brick' cost per SF (e.g., large national builders) would give a direct large-production cost anchor below the NAHB survey.",
+    "Lot development cost per lot is derived. A Zonda/John Burns or municipal lot-development benchmark would replace it.",
+    "The NAHB 2026 Construction Cost Survey (expected early 2027) should replace the 2024 figures."
+  ]
+}

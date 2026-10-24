@@ -1,0 +1,397 @@
+{
+  "schemaVersion": 1,
+  "id": "farmers-market-pavilion",
+  "name": "Farmers market / open-air pavilion",
+  "category": "entertainment",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Open-sided roofed pavilion (steel or heavy timber) over vendor stalls/drive aisles with lighting, power at columns, water, and usually a restroom building. Public bids give ≈ $57/SF of roof for a structure-only canopy (2015) and ≈ $540k for a ~20-stall street pavilion (2022, restrooms extra). The default includes a pro-rata restroom and site/utility allowance, so it sits above structure-only bids.",
+  "sizing": {
+    "typicalSize": {
+      "low": 4000,
+      "mid": 10000,
+      "high": 20000,
+      "unit": "sf",
+      "evidence": [
+        "e1",
+        "e2"
+      ],
+      "derived": true,
+      "method": "e1 15,000 SF roof; e2 ~20 vehicle stalls (≈ 6,000–9,000 SF). Mid 10,000 SF of covered area."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 8000,
+      "mid": 12000,
+      "high": 20000,
+      "evidence": [],
+      "derived": true,
+      "method": "Covered SF per acre of market site including aisles, parking and plaza; pavilions over existing parking lots (e1, e5) are denser. Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0,
+      "mid": 0.004,
+      "high": 0.008,
+      "type": "surface",
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Spaces per covered SF; many pavilions sit on lots used as parking on non-market days (e1). Derived."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 50,
+      "mid": 95,
+      "high": 200,
+      "dollarYear": 2024,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "entertainment/food-truck-park.json#e6"
+      ],
+      "derived": true,
+      "method": "2024 dollars per SF of covered area. Structure-only: e1 $56.6/SF (2015) ≈ $80 in 2024; shade/seating pavilion $41/SF (food-truck-park e6, 2022, lighter shade structure). e2 $540k for ~20 stalls (~7,500 SF assumed) ≈ $72/SF (2022) with lighting and power. Default adds restrooms (e3 $150k allowance ÷ 10,000 SF ≈ $15/SF) and site/utility/paving allowance (~$10–15/SF) → mid ≈ $95/SF. Low $50 = basic pre-engineered canopy over existing pavement, no restrooms; high $200 = heavy-timber/architectural pavilion with partially enclosed/heated bays (e4 Rochester-type market halls cost more)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Pavilion structure, slab/pavement under roof, lighting and power at columns, water hose bibs, pro-rata restroom building and on-site utilities. Excludes land, soft costs, vendor fixtures, off-sites, impact/tap fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.55,
+    "standard": 1.0,
+    "premium": 1.5,
+    "luxury": 2.1,
+    "evidence": [
+      "e1",
+      "e4"
+    ],
+    "derived": true,
+    "method": "economy ≈ low/mid (50/95); luxury ≈ high/mid (200/95 = 2.1); premium interpolated."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.1
+      },
+      {
+        "division": "03",
+        "pct": 0.15
+      },
+      {
+        "division": "05",
+        "pct": 0.25
+      },
+      {
+        "division": "06",
+        "pct": 0.05
+      },
+      {
+        "division": "07",
+        "pct": 0.08
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.08
+      },
+      {
+        "division": "26",
+        "pct": 0.1
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.1
+      },
+      {
+        "division": "33",
+        "pct": 0.04
+      }
+    ],
+    "evidence": [
+      "e1",
+      "e2"
+    ],
+    "derived": true,
+    "method": "Derived: steel/timber frame and roof dominate (05 + 06 + 07 ≈ 38%); footings and slab 03; electrical (lights/power on each pole per e2) ≈ 10%; restroom plumbing 22; paving/landscape 32. Not taken from a published bid breakdown."
+  },
+  "lineItems": [
+    {
+      "id": "pavilion-structure",
+      "name": "Open-sided pavilion structure and roof (steel or timber, incl. footings)",
+      "division": "05",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 40,
+        "mid": 65,
+        "high": 130,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "e1",
+          "entertainment/food-truck-park.json#e6"
+        ],
+        "derived": true,
+        "method": "e1 ≈ $57/SF roof structure (2015) and e6 $41/SF shade (2022); heavy timber/architectural roofs at the high end."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "restroom-building",
+      "name": "Restroom building",
+      "division": "22",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 250000,
+        "high": 450000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e3",
+          "_blocks/amenities.json#e13",
+          "_blocks/amenities.json#e14"
+        ],
+        "derived": true,
+        "method": "e3 $150k allowance (2022); park restroom contracts $265k–$608k (amenities block)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "vendor-power-water",
+      "name": "Vendor power pedestals/receptacles and water stations (per stall)",
+      "division": "26",
+      "unit": "stall",
+      "qty": {
+        "per": "sf",
+        "value": 0.004
+      },
+      "cost": {
+        "low": 1500,
+        "mid": 3000,
+        "high": 6000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "e2"
+        ],
+        "derived": true,
+        "method": "Derived per-stall allowance (e2 includes lights and electricity on each pole). Qty ≈ 1 stall per 250 SF covered."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "enclosed-market-bays",
+      "name": "Enclosed/heated market bays or winter shed (per SF enclosed)",
+      "division": "13",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 0
+      },
+      "cost": {
+        "low": 250,
+        "mid": 400,
+        "high": 600,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": true,
+        "method": "Derived; e4 shows enclosed sheds substantially raise cost. Qty defaults to 0."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": ""
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 1,
+      "mid": 3,
+      "high": 8,
+      "dollarYear": 2024,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Picnic tables, signage, trash receptacles, banners. Derived."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.1,
+      "mid": 0.15,
+      "high": 0.2,
+      "evidence": [],
+      "derived": true,
+      "method": "Simple structure: A&E, structural, civil, permits, survey/testing. Public projects add grant administration. Derived."
+    },
+    "notes": "Grant-funded projects often require prevailing wage and Buy-America compliance (soft/admin cost)."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [
+        "e2"
+      ],
+      "derived": true,
+      "method": "Small public pavilions frequently bid over budget (e2 bid 12% over the $483k budget)."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 45,
+      "max": 260,
+      "dollarYear": 2024,
+      "region": "US",
+      "method": "Structure-only canopy (e1 escalated, little soft) to architectural pavilion with restrooms (high × 1.25)."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 56.6,
+      "unit": "USD/sf",
+      "region": "Washington, PA",
+      "regionKey": "PA-Pittsburgh",
+      "dataYear": 2015,
+      "source": {
+        "title": "Farmers Market pavilion contract awarded",
+        "url": "https://cs.observer-reporter.com/news/2015/apr/23/farmers-market-pavilion-contract-awarded/",
+        "publisher": "Observer-Reporter",
+        "accessed": "2026-10-24"
+      },
+      "quote": "awarded an $849,000 contract to Maccabee Industrial Inc. ... The 15,000-square-foot roof structure will be constructed as originally designed, and the restrooms and office will be included in another phase",
+      "scopeNotes": "Canopy pavilion over existing city parking lots; restrooms/office deferred. $849,000 / 15,000 SF ≈ $56.6/SF of roof (my division). Washington PA is in the Pittsburgh metro.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostLumpSum",
+      "value": 540215.55,
+      "unit": "USD/ls",
+      "region": "Clinton, IA",
+      "regionKey": "IA",
+      "dataYear": 2022,
+      "source": {
+        "title": "Council awards bid for farmers market pavilion",
+        "url": "https://www.clintonherald.com/news/local_news/council-awards-bid-for-farmers-market-pavilion/article_e8fe9bbe-6c1c-11ed-83e0-27aff63411c4.html",
+        "publisher": "Clinton Herald",
+        "accessed": "2026-10-24"
+      },
+      "quote": "the $540,215.55 bid, which came in much higher than the project’s $483,000 budget ... stalls providing room for close to 20 vehicles ... The structure will include lights and electricity on each supporting pole.",
+      "scopeNotes": "Open-air street-spanning pavilion, ~20 vendor vehicle stalls (≈ $27k per stall); city separately allotted $150,000 for outdoor restrooms. Published 2022-11-24.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "restroomAllowance",
+      "value": 150000,
+      "unit": "USD/ls",
+      "region": "Clinton, IA",
+      "regionKey": "IA",
+      "dataYear": 2022,
+      "source": {
+        "title": "Council awards bid for farmers market pavilion",
+        "url": "https://www.clintonherald.com/news/local_news/council-awards-bid-for-farmers-market-pavilion/article_e8fe9bbe-6c1c-11ed-83e0-27aff63411c4.html",
+        "publisher": "Clinton Herald",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Outdoor restrooms have become part of the project as well, for which Obren says the city allotted $150,000.",
+      "scopeNotes": "Budget allowance, not a bid; plumbing had to be extended.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "renovationCost",
+      "value": 8300000,
+      "unit": "USD/ls",
+      "region": "Rochester, NY",
+      "regionKey": "NY",
+      "dataYear": 2016,
+      "source": {
+        "title": "Rochester Public Market",
+        "url": "https://en.wikipedia.org/wiki/Rochester_Public_Market",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Between 2015 and 2017, the market underwent an $8.3 million renovation ... replaced the 1978 \"Wintershed\" with a new 13,000-square-foot ... indoor Shed B, constructed a new outdoor Shed D ... added 46 vendor stalls, and installed four food kiosks",
+      "scopeNotes": "Mixed scope (enclosed heated shed + open shed + site); upper-bound reference for market buildings, not a simple pavilion.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "contractAmount",
+      "value": 3670000,
+      "unit": "USD/ls",
+      "region": "Traverse City, MI",
+      "regionKey": "MI",
+      "dataYear": 2026,
+      "source": {
+        "title": "Traverse City Commission to vote on $3.67 million Lot B and Farmers Market Pavilion project",
+        "url": "https://www.9and10news.com/2026/04/30/traverse-city-commission-to-vote-on-367-million-lot-b-and-farmers-market-pavilion-project/",
+        "publisher": "9&10 News",
+        "accessed": "2026-10-24"
+      },
+      "quote": "consider awarding a $3.67 million contract Monday to reconstruct Parking Lot B downtown and build the long-planned Farmers Market Pavilion. Elmer’s Crane and Dozer of Traverse City submitted the low bid at $3,334,714.24",
+      "scopeNotes": "Combined parking-lot reconstruction + pavilion contract (pavilion share not separated in the article; ~$2.95M funded by TIF). Pavilion area not stated. Context only.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Get pavilion area for e2/e5 to convert to $/SF.",
+    "More 2023+ pavilion bids would tighten the mid."
+  ]
+}

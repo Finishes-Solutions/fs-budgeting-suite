@@ -1,0 +1,474 @@
+{
+  "schemaVersion": 1,
+  "id": "amphitheater",
+  "name": "Amphitheater",
+  "category": "entertainment",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "seat",
+  "summary": "Outdoor performance venue priced per seat of total capacity (fixed + lawn). Cost per seat varies ~10x with the share of fixed/covered seating, the stage house/shell and back-of-house, and urban vs. greenfield sites: lawn-heavy pavilions ≈ $1,000/seat (Walmart AMP 2014), modern mid-size municipal venues ≈ $5,000/seat (Orion 2022), premium shells ≈ $8,000–10,000/seat (Daily's Place, Rady Shell). Figures are total project costs from Wikipedia infoboxes/citations; hard cost is derived with an assumed hard-cost share.",
+  "sizing": {
+    "typicalSize": {
+      "low": 1500,
+      "mid": 5000,
+      "high": 12000,
+      "unit": "seat",
+      "evidence": [
+        "e1",
+        "e3",
+        "e6",
+        "e7"
+      ],
+      "derived": true,
+      "method": "Examples: 5,990 (e7), 6,800 (e6), 8,000 (e1), 11,000 (e3). Municipal community amphitheaters are often 1,500–3,000. Mid 5,000."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 2,
+      "mid": 4,
+      "high": 8,
+      "evidence": [],
+      "derived": true,
+      "method": "Enclosed/roofed building SF (stage house, BOH, dressing, concessions, restrooms) per capacity seat; derived from typical programs (e.g., 15,000–30,000 SF of buildings for 5,000–8,000 seats). Excludes lawn."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 500,
+      "mid": 1000,
+      "high": 1800,
+      "evidence": [],
+      "derived": true,
+      "method": "Seats per acre of venue site excluding remote parking: lawn ~10 SF/person, fixed seats ~7 SF, plus stage, concourses and support. Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.2,
+      "mid": 0.33,
+      "high": 0.4,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Assembly zoning commonly 1 space per 3–4 seats; urban venues rely on shared/structured parking. Derived."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 800,
+      "mid": 3500,
+      "high": 8000,
+      "dollarYear": 2022,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5"
+      ],
+      "derived": true,
+      "method": "2022 dollars, hard cost per capacity seat. Total project cost per seat: e3 $1,045 (2014), e1 $5,000 (2022), e2 $8,145 (2016, includes practice field), e4 $10,000 (2021, premium), e5 $655 (1991, not used for mid). Applying ~0.75–0.80 hard-cost share: e1 ≈ $3,900, e4 ≈ $7,800, e3 ≈ $850 (≈ $1,100 in 2022). Mid $3,500 sits slightly below the Orion-derived figure to represent a typical municipal venue with a moderate fixed-seat share (~30–40% fixed, cf. e6/e7). Low ≈ lawn-dominant pavilion (e3); high ≈ premium shell (e4)."
+    },
+    "perSF": {
+      "low": 400,
+      "mid": 875,
+      "high": 1000,
+      "dollarYear": 2022,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "perPrimaryUnit / sfPerPrimaryUnit — not meaningful as a building $/SF because seating bowl, lawn and site are included; shown only for completeness (800/2, 3500/4, 8000/8)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Stage/shell, BOH, concessions/restrooms, seating bowl and lawn, site utilities, lighting and on-site parking. Excludes production sound/lighting packages (lineItem), land, soft costs, off-sites."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.3,
+    "standard": 1.0,
+    "premium": 1.6,
+    "luxury": 2.3,
+    "evidence": [
+      "e3",
+      "e1",
+      "e4"
+    ],
+    "derived": true,
+    "method": "economy ≈ low/mid (800/3500 ≈ 0.23, rounded up); luxury = high/mid (8000/3500 ≈ 2.3); premium ≈ Orion-type (e1-derived $3,900–5,000)/mid ≈ 1.4–1.6."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.1
+      },
+      {
+        "division": "03",
+        "pct": 0.14
+      },
+      {
+        "division": "04",
+        "pct": 0.03
+      },
+      {
+        "division": "05",
+        "pct": 0.12
+      },
+      {
+        "division": "06",
+        "pct": 0.02
+      },
+      {
+        "division": "07",
+        "pct": 0.06
+      },
+      {
+        "division": "08",
+        "pct": 0.02
+      },
+      {
+        "division": "09",
+        "pct": 0.05
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.04
+      },
+      {
+        "division": "12",
+        "pct": 0.03
+      },
+      {
+        "division": "13",
+        "pct": 0.04
+      },
+      {
+        "division": "22",
+        "pct": 0.05
+      },
+      {
+        "division": "23",
+        "pct": 0.04
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "27",
+        "pct": 0.02
+      },
+      {
+        "division": "31",
+        "pct": 0.06
+      },
+      {
+        "division": "32",
+        "pct": 0.06
+      },
+      {
+        "division": "33",
+        "pct": 0.02
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived: concrete seating bowl and stage (03 ≈ 14%), long-span stage roof/shell steel (05 ≈ 12%), fixed seating (12), rigging/stage equipment (11), heavy site work for raked lawn (31/32 ≈ 12%), power for production (26). Not sourced."
+  },
+  "lineItems": [
+    {
+      "id": "fixed-seating",
+      "name": "Fixed seats (installed, per fixed seat)",
+      "division": "12",
+      "unit": "seat",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 0.35
+      },
+      "cost": {
+        "low": 250,
+        "mid": 450,
+        "high": 800,
+        "dollarYear": 2022,
+        "region": "US",
+        "evidence": [
+          "e6",
+          "e7"
+        ],
+        "derived": true,
+        "method": "Derived allowance per installed fixed seat; qty 0.35 per capacity seat from fixed-seat shares of ~30–34% (e6, e7)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "stage-shell",
+      "name": "Stage house / acoustic shell / canopy roof",
+      "division": "05",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 2000000,
+        "mid": 6000000,
+        "high": 20000000,
+        "dollarYear": 2022,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": true,
+        "method": "Derived allowance; premium symphony shells (e4) at the top."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "production-av",
+      "name": "Production sound, lighting and video package",
+      "division": "27",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 500000,
+        "mid": 1500000,
+        "high": 4000000,
+        "dollarYear": 2022,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance; often operator-provided or rented."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": ""
+    },
+    {
+      "id": "concessions-restrooms",
+      "name": "Concessions and restroom buildings",
+      "division": "22",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 2
+      },
+      "cost": {
+        "low": 300000,
+        "mid": 600000,
+        "high": 1200000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "_blocks/amenities.json#e13",
+          "_blocks/amenities.json#e14"
+        ],
+        "derived": true,
+        "method": "Park restroom contracts $265k–$608k each (amenities block) scaled for event peak loads, plus concessions."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 20,
+      "mid": 60,
+      "high": 150,
+      "dollarYear": 2022,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Movable seating, bar/concession fixtures, signage, operations equipment. Derived."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.15,
+      "mid": 0.22,
+      "high": 0.3,
+      "evidence": [],
+      "derived": true,
+      "method": "Theatre/acoustic consultants, structural for long-span shells, civil, sound studies, permits; public projects carry owner's rep/CM fees. Derived."
+    },
+    "notes": "Noise studies and neighborhood mitigation are common soft items."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Unique structures (shell/canopy) carry design risk."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical public-venue construction contingency."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 700,
+      "max": 11000,
+      "dollarYear": 2022,
+      "region": "US",
+      "method": "Total project cost per seat range of e1–e4 (≈ $1,045–10,000) with margin."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "projectCostPerSeat",
+      "value": 5000,
+      "unit": "USD/seat",
+      "region": "Huntsville, AL",
+      "regionKey": "AL",
+      "dataYear": 2022,
+      "source": {
+        "title": "Orion Amphitheater",
+        "url": "https://en.wikipedia.org/wiki/Orion_Amphitheater",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The amphitheater, which cost $40 million to build, is owned by the city of Huntsville. ... Capacity 8000",
+      "scopeNotes": "$40M / 8,000 capacity ≈ $5,000 per seat; opened 2022; likely total project cost.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "projectCostPerSeat",
+      "value": 8145,
+      "unit": "USD/seat",
+      "region": "Jacksonville, FL",
+      "regionKey": "FL-Jacksonville",
+      "dataYear": 2016,
+      "source": {
+        "title": "Daily's Place",
+        "url": "https://en.wikipedia.org/wiki/Daily%27s_Place",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "seats 5,500 spectators ... Cost $44.8 million ... shares space with a \"flex field\" indoor practice facility for the Jacksonville Jaguars",
+      "scopeNotes": "Covered amphitheater under one roof with an indoor NFL practice field (hangar doors between), so cost includes non-amphitheater space; $44.8M / 5,500 ≈ $8,145 per seat. High outlier.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "projectCostPerSeat",
+      "value": 1045,
+      "unit": "USD/seat",
+      "region": "Rogers, AR",
+      "regionKey": "AR",
+      "dataYear": 2014,
+      "source": {
+        "title": "Walmart AMP",
+        "url": "https://en.wikipedia.org/wiki/Walmart_AMP",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Capacity 11,000 Construction Groundbreaking October 2013 Opened June 7, 2014 ... Cost $ 11.5 million",
+      "scopeNotes": "Lawn-heavy outdoor pavilion; $11.5M / 11,000 ≈ $1,045 per capacity seat. Expanded 2016 (not included).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "projectCostPerSeat",
+      "value": 10000,
+      "unit": "USD/seat",
+      "region": "San Diego, CA",
+      "regionKey": "CA-SanDiego",
+      "dataYear": 2021,
+      "source": {
+        "title": "The Rady Shell at Jacobs Park",
+        "url": "https://en.wikipedia.org/wiki/The_Rady_Shell_at_Jacobs_Park",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "A sloping lawn covered with artificial turf provides variable amounts of seating for 2,000 to 8,500 guests. ... \"San Diego Symphony Starts New Era with Friday Opening of $85 Million Rady Shell at Jacobs Park Concert Venue\"",
+      "scopeNotes": "Premium symphony shell incl. park improvements (lighting, public restrooms); $85M / 8,500 ≈ $10,000 per seat. Upper bound.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "projectCostPerSeat",
+      "value": 655,
+      "unit": "USD/seat",
+      "region": "Raleigh, NC",
+      "regionKey": "NC-Raleigh",
+      "dataYear": 1991,
+      "source": {
+        "title": "Coastal Credit Union Music Park",
+        "url": "https://en.wikipedia.org/wiki/Coastal_Credit_Union_Music_Park",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "It was built by the City of Raleigh, with private sector participation, at a cost of $13.5 million and opened on July 4, 1991 ... Capacity 20,601",
+      "scopeNotes": "Large shed-and-lawn amphitheater; 1991 dollars (too old for defaults, kept for spread). ≈ $655 per seat.",
+      "confidence": "low"
+    },
+    {
+      "id": "e6",
+      "metric": "seatMix",
+      "value": 6800,
+      "unit": "count",
+      "region": "Nashville, TN",
+      "regionKey": "TN-Nashville",
+      "source": {
+        "title": "Ascend Amphitheater",
+        "url": "https://en.wikipedia.org/wiki/Ascend_Amphitheater",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The amphitheater seats 2,300 in fixed seating, and 4,500 on the lawn, with a total capacity of 6,800.",
+      "scopeNotes": "Sizing/seat mix only (fixed ≈ 34% of capacity).",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "seatMix",
+      "value": 5990,
+      "unit": "count",
+      "region": "Raleigh, NC",
+      "regionKey": "NC-Raleigh",
+      "source": {
+        "title": "Red Hat Amphitheater",
+        "url": "https://en.wikipedia.org/wiki/Red_Hat_Amphitheater",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Seating capacity is 5,990: 1,800 fixed seats; 2,700 movable seats; and lawn space for 1,000.",
+      "scopeNotes": "Sizing/seat mix only.",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "Need municipal amphitheater bid tabs/capital budgets (2020+) with capacity to firm up the mid.",
+    "Split cost by fixed-seat share; hard-cost share of the Wikipedia totals is assumed."
+  ]
+}

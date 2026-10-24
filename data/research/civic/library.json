@@ -1,0 +1,545 @@
+{
+  "schemaVersion": 1,
+  "id": "library",
+  "name": "Public library",
+  "category": "civic",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Branch libraries are mid-size (10k-35k SF) one- or two-story assembly buildings with long-span reading rooms, lots of glazing and daylighting, heavy floor loads for stacks, meeting rooms and makerspaces; cost is driven by envelope quality, HVAC and site. Data is good: recent Texas state registrations, a Georgia owner estimate, the Virginia state cost database and a Library Journal-based median all fall in ~$500-$680/SF (2024-26), with older Midwest/Mountain planning rates near $320-$360/SF.",
+  "sizing": {
+    "typicalSize": {
+      "low": 10000,
+      "mid": 18000,
+      "high": 35000,
+      "unit": "sf",
+      "evidence": [
+        "e1",
+        "e2",
+        "e5",
+        "e7",
+        "e9",
+        "e10"
+      ],
+      "derived": true,
+      "method": "New branch examples: 14,100 SF (e1), 16,700 (e2), ~17,000 (e5), 21,600 (e10), 23,520 (e7); Cottage Grove scenarios 10k/15k/25k SF (e9). Central libraries run 45k-150k SF (e3, e4) and are above this range."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 4000,
+      "mid": 7000,
+      "high": 12000,
+      "evidence": [],
+      "derived": true,
+      "method": "Building SF per site acre. One-story suburban branch of ~15-20k SF typically sits on 2-4 acres with surface parking, book drop drive lane, stormwater and landscaped grounds (~5,000-10,000 SF/acre). Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0025,
+      "mid": 0.0035,
+      "high": 0.005,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per SF of building (= 2.5-5 per 1,000 SF); common suburban library requirement is ~1 space per 250-300 SF. Derived; local code governs."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 400,
+      "mid": 575,
+      "high": 800,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "e7",
+        "e8",
+        "e9",
+        "e10",
+        "e11"
+      ],
+      "derived": false,
+      "method": "Hard cost incl. sitework per building SF. 2024-26 anchors: $509 (e2), $515 (e5 midpoint), $567 LJ median with IQR $525-$665 (e6), $574 (e3, 2022), $624 (e8), $663 (e1), $680 (e7); large-building state average $395 (e4). Median of the branch-scale anchors ~ $575/SF (2025 $). Low $400 = simple one-story branch in a low-cost market / large-building economies (e4; e9 $320-$360 in 2022); high $800 = high-cost metro or two-story signature branch (LJ upper projects ~$790-$820 per e6 source). RSMeans 2019 model ($182 incl. A/E, e11) retained only as a stale reference."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. general conditions and OH&P and on-site work (parking, book-drop lane, landscaping, utilities); excludes land, soft costs, shelving/furniture/technology (FF&E), opening-day collection, off-sites, impact/tap fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.75,
+    "standard": 1.0,
+    "premium": 1.2,
+    "luxury": 1.45,
+    "evidence": [
+      "e6",
+      "e9"
+    ],
+    "derived": true,
+    "method": "Economy ~ simple one-story branch at ~$430 (e9 escalated); premium ~ LJ upper quartile $665 / $567 median = 1.17 (e6); luxury ~ signature projects ~$800+ (1.4-1.5x)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.07
+      },
+      {
+        "division": "04",
+        "pct": 0.05
+      },
+      {
+        "division": "05",
+        "pct": 0.07
+      },
+      {
+        "division": "06",
+        "pct": 0.03
+      },
+      {
+        "division": "07",
+        "pct": 0.07
+      },
+      {
+        "division": "08",
+        "pct": 0.08
+      },
+      {
+        "division": "09",
+        "pct": 0.09
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.01
+      },
+      {
+        "division": "12",
+        "pct": 0.01
+      },
+      {
+        "division": "14",
+        "pct": 0.01
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.04
+      },
+      {
+        "division": "23",
+        "pct": 0.12
+      },
+      {
+        "division": "26",
+        "pct": 0.09
+      },
+      {
+        "division": "27",
+        "pct": 0.03
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.05
+      },
+      {
+        "division": "33",
+        "pct": 0.02
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived from a typical one/two-story steel-frame public assembly building: higher glazing/openings (8%) and finishes (9%) for daylit reading rooms, HVAC 12% for assembly ventilation loads, communications 3% for public computing; site 10% (31-33) for a suburban branch with surface parking. No public elemental estimate for a branch library was found in this session - verify against a bid tabulation."
+  },
+  "lineItems": [
+    {
+      "id": "automated-materials-handling",
+      "name": "Automated materials handling / returns sorter",
+      "division": "11",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 350000,
+        "high": 750000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance (3-bin small branch sorter to multi-bin central system); usually procured by the library."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional; often owner-procured with RFID."
+    },
+    {
+      "id": "opening-day-collection",
+      "name": "Opening-day collection (books/media)",
+      "division": "12",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 500000,
+        "mid": 1000000,
+        "high": 2000000,
+        "dollarYear": 2022,
+        "region": "US",
+        "evidence": [
+          "e12"
+        ],
+        "derived": true,
+        "method": "Cottage Grove carries a $1M starting collection for a 10k-25k SF library (e12); scale roughly $40-$80 per SF of building."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Not construction; include only if the developer funds the collection."
+    },
+    {
+      "id": "drive-up-book-drop",
+      "name": "Drive-up book drop / pickup window with canopy",
+      "division": "10",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 40000,
+        "mid": 90000,
+        "high": 200000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance incl. through-wall unit, canopy and drive lane striping."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Inside baseline hard cost."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 35,
+      "mid": 55,
+      "high": 90,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: library FF&E (shelving, reading/lounge furniture, service desks, public computers, meeting-room AV) typically ~$35-$90 per building SF depending on technology; Cottage Grove's all-in budget explicitly includes 'furniture, finishes, phone/cabling, collection' beyond construction (e12)."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.18,
+      "mid": 0.22,
+      "high": 0.3,
+      "evidence": [
+        "e9"
+      ],
+      "derived": true,
+      "method": "Cottage Grove carries A&E at 8% of construction (e9); add owner's rep/PM 3-4%, permits/plan review 1-2%, survey/geotech/testing/commissioning 2-3%, legal/admin/insurance 2-3%, technology consultants ~1% -> ~18%-22%; up to 30% with public art (1%-percent-for-art programs) and LEED/net-zero certification. Excludes FF&E and contingency."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.08
+    },
+    "notes": "Many cities apply a 1%-2% percent-for-art requirement to library projects; check local ordinance."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.1,
+      "high": 0.15,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: concept-stage public building norm (5% at construction documents up to 15% at programming)."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: owner construction contingency for new public buildings."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: typical owner soft-cost contingency."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 450,
+      "max": 1200,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Low ~ $400 hard x 1.15; high ~ $800 hard x 1.3 soft + allowance for high-cost metros (signature branches > $1,000/SF all-in)."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 663,
+      "unit": "USD/sf",
+      "region": "Del Valle (Travis County), TX",
+      "regionKey": "TX-Austin",
+      "dataYear": 2024,
+      "source": {
+        "title": "TABS2024017695 - New Del Valle Public Library",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2024017695",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $9,350,000 ... New 14,100 square foot, one-story Library with associated site work",
+      "scopeNotes": "Registered estimated construction cost incl. site work / SF = ~$663/SF; start 12/2024.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": 509,
+      "unit": "USD/sf",
+      "region": "Weslaco (Hidalgo County), TX",
+      "regionKey": "TX",
+      "dataYear": 2024,
+      "source": {
+        "title": "TABS2025001915 - New Public Library (Weslaco)",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2025001915",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $8,500,000 ... new one-story public library of 16,700 SF",
+      "scopeNotes": "Registered estimated construction cost / SF = ~$509/SF; scope also lists accessible public parking, sitework and landscaping; low-cost Rio Grande Valley market.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": 574,
+      "unit": "USD/sf",
+      "region": "Cedar Park (Williamson County), TX",
+      "regionKey": "TX-Austin",
+      "dataYear": 2022,
+      "source": {
+        "title": "TABS2023000852 - Cedar Park Library",
+        "url": "https://www.tdlr.texas.gov/TABS/Projects/TABS2023000852",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $27,000,000 ... a new construction, 47,000 SF, 2-story central library facility",
+      "scopeNotes": "Registered estimated construction cost / SF = ~$574/SF; central (not branch) library, 2022 dollars.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": 395,
+      "unit": "USD/sf",
+      "region": "Richmond, VA (state database)",
+      "regionKey": "VA-Richmond",
+      "dataYear": 2026,
+      "source": {
+        "title": "Virginia Building Construction Cost Database (VBCCD) - 2026, rates per 01/01/2026",
+        "url": "https://aemassets.dgs.virginia.gov/site-assets/deb/Miscellaneous/R_2%20PUBLISHED%20Virginia%20Building%20Construction%20Cost%20Database%20-%202026.pdf",
+        "publisher": "Virginia Department of General Services, Division of Engineering & Buildings",
+        "accessed": "2026-10-24"
+      },
+      "quote": "New Library Yes Sq. Ft. 30,770 - 200,000 120,000 $395",
+      "scopeNotes": "Median comp is a 120,000 SF (mostly academic/state) library; economies of scale make this lower than a branch. Average construction cost of actual state/regional projects set to Richmond VA Jan 2026; 'Prices also include utilities and site work where applicable.' Excludes soft costs. Mostly higher-ed/state agency buildings.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": 515,
+      "low": 471,
+      "high": 559,
+      "unit": "USD/sf",
+      "region": "Athens-Clarke County, GA",
+      "regionKey": "GA",
+      "dataYear": 2026,
+      "source": {
+        "title": "Construction Services for the Eastside Public Library - 5989509",
+        "url": "https://projects.constructconnect.com/details/7356822-construction-services-for-the-eastside-public-library%26find_loc=georgia-30605",
+        "publisher": "ConstructConnect (public solicitation record)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "a new ~17,000 square foot branch library ... The estimated range of costs for the construction of this Project is between $8,000,000 and $9,500,000.",
+      "scopeNotes": "Owner's published construction estimate range / 17,000 SF = ~$471-$559/SF; bid date Jan 22 2026.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostPerSF",
+      "value": 567,
+      "low": 525,
+      "high": 665,
+      "unit": "USD/sf",
+      "region": "US (16 new public libraries, Library Journal Year in Architecture 2025)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "Public Library Construction Cost Per Square Foot (2026)",
+        "url": "https://buildermuse.com/public-works/public-library-construction-cost-per-square-foot/",
+        "publisher": "Buildermuse (analysis of Library Journal Year in Architecture 2025 data)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "gives a median of about $567 per square foot ... the middle half of projects between roughly $525 and $665 per square foot.",
+      "scopeNotes": "Construction cost per SF of new public library buildings completed ~2024-25 (dollars of contract years, assumed ~2024). Secondary analysis; Library Journal page itself is paywalled/blocked.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": 680,
+      "unit": "USD/sf",
+      "region": "New Braunfels, TX",
+      "regionKey": "TX",
+      "dataYear": 2026,
+      "source": {
+        "title": "Public Library Construction Cost Per Square Foot (2026)",
+        "url": "https://buildermuse.com/public-works/public-library-construction-cost-per-square-foot/",
+        "publisher": "Buildermuse (citing Community Impact, Feb 2026)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "a $16 million construction contract with Byrne Construction Services for a 23,520-square-foot Southeast Branch Library ... roughly $680 per square foot (our arithmetic)",
+      "scopeNotes": "Construction contract / SF; council approval Feb 9 2026; described as preliminary.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerSF",
+      "value": 624,
+      "unit": "USD/sf",
+      "region": "Williamsburg, VA",
+      "regionKey": "VA",
+      "dataYear": 2026,
+      "source": {
+        "title": "Public Library Construction Cost Per Square Foot (2026)",
+        "url": "https://buildermuse.com/public-works/public-library-construction-cost-per-square-foot/",
+        "publisher": "Buildermuse (citing City of Williamsburg project page)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The city's project page lists a construction payment of $31,224,414 and a total contract of $32,347,826 ... about $624 per square foot (our arithmetic).",
+      "scopeNotes": "50,000 SF library; construction payment / SF; authorized Sept 2026.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9",
+      "metric": "hardCostPerSF",
+      "value": 360,
+      "low": 320,
+      "high": 360,
+      "unit": "USD/sf",
+      "region": "Cottage Grove (Dane County), WI",
+      "regionKey": "WI",
+      "dataYear": 2022,
+      "source": {
+        "title": "Considerations for FMP - Capital Costs (Cottage Grove library planning)",
+        "url": "https://www.vi.cottagegrove.wi.gov/AgendaCenter/ViewFile/Item/10796?fileID=21319",
+        "publisher": "Village of Cottage Grove, WI",
+        "accessed": "2026-10-24"
+      },
+      "quote": "2022 building costs of $320-360/SF (for reference Oregon's project is currently $360/SF). ... Annual escalator of 12.5%, A&E 8% of construction costs.",
+      "scopeNotes": "Planning construction rate from local architects and the adjacent Oregon WI library; road/utilities brought by adjacent development; A&E 8% of construction; $1M starting collection carried separately.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e10",
+      "metric": "hardCostPerSF",
+      "value": 350,
+      "unit": "USD/sf",
+      "region": "Powell, WY",
+      "regionKey": "WY",
+      "dataYear": 2019,
+      "source": {
+        "title": "New library actually estimated to cost $8 million to $10 million",
+        "url": "https://www.powelltribune.com/stories/new-library-actually-estimated-to-cost-8-million-to-10-million,22707",
+        "publisher": "Powell Tribune (Dec 3 2019)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "That's based on a 21,600 square foot building constructed at a cost of $350 per square foot.",
+      "scopeNotes": "Building construction rate; total project $8M-$10M after furnishings, site prep, landscaping and other costs.",
+      "confidence": "low"
+    },
+    {
+      "id": "e11",
+      "metric": "hardCostPerSF",
+      "value": 181.72,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "RSMeans square foot cost model: Library (Face Brick & Concrete Block / Reinforced Concrete), 2 story",
+        "url": "https://www.rsmeans.com/model-pages/library",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Model page cost table (22,000 SF, 2019 data): SubTotal $134.6/SF; Contractor Fees 25%; Architectural Fees 8%; Total Building Cost $181.72/SF (union)",
+      "scopeNotes": "Building only, union labor, 2019 national average; includes contractor GC/OH&P (25%) AND architect fees; excludes sitework, land, FF&E. Hard cost w/o A/E fee = SubTotal x 1.25. Stale (2019) and well below current bids; used for relative ratios between types only.",
+      "confidence": "low"
+    },
+    {
+      "id": "e12",
+      "metric": "totalProjectCost",
+      "value": 1000000,
+      "unit": "USD/ls",
+      "region": "Cottage Grove (Dane County), WI",
+      "regionKey": "WI",
+      "dataYear": 2022,
+      "source": {
+        "title": "Considerations for FMP - Capital Costs (Cottage Grove library planning)",
+        "url": "https://www.vi.cottagegrove.wi.gov/AgendaCenter/ViewFile/Item/10796?fileID=21319",
+        "publisher": "Village of Cottage Grove, WI",
+        "accessed": "2026-10-24"
+      },
+      "quote": "This \"all-in\" number includes: construction, furniture, finishes, phone/cabling, collection, site work, architect/design costs, engineering, and project management. ... $1M starting collection.",
+      "scopeNotes": "Opening-day collection allowance of $1M for a 10,000-25,000 SF library serving 10-25k residents.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "Library Journal Year in Architecture tables (the best national dataset) were blocked to direct fetch; e6 cites a secondary analysis - verify the median against the LJ table.",
+    "No public elemental (CSI) estimate for a branch library was found; the system split is derived.",
+    "Library FF&E per SF is derived; a recent bond budget with separate FF&E/technology lines would firm it up."
+  ]
+}

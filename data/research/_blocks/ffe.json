@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "id": "ffe",
+  "name": "Furniture, fixtures & equipment (FF&E) and operating supplies & equipment (OS&E)",
+  "researchedAt": "2026-10-24",
+  "notes": "FF&E is OUTSIDE the baseline hard cost (see README hardCost definition). Hotel FF&E per HVS includes guestroom/public furniture, softgoods, kitchen & laundry equipment and technology; Marriott FDD Item 7 splits 'Furniture and Fixtures', 'Kitchen and Laundry Equipment', 'Technology' and 'Operating Supplies' (OS&E). Commercial kitchen equipment for restaurants lives in specialty-mep (commercial-kitchen), not here.",
+  "items": [
+    {
+      "id": "ffe-hotel-limited",
+      "name": "Hotel FF&E — limited-service / midscale extended-stay (per key)",
+      "division": "12",
+      "unit": "key",
+      "cost": {
+        "low": 13500, "mid": 16500, "high": 19500, "dollarYear": 2025, "region": "US",
+        "evidence": ["e3", "e7", "e12", "e13"], "derived": false,
+        "method": "HVS 2026 survey (2025 budgets) limited-service FF&E median $16,079 / avg $18,020 (e7); HVS 2025 survey (2024 budgets) median $16,991 / avg $16,233 (e3). StudioRes FDD 2025: furniture & fixtures $12,200–15,900 + kitchen/laundry $2,100–2,700 = $14,300–18,600 per key (e12, e13). Mid $16,500 ≈ mean of the two HVS medians; low $13,500 ≈ StudioRes low less ~5%; high $19,500 ≈ above HVS 2026 average. Mixed 2024/2025 evidence (≤1 yr) expressed in 2025 $."
+      },
+      "notes": "Hampton/Fairfield/Tru/WoodSpring class. Includes kitchen/laundry equipment and in-room tech per HVS definition."
+    },
+    {
+      "id": "ffe-hotel-select",
+      "name": "Hotel FF&E — select-service / upscale extended-stay (per key)",
+      "division": "12",
+      "unit": "key",
+      "cost": {
+        "low": 15000, "mid": 21000, "high": 27000, "dollarYear": 2025, "region": "US",
+        "evidence": ["e1", "e5", "e9", "e10", "e12", "e13"], "derived": false,
+        "method": "HVS select-service FF&E: 2026 survey median $18,321 / avg $22,860 (e5, 2025 $); 2025 survey median $22,929 / avg $23,120 (e1, 2024 $). Marriott FDDs for prototype select brands: Fairfield furniture & fixtures $12,200–16,800 + kitchen/laundry $1,400–2,400 (e9, e10; 2023 $, older than 1 yr — used for the low end only), StudioRes $12,200–15,900 + $2,100–2,700 (e12, e13). Mid $21,000 = mean of the four HVS median/average values for 2025 and 2024 surveys ($21,808) rounded down for the newer, lower 2026 median; low $15,000 ≈ FDD furniture+kitchen low end; high $27,000 ≈ 2025 HVS average + ~15% for upscale ES/dual-brand public space."
+      },
+      "notes": "Courtyard/Hilton Garden Inn/Hyatt Place/AC/Residence Inn class. Excludes OS&E (see ose-hotel) and pre-opening."
+    },
+    {
+      "id": "ffe-hotel-full",
+      "name": "Hotel FF&E — full-service (per key)",
+      "division": "12",
+      "unit": "key",
+      "cost": {
+        "low": 32000, "mid": 42000, "high": 60000, "dollarYear": 2025, "region": "US",
+        "evidence": ["e2", "e6", "e15", "e16", "e17"], "derived": false,
+        "method": "HVS full-service FF&E: 2026 survey median $36,752 / avg $43,928 (e6, 2025 $); 2025 survey median $34,464 / avg $39,907 (e2, 2024 $). Westin FDD 2025 (250 keys): furniture & fixtures $34,800–44,500 + kitchen/laundry $7,800–10,000 + technology $2,800–9,200 = $45,400–63,700 per key (e15–e17). Mid $42,000 ≈ midpoint between HVS 2026 median and average ($40,340) nudged toward the FDD prototype; low $32,000 ≈ below HVS 2025 median; high $60,000 ≈ Westin FDD upper total."
+      },
+      "notes": "Marriott/Westin/Hilton/Hyatt Regency class incl. meeting space and F&B outlets furniture, kitchen and laundry equipment."
+    },
+    {
+      "id": "ffe-hotel-luxury",
+      "name": "Hotel FF&E — luxury (per key)",
+      "division": "12",
+      "unit": "key",
+      "cost": {
+        "low": 90000, "mid": 120000, "high": 160000, "dollarYear": 2025, "region": "US",
+        "evidence": ["e4", "e8"], "derived": false,
+        "method": "HVS luxury FF&E: 2026 survey median $138,317 / avg $118,359 (e8, 2025 $); 2025 survey median $94,613 / avg $96,752 (e4, 2024 $). Mid $120,000 ≈ mean of the four values ($112,010) rounded up toward the newer survey; low $90,000 ≈ 2025 survey median less ~5%; high $160,000 ≈ 2026 median + 15%. Small luxury samples — wide spread."
+      },
+      "notes": "Ritz/Four Seasons/St. Regis class."
+    },
+    {
+      "id": "ose-hotel",
+      "name": "Hotel OS&E — limited/select-service opening operating supplies (per key)",
+      "division": "12",
+      "unit": "key",
+      "cost": {
+        "low": 1400, "mid": 1900, "high": 2600, "dollarYear": 2025, "region": "US",
+        "evidence": ["e11", "e14"], "derived": false,
+        "method": "Marriott FDD 'Operating Supplies' (towels, linens, guestroom amenities, maintenance supplies, paper goods, uniforms): StudioRes 2025 $186,000–248,000 for 124 keys = $1,500–2,000/key (e14); Fairfield 2023 $150,100–208,800 for 80–110 keys = $1,365 (150,100/110) to $2,610 (208,800/80)/key (e11, 2023 $ — older than 1 yr, used for spread only). Mid $1,900 ≈ midpoint of StudioRes per-key range + small allowance for F&B smallwares; low/high = Fairfield per-key extremes rounded."
+      },
+      "notes": "Opening inventory only; separate from pre-opening labor/marketing (soft cost). For full-service use ose-hotel-full."
+    },
+    {
+      "id": "ose-hotel-full",
+      "name": "Hotel OS&E — full-service opening operating supplies incl. china/glass/silver (per key)",
+      "division": "12",
+      "unit": "key",
+      "cost": {
+        "low": 6600, "mid": 7600, "high": 8800, "dollarYear": 2025, "region": "US",
+        "evidence": ["e18"], "derived": false,
+        "method": "Westin FDD 2025: Operating Supplies $6,600–8,500 per guestroom plus $48,000–61,400 per hotel (250 keys → +$190–250/key) (e18). Low = $6,600; high = $8,500 + $250 ≈ $8,800; mid $7,600 ≈ midpoint ($7,550 + ~$220 fixed share) rounded. Single brand source — verify with operator OS&E budget."
+      },
+      "notes": "Includes uniforms, china, flatware, towels, linens, amenities and banquet smallwares."
+    },
+    {
+      "id": "ffe-multifamily-common",
+      "name": "Multifamily common-area & amenity FF&E (clubhouse, leasing, fitness, lobby) — per unit",
+      "division": "12",
+      "unit": "unit",
+      "cost": {
+        "low": 750, "mid": 1500, "high": 3000, "dollarYear": 2026, "region": "US",
+        "evidence": ["e19", "e20", "e21"], "derived": true,
+        "method": "Derived. Assumes 20–40 SF of furnished common/amenity area per unit (e.g., 5,000–8,000 SF clubhouse+leasing+fitness for 250 units) × office-grade furniture at Cushman & Wakefield 2026 furniture benchmarks $23–61/SF (e19–e21) ≈ $460–2,440/unit, plus fitness equipment (~$60–80k per 250 units ≈ $250–320/unit). Low $750 ≈ 20 SF × $25 + $250; mid $1,500 ≈ 28 SF × $42 + $300; high $3,000 ≈ 40 SF × $61 + coworking/amenity-rich luxury allowance. Units themselves are unfurnished."
+      },
+      "notes": "Excludes in-unit appliances (in hard cost) and furnished-unit packages."
+    },
+    {
+      "id": "ffe-student-bed",
+      "name": "Student housing FF&E — furnished bedroom + share of unit living room (per bed)",
+      "division": "12",
+      "unit": "bed",
+      "cost": {
+        "low": 3000, "mid": 4500, "high": 6500, "dollarYear": 2025, "region": "US",
+        "evidence": ["e9", "e12"], "derived": true,
+        "method": "Derived from hotel prototype furniture packages: Marriott economy/select 'Furniture and Fixtures' $12,200–16,800 per guestroom (e9, e12) covers casegoods, seating, softgoods, lighting, a TV and a share of public space. A student bed package (XL twin bed + mattress, desk, chair, dresser/wardrobe, share of living-room sofa/table) ≈ 25–40% of a hotel key: 0.25 × $12,200 ≈ $3,050 (low) to 0.40 × $16,300 ≈ $6,500 (high); mid $4,500 ≈ 0.32 × $14,000. Includes share of lounge/study furniture. Verify with student-housing FF&E vendor pricing."
+      },
+      "notes": "Purpose-built off-campus student housing furnished by the owner."
+    },
+    {
+      "id": "ffe-senior-unit",
+      "name": "Senior living FF&E — common areas, dining, activity, memory-care furnishings (per unit)",
+      "division": "12",
+      "unit": "unit",
+      "cost": {
+        "low": 7000, "mid": 11000, "high": 16000, "dollarYear": 2025, "region": "US",
+        "evidence": ["e1", "e5", "e10"], "derived": true,
+        "method": "Derived. Residents furnish their own IL/AL apartments, so FF&E is mostly public space (dining, lounges, activity, therapy, salon), back-of-house kitchen/laundry smallwares and furnished memory-care rooms — closest analogue is select-service hotel public-space-heavy FF&E. HVS select-service FF&E $18,321–23,120/key (e1, e5) less the guestroom furniture share (~45–60%, per Fairfield FDD guestroom-focused F&F $12,200–16,800 vs kitchen/laundry $1,400–2,400, e10) ≈ $7,000–12,000; mid $11,000 adds commercial dining furniture density; high $16,000 for memory-care-heavy or luxury CCRC. Commercial kitchen equipment is separate (specialty-mep)."
+      },
+      "notes": "Independent/assisted/memory care communities."
+    },
+    {
+      "id": "ffe-office",
+      "name": "Office furniture (workstations, seating, conference) — per SF",
+      "division": "12",
+      "unit": "sf",
+      "cost": {
+        "low": 23, "mid": 35, "high": 61, "dollarYear": 2026, "region": "US",
+        "evidence": ["e19", "e20", "e21"], "derived": false,
+        "method": "Cushman & Wakefield Office Fit Out Cost Guide 2026 supplement furniture ranges: Tier 3 markets $23.39–35.09/SF (24% of hard cost), Tier 2 $27.54–41.32 (20%), Tier 1 $38.83–60.67 (22%) (e19–e21). Low $23 = Tier 3 low; mid $35 = midpoint of Tier 2 ($34.43) rounded; high $61 = Tier 1 high. Note C&W tiers are market tiers, not quality tiers."
+      },
+      "notes": "Excludes IT/AV (C&W: IT ≈ 4%, A/V ≈ 12% of hard cost) and move costs."
+    },
+    {
+      "id": "ffe-restaurant",
+      "name": "Restaurant front-of-house FF&E (tables, chairs, booths, décor, POS) — per seat",
+      "division": "12",
+      "unit": "seat",
+      "cost": {
+        "low": 400, "mid": 800, "high": 1500, "dollarYear": 2026, "region": "US",
+        "evidence": [], "derived": true,
+        "method": "Derived — no fetchable franchise Item 7 or seat-level source this session. Built up per seat: commercial chair $150–400, ¼ of a 4-top table + base $75–200, booth/banquette share $0–400, décor/lighting/POS/smallwares share $150–500 → $400 (QSR loose seating) to $1,500 (full-service casual with booths); mid $800. Back-of-house kitchen equipment excluded (specialty-mep: commercial-kitchen). Verify with a franchise FDD Item 7 'furniture, fixtures & décor' line divided by seat count."
+      },
+      "notes": "Per dining seat. Bar equipment and walk-ins excluded."
+    },
+    {
+      "id": "ffe-glamping-unit",
+      "name": "Glamping unit furnishing (tent/dome/pod interior: bed, linens, seating, décor, heater/fan) — per unit",
+      "division": "12",
+      "unit": "unit",
+      "cost": {
+        "low": 5000, "mid": 10000, "high": 18000, "dollarYear": 2025, "region": "US",
+        "evidence": ["e9", "e12", "e14"], "derived": true,
+        "method": "Derived from hotel per-key packages. Economy/select prototype 'Furniture and Fixtures' $12,200–16,800 per key (e9, e12) includes carpet-free casegoods, softgoods, TV and public space; a glamping unit has a bed, nightstands, seating, rug, lighting, portable heat/cooling and outdoor furniture but no TV/public-space share: ≈ 40–60% of a hotel key ($5,000–9,800) + OS&E linens/amenities ≈ $1,500–2,000/key (e14). Mid $10,000 ≈ 0.6 × $14,000 + $1,600; high $18,000 = luxury safari tent with king bed, en-suite fixtures décor and deck furniture. Structure itself excluded."
+      },
+      "notes": "Per rentable glamping unit; structure, platform and utilities are separate items."
+    },
+    {
+      "id": "ffe-str-cabin",
+      "name": "Short-term-rental cabin full furnishing incl. kitchenware & linens (per cabin key)",
+      "division": "12",
+      "unit": "key",
+      "cost": {
+        "low": 18000, "mid": 30000, "high": 50000, "dollarYear": 2025, "region": "US",
+        "evidence": ["e9", "e12", "e14"], "derived": true,
+        "method": "Derived. Per bedroom ≈ 80% of a prototype hotel key furniture package ($12,200–16,800, e9/e12; less public-space share) and a living/dining/kitchenware package $3,000–6,000 incl. OS&E-type linens (cf. $1,500–2,000/key OS&E, e14). 1.5-BR equivalent: 1.5 × $12,200 × 0.8 + $3,000 ≈ $17,600 (low); 2.5-BR: 2.5 × $14,000 × 0.8 + $4,500 ≈ $32,500 → mid $30,000; 3-BR luxury: 3 × $16,800 × 0.8 + $6,000 ≈ $46,300 → high $50,000 incl. hot-tub accessories/game room. Verify with STR furnishing vendor quotes."
+      },
+      "notes": "One 'key' = one rentable cabin/home. Appliances assumed in the hard cost."
+    }
+  ],
+  "evidence": [
+    { "id": "e1", "metric": "ffePerKey", "value": 22929, "low": 22929, "high": 23120, "unit": "USD/key", "region": "United States", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "HVS U.S. Hotel Development Cost Survey 2025", "url": "https://www.hvs.com/Print/HVS-US-Hotel-Development-Cost-Survey-2025?id=10219", "publisher": "HVS", "accessed": "2026-10-24" },
+      "quote": "Exhibit 6, Select-Service Hotels, FF&E column: Average $23,120; Median $22,929",
+      "scopeNotes": "Per room; projects proposed/under construction in 2024. HVS FF&E includes guestroom & public furniture, kitchen and laundry equipment, softgoods and technology.",
+      "confidence": "high" },
+    { "id": "e2", "metric": "ffePerKey", "value": 34464, "low": 34464, "high": 39907, "unit": "USD/key", "region": "United States", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "HVS U.S. Hotel Development Cost Survey 2025", "url": "https://www.hvs.com/Print/HVS-US-Hotel-Development-Cost-Survey-2025?id=10219", "publisher": "HVS", "accessed": "2026-10-24" },
+      "quote": "Exhibit 6, Full-Service Hotels, FF&E column: Average $39,907; Median $34,464",
+      "scopeNotes": "Per room, 2024 budgets.",
+      "confidence": "high" },
+    { "id": "e3", "metric": "ffePerKey", "value": 16991, "low": 16233, "high": 16991, "unit": "USD/key", "region": "United States", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "HVS U.S. Hotel Development Cost Survey 2025", "url": "https://www.hvs.com/Print/HVS-US-Hotel-Development-Cost-Survey-2025?id=10219", "publisher": "HVS", "accessed": "2026-10-24" },
+      "quote": "Exhibit 6, Limited-Service Hotels, FF&E column: Average $16,233; Median $16,991",
+      "scopeNotes": "Per room, 2024 budgets.",
+      "confidence": "high" },
+    { "id": "e4", "metric": "ffePerKey", "value": 94613, "low": 94613, "high": 96752, "unit": "USD/key", "region": "United States", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "HVS U.S. Hotel Development Cost Survey 2025", "url": "https://www.hvs.com/Print/HVS-US-Hotel-Development-Cost-Survey-2025?id=10219", "publisher": "HVS", "accessed": "2026-10-24" },
+      "quote": "Exhibit 6, Luxury Hotels, FF&E column: Average $96,752; Median $94,613",
+      "scopeNotes": "Per room, 2024 budgets; small sample.",
+      "confidence": "high" },
+    { "id": "e5", "metric": "ffePerKey", "value": 18321, "low": 18321, "high": 22860, "unit": "USD/key", "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "HVS U.S. Hotel Development Cost Survey 2026", "url": "https://www.hvs.com/Print/HVS-US-Hotel-Development-Cost-Survey-2026?id=10509", "publisher": "HVS", "accessed": "2026-10-24" },
+      "quote": "Exhibit 6, Select-Service Hotels, FF&E column: Average $22,860; Median $18,321",
+      "scopeNotes": "Per room; projects proposed/under construction in 2025.",
+      "confidence": "high" },
+    { "id": "e6", "metric": "ffePerKey", "value": 36752, "low": 36752, "high": 43928, "unit": "USD/key", "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "HVS U.S. Hotel Development Cost Survey 2026", "url": "https://www.hvs.com/Print/HVS-US-Hotel-Development-Cost-Survey-2026?id=10509", "publisher": "HVS", "accessed": "2026-10-24" },
+      "quote": "Exhibit 6, Full-Service Hotels, FF&E column: Average $43,928; Median $36,752",
+      "scopeNotes": "Per room, 2025 budgets.",
+      "confidence": "high" },
+    { "id": "e7", "metric": "ffePerKey", "value": 16079, "low": 16079, "high": 18020, "unit": "USD/key", "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "HVS U.S. Hotel Development Cost Survey 2026", "url": "https://www.hvs.com/Print/HVS-US-Hotel-Development-Cost-Survey-2026?id=10509", "publisher": "HVS", "accessed": "2026-10-24" },
+      "quote": "Exhibit 6, Limited-Service Hotels, FF&E column: Average $18,020; Median $16,079",
+      "scopeNotes": "Per room, 2025 budgets.",
+      "confidence": "high" },
+    { "id": "e8", "metric": "ffePerKey", "value": 138317, "low": 118359, "high": 138317, "unit": "USD/key", "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "HVS U.S. Hotel Development Cost Survey 2026", "url": "https://www.hvs.com/Print/HVS-US-Hotel-Development-Cost-Survey-2026?id=10509", "publisher": "HVS", "accessed": "2026-10-24" },
+      "quote": "Exhibit 6, Luxury Hotels, FF&E column: Average $118,359; Median $138,317",
+      "scopeNotes": "Per room, 2025 budgets; small sample (median above average).",
+      "confidence": "high" },
+    { "id": "e9", "metric": "furnitureFixturesPerKey", "value": null, "low": 12200, "high": 16800, "unit": "USD/key", "region": "United States (suburban prototype)", "regionKey": "US", "dataYear": 2023,
+      "source": { "title": "Fairfield by Marriott Franchise Disclosure Document (3/31/2023), Item 7", "url": "https://www.hotel-development.marriott.com/resourcefiles/fdd-document/2023-fairfield-fdd-3-31-2023.pdf", "publisher": "Marriott International", "accessed": "2026-10-24" },
+      "quote": "Furniture and Fixtures $12,200 - $16,800 per guestroom (including suites)",
+      "scopeNotes": "80–110 room hotel; guestroom and public space furniture, lighting, window treatments, carpet, vinyl wallcovering, interior signage, TV, procurement/freight/tax/install. Excludes kitchen/laundry and technology.",
+      "confidence": "high" },
+    { "id": "e10", "metric": "kitchenLaundryPerKey", "value": null, "low": 1400, "high": 2400, "unit": "USD/key", "region": "United States (suburban prototype)", "regionKey": "US", "dataYear": 2023,
+      "source": { "title": "Fairfield by Marriott Franchise Disclosure Document (3/31/2023), Item 7", "url": "https://www.hotel-development.marriott.com/resourcefiles/fdd-document/2023-fairfield-fdd-3-31-2023.pdf", "publisher": "Marriott International", "accessed": "2026-10-24" },
+      "quote": "Kitchen and Laundry Equipment $1,400 - $2,400 per guestroom",
+      "scopeNotes": "80–110 room hotel; laundry, kitchen equipment and guestroom appliances.",
+      "confidence": "high" },
+    { "id": "e11", "metric": "operatingSuppliesPerHotel", "value": null, "low": 150100, "high": 208800, "unit": "USD/ls", "region": "United States (suburban prototype)", "regionKey": "US", "dataYear": 2023,
+      "source": { "title": "Fairfield by Marriott Franchise Disclosure Document (3/31/2023), Item 7", "url": "https://www.hotel-development.marriott.com/resourcefiles/fdd-document/2023-fairfield-fdd-3-31-2023.pdf", "publisher": "Marriott International", "accessed": "2026-10-24" },
+      "quote": "Operating Supplies $150,100 - $208,800 (80 - 110 guestroom hotel)",
+      "scopeNotes": "Per hotel; towels, linens, guestroom amenities, maintenance equipment and supplies, paper goods, uniforms. ≈ $1,365–2,610 per key.",
+      "confidence": "high" },
+    { "id": "e12", "metric": "furnitureFixturesPerKey", "value": null, "low": 12200, "high": 15900, "unit": "USD/key", "region": "United States (suburban prototype)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "StudioRes Franchise Disclosure Document (3/31/2025), Item 7", "url": "https://www.hotel-development.marriott.com/ResourceFiles/fdd-document/2025-studiores-fdd-3-31-2025.pdf", "publisher": "Marriott International (MIF, L.L.C.)", "accessed": "2026-10-24" },
+      "quote": "Furniture and Fixtures8 $12,200 - $15,900 per guestroom",
+      "scopeNotes": "124-room midscale extended-stay prototype; same F&F definition as Fairfield.",
+      "confidence": "high" },
+    { "id": "e13", "metric": "kitchenLaundryPerKey", "value": null, "low": 2100, "high": 2700, "unit": "USD/key", "region": "United States (suburban prototype)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "StudioRes Franchise Disclosure Document (3/31/2025), Item 7", "url": "https://www.hotel-development.marriott.com/ResourceFiles/fdd-document/2025-studiores-fdd-3-31-2025.pdf", "publisher": "Marriott International (MIF, L.L.C.)", "accessed": "2026-10-24" },
+      "quote": "Kitchen and Laundry Equipment7 2,100 - $2,700 per guestroom",
+      "scopeNotes": "Laundry equipment and in-guestroom appliances (extended-stay kitchens).",
+      "confidence": "high" },
+    { "id": "e14", "metric": "operatingSuppliesPerHotel", "value": null, "low": 186000, "high": 248000, "unit": "USD/ls", "region": "United States (suburban prototype)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "StudioRes Franchise Disclosure Document (3/31/2025), Item 7", "url": "https://www.hotel-development.marriott.com/ResourceFiles/fdd-document/2025-studiores-fdd-3-31-2025.pdf", "publisher": "Marriott International (MIF, L.L.C.)", "accessed": "2026-10-24" },
+      "quote": "Operating Supplies10 $186,000 - $248,000",
+      "scopeNotes": "Per 124-room hotel ≈ $1,500–2,000 per key; towels, linens, amenities, maintenance supplies, paper goods, uniforms, cleaning inventory.",
+      "confidence": "high" },
+    { "id": "e15", "metric": "furnitureFixturesPerKey", "value": null, "low": 34800, "high": 44500, "unit": "USD/key", "region": "United States (suburban prototype)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Westin Franchise Disclosure Document (3/31/2025), Item 7", "url": "https://www.hotel-development.marriott.com/ResourceFiles/fdd-document/2025-westin-fdd-3-31-2025.pdf", "publisher": "Marriott International", "accessed": "2026-10-24" },
+      "quote": "Furniture and Fixtures9 $34,800 - $44,500 per guestroom",
+      "scopeNotes": "250-room full-service prototype; guestroom and public space furniture etc.; excludes kitchen/laundry and technology.",
+      "confidence": "high" },
+    { "id": "e16", "metric": "kitchenLaundryPerKey", "value": null, "low": 7800, "high": 10000, "unit": "USD/key", "region": "United States (suburban prototype)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Westin Franchise Disclosure Document (3/31/2025), Item 7", "url": "https://www.hotel-development.marriott.com/ResourceFiles/fdd-document/2025-westin-fdd-3-31-2025.pdf", "publisher": "Marriott International", "accessed": "2026-10-24" },
+      "quote": "Kitchen and Laundry Equipment8 $7,800 - $10,000 per guestroom",
+      "scopeNotes": "250-room full-service hotel.",
+      "confidence": "high" },
+    { "id": "e17", "metric": "technologyPerKey", "value": null, "low": 2800, "high": 9200, "unit": "USD/key", "region": "United States (suburban prototype)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Westin Franchise Disclosure Document (3/31/2025), Item 7", "url": "https://www.hotel-development.marriott.com/ResourceFiles/fdd-document/2025-westin-fdd-3-31-2025.pdf", "publisher": "Marriott International", "accessed": "2026-10-24" },
+      "quote": "Technology Hardware & Software and Network Infrastructure10 $2,800 - $9,200 per guestroom",
+      "scopeNotes": "PBX, HSIA, structured cabling, security, door locks, in-room and public-space tech.",
+      "confidence": "high" },
+    { "id": "e18", "metric": "operatingSuppliesPerKey", "value": null, "low": 6600, "high": 8500, "unit": "USD/key", "region": "United States (suburban prototype)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Westin Franchise Disclosure Document (3/31/2025), Item 7", "url": "https://www.hotel-development.marriott.com/ResourceFiles/fdd-document/2025-westin-fdd-3-31-2025.pdf", "publisher": "Marriott International", "accessed": "2026-10-24" },
+      "quote": "Operating Supplies11 $6,600 - $8,500 per guestroom, plus $48,000 to $61,400 per hotel",
+      "scopeNotes": "250-room full-service; uniforms, china, flatware, towels, linens, amenities, maintenance and other supplies, paper goods.",
+      "confidence": "high" },
+    { "id": "e19", "metric": "officeFurniturePerSF", "value": null, "low": 38.83, "high": 60.67, "unit": "USD/sf", "region": "US Tier 1 markets (NY, LA, Boston, SF)", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "Office Fit Out Cost Guide 2026 (Americas) — Office Fit Out Cost Supplement", "url": "https://digital.cushmanwakefield.com/fitoutcostguide-03-2026-amer-regional-en-content-pds-office/", "publisher": "Cushman & Wakefield", "accessed": "2026-10-24" },
+      "quote": "Supplement, Tier 1 markets: Furniture 22% of HC, $38.83–$60.67/SF",
+      "scopeNotes": "Furniture added to fit-out hard cost; FF&E excluded from base pricing.",
+      "confidence": "high" },
+    { "id": "e20", "metric": "officeFurniturePerSF", "value": null, "low": 27.54, "high": 41.32, "unit": "USD/sf", "region": "US Tier 2 markets (Atlanta, Austin, Baltimore, Denver, Miami)", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "Office Fit Out Cost Guide 2026 (Americas) — Office Fit Out Cost Supplement", "url": "https://digital.cushmanwakefield.com/fitoutcostguide-03-2026-amer-regional-en-content-pds-office/", "publisher": "Cushman & Wakefield", "accessed": "2026-10-24" },
+      "quote": "Supplement, Tier 2 markets: Furniture 20% of HC, $27.54–$41.32/SF",
+      "scopeNotes": "As e19.",
+      "confidence": "high" },
+    { "id": "e21", "metric": "officeFurniturePerSF", "value": null, "low": 23.39, "high": 35.09, "unit": "USD/sf", "region": "US Tier 3 markets (Cincinnati, Detroit, Houston, Tampa)", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "Office Fit Out Cost Guide 2026 (Americas) — Office Fit Out Cost Supplement", "url": "https://digital.cushmanwakefield.com/fitoutcostguide-03-2026-amer-regional-en-content-pds-office/", "publisher": "Cushman & Wakefield", "accessed": "2026-10-24" },
+      "quote": "Supplement, Tier 3 markets: Furniture 24% of HC, $23.39–$35.09/SF; \"Furniture and other Furniture, Fixtures & Equipment (FF&E) items are excluded from the pricing.\"",
+      "scopeNotes": "As e19.",
+      "confidence": "high" }
+  ]
+}

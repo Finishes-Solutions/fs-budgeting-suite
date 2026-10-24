@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 1,
+  "id": "office-ti",
+  "name": "Office tenant improvement",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Interior build-out of office space in an existing shell: partitions, ceilings, finishes, doors, millwork, distribution MEP and fire protection. Cost swings with density of enclosed offices, glass, millwork and MEP intensity; data quality is good (Cushman 42-city guide, Kirksey Texas surveys, Cumming metros, JLL).",
+  "sizing": {
+    "typicalSize": {
+      "low": 5000,
+      "mid": 15000,
+      "high": 50000,
+      "unit": "sf",
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Judgment for a single tenant suite; Kirksey benchmarks a 25,000-NRSF floor plate (e1)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 95,
+      "mid": 150,
+      "high": 260,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e8"
+      ],
+      "derived": false,
+      "method": "Mid-range (standard) TI, construction only, per usable/rentable SF. Kirksey 2025 mid-range: Houston $107–140, Dallas $108–133, Austin $114–148 (avg midpoint ≈ $125, Texas ≈ 10–12% below national). Cushman 2026 U.S. city range $108–219 (e4) with the middle of the distribution ≈ $150–160. Cumming metro TI ranges (e8) are wider and higher ($150–450) because they cover higher-end fit-outs. Mid = $150 (Kirksey Texas ≈ $125 scaled to national ≈ $140, and Cushman mid ≈ $155). Low = $95 ≈ Kirksey basic/second-gen. High = $260 ≈ Kirksey higher-end midpoint and Cumming 10-metro median midpoint ($320) trimmed. Mixed 2025/2026 evidence expressed in 2026 dollars (≤1-year gap)."
+    },
+    "scope": {
+      "includesSitework": false,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC and fee; excludes AV/IT/security cabling and equipment, furniture, soft costs and landlord base-building work."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.65,
+    "standard": 1.0,
+    "premium": 1.5,
+    "luxury": 1.9,
+    "evidence": [
+      "e1",
+      "e2",
+      "e3"
+    ],
+    "derived": false,
+    "method": "Kirksey tier midpoints vs. mid-range midpoint (Houston/Dallas/Austin): basic ≈ $93–103 / $120–131 ≈ 0.75–0.8 (economy set to 0.65 to cover light second-gen refreshes); higher-end ≈ $219–238 / $120–131 ≈ 1.8 → premium 1.5, luxury 1.9."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.109
+      },
+      {
+        "division": "06",
+        "pct": 0.066
+      },
+      {
+        "division": "08",
+        "pct": 0.107
+      },
+      {
+        "division": "09",
+        "pct": 0.199
+      },
+      {
+        "division": "10",
+        "pct": 0.037
+      },
+      {
+        "division": "21",
+        "pct": 0.025
+      },
+      {
+        "division": "22",
+        "pct": 0.04
+      },
+      {
+        "division": "23",
+        "pct": 0.186
+      },
+      {
+        "division": "26",
+        "pct": 0.19
+      },
+      {
+        "division": "27",
+        "pct": 0.026
+      },
+      {
+        "division": "28",
+        "pct": 0.015
+      }
+    ],
+    "evidence": [
+      "e6"
+    ],
+    "derived": false,
+    "method": "Cushman NYC 2026 hard-cost trade breakdown (e6) with contingency ($20.41) removed: GC/fee $21.84 → 01 10.9%; millwork 6.6% → 06; doors/frames/hardware 10.7% → 08; drywall/acoustic/carpentry + general finishes $39.92 → 09 19.9%; misc. architectural 3.7% → 10; mechanical/plumbing/fire protection 25.1% split 23 18.6% / 22 4.0% / 21 2.5% (judgment); electrical 23.1% split 26 19.0% / 27 2.6% / 28 1.5% (judgment)."
+  },
+  "lineItems": [
+    {
+      "id": "first-generation-premium",
+      "name": "First-generation space premium (no existing improvements)",
+      "division": "09",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 8,
+        "mid": 17,
+        "high": 23,
+        "dollarYear": 2025,
+        "region": "TX",
+        "evidence": [
+          "e1",
+          "e2",
+          "e3"
+        ],
+        "derived": false,
+        "method": "Kirksey 2025 mid-range: \"Add up to\" $17 (Houston), $22 (Dallas), $23 (Austin); basic tier $14–18. Low set at $8 (partial first-gen)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Turn on when building out a raw shell floor for the first time."
+    },
+    {
+      "id": "low-voltage-av-security",
+      "name": "Low-voltage cabling, AV and security",
+      "division": "27",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 15,
+        "mid": 24,
+        "high": 40,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e5",
+          "e10"
+        ],
+        "derived": true,
+        "method": "Cushman NYC example: IT 4% + A/V 12% of hard = 16% (e5); JLL: security/IT/AV ≈ 10–12% of total fit-out (e10). 16% × $150 mid ≈ $24/SF; low ≈ 10% × $150; high ≈ 16% × $250."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": false,
+      "notes": "Usually tenant/owner-direct, outside the GC contract."
+    },
+    {
+      "id": "demolition-second-gen",
+      "name": "Selective demolition of existing improvements",
+      "division": "02",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 4,
+        "mid": 8,
+        "high": 15,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived judgment: light selective demo of partitions/ceilings/flooring in occupied-building conditions; no public source fetched."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Second-generation space only."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 30,
+      "mid": 50,
+      "high": 90,
+      "dollarYear": 2025,
+      "region": "TX",
+      "evidence": [
+        "e9",
+        "e5"
+      ],
+      "derived": false,
+      "method": "Kirksey 2025 furniture $30–85 (Dallas) / $35–90 (Houston); mid-range $45–60 → mid $50. Cushman NYC furniture = 22% of hard ($48.54) corroborates."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.08,
+      "mid": 0.12,
+      "high": 0.18,
+      "evidence": [
+        "e5"
+      ],
+      "derived": false,
+      "method": "Cushman NYC example: soft costs 10% + misc 2% of hard (e5). Range widened for small projects (higher fixed design/permit costs) and project management fees."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.06
+    },
+    "notes": "Excludes moving costs and furniture (see ffe) and AV/IT (line item)."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical conceptual design contingency."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [
+        "e6"
+      ],
+      "derived": true,
+      "method": "Interior work in existing buildings carries unknowns; Cushman's NYC hard-cost build-up carries $20.41 contingency on $200.21 ≈ 10% (e6)."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 90,
+      "max": 450,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Hard + soft (excl. FF&E/AV): min ≈ $85 basic × 1.08; max ≈ Cumming Chicago high $450 (e8). JLL all-in (incl. furniture/AV) $230–375 (e7) sits inside."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 107,
+      "high": 140,
+      "unit": "USD/sf",
+      "region": "Houston, TX",
+      "regionKey": "TX-Houston",
+      "dataYear": 2025,
+      "source": {
+        "title": "Construction Cost Trends / 2025 — Houston",
+        "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=1c8a21ff-de0e-4629-b9b0-7f38f62c502b",
+        "publisher": "Kirksey Architecture",
+        "accessed": "2026-10-24"
+      },
+      "quote": "MID-RANGE OFFICE SPACE $107 to $140/SF ($100 to $135/sf in 2024) ... Add up to $17/sf for first-generation space.",
+      "scopeNotes": "25,000-NRSF floor plate, 50% offices / 50% open plan. \"Construction cost only; does not include owner-provided AV and IT equipment.\" Basic $83–104; higher-end $158–280.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 108,
+      "high": 133,
+      "unit": "USD/sf",
+      "region": "Dallas, TX",
+      "regionKey": "TX-Dallas",
+      "dataYear": 2025,
+      "source": {
+        "title": "Construction Cost Trends / 2025 — Dallas",
+        "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=c5a9a83b-478c-495a-a4b2-cbb2a99377dc",
+        "publisher": "Kirksey Architecture",
+        "accessed": "2026-10-24"
+      },
+      "quote": "MID-RANGE OFFICE SPACE $108 to $133/SF ($95 to $125/sf in 2024) ... Add up to $22/sf for first-generation space.",
+      "scopeNotes": "Same Kirksey scope. Basic $85–104; higher-end $184–291 (\"Construction costs only — excludes AV/IT, security, and signage\").",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 114,
+      "high": 148,
+      "unit": "USD/sf",
+      "region": "Austin, TX",
+      "regionKey": "TX-Austin",
+      "dataYear": 2025,
+      "source": {
+        "title": "Construction Cost Trends / 2025 — Austin",
+        "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=7cfddae4-aa86-4325-b4d1-2084432c2273",
+        "publisher": "Kirksey Architecture",
+        "accessed": "2026-10-24"
+      },
+      "quote": "MID-RANGE OFFICE SPACE $114 to $148/SF ($108 to $140/sf in 2024) ... Add up to $23/sf for first-generation space.",
+      "scopeNotes": "Same Kirksey scope. Basic $94–111; higher-end $171–264.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 108.03,
+      "high": 219.32,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "U.S. Office Fit Out Cost Guide (2026)",
+        "url": "https://www.cushmanwakefield.com/en/united-states/insights/office-fit-out-cost-guide",
+        "publisher": "Cushman & Wakefield",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indianapolis at $113.97/psf ... Kansas City at $108.26/psf ... Cincinnati at $108.03/psf (least expensive); San Jose at $219.32/psf, San Francisco at $219.26/psf, New York City at $212.59/psf (most expensive).",
+      "scopeNotes": "42 U.S. cities. \"Fit out construction costs ... are limited to physical construction\" — excludes soft costs, IT/AV/security and FF&E. Range spans the cheapest to the most expensive U.S. market.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "allInMultiplier",
+      "value": 330.92,
+      "low": 220.62,
+      "high": 330.92,
+      "unit": "USD/sf",
+      "region": "New York City, NY",
+      "regionKey": "NY-NewYorkCity",
+      "dataYear": 2026,
+      "source": {
+        "title": "U.S. Office Fit Out Cost Guide (2026)",
+        "url": "https://www.cushmanwakefield.com/en/united-states/insights/office-fit-out-cost-guide",
+        "publisher": "Cushman & Wakefield",
+        "accessed": "2026-10-24"
+      },
+      "quote": "TOTAL $220.62 ... Soft Costs: 10% $22.06 IT: 4% $8.82 A/V: 12% $26.47 Furniture: 22% $48.54 Miscellaneous: 2% $4.41 ALL-IN-TOTAL $330.92",
+      "scopeNotes": "NYC worked example: hard $220.62 → all-in $330.92 (×1.50). Percentages are of total hard cost.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostSplit",
+      "value": null,
+      "unit": "text",
+      "region": "New York City, NY",
+      "regionKey": "NY-NewYorkCity",
+      "dataYear": 2026,
+      "source": {
+        "title": "U.S. Office Fit Out Cost Guide (2026)",
+        "url": "https://www.cushmanwakefield.com/en/united-states/insights/office-fit-out-cost-guide",
+        "publisher": "Cushman & Wakefield",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Hard Costs / New York City / 2026: Misc. Architectural Trades $7.44, Architectural Millwork $13.12, Doors, Frames, Hardware $21.45, Drywall, Acoustic, Carpentry $26.29, General Finishes $13.63, Mechanical, Plumbing, Fire Protection $50.19, Electrical $46.25, General Requirements, General Conditions and Fee $21.84, Contingency $20.41",
+      "scopeNotes": "Trade breakdown used for systemSplit (contingency removed).",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "allInCostPerSF",
+      "value": 295,
+      "low": 230,
+      "high": 375,
+      "unit": "USD/sf",
+      "region": "U.S. & Canada",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "U.S. & Canada Office Fit-Out Cost Guide (Q1 2026 pricing)",
+        "url": "https://www.jll.com/en-ca/guides/us-canada-office-fit-out-cost-guide-2025",
+        "publisher": "JLL",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The regional average for a medium-quality corporate office fit-out is $295/sqft, with a typical range of $230-$375/sqft.",
+      "scopeNotes": "U.S.+Canada combined; page does not define scope. Level (~2× Cushman hard cost) suggests it includes furniture, AV/IT and fees — treat as all-in, not hard cost.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 160,
+      "high": 340,
+      "unit": "USD/sf",
+      "region": "Dallas, TX",
+      "regionKey": "TX-Dallas",
+      "dataYear": 2025,
+      "source": {
+        "title": "Market Analysis Q4 2025 — Typical Construction Cost Range (Cost Per Unit 2025)",
+        "url": "https://cumming-group.com/wp-content/uploads/2025/12/CummingGroup_Q4_2025_MarketingAnalysis_2.13.26.pdf",
+        "publisher": "Cumming Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Office | Tenant Improvement | SF: Dallas $160–$340; Nashville $150–$310; Chicago $220–$450",
+      "scopeNotes": "Values are the Dallas column (Nashville $150–310, Chicago $220–450). Construction cost only; excludes professional fees, permits, FF&E and soft costs. 10-metro median $210–$430.",
+      "confidence": "high"
+    },
+    {
+      "id": "e9",
+      "metric": "ffePerSF",
+      "value": null,
+      "low": 30,
+      "high": 85,
+      "unit": "USD/sf",
+      "region": "Dallas, TX",
+      "regionKey": "TX-Dallas",
+      "dataYear": 2025,
+      "source": {
+        "title": "Construction Cost Trends / 2025 — Dallas",
+        "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=c5a9a83b-478c-495a-a4b2-cbb2a99377dc",
+        "publisher": "Kirksey Architecture",
+        "accessed": "2026-10-24"
+      },
+      "quote": "FURNITURE $30 to $85/SF* Basic office space: $30 to $50/sf Mid-range office space: $45 to $60/sf Higher-end office space: $60 to $85/sf",
+      "scopeNotes": "Furniture only (Houston report: $35–$90/SF).",
+      "confidence": "high"
+    },
+    {
+      "id": "e10",
+      "metric": "lowVoltageShare",
+      "value": null,
+      "low": 0.1,
+      "high": 0.12,
+      "unit": "pct",
+      "region": "U.S. & Canada",
+      "regionKey": "US",
+      "source": {
+        "title": "U.S. & Canada Office Fit-Out Cost Guide (Q1 2026 pricing)",
+        "url": "https://www.jll.com/en-ca/guides/us-canada-office-fit-out-cost-guide-2025",
+        "publisher": "JLL",
+        "accessed": "2026-10-24"
+      },
+      "quote": "MEP and AV/IT together represent a growing share of total fit-out cost ... In 2026 they represent approximately 10-12% of total fit-out cost",
+      "scopeNotes": "Security, IT and AV share of total fit-out cost.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "Cushman publishes city values but no national average on the public page; a national median from the full PDF would tighten the mid.",
+    "JLL page does not define scope — confirm whether its $295 includes furniture/AV/fees."
+  ]
+}

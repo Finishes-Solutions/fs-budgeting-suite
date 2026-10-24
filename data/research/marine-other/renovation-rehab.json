@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "id": "renovation-rehab",
+  "name": "Renovation / rehab",
+  "category": "marine-other",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Same-use renovation spans a very wide range — cosmetic value-add (paint, flooring, fixtures) at a few tens of dollars per SF up to gut rehab of systems and envelope approaching new-construction cost. The best public anchor is Florida Housing's 2026 TDC test, which sets rehab hard-cost factors at roughly half of new-construction factors ($122k garden / $147k non-garden rehab vs. $256k / $284k new per unit). The default is a moderate-to-substantial rehab derived from that ratio and the new-construction files in this database — low-medium confidence; scope definition matters more than any benchmark.",
+
+  "sizing": {
+    "typicalSize": { "low": 10000, "mid": 60000, "high": 250000, "unit": "sf", "evidence": [], "derived": true, "method": "Typical value-add multifamily (50-250 units at ~900-1,000 SF) or small/mid commercial building; mid 60,000 SF is judgment." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 35, "mid": 110, "high": 200, "dollarYear": 2026, "region": "US", "evidence": ["e1", "residential/garden-multifamily.json#e1", "residential/podium-multifamily.json#e5"], "derived": true, "method": "Florida Housing 2026 rehab/new hard-cost factor ratios: garden 122,000/256,000 = 0.48; non-garden 147,000/284,000 = 0.52 (e1). Applied to new-construction mids in this database (garden MF $185/SF, podium MF $290/SF, office core & shell $210/SF; weighted reference ~$220/SF) -> substantial rehab ~ $105-115/SF, mid $110. FL factors are caps: $122k-147k per unit / ~950 SF = $128-155/SF, so the mid sits below the cap as expected. Low $35/SF = light value-add interior refresh (~$30k/unit) — judgment; high $200/SF = gut rehab incl. envelope and all MEP (~0.8-0.9x new garden/office) — judgment." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Moderate-to-substantial rehab: unit/tenant interiors, kitchens/baths, MEP replacement or major repair, roof and window replacement as needed, accessibility and life-safety upgrades, limited site repairs (paving overlay, landscaping), incl. GC/OH&P. Excludes acquisition, soft costs, FF&E, relocation, and structural/seismic retrofit (line item)."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.35, "standard": 1.0, "premium": 1.4, "luxury": 1.8,
+    "evidence": [], "derived": true,
+    "method": "Scope tiers rather than finish tiers: economy = cosmetic value-add (35/110 = 0.32, rounded 0.35); premium = substantial rehab at FL non-garden cap (~$150/SF -> 1.4); luxury = gut rehab (200/110 = 1.8)."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.10 },
+      { "division": "02", "pct": 0.06 },
+      { "division": "06", "pct": 0.04 },
+      { "division": "07", "pct": 0.07 },
+      { "division": "08", "pct": 0.08 },
+      { "division": "09", "pct": 0.18 },
+      { "division": "10", "pct": 0.02 },
+      { "division": "11", "pct": 0.04 },
+      { "division": "12", "pct": 0.04 },
+      { "division": "14", "pct": 0.02 },
+      { "division": "21", "pct": 0.03 },
+      { "division": "22", "pct": 0.10 },
+      { "division": "23", "pct": 0.10 },
+      { "division": "26", "pct": 0.08 },
+      { "division": "27", "pct": 0.01 },
+      { "division": "28", "pct": 0.01 },
+      { "division": "32", "pct": 0.02 }
+    ],
+    "evidence": [], "derived": true,
+    "method": "No public elemental rehab breakdown found. Derived from a multifamily substantial-rehab scope: interiors/finishes (09) 18%, cabinets/countertops (12) 4%, appliances (11) 4%; roofing/envelope (07) 7%; windows/doors (08) 8%; plumbing (22) 10%, HVAC (23) 10%, electrical (26) 8%, sprinkler/fire alarm (21/28) 4%; selective demolition (02) 6%; elevator modernization (14) 2%; site repairs (32) 2%; GC (01) 10%. Light value-add shifts weight to 09/11/12."
+  },
+
+  "lineItems": [
+    {
+      "id": "unit-interior-package",
+      "name": "Multifamily unit interior upgrade package (value-add: flooring, cabinets/counters, appliances, fixtures, paint)",
+      "division": "09",
+      "unit": "unit",
+      "qty": { "per": "project", "value": 0 },
+      "cost": { "low": 12000, "mid": 25000, "high": 45000, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment for classic-to-renovated multifamily interiors. Enter unit count when budgeting per unit instead of per SF; do not stack with the per-SF baseline for the same scope." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Alternative per-unit build-up for value-add deals."
+    },
+    {
+      "id": "roof-replacement",
+      "name": "Roof replacement (tear-off and new membrane/shingle)",
+      "division": "07",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 0.3 },
+      "cost": { "low": 8, "mid": 14, "high": 25, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment per SF of roof; qty assumes roof area ~0.3 x GFA (3-4 story building)." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out of the 07 share."
+    },
+    {
+      "id": "window-replacement",
+      "name": "Window replacement",
+      "division": "08",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 0.15 },
+      "cost": { "low": 60, "mid": 90, "high": 150, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment per SF of window opening; qty assumes glazing ~15% of GFA." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out of the 08 share."
+    },
+    {
+      "id": "elevator-modernization",
+      "name": "Elevator modernization (controller, machine, cab)",
+      "division": "14",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 150000, "mid": 250000, "high": 400000, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment per car." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Enter number of cars."
+    },
+    {
+      "id": "accessibility-upgrades",
+      "name": "Accessibility upgrades (accessible units, routes, restrooms) triggered by alteration",
+      "division": "01",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 50000, "mid": 150000, "high": 500000, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment; ADA path-of-travel rule commonly allocates up to 20% of alteration cost to accessibility for primary-function areas." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Higher for federally assisted housing (UFAS/Section 504)."
+    },
+    {
+      "id": "hazmat-abatement",
+      "name": "Hazardous materials abatement (asbestos/lead)",
+      "division": "02",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 1 },
+      "cost": { "low": 1, "mid": 4, "high": 15, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment; pre-1980 buildings. Requires survey." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Switch on for pre-1980 buildings."
+    }
+  ],
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.12, "mid": 0.18, "high": 0.25, "evidence": ["_common/soft-costs.json#e4"], "derived": true, "method": "Existing-conditions surveys, capital needs assessment, hazmat survey and higher A/E fee curves for rehab (PHFA rehabilitation fee curve above new construction, _common/soft-costs.json#e4); lighter than new construction for permits/impact fees. Judgment, mid 18%." },
+    "breakdown": { "architectureEngineering": 0.07 },
+    "notes": "Add tenant relocation where occupied rehab is not feasible (not included)."
+  },
+
+  "contingency": {
+    "design": { "low": 0.03, "mid": 0.06, "high": 0.10, "evidence": [], "derived": true, "method": "Existing-conditions unknowns (judgment)." },
+    "hard": { "low": 0.08, "mid": 0.10, "high": 0.15, "evidence": ["_common/contingency.json#e3", "_common/contingency.json#e4"], "derived": false, "method": "DSHA requires a 10% contingency for rehabilitation (e3) and PHFA 10% for rehabilitation and preservation developments (e4), vs 5% for new construction." },
+    "soft": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "General norm (judgment)." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 35, "max": 300, "dollarYear": 2026, "region": "US", "method": "Low = light value-add with minimal soft cost (~$35-40/SF); high = gut rehab $200 x 1.25 soft x 1.15 contingency = ~$290 -> $300. Excludes acquisition." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1", "metric": "hardCostFactorPerUnit", "value": 122000, "low": 122000, "high": 147000, "unit": "USD/unit",
+      "region": "Florida (statewide, non-SF columns)", "regionKey": "FL", "dataYear": 2026,
+      "source": { "title": "Total Development Cost per Unit Limitation Template, Version 09-30-2026 (for all RFAs starting July 2023)", "url": "https://www.floridahousing.org/docs/default-source/programs/developers-multifamily-programs/competitive/total-development-cost-per-unit-limitation-template-effective-september-30-2026-for-all-rfa-s-starting-july-2023.xlsx", "publisher": "Florida Housing Finance Corporation", "accessed": "2026-10-24" },
+      "quote": "Data sheet, 'Base01' Hard Cost Per Unit Factor table, RFA 2026-201/2026-202 columns: Garden-Non ESSC (NC) 256000; Mid-Rise-Non ESSC (NC) 284000; Garden (Rehab) 122000; Non-Garden (Rehab) 147000",
+      "scopeNotes": "Maximum hard-cost factor per unit used in FHFC's TDC limitation test (TDC = factor / 70% for rehab from the 2026/2027 cycle). Caps for affordable housing, not averages. 'SF' variant columns run higher (e.g., 160000 / 177000 rehab).", "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "Only one primary sourced data point (FL caps) — collect actual rehab hard costs from HFA cost certifications or capital-needs assessments (per unit and per SF).",
+    "Commercial (office/retail) same-use renovation benchmarks are missing; consider splitting residential vs. commercial rehab into separate defaults.",
+    "All line-item unit costs are estimating judgment."
+  ]
+}

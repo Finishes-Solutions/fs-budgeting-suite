@@ -1,0 +1,663 @@
+{
+  "schemaVersion": 1,
+  "id": "hotel-boutique",
+  "name": "Boutique hotel",
+  "category": "hospitality",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "key",
+  "summary": "Independent or lifestyle/soft-brand hotel (~50–200 keys), usually urban and often an adaptive reuse, with design-forward finishes and a destination restaurant/bar or rooftop. No survey reports boutique hotels as a category, so the default is derived between HVS select-service and full-service per-key costs and RLB metro 3–5 star $/SF; HVS \"redevelopment projects\" medians anchor the adaptive-reuse case. Treat as a derived estimate.",
+  "sizing": {
+    "typicalSize": {
+      "low": 50,
+      "mid": 120,
+      "high": 200,
+      "unit": "key",
+      "evidence": [],
+      "derived": true,
+      "method": "Boutique/lifestyle hotels are typically smaller than full-service; 50–200 keys with 120 as a judgment mid."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 600,
+      "mid": 750,
+      "high": 950,
+      "evidence": [
+        "e18"
+      ],
+      "derived": true,
+      "method": "Net guestrooms ~350–470 SF (HCEG midscale to upper upscale, e18) plus bath ≈ 420–540 SF; F&B/bar/lobby lounge add ~80–200 SF/key but meeting space is limited; adaptive reuse buildings are less efficient. ~600–950 GSF/key, mid 750."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 80,
+      "mid": 150,
+      "high": 300,
+      "evidence": [],
+      "derived": true,
+      "method": "Urban infill mid-rise; 120 keys on ~0.5–1.5 acre."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0,
+      "mid": 0.5,
+      "high": 1,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Urban boutiques frequently rely on valet/shared garages (0–0.5); suburban/resort-town boutiques ~1.0. Local code governs."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 180000,
+      "mid": 260000,
+      "high": 420000,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "e7"
+      ],
+      "derived": true,
+      "method": "Bracketed by HVS 2025-data building & site improvements: select-service average $156,219 (e1) and full-service median $305,266 (e2); HVS redevelopment projects (existing-building conversions) median $193,644 / avg $287,189 in 2023 data (e4) and $196,077 median in 2021–22 data (e5). Midpoint of select-service average and full-service median = $231k; x0.91 (HVS includes permits/engineering/contingency) → $210k; plus ~20–25% for design-forward finishes and a destination F&B program → ~$260k. RLB 2026 metro check: midpoint of 3-star median-high ($475/SF) and 5-star median-low ($483/SF) ≈ $480/SF (e6, e7) x 750 SF ≈ $360k in large metros, consistent with the mid after a national discount. Low $180k ≈ 0.91 x 2023 redevelopment median ($194k → $176k); high $420k ≈ RLB 5-star metro median-low ($483) x ~870 SF."
+    },
+    "perSF": {
+      "low": 260,
+      "mid": 350,
+      "high": 550,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e6",
+        "e7",
+        "e8"
+      ],
+      "derived": true,
+      "method": "Mid = $260k ÷ 750 SF ≈ $347/SF. Low ≈ RSMeans national 15-story hotel ~$262/SF (e8); high between RLB metro 3-star median-high ($475) and 5-star median midpoint ($613) (e6, e7)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC and OH&P, limited urban on-site work; for adaptive reuse the figure covers demolition, structural/MEP upgrades and new interiors (not acquisition). Excludes land/building acquisition, FF&E/OS&E, kitchen equipment, soft costs, pre-opening, permits, contingency, off-sites, impact/tap fees, financing."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.7,
+    "standard": 1,
+    "premium": 1.35,
+    "luxury": 1.8,
+    "evidence": [],
+    "derived": true,
+    "method": "Economy = low/mid (0.69, a micro/pod-style boutique); premium ≈ high/mid trimmed (1.6 → 1.35); luxury reflects small luxury hotels approaching full luxury per-key costs (1.8)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "02",
+        "pct": 0.02
+      },
+      {
+        "division": "03",
+        "pct": 0.08
+      },
+      {
+        "division": "04",
+        "pct": 0.02
+      },
+      {
+        "division": "05",
+        "pct": 0.05
+      },
+      {
+        "division": "06",
+        "pct": 0.04
+      },
+      {
+        "division": "07",
+        "pct": 0.05
+      },
+      {
+        "division": "08",
+        "pct": 0.07
+      },
+      {
+        "division": "09",
+        "pct": 0.15
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.03
+      },
+      {
+        "division": "12",
+        "pct": 0.03
+      },
+      {
+        "division": "14",
+        "pct": 0.03
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.08
+      },
+      {
+        "division": "23",
+        "pct": 0.08
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "27",
+        "pct": 0.02
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.01
+      },
+      {
+        "division": "32",
+        "pct": 0.02
+      },
+      {
+        "division": "33",
+        "pct": 0.01
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived from the full-service split with: finishes (09) raised to 15% and casework/millwork (12) to 3% for design-forward interiors; existing conditions/selective demolition (02) 2% for typical partial adaptive reuse; sitework (31–33) reduced to 4% for urban infill."
+  },
+  "lineItems": [
+    {
+      "id": "pre-opening-working-capital",
+      "name": "Pre-opening, OS&E, launch marketing and working capital",
+      "division": "01",
+      "unit": "key",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 6000,
+        "mid": 10000,
+        "high": 16000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e15",
+          "e14"
+        ],
+        "derived": true,
+        "method": "Between HVS 2025-data select-service ($3,561 median / $5,477 avg, e15) and full-service ($11,842 / $14,075, e14); independents carry extra launch marketing and F&B pre-opening without brand support, so the mid sits near full-service."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": false,
+      "notes": "Owner cost: OS&E (custom-branded), F&B opening inventory, pre-opening payroll and marketing, operating reserves."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 25000,
+      "mid": 35000,
+      "high": 55000,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e9",
+        "e10",
+        "e11"
+      ],
+      "derived": true,
+      "method": "Between HVS full-service FF&E ($36,752 median / $43,928 avg, 2025 data, e9) and luxury ($94,613–$138,317 medians, e11, e10); smaller boutiques with limited meeting space need less public-area FF&E than full-service, so mid ≈ full-service median."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.16,
+      "mid": 0.2,
+      "high": 0.28,
+      "evidence": [
+        "e13",
+        "e12",
+        "e19"
+      ],
+      "derived": true,
+      "method": "HVS soft ÷ building (2025-data medians): select-service 16.5% (e13), full-service 22.6% (e12). Boutiques carry custom architecture and interior design (HCEG: design, PM and procurement ~10% of a renovation budget, e19), historic/adaptive-reuse consultants and F&B concept design, so mid 20% (excl. financing) with a higher high."
+    },
+    "notes": "Includes custom interior design and procurement agent, F&B concept/kitchen design, branding, historic tax-credit consultants where applicable, soft-brand application/technical fees if affiliated."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Custom design with no prototype; higher design contingency."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Adaptive reuse / existing-building unknowns push hard contingency above new prototype hotels; use the low end for ground-up."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 220000,
+      "max": 650000,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Hard $180k–$420k + soft 16–28% + FF&E $25k–$55k → ~$235k–$595k; bracketed by HVS all-in less land for select-service (~$183k–$217k, e16) and full-service (~$437k–$526k, e17), widened up for urban luxury boutiques."
+    }
+  },
+  "openQuestions": [
+    "No direct boutique-hotel cost source found (search budget exhausted); a public budget for a boutique/adaptive-reuse hotel (e.g., a historic tax credit application or TIF packet) would make this sourced.",
+    "Adaptive-reuse vs. ground-up boutiques could be split; existing-building acquisition is excluded here."
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerUnit",
+      "value": 126900,
+      "low": 126900,
+      "high": 156219,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Select-Service Hotels — Building & Site Improvements: Average $156,219; Median $126,900",
+      "scopeNotes": "value = median; low/high = the median and average. HVS 'Building & Site Improvements' (cost-category exhibit) = GC bid, building/monument signage, building permits, contractor overhead, engineering, hard-cost contingency, landscaping, parking/parking garage, site improvements, subcontractor bids. Broader than our hard cost (permits, engineering, contingency); our conversion uses x0.91. Excludes land, soft costs, FF&E, pre-opening, developer fee. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerUnit",
+      "value": 305266,
+      "low": 305266,
+      "high": 374355,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Full-Service Hotels — Building & Site Improvements: Average $374,355; Median $305,266",
+      "scopeNotes": "value = median; low/high = the median and average. HVS 'Building & Site Improvements' (cost-category exhibit) = GC bid, building/monument signage, building permits, contractor overhead, engineering, hard-cost contingency, landscaping, parking/parking garage, site improvements, subcontractor bids. Broader than our hard cost (permits, engineering, contingency); our conversion uses x0.91. Excludes land, soft costs, FF&E, pre-opening, developer fee. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerUnit",
+      "value": 275414,
+      "low": 275414,
+      "high": 317731,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2025",
+        "url": "https://www.hvs.com/article/10219-hvs-us-hotel-development-cost-survey-2025",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilizes Since Our Last Survey', Full-Service Hotels — Building & Site Improvements: Average $317,731; Median $275,414",
+      "scopeNotes": "value = median; low/high = the median and average. HVS 'Building & Site Improvements' (cost-category exhibit) = GC bid, building/monument signage, building permits, contractor overhead, engineering, hard-cost contingency, landscaping, parking/parking garage, site improvements, subcontractor bids. Broader than our hard cost (permits, engineering, contingency); our conversion uses x0.91. Excludes land, soft costs, FF&E, pre-opening, developer fee. Survey covers budgets collected in calendar 2024.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerUnit",
+      "value": 193644,
+      "low": 193644,
+      "high": 287189,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2023,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2024",
+        "url": "https://www.hvs.com/article/9999-hvs-us-hotel-development-cost-survey-2024",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost-per-room table (exhibit image \"HVS Hotel Development Cost Ranges\"), Redevelopment Projects — Building & Site Improvements: Average $287,189; Median $193,644",
+      "scopeNotes": "value = median; low/high = the median and average. HVS 'Building & Site Improvements' (cost-category exhibit) = GC bid, building/monument signage, building permits, contractor overhead, engineering, hard-cost contingency, landscaping, parking/parking garage, site improvements, subcontractor bids. Broader than our hard cost (permits, engineering, contingency); our conversion uses x0.91. Excludes land, soft costs, FF&E, pre-opening, developer fee. Survey covers budgets collected in calendar 2023. HVS describes this category as 'redevelopments of existing buildings throughout the United States'.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerUnit",
+      "value": 196077,
+      "low": 180281,
+      "high": 196077,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2022,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2023",
+        "url": "https://www.hvs.com/article/9704-hvs-us-hotel-development-cost-survey-2023",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost-per-room table (exhibit image \"HVSHotelDevelopmentCostPerRoom\"), Redevelopment Projects — Building & Site Improvements: Average $180,281; Median $196,077",
+      "scopeNotes": "value = median; low/high = the median and average. HVS 'Building & Site Improvements' (cost-category exhibit) = GC bid, building/monument signage, building permits, contractor overhead, engineering, hard-cost contingency, landscaping, parking/parking garage, site improvements, subcontractor bids. Broader than our hard cost (permits, engineering, contingency); our conversion uses x0.91. Excludes land, soft costs, FF&E, pre-opening, developer fee. Survey covers projects proposed or under construction 2021-2022 (dataYear 2022 used).",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostPerSF",
+      "value": 406,
+      "low": 343,
+      "high": 475,
+      "unit": "USD/sf",
+      "region": "Median of 18 major U.S. metros in the RLB table",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "North America Quarterly Construction Cost Report, Q2 2026",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/06/Q2-2026-QCR_7.7.2026.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "\"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\" — Indicative Construction Costs table, Hotels 3 Star (e.g., Dallas 310–455, Phoenix 230–350, Chicago 385–515, New York 385–530)",
+      "scopeNotes": "My arithmetic over the 18 U.S. city rows: median of lows $342.5, median of highs $475, median of range midpoints $406/SF. Hard construction cost per GSF; RLB markets are all large metros, so this sits above a true national average. Site scope not stated.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": 613,
+      "low": 483,
+      "high": 735,
+      "unit": "USD/sf",
+      "region": "Median of 18 major U.S. metros in the RLB table",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "North America Quarterly Construction Cost Report, Q2 2026",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/06/Q2-2026-QCR_7.7.2026.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "\"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\" — Indicative Construction Costs table, Hotels 5 Star (e.g., Dallas 440–605, Phoenix 435–675, Chicago 530–810, San Francisco 580–1100)",
+      "scopeNotes": "My arithmetic over the 18 U.S. city rows: median of lows $482.5, median of highs $735, median of range midpoints $612.5/SF. Hard construction cost per GSF in large metros (above national average).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerSF",
+      "value": 261.76,
+      "unit": "USD/sf",
+      "region": "U.S. national average",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Hotel construction costs for 2025",
+        "url": "https://www.bdcnetwork.com/home/news/55284085/hotel-construction-costs-for-2025",
+        "publisher": "Building Design+Construction (data: Gordian RSMeans)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "'This table shows the most recent costs per square foot for 15-story hotels in select cities.' National Average 2025: $261.76 (2024: $261.27)",
+      "scopeNotes": "RSMeans square-foot model (15-story hotel). RSMeans model pages show model totals include contractor fees (25%) and architectural fees (6%); sitework not addressed. Building only, mid/high-rise.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9",
+      "metric": "ffePerUnit",
+      "value": 36752,
+      "low": 36752,
+      "high": 43928,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Full-Service Hotels — FF&E: Average $43,928; Median $36,752",
+      "scopeNotes": "value = median; low/high = the median and average. HVS FF&E = guestroom/bath furniture and fixtures, kitchen and laundry equipment, public space and meeting furniture, softgoods, technology/telecom equipment. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e10",
+      "metric": "ffePerUnit",
+      "value": 138317,
+      "low": 118359,
+      "high": 138317,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Luxury Hotels — FF&E: Average $118,359; Median $138,317",
+      "scopeNotes": "value = median; low/high = the median and average. HVS FF&E = guestroom/bath furniture and fixtures, kitchen and laundry equipment, public space and meeting furniture, softgoods, technology/telecom equipment. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e11",
+      "metric": "ffePerUnit",
+      "value": 94613,
+      "low": 94613,
+      "high": 96752,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2025",
+        "url": "https://www.hvs.com/article/10219-hvs-us-hotel-development-cost-survey-2025",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilizes Since Our Last Survey', Luxury Hotels — FF&E: Average $96,752; Median $94,613",
+      "scopeNotes": "value = median; low/high = the median and average. HVS FF&E = guestroom/bath furniture and fixtures, kitchen and laundry equipment, public space and meeting furniture, softgoods, technology/telecom equipment. Survey covers budgets collected in calendar 2024.",
+      "confidence": "high"
+    },
+    {
+      "id": "e12",
+      "metric": "softCostPerUnit",
+      "value": 68842,
+      "low": 68842,
+      "high": 90105,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Full-Service Hotels — Soft Costs: Average $90,105; Median $68,842",
+      "scopeNotes": "value = median; low/high = the median and average. HVS soft costs = architectural fees, consultants, FINANCING costs (construction interest, reserves, loan closing), franchise application fee, holding costs, interior design, land closing and entitlement, professional fees, soft-cost contingency, survey. Includes financing, which our soft-cost % excludes. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e13",
+      "metric": "softCostPerUnit",
+      "value": 21002,
+      "low": 21002,
+      "high": 28297,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Select-Service Hotels — Soft Costs: Average $28,297; Median $21,002",
+      "scopeNotes": "value = median; low/high = the median and average. HVS soft costs = architectural fees, consultants, FINANCING costs (construction interest, reserves, loan closing), franchise application fee, holding costs, interior design, land closing and entitlement, professional fees, soft-cost contingency, survey. Includes financing, which our soft-cost % excludes. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e14",
+      "metric": "preOpeningPerUnit",
+      "value": 11842,
+      "low": 11842,
+      "high": 14075,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Full-Service Hotels — Pre-Opening & Working Capital: Average $14,075; Median $11,842",
+      "scopeNotes": "value = median; low/high = the median and average. HVS pre-opening & working capital = operating reserves, pre-opening recruiting/staffing/training, supply inventories (linen, operating supplies = OS&E), technical services fees. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e15",
+      "metric": "preOpeningPerUnit",
+      "value": 3561,
+      "low": 3561,
+      "high": 5477,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Select-Service Hotels — Pre-Opening & Working Capital: Average $5,477; Median $3,561",
+      "scopeNotes": "value = median; low/high = the median and average. HVS pre-opening & working capital = operating reserves, pre-opening recruiting/staffing/training, supply inventories (linen, operating supplies = OS&E), technical services fees. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e16",
+      "metric": "totalDevCostPerUnit",
+      "value": 200730,
+      "low": 200730,
+      "high": 239006,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Select-Service Hotels — Total: Average $239,006; Median $200,730",
+      "scopeNotes": "value = median; low/high = the median and average. All-in development cost per room incl. land, soft costs (incl. financing), FF&E, pre-opening and developer fee. Survey covers budgets collected in calendar 2025. Land: avg $21,871 / median $18,000. Developer fee: avg $15,628 / median $9,500.",
+      "confidence": "high"
+    },
+    {
+      "id": "e17",
+      "metric": "totalDevCostPerUnit",
+      "value": 467244,
+      "low": 467244,
+      "high": 595252,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Full-Service Hotels — Total: Average $595,252; Median $467,244",
+      "scopeNotes": "value = median; low/high = the median and average. All-in development cost per room incl. land, soft costs (incl. financing), FF&E, pre-opening and developer fee. Survey covers budgets collected in calendar 2025. Land: avg $69,655 / median $30,300.",
+      "confidence": "high"
+    },
+    {
+      "id": "e18",
+      "metric": "guestroomNetSF",
+      "unit": "text",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Guestroom area assumptions: Economy 303 SF; Midscale 370 SF; Upscale 389 SF; Upper Upscale 472 SF; Luxury 578 SF; Extended Stay studio 548 SF (incl. 8x6 kitchen)",
+      "scopeNotes": "Net guestroom areas (excl. bath for most tiers) of the guide's prototype hotels; used to derive gross SF per key.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e19",
+      "metric": "softCostPct",
+      "value": 0.1,
+      "unit": "pct",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Typically, the design cost of a project including the Architecture, Interior Design, Project Management, and Procurement make up about 10% of the overall budget.",
+      "scopeNotes": "Renovation design/PM/procurement fees only; excludes permits, legal, insurance, etc.",
+      "confidence": "medium"
+    }
+  ]
+}

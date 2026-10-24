@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "id": "boat-ramp",
+  "name": "Boat ramp",
+  "category": "marine-other",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "lane",
+  "summary": "A launch lane's all-in cost is dominated by three pieces: the in-water concrete ramp (cofferdam/precast planks, 12-16 ft wide), the courtesy/boarding dock, and the trailer parking it needs (~30-35 car-trailer stalls per lane per Virginia DWR guidance). No public per-lane cost benchmark was found; the default is a bottom-up derived estimate bracketed by a recent single-lane state project (RI, $177k reconstruction) and 2026 Florida FBIP grant requests of ~$0.75-1.24M for ramp replacements. Low confidence — verify.",
+
+  "sizing": {
+    "typicalSize": { "low": 1, "mid": 2, "high": 4, "unit": "lane", "evidence": ["e1"], "derived": true, "method": "Public ramps are mostly 1-2 lanes (Olney Pond RI single lane, e1); regional facilities 3-6 lanes. Mid 2 is judgment." },
+    "parkingPerPrimaryUnit": { "low": 25, "mid": 32, "high": 40, "type": "surface", "evidence": ["e2"], "derived": false, "method": "Virginia DWR: 'one launching lane should have about 30-35 car-trailer parking spaces' (e2); low/high widen for low-use and high-demand sites." },
+    "primaryUnitsPerAcre": { "low": 0.7, "mid": 1.0, "high": 1.5, "evidence": ["e2"], "derived": true, "method": "Per lane: 32 trailer stalls x 10 ft x 40 ft (e2) = 12,800 SF, plus aisles/turning (~2x) = ~26,000 SF, plus ramp approach/staging 30-40 ft radius and landscaping -> ~1 acre per lane." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 200000, "mid": 550000, "high": 1200000, "dollarYear": 2026, "region": "US", "evidence": ["e1", "e2", "e3", "e4"], "derived": true, "method": "Bottom-up per lane (estimating judgment, 2026 $): concrete ramp lane 16 ft x ~120 ft incl. cofferdam/precast planks and toe protection ~$150-300k; courtesy dock ~80-120 LF at ~$1,000-1,500/LF (cf. marina side-tie evidence) ~$100-150k; trailer parking ~26,000 SF of paving/drainage/lighting at ~$8-12/SF ~$200-300k (32 stalls, e2) -> ~$450-750k, mid $550k. Low bracket: Olney Pond RI single-lane reconstruction $176,557 in 2021 incl. docks and paved parking at an existing site (e1). High bracket: 2026 FBIP grant requests for full ramp replacements ($1.03M Branford, $1.19M Deep Creek Phase II, $1.24M Five Hole Springs, e3), and new ramps on undeveloped sites with access roads or channel dredging." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Per lane: ramp slab (cast-in-place above water, precast or cofferdam below), toe scour protection, one courtesy/boarding dock, approach/staging apron, trailer parking (~32 stalls), on-site drainage, lighting, signage. Excludes access road off-site, channel dredging, restrooms, breakwaters, land, permits/design."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.4, "standard": 1.0, "premium": 1.5, "luxury": 2.2,
+    "evidence": [], "derived": true,
+    "method": "low/mid = 200k/550k = 0.36 (rounded 0.4; reuse of existing parking/approach); high/mid = 1.2M/550k = 2.2 for exposed coastal sites with breakwater-protected docks. Premium 1.5 = interpolated."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.10 },
+      { "division": "03", "pct": 0.22 },
+      { "division": "26", "pct": 0.04 },
+      { "division": "31", "pct": 0.12 },
+      { "division": "32", "pct": 0.27 },
+      { "division": "33", "pct": 0.05 },
+      { "division": "35", "pct": 0.20 }
+    ],
+    "evidence": [], "derived": true,
+    "method": "From the bottom-up per-lane build: ramp concrete (03) ~22%; courtesy dock/piles/toe protection (35) ~20%; trailer parking paving/curbs/striping (32) ~27%; earthwork, cofferdam/dewatering, erosion control (31) ~12%; drainage/stormwater (33) ~5%; lighting (26) ~4%; mobilization/general conditions (01) ~10%. Verify against a state bid tab."
+  },
+
+  "lineItems": [
+    {
+      "id": "courtesy-dock",
+      "name": "Courtesy / boarding dock (floating, ~100 LF per lane)",
+      "division": "35",
+      "unit": "lf",
+      "qty": { "per": "primaryUnit", "value": 100 },
+      "cost": { "low": 800, "mid": 1200, "high": 2000, "dollarYear": 2026, "region": "US", "evidence": ["marine-other/marina.json#e13", "marine-other/marina.json#e16"], "derived": true, "method": "Uses the lower half of marina floating side-tie dock evidence (~$1,000-1,400/LF incl. utilities, marina e13/e16); courtesy docks have no utilities, so mid $1,200/LF is judgment." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out of the per-lane baseline."
+    },
+    {
+      "id": "trailer-parking",
+      "name": "Car-trailer parking stalls (10 ft x 40 ft)",
+      "division": "32",
+      "unit": "space",
+      "qty": { "per": "primaryUnit", "value": 32 },
+      "cost": { "low": 5000, "mid": 8000, "high": 12000, "dollarYear": 2026, "region": "US", "evidence": ["e2", "marine-other/parking-lot.json#e1", "marine-other/parking-lot.json#e3"], "derived": true, "method": "Trailer stall + aisle ~800 SF ~ 2.4x a car space (330 SF, parking-lot file); car-space cost $5-6.5k (parking-lot e1/e3) scaled by area x ~0.5 (paving is ~half of per-space cost) -> ~$8k per trailer stall. Qty 32 per lane (e2)." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out of the per-lane baseline."
+    },
+    {
+      "id": "restroom",
+      "name": "Vault or plumbed restroom building",
+      "division": "22",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 80000, "mid": 200000, "high": 450000, "dollarYear": 2026, "region": "US", "evidence": ["e3"], "derived": true, "method": "FBIP has funded stand-alone ramp restroom projects (e.g., 'St. Mary's Cove Boat Ramp Restroom' $36,214 grant, 'Steinhatchee Boat Ramp Restroom' $42,876 grant — partial funding, e3). Range is estimating judgment: precast vault toilet low; plumbed 2-stall building high." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Off by default."
+    },
+    {
+      "id": "channel-dredging",
+      "name": "Approach channel dredging",
+      "division": "35",
+      "unit": "cy",
+      "qty": { "per": "project", "value": 0 },
+      "cost": { "low": 25, "mid": 45, "high": 120, "dollarYear": 2026, "region": "US", "evidence": ["marine-other/marina.json#e18"], "derived": true, "method": "Same derived unit range as marina dredging line item (judgment). Virginia DWR advises at least 3 ft depth at the ramp toe at mean low water (e2)." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Enter CY. FBIP 'Shell Mound Boat Ramp Channel Improvements' received $869,460 (e3) — channel work can rival the ramp cost."
+    },
+    {
+      "id": "kayak-launch",
+      "name": "ADA kayak / paddlecraft launch",
+      "division": "35",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 40000, "mid": 80000, "high": 150000, "dollarYear": 2026, "region": "US", "evidence": ["e1"], "derived": true, "method": "Included in the Olney Pond RI scope (e1) but not priced separately; manufactured floating launch + gangway range is judgment." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Often grant-funded."
+    }
+  ],
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.12, "mid": 0.18, "high": 0.25, "evidence": [], "derived": true, "method": "Civil/coastal engineering, survey, geotech, USACE/state in-water permits and environmental review; in-water permitting pushes above a surface-lot's ~15% (judgment)." },
+    "breakdown": { "architectureEngineering": 0.09 },
+    "notes": "Texas TPWD boating-access grants fund up to 75% with a 25% local match and offer Phase I planning grants up to $250,000 (e4) — planning/permitting is a material share."
+  },
+
+  "contingency": {
+    "design": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": [], "derived": true, "method": "In-water geotechnical and water-level uncertainty (judgment)." },
+    "hard": { "low": 0.08, "mid": 0.10, "high": 0.15, "evidence": [], "derived": true, "method": "Marine work norm, cf. Berkeley Marina 10% construction contingency (marina e10); judgment." },
+    "soft": { "low": 0.03, "mid": 0.05, "high": 0.10, "evidence": [], "derived": true, "method": "General norm (judgment)." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 175000, "max": 1700000, "dollarYear": 2026, "region": "US", "method": "Low = RI single-lane reconstruction (~$177k in 2021, e1); high = $1.2M hard x 1.25 soft x 1.10 contingency = ~$1.65M for an exposed new site." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1", "metric": "hardCostPerUnit", "value": 176557, "unit": "USD/lane",
+      "region": "Lincoln, RI (Olney Pond, Lincoln Woods State Park)", "regionKey": "RI", "dataYear": 2021,
+      "source": { "title": "Improvements to Boat Ramp at Olney Pond in Lincoln Woods to Get Underway in February", "url": "https://ri.gov/press/view/40299", "publisher": "State of Rhode Island (DEM press release, 01-28-2021)", "accessed": "2026-10-24" },
+      "quote": "single-lane concrete ramp ... 12-foot wide ... an adjacent row of floating docks ... $176,557",
+      "scopeNotes": "Construction cost of a single-lane ramp reconstruction at an existing site incl. floating docks, T-dock, ADA kayak launch and paved parking with ADA spaces. 12 ft lane (vs. 16 ft preferred).", "confidence": "medium"
+    },
+    {
+      "id": "e2", "metric": "parkingPerLane", "value": null, "low": 30, "high": 35, "unit": "count",
+      "region": "Virginia", "regionKey": "VA",
+      "source": { "title": "Building Boat Ramps", "url": "https://dwr.virginia.gov/boating/building-boat-ramps/", "publisher": "Virginia Department of Wildlife Resources", "accessed": "2026-10-24" },
+      "quote": "one launching lane should have about 30-35 car-trailer parking spaces ... a vehicle-trailer parking space should be at least 10 feet wide and 40 feet long ... Ramps 16 feet wide are preferred for the general public.",
+      "scopeNotes": "Design guidance (sizing), no costs.", "confidence": "high"
+    },
+    {
+      "id": "e3", "metric": "grantAmountPerProject", "value": 1032900, "low": 750000, "high": 1241005, "unit": "USD/ls",
+      "region": "Florida", "regionKey": "FL", "dataYear": 2026,
+      "source": { "title": "2026 FBIP Scores and Ranking (Florida Boating Improvement Program)", "url": "https://myfwc.com/media/lczpcteh/fbip-scores.pdf", "publisher": "Florida Fish and Wildlife Conservation Commission", "accessed": "2026-10-24" },
+      "quote": "Town of Branford ... Ivey Memorial Park Boat Ramp Replacement $ 1,032,900 ... DeSoto County ... Deep Creek- Boat Ramp Improvements Phase II $ 1,191,182 ... Hamilton County ... Five Hole Springs Boat Ramp Improvements $ 1,241,005 ... City of Panama City ... Downtown Marina Boat Ramp $ 750,000",
+      "scopeNotes": "Grant amounts requested (not total project cost, lane counts not given); a lower bound on project cost for 1-2 lane replacements. Funded-projects page also lists FBIP grants such as 'St. Mary's Cove Boat Ramp Restroom' $36,214 and 'Shell Mound Boat Ramp Channel Improvements' $869,460 (https://myfwc.com/boating/grants-programs/fbip/funded-projects/).", "confidence": "low"
+    },
+    {
+      "id": "e4", "metric": "grantProgramTerms", "value": 250000, "unit": "USD/ls",
+      "region": "Texas", "regionKey": "TX", "dataYear": 2026,
+      "source": { "title": "Boating Access Grants", "url": "https://tpwd.texas.gov/business/grants/recreation-grants/boating-access", "publisher": "Texas Parks and Wildlife Department", "accessed": "2026-10-24" },
+      "quote": "up to $250,000 in matching funds",
+      "scopeNotes": "Phase I planning grant cap; program covers 75% of costs with 25% local match. Context for soft costs only.", "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "No sourced per-lane construction cost found — collect 3+ recent state wildlife agency or county bid tabs (lane count, dock LF, stall count).",
+    "FBIP grant amounts are not total project cost; obtain applications for the top-ranked ramp replacements to get totals and lane counts.",
+    "Search budget was exhausted during this research pass; a follow-up search for TPWD/ODFW/WDFW ramp contracts is recommended."
+  ]
+}

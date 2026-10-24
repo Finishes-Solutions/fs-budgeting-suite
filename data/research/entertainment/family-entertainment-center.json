@@ -1,0 +1,410 @@
+{
+  "schemaVersion": 1,
+  "id": "family-entertainment-center",
+  "name": "Trampoline / family entertainment center",
+  "category": "entertainment",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Indoor FEC (trampoline courts, ninja/climbing, soft play, arcade, party rooms, café) in a high-bay box — most often a converted big box or warehouse, sometimes a new pre-engineered building. Building cost is low per SF (simple shell, open floor); the attraction package (trampolines, play structures, ropes courses, games) is a large separate FF&E/equipment item. Values derived from RSMeans warehouse/retail shells (2019) and size data from Main Event; no franchise Item 7 table was retrieved in this session.",
+  "sizing": {
+    "typicalSize": {
+      "low": 20000,
+      "mid": 35000,
+      "high": 60000,
+      "unit": "sf",
+      "evidence": [
+        "e4",
+        "e3"
+      ],
+      "derived": true,
+      "method": "Trampoline/adventure parks commonly 20,000–45,000 SF (first Sky Zone 17,000 SF, e3); multi-attraction FECs like Main Event 37,500–78,000 SF (e4). Mid 35,000."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 9000,
+      "mid": 12000,
+      "high": 16000,
+      "evidence": [],
+      "derived": true,
+      "method": "Box at ~0.2–0.35 FAR with ~5–8 spaces per 1,000 SF. Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.004,
+      "mid": 0.006,
+      "high": 0.008,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Commercial-recreation zoning typically 4–8 spaces per 1,000 SF; peak birthday-party loads. Derived."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 70,
+      "mid": 160,
+      "high": 275,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2"
+      ],
+      "derived": true,
+      "method": "2025 dollars, building + interiors + on-site work, excluding attraction equipment. RSMeans 2019 hard cost warehouse $131/SF (e1) and retail store $151 union / $134 open shop (e2) → ≈ $170–195/SF in 2025 for a new masonry box; pre-engineered high-bay buildings are cheaper, so new-build mid ≈ $185 incl. site. Many FECs are conversions of existing boxes (~$60–100/SF for MEP, restrooms, party rooms, finishes, sprinkler upgrades). Mid $160 weights new-build and conversion; low $70 = conversion; high $275 = ground-up with mezzanines, high-end finishes."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Excludes trampolines/play structures/ropes courses/arcade games (lineItems), furniture, land, soft costs, off-sites, impact/tap fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.6,
+    "standard": 1.0,
+    "premium": 1.35,
+    "luxury": 1.72,
+    "evidence": [],
+    "derived": true,
+    "method": "economy ≈ low/mid (70/160 = 0.44, raised to 0.6 as economy new-build); luxury = high/mid (275/160); premium interpolated."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "03",
+        "pct": 0.11
+      },
+      {
+        "division": "05",
+        "pct": 0.05
+      },
+      {
+        "division": "06",
+        "pct": 0.02
+      },
+      {
+        "division": "07",
+        "pct": 0.07
+      },
+      {
+        "division": "08",
+        "pct": 0.03
+      },
+      {
+        "division": "09",
+        "pct": 0.1
+      },
+      {
+        "division": "10",
+        "pct": 0.03
+      },
+      {
+        "division": "13",
+        "pct": 0.15
+      },
+      {
+        "division": "21",
+        "pct": 0.04
+      },
+      {
+        "division": "22",
+        "pct": 0.06
+      },
+      {
+        "division": "23",
+        "pct": 0.1
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.02
+      },
+      {
+        "division": "32",
+        "pct": 0.03
+      },
+      {
+        "division": "33",
+        "pct": 0.01
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived for a pre-engineered high-bay box: building system 13 ≈ 15%, slab 03 ≈ 11%, sprinklers 21 for high-piled/high-bay occupancy, HVAC for assembly loads 10%, party rooms/restrooms in 09/22. On-site work ≈ 6%. Not sourced."
+  },
+  "lineItems": [
+    {
+      "id": "trampoline-attractions",
+      "name": "Trampoline courts, dodgeball, foam pit, ninja course (installed)",
+      "division": "11",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 12000
+      },
+      "cost": {
+        "low": 25,
+        "mid": 45,
+        "high": 70,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance per SF of attraction footprint; verify with park-equipment vendor quotes or franchise FDD Item 7 tables."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": false,
+      "notes": "Equipment; footprint ≈ 30–40% of building."
+    },
+    {
+      "id": "soft-play-structure",
+      "name": "Multi-level soft play / toddler structure",
+      "division": "11",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 100000,
+        "mid": 250000,
+        "high": 600000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance for a custom multi-level play structure."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": ""
+    },
+    {
+      "id": "ropes-climbing",
+      "name": "Ropes course / climbing walls / zip line",
+      "division": "11",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 350000,
+        "high": 800000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": ""
+    },
+    {
+      "id": "arcade-package",
+      "name": "Arcade / redemption game package",
+      "division": "11",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 3000
+      },
+      "cost": {
+        "low": 80,
+        "mid": 150,
+        "high": 250,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "entertainment/entertainment-venue.json#e3"
+        ],
+        "derived": true,
+        "method": "Same basis as entertainment-venue arcade-games line item."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": ""
+    },
+    {
+      "id": "party-rooms",
+      "name": "Party rooms (finished, per room)",
+      "division": "09",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 6
+      },
+      "cost": {
+        "low": 15000,
+        "mid": 30000,
+        "high": 60000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: ~300–400 SF rooms with finishes, lighting, AV."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 5,
+      "mid": 10,
+      "high": 20,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Café furniture, lockers, cubbies, POS, signage (attractions separate). Derived."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.1,
+      "mid": 0.15,
+      "high": 0.22,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Simple box design (RSMeans model architectural fee ~7%) plus MEP, permits, attraction engineering/inspections. Derived."
+    },
+    "notes": "Franchise systems add franchise fees; amusement-device inspections/permits vary by state."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Conversions of existing boxes carry higher field risk."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 75,
+      "max": 340,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "low 70×1.1 to high 275×1.22; excludes attraction equipment."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "buildingHardCostPerSF",
+      "value": 130.62,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Warehouse - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/warehouse",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Warehouse with Brick Veneer / Reinforced Concrete ... SubTotal 100% $104.50 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $26.12",
+      "scopeNotes": "2019 RSMeans national model, 30,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $130.62/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. High-bay box shell proxy (trampoline parks need ~24–30 ft clear).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "buildingHardCostPerSF",
+      "value": 151.29,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Store, Retail - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/retail-store",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Store,Retail with Brick Veneer / Reinforced Concrete ... SubTotal 100% $121.03 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $30.26",
+      "scopeNotes": "2019 RSMeans national model, 8,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $151.29/SF; open shop = $134.49/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Retail-grade box proxy.",
+      "confidence": "medium",
+      "low": 134.49,
+      "high": 151.29
+    },
+    {
+      "id": "e3",
+      "metric": "projectCost",
+      "value": 2000000,
+      "unit": "USD/ls",
+      "region": "Las Vegas, NV",
+      "regionKey": "NV-LasVegas",
+      "dataYear": 2004,
+      "source": {
+        "title": "Sky Zone",
+        "url": "https://en.wikipedia.org/wiki/Sky_Zone",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Platt spent US$2 million to build a 17,000 square foot (1,600 m 2 ) trampoline arena in Las Vegas and to hire athletes for the sport",
+      "scopeNotes": "First Sky Zone (founded 2004). ≈ $118/SF but includes athlete hiring; very old, used only as historical context.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "typicalSize",
+      "value": 50000,
+      "low": 37500,
+      "high": 78000,
+      "unit": "sf",
+      "region": "US (company-wide)",
+      "regionKey": "US",
+      "source": {
+        "title": "Dave & Buster's Entertainment, Inc. Form 10-K for fiscal year ended February 3, 2026",
+        "url": "https://www.sec.gov/Archives/edgar/data/1525769/000152576926000008/play-20260203.htm",
+        "publisher": "U.S. SEC EDGAR (Dave & Buster's Entertainment, Inc.)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Our Main Event stores vary in size from approximately 37,500 to 78,000 square feet. The target size of our future stores is between approximately 40,000 and 50,000 square feet.",
+      "scopeNotes": "Main Event family entertainment centers (bowling, laser tag, gravity ropes, arcade). Sizing only.",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "Retrieve franchise FDD Item 7 tables (trampoline/adventure park brands) for leasehold improvements and equipment per location.",
+    "Confirm attraction package $/SF with vendor quotes."
+  ]
+}

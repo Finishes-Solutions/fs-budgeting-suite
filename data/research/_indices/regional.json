@@ -1,0 +1,1877 @@
+{
+ "schemaVersion": 1,
+ "id": "regional",
+ "name": "Regional construction cost factors (national average = 1.00)",
+ "researchedAt": "2026-10-24",
+ "basis": "DoD UFS 3-701-01 (6 June 2026) MILCON Area Cost Factors, 2025 survey; national 96-base-city average = 1.00",
+ "factors": {
+  "US": 1.0,
+  "AL": 0.85,
+  "AK": 1.5,
+  "AZ": 0.99,
+  "AR": 0.83,
+  "CA": 1.2,
+  "CO": 0.97,
+  "CT": 1.09,
+  "DE": 0.98,
+  "DC": 1.02,
+  "FL": 0.87,
+  "GA": 0.88,
+  "HI": 1.38,
+  "ID": 1.13,
+  "IL": 1.02,
+  "IN": 0.95,
+  "IA": 1.0,
+  "KS": 0.91,
+  "KY": 0.87,
+  "LA": 0.85,
+  "ME": 1.08,
+  "MD": 0.97,
+  "MA": 1.2,
+  "MI": 1.04,
+  "MN": 1.12,
+  "MS": 0.81,
+  "MO": 0.98,
+  "MT": 1.07,
+  "NE": 1.0,
+  "NV": 1.17,
+  "NH": 1.11,
+  "NJ": 1.18,
+  "NM": 0.89,
+  "NY": 1.03,
+  "NC": 0.81,
+  "ND": 1.14,
+  "OH": 0.93,
+  "OK": 0.88,
+  "OR": 1.24,
+  "PA": 1.09,
+  "RI": 1.17,
+  "SC": 0.88,
+  "SD": 1.01,
+  "TN": 0.87,
+  "TX": 0.82,
+  "UT": 1.08,
+  "VT": 1.05,
+  "VA": 0.92,
+  "WA": 1.1,
+  "WV": 0.94,
+  "WI": 1.11,
+  "WY": 1.05,
+  "AL-Birmingham": 0.85,
+  "AL-Huntsville": 0.81,
+  "AL-Mobile": 0.8,
+  "AK-Anchorage": 1.5,
+  "AK-Fairbanks": 1.53,
+  "AZ-Phoenix": 0.99,
+  "AZ-Tucson": 0.97,
+  "AR-LittleRock": 0.81,
+  "CA-LosAngeles": 1.11,
+  "CA-SanDiego": 1.13,
+  "CA-SanFrancisco": 1.32,
+  "CA-SanJose": 1.32,
+  "CA-Oakland": 1.32,
+  "CA-Sacramento": 1.18,
+  "CA-Fresno": 1.23,
+  "CA-Riverside": 1.09,
+  "CO-Denver": 0.96,
+  "CO-ColoradoSprings": 0.98,
+  "CT-Hartford": 1.09,
+  "CT-NewHaven": 1.09,
+  "DC-Washington": 1.02,
+  "DE-Wilmington": 0.98,
+  "FL-Miami": 0.87,
+  "FL-Orlando": 0.87,
+  "FL-Tampa": 0.85,
+  "FL-Jacksonville": 0.86,
+  "GA-Atlanta": 0.89,
+  "GA-Savannah": 0.83,
+  "HI-Honolulu": 1.38,
+  "ID-Boise": 1.04,
+  "IL-Chicago": 1.21,
+  "IN-Indianapolis": 0.96,
+  "IA-DesMoines": 0.98,
+  "KS-Wichita": 0.88,
+  "KS-KansasCity": 0.91,
+  "KY-Louisville": 0.84,
+  "KY-Lexington": 0.89,
+  "LA-NewOrleans": 0.88,
+  "LA-BatonRouge": 0.85,
+  "MA-Boston": 1.28,
+  "MD-Baltimore": 0.94,
+  "ME-Portland": 1.08,
+  "MI-Detroit": 1.07,
+  "MI-GrandRapids": 1.04,
+  "MN-Minneapolis": 1.13,
+  "MN-StPaul": 1.13,
+  "MO-KansasCity": 0.97,
+  "MO-StLouis": 0.98,
+  "MS-Jackson": 0.81,
+  "MT-Billings": 1.04,
+  "NC-Charlotte": 0.81,
+  "NC-Raleigh": 0.81,
+  "ND-Fargo": 1.14,
+  "NE-Omaha": 0.97,
+  "NH-Manchester": 1.11,
+  "NJ-Newark": 1.18,
+  "NM-Albuquerque": 0.89,
+  "NV-LasVegas": 1.13,
+  "NV-Reno": 1.17,
+  "NY-NewYorkCity": 1.32,
+  "NY-Buffalo": 1.01,
+  "NY-Albany": 1.04,
+  "NY-Rochester": 1.03,
+  "OH-Columbus": 0.93,
+  "OH-Cleveland": 0.93,
+  "OH-Cincinnati": 0.93,
+  "OK-OklahomaCity": 0.9,
+  "OK-Tulsa": 0.88,
+  "OR-Portland": 1.19,
+  "PA-Philadelphia": 1.17,
+  "PA-Pittsburgh": 1.09,
+  "RI-Providence": 1.17,
+  "SC-Charleston": 0.9,
+  "SC-Columbia": 0.86,
+  "SD-SiouxFalls": 1.01,
+  "TN-Nashville": 0.87,
+  "TN-Memphis": 0.89,
+  "TN-Knoxville": 0.87,
+  "TX-Houston": 0.82,
+  "TX-Dallas": 0.84,
+  "TX-FortWorth": 0.84,
+  "TX-Austin": 0.82,
+  "TX-SanAntonio": 0.79,
+  "TX-ElPaso": 0.84,
+  "UT-SaltLakeCity": 1.08,
+  "VA-Richmond": 0.89,
+  "VA-Norfolk": 0.92,
+  "VA-VirginiaBeach": 0.92,
+  "VA-Arlington": 1.0,
+  "VT-Burlington": 1.04,
+  "WA-Seattle": 1.12,
+  "WA-Spokane": 1.08,
+  "WA-Tacoma": 1.12,
+  "WI-Milwaukee": 1.1,
+  "WI-Madison": 1.11,
+  "WV-Charleston": 0.95,
+  "WY-Cheyenne": 1.06,
+  "TX-DFW": 0.84
+ },
+ "labels": {
+  "US": "United States (national average)",
+  "AL": "Alabama",
+  "AK": "Alaska",
+  "AZ": "Arizona",
+  "AR": "Arkansas",
+  "CA": "California",
+  "CO": "Colorado",
+  "CT": "Connecticut",
+  "DE": "Delaware",
+  "DC": "District of Columbia",
+  "FL": "Florida",
+  "GA": "Georgia",
+  "HI": "Hawaii",
+  "ID": "Idaho",
+  "IL": "Illinois",
+  "IN": "Indiana",
+  "IA": "Iowa",
+  "KS": "Kansas",
+  "KY": "Kentucky",
+  "LA": "Louisiana",
+  "ME": "Maine",
+  "MD": "Maryland",
+  "MA": "Massachusetts",
+  "MI": "Michigan",
+  "MN": "Minnesota",
+  "MS": "Mississippi",
+  "MO": "Missouri",
+  "MT": "Montana",
+  "NE": "Nebraska",
+  "NV": "Nevada",
+  "NH": "New Hampshire",
+  "NJ": "New Jersey",
+  "NM": "New Mexico",
+  "NY": "New York",
+  "NC": "North Carolina",
+  "ND": "North Dakota",
+  "OH": "Ohio",
+  "OK": "Oklahoma",
+  "OR": "Oregon",
+  "PA": "Pennsylvania",
+  "RI": "Rhode Island",
+  "SC": "South Carolina",
+  "SD": "South Dakota",
+  "TN": "Tennessee",
+  "TX": "Texas",
+  "UT": "Utah",
+  "VT": "Vermont",
+  "VA": "Virginia",
+  "WA": "Washington",
+  "WV": "West Virginia",
+  "WI": "Wisconsin",
+  "WY": "Wyoming",
+  "AL-Birmingham": "Birmingham, AL",
+  "AL-Huntsville": "Huntsville, AL",
+  "AL-Mobile": "Mobile, AL",
+  "AK-Anchorage": "Anchorage, AK",
+  "AK-Fairbanks": "Fairbanks, AK",
+  "AZ-Phoenix": "Phoenix, AZ",
+  "AZ-Tucson": "Tucson, AZ",
+  "AR-LittleRock": "Little Rock, AR",
+  "CA-LosAngeles": "Los Angeles, CA",
+  "CA-SanDiego": "San Diego, CA",
+  "CA-SanFrancisco": "San Francisco, CA",
+  "CA-SanJose": "San Jose, CA",
+  "CA-Oakland": "Oakland, CA",
+  "CA-Sacramento": "Sacramento, CA",
+  "CA-Fresno": "Fresno, CA",
+  "CA-Riverside": "Riverside, CA",
+  "CO-Denver": "Denver, CO",
+  "CO-ColoradoSprings": "Colorado Springs, CO",
+  "CT-Hartford": "Hartford, CT",
+  "CT-NewHaven": "New Haven, CT",
+  "DC-Washington": "Washington, DC",
+  "DE-Wilmington": "Wilmington, DE",
+  "FL-Miami": "Miami, FL",
+  "FL-Orlando": "Orlando, FL",
+  "FL-Tampa": "Tampa, FL",
+  "FL-Jacksonville": "Jacksonville, FL",
+  "GA-Atlanta": "Atlanta, GA",
+  "GA-Savannah": "Savannah, GA",
+  "HI-Honolulu": "Honolulu, HI",
+  "ID-Boise": "Boise, ID",
+  "IL-Chicago": "Chicago, IL",
+  "IN-Indianapolis": "Indianapolis, IN",
+  "IA-DesMoines": "Des Moines, IA",
+  "KS-Wichita": "Wichita, KS",
+  "KS-KansasCity": "Kansas City, KS",
+  "KY-Louisville": "Louisville, KY",
+  "KY-Lexington": "Lexington, KY",
+  "LA-NewOrleans": "New Orleans, LA",
+  "LA-BatonRouge": "Baton Rouge, LA",
+  "MA-Boston": "Boston, MA",
+  "MD-Baltimore": "Baltimore, MD",
+  "ME-Portland": "Portland, ME",
+  "MI-Detroit": "Detroit, MI",
+  "MI-GrandRapids": "Grand Rapids, MI",
+  "MN-Minneapolis": "Minneapolis, MN",
+  "MN-StPaul": "St. Paul, MN",
+  "MO-KansasCity": "Kansas City, MO",
+  "MO-StLouis": "St. Louis, MO",
+  "MS-Jackson": "Jackson, MS",
+  "MT-Billings": "Billings, MT",
+  "NC-Charlotte": "Charlotte, NC",
+  "NC-Raleigh": "Raleigh, NC",
+  "ND-Fargo": "Fargo, ND",
+  "NE-Omaha": "Omaha, NE",
+  "NH-Manchester": "Manchester, NH",
+  "NJ-Newark": "Newark, NJ",
+  "NM-Albuquerque": "Albuquerque, NM",
+  "NV-LasVegas": "Las Vegas, NV",
+  "NV-Reno": "Reno, NV",
+  "NY-NewYorkCity": "New York City, NY",
+  "NY-Buffalo": "Buffalo, NY",
+  "NY-Albany": "Albany, NY",
+  "NY-Rochester": "Rochester, NY",
+  "OH-Columbus": "Columbus, OH",
+  "OH-Cleveland": "Cleveland, OH",
+  "OH-Cincinnati": "Cincinnati, OH",
+  "OK-OklahomaCity": "Oklahoma City, OK",
+  "OK-Tulsa": "Tulsa, OK",
+  "OR-Portland": "Portland, OR",
+  "PA-Philadelphia": "Philadelphia, PA",
+  "PA-Pittsburgh": "Pittsburgh, PA",
+  "RI-Providence": "Providence, RI",
+  "SC-Charleston": "Charleston, SC",
+  "SC-Columbia": "Columbia, SC",
+  "SD-SiouxFalls": "Sioux Falls, SD",
+  "TN-Nashville": "Nashville, TN",
+  "TN-Memphis": "Memphis, TN",
+  "TN-Knoxville": "Knoxville, TN",
+  "TX-Houston": "Houston, TX",
+  "TX-Dallas": "Dallas, TX",
+  "TX-FortWorth": "Fort Worth, TX",
+  "TX-DFW": "Dallas-Fort Worth, TX",
+  "TX-Austin": "Austin, TX",
+  "TX-SanAntonio": "San Antonio, TX",
+  "TX-ElPaso": "El Paso, TX",
+  "UT-SaltLakeCity": "Salt Lake City, UT",
+  "VA-Richmond": "Richmond, VA",
+  "VA-Norfolk": "Norfolk, VA",
+  "VA-VirginiaBeach": "Virginia Beach, VA",
+  "VA-Arlington": "Arlington, VA",
+  "VT-Burlington": "Burlington, VT",
+  "WA-Seattle": "Seattle, WA",
+  "WA-Spokane": "Spokane, WA",
+  "WA-Tacoma": "Tacoma, WA",
+  "WI-Milwaukee": "Milwaukee, WI",
+  "WI-Madison": "Madison, WI",
+  "WV-Charleston": "Charleston, WV",
+  "WY-Cheyenne": "Cheyenne, WY"
+ },
+ "derived": {
+  "HI-Honolulu": {
+   "dodACF2026": 2.03,
+   "value": 1.38,
+   "method": "DoD ACF (2.03) rejected as a commercial factor: both RLB Q3 2026 measures put Honolulu near Boston/Chicago, not ~1.5x NYC. Value = mean of RLB comparative cost index (Jul 2026) mapped to the DoD scale (1.408) and RLB indicative-cost geometric mean mapped to the DoD scale (1.349).",
+   "evidence": [
+    "e4",
+    "e5",
+    "e6"
+   ]
+  },
+  "HI": {
+   "dodACF2026": 2.13,
+   "value": 1.38,
+   "method": "Set equal to HI-Honolulu (Oahu holds most of the state's construction). DoD data show neighbor-island sites 5-28% above Honolulu (Hilo/Kihei 2.14, Kauai 2.60 vs 2.03); apply a project-specific premium for neighbor islands.",
+   "evidence": [
+    "e1",
+    "e5"
+   ]
+  },
+  "AK-Anchorage": {
+   "dodACF2026": 2.2,
+   "value": 1.5,
+   "method": "No public commercial cross-check found. DoD ACF 2.20 scaled by the Honolulu commercial/DoD ratio (1.38 / 2.03 = 0.680), on the assumption that DoD noncontiguous factors overstate commercial costs similarly. Verify.",
+   "evidence": [
+    "e1",
+    "e3"
+   ]
+  },
+  "AK-Fairbanks": {
+   "dodACF2026": 2.25,
+   "value": 1.53,
+   "method": "Same scaling as AK-Anchorage applied to the DoD Fairbanks ACF 2.25. Verify.",
+   "evidence": [
+    "e1"
+   ]
+  },
+  "AK": {
+   "dodACF2026": 2.47,
+   "value": 1.5,
+   "method": "Set equal to AK-Anchorage. The DoD statewide site median (2.47) is dominated by remote bases (McGrath/Nome/Barrow 3.17); remote AK work needs a project-specific premium.",
+   "evidence": [
+    "e1"
+   ]
+  },
+  "TX-DFW": {
+   "value": 0.84,
+   "method": "Mean of DoD ACF Dallas 0.84 and Fort Worth 0.84.",
+   "evidence": [
+    "e1"
+   ]
+  }
+ },
+ "crossCheck": {
+  "note": "RLB Q3 2026 values mapped onto the DoD scale (geometric-mean fit over 17 CONUS cities). Shown for review only; the factors above use DoD except where listed in derived.",
+  "cities": {
+   "TX-Austin": {
+    "dodACF2026": 0.82,
+    "rlbComparativeIndexJul2026": 20769,
+    "rlbComparativeScaled": 0.828,
+    "rlbIndicativeCostScaled": 0.835
+   },
+   "MA-Boston": {
+    "dodACF2026": 1.28,
+    "rlbComparativeIndexJul2026": 34070,
+    "rlbComparativeScaled": 1.358,
+    "rlbIndicativeCostScaled": 1.141
+   },
+   "NC-Charlotte": {
+    "dodACF2026": 0.81,
+    "rlbComparativeIndexJul2026": 20852,
+    "rlbComparativeScaled": 0.831,
+    "rlbIndicativeCostScaled": 1.016
+   },
+   "IL-Chicago": {
+    "dodACF2026": 1.21,
+    "rlbComparativeIndexJul2026": 34459,
+    "rlbComparativeScaled": 1.374,
+    "rlbIndicativeCostScaled": 1.01
+   },
+   "TX-Dallas": {
+    "dodACF2026": 0.84,
+    "rlbComparativeIndexJul2026": 20982,
+    "rlbComparativeScaled": 0.837,
+    "rlbIndicativeCostScaled": 0.844
+   },
+   "CO-Denver": {
+    "dodACF2026": 0.96,
+    "rlbComparativeIndexJul2026": 21484,
+    "rlbComparativeScaled": 0.857,
+    "rlbIndicativeCostScaled": 1.05
+   },
+   "HI-Honolulu": {
+    "dodACF2026": 2.03,
+    "rlbComparativeIndexJul2026": 35324,
+    "rlbComparativeScaled": 1.408,
+    "rlbIndicativeCostScaled": 1.349
+   },
+   "NV-LasVegas": {
+    "dodACF2026": 1.13,
+    "rlbComparativeIndexJul2026": 21217,
+    "rlbComparativeScaled": 0.846,
+    "rlbIndicativeCostScaled": 0.972
+   },
+   "CA-LosAngeles": {
+    "dodACF2026": 1.11,
+    "rlbComparativeIndexJul2026": 30874,
+    "rlbComparativeScaled": 1.231,
+    "rlbIndicativeCostScaled": 0.96
+   },
+   "FL-Miami": {
+    "dodACF2026": 0.87,
+    "rlbComparativeIndexJul2026": 21405,
+    "rlbComparativeScaled": 0.853,
+    "rlbIndicativeCostScaled": 0.873
+   },
+   "MN-Minneapolis": {
+    "dodACF2026": 1.13,
+    "rlbComparativeIndexJul2026": 25023,
+    "rlbComparativeScaled": 0.998,
+    "rlbIndicativeCostScaled": 1.214
+   },
+   "TN-Nashville": {
+    "dodACF2026": 0.87,
+    "rlbComparativeIndexJul2026": 21213,
+    "rlbComparativeScaled": 0.846,
+    "rlbIndicativeCostScaled": 1.033
+   },
+   "NY-NewYorkCity": {
+    "dodACF2026": 1.32,
+    "rlbComparativeIndexJul2026": 39239,
+    "rlbComparativeScaled": 1.564,
+    "rlbIndicativeCostScaled": 1.328
+   },
+   "AZ-Phoenix": {
+    "dodACF2026": 0.99,
+    "rlbComparativeIndexJul2026": 22334,
+    "rlbComparativeScaled": 0.89,
+    "rlbIndicativeCostScaled": 0.801
+   },
+   "OR-Portland": {
+    "dodACF2026": 1.19,
+    "rlbComparativeIndexJul2026": 25002,
+    "rlbComparativeScaled": 0.997,
+    "rlbIndicativeCostScaled": 1.4
+   },
+   "CA-SanFrancisco": {
+    "dodACF2026": 1.32,
+    "rlbComparativeIndexJul2026": 38833,
+    "rlbComparativeScaled": 1.548,
+    "rlbIndicativeCostScaled": 1.542
+   },
+   "WA-Seattle": {
+    "dodACF2026": 1.12,
+    "rlbComparativeIndexJul2026": 28259,
+    "rlbComparativeScaled": 1.127,
+    "rlbIndicativeCostScaled": 1.135
+   },
+   "DC-Washington": {
+    "dodACF2026": 1.02,
+    "rlbComparativeIndexJul2026": 31329,
+    "rlbComparativeScaled": 1.249,
+    "rlbIndicativeCostScaled": 0.905
+   }
+  }
+ },
+ "dodDetail": {
+  "AL-Birmingham": {
+   "sites": 25,
+   "distribution": [
+    [
+     0.85,
+     25
+    ]
+   ],
+   "cities": [
+    "Birmingham"
+   ]
+  },
+  "AL-Huntsville": {
+   "sites": 18,
+   "distribution": [
+    [
+     0.81,
+     18
+    ]
+   ],
+   "cities": [
+    "Huntsville"
+   ]
+  },
+  "AL-Mobile": {
+   "sites": 25,
+   "distribution": [
+    [
+     0.8,
+     24
+    ],
+    [
+     0.82,
+     1
+    ]
+   ],
+   "cities": [
+    "Mobile"
+   ]
+  },
+  "AK-Anchorage": {
+   "sites": 22,
+   "distribution": [
+    [
+     2.2,
+     19
+    ],
+    [
+     2.23,
+     3
+    ]
+   ],
+   "cities": [
+    "Anchorage"
+   ]
+  },
+  "AK-Fairbanks": {
+   "sites": 34,
+   "distribution": [
+    [
+     2.25,
+     29
+    ],
+    [
+     2.3,
+     5
+    ]
+   ],
+   "cities": [
+    "Fairbanks"
+   ]
+  },
+  "AZ-Phoenix": {
+   "sites": 31,
+   "distribution": [
+    [
+     0.99,
+     31
+    ]
+   ],
+   "cities": [
+    "Phoenix"
+   ]
+  },
+  "AZ-Tucson": {
+   "sites": 23,
+   "distribution": [
+    [
+     0.97,
+     23
+    ]
+   ],
+   "cities": [
+    "Tucson"
+   ]
+  },
+  "AR-LittleRock": {
+   "sites": 9,
+   "distribution": [
+    [
+     0.81,
+     9
+    ]
+   ],
+   "cities": [
+    "Little Rock"
+   ]
+  },
+  "CA-LosAngeles": {
+   "sites": 26,
+   "distribution": [
+    [
+     1.11,
+     26
+    ]
+   ],
+   "cities": [
+    "Los Angeles"
+   ]
+  },
+  "CA-SanDiego": {
+   "sites": 81,
+   "distribution": [
+    [
+     1.13,
+     81
+    ]
+   ],
+   "cities": [
+    "San Diego"
+   ]
+  },
+  "CA-SanFrancisco": {
+   "sites": 14,
+   "distribution": [
+    [
+     1.32,
+     14
+    ]
+   ],
+   "cities": [
+    "San Francisco"
+   ]
+  },
+  "CA-SanJose": {
+   "sites": 12,
+   "distribution": [
+    [
+     1.32,
+     12
+    ]
+   ],
+   "cities": [
+    "San Jose"
+   ]
+  },
+  "CA-Oakland": {
+   "sites": 3,
+   "distribution": [
+    [
+     1.32,
+     3
+    ]
+   ],
+   "cities": [
+    "Oakland"
+   ]
+  },
+  "CA-Sacramento": {
+   "sites": 29,
+   "distribution": [
+    [
+     1.18,
+     29
+    ]
+   ],
+   "cities": [
+    "Sacramento"
+   ]
+  },
+  "CA-Fresno": {
+   "sites": 32,
+   "distribution": [
+    [
+     1.23,
+     32
+    ]
+   ],
+   "cities": [
+    "Fresno"
+   ]
+  },
+  "CA-Riverside": {
+   "sites": 14,
+   "distribution": [
+    [
+     1.09,
+     14
+    ]
+   ],
+   "cities": [
+    "Riverside"
+   ]
+  },
+  "CO-Denver": {
+   "sites": 20,
+   "distribution": [
+    [
+     0.96,
+     20
+    ]
+   ],
+   "cities": [
+    "Denver"
+   ]
+  },
+  "CO-ColoradoSprings": {
+   "sites": 17,
+   "distribution": [
+    [
+     0.98,
+     15
+    ],
+    [
+     1.0,
+     2
+    ]
+   ],
+   "cities": [
+    "Colorado Springs"
+   ]
+  },
+  "CT-Hartford": {
+   "sites": 5,
+   "distribution": [
+    [
+     1.09,
+     5
+    ]
+   ],
+   "cities": [
+    "Hartford"
+   ]
+  },
+  "CT-NewHaven": {
+   "sites": 6,
+   "distribution": [
+    [
+     1.09,
+     6
+    ]
+   ],
+   "cities": [
+    "New Haven"
+   ]
+  },
+  "DC-Washington": {
+   "sites": 12,
+   "distribution": [
+    [
+     1.02,
+     12
+    ]
+   ],
+   "cities": [
+    "Washington"
+   ]
+  },
+  "DE-Wilmington": {
+   "sites": 7,
+   "distribution": [
+    [
+     0.98,
+     7
+    ]
+   ],
+   "cities": [
+    "Wilmington"
+   ]
+  },
+  "FL-Miami": {
+   "sites": 33,
+   "distribution": [
+    [
+     0.87,
+     33
+    ]
+   ],
+   "cities": [
+    "Miami"
+   ]
+  },
+  "FL-Orlando": {
+   "sites": 50,
+   "distribution": [
+    [
+     0.87,
+     50
+    ]
+   ],
+   "cities": [
+    "Orlando"
+   ]
+  },
+  "FL-Tampa": {
+   "sites": 38,
+   "distribution": [
+    [
+     0.85,
+     38
+    ]
+   ],
+   "cities": [
+    "Tampa"
+   ]
+  },
+  "FL-Jacksonville": {
+   "sites": 42,
+   "distribution": [
+    [
+     0.86,
+     40
+    ],
+    [
+     0.85,
+     2
+    ]
+   ],
+   "cities": [
+    "Jacksonville"
+   ]
+  },
+  "GA-Atlanta": {
+   "sites": 26,
+   "distribution": [
+    [
+     0.89,
+     26
+    ]
+   ],
+   "cities": [
+    "Atlanta"
+   ]
+  },
+  "GA-Savannah": {
+   "sites": 16,
+   "distribution": [
+    [
+     0.83,
+     16
+    ]
+   ],
+   "cities": [
+    "Savannah"
+   ]
+  },
+  "HI-Honolulu": {
+   "sites": 15,
+   "distribution": [
+    [
+     2.03,
+     15
+    ]
+   ],
+   "cities": [
+    "Honolulu"
+   ]
+  },
+  "ID-Boise": {
+   "sites": 28,
+   "distribution": [
+    [
+     1.04,
+     28
+    ]
+   ],
+   "cities": [
+    "Boise"
+   ]
+  },
+  "IL-Chicago": {
+   "sites": 40,
+   "distribution": [
+    [
+     1.21,
+     40
+    ]
+   ],
+   "cities": [
+    "Chicago"
+   ]
+  },
+  "IN-Indianapolis": {
+   "sites": 36,
+   "distribution": [
+    [
+     0.96,
+     36
+    ]
+   ],
+   "cities": [
+    "Indianapolis"
+   ]
+  },
+  "IA-DesMoines": {
+   "sites": 9,
+   "distribution": [
+    [
+     0.98,
+     9
+    ]
+   ],
+   "cities": [
+    "Des Moines"
+   ]
+  },
+  "KS-Wichita": {
+   "sites": 23,
+   "distribution": [
+    [
+     0.88,
+     22
+    ],
+    [
+     0.9,
+     1
+    ]
+   ],
+   "cities": [
+    "Wichita"
+   ]
+  },
+  "KY-Louisville": {
+   "sites": 27,
+   "distribution": [
+    [
+     0.84,
+     27
+    ]
+   ],
+   "cities": [
+    "Louisville"
+   ]
+  },
+  "KY-Lexington": {
+   "sites": 27,
+   "distribution": [
+    [
+     0.89,
+     27
+    ]
+   ],
+   "cities": [
+    "Lexington"
+   ]
+  },
+  "LA-NewOrleans": {
+   "sites": 18,
+   "distribution": [
+    [
+     0.88,
+     13
+    ],
+    [
+     0.9,
+     5
+    ]
+   ],
+   "cities": [
+    "New Orleans"
+   ]
+  },
+  "LA-BatonRouge": {
+   "sites": 24,
+   "distribution": [
+    [
+     0.85,
+     24
+    ]
+   ],
+   "cities": [
+    "Baton Rouge"
+   ]
+  },
+  "MA-Boston": {
+   "sites": 23,
+   "distribution": [
+    [
+     1.28,
+     23
+    ]
+   ],
+   "cities": [
+    "Boston"
+   ]
+  },
+  "MD-Baltimore": {
+   "sites": 14,
+   "distribution": [
+    [
+     0.94,
+     14
+    ]
+   ],
+   "cities": [
+    "Baltimore"
+   ]
+  },
+  "ME-Portland": {
+   "sites": 5,
+   "distribution": [
+    [
+     1.08,
+     5
+    ]
+   ],
+   "cities": [
+    "Portland"
+   ]
+  },
+  "MI-Detroit": {
+   "sites": 11,
+   "distribution": [
+    [
+     1.07,
+     11
+    ]
+   ],
+   "cities": [
+    "Detroit"
+   ]
+  },
+  "MI-GrandRapids": {
+   "sites": 17,
+   "distribution": [
+    [
+     1.04,
+     17
+    ]
+   ],
+   "cities": [
+    "Grand Rapids"
+   ]
+  },
+  "MN-Minneapolis": {
+   "sites": 21,
+   "distribution": [
+    [
+     1.13,
+     21
+    ]
+   ],
+   "cities": [
+    "Minneapolis"
+   ]
+  },
+  "MN-StPaul": {
+   "sites": 15,
+   "distribution": [
+    [
+     1.13,
+     15
+    ]
+   ],
+   "cities": [
+    "Saint Paul",
+    "St Paul",
+    "St. Paul"
+   ]
+  },
+  "MO-KansasCity": {
+   "sites": 29,
+   "distribution": [
+    [
+     0.97,
+     29
+    ]
+   ],
+   "cities": [
+    "Kansas City"
+   ]
+  },
+  "MO-StLouis": {
+   "sites": 32,
+   "distribution": [
+    [
+     0.98,
+     32
+    ]
+   ],
+   "cities": [
+    "Saint Louis",
+    "St Louis",
+    "St. Louis"
+   ]
+  },
+  "MS-Jackson": {
+   "sites": 21,
+   "distribution": [
+    [
+     0.81,
+     21
+    ]
+   ],
+   "cities": [
+    "Jackson"
+   ]
+  },
+  "MT-Billings": {
+   "sites": 14,
+   "distribution": [
+    [
+     1.04,
+     14
+    ]
+   ],
+   "cities": [
+    "Billings"
+   ]
+  },
+  "NC-Charlotte": {
+   "sites": 28,
+   "distribution": [
+    [
+     0.81,
+     28
+    ]
+   ],
+   "cities": [
+    "Charlotte"
+   ]
+  },
+  "NC-Raleigh": {
+   "sites": 25,
+   "distribution": [
+    [
+     0.81,
+     25
+    ]
+   ],
+   "cities": [
+    "Raleigh"
+   ]
+  },
+  "ND-Fargo": {
+   "sites": 22,
+   "distribution": [
+    [
+     1.14,
+     22
+    ]
+   ],
+   "cities": [
+    "Fargo"
+   ]
+  },
+  "NE-Omaha": {
+   "sites": 26,
+   "distribution": [
+    [
+     0.97,
+     26
+    ]
+   ],
+   "cities": [
+    "Omaha"
+   ]
+  },
+  "NH-Manchester": {
+   "sites": 8,
+   "distribution": [
+    [
+     1.11,
+     8
+    ]
+   ],
+   "cities": [
+    "Manchester"
+   ]
+  },
+  "NJ-Newark": {
+   "sites": 7,
+   "distribution": [
+    [
+     1.18,
+     7
+    ]
+   ],
+   "cities": [
+    "Newark"
+   ]
+  },
+  "NM-Albuquerque": {
+   "sites": 28,
+   "distribution": [
+    [
+     0.89,
+     26
+    ],
+    [
+     0.91,
+     2
+    ]
+   ],
+   "cities": [
+    "Albuquerque"
+   ]
+  },
+  "NV-LasVegas": {
+   "sites": 30,
+   "distribution": [
+    [
+     1.13,
+     24
+    ],
+    [
+     1.17,
+     6
+    ]
+   ],
+   "cities": [
+    "Las Vegas"
+   ]
+  },
+  "NV-Reno": {
+   "sites": 16,
+   "distribution": [
+    [
+     1.17,
+     16
+    ]
+   ],
+   "cities": [
+    "Reno"
+   ]
+  },
+  "NY-NewYorkCity": {
+   "sites": 85,
+   "distribution": [
+    [
+     1.32,
+     81
+    ],
+    [
+     1.33,
+     4
+    ]
+   ],
+   "cities": [
+    "New York City"
+   ]
+  },
+  "NY-Buffalo": {
+   "sites": 7,
+   "distribution": [
+    [
+     1.01,
+     7
+    ]
+   ],
+   "cities": [
+    "Buffalo"
+   ]
+  },
+  "NY-Albany": {
+   "sites": 8,
+   "distribution": [
+    [
+     1.04,
+     8
+    ]
+   ],
+   "cities": [
+    "Albany"
+   ]
+  },
+  "NY-Rochester": {
+   "sites": 11,
+   "distribution": [
+    [
+     1.03,
+     11
+    ]
+   ],
+   "cities": [
+    "Rochester"
+   ]
+  },
+  "OH-Columbus": {
+   "sites": 39,
+   "distribution": [
+    [
+     0.93,
+     39
+    ]
+   ],
+   "cities": [
+    "Columbus"
+   ]
+  },
+  "OH-Cleveland": {
+   "sites": 14,
+   "distribution": [
+    [
+     0.93,
+     14
+    ]
+   ],
+   "cities": [
+    "Cleveland"
+   ]
+  },
+  "OH-Cincinnati": {
+   "sites": 16,
+   "distribution": [
+    [
+     0.93,
+     16
+    ]
+   ],
+   "cities": [
+    "Cincinnati"
+   ]
+  },
+  "OK-OklahomaCity": {
+   "sites": 50,
+   "distribution": [
+    [
+     0.9,
+     39
+    ],
+    [
+     0.92,
+     11
+    ]
+   ],
+   "cities": [
+    "Oklahoma City"
+   ]
+  },
+  "OK-Tulsa": {
+   "sites": 26,
+   "distribution": [
+    [
+     0.88,
+     26
+    ]
+   ],
+   "cities": [
+    "Tulsa"
+   ]
+  },
+  "OR-Portland": {
+   "sites": 22,
+   "distribution": [
+    [
+     1.19,
+     22
+    ]
+   ],
+   "cities": [
+    "Portland"
+   ]
+  },
+  "PA-Philadelphia": {
+   "sites": 29,
+   "distribution": [
+    [
+     1.17,
+     29
+    ]
+   ],
+   "cities": [
+    "Philadelphia"
+   ]
+  },
+  "PA-Pittsburgh": {
+   "sites": 30,
+   "distribution": [
+    [
+     1.09,
+     30
+    ]
+   ],
+   "cities": [
+    "Pittsburgh"
+   ]
+  },
+  "RI-Providence": {
+   "sites": 12,
+   "distribution": [
+    [
+     1.17,
+     12
+    ]
+   ],
+   "cities": [
+    "Providence"
+   ]
+  },
+  "SC-Charleston": {
+   "sites": 12,
+   "distribution": [
+    [
+     0.9,
+     11
+    ],
+    [
+     0.92,
+     1
+    ]
+   ],
+   "cities": [
+    "Charleston"
+   ]
+  },
+  "SC-Columbia": {
+   "sites": 26,
+   "distribution": [
+    [
+     0.86,
+     25
+    ],
+    [
+     0.87,
+     1
+    ]
+   ],
+   "cities": [
+    "Columbia"
+   ]
+  },
+  "SD-SiouxFalls": {
+   "sites": 43,
+   "distribution": [
+    [
+     1.01,
+     43
+    ]
+   ],
+   "cities": [
+    "Sioux Falls"
+   ]
+  },
+  "TN-Nashville": {
+   "sites": 12,
+   "distribution": [
+    [
+     0.87,
+     12
+    ]
+   ],
+   "cities": [
+    "Nashville"
+   ]
+  },
+  "TN-Memphis": {
+   "sites": 14,
+   "distribution": [
+    [
+     0.89,
+     14
+    ]
+   ],
+   "cities": [
+    "Memphis"
+   ]
+  },
+  "TN-Knoxville": {
+   "sites": 18,
+   "distribution": [
+    [
+     0.87,
+     18
+    ]
+   ],
+   "cities": [
+    "Knoxville"
+   ]
+  },
+  "TX-Houston": {
+   "sites": 54,
+   "distribution": [
+    [
+     0.82,
+     54
+    ]
+   ],
+   "cities": [
+    "Houston"
+   ]
+  },
+  "TX-Dallas": {
+   "sites": 21,
+   "distribution": [
+    [
+     0.84,
+     19
+    ],
+    [
+     0.82,
+     2
+    ]
+   ],
+   "cities": [
+    "Dallas"
+   ]
+  },
+  "TX-FortWorth": {
+   "sites": 30,
+   "distribution": [
+    [
+     0.84,
+     30
+    ]
+   ],
+   "cities": [
+    "Fort Worth"
+   ]
+  },
+  "TX-Austin": {
+   "sites": 29,
+   "distribution": [
+    [
+     0.82,
+     29
+    ]
+   ],
+   "cities": [
+    "Austin"
+   ]
+  },
+  "TX-SanAntonio": {
+   "sites": 55,
+   "distribution": [
+    [
+     0.79,
+     51
+    ],
+    [
+     0.81,
+     4
+    ]
+   ],
+   "cities": [
+    "San Antonio"
+   ]
+  },
+  "TX-ElPaso": {
+   "sites": 104,
+   "distribution": [
+    [
+     0.84,
+     102
+    ],
+    [
+     0.9,
+     2
+    ]
+   ],
+   "cities": [
+    "El Paso"
+   ]
+  },
+  "UT-SaltLakeCity": {
+   "sites": 23,
+   "distribution": [
+    [
+     1.08,
+     23
+    ]
+   ],
+   "cities": [
+    "Salt Lake City"
+   ]
+  },
+  "VA-Richmond": {
+   "sites": 36,
+   "distribution": [
+    [
+     0.89,
+     36
+    ]
+   ],
+   "cities": [
+    "Richmond"
+   ]
+  },
+  "VA-Norfolk": {
+   "sites": 21,
+   "distribution": [
+    [
+     0.92,
+     15
+    ],
+    [
+     0.94,
+     6
+    ]
+   ],
+   "cities": [
+    "Norfolk"
+   ]
+  },
+  "VA-VirginiaBeach": {
+   "sites": 46,
+   "distribution": [
+    [
+     0.92,
+     24
+    ],
+    [
+     0.94,
+     19
+    ],
+    [
+     0.96,
+     3
+    ]
+   ],
+   "cities": [
+    "Virginia Beach"
+   ]
+  },
+  "VA-Arlington": {
+   "sites": 36,
+   "distribution": [
+    [
+     1.0,
+     36
+    ]
+   ],
+   "cities": [
+    "Arlington"
+   ]
+  },
+  "VT-Burlington": {
+   "sites": 9,
+   "distribution": [
+    [
+     1.04,
+     9
+    ]
+   ],
+   "cities": [
+    "Colchester",
+    "Essex Junction",
+    "Essex",
+    "Burlington"
+   ]
+  },
+  "WA-Seattle": {
+   "sites": 28,
+   "distribution": [
+    [
+     1.12,
+     28
+    ]
+   ],
+   "cities": [
+    "Seattle"
+   ]
+  },
+  "WA-Spokane": {
+   "sites": 21,
+   "distribution": [
+    [
+     1.08,
+     21
+    ]
+   ],
+   "cities": [
+    "Spokane"
+   ]
+  },
+  "WA-Tacoma": {
+   "sites": 18,
+   "distribution": [
+    [
+     1.12,
+     13
+    ],
+    [
+     1.14,
+     5
+    ]
+   ],
+   "cities": [
+    "Tacoma"
+   ]
+  },
+  "WI-Milwaukee": {
+   "sites": 21,
+   "distribution": [
+    [
+     1.1,
+     20
+    ],
+    [
+     1.11,
+     1
+    ]
+   ],
+   "cities": [
+    "Milwaukee"
+   ]
+  },
+  "WI-Madison": {
+   "sites": 15,
+   "distribution": [
+    [
+     1.11,
+     15
+    ]
+   ],
+   "cities": [
+    "Madison"
+   ]
+  },
+  "WV-Charleston": {
+   "sites": 12,
+   "distribution": [
+    [
+     0.95,
+     12
+    ]
+   ],
+   "cities": [
+    "Charleston"
+   ]
+  },
+  "WY-Cheyenne": {
+   "sites": 31,
+   "distribution": [
+    [
+     1.06,
+     17
+    ],
+    [
+     1.04,
+     14
+    ]
+   ],
+   "cities": [
+    "Cheyenne"
+   ]
+  },
+  "KS-KansasCity": {
+   "sites": 4,
+   "distribution": [
+    [
+     0.91,
+     4
+    ]
+   ],
+   "cities": [
+    "Kansas City"
+   ]
+  }
+ },
+ "method": "Primary source: DoD UFS 3-701-01 (2026) Table 4-1 MILCON area cost factors (e1, e2), the only free, current location index covering every state and the major metros. Metro factor = the most common ACF among DoD sites whose City field matches the metro's core city in that state (site counts and splits in dodDetail). Where no core-city site exists, adjacent cities stand in: VT-Burlington uses Colchester/Essex Junction. State factor = median ACF of all DoD sites in the state. That is a 'typical location in the state' value; for a project in a big metro, use the metro key (e.g. NY 1.03 vs NY-NewYorkCity 1.32, IL 1.02 vs IL-Chicago 1.21). Normalization: DoD sets the 96-base-city (two per CONUS state) average = 1.00. Check: the 2025 population-weighted mean of the state factors is 0.997, so values are used as published (no rescaling); US = 1.00. Cross-check vs RLB Q3 2026 (e4-e6, crossCheck): DoD and RLB agree within about 5% for Austin, Dallas, Miami and Seattle. RLB's two measures disagree with each other by up to 40% for some cities (Chicago, DC, Portland, Charlotte), so they are not used to override CONUS values. Exception: Hawaii and Alaska. DoD's noncontiguous factors (HI 2.03-2.60, AK 2.20-4.94) are far above both RLB measures for Honolulu (~1.35-1.41 on the DoD scale), so HI and AK are derived (see derived). Factors are rounded to 2 decimals like the source. A value in region R converts to national with value / factors[R]; a metro falls back to its state, then to US.",
+ "evidence": [
+  {
+   "id": "e1",
+   "metric": "areaCostFactor",
+   "value": null,
+   "low": 0.79,
+   "high": 4.94,
+   "unit": "ratio",
+   "region": "United States (CONUS + AK + HI), 15,534 DoD sites",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "UFS 3-701-01 DoD Facilities Pricing Guide (2026) - Data Tables workbook, sheet 'Table 4-1 CONUS'",
+    "url": "https://legacy.wbdg.org/FFC/DOD/UFC/ufs_3_701_01_2026_Data_Tables.xlsx",
+    "publisher": "U.S. Department of Defense / Whole Building Design Guide (NIBS)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "Table 4-1 CONUS, column 'AREA COST FACTOR' by site (State, County, City). E.g. Texas/Houston 0.82 (54 sites); Illinois/Chicago 1.21 (40); New York/New York City 1.32 (81 of 85); Hawaii/Honolulu 2.03 (15); Alaska/Anchorage 2.20 (19 of 22).",
+   "scopeNotes": "MILCON ACF (labor/material/equipment 63/35/2), new construction; national 96-base-city average = 1.00. Not a commercial index; applied here as the location factor for all building types.",
+   "confidence": "high"
+  },
+  {
+   "id": "e2",
+   "metric": "areaCostFactorMethod",
+   "value": null,
+   "unit": "text",
+   "region": "United States",
+   "regionKey": "US",
+   "source": {
+    "title": "UFS 3-701-01 DoD Facilities Pricing Guide, 6 June 2026, Chapter 4 Cost Adjustment Factors",
+    "url": "https://legacy.wbdg.org/FFC/DOD/UFC/ufs_3_701_01_06_2026.pdf",
+    "publisher": "U.S. Department of Defense / Whole Building Design Guide (NIBS)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "The resultant ACF for each location is normalized again by dividing by the 96-Base-City average to provide a final ACF ... as 1.00.",
+   "scopeNotes": "Same chapter: 'The CONUS survey covered 213 locations that included 96 Base Cities (two per state in the continental U.S.)' and 'MILCON ACFs are calculated using a MLE ratio of 63/35/2.'",
+   "confidence": "high"
+  },
+  {
+   "id": "e3",
+   "metric": "areaCostFactorCaveat",
+   "value": null,
+   "unit": "text",
+   "region": "United States",
+   "regionKey": "US",
+   "source": {
+    "title": "UFS 3-701-01 DoD Facilities Pricing Guide, 6 June 2026, 4-1.1 Application",
+    "url": "https://legacy.wbdg.org/FFC/DOD/UFC/ufs_3_701_01_06_2026.pdf",
+    "publisher": "U.S. Department of Defense / Whole Building Design Guide (NIBS)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "Do not use the MILCON ACFs to modify detailed quantity take-offs, unit price book (UPB) line items, commercial cost data, or user-generated unit costs.",
+   "scopeNotes": "DoD's own caveat: ACFs are calibrated to military facilities. We use them because no free commercial city index with full state/metro coverage exists; RLB cross-check (e4-e6) is used to test and, for Hawaii, override them.",
+   "confidence": "high"
+  },
+  {
+   "id": "e4",
+   "metric": "comparativeCostIndex",
+   "value": null,
+   "low": 19901,
+   "high": 39239,
+   "unit": "ratio",
+   "region": "18 U.S. cities",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "RLB Quarterly Construction Cost Report North America, Third Quarter 2026 (Comparative Cost Index)",
+    "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+    "publisher": "Rider Levett Bucknall",
+    "accessed": "2026-10-24"
+   },
+   "quote": "Comparative Cost Index, July2026 column: Austin 20,769; Boston 34,070; Chicago 34.459; Honolulu 35,324; Los Angeles 30,874; New York 39,239; San Francisco 38,833; Seattle 28,259; Washington, DC 31,329.",
+   "scopeNotes": "Selling-price oriented city index; scaled to the DoD basis by the geometric mean of DoD/RLB over the 17 CONUS cities (k = 3.987e-05). Scaled values are in crossCheck.",
+   "confidence": "medium"
+  },
+  {
+   "id": "e5",
+   "metric": "comparativeCostIndex",
+   "value": 35324,
+   "unit": "ratio",
+   "region": "Honolulu, HI",
+   "regionKey": "HI-Honolulu",
+   "dataYear": 2026,
+   "source": {
+    "title": "RLB Quarterly Construction Cost Report North America, Third Quarter 2026 (Comparative Cost Index)",
+    "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+    "publisher": "Rider Levett Bucknall",
+    "accessed": "2026-10-24"
+   },
+   "quote": "Honolulu 33,170 33,721 34,262 34,743 35,324 6.49%",
+   "scopeNotes": "Honolulu sits between Chicago (34,459) and San Francisco (38,833); scaled to the DoD basis = 1.408 vs DoD ACF 2.03.",
+   "confidence": "medium"
+  },
+  {
+   "id": "e6",
+   "metric": "indicativeHardCostPerSF",
+   "value": null,
+   "low": 75,
+   "high": 1600,
+   "unit": "USD/sf",
+   "region": "18 U.S. cities",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "RLB Quarterly Construction Cost Report North America, Third Quarter 2026 (Indicative Construction Costs)",
+    "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+    "publisher": "Rider Levett Bucknall",
+    "accessed": "2026-10-24"
+   },
+   "quote": "Indicative Construction Costs table (USD/SF of gross floor area, hard construction cost), row: Honolulu 400 675 260 390 320 645 300 495 770 925 445 695 595 995",
+   "scopeNotes": "Used only as a relative-cost cross-check: geometric mean of the 15 building-category range midpoints per city, scaled to the DoD basis like e4 (Honolulu = 1.349).",
+   "confidence": "medium"
+  },
+  {
+   "id": "e7",
+   "metric": "statePopulation",
+   "value": 341784857,
+   "unit": "count",
+   "region": "United States (50 states + DC)",
+   "regionKey": "US",
+   "dataYear": 2025,
+   "source": {
+    "title": "Resident Population in Texas (TXPOP) and the other <ST>POP state series, FRED",
+    "url": "https://fred.stlouisfed.org/series/TXPOP",
+    "publisher": "Federal Reserve Bank of St. Louis (data: U.S. Census Bureau)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "TXPOP 2025-01-01: 31,709.821 (thousands of persons); summed over 51 <ST>POP series for 2025 = 341.78 million.",
+   "scopeNotes": "Used only to test the national normalization: population-weighted mean of the state factors = 0.997 (with HI/AK overrides), 1.003 using raw DoD values.",
+   "confidence": "high"
+  }
+ ],
+ "openQuestions": [
+  "A commercial city cost index (RSMeans CCI, ENR) would be a better primary source; it is paywalled, so it was not used.",
+  "AK factors are a scaled derivation with no commercial cross-check. Verify against a local estimator.",
+  "DoD vs RLB differ by 15-35% for San Francisco (1.32 vs ~1.55), Las Vegas (1.13 vs ~0.85-0.97), Phoenix (0.99 vs ~0.80-0.89) and Washington DC (1.02 vs 0.91-1.25). These metros are worth a local check.",
+  "State factors are site medians, not construction-volume weighted."
+ ]
+}

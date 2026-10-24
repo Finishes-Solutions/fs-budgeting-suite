@@ -1,0 +1,273 @@
+{
+ "schemaVersion": 1,
+ "id": "financing",
+ "name": "Construction and permanent financing norms (US, Oct 2026)",
+ "researchedAt": "2026-10-24",
+ "method": "Rates are anchored to FRED market data as of 2026-10-21/24 (SOFR, prime, Fed target, Treasuries). Lender spreads, LTC, fees and draw-balance factors are derived conventions, not survey data: the web-search budget ran out before a public spread/LTC survey (e.g. CBRE, MBA, Trepp) could be located. Verify with current term sheets. All values are decimals.",
+ "items": [
+  {
+   "id": "constructionLoanRate",
+   "name": "Construction loan all-in interest rate (floating, 2026)",
+   "unit": "pct",
+   "range": {
+    "low": 0.064,
+    "mid": 0.07,
+    "high": 0.085,
+    "evidence": [
+     "e1",
+     "e2",
+     "e3",
+     "e4",
+     "e6"
+    ],
+    "derived": true,
+    "method": "All-in = 1-month SOFR (about 3.89%: e1, e2) + lender spread. No public, current survey of construction-loan spreads was found, so the spreads are an assumption: bank/regional-bank construction ~SOFR+2.50 to +3.50 (often quoted as prime, e3, = SOFR+3.1); debt-fund/non-bank ~SOFR+4.0 to +5.0. Low = 3.89+2.50 = 6.4%. Mid = prime, 7.00% (3.89+3.11). High = 3.89+4.60 = about 8.5% (non-bank, higher leverage). Tight CLD standards (e6) argue against the low end for spec projects. Verify spreads with a lender quote."
+   },
+   "notes": "Floating rate. Rate caps or floors and SOFR moves over an 18-30 month draw period can shift the realized rate by +/-50-100 bp."
+  },
+  {
+   "id": "loanToCost",
+   "name": "Construction loan-to-cost (LTC)",
+   "unit": "pct",
+   "range": {
+    "low": 0.5,
+    "mid": 0.6,
+    "high": 0.7,
+    "evidence": [
+     "e5",
+     "e6"
+    ],
+    "derived": true,
+    "method": "Regulatory loan-to-value ceilings (e5): 80% for commercial/multifamily construction, 85% for 1-4 family. Lenders size well inside these and usually also cap LTC. With CLD standards at the tighter end of their range (e6), bank senior construction loans are assumed at 50-65% LTC and up to 70-75% with recourse, strong sponsors or non-bank lenders. Mid 60%. Agency/HUD 221(d)(4) programs go higher, but no source page could be retrieved this session (not cited)."
+   },
+   "notes": "Equity first: the loan funds only after the (1 - LTC) equity is spent, as the engine models."
+  },
+  {
+   "id": "constructionLoanFee",
+   "name": "Construction loan origination fee (% of loan commitment)",
+   "unit": "pct",
+   "range": {
+    "low": 0.005,
+    "mid": 0.01,
+    "high": 0.015,
+    "evidence": [],
+    "derived": true,
+    "method": "Industry convention of 0.5-1.5 points (1 point = 1% of commitment), paid at closing; mid 1.0 point. No public survey was retrievable this session. Excludes lender legal, inspection and title (budget those as soft costs) and any exit fee (0-1%) charged by non-bank lenders."
+   },
+   "notes": "Applied to the loan commitment at close."
+  },
+  {
+   "id": "averageOutstandingBalance",
+   "name": "Average outstanding balance as share of loan commitment (construction + lease-up carry)",
+   "unit": "ratio",
+   "range": {
+    "low": 0.5,
+    "mid": 0.6,
+    "high": 0.7,
+    "evidence": [],
+    "derived": true,
+    "method": "Monthly simulation (scratch model): 20% of cost up front (land/soft), remaining hard cost on an S-curve (smoothstep), equity first, then loan draws, then the loan held fully drawn through lease-up until takeout. Average balance / commitment over construction + lease-up: 18-mo build + 6-mo lease-up = 0.54-0.59 (LTC 55-70%); 18 + 12 = 0.63-0.67; 24 + 6 = 0.50-0.56; 24 + 12 = 0.59-0.63; 12 + 12 = 0.69-0.72. Range 0.50-0.70, mid 0.60. Matches the common 55-65% rule of thumb when interest is figured over construction + lease-up."
+   },
+   "notes": "Shortcut check only: interest = loan x rate x (construction + lease-up months)/12 x this factor. The engine itself simulates monthly draws."
+  },
+  {
+   "id": "averageOutstandingBalanceConstructionOnly",
+   "name": "Average outstanding balance, construction period only (equity first)",
+   "unit": "ratio",
+   "range": {
+    "low": 0.38,
+    "mid": 0.42,
+    "high": 0.45,
+    "evidence": [],
+    "derived": true,
+    "method": "Same simulation, averaged over the construction months only (no lease-up). LTC 55% = 0.38, 60% = 0.40, 65% = 0.43, 70% = 0.45, nearly independent of a 12-24 month duration. Pari-passu funding (equity and loan drawn pro rata) would give about 0.60 instead."
+   },
+   "notes": "Use when the shortcut covers construction months only."
+  },
+  {
+   "id": "interestReserveConvention",
+   "name": "Interest reserve convention",
+   "unit": "text",
+   "value": "Construction interest is capitalized: an interest-reserve line inside the loan budget pays monthly interest on the drawn balance until completion or stabilization, so interest is part of total project cost. It is sized as rate x average outstanding balance x (construction + lease-up months)/12, plus a cushion for rate moves (a floating loan with no cap). Equity funds first; the loan fee is paid at close and usually financed.",
+   "derived": true,
+   "evidence": [
+    "e1",
+    "e2"
+   ],
+   "method": "Standard lender structure for floating-rate construction loans. The engine models this directly (monthly draws, equity first, capitalized interest)."
+  },
+  {
+   "id": "permanentLoanRate",
+   "name": "Permanent / takeout loan rate (fixed, 7-10 year)",
+   "unit": "pct",
+   "range": {
+    "low": 0.065,
+    "mid": 0.071,
+    "high": 0.077,
+    "evidence": [
+     "e7",
+     "e8"
+    ],
+    "derived": true,
+    "method": "10-year Treasury about 5.0-5.3% (e7; October 2026 average 5.19%) + spread. Spreads are an assumption (no public current survey retrieved): agency multifamily / life-company ~+1.4 to +1.8; bank / CMBS ~+1.9 to +2.5. Low = 5.10+1.40 = 6.5%. Mid = 5.19+1.90 = about 7.1%. High = 5.19+2.50 = about 7.7%."
+   },
+   "notes": "Used for stabilized-value or refinance checks, not by the construction budget. exitCapRate guidance is out of scope here (no sourced 2026 cap-rate survey retrieved)."
+  }
+ ],
+ "evidence": [
+  {
+   "id": "e1",
+   "metric": "sofr",
+   "value": 0.039,
+   "low": 0.0387,
+   "high": 0.039,
+   "unit": "pct",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "Secured Overnight Financing Rate (SOFR)",
+    "url": "https://fred.stlouisfed.org/series/SOFR",
+    "publisher": "Federal Reserve Bank of St. Louis (FRED)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "SOFR 2026-10-22: 3.90 (percent); October 1-22, 2026 daily range 3.87-3.90, average 3.88",
+   "scopeNotes": "Overnight SOFR (data: Federal Reserve Bank of New York). Rose from 3.50 (2026 low) to about 3.9 during 2026. Floating construction loans reset monthly, so the all-in rate moves with SOFR.",
+   "confidence": "high"
+  },
+  {
+   "id": "e2",
+   "metric": "sofr30DayAverage",
+   "value": 0.03889,
+   "unit": "pct",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "30-Day Average SOFR (SOFR30DAYAVG)",
+    "url": "https://fred.stlouisfed.org/series/SOFR30DAYAVG",
+    "publisher": "Federal Reserve Bank of St. Louis (FRED)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "SOFR30DAYAVG 2026-10-23: 3.88887",
+   "scopeNotes": "Proxy for the 1-month Term SOFR index used in most construction loans (Term SOFR itself is a licensed CME rate, not on FRED).",
+   "confidence": "high"
+  },
+  {
+   "id": "e3",
+   "metric": "primeRate",
+   "value": 0.07,
+   "unit": "pct",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "Bank Prime Loan Rate (DPRIME)",
+    "url": "https://fred.stlouisfed.org/series/DPRIME",
+    "publisher": "Federal Reserve Bank of St. Louis (FRED)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "DPRIME 2026-10-21: 7.00",
+   "scopeNotes": "Community and regional banks often price construction loans at prime or prime plus a margin; prime = SOFR + about 3.1 points today.",
+   "confidence": "high"
+  },
+  {
+   "id": "e4",
+   "metric": "fedFundsTarget",
+   "value": null,
+   "low": 0.0375,
+   "high": 0.04,
+   "unit": "pct",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "Federal Funds Target Range - Upper Limit (DFEDTARU)",
+    "url": "https://fred.stlouisfed.org/series/DFEDTARU",
+    "publisher": "Federal Reserve Bank of St. Louis (FRED)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "DFEDTARU 2026-10-24: 4.00; DFEDTARL (lower limit) 2026-10-24: 3.75",
+   "scopeNotes": "Policy range anchoring SOFR.",
+   "confidence": "high"
+  },
+  {
+   "id": "e5",
+   "metric": "supervisoryLTVLimit",
+   "value": 0.8,
+   "unit": "pct",
+   "region": "United States",
+   "regionKey": "US",
+   "source": {
+    "title": "12 CFR Appendix A to Subpart A of Part 365 - Interagency Guidelines for Real Estate Lending Policies",
+    "url": "https://www.law.cornell.edu/cfr/text/12/appendix-A_to_subpart_A_of_part_365",
+    "publisher": "Legal Information Institute, Cornell Law School (text of FDIC regulation)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "Supervisory loan-to-value limits table: Construction: Commercial, multifamily, and other nonresidential 80; 1- to 4-family residential 85; Land development 75; Raw land 65",
+   "scopeNotes": "Regulatory ceiling on loan-to-VALUE for bank construction loans, not a typical loan-to-cost. Typical LTC sits well below it.",
+   "confidence": "high"
+  },
+  {
+   "id": "e6",
+   "metric": "lendingStandards",
+   "value": null,
+   "unit": "text",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "The July 2026 Senior Loan Officer Opinion Survey on Bank Lending Practices",
+    "url": "https://www.federalreserve.gov/data/sloos/sloos-202607.htm",
+    "publisher": "Board of Governors of the Federal Reserve System",
+    "accessed": "2026-10-24"
+   },
+   "quote": "For CRE loans, a significant net share of banks reported that lending standards were at the tighter end of their range for CLD loans",
+   "scopeNotes": "Same survey: standards for construction and land development loans 'remained basically unchanged on net', and demand for CLD loans weakened. Supports conservative LTC and spreads.",
+   "confidence": "high"
+  },
+  {
+   "id": "e7",
+   "metric": "treasury10y",
+   "value": 0.0496,
+   "low": 0.0496,
+   "high": 0.0531,
+   "unit": "pct",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "Market Yield on U.S. Treasury Securities at 10-Year Constant Maturity (DGS10)",
+    "url": "https://fred.stlouisfed.org/series/DGS10",
+    "publisher": "Federal Reserve Bank of St. Louis (FRED)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "DGS10 2026-10-22: 4.96; October 2026 daily values 4.96-5.31, average 5.19",
+   "scopeNotes": "Base rate for fixed-rate permanent and agency loans.",
+   "confidence": "high"
+  },
+  {
+   "id": "e8",
+   "metric": "treasury5y",
+   "value": 0.0478,
+   "unit": "pct",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "Market Yield on U.S. Treasury Securities at 5-Year Constant Maturity (DGS5)",
+    "url": "https://fred.stlouisfed.org/series/DGS5",
+    "publisher": "Federal Reserve Bank of St. Louis (FRED)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "DGS5 2026-10-22: 4.78",
+   "scopeNotes": "Base rate for 5-year fixed bank and bridge-to-perm loans.",
+   "confidence": "high"
+  }
+ ],
+ "openQuestions": [
+  "Find a public 2026 survey of construction-loan spreads and LTC (CBRE Lending Momentum, MBA, Trepp, bank investor decks) to replace the derived spreads.",
+  "Add HUD 221(d)(4) and agency construction-to-perm terms for affordable and multifamily types.",
+  "Add exit cap-rate guidance by property type if the engine needs it."
+ ]
+}

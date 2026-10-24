@@ -1,0 +1,266 @@
+{
+  "schemaVersion": 1,
+  "id": "retail-pad-qsr",
+  "name": "Retail pad / QSR",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Ground-up freestanding quick-service restaurant (1,400–3,500 SF) with drive-thru on a 0.6–1.5 acre outparcel. Cost per SF is high because a small building carries a full commercial kitchen MEP load plus a large share of site work (drive-thru stacking lane, parking, utilities), which franchisor data puts at roughly one-third of building+site cost. Data quality is good: seven 2026 franchise disclosure documents (Item 7) publish building and site-work ranges drawn from recent company and franchisee projects; per-SF conversion depends on assumed building size.",
+
+  "sizing": {
+    "typicalSize": { "low": 1400, "mid": 2500, "high": 3500, "unit": "sf", "evidence": ["e3", "e5", "e7", "e13"], "derived": false, "method": "Building sizes stated in Item 7 notes: Jack in the Box prototypes 1,386–2,440 SF (e5), Popeyes 1,600–3,500 SF (e3), A&W freestanding 2,082–2,176 SF (e7), Taco Bell traditional ~2,500 SF (e13). Mid = 2,500 SF (Taco Bell / upper JIB / mid Popeyes)." },
+    "primaryUnitsPerAcre": { "low": 2000, "mid": 3100, "high": 4500, "evidence": ["e3", "e7", "e13", "e4"], "derived": true, "method": "Building SF per acre of pad. Lot sizes: Popeyes 28,000–38,000 SF of land (e3), A&W 28,000–35,000 SF (e7), Taco Bell ~0.75 ac (e13), Zaxby's 0.72–1.5 ac (e4). 2,500 SF building / 0.8 ac = ~3,100 SF/ac; 2,100 SF on 1.0 ac = ~2,100; 2,100 SF on 28,000 SF = ~3,300; small 1,400–1,600 SF Go-Mobile style on 0.33–0.5 ac = ~4,500." },
+    "parkingPerPrimaryUnit": { "low": 0.008, "mid": 0.011, "high": 0.015, "type": "surface", "evidence": ["e3"], "derived": true, "method": "Spaces per building SF. Popeyes: 'typically 25-30 spaces on average' (e3) for 1,600–3,500 SF restaurants → 27.5 / 2,500 = 0.011. Low/high = 25 / 3,000 and 30 / 2,000 rounded." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 400, "mid": 575, "high": 850, "dollarYear": 2025, "region": "US", "evidence": ["e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "e10"], "derived": false, "method": "Building + on-site work per building SF. Item 7 building+site per-project ranges (2025 $): Wendy's $1.03–2.20M (e1); Taco Bell $1.0–2.0M (Dallas, e2); Popeyes $0.74–2.40M (e3); Zaxby's $0.79–2.29M (e4); Jack in the Box $0.96–2.08M (e5); Sonic $1.05–1.50M (e6); A&W $0.50–0.87M (e7). Midpoints median ≈ $1.52M; at the 1,900–2,500 SF typical buildings these brands quote that is ~$600–800/SF, but franchisor highs are skewed by CA/NY sites (e1 is 11 of 34 projects in CA). A&W converts to $240–418/SF (2,082–2,176 SF), RSMeans 2019 fast-food building-only $208/SF ex-architect (e8, ≈$270 in 2025 + ~35% site share ≈ $415/SF), a 2025 Texas McDonald's registration $205/SF (e9, registration estimates are usually partial) and a 2025 consultant benchmark $535–555/SF (e10). Mid $575/SF ≈ $1.44M for the 2,500 SF typical building — between the A&W/RSMeans cluster and the franchisor medians. Low $400 = A&W/RSMeans-with-site; high $850 = JIB/Sonic small-building upper ranges. Excludes kitchen equipment, signage and technology (see ffe), franchise fees, land, impact/tap fees." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price for building shell + interior + MEP (incl. kitchen hood/exhaust, walk-in box shells are usually in equipment package) and on-site work (grading, paving incl. drive-thru lane, on-site utilities, grease interceptor, landscaping). Excludes kitchen equipment, signage, POS/drive-thru technology (ffe), land, soft costs, off-site improvements, impact/tap fees."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.78, "standard": 1.0, "premium": 1.25, "luxury": 1.5,
+    "evidence": ["e7", "e5", "e6"], "derived": true,
+    "method": "Economy ≈ A&W-type budget prototype ($240–418/SF, e7) vs mid → ~0.78 (= low/mid 450/575 rounded down for small-market builds); premium = high-end franchisor ranges (JIB/Sonic, e5/e6) ≈ 1.25; luxury 1.5 = urban/West Coast flagship with custom architecture (not directly sourced)."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.08 },
+      { "division": "03", "pct": 0.06 },
+      { "division": "04", "pct": 0.04 },
+      { "division": "05", "pct": 0.03 },
+      { "division": "06", "pct": 0.04 },
+      { "division": "07", "pct": 0.04 },
+      { "division": "08", "pct": 0.04 },
+      { "division": "09", "pct": 0.07 },
+      { "division": "10", "pct": 0.01 },
+      { "division": "11", "pct": 0.01 },
+      { "division": "21", "pct": 0.01 },
+      { "division": "22", "pct": 0.05 },
+      { "division": "23", "pct": 0.07 },
+      { "division": "26", "pct": 0.07 },
+      { "division": "27", "pct": 0.01 },
+      { "division": "28", "pct": 0.01 },
+      { "division": "31", "pct": 0.08 },
+      { "division": "32", "pct": 0.18 },
+      { "division": "33", "pct": 0.10 }
+    ],
+    "evidence": ["e3", "e4", "e5", "e6"], "derived": true,
+    "method": "Site (31+32+33) = 0.36 from franchisor site-vs-building splits: JIB on-site $337–825k vs building $626–1,250k → 35–40% (e5); Sonic site $450–700k vs building $600–800k → 43–47% (e6); Zaxby's sitework $150–990k vs building $640k–1.3M (e4); Popeyes $40–800k vs $0.7–1.6M (e3). Site split 31/32/33 ≈ 22/50/28 (paving and drive-thru lane dominate). Building 0.64 allocated with a restaurant elemental pattern (heavy 22/23/26 for kitchen MEP and hood exhaust/make-up air; 09 finishes; 01 general conditions ~8%). Not a published elemental estimate — verify against a bid."
+  },
+
+  "lineItems": [
+    {
+      "id": "onsite-improvements",
+      "name": "On-site improvements (grading, paving incl. drive-thru lane, utilities, landscaping)",
+      "division": "32",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 300000, "mid": 500000, "high": 850000, "dollarYear": 2025, "region": "US", "evidence": ["e3", "e4", "e5", "e6"], "derived": false, "method": "Franchisor Item 7 site-work lines for new freestanding units: JIB $337,000–$825,000 (e5); Sonic $450,000–$700,000 (e6); Zaxby's $150,000–$990,000 (e4, low end is conversions); Popeyes $40,000–$800,000 (e3, low end is pad-ready sites). Mid = median of new-build midpoints (JIB 581k, Sonic 575k, Zaxby's 570k, Popeyes 420k) rounded to $500k." },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out shown for transparency; already inside hardCost (~36% of it). Highly site-dependent (pad-ready outparcel vs raw land)."
+    },
+    {
+      "id": "kitchen-hood-fire-suppression",
+      "name": "Kitchen exhaust hood, make-up air and fire suppression",
+      "division": "23",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 30000, "mid": 50000, "high": 80000, "dollarYear": 2025, "region": "US", "evidence": ["e10"], "derived": true, "method": "e10: hood with ductwork and make-up air 'can exceed $30,000–$50,000 for a full QSR kitchen configuration' plus fire suppression $2,000–$5,000. Mid $50k; high allows two hood lines (fryer + grill)." },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Inside Div 23 of the baseline."
+    },
+    {
+      "id": "second-drive-thru-lane",
+      "name": "Second (dual) drive-thru lane with order point",
+      "division": "32",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 75000, "mid": 125000, "high": 200000, "dollarYear": 2025, "region": "US", "evidence": ["e10"], "derived": true, "method": "e10 states a drive-thru 'adds $75,000 to $200,000 to total project cost' and 'Adding a drive-thru lane alone can rise to $200,000'. Mid = geometric-ish midpoint $125k. Low-confidence source." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Baseline assumes one lane; add for dual-lane prototypes (e.g., e9 McDonald's dual lane)."
+    },
+    {
+      "id": "franchise-design-cm-fees",
+      "name": "Franchisor construction / design services fees",
+      "division": "01",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 25000, "mid": 35000, "high": 80000, "dollarYear": 2025, "region": "US", "evidence": ["e1", "e2", "e3"], "derived": false, "method": "Wendy's FDP Fee $35,000 for new construction (e1); Taco Bell First Unit Construction Services $27,250 (e2); Popeyes construction-management review $20,000–$80,000 if non-qualified CM is used (e3)." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Soft-cost-like brand fee; only for franchised builds. Initial franchise fees ($35k–$50k) are not included here."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 130, "mid": 220, "high": 380, "dollarYear": 2025, "region": "US", "evidence": ["e7", "e11", "e12", "e2", "e3", "e5", "e4"], "derived": false, "method": "Kitchen equipment + furniture + signage + POS/drive-thru technology per building SF. Item 7 per-project: Wendy's $380,165–$650,000 (e12); Taco Bell equipment/signage/decor/POS $400,000–$577,000 (e2); Popeyes FF&E/signage/tech $340,000–$865,000 (e3); JIB FF&E $499,000–$967,000 + IT $45,000–$60,000 (e5); Zaxby's FF&E $445–497k + tech $75–217.5k + signage $23–245k (e4); A&W signs+tech+FF&E $288,130–$433,148 (e7); McDonald's signs/seating/equipment/decor $1.10–1.85M (e11, larger buildings). Median per project ≈ $550k / 2,500 SF = $220/SF; low = A&W $288k / 2,100 SF ≈ $137; high ≈ $950k / 2,500 SF." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.08, "mid": 0.12, "high": 0.18, "evidence": ["e2", "e14", "e15", "e16", "e3", "e10"], "derived": false, "method": "A&E + permits relative to building+site cost: Taco Bell permits/A&E/geotech/testing $75–150k on $1.0–2.0M (7.5%, e2); Zaxby's A&E $45–110k + permits $2–150k (e14); JIB A&E $44–216k + environmental $2.5–34k on $0.96–2.08M (5–12%, e15); A&W professional fees/permits $30–84k on $0.50–0.87M (6–10%, e16); Popeyes soft costs $10k–420k incl. legal, brokerage, traffic studies (e3); consultant guide lists 'Soft costs (permits, design, legal, contingency): $120,000–$200,000' on ~$963k–1.17M hard (10–17%, e10). Adding legal, builder's risk, testing, PM and franchisor fees → mid 12%." },
+    "breakdown": { "architectureEngineering": 0.06, "permitsFees": 0.03 },
+    "notes": "Type-specific: initial franchise fee $35,000–$50,000 (Zaxby's $35k, Taco Bell $45k, Wendy's TAF $50k, Popeyes/JIB $50k) and franchisor development/CM fees (line item franchise-design-cm-fees). Impact and tap fees excluded by definition; FDDs flag them as highly variable."
+  },
+
+  "contingency": {
+    "design": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "Prototype drawings are site-adapted, so design contingency is modest; 3–8% typical for adapted prototypes (judgment, consistent with common practice)." },
+    "hard": { "low": 0.05, "mid": 0.08, "high": 0.12, "evidence": ["e10"], "derived": true, "method": "e10 recommends 'a 10–15% contingency on all QSR builds' (total project). Applied to hard cost only with separate design contingency → 5–12%, mid 8%." },
+    "soft": { "low": 0.05, "mid": 0.08, "high": 0.10, "evidence": [], "derived": true, "method": "Permit/utility-fee volatility noted in every FDD footnote; standard 5–10% of soft costs." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 380, "max": 1300, "dollarYear": 2025, "region": "US", "method": "Hard $400–850/SF × (1 + 8–18% soft) ≈ $430–1,000/SF; widened to $380 (rural, pad-ready site) and $1,300 (CA/NY, Sonic-type small building with canopies) per the spread of e1–e7. Excludes land and FF&E." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1", "metric": "hardCostPerSite", "value": null, "low": 1033292, "high": 2200000, "unit": "USD/site",
+      "region": "United States (34 projects; 11 in California)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Franchise Disclosure Document, Quality Is Our Recipe, LLC (Wendy's), FDD-2026, Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Wendys-2025.pdf", "publisher": "Quality Is Our Recipe, LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Building 3 $1,033,292 - $2,200,000 … 3 - Includes Permits, Standard Construction, and Site Improvements.",
+      "scopeNotes": "Building + site improvements + permits for a new restaurant; based on approved budgets of 34 company-led franchisee projects 1/1/2024–12/28/2025; net of landlord TI allowance. Excludes equipment ($380k–650k), land. Building SF not stated.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2", "metric": "hardCostPerSite", "value": null, "low": 1000000, "high": 2000000, "unit": "USD/site",
+      "region": "Dallas, TX", "regionKey": "TX-Dallas", "dataYear": 2025,
+      "source": { "title": "Taco Bell Franchise Disclosure Document (Traditional FDD 2026), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Taco-Bell-2025.pdf", "publisher": "Taco Bell Franchisor, LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "**Building/Site Construction (F) $1,000,000 - $2,000,000 … The building and site construction cost estimates are based on development in Dallas, Texas.",
+      "scopeNotes": "Building + site construction for various Taco Bell building types. Same table: Permits, Licenses, Security Deposits incl. A&E/geotech/testing/impact fees $75,000–$150,000; Equipment/Signage/Decor/POS $400,000–$577,000; First Unit Construction Services $27,250.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3", "metric": "hardCostPerSite", "value": null, "low": 740000, "high": 2400000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Popeyes Louisiana Kitchen Franchise Disclosure Document (03/2026), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Popeyes-2025.pdf", "publisher": "Popeyes Louisiana Kitchen, Inc. (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Site Work6 $40,000 $800,000 … Building7 $700,000 $1,600,000 … Popeyes Restaurants range in size from 1,600 to 3,500 square feet … typically 25-30 spaces on average.",
+      "scopeNotes": "Free-standing column; site work (sewer, electrical, water, storm, paving, landscaping, grading) + building summed by us. Soft costs $10,000–$420,000; FF&E/signage/technology $340,000–$865,000 in the same table. Land 28,000–38,000 SF.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4", "metric": "hardCostPerSite", "value": null, "low": 790000, "high": 2290000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Zaxbys Franchise Disclosure Document (04/26 FDD), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Zaxbys-2025.pdf", "publisher": "Zaxby's SPE Franchisor LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Building4 $640,000 $1,300,000 … Sitework5 $150,000 $990,000 … The typical lot size for a Restaurant is between 0.72 and 1.5 acres.",
+      "scopeNotes": "Building + sitework summed by us; low ends reflect conversions of existing freestanding buildings. Same table: FF&E $445,000–$497,000; technology $75,000–$217,500; signage incl. drive-thru canopy $23,000–$245,000.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5", "metric": "hardCostPerSite", "value": null, "low": 963000, "high": 2075400, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Jack in the Box Franchise Disclosure Document (FDD 03/26), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Jack-In-The-Box-2025.pdf", "publisher": "Different Rules, LLC (Jack in the Box) (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "On-site improvements7 $337,000 $825,000 … Building Improvements8 $626,000 $1,250,400 … The prototypical buildings range in size from 1,386 square feet to 2,440 square feet",
+      "scopeNotes": "Summed on-site + building; based on development costs of prototypical buildings opened FY2023–2025. FF&E $499,000–$967,000; IT $45,000–$60,000; A&E $44,000–$216,000 in same table.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6", "metric": "hardCostPerSite", "value": null, "low": 1050000, "high": 1500000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Sonic Franchise Disclosure Document (2026 FDD, issued March 26, 2026), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Sonic-2025.pdf", "publisher": "Sonic Franchising LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Building costs(7) $600,000 – $800,000 … Site work(7) $450,000 – $700,000 … suitable for constructing a 1,250 to 1,500 square-foot Sonic",
+      "scopeNotes": "Free-standing column, summed. Includes drive-in stall canopies (atypical for other QSRs, inflates $/SF). Equipment $175–310k, POS/POPS $105–160k, signage $50–80k separately.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7", "metric": "hardCostPerSite", "value": null, "low": 500000, "high": 869484, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "A&W Restaurants Franchise Disclosure Document (A&W FDD- 4/2026), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/A-And-W-2025.pdf", "publisher": "A&W Restaurants, Inc. (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Building Costs Including Site Work 4 $500,000 - $869,484 … a new Freestanding Restaurant with a building square footage of 2,082 - 2,176 is approximately 28,000 - 35,000 square feet.",
+      "scopeNotes": "Building incl. site work for 2,082–2,176 SF → ~$240–418/SF. Professional fees/permits $30,000–$84,000; signs $70,000–$87,658; technology $33,230–$69,851; FF&E $184,900–$275,639.",
+      "confidence": "high"
+    },
+    {
+      "id": "e8", "metric": "hardCostPerSF", "value": 208.3, "unit": "USD/sf",
+      "region": "US national average", "regionKey": "US", "dataYear": 2019,
+      "source": { "title": "Construction Cost Estimates for Fast Food Restaurant in National, US (model page)", "url": "https://www.rsmeans.com/model-pages/fast-food-restaurant", "publisher": "Gordian / RSMeans", "accessed": "2026-10-24" },
+      "quote": "Total building cost $224.96/S.F. (union), incl. Contractor Fees 25% ($41.66/S.F.) and Architectural Fees 8% ($16.66/S.F.); 'This cost estimate uses 2019 RSMeans data.'",
+      "scopeNotes": "Value = $224.96 − $16.66 architect fee = $208.30/SF; 4,000 SF brick veneer/wood frame model; building only, no sitework, no kitchen equipment. Open shop $204.56 total.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9", "metric": "hardCostPerSF", "value": 205, "unit": "USD/sf",
+      "region": "Fulshear, TX (Houston metro)", "regionKey": "TX-Houston", "dataYear": 2025,
+      "source": { "title": "TABS project TABS2025010278 — McDonald's Fulshear (42-3567)", "url": "https://www.tdlr.texas.gov/TABS/Projects/TABS2025010278", "publisher": "Texas Department of Licensing and Regulation", "accessed": "2026-10-24" },
+      "quote": "New McDonald's restaurant with new Dual lane Drive-thru layout located behind the restaurant and new Site Work … 3,655 ft 2 … Estimated Cost: $750,000",
+      "scopeNotes": "$750,000 / 3,655 SF = $205/SF. Registration estimates are self-reported for accessibility review and often understate full contract value; McDonald's builds its own buildings at scale.",
+      "confidence": "low"
+    },
+    {
+      "id": "e10", "metric": "hardCostPerSF", "value": null, "low": 535, "high": 555, "unit": "USD/sf",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Average Cost to Build a QSR in the USA (2026 Complete Guide)", "url": "https://terrapincg.com/news/average-cost-to-build-a-qsr-usa", "publisher": "Terrapin Construction Group", "accessed": "2026-10-24" },
+      "quote": "ranges from $535 to $555 per square foot based on 2025 industry benchmarks",
+      "scopeNotes": "Ground-up fast food; scope (site work in/out) not clearly defined. Same page: 'Budget a 10–15% contingency on all QSR builds'; hood w/ make-up air 'can exceed $30,000–$50,000'; drive-thru 'adds $75,000 to $200,000'. Contractor marketing content.",
+      "confidence": "low"
+    },
+    {
+      "id": "e11", "metric": "ffePerSite", "value": null, "low": 1100000, "high": 1850000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "McDonald's USA Franchise Disclosure Document (2026), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/McDonalds-2025.pdf", "publisher": "McDonald's USA, LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Signs, Seating, Equipment, and Decor $1,100,000 to $1,850,000 (8) … includes the cost of the current Technology Platform, which ranges from $165,000 to $265,000",
+      "scopeNotes": "McDonald's owns land and building; franchisee buys equipment package only. Larger than typical QSR package.",
+      "confidence": "high"
+    },
+    {
+      "id": "e12", "metric": "ffePerSite", "value": null, "low": 380165, "high": 650000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Franchise Disclosure Document, Quality Is Our Recipe, LLC (Wendy's), FDD-2026, Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Wendys-2025.pdf", "publisher": "Quality Is Our Recipe, LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Equipment 4 $380,165 - $650,000 … 4 - Includes Furniture, Fixtures, Equipment, Signage, Technology, and select Security costs.",
+      "scopeNotes": "FF&E incl. signage and technology for a new Wendy's.",
+      "confidence": "high"
+    },
+    {
+      "id": "e13", "metric": "buildingSF", "value": 2500, "unit": "count",
+      "region": "United States", "regionKey": "US",
+      "source": { "title": "The New Taco Bell Is Half the Size. It Does Not Cost Half as Much.", "url": "https://www.mmcginvest.com/post/the-new-taco-bell-is-half-the-size-it-does-not-cost-half-as-much", "publisher": "MMCG Invest", "accessed": "2026-10-24" },
+      "quote": "still averages about 2,500 square feet … three-quarters of an acre for a traditional unit",
+      "scopeNotes": "Traditional Taco Bell building SF and lot size; Go Mobile 1,325–1,600 SF on half-acre lots.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e14", "metric": "softCostPerSite", "value": null, "low": 47000, "high": 260000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Zaxbys Franchise Disclosure Document (04/26 FDD), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Zaxbys-2025.pdf", "publisher": "Zaxby's SPE Franchisor LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Architect & Engineer6 $45,000 $110,000 … Permits and Licenses7 $2,000 $150,000",
+      "scopeNotes": "A&E (incl. Phase I/II environmental) + permits (incl. impact fees) summed by us.",
+      "confidence": "high"
+    },
+    {
+      "id": "e15", "metric": "softCostPerSite", "value": null, "low": 46500, "high": 250000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Jack in the Box Franchise Disclosure Document (FDD 03/26), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Jack-In-The-Box-2025.pdf", "publisher": "Different Rules, LLC (Jack in the Box) (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Fee for architect/ engineering services5 $44,000 $216,000 … Environmental assessment5, 6 $2,500 $34,000",
+      "scopeNotes": "A&E + environmental summed by us.",
+      "confidence": "high"
+    },
+    {
+      "id": "e16", "metric": "softCostPerSite", "value": null, "low": 30000, "high": 84000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "A&W Restaurants Franchise Disclosure Document (A&W FDD- 4/2026), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/A-And-W-2025.pdf", "publisher": "A&W Restaurants, Inc. (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Professional Fees, Licenses & Permits 3 $30,000 - $84,000",
+      "scopeNotes": "Architects, attorneys, governmental authorities.",
+      "confidence": "high"
+    }
+  ],
+
+  "openQuestions": [
+    "No published elemental (CSI) breakdown for a ground-up QSR was found; systemSplit is derived — a GC bid tab or public RFP for a QSR would firm it up.",
+    "Franchisor Item 7 ranges do not state building SF for Wendy's and Taco Bell; per-SF conversion assumes 2,500 SF.",
+    "Wendy's sample is CA-heavy (11 of 34 projects) and Taco Bell is Dallas-only; regionalization of these ranges is approximate.",
+    "Burger King, Chick-fil-A and Popeyes building-only per-SF costs from actual GMP contracts would help separate building vs site."
+  ]
+}

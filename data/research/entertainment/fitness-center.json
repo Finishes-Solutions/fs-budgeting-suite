@@ -1,0 +1,393 @@
+{
+  "schemaVersion": 1,
+  "id": "fitness-center",
+  "name": "Fitness center / gym",
+  "category": "entertainment",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Health club with open fitness floor, group-exercise rooms and locker rooms, either ground-up or a converted retail box. Building $/SF is anchored on RSMeans gymnasium/athletic-club models (2019); size and investment anchors come from public company filings (Planet Fitness ~20,000 SF clubs, Life Time ~97,000 SF clubs, Xponential studios ~$554k for 1,500–2,500 SF). Equipment is carried as FF&E. Pools/aquatics are optional line items.",
+  "sizing": {
+    "typicalSize": {
+      "low": 5000,
+      "mid": 20000,
+      "high": 60000,
+      "unit": "sf",
+      "evidence": [
+        "e3",
+        "e4",
+        "e5"
+      ],
+      "derived": false,
+      "method": "e3: HVLP clubs 'typically 20,000 square feet'; e5 boutique studios 1,500–2,500 SF; e4 large athletic clubs ~97,000 SF. Mid 20,000 (most common new-build/conversion size); high 60,000 for full-service clubs."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 8000,
+      "mid": 11000,
+      "high": 15000,
+      "evidence": [],
+      "derived": true,
+      "method": "Freestanding club at ~0.2–0.35 FAR with surface parking (~5–7 spaces per 1,000 SF). Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.004,
+      "mid": 0.006,
+      "high": 0.008,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Health-club zoning commonly 4–8 spaces per 1,000 SF. Derived."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 90,
+      "mid": 225,
+      "high": 375,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e5"
+      ],
+      "derived": true,
+      "method": "2025 dollars. RSMeans 2019 building hard cost: gymnasium $177 union / $162 open shop (e1), racquetball/athletic club $172 / $155 (e2); ×~1.30 to 2025 ≈ $200–230/SF plus ~8% on-site work → mid $225 for a new single-story club with locker rooms. Low $90 = interior conversion of an existing retail box (consistent with boutique all-in investment of ≈ $220–370/SF in e5, of which roughly a third to half is leasehold improvements). High $375 = full-service club with extensive locker/spa areas (pools excluded, see lineItems)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Building/interiors + typical on-site work. Excludes fitness equipment (FF&E), pools (lineItem), land, soft costs, off-sites, impact/tap fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.6,
+    "standard": 1.0,
+    "premium": 1.3,
+    "luxury": 1.67,
+    "evidence": [],
+    "derived": true,
+    "method": "economy ≈ low/mid (90/225 = 0.4, raised to 0.6 since economy new-builds rarely drop to TI-only cost); luxury = high/mid (375/225); premium interpolated."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "03",
+        "pct": 0.08
+      },
+      {
+        "division": "04",
+        "pct": 0.03
+      },
+      {
+        "division": "05",
+        "pct": 0.07
+      },
+      {
+        "division": "06",
+        "pct": 0.03
+      },
+      {
+        "division": "07",
+        "pct": 0.06
+      },
+      {
+        "division": "08",
+        "pct": 0.04
+      },
+      {
+        "division": "09",
+        "pct": 0.13
+      },
+      {
+        "division": "10",
+        "pct": 0.03
+      },
+      {
+        "division": "21",
+        "pct": 0.03
+      },
+      {
+        "division": "22",
+        "pct": 0.09
+      },
+      {
+        "division": "23",
+        "pct": 0.11
+      },
+      {
+        "division": "26",
+        "pct": 0.09
+      },
+      {
+        "division": "27",
+        "pct": 0.02
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.04
+      },
+      {
+        "division": "33",
+        "pct": 0.02
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived: locker rooms/showers drive plumbing (22 ≈ 9%) and specialties (10: lockers, partitions); rubber flooring and finishes 09 ≈ 13%; high ventilation/cooling loads 23 ≈ 11%; on-site work ≈ 9%. Not sourced from a published estimate."
+  },
+  "lineItems": [
+    {
+      "id": "pool-indoor",
+      "name": "Indoor lap/leisure pool (per SF of water) incl. natatorium HVAC premium",
+      "division": "13",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 0
+      },
+      "cost": {
+        "low": 200,
+        "mid": 320,
+        "high": 490,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "_blocks/amenities.json#e1",
+          "_blocks/amenities.json#e2",
+          "_blocks/amenities.json#e3",
+          "_blocks/amenities.json#e4"
+        ],
+        "derived": false,
+        "method": "Amenities block pool-per-sf: $145–$488 per SF of water (Chico feasibility study, Recreation Management). Natatorium enclosure and dehumidification add further."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Qty defaults to 0; set SF of water for full-service clubs."
+    },
+    {
+      "id": "locker-rooms",
+      "name": "Locker rooms with showers (finished)",
+      "division": "22",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 0.08
+      },
+      "cost": {
+        "low": 250,
+        "mid": 350,
+        "high": 500,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e1"
+        ],
+        "derived": true,
+        "method": "Derived: plumbing-dense rooms at ~1.5–2× the building average; ~8% of club area."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "group-ex-rooms",
+      "name": "Group exercise studios (sprung floors, mirrors, AV)",
+      "division": "09",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 0.1
+      },
+      "cost": {
+        "low": 40,
+        "mid": 70,
+        "high": 120,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived premium over base finishes per SF of studio area."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": ""
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 20,
+      "mid": 40,
+      "high": 70,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e3",
+        "e5"
+      ],
+      "derived": true,
+      "method": "Fitness equipment package (cardio, strength, functional), AV and furniture: ~$400k–$1.0M for a 20,000 SF club. Equipment is replaced every five to nine years (e3). Derived; verify with equipment vendor quotes."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.12,
+      "mid": 0.18,
+      "high": 0.24,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "RSMeans model architectural fees ~7% (e1) plus MEP/structural, civil, permits, testing, legal. Franchise fees (e5 franchise systems) are additional. Derived."
+    },
+    "notes": "Franchise systems: add initial franchise fee and pre-opening marketing outside hard/soft."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical; conversions at the high end."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 100,
+      "max": 470,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "low 90×1.12 to high 375×1.24; excludes equipment and pools."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "buildingHardCostPerSF",
+      "value": 176.85,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Gymnasium - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/gymnasium",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Gymnasium with Concrete Block / Rigid Steel ... SubTotal 100% $141.48 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $35.37",
+      "scopeNotes": "2019 RSMeans national model, 20,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $176.85/SF; open shop = $162.05/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E.",
+      "confidence": "medium",
+      "low": 162.05,
+      "high": 176.85
+    },
+    {
+      "id": "e2",
+      "metric": "buildingHardCostPerSF",
+      "value": 171.9,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Racquetball Court - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/racquetball-court",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Racquetball Court with Brick Veneer / Rigid Steel ... SubTotal 100% $137.52 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $34.38",
+      "scopeNotes": "2019 RSMeans national model, 30,000 SF, 2 story, union labor. value = subtotal + 25% contractor fees = $171.9/SF; open shop = $155.06/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Closest RSMeans model to a full-service athletic club (courts, lockers).",
+      "confidence": "medium",
+      "low": 155.06,
+      "high": 171.9
+    },
+    {
+      "id": "e3",
+      "metric": "typicalSize",
+      "value": 20000,
+      "unit": "sf",
+      "region": "US (franchise system)",
+      "regionKey": "US",
+      "source": {
+        "title": "Planet Fitness, Inc. Form 10-K for fiscal year 2025",
+        "url": "https://www.sec.gov/Archives/edgar/data/1637207/000163720726000011/plnt-20251231.htm",
+        "publisher": "U.S. SEC EDGAR (Planet Fitness, Inc.)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Our bright, clean clubs are typically 20,000 square feet",
+      "scopeNotes": "HVLP gym size; equipment replaced 'approximately every five to nine years' (same filing).",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "typicalSize",
+      "value": 97000,
+      "unit": "sf",
+      "region": "US (company-wide)",
+      "regionKey": "US",
+      "source": {
+        "title": "Life Time Group Holdings, Inc. Form 10-K for fiscal year 2025",
+        "url": "https://www.sec.gov/Archives/edgar/data/1869198/000186919826000010/lth-20251231.htm",
+        "publisher": "U.S. SEC EDGAR (Life Time Group Holdings, Inc.)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Our luxurious athletic country clubs total over 18 million of indoor square feet ... and measure approximately 97,000 square feet on average.",
+      "scopeNotes": "Upper bound for large-format athletic clubs with pools; used for sizing only.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "initialInvestmentPerStudio",
+      "value": 554000,
+      "unit": "USD/ls",
+      "region": "US (franchise system)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Xponential Fitness, Inc. Form 10-K for fiscal year 2025",
+        "url": "https://www.sec.gov/Archives/edgar/data/1802156/000180215626000016/xpof-20251231.htm",
+        "publisher": "U.S. SEC EDGAR (Xponential Fitness, Inc.)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Studios are generally designed to be between 1,500 and 2,500 square feet in size, depending on the brand. The smaller box format contributed to a weighted average initial franchisee investment of approximately $554,000 in 2025.",
+      "scopeNotes": "Total franchisee initial investment (leasehold improvements, equipment, franchise fee, opening costs) in leased space; ≈ $220–$370/SF all-in for boutique studios. Not hard cost.",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "Need a sourced new-build health club budget (e.g., municipal fitness/rec center bid, or chain disclosures) to replace RSMeans-based escalation.",
+    "Equipment package cost by club format needs vendor data."
+  ]
+}

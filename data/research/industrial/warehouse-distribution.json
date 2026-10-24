@@ -1,0 +1,602 @@
+{
+  "schemaVersion": 1,
+  "id": "warehouse-distribution",
+  "name": "Warehouse / distribution",
+  "category": "industrial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Bulk tilt-wall or precast distribution (32–40' clear) is one of the cheapest building types per SF; cost is driven by building size (fixed costs spread over more SF), slab/structure spec, clear height, dock-door count and the size of the truck courts and trailer parking. Data quality is good: Cushman & Wakefield publishes an annual model-building guide (2026: $78–$144 psf by size) and RLB publishes metro ranges, but the two differ in scope and basis, so the default leans on C&W for big-box product and uses RLB for the spread.",
+  "sizing": {
+    "typicalSize": {
+      "low": 150000,
+      "mid": 350000,
+      "high": 1000000,
+      "unit": "sf",
+      "evidence": [
+        "e4"
+      ],
+      "derived": true,
+      "method": "C&W models 109,200 / 476,400 / 901,000 SF buildings (e4). Typical speculative bulk product taken as 150k–1M SF with a 350k SF mid (between C&W small and medium models)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 15000,
+      "mid": 17500,
+      "high": 21000,
+      "evidence": [],
+      "derived": true,
+      "method": "Building SF per gross site acre at a floor-area ratio of ~0.35–0.48 (43,560 SF × FAR), typical for single-story distribution with truck courts, trailer parking and detention. Mid FAR 0.40 → 17,400 SF/acre, rounded."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0003,
+      "mid": 0.0005,
+      "high": 0.001,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Car spaces per building SF: ~0.3–1.0 per 1,000 SF for distribution (low employee density); trailer stalls are a separate line item."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 75,
+      "mid": 100,
+      "high": 150,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e7",
+        "e8",
+        "e9",
+        "e10",
+        "e11",
+        "e12",
+        "e13"
+      ],
+      "derived": false,
+      "method": "Low = C&W 2026 large/medium model averages ($78–$87, e1/e2) and RLB low bounds in big-box markets (Dallas $75, Phoenix $85; e8/e9). Mid $100 = C&W medium ($87) uplifted ~15% because a typical 150k–500k SF bulk project sits between the C&W medium and small models ($87–$144, e3) and because C&W is an Americas average that includes cheaper Mexican/Central American markets; it is also the midpoint of the big-box-market RLB ranges (Dallas/Phoenix $75–$170). High $150 = RLB national median-of-highs is $228 (e7) but that is a generic-warehouse sample skewed to coastal cities; $150 ≈ C&W small model ($144) and RSMeans 2019 30k SF warehouse ($119–$131 in 2019 $, e12) escalated, and the bottom of Chicago/LA RLB ranges ($150–$155; e10/e11). Terrapin ($115–$185, e13) is a low-confidence upper cross-check."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price for core & shell incl. general conditions and OH&P, typical on-site work (grading, truck courts, car/trailer paving, on-site utilities, detention, landscaping) and a minimal spec office; excludes tenant office build-out beyond spec, racking/material handling, land, soft costs, off-sites and impact/tap fees. C&W category shares (e5) leave ~40% unitemised, consistent with sitework and GC/fees being inside its figure — verify against the full guide."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.8,
+    "standard": 1,
+    "premium": 1.25,
+    "luxury": 1.5,
+    "evidence": [
+      "e1",
+      "e3"
+    ],
+    "derived": true,
+    "method": "economy ≈ low/mid (75/100); premium ≈ (C&W small $144 + mid) / 2 / mid for 40' clear, heavier slab, ESFR + more office; luxury 1.5 = high/mid for multi-story, automation-ready or high-power product."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.1
+      },
+      {
+        "division": "03",
+        "pct": 0.22
+      },
+      {
+        "division": "05",
+        "pct": 0.11
+      },
+      {
+        "division": "07",
+        "pct": 0.07
+      },
+      {
+        "division": "08",
+        "pct": 0.04
+      },
+      {
+        "division": "09",
+        "pct": 0.02
+      },
+      {
+        "division": "10",
+        "pct": 0.01
+      },
+      {
+        "division": "11",
+        "pct": 0.02
+      },
+      {
+        "division": "21",
+        "pct": 0.04
+      },
+      {
+        "division": "22",
+        "pct": 0.015
+      },
+      {
+        "division": "23",
+        "pct": 0.025
+      },
+      {
+        "division": "26",
+        "pct": 0.055
+      },
+      {
+        "division": "27",
+        "pct": 0.005
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.08
+      },
+      {
+        "division": "32",
+        "pct": 0.12
+      },
+      {
+        "division": "33",
+        "pct": 0.06
+      }
+    ],
+    "evidence": [
+      "e5"
+    ],
+    "derived": true,
+    "method": "Anchored to C&W 2026 category shares (e5): structure + enclosure 34–37% → 03 slab/tilt panels 22% + 05 joists/deck/columns 11% + 07 roofing/insulation 7% = 40%; architectural 15–22% → 08 dock/man doors, 09, 10, 11 dock equipment = 9% (less, because sitework is carried separately here); MEP 6–7% → 22/23/26 = 9.5%, plus 21 ESFR sprinklers 4% and 27/28 1.5%. Remainder: sitework 31–33 = 26% (large truck courts and trailer paving) and 01 general conditions/fee 10%. Judgment split — verify with a project estimate."
+  },
+  "lineItems": [
+    {
+      "id": "dock-door-package",
+      "name": "Dock door package (9×10 insulated door, 30k-lb hydraulic leveler, seal, bumpers, dock light)",
+      "division": "11",
+      "unit": "ea",
+      "qty": {
+        "per": "sf",
+        "value": 0.000133
+      },
+      "cost": {
+        "low": 12000,
+        "mid": 18000,
+        "high": 28000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No public unit price fetched. Built up by judgment: insulated sectional door $4k–$7k, pit-style hydraulic leveler $7k–$14k, seal/shelter + bumpers + light $1.5k–$4k, plus pit concrete/embeds; total $12k–$28k. Quantity: 1 door per ~7,500 SF (typical 1 per 5,000–10,000 SF for cross-dock/rear-load bulk)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of the baseline; adjust count for door-heavy cross-dock buildings."
+    },
+    {
+      "id": "esfr-fire-protection",
+      "name": "ESFR sprinkler system incl. fire pump allowance",
+      "division": "21",
+      "block": "building-systems",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 3,
+        "mid": 4,
+        "high": 6,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/building-systems.json#e3",
+          "_blocks/building-systems.json#e4"
+        ],
+        "derived": true,
+        "method": "Building-systems block gives $1.50–$3/SF for simple wet-pipe and $4–$9/SF for dry systems. ESFR in high-piled storage needs larger mains and often a fire pump/tank, so placed at the top of the wet-pipe range and into the dry range: $3–$6, mid $4 (judgment)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out; ~4% of hard cost."
+    },
+    {
+      "id": "trailer-parking",
+      "name": "Trailer parking stalls (heavy-duty concrete, 12×55 ft)",
+      "division": "32",
+      "block": "paving",
+      "unit": "space",
+      "qty": {
+        "per": "sf",
+        "value": 0.0001
+      },
+      "cost": {
+        "low": 6500,
+        "mid": 9000,
+        "high": 13000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/paving.json#e7",
+          "_blocks/paving.json#e8"
+        ],
+        "derived": true,
+        "method": "12×55 ft stall = 660 SF = 73 SY; paving block heavy-duty concrete $85–$170/SY (mid $115) → $6.2k–$12.4k; mid ≈ 73 × $115 = $8.4k + striping/bumpers → $9k. Quantity ≈ 1 stall per 10,000 SF (roughly 0.75–1 per dock door)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline sitework. Truck courts are part of the base sitework."
+    },
+    {
+      "id": "office-buildout",
+      "name": "Tenant office build-out (beyond spec office), ~2% of building area",
+      "division": "09",
+      "block": "vertical-building",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 0.02
+      },
+      "cost": {
+        "low": 80,
+        "mid": 120,
+        "high": 165,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/vertical-building.json#e20",
+          "_blocks/vertical-building.json#e23"
+        ],
+        "derived": true,
+        "method": "Per SF of office: between the vertical-building block tenant-improvement-basic ($45–$120) and the C&W 2026 Gen-1 office fit-out US average $162 (e20); low ≈ lowest C&W markets (~$108, e23) less a simpler warehouse-office spec. Quantity 2% of building area (typical 1–5%)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Usually a tenant improvement; turn on for build-to-suit."
+    },
+    {
+      "id": "rooftop-solar",
+      "name": "Rooftop solar PV (optional)",
+      "division": "48",
+      "block": "energy",
+      "unit": "kw",
+      "qty": {
+        "per": "sf",
+        "value": 0.005
+      },
+      "cost": {
+        "low": 1500,
+        "mid": 2300,
+        "high": 3300,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Copied from _blocks/energy.json item rooftop-solar-commercial ($1,500/$2,300/$3,300 per kW, 2024). Quantity ~5 W per SF of roof (≈ 0.005 kW/SF) for a partial-roof commercial array (judgment)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Optional; many states/tenants now require solar-ready roofs."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.1,
+      "mid": 0.14,
+      "high": 0.2,
+      "evidence": [
+        "e12"
+      ],
+      "derived": true,
+      "method": "No industrial-specific soft-cost survey fetched. RSMeans models carry architectural fees of 7% on building cost (e12); big-box shells use repetitive designs, so A/E ≈ 3–5%. Add permits/plan review, geotech/survey, legal/leasing-free development admin, insurance/builder's risk and developer overhead ≈ 6–12% → 10–20% total excluding financing, mid 14% (judgment)."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.045
+    },
+    "notes": "Excludes financing/interest and leasing commissions; impact and tap fees are site-specific and excluded from hard cost."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.02,
+      "mid": 0.04,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Repetitive tilt-wall shell designs carry lower design contingency than custom building types; 2–8% depending on design completion (judgment)."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical owner construction contingency for simple industrial shells 3–8% (judgment); higher for poor soils or heavy sitework."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Soft-cost contingency 5–10% of soft costs (judgment, standard development pro forma practice)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 80,
+      "max": 230,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "min ≈ hard low $75 × 1.08 (lean soft costs); max ≈ RLB national median-of-highs $228 (e7) — a high-cost-metro bulk project with full soft costs. Values outside warrant a check."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 87,
+      "unit": "USD/sf",
+      "region": "Americas average (46 markets)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "2026 Americas Industrial Construction Cost Guide (landing page)",
+        "url": "https://www.cushmanwakefield.com/en/united-states/insights/industrial-construction-cost-guide",
+        "publisher": "Cushman & Wakefield",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Small projects averaged $144 psf (+3.6% YOY), medium $87 psf (+2.8% YOY), and large $78 psf (+2.3% YOY).",
+      "scopeNotes": "Model 476,400-SF distribution building; ground-up core and shell (no office TI). Americas average incl. Canada/Mexico.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": 78,
+      "unit": "USD/sf",
+      "region": "Americas average (46 markets)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "2026 Americas Industrial Construction Cost Guide (landing page)",
+        "url": "https://www.cushmanwakefield.com/en/united-states/insights/industrial-construction-cost-guide",
+        "publisher": "Cushman & Wakefield",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Small projects averaged $144 psf (+3.6% YOY), medium $87 psf (+2.8% YOY), and large $78 psf (+2.3% YOY).",
+      "scopeNotes": "Model 901,000-SF distribution building; ground-up core and shell. Americas average incl. Canada/Mexico.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": 144,
+      "unit": "USD/sf",
+      "region": "Americas average (46 markets)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "2026 Americas Industrial Construction Cost Guide (landing page)",
+        "url": "https://www.cushmanwakefield.com/en/united-states/insights/industrial-construction-cost-guide",
+        "publisher": "Cushman & Wakefield",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Small projects averaged $144 psf (+3.6% YOY), medium $87 psf (+2.8% YOY), and large $78 psf (+2.3% YOY).",
+      "scopeNotes": "Model 109,200-SF distribution building (size per CRE Daily); ground-up core and shell. Average of 46 Americas markets incl. Canada, Mexico, Costa Rica, so not a pure US figure.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "modelBuildingSize",
+      "value": 476400,
+      "low": 109200,
+      "high": 901000,
+      "unit": "sf",
+      "region": "Americas",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Industrial Construction Costs Rise Across Americas",
+        "url": "https://www.credaily.com/?p=223266",
+        "publisher": "CRE Daily",
+        "accessed": "2026-10-24"
+      },
+      "quote": "A 109,200-SF small project averaged $144 PSF in mid-2026 … A 476,400-SF medium project averaged $87 PSF … A 901,000-SF large project averaged $78 PSF",
+      "scopeNotes": "Secondary report of the C&W 2026 guide; gives the model building sizes behind the small/medium/large averages.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "costShareByCategory",
+      "value": null,
+      "low": 0.34,
+      "high": 0.37,
+      "unit": "pct",
+      "region": "Americas",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Industrial Construction Costs Rise Across Americas",
+        "url": "https://www.credaily.com/?p=223266",
+        "publisher": "CRE Daily",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Structural and enclosure work was the biggest cost category … about 34% of a small warehouse budget … about 37% for a large project. Architectural work represented about 22% of costs on small projects and roughly 15% on large projects.",
+      "scopeNotes": "C&W 2026 cost-category shares (structure/enclosure 34-37%, architectural 15-22%; the article also puts MEP near 6-7% across sizes); the remaining ~35-45% is not itemised in the article (presumably sitework and GC/fees).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "scope",
+      "value": null,
+      "unit": "text",
+      "region": "Americas",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Costs increased across all industrial project sizes in 2026: Cushman & Wakefield report",
+        "url": "https://www.bdcnetwork.com/building-sector-reports/industrial-facilities/article/55409301/costs-increased-across-all-industrial-project-sizes-in-2026-cushman-wakefield-report",
+        "publisher": "Building Design + Construction",
+        "accessed": "2026-10-24"
+      },
+      "quote": "reflects ground-up core and shell construction for modern distribution facilities",
+      "scopeNotes": "Scope statement for the C&W 2026 industrial guide figures.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 140,
+      "high": 228,
+      "unit": "USD/sf",
+      "region": "United States (18 RLB metros)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Industrial - Warehouse column, 18 U.S. city rows (Austin 75-155 … Washington, D.C. 140-225; full range 75-370).",
+      "scopeNotes": "low/high here = median of the 18 U.S. city LOW values (140) and median of the HIGH values (227.5), computed by the researcher; un-weighted, coastal-heavy city sample, so above a true national average.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 75,
+      "high": 155,
+      "unit": "USD/sf",
+      "region": "Dallas",
+      "regionKey": "TX-DFW",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Dallas row, Industrial - Warehouse: Low 75 High 155. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e9",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 85,
+      "high": 170,
+      "unit": "USD/sf",
+      "region": "Phoenix",
+      "regionKey": "AZ-Phoenix",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Phoenix row, Industrial - Warehouse: Low 85 High 170. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e10",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 155,
+      "high": 245,
+      "unit": "USD/sf",
+      "region": "Chicago",
+      "regionKey": "IL-Chicago",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Chicago row, Industrial - Warehouse: Low 155 High 245. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e11",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 150,
+      "high": 230,
+      "unit": "USD/sf",
+      "region": "Los Angeles",
+      "regionKey": "CA-LosAngeles",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Los Angeles row, Industrial - Warehouse: Low 150 High 230. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e12",
+      "metric": "hardCostPerSF",
+      "value": 119.27,
+      "low": 119.27,
+      "high": 130.62,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Warehouse Construction Cost Model (Brick Veneer / Reinforced Concrete)",
+        "url": "https://www.rsmeans.com/model-pages/warehouse",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Subtotal $95.42/SF (open shop) … Contractor Fees (General Conditions, Overhead, Profit) 25% $23.85 … Architectural Fees 7% … Total $127.62 (open shop) / $139.76 (union)",
+      "scopeNotes": "value = open-shop subtotal + 25% contractor fees ($95.42 + $23.85), architectural fee removed; high = union equivalent ($104.50 + $26.12). 30,000-SF, 24-ft brick-veneer warehouse; building only, sitework not shown. 2019 dollars.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e13",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 115,
+      "high": 185,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Tilt-Up Concrete Construction Cost Per Square Foot (2026)",
+        "url": "https://terrapincg.com/news/tilt-up-concrete-construction-cost-per-square-foot-2026",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Building-type table: 'Ambient warehouse' $115–$160/SF total shell (80k–1.2M SF); 'Distribution center / 3PL' $135–$185/SF (200k–1.5M SF)",
+      "scopeNotes": "Contractor marketing article. Table note says 'full-shell envelope, slab, and roof — exclusive of MEP, finishes, and FF&E' while its FAQ says MEP rough-in is included; sitework/GC fees not stated. Treated as an upper cross-check.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Obtain the full C&W 2026 Industrial Construction Cost Guide (flipbook) to confirm whether sitework and GC/fee are inside the $78–$144 psf and to get its category table.",
+    "Find a public US-only bulk-distribution budget (port authority or economic-development filing) to replace the Americas-average basis.",
+    "Dock-door package and ESFR costs are derived; a contractor unit-price source would firm them up."
+  ]
+}

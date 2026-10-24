@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "id": "building-systems",
+  "name": "Building systems (conveying, fire protection, low voltage, security)",
+  "researchedAt": "2026-10-24",
+  "items": [
+    {
+      "id": "elevator-hydraulic",
+      "name": "Hydraulic passenger elevator, low-rise (2–4 stops), installed",
+      "division": "14",
+      "unit": "ea",
+      "cost": {
+        "low": 75000, "mid": 115000, "high": 160000, "dollarYear": 2026, "region": "US",
+        "evidence": ["e1"], "derived": false,
+        "method": "e1 commercial hydraulic $75,000–$150,000 turnkey low-rise. Low = $75k; mid = $115k ≈ midpoint of e1 (rounded up for 3–4 stops); high = $160k, slightly above e1 to cover 4-stop / 3,500 lb cars. Single low-confidence cost-guide source — verify with an elevator contractor quote."
+      },
+      "notes": "Per car incl. cab, jack, power unit, controller, door equipment and installation. Excludes the hoistway, pit and machine room construction (in shell) and power feeder. MRL traction is a common alternative at similar cost."
+    },
+    {
+      "id": "elevator-traction",
+      "name": "Traction passenger elevator, mid-rise (≈5–10 stops), installed",
+      "division": "14",
+      "unit": "ea",
+      "cost": {
+        "low": 150000, "mid": 250000, "high": 400000, "dollarYear": 2026, "region": "US",
+        "evidence": ["e1", "e2"], "derived": false,
+        "method": "e1 traction $150,000–$350,000+ (mid- and higher-rise). Low = $150k; mid = $250k = midpoint of e1; high = $400k reflecting the '+' and e2's $50k–$100k per landing at ~5+ landings for office/retail. High-rise (15+ stops, 500+ fpm) exceeds the high — add per stop."
+      },
+      "notes": "Per car, geared/gearless or MRL. Excludes hoistway construction and power feeders."
+    },
+    {
+      "id": "fire-sprinkler",
+      "name": "Automatic fire sprinkler system, new construction (per SF of sprinklered area)",
+      "division": "21",
+      "unit": "sf",
+      "cost": {
+        "low": 1.75, "mid": 3.0, "high": 5.0, "dollarYear": 2026, "region": "US",
+        "evidence": ["e3", "e4"], "derived": false,
+        "method": "e3 straightforward new construction wet-pipe $1.50–$3/SF; e4 dry-pipe $4–$9/SF where dry equipment and layout changes are needed. Low = $1.75 (large open wet-pipe buildings), mid = $3.00 (top of e3, allowing riser/backflow/FDC in small-to-mid buildings), high = $5.00 (partial dry/pre-action, low end of e4). Excludes fire pump and water service."
+      },
+      "notes": "NFPA 13/13R wet system incl. riser, backflow preventer and FDC. Fire pump (if required) and site fire line are separate. Retrofit in occupied buildings runs $4–$12/SF per the same source."
+    },
+    {
+      "id": "fire-alarm",
+      "name": "Addressable fire alarm / detection system, new construction (per SF)",
+      "division": "28",
+      "unit": "sf",
+      "cost": {
+        "low": 1.0, "mid": 2.0, "high": 4.0, "dollarYear": 2026, "region": "US",
+        "evidence": ["e5"], "derived": false,
+        "method": "e5 standard installation $1–$5/SF (retrofits $4–$12+). New construction sits in the lower part of e5: low = $1 (warehouse/simple occupancies), mid = $2, high = $4 (residential/hotel with in-unit devices, voice evac). Single low-confidence source."
+      },
+      "notes": "FACP, initiating and notification devices, wiring, programming and testing. Mass notification / high-rise voice evac and elevator recall interfaces push to the high end."
+    },
+    {
+      "id": "low-voltage-structured-cabling",
+      "name": "Structured cabling (Cat6 horizontal + backbone, IDF/MDF racks) per SF",
+      "division": "27",
+      "unit": "sf",
+      "cost": {
+        "low": 1.25, "mid": 2.5, "high": 4.0, "dollarYear": 2026, "region": "US",
+        "evidence": ["e6"], "derived": true,
+        "method": "Derived from per-drop cost. e6 Cat6 drop $125–$250 installed (2025). Office density ≈ 1 drop per 75–100 SF (≈2 drops per workstation at 150–200 SF/person, judgment) → $1.25–$3.33/SF; add ≈20% for backbone fiber, racks, patch panels and testing → ≈$1.50–$4.00. Low $1.25 for low-density uses (retail/warehouse office areas), mid $2.50, high $4.00 (dense office, Cat6A). 2025 evidence expressed in 2026 dollars (gap ≤1 yr)."
+      },
+      "notes": "Tenant/owner data cabling only. Excludes active network equipment, Wi-Fi APs, DAS/ERRCS and AV."
+    },
+    {
+      "id": "access-control-door",
+      "name": "Card access control, per controlled door (reader, lock/strike, controller share, install)",
+      "division": "28",
+      "unit": "ea",
+      "cost": {
+        "low": 1500, "mid": 2800, "high": 4500, "dollarYear": 2026, "region": "US",
+        "evidence": ["e7"], "derived": false,
+        "method": "e7 all-in first-year cost $1,500–$4,500 per door incl. hardware, setup, software and configuration (installation alone $500–$2,000). Low/high = e7; mid = $2,800 ≈ midpoint, rounded down slightly because multi-door systems share panels/software."
+      },
+      "notes": "Interior doors toward low, exterior/high-security toward high. Biometric readers and turnstiles are extra."
+    },
+    {
+      "id": "cctv-camera",
+      "name": "IP video surveillance camera, installed (incl. cabling and share of NVR/VMS)",
+      "division": "28",
+      "unit": "ea",
+      "cost": {
+        "low": 1000, "mid": 1800, "high": 3000, "dollarYear": 2026, "region": "US",
+        "evidence": ["e6"], "derived": true,
+        "method": "Derived (no camera-specific source fetched). Commercial IP camera $300–$1,200 hardware (judgment) + one Cat6 drop $125–$250 (e6, used as proxy for the camera run, often longer than an office drop) + mounting/labor $300–$800 + allocated NVR/VMS license/storage $200–$700 ≈ $1,000–$3,000 per camera, mid $1,800. Multi-sensor/PTZ cameras exceed the high."
+      },
+      "notes": "Per camera position. Pole-mounted parking lot cameras need poles and conduit (site work) on top."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "elevatorInstalledCost",
+      "value": null, "low": 75000, "high": 350000,
+      "unit": "USD/ea",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "How Much Does Elevator Installation Cost?",
+        "url": "https://www.thepricer.org/elevator-installation-costs/",
+        "publisher": "ThePricer",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Commercial hydraulic elevators commonly fall around $75,000 to $150,000 … traction elevators reaching roughly $150,000 to $350,000+.",
+      "scopeNotes": "Consumer/business cost guide (updated Aug 26, 2026); turnkey per elevator; hydraulic = low-rise, traction = mid/high-rise. low/high span both types.",
+      "confidence": "low"
+    },
+    {
+      "id": "e2",
+      "metric": "elevatorCostPerLanding",
+      "value": null, "low": 50000, "high": 100000,
+      "unit": "USD/ea",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "How Much Does Elevator Installation Cost?",
+        "url": "https://www.thepricer.org/elevator-installation-costs/",
+        "publisher": "ThePricer",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Day Elevator estimates roughly $50,000 to $100,000 per landing",
+      "scopeNotes": "Per landing (stop), office and retail projects; secondary citation of an elevator contractor.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "sprinklerNewConstructionPerSF",
+      "value": null, "low": 1.5, "high": 3,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "How Much Does a Commercial Fire Sprinkler System Cost?",
+        "url": "https://www.thepricer.org/commercial-fire-sprinkler-system-cost/",
+        "publisher": "ThePricer",
+        "accessed": "2026-10-24"
+      },
+      "quote": "A commercial fire sprinkler system costs about $1.50 to $3 per square foot in straightforward new construction.",
+      "scopeNotes": "Wet-pipe, new construction; page notes permits, water service and pumps may be excluded.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "sprinklerDryPipePerSF",
+      "value": null, "low": 4, "high": 9,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "How Much Does a Commercial Fire Sprinkler System Cost?",
+        "url": "https://www.thepricer.org/commercial-fire-sprinkler-system-cost/",
+        "publisher": "ThePricer",
+        "accessed": "2026-10-24"
+      },
+      "quote": "could rise to $4 to $9 per square foot when dry-pipe equipment and layout changes are needed",
+      "scopeNotes": "Dry-pipe systems; same page gives retrofits at $4–$12/SF and pre-action $6–$15/SF.",
+      "confidence": "low"
+    },
+    {
+      "id": "e5",
+      "metric": "fireAlarmPerSF",
+      "value": null, "low": 1, "high": 5,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "How Much Does a Commercial Fire Alarm System Cost?",
+        "url": "https://www.thepricer.org/commercial-fire-alarm-system-cost/",
+        "publisher": "ThePricer",
+        "accessed": "2026-10-24"
+      },
+      "quote": "generally costs about $1 to $5 per square foot for a standard installation",
+      "scopeNotes": "Commercial fire alarm, standard installation (updated Aug 30, 2026); difficult retrofits $4–$12+/SF.",
+      "confidence": "low"
+    },
+    {
+      "id": "e6",
+      "metric": "cat6CostPerDrop",
+      "value": null, "low": 125, "high": 250,
+      "unit": "USD/ea",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "How much does it cost to install CAT-6 cabling?",
+        "url": "https://www.fixr.com/costs/upgrading-to-cat6-cabling",
+        "publisher": "Fixr",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The average price per data drop for CAT-6 cabling is $125 to $250, including materials and labor.",
+      "scopeNotes": "Per drop, materials + labor; consumer-oriented, not commercial-specific (updated Jan 31, 2025).",
+      "confidence": "low"
+    },
+    {
+      "id": "e7",
+      "metric": "accessControlPerDoor",
+      "value": null, "low": 1500, "high": 4500,
+      "unit": "USD/ea",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Key Card Door Lock System Price: Overview & Guide (2026)",
+        "url": "https://getsafeandsound.com/blog/key-card-door-lock-system-price/",
+        "publisher": "Safe and Sound Security",
+        "accessed": "2026-10-24"
+      },
+      "quote": "typically run $1,500–$4,500 per door, including hardware, setup, software licensing, and configuration",
+      "scopeNotes": "Integrator blog (updated Mar 26, 2026); first-year all-in per door. Installation alone quoted at $500–$2,000 per door.",
+      "confidence": "low"
+    }
+  ]
+}

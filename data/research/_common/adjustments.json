@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "id": "adjustments",
+  "name": "Engine adjustment factors",
+  "researchedAt": "2026-10-24",
+  "summary": "Multipliers the engine applies to a type's baseline hard cost: quality tier, project size (economies of scale), IBC construction type, height above the typical story count, and prevailing-wage/union labor. Quality tiers come from the low/high spreads in RLB's Q3 2026 cost table (18 US cities); construction-type factors from the ICC Building Valuation Data (Aug 2025) and the Terner Center's California regression; prevailing wage from Terner Center studies. Size and height factors are derived and should be verified. Apply construction-type factors as a ratio: factor(selected) / factor(type's typical construction type).",
+  "items": [
+    {
+      "id": "qualityTier-economy",
+      "name": "Quality tier — economy",
+      "basis": "multiplierOnStandard",
+      "range": { "low": 0.70, "mid": 0.79, "high": 0.85, "evidence": ["e1", "e2", "e3"], "derived": true,
+        "method": "RLB Q3 2026 per-city LOW / (LOW+HIGH)/2, median across 18 US cities by building type: office secondary 0.83, office prime 0.75, retail center 0.74, hotel 3-star 0.81, warehouse 0.77, multifamily 0.75, single-family 0.67, high school 0.79, university 0.83 (e1-e3). Mid 0.79 = median of these ratios; low/high bracket them." },
+      "notes": "The RLB low end of a city range reflects simpler specification as well as easier sites, so this slightly overstates pure finish-quality savings."
+    },
+    {
+      "id": "qualityTier-standard",
+      "name": "Quality tier — standard",
+      "basis": "multiplierOnStandard",
+      "range": { "low": 1.0, "mid": 1.0, "high": 1.0, "evidence": [], "derived": true,
+        "method": "Definition: the type files' baseline hard cost is the standard-quality price." },
+      "notes": ""
+    },
+    {
+      "id": "qualityTier-premium",
+      "name": "Quality tier — premium",
+      "basis": "multiplierOnStandard",
+      "range": { "low": 1.15, "mid": 1.21, "high": 1.30, "evidence": ["e1", "e2", "e3"], "derived": true,
+        "method": "RLB Q3 2026 per-city HIGH / (LOW+HIGH)/2, median across 18 US cities: office secondary 1.17, office prime 1.25, retail center 1.26, hotel 5-star 1.20, hotel 3-star 1.19, warehouse 1.23, multifamily 1.25, single-family 1.33, university 1.17 (e1-e3). Mid 1.21 = median." },
+      "notes": ""
+    },
+    {
+      "id": "qualityTier-luxury",
+      "name": "Quality tier — luxury",
+      "basis": "multiplierOnStandard",
+      "range": { "low": 1.35, "mid": 1.50, "high": 1.80, "evidence": ["e1", "e2", "e4"], "derived": true,
+        "method": "Class-to-class step-ups in the same cities: RLB hotel 5-star vs 3-star midpoint ratio median 1.46 (e2); office prime vs secondary 1.65 (e1). HVS median cost per room: full-service $467k vs select-service ~$200k (luxury >$1.6M) (e4) shows much larger jumps when the product changes, which belongs in the type, not this multiplier. Mid 1.50; high 1.80 for trophy/high-end residential." },
+      "notes": "Above ~1.8x the project is usually a different product type (e.g., luxury hotel vs select-service) and should be modeled as such."
+    },
+    {
+      "id": "sizeAdjustment-exponent",
+      "name": "Size adjustment — economies-of-scale exponent",
+      "basis": "exponentOnSizeRatio",
+      "range": { "low": -0.12, "mid": -0.08, "high": -0.04, "evidence": ["e7", "e9"], "derived": true,
+        "method": "factor = (projectSize / typicalSize) ^ b, applied to hard cost per SF; clamp the factor to 0.85-1.20. Terner's California regression gives -$0.23/SF per additional unit (e7); at the report's 2018 average of $222/SF, going from 50 to 100 units lowers cost ~$11.5/SF = -5.2%, i.e. b = ln(0.948)/ln(2) = -0.077 -> mid -0.08. GAO/Abt LIHTC data likewise find projects under 37 units cost more than projects over 100 (e9). Low/high (-0.12 / -0.04) by judgment. RSMeans area-modification curves are paywalled and not used." },
+      "notes": "Factors at mid (low-high): 0.25x typical size = 1.12 (1.06-1.18); 0.5x = 1.06 (1.03-1.09); 2x = 0.95 (0.92-0.97); 4x = 0.90 (0.85-0.95)."
+    },
+    {
+      "id": "sizeAdjustment-ratio-0.5",
+      "name": "Size factor at half the typical size",
+      "basis": "multiplierOnHard",
+      "range": { "low": 1.028, "mid": 1.057, "high": 1.087, "evidence": [], "derived": true,
+        "method": "0.5 ^ b for b = -0.04 / -0.08 / -0.12 (see sizeAdjustment-exponent)." },
+      "notes": ""
+    },
+    {
+      "id": "sizeAdjustment-ratio-2",
+      "name": "Size factor at twice the typical size",
+      "basis": "multiplierOnHard",
+      "range": { "low": 0.920, "mid": 0.946, "high": 0.973, "evidence": [], "derived": true,
+        "method": "2 ^ b for b = -0.12 / -0.08 / -0.04 (see sizeAdjustment-exponent)." },
+      "notes": ""
+    },
+    {
+      "id": "constructionType-VB",
+      "name": "IBC Type V-B (unprotected wood frame)",
+      "basis": "multiplierVsTypeVA",
+      "range": { "low": 0.954, "mid": 0.955, "high": 0.965, "evidence": ["e5"], "derived": false,
+        "method": "ICC BVD Aug 2025 VB/VA ratio: R-2 155.12/162.43 = 0.955, B 209.02/219.07 = 0.954, R-1 200.22/207.53 = 0.965 (e5)." },
+      "notes": ""
+    },
+    {
+      "id": "constructionType-VA",
+      "name": "IBC Type V-A (protected wood frame) — reference",
+      "basis": "multiplierVsTypeVA",
+      "range": { "low": 1.0, "mid": 1.0, "high": 1.0, "evidence": ["e5"], "derived": false,
+        "method": "Reference type (= 1.00)." },
+      "notes": "Typical garden/walk-up multifamily and many low-rise commercial buildings. A 'V over I' podium sits between V-A and Type I in proportion to the podium share of floor area."
+    },
+    {
+      "id": "constructionType-III",
+      "name": "IBC Type III (A/B — noncombustible exterior walls, wood interior)",
+      "basis": "multiplierVsTypeVA",
+      "range": { "low": 1.079, "mid": 1.11, "high": 1.139, "evidence": ["e5"], "derived": false,
+        "method": "ICC BVD Aug 2025 IIIB/VA and IIIA/VA: R-2 1.102 / 1.139; B 1.079 / 1.119; R-1 1.079 / 1.109 (e5). Mid ~ average." },
+      "notes": ""
+    },
+    {
+      "id": "constructionType-IV",
+      "name": "IBC Type IV (heavy / mass timber)",
+      "basis": "multiplierVsTypeVA",
+      "range": { "low": 1.178, "mid": 1.21, "high": 1.30, "evidence": ["e5"], "derived": true,
+        "method": "ICC BVD Aug 2025 IV/VA: R-2 1.261, B 1.178, R-1 1.210 (e5); mid 1.21. ICC's single 'IV' column does not separate the 2021-IBC mass-timber types IV-A/B/C; taller IV-A buildings with full encapsulation likely cost more, so high is extended to 1.30 by judgment. No public mass-timber vs concrete cost study was fetched." },
+      "notes": "Verify — mass timber premiums are project-specific and schedule savings are not captured here."
+    },
+    {
+      "id": "constructionType-II",
+      "name": "IBC Type II (A/B — noncombustible steel / light gauge)",
+      "basis": "multiplierVsTypeVA",
+      "range": { "low": 1.213, "mid": 1.26, "high": 1.324, "evidence": ["e5"], "derived": false,
+        "method": "ICC BVD Aug 2025 IIB/VA and IIA/VA: R-2 1.264 / 1.324; B 1.225 / 1.279; R-1 1.213 / 1.260 (e5). Mid ~ average." },
+      "notes": ""
+    },
+    {
+      "id": "constructionType-I",
+      "name": "IBC Type I (A/B — fire-resistive concrete / protected steel)",
+      "basis": "multiplierVsTypeVA",
+      "range": { "low": 1.306, "mid": 1.37, "high": 1.444, "evidence": ["e5", "e6"], "derived": false,
+        "method": "ICC BVD Aug 2025 IB/VA and IA/VA: R-2 1.383 / 1.444; B 1.327 / 1.376; R-1 1.306 / 1.354 (e5). Terner's California regression finds Type I $65-$71/SF above other types at a $222/SF average (e6), i.e. roughly 1.30-1.35x, consistent with the lower half. Mid 1.37." },
+      "notes": "Typical high-rise. ICC data understate the premium where Type I also brings structured parking or deep foundations."
+    },
+    {
+      "id": "storiesAdjustment-perStory",
+      "name": "Height premium per story above the type's typical story count (same construction type)",
+      "basis": "pctOfHardPerStory",
+      "range": { "low": 0.005, "mid": 0.01, "high": 0.02, "evidence": ["e5", "e6"], "derived": true,
+        "method": "Derived. Most of the height premium arrives through the forced change of construction type (V -> III -> I), which the constructionType factors capture (Type I is +30%-44% over V-A, e5/e6). Within a type, added stories bring more elevator stops, heavier lateral system, taller MEP risers and hoisting, partly offset by spreading roof and foundation over more floor area; ~1% of hard cost per added story (0.5%-2%) by judgment. Do not apply below the typical story count (no discount)." },
+      "notes": "Low confidence; apply after the construction-type factor, not instead of it."
+    },
+    {
+      "id": "prevailingWageUnionPremium",
+      "name": "Prevailing wage (Davis-Bacon / state) or union labor premium",
+      "basis": "pctOfHard",
+      "range": { "low": 0.10, "mid": 0.15, "high": 0.35, "evidence": ["e6", "e8"], "derived": false,
+        "method": "Terner California regression: prevailing-wage projects cost ~$30-$36/SF more (e6), = 13.5%-16% of the $222/SF average. Terner LIHTC study: TDC gap ~10% in San Francisco/San Jose/Los Angeles, 27.5% Central Valley, 36.4% Sacramento; CTCAC allows a 20% increase to cost limits for prevailing wage (e8). Mid 15% (regression); low 10% (high-union metros); high 35% (low-wage open-shop markets)." },
+      "notes": "Multiplier on hard cost = 1 + value. The premium is largest where open-shop wages are lowest."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1", "metric": "officeCostRangePerSF", "low": 250, "high": 588, "unit": "USD/sf",
+      "region": "United States (18 cities)", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "Quarterly Construction Cost Report — North America, Third Quarter 2026", "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf", "publisher": "Rider Levett Bucknall", "accessed": "2026-10-24" },
+      "quote": "Indicative construction costs table, OFFICES PRIME / SECONDARY, LOW / HIGH: Austin 260 435 170 235; Boston 470 745 290 435; Chicago 360 585 220 355",
+      "scopeNotes": "Hard construction cost per SF of gross floor area. Researcher-computed medians across 18 US cities: prime $358-$588, secondary $250-$365; median prime/secondary midpoint ratio 1.65.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2", "metric": "hotelCostRangePerSF", "low": 348, "high": 743, "unit": "USD/sf",
+      "region": "United States (18 cities)", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "Quarterly Construction Cost Report — North America, Third Quarter 2026", "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf", "publisher": "Rider Levett Bucknall", "accessed": "2026-10-24" },
+      "quote": "Indicative construction costs table, HOTELS 5 STAR / 3 STAR, LOW / HIGH: Austin 440 605 315 465; Boston 510 870 360 590; Chicago 540 820 385 515",
+      "scopeNotes": "Researcher-computed medians across 18 US cities: 5-star $488-$743, 3-star $348-$485; median 5-star/3-star midpoint ratio 1.46; retail center/strip 1.21.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3", "metric": "residentialCostRangePerSF", "low": 230, "high": 430, "unit": "USD/sf",
+      "region": "United States (18 cities)", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "Quarterly Construction Cost Report — North America, Third Quarter 2026", "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf", "publisher": "Rider Levett Bucknall", "accessed": "2026-10-24" },
+      "quote": "Indicative construction costs table (page 11), RESIDENTIAL MULTI-FAMILY and SINGLE-FAMILY, INDUSTRIAL WAREHOUSE and EDUCATION columns, LOW / HIGH by US location",
+      "scopeNotes": "Researcher-computed medians across 18 US rows: multifamily $230-$430/SF (low/mid 0.75, high/mid 1.25); single-family $270-$525 (0.67 / 1.33); warehouse $140-$228 (0.77 / 1.23); high school $423-$655 (0.79 / 1.21).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4", "metric": "hotelDevelopmentCostPerKey", "value": 213000, "low": 170000, "high": 1600000, "unit": "USD/key",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "HVS U.S. Hotel Development Cost Survey 2026", "url": "https://hvs.com/article/10509", "publisher": "HVS", "accessed": "2026-10-24" },
+      "quote": "Article text, median development cost per room by class: select-service around $200,000; full-service $467,000; luxury over $1,600,000; all surveyed properties $213,000",
+      "scopeNotes": "Total development cost per key incl. land, soft, FF&E; projects proposed or under construction in 2025. Used only to show class-to-class spreads.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5", "metric": "costPerSFByConstructionType", "value": 162.43, "low": 155.12, "high": 234.59, "unit": "USD/sf",
+      "region": "United States (national average)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Building Valuation Data – August 2025", "url": "https://www.kirklandwa.gov/files/sharedassets/public/v/2/development-services/pdfs/building-pdfs/icc-august-2025.pdf", "publisher": "International Code Council (posted by City of Kirkland, WA)", "accessed": "2026-10-24" },
+      "quote": "Square Foot Construction Costs, R-2 Residential, multiple family: IA 234.59, IB 224.64, IIA 215.08, IIB 205.32, IIIA 185.03, IIIB 178.92, IV 204.80, VA 162.43, VB 155.12; B Business: IA 301.40, IB 290.70, IIA 280.27, IIB 268.41, IIIA 245.13, IIIB 236.39, IV 258.10, VA 219.07, VB 209.02",
+      "scopeNotes": "National average permit valuations by occupancy x construction type; ICC says it 'is not intended to be used as an estimating guide'. Used only for relative factors. R-1 hotels row: IA 280.94, IB 270.99, IIA 261.43, IIB 251.67, IIIA 230.13, IIIB 224.02, IV 251.15, VA 207.53, VB 200.22.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6", "metric": "hardCostDriversRegression", "value": 30, "low": 30, "high": 71, "unit": "USD/sf",
+      "region": "California", "regionKey": "CA", "dataYear": 2018,
+      "source": { "title": "The Hard Costs of Construction: Recent Trends in Labor and Materials Costs for Apartment Buildings in California", "url": "https://ternercenter.berkeley.edu/wp-content/uploads/2020/08/Hard_Construction_Costs_March_2020.pdf", "publisher": "Terner Center for Housing Innovation, UC Berkeley (March 2020)", "accessed": "2026-10-24" },
+      "quote": "Our model found that projects with prevailing wage requirements cost an average of $30 more per square foot than those without wage requirements",
+      "scopeNotes": "Same report: Type I projects 'cost an average of $65 more per square foot than other types of construction' ($71 controlling for units); 2018 average hard cost $222/SF; 223 projects; 2018 dollars.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7", "metric": "sizeCoefficientPerUnit", "value": -0.23, "unit": "USD/sf",
+      "region": "California", "regionKey": "CA", "dataYear": 2018,
+      "source": { "title": "The Hard Costs of Construction: Recent Trends in Labor and Materials Costs for Apartment Buildings in California", "url": "https://ternercenter.berkeley.edu/wp-content/uploads/2020/08/Hard_Construction_Costs_March_2020.pdf", "publisher": "Terner Center for Housing Innovation, UC Berkeley (March 2020)", "accessed": "2026-10-24" },
+      "quote": "Regression table, Per Square Foot, Model 2: Project Size (Number of Units) -0.23*** (0.09)",
+      "scopeNotes": "Change in hard cost per SF per additional unit, controlling for year, type, region, affordability, prevailing wage. Linear model; applied by the researcher at the $222/SF average.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8", "metric": "prevailingWageGap", "value": 0.10, "low": 0.10, "high": 0.364, "unit": "pct",
+      "region": "California", "regionKey": "CA", "dataYear": 2019,
+      "source": { "title": "The Costs of Affordable Housing Production: Insights from California’s 9% Low-Income Housing Tax Credit Program", "url": "https://ternercenter.berkeley.edu/wp-content/uploads/2020/08/LIHTC_Construction_Costs_2020.pdf", "publisher": "Terner Center for Housing Innovation, UC Berkeley (March 2020)", "accessed": "2026-10-24" },
+      "quote": "In the Sacramento region, for example, prevailing wage projects in our sample were 36.4% more expensive than those without prevailing wage, and in the Central Valley, the gap was 27.5%.",
+      "scopeNotes": "Total development cost per unit, LIHTC. Same page: San Francisco, San Jose, Los Angeles gap 'only around 10 percent'; LIHTC allows a '20 percent increase on their development cost limits' with prevailing wage.",
+      "confidence": "high"
+    },
+    {
+      "id": "e9", "metric": "projectSizeEffect", "value": null, "unit": "text",
+      "region": "United States (LIHTC)", "regionKey": "US", "dataYear": 2018,
+      "source": { "title": "Development Costs in the Housing Credit Program: GAO and Abt Associates Studies, Side by Side", "url": "https://ncsha.org/wp-content/uploads/2018/09/Side-by-Side-Study-Comparison-GAO-and-Abt-Assoc-Sept-2018.pdf", "publisher": "National Council of State Housing Agencies", "accessed": "2026-10-24" },
+      "quote": "smaller projects (fewer than 37 units) are more expensive than larger (more than 100 units)",
+      "scopeNotes": "GAO finding on LIHTC total development cost per unit.",
+      "confidence": "medium"
+    }
+  ]
+}

@@ -1,0 +1,480 @@
+{
+  "schemaVersion": 1,
+  "id": "flex-industrial",
+  "name": "Flex / light industrial",
+  "category": "industrial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Small-bay flex (20k–100k SF, 18–24' clear, 2,500–10,000 SF bays) combines a light-industrial shell with 15–30% office/showroom finish, more storefront glazing, demising walls and a grade-level door per bay. Per-SF cost is well above bulk warehouse. No public benchmark isolates flex, so the default is built from Cushman & Wakefield's small-building shell figure plus a basic office finish allowance, cross-checked with RLB warehouse ranges — a derived estimate.",
+  "sizing": {
+    "typicalSize": {
+      "low": 20000,
+      "mid": 50000,
+      "high": 120000,
+      "unit": "sf",
+      "evidence": [],
+      "derived": true,
+      "method": "Typical multi-tenant flex buildings 20k–120k SF (judgment; smaller than C&W's 109k SF small distribution model)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 12000,
+      "mid": 15000,
+      "high": 18000,
+      "evidence": [],
+      "derived": true,
+      "method": "FAR ~0.28–0.41 (higher car parking than warehouse, smaller truck courts): 43,560 × 0.345 ≈ 15,000 SF/acre mid."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0015,
+      "mid": 0.0025,
+      "high": 0.004,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Flex zoning typically requires 1.5–4 spaces per 1,000 SF depending on office share (judgment)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 115,
+      "mid": 160,
+      "high": 230,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "e7",
+        "e8",
+        "e9"
+      ],
+      "derived": true,
+      "method": "Shell: C&W 2026 small-building average $144 psf at 109k SF (e1); flex buildings are smaller with more glazing and demising, offset by lighter yard → shell incl. sitework ≈ $140. Add office/showroom finish on ~20% of area at ≈ $90/SF (vertical-building block TI-basic mid $80, upgraded for storefront) = +$18 → mid ≈ $158, rounded $160. Low $115 ≈ RLB warehouse midpoints in Austin/Phoenix ($115/$128, e3/e6) — PEMB flex with 10–15% office. High $230 ≈ RLB national median-of-highs $228 (e2) and the top of Terrapin's mixed-use retail/industrial row ($225, e9). RSMeans 2019 small warehouse/factory ($108–$131 in 2019 $, e7/e8) escalate into the low-mid of this range."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P; shell, demising walls, grade-level doors, typical office/showroom finish (~20% of area), sitework, on-site utilities and parking. Excludes tenant-specific process utilities, racking, land, soft costs, off-sites and fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.72,
+    "standard": 1,
+    "premium": 1.3,
+    "luxury": 1.55,
+    "evidence": [],
+    "derived": true,
+    "method": "economy = low/mid (115/160); premium ≈ high/mid (230/160 = 1.44) tempered to 1.3; luxury 1.55 for 2-story R&D/creative flex with heavy glazing and 40%+ office (judgment)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.1
+      },
+      {
+        "division": "03",
+        "pct": 0.15
+      },
+      {
+        "division": "05",
+        "pct": 0.09
+      },
+      {
+        "division": "07",
+        "pct": 0.07
+      },
+      {
+        "division": "08",
+        "pct": 0.06
+      },
+      {
+        "division": "09",
+        "pct": 0.08
+      },
+      {
+        "division": "10",
+        "pct": 0.01
+      },
+      {
+        "division": "21",
+        "pct": 0.03
+      },
+      {
+        "division": "22",
+        "pct": 0.04
+      },
+      {
+        "division": "23",
+        "pct": 0.07
+      },
+      {
+        "division": "26",
+        "pct": 0.07
+      },
+      {
+        "division": "27",
+        "pct": 0.01
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.06
+      },
+      {
+        "division": "32",
+        "pct": 0.1
+      },
+      {
+        "division": "33",
+        "pct": 0.05
+      }
+    ],
+    "evidence": [
+      "e10"
+    ],
+    "derived": true,
+    "method": "Warehouse split (C&W small-project shares: architectural ~22%, structure/enclosure ~34%; e10) adjusted for flex: more 08 storefront/grade doors, 09 office finishes, 22/23 restroom and office HVAC per bay; less truck-court paving. Judgment — verify."
+  },
+  "lineItems": [
+    {
+      "id": "office-showroom-finish",
+      "name": "Office / showroom finish (~20% of area)",
+      "division": "09",
+      "block": "vertical-building",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 0.2
+      },
+      "cost": {
+        "low": 60,
+        "mid": 90,
+        "high": 130,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/vertical-building.json#e20",
+          "_blocks/vertical-building.json#e23"
+        ],
+        "derived": true,
+        "method": "Per SF of finished office: between vertical-building block tenant-improvement-basic ($45/$80/$120) and C&W 2026 office Gen-1 fit-out low markets (~$108, e23) / US average $162 (e20); flex office is a simpler spec than corporate office."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline; raise the share for R&D/showroom flex."
+    },
+    {
+      "id": "grade-door-per-bay",
+      "name": "Grade-level overhead door (12×14) per bay",
+      "division": "08",
+      "unit": "ea",
+      "qty": {
+        "per": "sf",
+        "value": 0.0003
+      },
+      "cost": {
+        "low": 4000,
+        "mid": 6500,
+        "high": 10000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No public unit price fetched; insulated steel sectional door with operator, ramp/apron and bollards, judgment $4k–$10k. Roughly one per bay at 2,500–5,000 SF bays → ~0.0003 per SF."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "demising-walls",
+      "name": "Demising walls between bays",
+      "division": "09",
+      "unit": "lf",
+      "qty": {
+        "per": "sf",
+        "value": 0.02
+      },
+      "cost": {
+        "low": 120,
+        "mid": 200,
+        "high": 320,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Full-height (20–24 ft) metal-stud/gypsum or CMU demising wall ≈ $6–$13 per SF of wall × 20–24 ft height (judgment) ≈ $120–$320/LF. Quantity: one ~100 ft deep wall per bay; at an average demised bay of ~5,000 SF (50 × 100 ft) ≈ 100/5,000 = 0.02 LF per building SF."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.12,
+      "mid": 0.16,
+      "high": 0.22,
+      "evidence": [
+        "e7"
+      ],
+      "derived": true,
+      "method": "Higher than bulk warehouse (10–20%) because of smaller project size and multi-tenant design/permitting per bay; A/E ≈ 5–7% (RSMeans models carry 7%, e7) + permits/testing/insurance/developer overhead 7–15% (judgment)."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.06
+    },
+    "notes": "Excludes leasing commissions and financing."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Moderate design contingency for multi-tenant layouts (judgment)."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical new-build commercial contingency 3–8% (judgment)."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard 5–10% of soft costs (judgment)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 120,
+      "max": 310,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "min ≈ hard low $115 × 1.05; max ≈ hard high $230 × 1.35 (high-cost metro with full soft costs)."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 144,
+      "unit": "USD/sf",
+      "region": "Americas average (46 markets)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "2026 Americas Industrial Construction Cost Guide (landing page)",
+        "url": "https://www.cushmanwakefield.com/en/united-states/insights/industrial-construction-cost-guide",
+        "publisher": "Cushman & Wakefield",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Small projects averaged $144 psf (+3.6% YOY), medium $87 psf (+2.8% YOY), and large $78 psf (+2.3% YOY).",
+      "scopeNotes": "Model 109,200-SF distribution building (size per CRE Daily); ground-up core and shell. Average of 46 Americas markets incl. Canada, Mexico, Costa Rica, so not a pure US figure.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 140,
+      "high": 228,
+      "unit": "USD/sf",
+      "region": "United States (18 RLB metros)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Industrial - Warehouse column, 18 U.S. city rows (Austin 75-155 … Washington, D.C. 140-225; full range 75-370).",
+      "scopeNotes": "low/high here = median of the 18 U.S. city LOW values (140) and median of the HIGH values (227.5), computed by the researcher; un-weighted, coastal-heavy city sample, so above a true national average.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 75,
+      "high": 155,
+      "unit": "USD/sf",
+      "region": "Austin",
+      "regionKey": "TX-Austin",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Austin row, Industrial - Warehouse: Low 75 High 155. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 135,
+      "high": 215,
+      "unit": "USD/sf",
+      "region": "Charlotte",
+      "regionKey": "NC-Charlotte",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Charlotte row, Industrial - Warehouse: Low 135 High 215. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 140,
+      "high": 225,
+      "unit": "USD/sf",
+      "region": "Denver",
+      "regionKey": "CO-Denver",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Denver row, Industrial - Warehouse: Low 140 High 225. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 85,
+      "high": 170,
+      "unit": "USD/sf",
+      "region": "Phoenix",
+      "regionKey": "AZ-Phoenix",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Phoenix row, Industrial - Warehouse: Low 85 High 170. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": 119.27,
+      "low": 119.27,
+      "high": 130.62,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Warehouse Construction Cost Model (Brick Veneer / Reinforced Concrete)",
+        "url": "https://www.rsmeans.com/model-pages/warehouse",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Subtotal $95.42/SF (open shop) … Contractor Fees (General Conditions, Overhead, Profit) 25% $23.85 … Architectural Fees 7% … Total $127.62 (open shop) / $139.76 (union)",
+      "scopeNotes": "value = open-shop subtotal + 25% contractor fees ($95.42 + $23.85), architectural fee removed; high = union equivalent ($104.50 + $26.12). 30,000-SF, 24-ft brick-veneer warehouse; building only, sitework not shown. 2019 dollars.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerSF",
+      "value": 108.2,
+      "low": 108.2,
+      "high": 120.29,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Factory, 1 Story Construction Cost Model",
+        "url": "https://www.rsmeans.com/model-pages/factory-1-story",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Factory, 1 Story with Concrete Block / Bearing Walls … Cost per S.F. (subtotal) $86.56 open shop … Contractor fees (25%) $21.64 … Total building cost $115.78 (open shop) / $128.71 (union)",
+      "scopeNotes": "value = open-shop subtotal + 25% contractor fees ($86.56 + $21.64), architectural fee removed; high = union ($96.23 + $24.06). 30,000-SF, 20-ft story height; building only, sitework and process equipment not shown. 2019 dollars.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 165,
+      "high": 225,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Tilt-Up Concrete Construction Cost Per Square Foot (2026)",
+        "url": "https://terrapincg.com/news/tilt-up-concrete-construction-cost-per-square-foot-2026",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Building-type table row 'Mixed-Use Retail / Industrial' $165–$225/SF total shell",
+      "scopeNotes": "Contractor marketing article; closest row to flex (no flex row). Scope note says shell exclusive of MEP/finishes (conflicting FAQ). Low confidence.",
+      "confidence": "low"
+    },
+    {
+      "id": "e10",
+      "metric": "costShareByCategory",
+      "value": null,
+      "low": 0.34,
+      "high": 0.37,
+      "unit": "pct",
+      "region": "Americas",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Industrial Construction Costs Rise Across Americas",
+        "url": "https://www.credaily.com/?p=223266",
+        "publisher": "CRE Daily",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Structural and enclosure work was the biggest cost category … about 34% of a small warehouse budget … about 37% for a large project. Architectural work represented about 22% of costs on small projects and roughly 15% on large projects.",
+      "scopeNotes": "C&W 2026 cost-category shares (structure/enclosure 34-37%, architectural 15-22%; the article also puts MEP near 6-7% across sizes); the remaining ~35-45% is not itemised in the article (presumably sitework and GC/fees).",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "No public flex-specific benchmark found; a published flex development budget (e.g., municipal incentive or REIT disclosure) would replace this derivation.",
+    "Office share varies widely (10–50%); the engine should expose it as an input."
+  ]
+}

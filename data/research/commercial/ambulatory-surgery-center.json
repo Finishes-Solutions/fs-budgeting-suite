@@ -1,0 +1,458 @@
+{
+  "schemaVersion": 1,
+  "id": "ambulatory-surgery-center",
+  "name": "Outpatient / ambulatory surgery center",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Licensed ASC: operating and procedure rooms, pre-op/PACU, sterile processing, medical gases, heavy HVAC (pressurization, high air-change rates, humidity control) and emergency power. Only one public national ASC-specific benchmark was retrievable (RSMeans 2019 model); the mid is anchored by its ASC-to-MOB ratio and bounded by hospital data (Cumming, RLB, RSMeans).",
+  "sizing": {
+    "typicalSize": {
+      "low": 8000,
+      "mid": 15000,
+      "high": 30000,
+      "unit": "sf",
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Judgment: 2–8 OR freestanding ASCs; RSMeans model is 12,500 SF (e1)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 8000,
+      "mid": 10000,
+      "high": 14000,
+      "unit": "sf",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: 1-story building ≈ 20–25% coverage with 4–5 spaces/1,000 SF parking and drop-off canopy."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.004,
+      "mid": 0.005,
+      "high": 0.006,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per GSF (judgment; patient + escort + staff)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 520,
+      "mid": 720,
+      "high": 980,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5"
+      ],
+      "derived": true,
+      "method": "Ratio method: RSMeans 2019 ASC model hard cost ÷ MOB 1-story model = $427.41/$217.02 = 1.97 (union) and $399.36/$197.75 = 2.02 (open shop) (e1, e2). Apply ≈1.95 to the medical-office building-only mid ($400 − $30 sitework = $370) → ≈ $720 building, ≈ $750 with sitework; rounded to $720 because ASC sites are compact. Bounds: hospitals are the ceiling — RLB 2026 Dallas hospital $495–710, 18-city median $655–998 (e5); Cumming 2025 Dallas hospital $830–1,250 (e4). Low $520 ≈ Cumming Dallas MOB high ($690) × 0.75 ≈ RLB Dallas hospital low; High $980 ≈ RLB hospital median high. Derived — verify."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC and fee; includes medical gas piping, OR HVAC, emergency power distribution and typical sitework; excludes surgical equipment, booms/lights (owner FF&E), land and soft costs."
+    }
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "03",
+        "pct": 0.05
+      },
+      {
+        "division": "04",
+        "pct": 0.01
+      },
+      {
+        "division": "05",
+        "pct": 0.05
+      },
+      {
+        "division": "06",
+        "pct": 0.02
+      },
+      {
+        "division": "07",
+        "pct": 0.04
+      },
+      {
+        "division": "08",
+        "pct": 0.05
+      },
+      {
+        "division": "09",
+        "pct": 0.1
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.02
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.08
+      },
+      {
+        "division": "23",
+        "pct": 0.2
+      },
+      {
+        "division": "26",
+        "pct": 0.15
+      },
+      {
+        "division": "27",
+        "pct": 0.03
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.02
+      },
+      {
+        "division": "32",
+        "pct": 0.03
+      },
+      {
+        "division": "33",
+        "pct": 0.01
+      }
+    ],
+    "evidence": [
+      "e6"
+    ],
+    "derived": true,
+    "method": "Derived from RSMeans 2022 hospital medians (e6): mechanical 17.95% → 23 20% (ORs need high ACH/pressurization), electrical 14.1% → 26 15% + 27 3% + 28 1%, plumbing 7.65% → 22 8% (incl. med gas). Sitework 6% (compact site). Architectural remainder split by judgment."
+  },
+  "lineItems": [
+    {
+      "id": "medical-gas",
+      "name": "Medical gas & vacuum per OR",
+      "division": "22",
+      "block": "specialty-mep",
+      "unit": "or",
+      "qty": {
+        "per": "sf",
+        "value": 0.00025
+      },
+      "cost": {
+        "low": 40000,
+        "mid": 75000,
+        "high": 150000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "From _blocks/specialty-mep.json medical-gas (derived there). Qty = 1 OR per ≈4,000 GSF (judgment: 4-OR, 15,000–16,000 SF center)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Inside baseline; shown as a carve-out."
+    },
+    {
+      "id": "emergency-generator",
+      "name": "Essential electrical system generator (NFPA 99/110)",
+      "division": "26",
+      "block": "specialty-mep",
+      "unit": "kw",
+      "qty": {
+        "per": "project",
+        "value": 300
+      },
+      "cost": {
+        "low": 350,
+        "mid": 550,
+        "high": 750,
+        "dollarYear": 2014,
+        "region": "US",
+        "evidence": [
+          "_blocks/specialty-mep.json#e11",
+          "_blocks/specialty-mep.json#e12"
+        ],
+        "derived": false,
+        "method": "From _blocks/specialty-mep.json emergency-generator; 300 kW default for a ≈15,000-SF ASC (judgment)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Inside baseline (required for licensed ASCs)."
+    },
+    {
+      "id": "or-equipment",
+      "name": "OR equipment package (surgical lights, booms, tables, integration)",
+      "division": "11",
+      "unit": "or",
+      "qty": {
+        "per": "sf",
+        "value": 0.00025
+      },
+      "cost": {
+        "low": 250000,
+        "mid": 450000,
+        "high": 800000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived judgment (no public source fetched): lights + booms ≈ $150k–300k, table ≈ $50k–100k, integration/video ≈ $50k–300k per OR."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": false,
+      "notes": "Owner equipment; counted here rather than in ffe to keep it per-OR."
+    },
+    {
+      "id": "sterile-processing",
+      "name": "Sterile processing equipment (washers, sterilizers)",
+      "division": "11",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 250000,
+        "mid": 450000,
+        "high": 800000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived judgment: 2 steam sterilizers + low-temp sterilizer + washer-disinfector + case carts."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 40,
+      "mid": 70,
+      "high": 120,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived judgment: pre-op/PACU stretchers, monitors, nurse stations, waiting and staff furniture (OR and sterile processing equipment carried as line items)."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.2,
+      "mid": 0.27,
+      "high": 0.35,
+      "evidence": [
+        "e7"
+      ],
+      "derived": true,
+      "method": "Derived. A/E 9% (RSMeans ASC model fee, e7) + medical equipment planning 1% + state licensure/CON and AHCA-type reviews 1–3% + commissioning 1% + permits 1–2% + insurance/legal 2–3% + developer fee 3–5% + PM 2%."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.09
+    },
+    "notes": "Certificate-of-need states add application fees and legal costs; Medicare certification/accreditation surveys are pre-opening costs."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Healthcare design contingency norm (program and code review changes)."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Healthcare new-build hard contingency norm."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Includes licensing/inspection timing risk."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 500,
+      "max": 1600,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Min ≈ RSMeans 2019 ASC model ($399 open shop) escalated + sitework + 20% soft; max ≈ Cumming hospital Dallas high ($1,250, e4) × 1.27 soft — an ASC should not exceed hospital all-in cost."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 427.41,
+      "low": 399.36,
+      "high": 427.41,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Construction Cost Estimates for a Outpatient Surgery Center in National, US (2019 RSMeans data)",
+        "url": "https://www.rsmeans.com/model-pages/outpatient-surgery-center.aspx",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Outpatient Surgery Center ... Floor Area (S.F.): 12,500 ... SubTotal 100% $341.93 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $85.48 ... Architectural Fees 9% $38.47",
+      "scopeNotes": "Basic-component model, excl. sitework. Hard cost = SubTotal + contractor fees: union $427.41, open shop $399.36 ($319.49 + $79.87).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": 217.02,
+      "low": 197.75,
+      "high": 217.02,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Construction Cost Estimates for a Medical Office, 1 Story in National, US (2019 RSMeans data)",
+        "url": "https://www.rsmeans.com/model-pages/medical-office-1-story.aspx",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Medical Office, 1 Story ... Floor Area (S.F.): 7,000 ... SubTotal 100% $173.62 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $43.40 ... Architectural Fees 9% (union); open shop SubTotal $158.20",
+      "scopeNotes": "Basic-component model, excl. sitework. Hard cost = SubTotal + 25% contractor fees (open $197.75, union $217.02). 2-story model: $191.90–$210.81.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 450,
+      "high": 690,
+      "unit": "USD/sf",
+      "region": "Dallas, TX",
+      "regionKey": "TX-Dallas",
+      "dataYear": 2025,
+      "source": {
+        "title": "Market Analysis Q4 2025 — Typical Construction Cost Range (Cost Per Unit 2025)",
+        "url": "https://cumming-group.com/wp-content/uploads/2025/12/CummingGroup_Q4_2025_MarketingAnalysis_2.13.26.pdf",
+        "publisher": "Cumming Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Healthcare | Medical Office Building | SF: Dallas $450–$690; Nashville $400–$620; Denver $490–$750; Chicago $590–$900",
+      "scopeNotes": "Values are the Dallas column; Nashville $400–620, Denver $490–750, 10-metro median $570–875. Cumming notes: \"Costs represent new-build projects for complete structure shell and interior build-out to five feet out and excludes sitework.\" Excludes land, professional fees, permits, FF&E, soft costs.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 830,
+      "high": 1250,
+      "unit": "USD/sf",
+      "region": "Dallas, TX",
+      "regionKey": "TX-Dallas",
+      "dataYear": 2025,
+      "source": {
+        "title": "Market Analysis Q4 2025 — Typical Construction Cost Range (Cost Per Unit 2025)",
+        "url": "https://cumming-group.com/wp-content/uploads/2025/12/CummingGroup_Q4_2025_MarketingAnalysis_2.13.26.pdf",
+        "publisher": "Cumming Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Healthcare | Hospital | SF: Dallas $830–$1,250; Nashville $740–$1,120; Denver $900–$1,360",
+      "scopeNotes": "Values are the Dallas column (Nashville $740–1,120). Acute hospital, used as an upper bound for outpatient types. Cumming notes: \"Costs represent new-build projects for complete structure shell and interior build-out to five feet out and excludes sitework.\" Excludes land, professional fees, permits, FF&E, soft costs.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 495,
+      "high": 710,
+      "unit": "USD/sf",
+      "region": "Dallas, TX",
+      "regionKey": "TX-Dallas",
+      "dataYear": 2026,
+      "source": {
+        "title": "North America Quarterly Construction Cost Report, Q3 2026 (Indicative Construction Costs table)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall (RLB)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative construction costs, Hospital — General: Dallas 495–710; Phoenix 545–765; Austin 495–700 (USD/SF GFA).",
+      "scopeNotes": "Values are the Dallas column; 18-US-city median 655–998. \"Hard construction costs\" per SF of gross floor area. Upper-bound reference for outpatient types.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostPerSF",
+      "value": 425,
+      "low": 282,
+      "high": 455,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2022,
+      "source": {
+        "title": "2022 Project Costs — 50 17 00 Project Costs per S.F.",
+        "url": "https://www.rsmeans.com/media/wysiwyg/quarterly_updates/2022-Project-Costs-per-Square-Foot.pdf",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Hospitals, Total Project Costs per S.F.: 1/4 = 282, Median = 425, 3/4 = 455 (Mechanical 17.95%, Electrical 14.10%, Plumbing 7.65% medians).",
+      "scopeNotes": "Acute hospitals, January 2022 national dollars; upper-bound reference and MEP shares.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "architecturalFeePct",
+      "value": 0.09,
+      "unit": "pct",
+      "region": "US",
+      "regionKey": "US",
+      "source": {
+        "title": "Construction Cost Estimates for a Outpatient Surgery Center in National, US (2019 RSMeans data)",
+        "url": "https://www.rsmeans.com/model-pages/outpatient-surgery-center.aspx",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Architectural Fees 9% $38.47",
+      "scopeNotes": "A/E fee as % of building cost in the RSMeans model.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "No 2024–2026 ASC-specific $/SF benchmark was retrieved (search budget exhausted) — Becker's ASC Review cost articles and state CON filings would directly validate the mid.",
+    "Per-OR equipment and sterile processing costs are derived — need a public equipment budget (e.g., a CON application)."
+  ]
+}

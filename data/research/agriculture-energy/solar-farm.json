@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "id": "solar-farm",
+  "name": "Solar farm (utility / community)",
+  "category": "agriculture-energy",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "mw",
+  "summary": "Ground-mount single-axis-tracking PV priced per MWdc. Cost is dominated by modules, trackers/racking and electrical BOS. Scale economies are strong: LBNL finds projects over 250 MWac cost about 60% less per watt than projects under 20 MWac, so community-scale (1–20 MWac) projects sit at the high end. Data quality is high: an itemized Sargent & Lundy/EIA estimate, the DOE/NREL bottom-up benchmark and LBNL empirical plant data all agree within about 15%.",
+
+  "sizing": {
+    "typicalSize": { "low": 5, "mid": 100, "high": 250, "unit": "mw", "evidence": ["e3", "e1"], "derived": true, "method": "Mid = DOE/NREL representative utility-scale system of 100 MWdc (e3); EIA reference case is 195 MWdc (e1). Low 5 MWdc = typical community-solar scale; high 250 MWdc = large utility-scale (LBNL size bin >250 MWac, e4)." },
+    "primaryUnitsPerAcre": { "low": 0.15, "mid": 0.2, "high": 0.25, "evidence": ["e1"], "derived": true, "method": "EIA/S&L case 16 assumes 1,000 acres for 195 MWdc (150 MWac) = 0.195 MWdc/acre (about 5.1 acres per MWdc). Range ±25% for terrain, setbacks, tracker vs fixed tilt and ground-coverage ratio." },
+    "parkingPerPrimaryUnit": { "low": 0, "mid": 0, "high": 0.05, "type": "surface", "evidence": [], "derived": true, "method": "Unstaffed plant; only a few gravel spaces at the O&M/substation area (≈5 spaces per 100 MW at most)." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 900000, "mid": 1050000, "high": 1500000,
+      "dollarYear": 2024, "region": "US",
+      "evidence": ["e1", "e2", "e3", "e4"],
+      "derived": false,
+      "method": "Hard cost = EPC price per MWdc. e1 EIA/S&L EPC subtotal $211.085M / 195 MWdc = $1.08M/MWdc (2023$, includes substation, EPC indirects, fee and 5% EPC contingency; excludes owner's costs and interconnection). e2 LBNL 2023 capacity-weighted total installed cost $1.08/Wdc × 0.90 EPC share (EPC/total = 0.937 in e1) ≈ $0.97M. e3 DOE/NREL 2025Q1 PV-only modeled market price $1.12/Wdc (2024$) includes developer overhead/profit/interconnection; × 0.90 ≈ $1.01M. e4 LBNL 2024 average $1.22/Wdc × 0.90 ≈ $1.10M. Mid = rounded average of the four (~$1.04M) → $1.05M in 2024$ (evidence spans 2023–2024, gap ≤ 1 yr). Low = LBNL >250 MWac bin $1.38/Wac ÷ 1.32 DC/AC × 0.90 ≈ $0.94M, rounded down to $0.90M. High = LBNL <20 MWac bin $2.19/Wac ÷ 1.32 × 0.90 ≈ $1.49M → $1.5M (community-scale)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "EPC price incl. modules, inverters, trackers, DC/AC collection, on-site project substation/main power transformer, civil (grading, access roads, fencing), EPC indirects, fee and EPC contingency. Excludes land/lease, developer/owner soft costs, interconnection/transmission line and network upgrades, financing."
+    }
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.153 },
+      { "division": "03", "pct": 0.0097 },
+      { "division": "25", "pct": 0.0043 },
+      { "division": "26", "pct": 0.1118 },
+      { "division": "31", "pct": 0.0323 },
+      { "division": "32", "pct": 0.0226 },
+      { "division": "33", "pct": 0.0497 },
+      { "division": "48", "pct": 0.6166 }
+    ],
+    "evidence": ["e1"],
+    "derived": true,
+    "method": "From EIA/S&L Case 16 EPC components (total $211.085M): 48 = module supply 72.15 + inverter supply 10.395 + 65% of racking/tracker/BOP supply (44.85) + 70% of installation labor (26.325) = 130.125; 26 = 35% of racking/tracker/BOP supply (DC/AC cabling, combiners) + 30% of labor = 23.595; 33 = main power transformer & substation 10.5; 25 = SCADA 0.915; civil/structural subcontract 13.65 split 31 earthwork 50% / 32 roads & fencing 35% / 03 foundations 15%; 01 = indirects 12.675 + EPC fee 9.573 + EPC contingency 10.052 = 32.3. The 65/35 and 70/30 splits of tracker/BOP and labor are assumptions (verify)."
+  },
+
+  "lineItems": [
+    {
+      "id": "pv-modules",
+      "name": "PV module supply (bifacial mono)",
+      "division": "48",
+      "unit": "mw",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 300000, "mid": 370000, "high": 450000, "dollarYear": 2023, "region": "US", "evidence": ["e1"], "derived": true, "method": "e1 module supply $72.15M / 195 MWdc = $370k/MWdc. Range ±20% for tariff/AD-CVD exposure and domestic-content modules." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out of the baseline; most volatile line (tariffs, FEOC/domestic-content rules)."
+    },
+    {
+      "id": "project-substation",
+      "name": "Project substation & main power transformer",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 6000000, "mid": 10500000, "high": 15000000, "dollarYear": 2023, "region": "US", "evidence": ["e1"], "derived": true, "method": "e1 'Main Power Transformer and Substation' $10.5M for 150 MWac. Low/high ±~40% for voltage class and size; small community projects that tie in at distribution voltage may need only a recloser/pad transformer (well below low)." },
+      "inBaseline": true, "scales": false, "optional": false,
+      "notes": "Inside the baseline per-MW rate for a ~100–200 MW project."
+    },
+    {
+      "id": "gen-tie-line",
+      "name": "Generator tie / transmission line to POI",
+      "division": "33",
+      "unit": "lf",
+      "qty": { "per": "project", "value": 5280 },
+      "cost": { "low": 300, "mid": 457, "high": 700, "dollarYear": 2023, "region": "US", "evidence": ["e1"], "derived": true, "method": "e1 transmission line cost $2,412,000 per mile ÷ 5,280 LF = $457/LF; default 1 mile per e1. Range assumed ±35% for voltage and terrain." },
+      "inBaseline": false, "scales": false, "optional": false,
+      "notes": "Owner's cost in EIA; outside the property line — excluded from hard-cost baseline."
+    },
+    {
+      "id": "network-upgrades",
+      "name": "Utility network upgrade allocation",
+      "division": "33",
+      "unit": "mw",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 0, "mid": 50000, "high": 250000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Placeholder allowance: highly site- and queue-specific (from $0 to several hundred $k/MW). Mid $50k/MWdc ≈ 5% of hard cost. Verify with the interconnection study (facilities study / LGIA)." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Set from the interconnection agreement when available."
+    },
+    {
+      "id": "bess-addon",
+      "name": "Co-located battery storage adder (≈2.4 MWh per MWdc)",
+      "division": "48",
+      "unit": "mw",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 550000, "mid": 690000, "high": 850000, "dollarYear": 2024, "region": "US", "evidence": ["e3"], "derived": true, "method": "e3 DOE/NREL 2025Q1 utility PV+ESS MMP $1.81/Wdc minus PV-only $1.12/Wdc = $0.69/Wdc for a 240 MWh ESS on 100 MWdc. Range ±20%. Use the battery-storage type for a standalone estimate." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Includes developer margins (MMP basis)."
+    }
+  ],
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.06, "mid": 0.1, "high": 0.18, "evidence": ["e1", "e3"], "derived": true, "method": "e1 owner's costs (development, studies, permitting, legal, owner's PM/engineering) = 5% of EPC plus interconnection and owner contingency = 6.8% of EPC total. Low 6% = that. Mid 10% adds developer margin/financing fees implied by the ~10% gap between EPC and total installed cost (e1, e2–e4). High 18% for community solar with subscriber acquisition and small-project fixed development costs." },
+    "notes": "Excludes interconnection network upgrades (line item) and land lease (operating cost)."
+  },
+
+  "contingency": {
+    "design": { "low": 0.02, "mid": 0.03, "high": 0.05, "evidence": [], "derived": true, "method": "Mature, repetitive technology; design contingency mainly geotech (pile refusal) and layout changes." },
+    "hard": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": ["e1"], "derived": true, "method": "e1 applies a 5% EPC contingency on EPC costs; used as the mid owner hard contingency. High for tariff-exposed module procurement." },
+    "soft": { "low": 0.05, "mid": 0.1, "high": 0.1, "evidence": ["e1"], "derived": true, "method": "e1 owner's contingency = 10% of owner's costs." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 850000, "max": 2000000, "dollarYear": 2024, "region": "US", "method": "Total installed cost (hard + soft, excl. land): LBNL >250 MWac ≈ $1.05/Wdc down to ~$0.85 for the cheapest plants; <20 MWac ≈ $1.66/Wdc, with small community projects up to ~$2.0/Wdc." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerUnit",
+      "value": 1082487,
+      "unit": "USD/mw",
+      "region": "United States (national reference)",
+      "regionKey": "US",
+      "dataYear": 2023,
+      "source": {
+        "title": "Capital Cost and Performance Characteristic Estimates for Utility Scale Electric Power Generating Technologies (Sargent & Lundy for EIA), Case 16 Solar PV with Single-Axis Tracking, 150 MWAC",
+        "url": "https://www.eia.gov/analysis/studies/powerplants/capitalcost/pdf/capital_cost_AEO2025.pdf",
+        "publisher": "U.S. Energy Information Administration / Sargent & Lundy",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 16-1 — Case 16 Capital Cost Estimate (2023 $): EPC Subtotal $211,085,000; Total Capital Cost $225,348,000; $/kW net 1,502; 'This case uses 195 MWDC of monocrystalline ... bifacial modules'; Estimated Land Requirement 1000 acres.",
+      "scopeNotes": "Value = EPC subtotal / 195 MWdc. EPC includes modules, inverters, tracker/BOP, MPT & substation, labor, SCADA, civil, indirects, 5% fee, 5% contingency. Owner's costs ($14.263M: services, 1-mile interconnection, contingency) excluded. Total capital cost = $1.156M/MWdc.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "totalInstalledCostPerUnit",
+      "value": 1080000,
+      "unit": "USD/mw",
+      "region": "United States (76 plants completed in 2023)",
+      "regionKey": "US",
+      "dataYear": 2023,
+      "source": {
+        "title": "Utility-Scale Solar, 2024 Edition — Executive Summary",
+        "url": "https://eta-publications.lbl.gov/sites/default/files/2024-10/utility-scale_solar_2024_executive_summary.pdf",
+        "publisher": "Lawrence Berkeley National Laboratory",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Relative to 2022, capacity-weighted averages decreased by 8% to $1.43/WAC (or $1.08/WDC). Costs, based on a 7.1 GWAC sample of 76 plants completed in 2023",
+      "scopeNotes": "Empirical total installed project cost (EPC + developer/owner costs, typically incl. interconnection), plants >5 MWac. Converted to hard cost with ×0.90 in method.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "totalInstalledCostPerUnit",
+      "value": 1120000,
+      "unit": "USD/mw",
+      "region": "United States (national bottom-up benchmark)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "Solar Photovoltaic System Cost Benchmarks (2025Q1 benchmarks)",
+        "url": "https://www.energy.gov/eere/solar/solar-photovoltaic-system-cost-benchmarks",
+        "publisher": "U.S. Department of Energy, Solar Energy Technologies Office (NREL modeling)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The representative utility-scale PV system for 2025 has a rating of 100 MWdc. Table 2 (PV-only): MSP $1.07/Wdc; MMP $1.12/Wdc. Table 1 (PV + 240 MWh ESS): MMP $1.81/Wdc. All dollar values are inflation-adjusted to 2024 U.S. dollars.",
+      "scopeNotes": "Modeled market price includes hardware, labor, EPC and developer overhead, permitting/interconnection and profit — i.e., closer to total installed cost than EPC hard cost.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "totalInstalledCostPerUnit",
+      "value": 1220000,
+      "unit": "USD/mw",
+      "region": "United States (projects online in 2024)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "Cost of Utility-Scale Solar: LCOE, PPAs, and Storage (summarizing LBNL U.S. Utility-Scale Solar, 2025 Data Update slides)",
+        "url": "https://legalclarity.org/cost-of-utility-scale-solar-lcoe-ppas-and-storage/",
+        "publisher": "LegalClarity (secondary, citing Lawrence Berkeley National Laboratory)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "was $1.61 per watt AC ($1.22/W DC) ... In 2024, projects larger than 250 MW AC cost $1.38/W AC, while those smaller than 20 MW AC cost $2.19/W AC.",
+      "scopeNotes": "Secondary summary of LBNL total installed cost; primary slide deck was blocked (Cloudflare) when fetched. Used for size-class low/high via ÷1.32 DC/AC.",
+      "confidence": "medium"
+    }
+  ],
+
+  "openQuestions": [
+    "Retrieve LBNL 2025 Data Update slides directly to confirm the 2024 cost and size-class figures (fetch blocked).",
+    "NREL itemized UPV breakdown (PVSCM UPV 2025Q1 file) would give a sourced, not apportioned, CSI split.",
+    "Interconnection network-upgrade costs vary by ISO; an ISO-level allowance table would improve the optional line item.",
+    "Tariff/FEOC effects on 2025–2026 module prices are not captured by 2023–2024 evidence."
+  ]
+}

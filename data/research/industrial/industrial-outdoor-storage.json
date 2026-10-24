@@ -1,0 +1,333 @@
+{
+  "schemaVersion": 1,
+  "id": "industrial-outdoor-storage",
+  "name": "Industrial outdoor storage (IOS)",
+  "category": "industrial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "acre",
+  "summary": "IOS sites are low-coverage (<10–20%) yards for trucks, trailers, containers and equipment: the cost is almost entirely sitework — grading, stabilized aggregate or paved surface, stormwater, perimeter security fencing, lighting — plus a small office/shop. The surface spec (gravel vs. asphalt vs. concrete) swings cost 2–3×. No authoritative per-acre IOS benchmark was found; the default is a bottom-up derivation from the paving building block, checked against one low-confidence developer blog.",
+  "sizing": {
+    "typicalSize": {
+      "low": 2,
+      "mid": 5,
+      "high": 15,
+      "unit": "acre",
+      "evidence": [],
+      "derived": true,
+      "method": "Typical IOS parcels 2–15 usable acres (judgment from listing norms); mid 5 acres."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 200,
+      "mid": 600,
+      "high": 2000,
+      "evidence": [],
+      "derived": true,
+      "method": "Building SF (office/shop) per acre of yard: ~1,000–5,000 SF building on a 2–15 acre site (judgment)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 100000,
+      "mid": 175000,
+      "high": 375000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "_blocks/paving.json#e10",
+        "_blocks/paving.json#e1",
+        "_blocks/paving.json#e2"
+      ],
+      "derived": true,
+      "method": "Bottom-up per acre (≈ 4,840 SY; ~85% surfaced = 4,100 SY): clearing/grading/subgrade $8k–$20k; surface = stabilized 8\" aggregate at paving-block gravel-road $9–$25/SY (MDT crushed aggregate, e10) → $37k–$103k (mid $62k), or asphalt at $45/SY → $185k; stormwater/detention $15k–$40k; perimeter fence ~400 LF/acre (5-acre site) × $35–$70 → $14k–$28k; lighting ~2 poles/acre → $12k–$20k; office/shop and utilities $75k–$250k per site ÷ 5 acres → $15k–$50k. Mid (gravel yard with paved entry/office area) ≈ 14 + 62 + 25 + 20 + 16 + 30 ≈ $167k → $175k; low (all gravel, trailer office) ≈ $100k; high (fully paved asphalt/heavy concrete) ≈ $350k–$410k → $375k. Plausibility: blog IOS development $150k–$300k for an unstated (small) site (e2)."
+    },
+    "perSF": {
+      "low": 2.3,
+      "mid": 4,
+      "high": 8.6,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Per SF of SITE (not building) = per-acre ÷ 43,560."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P: clearing, grading, stabilized/paved surface, stormwater and detention, perimeter fence and gates, site lighting, CCTV, small office/shop with on-site utilities. Excludes land, environmental remediation, off-site utilities/road work, soft costs and fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.6,
+    "standard": 1,
+    "premium": 1.5,
+    "luxury": 2.1,
+    "evidence": [],
+    "derived": true,
+    "method": "economy = low/mid (gravel, minimal office); premium ≈ asphalt-paved yard (~$260k/acre ÷ mid); luxury = high/mid (heavy-duty concrete, maintenance shop)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "13",
+        "pct": 0.04
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "28",
+        "pct": 0.03
+      },
+      {
+        "division": "31",
+        "pct": 0.22
+      },
+      {
+        "division": "32",
+        "pct": 0.45
+      },
+      {
+        "division": "33",
+        "pct": 0.1
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "From the bottom-up mid: surface + fence ≈ $82k (32), grading/subgrade incl. aggregate base prep ≈ $35k (31), stormwater $17k (33), lighting/power $13k (26), cameras/gates $5k (28), modular office $7k (13), GC 8%. Judgment."
+  },
+  "lineItems": [
+    {
+      "id": "aggregate-surface",
+      "name": "Stabilized aggregate yard surface (8\" crushed aggregate)",
+      "division": "32",
+      "block": "paving",
+      "unit": "sy",
+      "qty": {
+        "per": "acre",
+        "value": 4100
+      },
+      "cost": {
+        "low": 9,
+        "mid": 15,
+        "high": 25,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "_blocks/paving.json#e10"
+        ],
+        "derived": true,
+        "method": "From _blocks/paving.json gravel-road ($9/$15/$25 per SY, 2025; MDT crushed aggregate). Quantity ≈ 85% of an acre = 4,100 SY."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "asphalt-upgrade",
+      "name": "Asphalt paving upgrade over aggregate (incremental)",
+      "division": "32",
+      "block": "paving",
+      "unit": "sy",
+      "qty": {
+        "per": "acre",
+        "value": 4100
+      },
+      "cost": {
+        "low": 20,
+        "mid": 30,
+        "high": 45,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/paving.json#e1",
+          "_blocks/paving.json#e2"
+        ],
+        "derived": true,
+        "method": "Paving-block asphalt $30/$45/$70 per SY less the aggregate base already in the baseline (~$10–$25/SY) ≈ $20–$45/SY incremental."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Optional upgrade for tenants storing trailers/equipment on paved surfaces."
+    },
+    {
+      "id": "security-fence",
+      "name": "Perimeter security fence with barbed/razor wire and gates",
+      "division": "32",
+      "unit": "lf",
+      "qty": {
+        "per": "acre",
+        "value": 400
+      },
+      "cost": {
+        "low": 35,
+        "mid": 50,
+        "high": 70,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No public unit price fetched; 8 ft chain-link with security wire incl. posts/footings and gate allowance $35–$70/LF (judgment). ~400 LF per acre for a ~5-acre rectangular site."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "site-lighting",
+      "name": "Pole-mounted LED yard lighting",
+      "division": "26",
+      "unit": "ea",
+      "qty": {
+        "per": "acre",
+        "value": 2
+      },
+      "cost": {
+        "low": 6000,
+        "mid": 8000,
+        "high": 10000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Judgment: 25–35 ft pole with LED heads, base, conduit and wiring $6k–$10k each; ~2 per acre."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "site-office",
+      "name": "Small office/shop building (~1,500–3,000 SF PEMB or modular)",
+      "division": "13",
+      "block": "vertical-building",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 2000
+      },
+      "cost": {
+        "low": 70,
+        "mid": 105,
+        "high": 160,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "From _blocks/vertical-building.json building-steel-preengineered ($70/$105/$160 per SF). 2,000 SF per project (judgment)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out; set to a modular trailer for economy sites."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.08,
+      "mid": 0.12,
+      "high": 0.18,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Civil design, survey, geotech, stormwater/environmental permits: the blog lists environmental assessment $5k–$20k, soil testing $2k–$10k and environmental permitting $5k–$50k per project (same source as e1); for a ~$900k (5-acre) project these plus civil design ≈ 8–18% (judgment)."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.05
+    },
+    "notes": "Zoning/conditional-use permits are often the gating item for IOS; excludes financing."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.02,
+      "mid": 0.03,
+      "high": 0.06,
+      "evidence": [],
+      "derived": true,
+      "method": "Simple civil scope (judgment)."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Unknown soils/fill and stormwater requirements dominate risk on former industrial land (judgment)."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard 5–10% of soft costs (judgment)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 90000,
+      "max": 500000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "min ≈ gravel yard with trailer office (hard low $100k less 10%, minimal soft); max ≈ fully paved concrete yard (high $375k × 1.3)."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "siteWorkLumpSum",
+      "value": null,
+      "low": 50000,
+      "high": 200000,
+      "unit": "USD/ls",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Cost to Develop an Industrial Outdoor Storage Site",
+        "url": "https://www.recnationstorage.com/blog/cost-to-develop-an-industrial-outdoor-storage-site/",
+        "publisher": "RecNation Storage",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Site preparation lump sums: clearing and excavation $10,000–$50,000; surfacing for internal roads and pads $50,000–$200,000; drainage systems $20,000–$100,000 — \"typical U.S. construction cost ranges as of 2025.\"",
+      "scopeNotes": "Developer blog (RecNation Storage, 10 Dec 2025); project size (acres) not stated, so cannot be converted to per-acre directly. Low confidence.",
+      "confidence": "low"
+    },
+    {
+      "id": "e2",
+      "metric": "developmentCostLumpSum",
+      "value": null,
+      "low": 150000,
+      "high": 300000,
+      "unit": "USD/ls",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Cost to Develop an Industrial Outdoor Storage Site",
+        "url": "https://www.recnationstorage.com/blog/cost-to-develop-an-industrial-outdoor-storage-site/",
+        "publisher": "RecNation Storage",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Project totals table: IOS development $150,000–$300,000 vs. indoor $1,000,000–$2,500,000; stormwater management system $50,000–$200,000 (one-time)",
+      "scopeNotes": "Same blog; acreage unstated (implicitly a small 1–3 acre site). Used only as a plausibility check.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "No authoritative IOS improvement-cost benchmark found; broker research (e.g., Cushman/Newmark IOS reports) or a public site-plan cost estimate would replace the derivation.",
+    "Fence and lighting unit costs are derived; a fencing/lighting bid tab would help."
+  ]
+}

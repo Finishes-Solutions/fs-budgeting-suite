@@ -1,0 +1,444 @@
+{
+  "schemaVersion": 1,
+  "id": "marine",
+  "name": "Marine (docks, piers, slips, shoreline, marina services)",
+  "researchedAt": "2026-10-24",
+  "items": [
+    {
+      "id": "floating-dock",
+      "name": "Floating dock, commercial marina grade (floats, frame, decking, guide piles)",
+      "division": "35",
+      "unit": "sf",
+      "cost": {
+        "low": 60, "mid": 120, "high": 200,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e4", "e5", "e14"],
+        "derived": true,
+        "method": "No public $/SF marina bid unit price was found. Derived from FY2026 BIG Tier 2 project totals per linear foot of side-tie dock: Reefpoint Marina $2,612,600 / 1,450 LF = $1,802/LF (e4); Skull Creek $4,336,800 / 2,769 LF = $1,566/LF incl. utilities, fuel dispensers and a gangway (e5). Assuming an 8–10 ft wide main walk, these give ~$155–225/SF all-in; removing ~20–25% for utilities/fuel/gangway leaves ~$120–170/SF for the dock structure. Mid $120 = low end of that band (timber/aluminum framing); high $200 = concrete pontoons / exposed sites; low $60 = light modular or timber floats, above residential installed prices of $15–40/SF (e14, low confidence)."
+      },
+      "notes": "Per SF of walking surface. Structure only — add dock-pedestal (power/water), gangway and fire protection separately. Concrete floats for exposed or large-vessel marinas sit at the high end; wave attenuation/breakwaters are not included."
+    },
+    {
+      "id": "fixed-pier",
+      "name": "Fixed pier / dock on piles (timber or concrete deck)",
+      "division": "35",
+      "unit": "sf",
+      "cost": {
+        "low": 50, "mid": 110, "high": 250,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e9", "e14"],
+        "derived": true,
+        "method": "Residential pile-supported docks run $20–40/SF installed (e14, low confidence) — the floor for light timber construction. A commercial timber pier with heavier piles, decking and rails is taken at ~2.5–3× residential (mid $110/SF, judgment). High $250 = concrete deck on steel/concrete piles; the Rock Island State Park concrete dock rebuild/extension plus gangway ($3,652,782 for 600 LF of side-tie berthing, ~$6,100/LF, e9) shows remote/heavy-duty concrete work can exceed this — use a site-specific estimate for such cases."
+      },
+      "notes": "Per SF of deck. Includes piles, pile caps, framing, decking. Excludes utilities, lighting, fendering upgrades beyond standard, and shoreline protection."
+    },
+    {
+      "id": "boat-slip-floating",
+      "name": "Boat slip, floating, all-in (dock share, fingers, pedestal, utilities, gangway share)",
+      "division": "35",
+      "unit": "slip",
+      "cost": {
+        "low": 25000, "mid": 45000, "high": 80000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e1", "e2", "e3", "e8", "e10"],
+        "derived": false,
+        "method": "Per-slip totals from FY2026 BIG Tier 2 funded projects (total cost / slips): Georgetown Landing SC $1,384,365 / 52 = $26,600 (docks + pedestals, plus fuel update and restroom renovation, e2); New Rochelle NY $1,500,000 / 20 = $75,000 (dock reconstruction, gangway, utilities, pumpout, e1); Old Point Comfort VA $3,499,546 for 66 slips + 1,600 ft side-tie (~32 slip-equivalents at 50 ft) ≈ $36,000 incl. fuel/pumpout/restrooms (e3); Ashley Marina SC $2,033,691 / 33 = $61,600 incl. welcome building (e10); Clayton NY $1,894,085 / 24 = $78,900 incl. boater services building (e8). Mid $45,000 = median of the five dock-dominant values excluding the building share (~$36k–62k band); low = Georgetown; high ≈ New Rochelle / Clayton."
+      },
+      "notes": "Typical 30–45 ft transient/recreational slip. BIG projects favor transient boats ≥26 ft; small-boat (≤25 ft) slips in sheltered water run toward the low end, megayacht slips far above the high end. Excludes dredging, breakwaters, bulkheads, upland buildings and parking."
+    },
+    {
+      "id": "gangway",
+      "name": "Gangway, aluminum ADA-compliant (incl. landing float)",
+      "division": "35",
+      "unit": "ea",
+      "cost": {
+        "low": 60000, "mid": 150000, "high": 400000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e11"],
+        "derived": true,
+        "method": "City of Berkeley memo (e11): ADA gangway/float replacement with temporary repair estimated at $110,000 (2025); South Cove ADA Accessible Gangway Project $380,000 (2020, includes design/permitting). Evidence years differ by 5 years — not escalated here. Mid $150,000 = 2025 replacement figure plus allowance for landing float/abutment on new work; high $400,000 ≈ 2020 full project (long ADA gangway, 80+ ft); low $60,000 = short (30–50 ft) non-ADA gangway (judgment, verify)."
+      },
+      "notes": "ADA ramp slope (1:12 at design low water) drives length — large tidal ranges need 80–120 ft gangways and transition plates. Includes abutment/hinge and landing float; excludes pier/bulkhead modifications."
+    },
+    {
+      "id": "dock-pedestal",
+      "name": "Dock utility pedestal (shore power 30/50 A + water, lighting), installed",
+      "division": "26",
+      "unit": "ea",
+      "cost": {
+        "low": 6000, "mid": 9000, "high": 15000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No itemized public price found (BIG projects bundle pedestals with docks, e.g., Queen City Marina's 12 new pedestals inside a $1,000,675 bulkhead project, e6). Estimate = pedestal hardware (~$2,500–6,000 for 30/50 A dual-outlet units with GFP, metering) + share of dock feeders, transformers/panels and water lines (~$3,500–9,000 per pedestal). Judgment — verify with marina electrical bids. Note 480 V/100 A+ pedestals for large yachts run well above the high."
+      },
+      "notes": "One pedestal typically serves two slips. Excludes upland service/transformer upgrades for large marinas and NFPA 303 / NEC 555 ground-fault equipment beyond the pedestal."
+    },
+    {
+      "id": "bulkhead-seawall",
+      "name": "Bulkhead / seawall (steel or vinyl sheet pile with cap and tiebacks)",
+      "division": "35",
+      "unit": "lf",
+      "cost": {
+        "low": 600, "mid": 1300, "high": 2500,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e6", "e14"],
+        "derived": true,
+        "method": "Queen City Marina NJ replaced a 500-ft bulkhead (inner and outer portions) with a protection system, 21 berths and 12 pedestals for $1,000,675 = ~$2,000/LF all-in (e6) — taken as near the high end for marina bulkheads. Residential seawalls run $150–800/LF (e14, low confidence). Mid $1,300 = commercial steel/vinyl sheet pile with concrete cap and tiebacks at moderate retained height (judgment between the two anchors); high $2,500 = tall walls/king-pile systems or difficult access."
+      },
+      "notes": "Per LF of wall. Retained height, soil and exposure dominate. Excludes dredging, riprap revetment and environmental mitigation."
+    },
+    {
+      "id": "timber-pile",
+      "name": "Timber pile, marine treated (12 in, ~40–50 ft), furnished and driven",
+      "division": "31",
+      "unit": "ea",
+      "cost": {
+        "low": 1500, "mid": 3000, "high": 6000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e14"],
+        "derived": true,
+        "method": "Residential pile replacement runs $300–1,600 per piece (e14, low confidence), which reflects short piles and small barges. A commercial marine pile (CCA 2.5 pcf, 40–50 ft) furnished and driven with barge-mounted equipment is taken at ~2–4× that (mid $3,000, judgment). Mobilization of marine equipment is not included — small pile counts carry a large per-pile mob share."
+      },
+      "notes": "Per pile. Excludes marine mobilization/demobilization (often $25k–100k+), pile wraps and jetting/pre-drilling in hard bottoms."
+    },
+    {
+      "id": "steel-pile",
+      "name": "Steel pipe pile, coated (12–16 in, ~50–70 ft), furnished and driven",
+      "division": "31",
+      "unit": "ea",
+      "cost": {
+        "low": 8000, "mid": 14000, "high": 25000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No public unit price found. Estimate = steel (~60 ft × ~50–80 lb/ft ≈ 1.5–2.5 tons at ~$1,500–2,500/ton furnished, coated) + driving with barge crane (~$3,000–8,000 per pile) + cutoff/caps. Mid $14,000 by that build-up; low/high span lighter/shorter vs heavier/longer piles. Judgment — verify against local marine contractor pricing."
+      },
+      "notes": "Used for floating-dock guide piles in exposed water, fixed piers and fuel docks. Excludes mobilization and rock socketing."
+    },
+    {
+      "id": "dredging",
+      "name": "Dredging, marina basin / channel (mechanical or hydraulic, incl. upland disposal)",
+      "division": "35",
+      "unit": "cy",
+      "cost": {
+        "low": 15, "mid": 35, "high": 80,
+        "dollarYear": 2025, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No public per-CY figure could be retrieved this session (USACE Navigation Data Center pages returned 403). Estimate reflects small-marina dredging of clean sediment with upland disposal: ~$15/CY for large hydraulic jobs with nearby disposal, ~$35/CY typical small-volume mechanical work, ~$80/CY+ where sediment needs dewatering, testing, or offsite/contaminated disposal. Judgment — weakest item in this file; verify with a dredging contractor and the disposal site."
+      },
+      "notes": "Excludes permitting (USACE Section 10/404, sediment testing) and mobilization, which dominate small jobs. Contaminated sediment can multiply cost several times."
+    },
+    {
+      "id": "boat-ramp-lane",
+      "name": "Boat launch ramp lane (concrete ramp, courtesy dock share, approach)",
+      "division": "35",
+      "unit": "lane",
+      "cost": {
+        "low": 150000, "mid": 300000, "high": 600000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No itemized public cost found this session. Estimate per 15-ft lane: cast-in-place/precast concrete ramp (~15 ft × 80–120 ft at ~$100–150/SF in-water incl. cofferdam/dewatering ≈ $120k–270k) + share of courtesy/boarding float (~$30k–100k) + approach paving. Mid $300,000. Excludes the trailer parking lot (use parking blocks). Judgment — verify against state boating access grant bids."
+      },
+      "notes": "Multi-lane ramps share mobilization and the courtesy dock, so per-lane cost falls with lane count."
+    },
+    {
+      "id": "fuel-dock-system",
+      "name": "Marina fuel system (USTs/ASTs, piping, dispensers, containment)",
+      "division": "33",
+      "unit": "ea",
+      "cost": {
+        "low": 250000, "mid": 600000, "high": 1200000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e7"],
+        "derived": true,
+        "method": "Naples City Dock replacement of underground storage tanks for diesel and ethanol-free gasoline: total cost $624,580 (e7) — used as the mid (tanks + associated work at an existing fuel dock). Low $250,000 = small single-product AST system; high $1,200,000 = new fuel dock with tanks, double-wall piping, high-speed dispensers and dock structure (judgment)."
+      },
+      "notes": "Per marina fuel system. Excludes the dock structure itself where it is part of floating-dock area, and environmental permitting/monitoring."
+    },
+    {
+      "id": "pump-out-station",
+      "name": "Sewage pump-out station (stationary, incl. sewer connection)",
+      "division": "22",
+      "unit": "ea",
+      "cost": {
+        "low": 20000, "mid": 45000, "high": 75000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e12", "e13"],
+        "derived": false,
+        "method": "Clean Vessel Act FY2025 awards: Illinois $75,000 federal for two new pumpout stations with sewer hookups (e12) and Ohio $402,000 federal for up to 10 new pumpout systems plus outreach (e13). CVA federal share is at most 75% (state match minimum 25%, e13 scopeNotes), so total cost per station ≈ federal / 0.75: Illinois ≈ $50,000; Ohio ≤ ~$53,600. Mid $45,000 = rounded below these since Ohio's award also funds outreach; low $20,000 = simple pump-out cart/portable unit; high $75,000 = in-dock vacuum systems with long sewer runs."
+      },
+      "notes": "Per station. In-slip pumpout systems (per-slip vacuum lines) cost more and are priced per slip."
+    },
+    {
+      "id": "boat-lift",
+      "name": "Boat lift (marina, 10,000–20,000 lb class)",
+      "division": "35",
+      "unit": "ea",
+      "cost": {
+        "low": 5000, "mid": 15000, "high": 35000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e14"],
+        "derived": true,
+        "method": "Residential boat lifts cost $2,000–20,000, average $8,000 (e14, low confidence). Marina slip lifts sized for 25–35 ft boats (10,000–20,000 lb, electric, often floating or pile-mounted) are placed above the residential average: mid $15,000; high $35,000 for large or floating hydraulic lifts (judgment)."
+      },
+      "notes": "Per lift, installed on existing piles/dock. Excludes new piles and electrical service."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "marinaProjectCost",
+      "value": 1500000,
+      "unit": "USD/ls",
+      "region": "New Rochelle, NY",
+      "regionKey": "NY-NewYorkCity",
+      "dataYear": 2025,
+      "source": {
+        "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — Funded Application Summaries",
+        "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf",
+        "publisher": "U.S. Fish and Wildlife Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "dock reconstruction, 20 new and rebuilt slips, a new gangway, and updated shore power, water, and pumpout facilities ... Total Cost: $1,500,000",
+      "scopeNotes": "Municipal Marina, New Rochelle. $75,000 per slip incl. gangway, utilities and pumpout. Application-year dollars assumed 2025.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "marinaProjectCost",
+      "value": 1384365,
+      "unit": "USD/ls",
+      "region": "Georgetown, SC",
+      "regionKey": "SC",
+      "dataYear": 2025,
+      "source": {
+        "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — Funded Application Summaries",
+        "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf",
+        "publisher": "U.S. Fish and Wildlife Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "replacement with new docks and pedestals providing power and water service to 52 dedicated transient slips ... Total Cost: $1,384,365",
+      "scopeNotes": "Georgetown Landing Marina. Also includes shower/restroom renovation and fuel system update. ≈ $26,600 per slip.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "marinaProjectCost",
+      "value": 3499546,
+      "unit": "USD/ls",
+      "region": "Hampton, VA",
+      "regionKey": "VA",
+      "dataYear": 2025,
+      "source": {
+        "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — Funded Application Summaries",
+        "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf",
+        "publisher": "U.S. Fish and Wildlife Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "construction of new docks providing 66 slips and an additional 1,600 feet of side-tie berthing ... Total Cost: $3,499,546",
+      "scopeNotes": "Old Point Comfort Marina. Also upgrades fueling and pumpout and adds restrooms, showers, laundry.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "dockCostPerLf",
+      "value": 2612600,
+      "unit": "USD/ls",
+      "region": "Racine, WI",
+      "regionKey": "WI",
+      "dataYear": 2025,
+      "source": {
+        "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — Funded Application Summaries",
+        "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf",
+        "publisher": "U.S. Fish and Wildlife Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "renovate two existing docks in the marina to provide 1,450 feet of side-tie berthing with utility connections ... Total Cost: $2,612,600",
+      "scopeNotes": "Reefpoint Marina; ADA-compliant docks with utilities. ≈ $1,802 per LF of side-tie.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "dockCostPerLf",
+      "value": 4336800,
+      "unit": "USD/ls",
+      "region": "Hilton Head, SC",
+      "regionKey": "SC",
+      "dataYear": 2025,
+      "source": {
+        "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — Funded Application Summaries",
+        "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf",
+        "publisher": "U.S. Fish and Wildlife Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "a new dock with 2,769 feet of side-tie berthing, electrical and water upgrades, fuel dispensers, and a new gangway ... Total Cost: $4,336,800",
+      "scopeNotes": "Skull Creek Marina. ≈ $1,566 per LF all-in incl. utilities, fuel dispensers, gangway.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "bulkheadProjectCost",
+      "value": 1000675,
+      "unit": "USD/ls",
+      "region": "Beach Haven, NJ",
+      "regionKey": "NJ",
+      "dataYear": 2025,
+      "source": {
+        "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — Funded Application Summaries",
+        "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf",
+        "publisher": "U.S. Fish and Wildlife Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "replace 21 berths along the 500-foot span of the bulkhead and install a bulkhead protection system. In addition, 12 new power pedestals ... Total Cost: $1,000,675",
+      "scopeNotes": "Queen City Marina. ≈ $2,000 per LF of bulkhead including berths and pedestals.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "fuelSystemCost",
+      "value": 624580,
+      "unit": "USD/ea",
+      "region": "Naples, FL",
+      "regionKey": "FL",
+      "dataYear": 2025,
+      "source": {
+        "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — Funded Application Summaries",
+        "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf",
+        "publisher": "U.S. Fish and Wildlife Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The project will replace existing underground storage tanks providing diesel and ethanol-free gasoline to transient boaters. ... Total Cost: $624,580",
+      "scopeNotes": "Naples City Dock; tank replacement at an existing fuel dock.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "marinaProjectCost",
+      "value": 1894085,
+      "unit": "USD/ls",
+      "region": "Clayton, NY",
+      "regionKey": "NY",
+      "dataYear": 2025,
+      "source": {
+        "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — Funded Application Summaries",
+        "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf",
+        "publisher": "U.S. Fish and Wildlife Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "These docks will provide 24 slips for eligible boaters. The project also includes a new boater services building ... Total Cost: $1,894,085",
+      "scopeNotes": "Town of Clayton Municipal Marina; includes a building with showers and laundry. ≈ $78,900 per slip incl. building.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9",
+      "metric": "dockCostPerLf",
+      "value": 3652782,
+      "unit": "USD/ls",
+      "region": "Door County, WI",
+      "regionKey": "WI",
+      "dataYear": 2025,
+      "source": {
+        "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — Funded Application Summaries",
+        "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf",
+        "publisher": "U.S. Fish and Wildlife Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "rebuild and extend an existing concrete dock originally built in the 1920s and install a new gangway ... 600 feet of side-tie berthing ... Total Cost: $3,652,782",
+      "scopeNotes": "Rock Island State Park — remote island site, concrete fixed dock. ≈ $6,100 per LF; atypically high.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e10",
+      "metric": "marinaProjectCost",
+      "value": 2033691,
+      "unit": "USD/ls",
+      "region": "Charleston, SC",
+      "regionKey": "SC",
+      "dataYear": 2025,
+      "source": {
+        "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — Funded Application Summaries",
+        "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf",
+        "publisher": "U.S. Fish and Wildlife Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "a complete rebuild of the marina that will provide 33 transient slips with electrical and water service and a building for use as a boater welcome center ... Total Cost: $2,033,691",
+      "scopeNotes": "Ashley Marina; includes welcome center building and 5,000 SF deck. ≈ $61,600 per slip incl. building.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e11",
+      "metric": "gangwayCost",
+      "value": 110000, "low": 110000, "high": 380000,
+      "unit": "USD/ea",
+      "region": "Berkeley, CA",
+      "regionKey": "CA-SanFrancisco",
+      "dataYear": 2025,
+      "source": {
+        "title": "South Sailing Basin Dock Closure Update (City Manager memo, February 28, 2025)",
+        "url": "https://dev.berkeleyca.gov/sites/default/files/documents/2025-02-28%20South%20Sailing%20Basin%20Dock%20Closure%20Update.pdf",
+        "publisher": "City of Berkeley, Office of the City Manager",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The cost is estimated to be $110,000 ... South Cove ADA Accessible Gangway Project, $380,000 (2020)",
+      "scopeNotes": "$110,000 = 2025 estimate for replacement ADA gangway float option plus temporary repair; $380,000 = 2020 ADA gangway and float project (2020 dollars).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e12",
+      "metric": "pumpoutGrantFederal",
+      "value": 75000,
+      "unit": "USD/ls",
+      "region": "Illinois",
+      "regionKey": "IL",
+      "dataYear": 2025,
+      "source": {
+        "title": "Clean Vessel Act FY 2025 Project Selection Summaries",
+        "url": "https://www.fws.gov/sites/default/files/documents/2025-07/fy2025-cva-project-summaries.pdf",
+        "publisher": "U.S. Fish and Wildlife Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Illinois – Coastal $75,000.00 – The Illinois Department of Natural Resources plans to provide funding for two new pumpout stations along with sewer hookups",
+      "scopeNotes": "Federal award only, for two stations (Navy Pier Marina). Total cost ≈ federal / 0.75.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e13",
+      "metric": "pumpoutGrantFederal",
+      "value": 402000,
+      "unit": "USD/ls",
+      "region": "Ohio",
+      "regionKey": "OH",
+      "dataYear": 2025,
+      "source": {
+        "title": "Clean Vessel Act FY 2025 Project Selection Summaries",
+        "url": "https://www.fws.gov/sites/default/files/documents/2025-07/fy2025-cva-project-summaries.pdf",
+        "publisher": "U.S. Fish and Wildlife Service",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Ohio – Coastal $402,000.00 – The Ohio Department of Natural Resources plans to install up to 10 new pumpout systems and continue their boater outreach and education activities.",
+      "scopeNotes": "Federal award for up to 10 systems plus outreach. FWS CVA program page states state agencies cover a minimum 25% of project costs.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e14",
+      "metric": "residentialDockCosts",
+      "value": null, "low": 15, "high": 40,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Cost to Build a Dock (updated January 31, 2025) and Dock Repair Cost",
+        "url": "https://www.fixr.com/costs/build-dock",
+        "publisher": "Fixr",
+        "accessed": "2026-10-24"
+      },
+      "quote": "the prices for a floating dock range between $15 and $40 per sq.ft., including the cost of installation ... Seawalls run between $150 and $800 per linear foot ... a boat lift should expect to pay $2,000 to $20,000",
+      "scopeNotes": "Residential consumer guide. Also: pile docks $20–40/SF; replacing pilings $300–1,600 per piece (fixr.com/costs/dock-repair); boat lift average $8,000. Used only as low-end proxies.",
+      "confidence": "low"
+    }
+  ]
+}

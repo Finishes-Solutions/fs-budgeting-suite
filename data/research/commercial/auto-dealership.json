@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "id": "auto-dealership",
+  "name": "Auto dealership",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "New-vehicle franchised dealership (≈20,000–60,000 SF: glass showroom, offices, service drive, 12–35 service bays, parts) on 2–6 acres, most of which is paved display, inventory and customer parking. Building cost is moderate (pre-engineered/steel service shop under a premium OEM-image showroom), but the large paved site adds materially per building SF. Data are thin: RSMeans' 2019 model, two older completed projects and county assessment records; no recent public dealership budgets or OEM image-program cost disclosures were found in this session, so the baseline is a derived estimate in 2019 dollars.",
+
+  "sizing": {
+    "typicalSize": { "low": 20000, "mid": 30000, "high": 60000, "unit": "sf", "evidence": ["d5", "d6", "d7", "d1"], "derived": false, "method": "Clark County WA dealerships 21,433–57,839 SF (d5); Classic Ford/Lincoln 67,152 SF with 34 bays (d6); Harwood Ford 25,000 SF with 14 bays (d7); RSMeans model 21,000 SF (d1). Mid 30,000 SF ≈ single-franchise store with ~20 bays." },
+    "primaryUnitsPerAcre": { "low": 6000, "mid": 8500, "high": 17700, "evidence": ["d5"], "derived": false, "method": "Building SF per site acre from Clark County BOE records (d5): Subaru 34,528 SF / 1.95 ac = 17,700; Honda ~33,000 / 4.29 = 7,700; VW 21,433 / 2.55 = 8,400; CDJR 57,839 / 5.53 = 10,460; Kia 22,069 / 2.8 = 7,880. Median ≈ 8,400 → mid 8,500; low allows suburban stores with deep inventory lots." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 130, "mid": 190, "high": 280, "dollarYear": 2019, "region": "US", "evidence": ["d1", "d2", "d3", "d4"], "derived": true, "method": "Expressed in 2019 dollars (anchor year of the best evidence; build script escalates). RSMeans 2019 car dealership model: $131.10/SF total incl. 25% contractor fees and 7% architect → $122.52/SF building-only ex-architect (d1). Add site work for a dealership lot: ~3.5–4 SF of paved site per building SF (d5 median 8,400 SF/ac → ~5.2 SF of site per building SF, ~75% paved) × ~$12–16/SF for paving, storm, lighting and utilities (judgment, 2019) ≈ +$45–65/SF → $170–190/SF. Racine Hyundai 2017 $4.3M / 22,500 SF = $191/SF (d2, scope believed all-in). Colonial Honda 2005 $4.318M / 39,500 SF = $109/SF incl. site (d3, much older dollars, not used for mid). Online guide $91 (TX) – $134 (NY)/SF (d4, low confidence, building only). Mid $190 (2019 $); low $130 = RSMeans open-shop building + minimal site (pad on existing auto mall); high $280 = premium OEM image program (full-height glass showroom, ACM portal, polished floors) ≈ +45% (judgment — OEM image program cost disclosures not found). Verify against a current GMP." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Showroom, offices, service drive, service shop, parts, plus on-site paving for display/inventory/customer parking, storm, lighting and utilities. Excludes vehicle lifts and shop equipment (line item), furniture/IT/signage (ffe), land, soft costs, off-site work, impact/tap fees. Structured inventory parking excluded."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.7, "standard": 1.0, "premium": 1.3, "luxury": 1.6,
+    "evidence": [], "derived": true,
+    "method": "economy = low/mid (130/190 ≈ 0.68); premium = high/mid (280/190 ≈ 1.47) moderated to 1.3 for mainstream brand image programs; luxury 1.6 for luxury-marque flagships (judgment)."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.08 },
+      { "division": "03", "pct": 0.09 },
+      { "division": "04", "pct": 0.03 },
+      { "division": "05", "pct": 0.10 },
+      { "division": "07", "pct": 0.07 },
+      { "division": "08", "pct": 0.07 },
+      { "division": "09", "pct": 0.06 },
+      { "division": "10", "pct": 0.01 },
+      { "division": "11", "pct": 0.02 },
+      { "division": "21", "pct": 0.02 },
+      { "division": "22", "pct": 0.04 },
+      { "division": "23", "pct": 0.06 },
+      { "division": "26", "pct": 0.07 },
+      { "division": "27", "pct": 0.01 },
+      { "division": "28", "pct": 0.01 },
+      { "division": "31", "pct": 0.05 },
+      { "division": "32", "pct": 0.15 },
+      { "division": "33", "pct": 0.06 }
+    ],
+    "evidence": ["d1"], "derived": true,
+    "method": "Site (31–33) = 0.26 from the hard-cost build-up (≈$50 of $190/SF). Building 0.74 split with a pre-engineered/steel shop + glass showroom pattern: high 05 (steel frame), 08 (storefront curtain wall + overhead service doors), 03 (heavy shop slabs, trench drains). Not from a published elemental estimate."
+  },
+
+  "lineItems": [
+    {
+      "id": "service-bay-equipment",
+      "name": "Service bay equipment (lifts, oil/air reels, exhaust extraction) per bay",
+      "division": "11",
+      "unit": "bay",
+      "qty": { "per": "project", "value": 20 },
+      "cost": { "low": 12000, "mid": 25000, "high": 45000, "dollarYear": 2019, "region": "US", "evidence": ["d4"], "derived": true, "method": "Derived: a two-post/four-post lift plus fluid/air reels and exhaust drops per bay (judgment). Cross-check: an online guide puts a 'mechanic/service station' equipment set at $115,000–$320,000 (d4). Qty default 20 bays (d6 34 bays/67k SF; d7 14 bays/25k SF; d2 12 bays/22.5k SF ≈ 1 bay per 1,500–2,000 SF)." },
+      "inBaseline": false,
+      "scales": true,
+      "optional": false,
+      "notes": "Often purchased by the dealer, not the GC."
+    },
+    {
+      "id": "in-bay-car-wash",
+      "name": "In-bay automatic car wash / detail bay equipment",
+      "division": "11",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 100000, "mid": 200000, "high": 400000, "dollarYear": 2019, "region": "US", "evidence": ["d2", "d3"], "derived": true, "method": "Derived: dealerships commonly include a wash bay (d2, d3, d6 mention car washes); priced as an in-bay automatic system + reclaim (judgment; compare car-wash.json tunnel package, which is far larger)." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Building shell for the wash bay is in the baseline; this is the equipment."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 15, "mid": 25, "high": 45, "dollarYear": 2019, "region": "US", "evidence": [], "derived": true, "method": "Furniture (showroom, offices, customer lounge), IT/AV and OEM signage per SF — judgment; not sourced. Verify with OEM image-program furniture packages." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.09, "mid": 0.12, "high": 0.18, "evidence": ["d1"], "derived": true, "method": "RSMeans carries 7% architectural fees on the dealership model (d1); add civil/survey/geotech, permits, testing, legal and OEM design-review costs → mid 12%." },
+    "breakdown": { "architectureEngineering": 0.07, "permitsFees": 0.02 },
+    "notes": "Type-specific: OEM facility/image program design review and branded elements may be specified by the manufacturer; some OEMs offer facility incentive programs that offset cost (not modeled)."
+  },
+
+  "contingency": {
+    "design": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "OEM image requirements evolve during design; judgment." },
+    "hard": { "low": 0.05, "mid": 0.07, "high": 0.10, "evidence": [], "derived": true, "method": "Simple building types; judgment consistent with commercial norms." },
+    "soft": { "low": 0.05, "mid": 0.08, "high": 0.10, "evidence": [], "derived": true, "method": "Standard 5–10%." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 140, "max": 400, "dollarYear": 2019, "region": "US", "method": "Hard $130–280 × 1.09–1.18 soft ≈ $142–330; widened to $400 for luxury-marque flagships. 2019 dollars." }
+  },
+
+  "evidence": [
+    {
+      "id": "d1", "metric": "hardCostPerSF", "value": 122.52, "unit": "USD/sf",
+      "region": "US national average", "regionKey": "US", "dataYear": 2019,
+      "source": { "title": "Construction Cost Estimates for Car Dealership in National, US (model page)", "url": "https://www.rsmeans.com/model-pages/car-dealership", "publisher": "Gordian / RSMeans", "accessed": "2026-10-24" },
+      "quote": "Garage, Auto Sales with E.I.F.S. & Concrete Block / Rigid Steel … 21,000 SF … Total building cost $131.10 (union), incl. Contractor fees (25%) $24.51 and Architectural fees (7%) $8.58 per SF",
+      "scopeNotes": "Value = $131.10 − $8.58 = $122.52/SF; building only, no site work or equipment; basic components; 2019 data. Open shop total $119.35.",
+      "confidence": "medium"
+    },
+    {
+      "id": "d2", "metric": "hardCostPerSite", "value": 4300000, "unit": "USD/site",
+      "region": "Mount Pleasant (Racine), WI", "regionKey": "WI", "dataYear": 2017,
+      "source": { "title": "Racine Hyundai dealership project profile", "url": "https://dailyreporter.com/?p=176731", "publisher": "The Daily Reporter (Milwaukee)", "accessed": "2026-10-24" },
+      "quote": "$4.3 million … 22,500 square feet … a service center with 12 bays",
+      "scopeNotes": "≈$191/SF; built Aug 2016–May 2017; includes alignment bay, car wash and detailing bay. Whether site work and equipment are included is not stated.",
+      "confidence": "medium"
+    },
+    {
+      "id": "d3", "metric": "hardCostPerSite", "value": 4318000, "unit": "USD/site",
+      "region": "Richmond, VA", "regionKey": "VA-Richmond", "dataYear": 2005,
+      "source": { "title": "Colonial Honda — project portfolio", "url": "https://danielco.net/portfolio/details/colonial_honda", "publisher": "Daniel & Company", "accessed": "2026-10-24" },
+      "quote": "39,500 square foot new full service automobile dealership … Construction value: $4,318,000",
+      "scopeNotes": "≈$109/SF in 2004–05 dollars; includes earthwork, underground utilities, concrete and asphalt paving, vehicle display. Old — escalation-sensitive.",
+      "confidence": "medium"
+    },
+    {
+      "id": "d4", "metric": "hardCostPerSF", "value": null, "low": 91, "high": 134, "unit": "USD/sf",
+      "region": "Texas (low) and New York (high)", "regionKey": "US", "dataYear": 2021,
+      "source": { "title": "Car Dealership Showroom Construction Cost Analysis (Building Cost Breakdown Included)", "url": "https://www.profitableventure.com/cost-build-showroom-car-dealership/", "publisher": "Profitable Venture", "accessed": "2026-10-24" },
+      "quote": "In New York, the costs are on average 134 U.S. dollars per square foot. However, the cost in Texas is significantly lower at 91 U.S. dollars per square foot.",
+      "scopeNotes": "Blog, published March 2021, unsourced; showroom building only. Also lists 'mechanic/service station' $115,000–$320,000.",
+      "confidence": "low"
+    },
+    {
+      "id": "d5", "metric": "buildingSF", "value": null, "low": 21433, "high": 57839, "unit": "count",
+      "region": "Clark County (Vancouver), WA", "regionKey": "WA",
+      "source": { "title": "Clark County Board of Equalization — Board Clerk's Record of Hearing (January 11, 2023), dealership petitions", "url": "https://clark.wa.gov/sites/default/files/2023-02/01112023.pdf", "publisher": "Clark County, Washington", "accessed": "2026-10-24" },
+      "quote": "The property was built in 1987 with 34,528 square feet … located on 1.95 acres. The property is divided into a showroom of 14,000 square feet, a service center of 8,600 square feet, a repair garage of 10,800 square feet",
+      "scopeNotes": "Sizing only (depreciated assessed values are not construction costs). Other records: Honda ~33,000 SF on 4.29 ac; VW 21,433 SF on 2.55 ac; CDJR 57,839 SF on 5.53 ac; Kia 22,069 SF on 2.8 ac.",
+      "confidence": "high"
+    },
+    {
+      "id": "d6", "metric": "buildingSF", "value": 67152, "unit": "count",
+      "region": "Mentor, OH", "regionKey": "OH",
+      "source": { "title": "Classic Ford/Lincoln Dealership — project page", "url": "https://clevelandconstruction.com/general-contracting/projects/classic-fordlincoln-dealership/", "publisher": "Cleveland Construction", "accessed": "2026-10-24" },
+      "quote": "a new 67,152 square-foot Ford/Lincoln dealership",
+      "scopeNotes": "2012 new construction; 34 service bays, car wash, 36,642 SF service and parts area. No cost published.",
+      "confidence": "medium"
+    },
+    {
+      "id": "d7", "metric": "buildingSF", "value": 25000, "unit": "count",
+      "region": "Brooks, Alberta (Canada)",
+      "source": { "title": "Harwood Ford Dealership — project page", "url": "https://sekoconstruction.com/projects/harwood-ford-dealership", "publisher": "Seko Construction", "accessed": "2026-10-24" },
+      "quote": "A 25,000SF dealership facility",
+      "scopeNotes": "Canadian project, sizing/program only: 5,700 SF showroom, 14 service bays, 2 detail bays, 1 wash bay. No cost published.",
+      "confidence": "low"
+    }
+  ],
+
+  "openQuestions": [
+    "No recent (2023–2026) dealership construction cost with stated scope was found — web search quota was exhausted mid-session. Look for city staff reports on dealership incentive (sales-tax rebate) agreements, which often state construction investment, and OEM image-program cost reporting (Automotive News).",
+    "Site-work allowance per building SF is derived from assessment acreage, not a cost source.",
+    "Service-bay equipment, wash and FF&E are judgment values."
+  ]
+}

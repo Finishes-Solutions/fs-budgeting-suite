@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "id": "signage",
+  "name": "Signage",
+  "researchedAt": "2026-10-24",
+  "note": "Installed price incl. fabrication, foundation, installation and electrical hookup; excludes sign permits/variances (soft cost) unless noted. Evidence is vendor/marketing guides only (low confidence); web search budget ran out before municipal or consultant sources could be found.",
+  "items": [
+    {
+      "id": "monument-sign",
+      "name": "Monument sign (ground-mounted, masonry/aluminum base, illuminated)",
+      "division": "10",
+      "unit": "ea",
+      "cost": {
+        "low": 8000, "mid": 25000, "high": 60000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e1"],
+        "derived": false,
+        "method": "AlphaGraphics guide (e1, 2026): basic $5,000–$15,000, mid-range (premium materials, LED/halo lighting) $15,000–$40,000, premium $40,000–$100,000+. Mid = midpoint of the mid-range tier (typical project entry sign); low = basic tier mid; high = lower half of premium tier. Excludes LED message centers ($15k–$300k+ per e1)."
+      },
+      "notes": "One per primary entrance is typical. Landscaping around the sign is carried in landscaping."
+    },
+    {
+      "id": "pylon-sign",
+      "name": "Pylon sign (multi-tenant, 20–40 ft, illuminated)",
+      "division": "10",
+      "unit": "ea",
+      "cost": {
+        "low": 25000, "mid": 75000, "high": 200000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e2"],
+        "derived": true,
+        "method": "BlinkSigns (e2, 2023) puts 'pylon business signs' at $5,000–$15,000, which reflects small single-tenant pole signs. Multi-tenant shopping-center/highway pylons need engineered drilled-pier foundations, steel structure and multiple illuminated cabinets; by analogy with e1's monument tiers (foundation $1.5k–$15k, fabrication up to $80k+, installation with crane $2k–$15k+), a 20–40 ft multi-tenant pylon is set at $25k (low) / $75k (mid) / $200k (high, tall highway pylon with LED message center). Judgment — verify with a sign fabricator quote."
+      },
+      "notes": "Often restricted or prohibited by local sign codes; check zoning first."
+    },
+    {
+      "id": "building-signage",
+      "name": "Building-mounted sign (illuminated channel letters / blade sign)",
+      "division": "10",
+      "unit": "ea",
+      "cost": {
+        "low": 4000, "mid": 10000, "high": 25000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e3", "e2"],
+        "derived": false,
+        "method": "BlinkSigns channel-letter guide (e3, 2026): most single-storefront illuminated channel letter projects $4,000–$12,000; FAQ range $3,000–$20,000+. Low = e3 low; mid ≈ upper-middle of the planning range for a project ID sign larger than a storefront; high = e3 FAQ high + premium (halo-lit, large-format building ID)."
+      },
+      "notes": "Per sign face. Retail: one per tenant (often tenant-paid). Multifamily/hotel: 1–3 building ID signs."
+    },
+    {
+      "id": "wayfinding-package",
+      "name": "Wayfinding & code signage package (directional, ADA room ID, building/unit numbering)",
+      "division": "10",
+      "unit": "ls",
+      "cost": {
+        "low": 15000, "mid": 50000, "high": 150000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No source captured (web search limit reached). Judgment: low = small commercial building (ADA room ID, exit/code signs, a few directional signs); mid = 200–300-unit garden multifamily or mid-size hotel (unit numbers, building numbers, vehicular directionals, amenity and code signage ≈ $150–$250 per dwelling unit); high = campus-scale/multi-building project with illuminated vehicular wayfinding. Verify against an interior signage sub's quote."
+      },
+      "notes": "Scale with project size — roughly $0.50–$1.50 per GSF for interior code/ID signage on commercial buildings (judgment)."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1", "metric": "monumentSignCost", "low": 5000, "high": 150000, "unit": "USD/ea",
+      "region": "Conroe, TX", "regionKey": "TX", "dataYear": 2026,
+      "source": { "title": "Monument Signs for Businesses: A Complete Guide", "url": "https://www.alphagraphics.com/us-texas-conroe-us723/blog/blog-list/2026/07/monument-signs-for-businesses-a-complete-guide", "publisher": "AlphaGraphics Conroe", "accessed": "2026-10-24" },
+      "quote": "anywhere from $5,000 to $150,000 or more",
+      "scopeNotes": "Vendor guide (July 2026). Tiers: basic $5k–$15k; mid-range $15k–$40k (premium materials, LED/halo lighting); premium $40k–$100k+. LED illumination adds $5k–$30k+.",
+      "confidence": "low"
+    },
+    {
+      "id": "e2", "metric": "pylonSignCost", "low": 5000, "high": 15000, "unit": "USD/ea",
+      "region": "United States", "regionKey": "US", "dataYear": 2023,
+      "source": { "title": "Signage Cost for Business: How Much Should You Expect to Pay?", "url": "https://blinksigns.com/signage-cost-for-business-how-much-should-you-expect-to-pay/", "publisher": "BlinkSigns", "accessed": "2026-10-24" },
+      "quote": "On average, pylon business signs cost anywhere between $5,000 and $15,000.",
+      "scopeNotes": "Vendor blog (Sept 2023); reflects small single-tenant pylons. Same page: general business sign average 'between $2,000 to $3,000'.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3", "metric": "channelLetterSignCost", "low": 4000, "high": 12000, "unit": "USD/ea",
+      "region": "United States", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "How much does a channel letter sign cost?", "url": "https://blinksigns.com/channel-letter-sign-cost/", "publisher": "BlinkSigns", "accessed": "2026-10-24" },
+      "quote": "Most single-storefront illuminated channel letter projects fall in the $4,000 to $12,000 planning range",
+      "scopeNotes": "Vendor guide (June 2026). FAQ: 'Illuminated channel letters often fall within the $3,000-$20,000+ range'.",
+      "confidence": "low"
+    }
+  ]
+}

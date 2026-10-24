@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 1,
+  "id": "student-housing",
+  "name": "Student housing",
+  "category": "residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "bed",
+  "summary": "Purpose-built off-campus student housing leased by the bed: 3-5 bedroom units with a bathroom per bedroom, furnished, built as garden, wrap, podium or high-rise near campus. Per-bed cost is driven by the building form (same structure economics as conventional multifamily), bathroom density and furnishing. Public per-bed budgets found are on-campus university projects (Utah 2022, UTEP 2025), which carry dining/student-life space; off-campus figures are therefore derived from the multifamily files and flagged for verification.",
+  "sizing": {
+    "typicalSize": {
+      "low": 400,
+      "mid": 700,
+      "high": 1200,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical off-campus PBSH projects of ~150-300 units x 3-4 beds = 400-1,200 beds (judgment); UTEP hall 456 beds (e3), Utah phases 850 and 1,150 beds (e1)."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 380,
+      "mid": 450,
+      "high": 520,
+      "evidence": [],
+      "derived": true,
+      "method": "Gross SF per bed: 4BR/4BA units ~1,300-1,450 net SF (~330-360 net SF/bed) at ~80-85% efficiency plus clubhouse/study space => ~420-480 GSF/bed; suburban garden PBSH with larger units at the high end."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 60,
+      "mid": 110,
+      "high": 250,
+      "evidence": [],
+      "derived": true,
+      "method": "Garden PBSH ~20-30 units/acre x 3.5 beds = 70-105 beds/acre; podium/high-rise near campus 200+ beds/acre (derived from garden/podium densities in this category)."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.3,
+      "mid": 0.6,
+      "high": 0.9,
+      "evidence": [],
+      "derived": true,
+      "method": "Parking per bed: near-campus podium projects ~0.3-0.5; suburban garden PBSH ~0.8-0.9 (judgment; varies with local code).",
+      "type": "structured"
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 80000,
+      "mid": 115000,
+      "high": 175000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e3",
+        "e4",
+        "e5"
+      ],
+      "derived": true,
+      "method": "Derived: perSF x sfPerPrimaryUnit. Mid $255/GSF (between the garden $185 and podium $290 mids in this category, weighted to mid-rise near-campus product, plus ~3% for a bathroom per bedroom) x 450 GSF/bed ~= $115k/bed. Low ~ garden PBSH $200 x 400 = $80k; high ~ podium/high-rise $340 x 520 = ~$175k. On-campus public projects run higher per bed because they include dining and student-life space: Utah 2022 construction $159,325/bed (e1); UTEP 2025 total project ~$237k/bed incl. soft costs and a dining hall (e3)."
+    },
+    "perSF": {
+      "low": 200,
+      "mid": 255,
+      "high": 340,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e4",
+        "e5"
+      ],
+      "derived": true,
+      "method": "Derived from the multifamily product-type ranges (LandSouth garden $130-190 / wrap $200-275 / podium $235-350, e5; RLB 18-city multifamily median $225-410, e4) and this category's garden/podium mids, +~3% for bath-per-bed plumbing and tile."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. general conditions, OH&P, on-site work, clubhouse/study amenities; excludes land, soft costs, unit furniture (FF&E line), off-sites, impact/tap fees and financing. Podium/high-rise PBSH parking: use the podium/high-rise parking items."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.85,
+    "standard": 1.0,
+    "premium": 1.2,
+    "luxury": 1.45,
+    "evidence": [],
+    "derived": true,
+    "method": "Same tier steps as conventional multifamily (see garden/podium files); luxury reflects high-rise 'amenity-rich' PBSH near flagship campuses."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.132
+      },
+      {
+        "division": "03",
+        "pct": 0.09
+      },
+      {
+        "division": "04",
+        "pct": 0.018
+      },
+      {
+        "division": "05",
+        "pct": 0.026
+      },
+      {
+        "division": "06",
+        "pct": 0.157
+      },
+      {
+        "division": "07",
+        "pct": 0.054
+      },
+      {
+        "division": "08",
+        "pct": 0.03
+      },
+      {
+        "division": "09",
+        "pct": 0.093
+      },
+      {
+        "division": "10",
+        "pct": 0.006
+      },
+      {
+        "division": "11",
+        "pct": 0.026
+      },
+      {
+        "division": "12",
+        "pct": 0.034
+      },
+      {
+        "division": "14",
+        "pct": 0.01
+      },
+      {
+        "division": "21",
+        "pct": 0.016
+      },
+      {
+        "division": "22",
+        "pct": 0.085
+      },
+      {
+        "division": "23",
+        "pct": 0.043
+      },
+      {
+        "division": "26",
+        "pct": 0.084
+      },
+      {
+        "division": "27",
+        "pct": 0.006
+      },
+      {
+        "division": "28",
+        "pct": 0.006
+      },
+      {
+        "division": "31",
+        "pct": 0.036
+      },
+      {
+        "division": "32",
+        "pct": 0.03
+      },
+      {
+        "division": "33",
+        "pct": 0.018
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived: 50/50 blend of the garden split (RAND-sourced) and podium split (derived) in this category, then +1.5 pts plumbing (22) and +0.5 pts finishes (09) for a bathroom per bedroom, offset by -1.0 pts framing (06) and -1.0 pts site (32); division 01 absorbs rounding."
+  },
+  "lineItems": [
+    {
+      "id": "bath-per-bed",
+      "name": "Private bathroom per bedroom (fixtures, tile, plumbing rough-in)",
+      "division": "22",
+      "unit": "bed",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 9000,
+        "mid": 13000,
+        "high": 18000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: compact bathroom (toilet, lav, tub/shower, tile, exhaust, rough-in) ~ $9-18k each (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out; the defining PBSH cost feature."
+    },
+    {
+      "id": "clubhouse-study",
+      "name": "Clubhouse, study lounges and fitness",
+      "division": "01",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 1200000,
+        "mid": 2000000,
+        "high": 3500000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: 5,000-10,000 SF of amenity space at ~$250-350/SF (2026)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "access-control-wifi",
+      "name": "Bed-level access control and building-wide Wi-Fi",
+      "division": "27",
+      "unit": "bed",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 800,
+        "mid": 1200,
+        "high": 2000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: keyless bedroom locks and dense managed Wi-Fi typical of PBSH (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 3000,
+      "mid": 4500,
+      "high": 6500,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: furnished bedroom (bed, desk, chair, dresser) plus shared living/dining furniture and amenity FF&E ~ $3,000-6,500 per bed (2026); PBSH is leased furnished."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.17,
+      "mid": 0.23,
+      "high": 0.32,
+      "evidence": [
+        "e2",
+        "e6"
+      ],
+      "derived": false,
+      "method": "Utah public project soft/hard 0.20 incl. FF&E and IT (e2, no developer fee); RAND market-rate multifamily 0.19-0.33 incl. financing (e6). Mid 0.23 for a private developer excl. construction interest; FF&E carried separately here."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.045
+    },
+    "notes": "Schedules are tied to August move-in - acceleration premiums and pre-leasing marketing are common soft items."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    },
+    "hard": {
+      "low": 0.04,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: fixed academic-year delivery date raises schedule risk."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 90000,
+      "max": 260000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Hard low $80k x 1.15 ~= $92k; hard high $175k x 1.45 ~= $254k; on-campus projects with dining (UTEP ~$237k/bed total, e3) sit near the top."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerBed",
+      "value": 159325,
+      "unit": "USD/bed",
+      "region": "Salt Lake City, UT (University of Utah)",
+      "regionKey": "UT-SaltLakeCity",
+      "dataYear": 2022,
+      "source": {
+        "title": "New Student Housing - Housing & Residential Education, Board of Higher Education, November 18, 2022 (University of Utah)",
+        "url": "https://ushe.edu/wp-content/uploads/pdf/agendas/20221118/UofU_Student_Housing.pdf",
+        "publisher": "Utah System of Higher Education",
+        "accessed": "2026-10-24"
+      },
+      "quote": "PROJECT BUDGET ... Cost per Bed: Construction $159,325; Soft Costs $31,833 (Design Fees, Permits & Inspection, UIT, FF&E); TOTAL PROJECT $191,208",
+      "scopeNotes": "On-campus university housing for ~2,000 beds (Annex 1,150 + Shoreline Ridge 850) including associated dining, retail and student-life space; 2022 budget. On-campus residence halls carry more common/dining area than off-campus purpose-built student housing.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "softCostPctOfHard",
+      "value": 0.2,
+      "unit": "ratio",
+      "region": "Salt Lake City, UT",
+      "regionKey": "UT-SaltLakeCity",
+      "source": {
+        "title": "New Student Housing - Housing & Residential Education, Board of Higher Education, November 18, 2022 (University of Utah)",
+        "url": "https://ushe.edu/wp-content/uploads/pdf/agendas/20221118/UofU_Student_Housing.pdf",
+        "publisher": "Utah System of Higher Education",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Construction $198,467,255 $120,181,215 $159,325 / Soft Costs $ 35,383,307 $ 28,383,641 $ 31,833 (Design Fees, Permits & Inspection, UIT, FF&E)",
+      "scopeNotes": "Soft/hard = 31,833 / 159,325 = 0.20 including FF&E and IT; public owner (no developer fee, financing outside budget).",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "totalProjectCostPerBed",
+      "value": 236842,
+      "unit": "USD/bed",
+      "region": "El Paso, TX (UTEP)",
+      "regionKey": "TX-ElPaso",
+      "dataYear": 2025,
+      "source": {
+        "title": "UT System Regents approve construction of new $108M student housing complex at UTEP (Nov 2025)",
+        "url": "https://www.utep.edu/newsfeed/2025/November/ut-system-regents-approve-construction-of-new-108m-student-housing-complex-at-utep.html",
+        "publisher": "The University of Texas at El Paso",
+        "accessed": "2026-10-24"
+      },
+      "quote": "a new $108 million student housing complex ... will house 456 beds ... four-story, co-ed dormitory for freshmen",
+      "scopeNotes": "Total project allocation ($108M / 456 beds = ~$237k per bed) for an on-campus freshman residence hall with a large dining hall, fitness and lounges; total project cost incl. soft costs. Not off-campus PBSH.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 225,
+      "high": 410,
+      "unit": "USD/sf",
+      "region": "Median of the 18 US cities in RLB's table",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "RLB Construction Cost Report North America Q3 2026 (PDF), Indicative Construction Costs table",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table, Residential 'Multi-Family' column (US$/SF GFA), 18 US cities from Austin 190-285 to San Francisco 420-700; median LOW 225, median HIGH 410 (computed from the table)",
+      "scopeNotes": "RLB: 'Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area.' One 'Multi-Family' column covers all multifamily product (garden to high-rise); sitework treatment not stated. Median of city lows/highs computed by the researcher; the 18 cities skew to large, higher-cost metros.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 130,
+      "high": 350,
+      "unit": "USD/sf",
+      "region": "US (developer commentary)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Which multifamily product type is right for your site",
+        "url": "https://landsouth.com/which-multifamily-product-type-is-right-for-your-site/",
+        "publisher": "LandSouth Construction",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Garden-style ... $130 to $190 per square foot; Wrap ... $200 to $275; Podium ... $235 to $350 per square foot",
+      "scopeNotes": "Multifamily product-type ranges used as proxies for off-campus student housing built in the same forms.",
+      "confidence": "low"
+    },
+    {
+      "id": "e6",
+      "metric": "softCostPctOfHard",
+      "value": null,
+      "low": 0.19,
+      "high": 0.33,
+      "unit": "ratio",
+      "region": "Texas / Colorado / California",
+      "regionKey": "US",
+      "source": {
+        "title": "The High Cost of Producing Multifamily Housing in California (RAND RR-A3743-1, Ward & Schlake, 2025) - copy hosted by San Diego Housing Commission",
+        "url": "https://sdhc.org/wp-content/uploads/2025/04/Att-2_RAND_RRA3743-1.pdf",
+        "publisher": "RAND Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 3.1 Panel C. Soft Costs: Texas Market rate $22; Colorado Market rate $44; California Market rate $84 (vs Panel A hard costs $115 / $237 / $253 per NRSF)",
+      "scopeNotes": "Soft/hard ratios derived: TX 0.19, CO 0.19, CA 0.33. RAND soft costs include A&E, legal, fees and financing costs; market-rate sample mixes garden, podium, wrap, high-rise.",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "Off-campus PBSH per-bed hard costs (public REIT disclosures, city incentive applications or university P3 ground-lease budgets) were not found in this pass - the per-bed mid is derived.",
+    "Beds per unit and GSF per bed vary widely by market; a sample of recent PBSH projects would tighten sizing."
+  ]
+}

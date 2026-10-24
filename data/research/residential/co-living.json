@@ -1,0 +1,441 @@
+{
+  "schemaVersion": 1,
+  "id": "co-living",
+  "name": "Co-living",
+  "category": "residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "bed",
+  "summary": "Purpose-built co-living: private furnished bedrooms (often with private bath) clustered in suites around shared kitchens and lounges, leased by the room, usually urban podium or mid-rise. Structure costs follow podium multifamily; per-bed cost is driven by gross SF per bed (~300-350), bathroom density and furnishing. No public US per-bed construction budget was found in this pass, so all cost values are derived from the multifamily files and should be verified.",
+  "sizing": {
+    "typicalSize": {
+      "low": 120,
+      "mid": 250,
+      "high": 450,
+      "evidence": [
+        "e6"
+      ],
+      "derived": true,
+      "method": "Typical new-build US co-living projects ~100-450 bedrooms (e.g., Boston Allston co-living building with 279 bedrooms, e6; judgment)."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 280,
+      "mid": 330,
+      "high": 400,
+      "evidence": [
+        "e4"
+      ],
+      "derived": true,
+      "method": "Gross SF per bed: private bedroom 130-200 SF (+ ~40-50 SF private bath where provided) plus ~60-100 SF/bed of shared kitchen/lounge, and corridors/amenity at ~80% efficiency => ~280-400. Compare Census median new rental unit 1,000 SF (e4)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 150,
+      "mid": 250,
+      "high": 450,
+      "evidence": [],
+      "derived": true,
+      "method": "Podium/mid-rise density (~80-150 units/acre, see podium-multifamily.json) at ~2.5-3 beds per equivalent unit."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0,
+      "mid": 0.2,
+      "high": 0.5,
+      "evidence": [],
+      "derived": true,
+      "method": "Co-living is typically sited near transit with reduced or no parking (judgment).",
+      "type": "structured"
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 65000,
+      "mid": 100000,
+      "high": 165000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3"
+      ],
+      "derived": true,
+      "method": "Derived: perSF x sfPerPrimaryUnit: mid $300 x 330 = ~$100k/bed; low ~$230 x 280 = ~$65k (wood mid-rise, shared baths); high ~$410 x 400 = ~$165k (high-rise, private baths)."
+    },
+    "perSF": {
+      "low": 230,
+      "mid": 300,
+      "high": 410,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3"
+      ],
+      "derived": true,
+      "method": "Derived: podium multifamily mid $290/SF (podium-multifamily.json; LandSouth podium $235-350, e2; RSMeans 4-7 story $210-475, e3; RLB 18-city multifamily median $225-410, e1) + ~3% for higher bathroom density and suite kitchens per SF; high = high-rise mid ($410)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. general conditions, OH&P and on-site work; excludes land, soft costs, room/common furniture (FF&E line), off-sites, impact/tap fees, financing. Parking, if any, via the podium file's parking items. Conversions of offices/hotels are not represented."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.85,
+    "standard": 1.0,
+    "premium": 1.2,
+    "luxury": 1.4,
+    "evidence": [],
+    "derived": true,
+    "method": "Same tier steps as podium multifamily (see podium-multifamily.json)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.125
+      },
+      {
+        "division": "03",
+        "pct": 0.13
+      },
+      {
+        "division": "04",
+        "pct": 0.015
+      },
+      {
+        "division": "05",
+        "pct": 0.03
+      },
+      {
+        "division": "06",
+        "pct": 0.14
+      },
+      {
+        "division": "07",
+        "pct": 0.055
+      },
+      {
+        "division": "08",
+        "pct": 0.035
+      },
+      {
+        "division": "09",
+        "pct": 0.09
+      },
+      {
+        "division": "10",
+        "pct": 0.007
+      },
+      {
+        "division": "11",
+        "pct": 0.014
+      },
+      {
+        "division": "12",
+        "pct": 0.023
+      },
+      {
+        "division": "14",
+        "pct": 0.02
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.082
+      },
+      {
+        "division": "23",
+        "pct": 0.055
+      },
+      {
+        "division": "26",
+        "pct": 0.085
+      },
+      {
+        "division": "27",
+        "pct": 0.011
+      },
+      {
+        "division": "28",
+        "pct": 0.008
+      },
+      {
+        "division": "31",
+        "pct": 0.025
+      },
+      {
+        "division": "32",
+        "pct": 0.018
+      },
+      {
+        "division": "33",
+        "pct": 0.012
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived from the podium split in this category: +1.2 pts plumbing (22, bath per bedroom), +0.5 finishes (09), +0.5 HVAC (23), +0.3 low-voltage (27, room access/Wi-Fi); offset by fewer in-unit kitchens (-0.8 equipment 11, -0.7 casework 12) and less parking concrete (-1.0 03); 01 absorbs rounding."
+  },
+  "lineItems": [
+    {
+      "id": "suite-kitchens",
+      "name": "Shared suite kitchens (one per 4-8 bedrooms)",
+      "division": "12",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 0.17
+      },
+      "cost": {
+        "low": 25000,
+        "mid": 40000,
+        "high": 60000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: larger-than-apartment kitchen with multiple refrigerators/storage, appliances and casework (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "private-bath",
+      "name": "Private bathroom per bedroom",
+      "division": "22",
+      "unit": "bed",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 0.8
+      },
+      "cost": {
+        "low": 9000,
+        "mid": 13000,
+        "high": 18000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: compact bathroom incl. fixtures, tile, rough-in (2026 judgment); ~80% of new-build co-living rooms have private baths (assumption)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "access-control-wifi",
+      "name": "Room-level smart locks and managed Wi-Fi",
+      "division": "27",
+      "unit": "bed",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 800,
+        "mid": 1200,
+        "high": 2000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 4000,
+      "mid": 5500,
+      "high": 8000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: furnished bedroom plus share of shared kitchen smallwares, lounge and co-working furniture (2026 judgment); co-living is leased fully furnished."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.18,
+      "mid": 0.25,
+      "high": 0.35,
+      "evidence": [
+        "e5"
+      ],
+      "derived": true,
+      "method": "Derived: RAND market-rate soft/hard 0.19-0.33 incl. financing (e5); urban podium-like entitlement plus operator/brand technical services; mid 0.25 excluding construction interest."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.05
+    },
+    "notes": "Zoning often treats co-living as a special use (SRO/rooming house/group living) - entitlement risk and time can add soft cost."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.06,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: newer building type with code-interpretation risk."
+    },
+    "hard": {
+      "low": 0.04,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 75000,
+      "max": 240000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Hard low $65k x 1.15 ~= $75k; hard high $165k x 1.45 ~= $240k."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 225,
+      "high": 410,
+      "unit": "USD/sf",
+      "region": "Median of the 18 US cities in RLB's table",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "RLB Construction Cost Report North America Q3 2026 (PDF), Indicative Construction Costs table",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table, Residential 'Multi-Family' column (US$/SF GFA), 18 US cities from Austin 190-285 to San Francisco 420-700; median LOW 225, median HIGH 410 (computed from the table)",
+      "scopeNotes": "RLB: 'Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area.' One 'Multi-Family' column covers all multifamily product (garden to high-rise); sitework treatment not stated. Median of city lows/highs computed by the researcher; the 18 cities skew to large, higher-cost metros.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 200,
+      "high": 350,
+      "unit": "USD/sf",
+      "region": "US (developer commentary)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Which multifamily product type is right for your site",
+        "url": "https://landsouth.com/which-multifamily-product-type-is-right-for-your-site/",
+        "publisher": "LandSouth Construction",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Wrap ... $200 to $275 per square foot; Podium ... at current industry hard costs near $235 to $350 per square foot",
+      "scopeNotes": "Multifamily product-type ranges used as a proxy - new-build co-living is typically podium or mid-rise.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 210,
+      "high": 475,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "How Much Does It Cost to Build an Apartment Complex?",
+        "url": "https://www.rsmeans.com/resources/how-much-does-it-cost-to-build-an-apartment-complex",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "4-7 Story Apartment | 34,000 - 115,000 | $210 - 475 | $7.1 - 54.6M",
+      "scopeNotes": "RSMeans square-foot model range (4-7 story apartment); page calls it a national average; scope (sitework, soft) not stated. Page dated May 29, 2026 but headed '2025 Guide' - treated as 2025 dollars.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "unitSizeNetSF",
+      "value": 1000,
+      "unit": "sf",
+      "region": "US",
+      "regionKey": "US",
+      "source": {
+        "title": "Characteristics of New Housing - Highlights",
+        "url": "https://www.census.gov/construction/chars/highlights.html",
+        "publisher": "U.S. Census Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The median size of multifamily units completed that were built for rent was 1,000 square feet",
+      "scopeNotes": "All new multifamily rental units completed in 2025 (all building types); net unit area.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "softCostPctOfHard",
+      "value": null,
+      "low": 0.19,
+      "high": 0.33,
+      "unit": "ratio",
+      "region": "Texas / Colorado / California",
+      "regionKey": "US",
+      "source": {
+        "title": "The High Cost of Producing Multifamily Housing in California (RAND RR-A3743-1, Ward & Schlake, 2025) - copy hosted by San Diego Housing Commission",
+        "url": "https://sdhc.org/wp-content/uploads/2025/04/Att-2_RAND_RRA3743-1.pdf",
+        "publisher": "RAND Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 3.1 Panel C. Soft Costs: Texas Market rate $22; Colorado Market rate $44; California Market rate $84 (vs Panel A hard costs $115 / $237 / $253 per NRSF)",
+      "scopeNotes": "Soft/hard ratios derived: TX 0.19, CO 0.19, CA 0.33. RAND soft costs include A&E, legal, fees and financing costs; market-rate sample mixes garden, podium, wrap, high-rise.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "projectBedrooms",
+      "value": 279,
+      "unit": "count",
+      "region": "Boston (Allston), MA",
+      "regionKey": "MA-Boston",
+      "source": {
+        "title": "Allston development gets $58M financing after fast lease-up (Nov 19, 2024)",
+        "url": "https://bankerandtradesman.com/allston-development-gets-58m-financing-after-fast-lease-up/",
+        "publisher": "Banker & Tradesman",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The 525 LINK contains 279 bedrooms, most of them located in suites sharing living and dining areas.",
+      "scopeNotes": "Project-size data point only (co-living with some conventional apartments); the $58M is permanent financing, not cost.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "No US co-living project budget with construction cost per bedroom was found (searched developer press, Boston/LA trade coverage); a city staff report or lender disclosure would anchor this file.",
+    "Share of rooms with private baths and beds per kitchen vary by operator - confirm design assumptions.",
+    "Office/hotel-to-co-living conversions need a separate cost basis."
+  ]
+}
