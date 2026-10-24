@@ -9,12 +9,12 @@ Read this first in a new session, then `docs/DECISIONS.md`, then `CLAUDE.md`.
 |---|---|
 | 0 Setup & safety net | Branch created; pro forma goldens committed (7 deals, `test/proforma-golden.test.js`); `feature` merged; CLAUDE.md hard rules added |
 | 1 Audit | DONE — `docs/AUDIT.md` |
-| 2 Research | DONE (first pass) — 94 types, 144 blocks, 1,017 evidence items; `docs/RESEARCH.md` still to write |
+| 2 Research | DONE — 94 types, 144 blocks, 1,025 evidence items; `docs/RESEARCH.md` (generated coverage + summaries) |
 | 3 Engine design | DONE — `docs/BUDGET_ENGINE.md` |
 | 4 Engine build | DONE — `app/budget-engine.js`, `test/budget-engine.test.js` (22 tests), pro forma handoff by scope |
-| 5 UI | IN PROGRESS — workspace, detail, scenarios, sensitivity, exports working; browser suite, a11y review, screenshots to do |
-| 6 Samples | not started |
-| 7 Second research pass | not started |
+| 5 UI | DONE — workspace, detail, scenarios, sensitivity, exports, project files; `test/suite-23.js` (41 checks); axe WCAG 2.1 AA clean (22 states, light+dark); `docs/screenshots/` |
+| 6 Samples | DONE — 16 samples in `docs/sample-output/` (`node tools/run-samples.js`) |
+| 7 Second research pass | DONE — soft-cost definitions aligned (27 types), fee norms → NAHB 2024, glamping/equestrian evidence, range calibrations |
 | 8 Verify & merge | not started |
 
 ## How to run things
@@ -33,15 +33,16 @@ Read this first in a new session, then `docs/DECISIONS.md`, then `CLAUDE.md`.
 
 ## Next
 
-1. `test/research-data.test.js` (bundle fresh, splits 100%, every type within its range check) — bank-branch and sports-complex currently land slightly above range.
-2. Browser suite for v2 (`test/suite-23.js`), screenshots to `docs/screenshots/`, accessibility review.
-3. Phase 6 samples (`tools/run-samples.js` → `docs/sample-output/`).
-4. `docs/RESEARCH.md`, second research pass (Phase 7), README/user docs, CHANGELOG.
-5. Phase 8 verification + reviews + merge.
+1. Phase 8: syntax check, full node + browser test run, code-review (high), security-review, simplify; fix; re-run.
+2. Retake screenshots after review fixes (`BASE=… node tools/take-screenshots.js`), re-run samples.
+3. Merge `upgrade/budgeting-v2` → `staging` (normal merge) and push.
 
-## Known issues
+## Known issues / blocked
 
-- `test/suite-07.js` "every TOC link scrolls to its section" fails on the merged `feature` base before any upgrade change (pre-existing). Must be fixed before Phase 8.
+- FIXED: `test/suite-07.js` TOC scroll (smooth scroll on the now-longer help page took >750 ms; the test now waits for scrolling to settle). `test/suite-02.js` date fixture was time-zone dependent (now noon UTC).
+- BLOCKED (worked around): the `design:accessibility-review` and `design:design-system` skills fail to load ("Unknown command"). Substitute: `tools/a11y-audit.js` (axe-core, WCAG 2.0/2.1 A+AA rules) — all estimate screens pass; design reviewed manually against the vendored Finishes Solutions tokens (the finishes-solutions-design skill did load).
+- Pre-existing, outside v2 scope: the app-wide dark theme's `--ink-500` label colour is 4.4:1 on cards (below AA for small text). v2 remaps it inside its own scope; the owner may want the same fix app-wide.
+- Research agents hit a shared 200-call web-search cap mid-run; many values are derived (see `docs/RESEARCH.md` → Weakest areas).
 
 ## Things I need to do (owner)
 
