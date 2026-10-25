@@ -32,10 +32,14 @@ const round4 = x => Math.round(x * 10000) / 10000;
 // The engine multiplies GOI — after vacancy, other income included — so the
 // derivation has to divide by the same thing. Returns null when the budget
 // cannot support a ratio (no income, or no expenses entered).
+// Gross Operating Income as the engine's percentOfGOI mode multiplies it:
+// vacancy applies to rent only (rule 3). The one formula, for both derivations.
+function goiOf(rentYr, otherYr, vacancy) { return rentYr * (1 - vacancy) + otherYr; }
+
 function deriveExpenseRatio(doc, vacancy) {
   const g = grossIncome(doc);
   const vac = Number.isFinite(+vacancy) ? +vacancy : D.vacancy;
-  const goi = 12 * g.rentMo * (1 - vac) + 12 * g.otherMo;
+  const goi = goiOf(12 * g.rentMo, 12 * g.otherMo, vac);
   if (!(goi > 0)) return null;
   const annualOpex = 12 * g.expMo;
   if (!(annualOpex > 0)) return null;
@@ -136,22 +140,22 @@ function projectFromBudget(doc, v, opts) {
   // replace the unit-mix projection above; everything else about the handoff —
   // the badges, the locks, the re-sync — is unchanged.
   if (doc && doc.engineSummary && doc.engineSummary.proforma) {
-    return engineProjection(doc, v, p, imported, support, fieldOrigins, opts);
+    return engineProjection(doc, v, p, imported, support, opts);
   }
   return { imported, support, fieldOrigins, derived, scope: null };
 }
 
+const { isSafeRowId } = require('../identifiers');
 const SCOPE_KINDS = ['project', 'component', 'phase'];
-const SCOPE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 // Normalize a requested scope; anything unrecognised is the whole project.
 function normalizeScope(scope) {
   if (!scope || typeof scope !== 'object' || !SCOPE_KINDS.includes(scope.kind)) return { kind: 'project', id: 'project' };
   if (scope.kind === 'project') return { kind: 'project', id: 'project' };
-  return SCOPE_ID.test(String(scope.id || '')) ? { kind: scope.kind, id: String(scope.id) } : { kind: 'project', id: 'project' };
+  return isSafeRowId(scope.id) ? { kind: scope.kind, id: scope.id } : { kind: 'project', id: 'project' };
 }
 
-function engineProjection(doc, v, p, imported, support, fieldOrigins, opts) {
+function engineProjection(doc, v, p, imported, support, opts) {
   const pf = doc.engineSummary.proforma;
   const scope = normalizeScope(opts.scope);
   let s = pf.project;
@@ -160,7 +164,7 @@ function engineProjection(doc, v, p, imported, support, fieldOrigins, opts) {
   // A component or phase that is not in this version is NOT quietly replaced
   // by the whole project — that would turn a component analysis into a
   // project one with a different price. The caller refuses (scopeMissing).
-  if (!s) return { imported, support, fieldOrigins, derived: null, scope, scopeMissing: true };
+  if (!s) return { scope, scopeMissing: true };
   // Rule 2 still holds for the whole project: the price is recomputed from the
   // document. A component or phase price is its materialized share.
   const price = scope.kind === 'project' ? round2(p.project) : round2(nz(s.totalCost));
@@ -183,7 +187,7 @@ function engineProjection(doc, v, p, imported, support, fieldOrigins, opts) {
   // because the analysis UI's badge, note and override-restore read it.
   const potential = nz(s.income && s.income.year1PotentialIncome), otherYr = nz(s.income && s.income.otherIncome);
   const vac = imported.vacancy !== null ? imported.vacancy : (Number.isFinite(+opts.vacancy) ? +opts.vacancy : D.vacancy);
-  const goi = potential * (1 - vac) + otherYr;
+  const goi = goiOf(potential, otherYr, vac);
   imported.expenses = ratio !== null
     ? { mode: 'percentOfGOI', value: ratio, override: false,
         derivedFrom: { projectId: opts.projectId, budgetVersionNumber: v && v.VersionNumber, scope,

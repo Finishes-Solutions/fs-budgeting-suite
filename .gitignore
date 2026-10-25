@@ -16,6 +16,3 @@ node_modules/
 test/out/
 *.log
 
-# Python bytecode from tools/research-pass2
-__pycache__/
-*.pyc

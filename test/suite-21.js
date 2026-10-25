@@ -24,7 +24,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // one first" over a disabled Create and offer no way to do it.
  await p.evaluate(()=>go('home')); await p.waitForTimeout(700);
  await p.click('#newBudgetBtn'); await p.waitForTimeout(400);
- await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'); await p.waitForTimeout(700);
+ await p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'); await p.waitForTimeout(700);
  ok('with no projects, Create waits for one', await p.locator('#nbCreate').isDisabled());
  ok('the Budget ID waits for the project instead of offering a legacy BD- id',
     (await p.locator('#nbId').inputValue())==='', await p.locator('#nbId').inputValue());
@@ -95,7 +95,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       .find(x=>/\+ New Budget/.test(x.textContent))));
  await p.click('#page-project button:has-text("+ New Budget")');
  await p.waitForTimeout(700);
- await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")');
+ await p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]');
  await p.waitForTimeout(800);
  await p.fill('#nbId','BD-7301');
  await p.click('#nbCreate'); await p.waitForTimeout(800);
@@ -364,7 +364,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     await p.evaluate(()=>budgetOrigin&&budgetOrigin.id==='OP-7301'), JSON.stringify(await p.evaluate(()=>budgetOrigin)));
  await p.evaluate(()=>go('home')); await p.waitForTimeout(700);
  await p.click('#newBudgetBtn'); await p.waitForTimeout(400);
- await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'); await p.waitForTimeout(700);
+ await p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'); await p.waitForTimeout(700);
  await p.selectOption('#nbProject','OP-7300'); await p.waitForTimeout(500);
  await p.click('#nbCreate'); await p.waitForTimeout(900);
  ok('a budget created from Home has no project origin',
@@ -375,7 +375,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // and from a project page, Back returns to THAT project
  await p.evaluate(()=>FSProjects.open('OP-7300')); await p.waitForTimeout(900);
  await p.click('#page-project button:has-text("+ New Budget")'); await p.waitForTimeout(500);
- await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'); await p.waitForTimeout(800);
+ await p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'); await p.waitForTimeout(800);
  await p.click('#nbCreate'); await p.waitForTimeout(900);
  ok('a budget created from a project page points Back at that project',
     (await p.locator('.page.on .btn-back').getAttribute('title'))==='Back to OP-7300',

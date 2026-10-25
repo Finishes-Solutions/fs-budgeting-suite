@@ -34,21 +34,19 @@
     });
     return loading;
   }
-  var SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
-  var st = { result: null, resultFor: null, view: 'detail', open: {}, q: '', picker: null, drawer: null,
-    blockQ: '', scope: 'project', sens: null, scen: null };
+  function initialState() {
+    return { result: null, resultFor: null, view: 'detail', open: {}, q: '', picker: null, drawer: null,
+      blockQ: '', scope: 'project', sens: null, scen: null };
+  }
+  var st = initialState();
+  var cache = {};       // option lists built once per research bundle (it never changes after load)
 
   /* ------------------------------------------------------------ formatting */
   function esc(s) { return A ? A.esc(s) : String(s == null ? '' : s); }
-  function money(v) {
-    if (v === null || v === undefined || !isFinite(v)) return '—';
-    var r = Math.round(v);
-    return (r < 0 ? '−$' : '$') + Math.abs(r).toLocaleString('en-US');
-  }
-  function money2(v) {
-    if (v === null || v === undefined || !isFinite(v)) return '—';
-    return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
+  // The app's money formatters (index.html usd / usd2: −$ for negatives),
+  // with "—" for a value that does not exist.
+  function money(v) { return v === null || v === undefined || !isFinite(v) ? '—' : A.usd(v); }
+  function money2(v) { return v === null || v === undefined || !isFinite(v) ? '—' : A.usd2(v); }
   function short(v) {
     if (v === null || v === undefined || !isFinite(v)) return '—';
     var a = Math.abs(v), sg = v < 0 ? '−$' : '$';
@@ -59,10 +57,7 @@
   }
   function pct(v, d) { return v === null || v === undefined || !isFinite(v) ? '—' : (v * 100).toFixed(d === undefined ? 1 : d) + '%'; }
   function num(v, d) { return v === null || v === undefined || !isFinite(v) ? '—' : (+v).toLocaleString('en-US', { maximumFractionDigits: d === undefined ? 2 : d }); }
-  function unitL(id, plural) {
-    var u = (D.units || []).filter(function (x) { return x.id === id; })[0];
-    return u ? (plural ? u.plural : u.label) : (id || '');
-  }
+  function unitL(id, plural) { return id ? E._.unitLabel(D, id, plural) : ''; }
   function isNum(v) { return typeof v === 'number' && isFinite(v); }
   function newId(p) { return p + Math.random().toString(36).slice(2, 9); }
   function nextMonth() { var d = new Date(); d.setMonth(d.getMonth() + 3); return d.toISOString().slice(0, 7); }
@@ -84,7 +79,7 @@
     var seen = {};
     var fix = function (o, p) {
       if (!o || typeof o !== 'object') return;
-      if (!SAFE_ID.test(String(o.id || '')) || seen[o.id]) o.id = newId(p);
+      if (!A.safeRowId(o.id) || seen[o.id]) o.id = newId(p);
       seen[o.id] = true;
     };
     e.phases.forEach(function (x) { fix(x, 'p'); x.financing = x.financing || { enabled: true }; });
@@ -248,15 +243,14 @@
   }
   function srcBadge(src) {
     if (!src) return '';
-    var kind = src.kind === 'user' ? 'user' : (src.kind === 'computed' || src.kind === 'allocation') ? 'computed'
-      : src.kind === 'missing' ? 'derived'
-      : (src.kind === 'derived' || (src.ref && src.ref.derived)) ? 'derived' : 'research';
+    var kind = E.sourceKind(src);
     var lab = kind === 'user' ? 'Edited' : kind === 'derived' ? 'Derived — verify' : kind === 'computed' ? 'Computed' : 'Sourced';
     return '<span class="v2-src v2-src-' + kind + '">' + lab + '</span>';
   }
 
   /* ------------------------------------------------------------ regions */
   function regionOptions() {
+    if (cache.regions) return cache.regions;
     var reg = D.indices && D.indices.regional;
     var f = reg ? reg.factors : { US: 1 }, labels = reg ? reg.labels || {} : {};
     var keys = Object.keys(f).filter(function (x) { return x !== 'US'; });
@@ -266,6 +260,7 @@
     var o = [['US', 'National average (1.00)']];
     metros.forEach(function (x) { o.push([x, (labels[x] || x) + ' (' + (+f[x]).toFixed(2) + ')']); });
     states.forEach(function (x) { o.push([x, (labels[x] || x) + ' — statewide (' + (+f[x]).toFixed(2) + ')']); });
+    cache.regions = o;
     return o;
   }
 
@@ -470,7 +465,7 @@
       + (p.mode !== 'mixed' ? fld('Construction months', numInput('ph.' + ph0.id + '.months', ph0.months, { ph: rp0 ? rp0.months : '', step: 1 }),
           'Blank = Census average for this type and value') : '')
       + fld('Escalation per year', numInput('p.settings.escalationRate', p.settings.escalationRate, { pct: 1, step: 0.1,
-          ph: D.indices.escalation && D.indices.escalation.forecast ? +(100 * avgForecast()).toFixed(2) : '' }),
+          ph: E.forecastMean(D) !== null ? +(100 * E.forecastMean(D)).toFixed(2) : '' }),
           rp0 && rp0.escalation ? 'To midpoint: ' + pct(rp0.escalation.factor - 1, 2) : '')
       + '</div>';
     h += '<div class="grid g4" style="margin-top:12px">'
@@ -494,10 +489,6 @@
       + '</div>';
     return h + '</div></section>';
   }
-  function avgForecast() {
-    var fc = D.indices.escalation.forecast || {}, ks = Object.keys(fc);
-    return ks.length ? ks.reduce(function (s, x) { return s + (+fc[x]); }, 0) / ks.length : 0;
-  }
 
   function mixedHTML(p, r) {
     var h = '';
@@ -508,12 +499,13 @@
     return h;
   }
 
+  function sortedBlocks() {
+    return cache.blocks || (cache.blocks = Object.keys(D.blocks).map(function (id) { return D.blocks[id]; })
+      .sort(function (a, b) { return (a.blockName + a.name).localeCompare(b.blockName + b.name); }));
+  }
   function blockOptions() {
-    var o = [['', '— choose a building block —']];
-    Object.keys(D.blocks).map(function (id) { return D.blocks[id]; })
-      .sort(function (a, b) { return (a.blockName + a.name).localeCompare(b.blockName + b.name); })
-      .forEach(function (b) { o.push([b.id, b.blockName + ' · ' + b.name + ' (' + money(b.cost.mid) + '/' + unitL(b.unit) + ')']); });
-    return o;
+    return cache.blockOptions || (cache.blockOptions = [['', '— choose a building block —']].concat(sortedBlocks().map(function (b) {
+      return [b.id, b.blockName + ' · ' + b.name + ' (' + money(b.cost.mid) + '/' + unitL(b.unit) + ')']; })));
   }
 
   function sharedHTML(p, r) {
@@ -549,7 +541,7 @@
   function phasesHTML(p, r) {
     var h = '<section class="card"><div class="card-hd"><h2>Phases</h2><span class="eyebrow">Timeline, escalation &amp; financing per phase</span></div><div class="card-bd">';
     var phs = r ? r.phases : [];
-    var mi = function (m) { var x = /^(\d{4})-(\d{2})$/.exec(m || ''); return x ? +x[1] * 12 + (+x[2] - 1) : null; };
+    var mi = E._.monthIndex;
     var starts = phs.map(function (x) { return mi(x.start); }).filter(function (x) { return x !== null; });
     var ends = phs.map(function (x) { var s = mi(x.start); return s === null ? null : s + x.months; }).filter(function (x) { return x !== null; });
     var t0 = starts.length ? Math.min.apply(null, starts) : null, t1 = ends.length ? Math.max.apply(null, ends) : null;
@@ -614,9 +606,8 @@
     h += '</tbody></table>';
     h += '<div class="v2-blockadd"><input type="search" class="v2-search" data-ui="blockQ" data-k="v2.blockq" placeholder="Search building blocks — pool, dock, metal building, site work, solar…" value="' + esc(st.blockQ) + '" aria-label="Search building blocks">';
     var q = st.blockQ.toLowerCase().trim();
-    var list = Object.keys(D.blocks).map(function (id) { return D.blocks[id]; })
-      .filter(function (b) { return !q || (b.name + ' ' + b.blockName + ' ' + b.id).toLowerCase().indexOf(q) >= 0; })
-      .sort(function (a, z) { return (a.blockName + a.name).localeCompare(z.blockName + z.name); }).slice(0, q ? 40 : 12);
+    var list = sortedBlocks()
+      .filter(function (b) { return !q || (b.name + ' ' + b.blockName + ' ' + b.id).toLowerCase().indexOf(q) >= 0; }).slice(0, q ? 40 : 12);
     h += '<div class="v2-blocklist">' + list.map(function (b) {
       return '<button type="button" class="v2-blockbtn" data-act="add-block" data-comp="' + esc(c.id) + '" data-item="' + esc(b.id) + '">'
         + '<span>' + esc(b.blockName) + ' · ' + esc(b.name) + '</span><span class="mono">' + money(b.cost.mid) + '/' + esc(unitL(b.unit)) + '</span></button>';
@@ -754,8 +745,7 @@
         if (r.phases.length > 1) h += treeRow(pk, pOpen, 1, esc(phaseName[ph] || ph), pl.reduce(function (s, l) { return s + l.amount; }, 0));
         if (r.phases.length > 1 && !pOpen) return;
         var grp = {};
-        pl.forEach(function (l) { var gname = l.category === 'hard' && l.division ? 'Division ' + l.division + ' — ' + E._.csiTitle(l.division) : l.group;
-          (grp[gname] = grp[gname] || []).push(l); });
+        pl.forEach(function (l) { var gname = groupName(l); (grp[gname] = grp[gname] || []).push(l); });
         Object.keys(grp).sort(groupOrder).forEach(function (gname) {
           var gk = pk + '|' + gname, gOpen = st.open[gk] === true;
           var gl = grp[gname];
@@ -775,6 +765,9 @@
     });
     h += '<tr class="v2-tot"><td>Total project cost</td><td></td><td></td><td></td><td class="r mono">' + money(r.totals.total) + '</td><td></td></tr>';
     return h + '</tbody></table></div></section>';
+  }
+  function groupName(l) {
+    return l.category === 'hard' && l.division ? 'Division ' + l.division + ' — ' + E._.csiTitle(l.division) : l.group;
   }
   function groupOrder(a, b) {
     var rank = function (s) { return /^Division/.test(s) ? 0 : /Specialty|Building blocks|Parking|Shared/.test(s) ? 1 : /FF&E/.test(s) ? 2
@@ -818,7 +811,7 @@
   }
 
   function scenariosHTML(p, r) {
-    if (!st.scen) st.scen = E.compareScenarios(p, D);
+    if (!st.scen) st.scen = E.compareScenarios(p, D, { base: result() });
     var rows = st.scen;
     var h = '<section class="card"><div class="card-hd"><h2>Scenarios</h2><span class="eyebrow">Side by side against the base estimate</span></div><div class="card-bd">';
     p.scenarios.forEach(function (s) {
@@ -848,7 +841,7 @@
   }
 
   function sensitivityHTML(p) {
-    if (!st.sens) st.sens = E.sensitivity(p, D);
+    if (!st.sens) st.sens = E.sensitivity(p, D, { base: result() });
     var s = st.sens, mx = Math.max.apply(null, s.drivers.map(function (d) { return Math.max(Math.abs(d.lowDelta), Math.abs(d.highDelta)); })) || 1;
     var h = '<section class="card"><div class="card-hd"><h2>Sensitivity</h2><span class="eyebrow">Each driver moved alone; base ' + money(s.base) + '</span></div><div class="card-bd">';
     h += '<table class="tbl v2-tbl v2-tornado"><thead><tr><th>Driver</th><th class="r">Low case</th><th class="v2-tcell">Change in total cost</th><th>High case</th></tr></thead><tbody>';
@@ -864,16 +857,8 @@
   }
 
   function sourcesHTML(r) {
-    var used = {};
-    var walk = function (src) {
-      if (!src || typeof src !== 'object') return;
-      (src.evidence || []).forEach(function (e) { used[e] = (used[e] || 0) + 1; });
-      ['ref', 'was', 'of', 'typePct', 'weight', 'baseline', 'rate', 'ltc', 'fee'].forEach(function (k) { walk(src[k]); });
-    };
-    r.lines.forEach(function (l) { walk(l.source); });
-    r.components.forEach(function (c) { walk(c.baselineSource); });
-    var ids = Object.keys(used).sort();
-    var derived = r.lines.filter(function (l) { var s = l.source || {}; return s.kind === 'derived' || (s.ref && s.ref.derived); });
+    var ids = E.evidenceIds(r);
+    var derived = r.lines.filter(function (l) { return E.sourceKind(l.source) === 'derived'; });
     var h = '<section class="card"><div class="card-hd"><h2>Sources &amp; assumptions</h2><span class="eyebrow">' + ids.length + ' sources · '
       + derived.length + ' derived lines</span></div><div class="card-bd">';
     h += '<p class="v2-note">Every default comes from the research files shipped with the app (version <span class="mono">' + esc(D.version)
@@ -954,18 +939,16 @@
   /* ------------------------------------------------------------ exports */
   function fsdoc() {
     var doc = A.getDoc(), r = result();
-    return { fsdoc: '1', meta: {
+    return E.toFsdoc(r, doc.engine, D, {
       title: doc.name || doc.projectId || 'Estimate',
-      eyebrow: 'FINISHES SOLUTIONS · PROJECT ESTIMATE',
       subline: (doc.projectId || '') + (doc.address ? ' · ' + doc.address : ''),
-      rightLines: [new Date().toLocaleDateString('en-US'), 'Research data ' + D.version, doc.type || ''].filter(Boolean),
+      rightLines: [A.fmtWhen(new Date()), 'Research data ' + D.version, doc.type || ''].filter(Boolean),
       bandLine: (doc.name || 'Estimate') + ' · Total ' + money(r.totals.total),
-      footnote: 'Budgeting engine ' + r.engineVersion + ' · research ' + D.version + ' · derived estimates are marked — verify before relying on them.',
-      footerRight: doc.projectId || '',
-      generatedAt: new Date().toISOString()
-    }, sheets: E.toFsdocSheets(r, doc.engine, D) };
+      footerRight: doc.projectId || '', generatedAt: new Date().toISOString() });
   }
-  function baseName() { var d = A.getDoc(); return ((d.projectId || 'estimate') + ' ' + (d.name || '')).trim().replace(/[^\w\- ]+/g, '').replace(/\s+/g, '_') + '_estimate'; }
+  // The classic export's name with an _estimate suffix, so the two reports of
+  // one budget sort together and do not overwrite each other.
+  function baseName() { return A.exportBaseName() + '_estimate'; }
   async function exportXlsx() {
     if (typeof ExcelJS === 'undefined' || typeof fsRender === 'undefined') { A.toast('Excel library is unavailable — reload the page.'); return; }
     try {
@@ -1049,7 +1032,7 @@
       case 'toggle': {
         var key = el.getAttribute('data-key');
         var cur = st.open[key];
-        var dflt = /^c:/.test(key) && key.split('|').length <= 2 ? true : false;
+        var dflt = /^c:/.test(key) && key.split('|').length <= 2;
         st.open[key] = !(cur === undefined ? dflt : cur);
         return paint();
       }
@@ -1059,7 +1042,7 @@
         st.open = {};
         if (r) r.lines.forEach(function (l) {
           var ck = 'c:' + (l.comp || '_project');
-          var gname = l.category === 'hard' && l.division ? 'Division ' + l.division + ' — ' + E._.csiTitle(l.division) : l.group;
+          var gname = groupName(l);
           st.open[ck] = true; st.open[ck + '|' + l.phase] = true; st.open[ck + '|' + l.phase + '|' + gname] = on;
         });
         return paint();
@@ -1215,7 +1198,6 @@
     // The project's Construction start is phase 1's start unless phase 1 has
     // its own (set in Mixed-use & phases).
     if (f === 'p.startMonth' && P().phases[0] && P().mode !== 'mixed') P().phases[0].startMonth = null;
-    if (el.type === 'number' && ev.type === 'input') { /* recompute live while typing numbers */ }
     var m = /^sc\.([A-Za-z0-9_-]+)\.(name|q|price|esc|soft|cont|land)$/.exec(f);
     if (m) { if (ev.type === 'change' || m[2] !== 'name') scenarioSet(m[1], m[2], parse(el)); return; }
     if (getPath(f) === parse(el)) return;
@@ -1273,6 +1255,8 @@
         if (page === 'budget') renderDetail(document.getElementById('v2Detail'));
       });
     } finally { painting = false; }
+    // The picker and the drawer are modal: the page behind them must not scroll.
+    document.body.classList.toggle('modal-open', !!(st.picker || st.drawer));
     if (pendingPaint) { pendingPaint = false; setTimeout(paint, 0); }
   }
 
@@ -1285,13 +1269,12 @@
   }
 
   window.FSBudgetV2 = {
-    init: init, ready: ready, isEngine: isEngine, startNew: startNew, migrate: migrate, materialize: materialize, paint: paint, sized: sized,
-    result: result, reset: function () { st.result = null; st.resultFor = null; st.picker = null; st.drawer = null; st.view = 'detail'; st.scope = 'project'; st.sens = null; st.scen = null; },
+    init: init, ready: ready, startNew: startNew, migrate: migrate, materialize: materialize, paint: paint, sized: sized,
+    result: result, reset: function () { st = initialState(); document.body.classList.remove('modal-open'); },
     setImpactFees: function (doc, amount) {
       if (!isEngine(doc) || !D) return;
       var v = amount === null || amount === undefined ? null : Math.round(amount * 100) / 100;
       if (doc.engine.settings.impactFeesOverride !== v) { doc.engine.settings.impactFeesOverride = v; materialize(doc); }
-    },
-    _st: st
+    }
   };
 })();

@@ -23,7 +23,7 @@ const PASS='Basalt-Meridian-8538-27D5B4';
      headers:{'Content-Type':'application/json'},
      body:JSON.stringify({create:true,name:a.n,address:'1 Test Way'})});
  },{p:'OP-0401',n:'Edit Flag Test'});
- await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'));
  await p.waitForTimeout(600);
  await p.selectOption('#nbProject','OP-0401');
  await p.fill('#nbId','BD-0401');

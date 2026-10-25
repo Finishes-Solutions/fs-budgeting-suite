@@ -389,9 +389,8 @@ custom provider for sign-in.
 - **The pro forma engine is frozen.** `test/proforma-golden.test.js` must pass unchanged.
   Estimates reach it only through `from-budget.js` (`engineProjection()`, scope =
   project | component | phase, carried in `input.source.scope` for re-sync).
-- **The type filter word "Multifamily" is a selector in older suites.** The estimate
-  row in New Budget deliberately says "apartments" so `has-text("Multifamily")` still
-  finds the classic template.
+- **New Budget rows are selected by `data-tpl`** (`engine`, `multifamily`, `blank`) in
+  the suites and tools — never by their text, which is product copy.
 
 ## Projects
 

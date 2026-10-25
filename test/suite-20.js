@@ -37,7 +37,7 @@ async function nbFinish(p,project,id,name){
  await p.evaluate(()=>go('budgets')); await p.waitForTimeout(400);
  await nbSeedProject(p,'OP-7200','Guard Rail Project');
  await p.click('.page.on button:has-text("+ New Budget")');
- await p.click('#newBudgetModal .tpl-row:has-text("Blank Budget")');
+ await p.click('#newBudgetModal .tpl-row[data-tpl="blank"]');
  await p.waitForTimeout(500);
  await nbFinish(p,'OP-7200','BD-7201','Empty Shell');
  await p.fill('#pId','TST-7201'); await p.fill('#pName','Empty Shell');
@@ -65,7 +65,7 @@ async function nbFinish(p,project,id,name){
  // ---------- 2. the multifamily template lands inside the rails ----------
  await p.evaluate(()=>go('budgets')); await p.waitForTimeout(400);
  await p.click('.page.on button:has-text("+ New Budget")');
- await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")');
+ await p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]');
  await p.waitForTimeout(600);
  await nbFinish(p,'OP-7200','BD-7202','Rail Tower');
  await p.fill('#pId','TST-7202'); await p.fill('#pName','Rail Tower');

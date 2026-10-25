@@ -15,7 +15,8 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { check } = require('./validate-research');
+const { check, walk: walkAll } = require('./validate-research');
+const { FEE_USES } = require('../app/budget-engine.js');
 
 const ROOT = path.join(__dirname, '..', 'data', 'research');
 const OUT = path.join(__dirname, '..', 'app', 'research-data.js');
@@ -93,14 +94,6 @@ function provenance(range, file) {
   return { file, evidence: refs, derived: !!range.derived, method: range.method || '' };
 }
 
-function walk(dir) {
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(d => {
-    const p = path.join(dir, d.name);
-    if (d.isDirectory()) return walk(p);
-    return d.name.endsWith('.json') ? [p] : [];
-  }).sort();
-}
-
 function build() {
   const catalog = readJson(path.join(ROOT, 'catalog.json'));
   const units = readJson(path.join(ROOT, 'units.json'));
@@ -128,7 +121,7 @@ function build() {
   if (!esc) warn('_indices/escalation.json missing — dollars are NOT escalated');
   if (!reg) warn('_indices/regional.json missing — dollars are NOT regionalized');
 
-  const files = walk(ROOT).filter(f => !['catalog.json', 'units.json'].includes(path.basename(f)));
+  const files = walkAll(ROOT);
   for (const abs of files) {
     const rel = path.relative(ROOT, abs).split(path.sep).join('/');
     const v = check(abs);
@@ -215,6 +208,15 @@ function build() {
       openQuestions: doc.openQuestions || []
     };
   }
+
+  // Template switches the engine acts on must name things that exist: a typo
+  // would otherwise price fees at $0 or fall back to a default duration silently.
+  const durations = new Set(Object.keys((bundle.common.schedule || {}).items || {}).filter(k => /^duration-/.test(k)).map(k => k.slice(9)));
+  Object.values(bundle.types).forEach(t => {
+    const tp = t.template || {};
+    if (tp.feeUse && tp.feeUse !== 'none' && !FEE_USES[tp.feeUse]) errors.push(t.id + ': template.feeUse "' + tp.feeUse + '" is not a fee land use');
+    if (tp.durationClass && !durations.has(tp.durationClass)) errors.push(t.id + ': template.durationClass "' + tp.durationClass + '" has no _common/schedule entry');
+  });
 
   // Every catalog type must have a research file before the bundle ships.
   const missing = catalog.types.filter(t => !bundle.types[t.id]).map(t => t.id);

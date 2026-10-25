@@ -120,7 +120,7 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   ok('creating a budget from a project preselects that project',
      (await p.locator('#nbProject').inputValue()) === 'OP-0900',
      await p.locator('#nbProject').inputValue());
-  await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")');
+  await p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]');
   await p.waitForTimeout(700);
   ok('the Budget ID suggested is the project\'s first child, BDG-0900-01',
      (await p.locator('#nbId').inputValue()) === 'BDG-0900-01',
@@ -185,7 +185,7 @@ const R = []; const ok = (n, c, e = '') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}$
   await p.waitForTimeout(300);
   await p.click('#page-project button:has-text("+ New Budget")');
   await p.waitForTimeout(600);
-  await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")');
+  await p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]');
   await p.waitForTimeout(700);
   await p.fill('#nbName', 'Post-publish Budget');
   await p.click('#nbCreate');

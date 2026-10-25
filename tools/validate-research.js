@@ -14,8 +14,8 @@ const ROOT = path.join(__dirname, '..', 'data', 'research');
 const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'catalog.json'), 'utf8'));
 const UNITS = new Set(JSON.parse(fs.readFileSync(path.join(ROOT, 'units.json'), 'utf8')).units.map(u => u.id));
 const TYPES = new Map(catalog.types.map(t => [t.id, t]));
-const DIVISIONS = new Set(['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14',
-  '21', '22', '23', '25', '26', '27', '28', '31', '32', '33', '34', '35', '40', '41', '42', '43', '44', '45', '46', '48']);
+// The CSI divisions the engine can title (one list: app/budget-engine.js CSI_TITLES).
+const DIVISIONS = new Set(Object.keys(require('../app/budget-engine.js').CSI_TITLES));
 const CONF = new Set(['high', 'medium', 'low']);
 const QTY_PER = new Set(['project', 'primaryUnit', 'sf', 'acre', ...UNITS]);
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
@@ -174,4 +174,4 @@ if (require.main === module) {
   process.exit(bad ? 1 : 0);
 }
 
-module.exports = { check };
+module.exports = { check, walk };

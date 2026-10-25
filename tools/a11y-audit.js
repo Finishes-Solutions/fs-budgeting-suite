@@ -34,7 +34,7 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
     await p.evaluate(t => document.documentElement.setAttribute('data-theme', t), theme);
     await p.evaluate(() => { location.hash = '#/home'; }); await p.waitForTimeout(300);
     await p.click('button:has-text("+ New Budget")'); await p.waitForTimeout(300);
-    await p.click('#newBudgetModal .tpl-row:has-text("Estimate Any Project Type")'); await p.waitForTimeout(400);
+    await p.click('#newBudgetModal .tpl-row[data-tpl="engine"]'); await p.waitForTimeout(400);
     await p.selectOption('#nbProject', 'OP-3901'); await p.fill('#nbName', 'A11y ' + theme); await p.click('#nbCreate'); await p.waitForTimeout(700);
     await audit(theme + ': type picker', ['.v2-picker']);
     await p.click('.v2-type[data-type="hotel-select-service"]'); await p.waitForTimeout(300);

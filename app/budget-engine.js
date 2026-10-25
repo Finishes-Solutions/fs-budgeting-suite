@@ -86,6 +86,9 @@
     return it && it.range && isNum(it.range.mid) ? it.range.mid : null;
   }
   function srcOf(range) { return range && range.source ? range.source : null; }
+  /* A line's source for a researched value: 'derived' when the research says
+     the value is a derived estimate, else 'research'. */
+  function researchSrc(ref) { return { kind: ref && ref.derived ? 'derived' : 'research', ref: ref || null }; }
   function unitLabel(D, id, plural) {
     var u = (D && D.units || []).filter(function (x) { return x.id === id; })[0];
     return u ? (plural ? u.plural : u.label) : id;
@@ -224,20 +227,20 @@
     var unit = t ? t.primaryUnit : 'ls';
     var spu = t && t.sizing && t.sizing.sfPerPrimaryUnit ? t.sizing.sfPerPrimaryUnit.mid : null;
     var sf;
-    if (isNum(comp.sf) && comp.sf !== null) sf = Math.max(0, comp.sf);
+    if (isNum(comp.sf)) sf = Math.max(0, comp.sf);
     else if (unit === 'sf') sf = size;
     else if (spu > 0) sf = size * spu;
     else if (unit === 'nrsf') sf = size;
     else sf = 0;
     var upa = t && t.sizing && t.sizing.primaryUnitsPerAcre ? t.sizing.primaryUnitsPerAcre.mid : null;
     var acres;
-    if (isNum(comp.acres) && comp.acres !== null) acres = Math.max(0, comp.acres);
+    if (isNum(comp.acres)) acres = Math.max(0, comp.acres);
     else if (unit === 'acre') acres = size;
     else if (upa > 0) acres = size / upa;
     else acres = 0;
     var ppu = t && t.sizing && t.sizing.parkingPerPrimaryUnit ? t.sizing.parkingPerPrimaryUnit : null;
     var spaces = comp.parking && isNum(comp.parking.spaces) ? comp.parking.spaces : (ppu && isNum(ppu.mid) ? ppu.mid * size : 0);
-    return { size: size, unit: unit, sf: sf, acres: acres, spaces: spaces, parkingType: ppu ? ppu.type || null : null };
+    return { size: size, unit: unit, sf: sf, acres: acres, spaces: spaces };
   }
 
   function driverQty(D, per, value, geo, t) {
@@ -256,17 +259,13 @@
     this.overrides = (project && project.overrides) || {};
     this.used = {};
   }
-  /* Build a line without listing it — for a whole shared, land or financing
-     cost that is overridable as one line and then split. Its override counts
-     as used. */
+  /* Add one line (build + list it). make() builds without listing — for a
+     whole shared, land or financing cost that is overridable as one line and
+     then split; its override still counts as used. */
+  Lines.prototype.add = function (L) { var line = this.make(L); this.list.push(line); return line; };
+  /* qty × rate (dollars) unless amountCents is given. An override replaces
+     amount, rate or qty, or switches the line off. */
   Lines.prototype.make = function (L) {
-    var line = this.add(L);
-    this.list.pop();
-    return line;
-  };
-  /* Add one line. qty × rate (dollars) unless amountCents is given. An
-     override replaces amount, rate or qty, or switches the line off. */
-  Lines.prototype.add = function (L) {
     var o = this.overrides[L.key];
     var baseCents = isNum(L.amountCents) ? Math.round(L.amountCents) : cents(nz(L.qty) * nz(L.rate));
     var qty = L.qty, rate = L.rate, amt = baseCents, overridden = false, source = L.source || null;
@@ -285,15 +284,9 @@
       group: L.group || '', division: L.division || null, code: L.code || '', name: L.name,
       qty: isNum(qty) ? qty : null, uom: L.uom || '', rate: isNum(rate) ? rate : null,
       cents: amt, baseCents: baseCents, overridden: overridden, carveOut: !!L.carveOut,
-      timing: L.timing || null, source: source };
-    this.list.push(line);
+      timing: L.timing || null, source: source, part: L.part || null };
     return line;
   };
-
-  function divisionName(D, div) {
-    var names = D && D.divisions;
-    return names && names[div] ? names[div] : 'Division ' + div;
-  }
 
   var CSI_TITLES = { '01': 'General Requirements', '02': 'Existing Conditions', '03': 'Concrete', '04': 'Masonry',
     '05': 'Metals', '06': 'Wood, Plastics & Composites', '07': 'Thermal & Moisture Protection', '08': 'Openings',
@@ -319,7 +312,7 @@
     }
     var key = function (s) { return comp.id + ':' + s; };
     var isCustom = t.id === 'custom';
-    var userPrice = comp.baseline && isNum(comp.baseline.price) && comp.baseline.price !== null && comp.baseline.price > 0;
+    var userPrice = comp.baseline && isNum(comp.baseline.price) && comp.baseline.price > 0;
     var local = userPrice && comp.baseline.basis === 'local';
     var Rf = local ? 1 : R.factor;
     var Ef = E.factor;
@@ -329,8 +322,7 @@
     var H = { factor: 1 };
     if (isNum(comp.stories) && comp.stories && t.template && isNum(t.template.stories)) {
       var per = commonMid(D, 'adjustments', 'storiesAdjustment-perStory');
-      if (per !== null) H = { factor: Math.max(0.5, 1 + per * (comp.stories - t.template.stories)),
-        source: srcOf(common(D, 'adjustments', 'storiesAdjustment-perStory').range) };
+      if (per !== null) H = { factor: Math.max(0.5, 1 + per * (comp.stories - t.template.stories)) };
     }
     if (Q.missing) warnings.push({ level: 'warn', code: 'quality-default', comp: comp.id,
       message: comp.name + ': no researched multiplier for "' + comp.quality + '" quality — priced at standard.' });
@@ -363,10 +355,7 @@
           message: comp.name + ': fixed items exceed 80% of the baseline at typical size — treated as 80%.' });
         fixedAtTypical = 0.8 * P0 * typical; v = 0.2 * P0;
       }
-      var fixedScale = typical > 0 ? fixedAtTypical / (P0 * typical) : 0;
       var baseHardDollars = (v * geo.size * S.factor + (fixedAtTypical > 0 ? fixedAtTypical : 0)) * factorAll;
-      info.baselineHard = baseHardDollars;
-      info.fixedShare = fixedScale;
       info.unitPrice = geo.size > 0 ? baseHardDollars / geo.size : 0;
 
       // Carve-outs: in-baseline items, at their own quantities, inside their division.
@@ -415,7 +404,7 @@
         lines.add({ key: key('item:' + c.li.id), comp: comp.id, phase: phase.id, category: 'hard',
           group: 'Construction', division: c.li.division, code: c.li.division + ' 00 00', name: c.li.name,
           qty: c.q, uom: c.li.unit, rate: c.rate, carveOut: true, timing: 'hard',
-          source: { kind: liSrc.derived ? 'derived' : 'research', ref: liSrc } });
+          source: researchSrc(liSrc) });
       });
     } else if (!isCustom && geo.size > 0 && !(P0 > 0)) {
       warnings.push({ level: 'warn', code: 'no-baseline', comp: comp.id,
@@ -433,7 +422,7 @@
       var liSrc = li.cost.source || {};
       lines.add({ key: key('item:' + li.id), comp: comp.id, phase: phase.id, category: 'hard', group: 'Specialty & site',
         division: li.division, code: li.division + ' 00 00', name: li.name, qty: q, uom: li.unit,
-        rate: li.cost.mid * Rf * Ef, timing: 'hard', source: { kind: liSrc.derived ? 'derived' : 'research', ref: liSrc } });
+        rate: li.cost.mid * Rf * Ef, timing: 'hard', source: researchSrc(liSrc) });
     });
 
     // Site work the baseline does not include.
@@ -444,7 +433,7 @@
         if (b && b.cost) lines.add({ key: key('site-work'), comp: comp.id, phase: phase.id, category: 'hard',
           group: 'Specialty & site', division: b.division || '31', code: (b.division || '31') + ' 00 00',
           name: 'Site development (not in the baseline price)', qty: isNum(sw0.qty) ? sw0.qty : geo.acres, uom: 'acre',
-          rate: b.cost.mid * Rf * Ef, timing: 'hard', source: { kind: b.cost.source.derived ? 'derived' : 'research', ref: b.cost.source } });
+          rate: b.cost.mid * Rf * Ef, timing: 'hard', source: researchSrc(b.cost.source) });
       }
     }
 
@@ -456,7 +445,7 @@
       if (pb && pb.cost && spaces > 0) lines.add({ key: key('parking'), comp: comp.id, phase: phase.id, category: 'hard',
         group: 'Parking', division: pb.division || '32', code: (pb.division || '32') + ' 00 00', name: pb.name,
         qty: spaces, uom: 'space', rate: pb.cost.mid * Rf * Ef, timing: 'hard',
-        source: { kind: pb.cost.source.derived ? 'derived' : 'research', ref: pb.cost.source } });
+        source: researchSrc(pb.cost.source) });
       else if (!pb) warnings.push({ level: 'warn', code: 'parking-type', comp: comp.id,
         message: comp.name + ': no researched cost for parking type "' + pk.type + '".' });
     }
@@ -464,7 +453,7 @@
     // Extra building blocks (the Custom builder, or add-ons on any component).
     (comp.blocks || []).forEach(function (bl) {
       var b = D.blocks && D.blocks[bl.itemId];
-      var hasUser = isNum(bl.unitCost) && bl.unitCost !== null;
+      var hasUser = isNum(bl.unitCost);
       if (!b && !hasUser) {
         warnings.push({ level: 'warn', code: 'unknown-block', comp: comp.id,
           message: comp.name + ': building block "' + bl.itemId + '" is not in the research data.' });
@@ -472,7 +461,7 @@
       }
       var rate = hasUser ? bl.unitCost : b.cost.mid * Rf * Ef;
       var src = hasUser ? { kind: 'user', note: 'Unit cost entered by the user' }
-        : { kind: b.cost.source.derived ? 'derived' : 'research', ref: b.cost.source };
+        : researchSrc(b.cost.source);
       var div = bl.division || (b && b.division) || '01';
       lines.add({ key: key('block:' + bl.id), comp: comp.id, phase: phase.id, category: 'hard', group: 'Building blocks',
         division: div, code: div + ' 00 00', name: bl.name || (b ? b.name : bl.itemId), qty: nz(bl.qty),
@@ -486,7 +475,7 @@
       lines.add({ key: key('ffe'), comp: comp.id, phase: phase.id, category: 'ffe', group: 'FF&E', division: '12',
         code: '12 00 00', name: 'Furniture, fixtures & equipment', qty: geo.size, uom: t.primaryUnit,
         rate: t.ffe.perPrimaryUnit.mid * Q.factor * Rf * Ef, timing: 'hard',
-        source: { kind: fs.derived ? 'derived' : 'research', ref: fs } });
+        source: researchSrc(fs) });
     }
     return info;
   }
@@ -494,14 +483,14 @@
   /* ------------------------------------------------------------ shared elements */
   function sharedCost(D, sh, ctx, phase) {
     var R = ctx.region.factor, E = ctx.esc[phase.id].factor;
-    var hasUser = isNum(sh.unitCost) && sh.unitCost !== null;
+    var hasUser = isNum(sh.unitCost);
     if (sh.itemId) {
       var b = D.blocks && D.blocks[sh.itemId];
       if (!b && !hasUser) return null;
       return { rate: hasUser ? sh.unitCost : b.cost.mid * R * E, uom: b ? b.unit : 'ea', division: (b && b.division) || '01',
         name: sh.name || (b ? b.name : sh.itemId),
         source: hasUser ? { kind: 'user', note: 'Unit cost entered by the user' }
-          : { kind: b.cost.source.derived ? 'derived' : 'research', ref: b.cost.source } };
+          : researchSrc(b.cost.source) };
     }
     if (sh.typeId) {
       var t = typeOf(D, sh.typeId);
@@ -586,12 +575,20 @@
     industrial: { impact: 'impactFee-industrial', per: 'kSF', edu: 'eduPer1000SF-nonresidential', eduPer: 'kSF' },
     hotel: { impact: 'impactFee-hotel', per: 'unit', edu: 'eduPer1000SF-nonresidential', eduPer: 'kSF' }
   };
+  /* Dwelling units (or keys) per-unit fees are charged on — the one rule,
+     used by the fee estimate and reported on each component so a
+     jurisdiction schedule counts the same units (index.html feeUnits()). */
+  function feeDwellings(t, geo) {
+    var spec = t && t.template && FEE_USES[t.template.feeUse];
+    if (!spec || spec.per !== 'unit') return 0;
+    return isNum(t.template.feeDwellingsPerProject) ? t.template.feeDwellingsPerProject
+      : geo.size * (isNum(t.template.feeUnitsPerPrimaryUnit) ? t.template.feeUnitsPerPrimaryUnit : 1);
+  }
   function feeEstimate(D, t, geo) {
     var use = t && t.template && t.template.feeUse;
     var spec = use && FEE_USES[use];
     if (!spec) return null;
-    var units = isNum(t.template.feeDwellingsPerProject) ? t.template.feeDwellingsPerProject
-      : geo.size * (isNum(t.template.feeUnitsPerPrimaryUnit) ? t.template.feeUnitsPerPrimaryUnit : 1);
+    var units = feeDwellings(t, geo);
     var ksf = geo.sf / 1000;
     var parts = [];
     var imp = common(D, 'fees', spec.impact);
@@ -731,7 +728,7 @@
         : (t && t.hardCost && t.hardCost.perPrimaryUnit ? t.hardCost.perPrimaryUnit.mid : 0);
       return p0 * g.size * region.factor + sum(c.blocks || [], function (b) {
         var bi = D.blocks && D.blocks[b.itemId];
-        return nz(b.qty) * (isNum(b.unitCost) && b.unitCost !== null ? b.unitCost : (bi && bi.cost ? bi.cost.mid : 0));
+        return nz(b.qty) * (isNum(b.unitCost) ? b.unitCost : (bi && bi.cost ? bi.cost.mid : 0));
       });
     };
     var defaultMonths = function (comps) {
@@ -828,11 +825,11 @@
     var compById = {};
     project.components.forEach(function (c) { compById[c.id] = c; });
     var pctFrom = function (userVal, compVal, typeRange, commonFile, commonId) {
-      if (isNum(compVal) && compVal !== null) return { v: compVal, source: { kind: 'user', note: 'Component override' } };
-      if (isNum(userVal) && userVal !== null) return { v: userVal, source: { kind: 'user', note: 'Project setting' } };
-      if (typeRange && isNum(typeRange.mid)) return { v: typeRange.mid, source: { kind: typeRange.source && typeRange.source.derived ? 'derived' : 'research', ref: typeRange.source } };
+      if (isNum(compVal)) return { v: compVal, source: { kind: 'user', note: 'Component override' } };
+      if (isNum(userVal)) return { v: userVal, source: { kind: 'user', note: 'Project setting' } };
+      if (typeRange && isNum(typeRange.mid)) return { v: typeRange.mid, source: researchSrc(typeRange.source) };
       var it = commonFile ? common(D, commonFile, commonId) : null;
-      if (it && it.range && isNum(it.range.mid)) return { v: it.range.mid, source: { kind: it.range.source && it.range.source.derived ? 'derived' : 'research', ref: it.range.source } };
+      if (it && it.range && isNum(it.range.mid)) return { v: it.range.mid, source: researchSrc(it.range.source) };
       return { v: 0, source: { kind: 'missing', note: 'No researched value' } };
     };
     Object.keys(groups).sort().forEach(function (gk) {
@@ -843,7 +840,6 @@
       var tc = (t && t.contingency) || {};
       var dP = pctFrom(S.designContingencyPct, cc.design, tc.design, 'contingency', 'designContingency');
       var hP = pctFrom(S.hardContingencyPct, cc.hard, tc.hard, 'contingency', 'hardCostContingency');
-      var sP = pctFrom(S.softContingencyPct, cc.soft, tc.soft, 'contingency', 'softCostContingency');
       var hardBase = g.hard;   // FF&E carries no design contingency
       var dl = lines.add(Object.assign({ key: tag + 'cont:design', category: 'contingency', group: 'Contingency',
         code: '99 02 00', name: 'Design contingency', amountCents: Math.round(hardBase * dP.v), qty: dP.v, uom: '% of hard',
@@ -875,7 +871,7 @@
         if (tp && tp.range && isNum(tp.range.mid) && /project/i.test(tp.basis || '')) {
           var l3 = lines.add(Object.assign({ key: tag + 'soft:thirdPartyReports', category: 'soft', group: 'Soft costs', code: 'SC',
             name: tp.name || 'Third-party reports', qty: 1, uom: 'project', rate: tp.range.mid * region.factor,
-            source: { kind: tp.range.source && tp.range.source.derived ? 'derived' : 'research', ref: tp.range.source } }, base));
+            source: researchSrc(tp.range.source) }, base));
           l3.softId = 'thirdPartyReports';
         }
         // Impact & tap fees.
@@ -884,14 +880,14 @@
         (fe ? fe.parts : []).forEach(function (fp) {
           var lf = lines.add(Object.assign({ key: tag + 'fees:' + fp.id, category: 'fees', group: 'Impact & tap fees', code: 'SC',
             name: fp.name, qty: fp.qty, uom: fp.uom, rate: fp.rate, timing: 'upfront',
-            source: { kind: fp.source && fp.source.derived ? 'derived' : 'research', ref: fp.source } }, base));
+            source: researchSrc(fp.source) }, base));
           lf.softId = 'impactFees';
         });
       }
     });
     // A jurisdiction schedule from the Impact Fees step replaces the estimates,
     // allocated across components by building SF.
-    if (isNum(S.impactFeesOverride) && S.impactFeesOverride !== null && project.components.length) {
+    if (isNum(S.impactFeesOverride) && project.components.length) {
       var feeSplit = allocateCents(cents(S.impactFeesOverride), project.components.map(function (c) { return info[c.id].geo.sf || 0; }));
       project.components.forEach(function (c, k) {
         var lf = lines.add({ key: c.id + '@' + c.phaseId + ':fees:schedule', comp: c.id, phase: c.phaseId, category: 'fees',
@@ -925,12 +921,12 @@
     else landCents = cents(L0.value);
     var landLines = [];
     if (landCents > 0) {
-      var closeP = isNum(L0.closingPct) && L0.closingPct !== null ? { v: L0.closingPct, source: { kind: 'user' } }
+      var closeP = isNum(L0.closingPct) ? { v: L0.closingPct, source: { kind: 'user' } }
         : pctFrom(null, null, null, 'land-closing', 'landClosingCosts');
       var ddIt = common(D, 'land-closing', 'landDueDiligence');
-      var ddC = isNum(L0.dueDiligence) && L0.dueDiligence !== null ? cents(L0.dueDiligence)
+      var ddC = isNum(L0.dueDiligence) ? cents(L0.dueDiligence)
         : (ddIt && ddIt.range && isNum(ddIt.range.mid) ? cents(ddIt.range.mid * region.factor) : 0);
-      var ddSrc = isNum(L0.dueDiligence) && L0.dueDiligence !== null ? { kind: 'user' }
+      var ddSrc = isNum(L0.dueDiligence) ? { kind: 'user' }
         : { kind: ddIt && ddIt.range && ddIt.range.source && ddIt.range.source.derived ? 'derived' : 'research', ref: ddIt && ddIt.range ? ddIt.range.source : null };
       landLines.push({ id: 'price', name: 'Land / acquisition', cents: landCents, source: { kind: 'user', note: 'Land price entered by the user' } });
       landLines.push({ id: 'closing', name: 'Land closing costs', cents: Math.round(landCents * closeP.v), source: closeP.source });
@@ -943,15 +939,15 @@
         return gAll('acres') ? g.acres : gAll('sf') ? g.sf : (info[c.id].directHardCents || 0);
       });
       landLines.forEach(function (ll) {
-        var whole = lines.make({ key: 'land:' + ll.id, category: 'land', amountCents: ll.cents, name: ll.name, source: ll.source });
+        var whole = lines.make({ key: 'land:' + ll.id, category: 'land', part: ll.id, amountCents: ll.cents, name: ll.name, source: ll.source });
         if (!project.components.length) {
-          lines.add({ key: 'land:' + ll.id + '>project', comp: null, phase: firstPhase.id, category: 'land', group: 'Land',
+          lines.add({ key: 'land:' + ll.id + '>project', comp: null, phase: firstPhase.id, category: 'land', part: ll.id, group: 'Land',
             code: 'LAND', name: ll.name, amountCents: whole.cents, source: whole.source });
           return;
         }
         var sp = allocateCents(whole.cents, lw);
         project.components.forEach(function (c, k) {
-          lines.add({ key: 'land:' + ll.id + '>' + c.id, comp: c.id, phase: c.phaseId, category: 'land', group: 'Land',
+          lines.add({ key: 'land:' + ll.id + '>' + c.id, comp: c.id, phase: c.phaseId, category: 'land', part: ll.id, group: 'Land',
             code: 'LAND', name: ll.name, amountCents: sp[k], source: { kind: 'allocation', method: 'acres', of: whole.source } });
         });
       });
@@ -962,13 +958,13 @@
     var taxIt = common(D, 'soft-costs', 'propertyTaxesDuringConstruction');
     if (landCents > 0 && taxIt && taxIt.range && isNum(taxIt.range.mid)) {
       project.components.forEach(function (c) {
-        var landC = sum(lines.list.filter(function (l) { return l.comp === c.id && /^land:price>/.test(l.key); }), function (l) { return l.cents; });
+        var landC = sum(lines.list.filter(function (l) { return l.comp === c.id && l.part === 'price'; }), function (l) { return l.cents; });
         var pi = phaseById[c.phaseId];
         if (!(landC > 0) || !pi) return;
         var lt = lines.add({ key: c.id + '@' + c.phaseId + ':soft:propertyTaxes', comp: c.id, phase: c.phaseId, category: 'soft',
           group: 'Soft costs', code: 'SC', name: taxIt.name || 'Property taxes during construction',
           qty: pi.months / 12, uom: 'years', rate: dollars(landC) * taxIt.range.mid,
-          source: { kind: taxIt.range.source && taxIt.range.source.derived ? 'derived' : 'research', ref: taxIt.range.source } });
+          source: researchSrc(taxIt.range.source) });
         lt.softId = 'propertyTaxesDuringConstruction';
       });
     }
@@ -1098,7 +1094,8 @@
         phaseId: c.phaseId, quality: c.quality, size: g.size, unit: t ? t.primaryUnit : null,
         unitLabel: t ? unitLabel(D, t.primaryUnit, true) : '', sf: g.sf, acres: g.acres, spaces: g.spaces,
         factors: i.factors || {}, baselinePrice: i.baselinePrice || 0, baselineSource: i.baselineSource,
-        unitPrice: i.unitPrice || 0, totals: ct, metrics: m, range: range, revenue: revenue[c.id] || 0 };
+        unitPrice: i.unitPrice || 0, totals: ct, metrics: m, range: range, revenue: revenue[c.id] || 0,
+        feeUnits: t ? feeDwellings(t, g) : 0 };
     });
     var phases = phaseInfo.map(function (pi) {
       var pl = list.filter(function (l) { return l.phase === pi.id; });
@@ -1138,7 +1135,7 @@
     var outLines = list.map(function (l) {
       return { key: l.key, comp: l.comp, phase: l.phase, category: l.category, group: l.group, division: l.division,
         code: l.code, name: l.name, qty: l.qty, uom: l.uom, rate: l.rate, amount: dollars(l.cents),
-        baseAmount: dollars(l.baseCents), overridden: l.overridden, carveOut: l.carveOut, source: l.source };
+        baseAmount: dollars(l.baseCents), overridden: l.overridden, carveOut: l.carveOut, part: l.part, source: l.source };
     });
     var result = {
       engineVersion: ENGINE_VERSION, dataVersion: D.version, baseYear: D.baseYear,
@@ -1213,7 +1210,7 @@
   function applyScenario(project, scenario) { return merge(project, (scenario && scenario.patch) || {}); }
 
   function compareScenarios(project, D, opts) {
-    var base = calculate(project, D, opts);
+    var base = (opts && opts.base) || calculate(project, D, opts);
     var rows = [{ id: 'base', name: 'Base', result: base }];
     (project.scenarios || []).forEach(function (s) {
       rows.push({ id: s.id, name: s.name, result: calculate(applyScenario(project, s), D, opts) });
@@ -1226,62 +1223,63 @@
 
   /* One-at-a-time sensitivity: each driver moved down and up, everything else
      held. Drivers that do not apply (no land, no financing) are left out. */
+  /* One-at-a-time sensitivity: each driver moved down (dir −1) and up (+1),
+     everything else held. Drivers that do not apply (no land, no financing)
+     are left out. opts.base may carry the already-calculated base result. */
   function sensitivity(project, D, opts) {
-    var base = calculate(project, D, opts);
+    opts = opts || {};
+    var base = opts.base || calculate(project, D, opts);
     var B = base.totals.total;
+    var S0 = project.settings || {};
     var drivers = [];
-    var withComps = function (f) {
-      return function (p) { p.components.forEach(f); return p; };
-    };
-    drivers.push({ id: 'baseline', name: 'Baseline price per unit', lo: '-10%', hi: '+10%',
-      down: withComps(function (c, i) { var cb = base.components[i]; c.baseline = Object.assign({}, c.baseline, { price: (cb ? cb.baselinePrice : 0) * 0.9 }); }),
-      up: withComps(function (c, i) { var cb = base.components[i]; c.baseline = Object.assign({}, c.baseline, { price: (cb ? cb.baselinePrice : 0) * 1.1 }); }) });
-    drivers.push({ id: 'quality', name: 'Quality tier', lo: 'one tier down', hi: 'one tier up',
-      down: withComps(function (c) { var i = QUALITY_TIERS.indexOf(c.quality || 'standard'); c.quality = QUALITY_TIERS[Math.max(0, i - 1)]; }),
-      up: withComps(function (c) { var i = QUALITY_TIERS.indexOf(c.quality || 'standard'); c.quality = QUALITY_TIERS[Math.min(3, i + 1)]; }) });
+    var each = function (f) { return function (p, dir) { p.components.forEach(function (c, i) { f(c, i, dir); }); }; };
+    drivers.push({ id: 'baseline', name: 'Baseline price per unit', lo: '-10%', hi: '+10%', apply: each(function (c, i, dir) {
+      var cb = base.components[i];
+      c.baseline = Object.assign({}, c.baseline, { price: (cb ? cb.baselinePrice : 0) * (1 + 0.1 * dir) }); }) });
+    drivers.push({ id: 'quality', name: 'Quality tier', lo: 'one tier down', hi: 'one tier up', apply: each(function (c, i, dir) {
+      c.quality = QUALITY_TIERS[clamp(QUALITY_TIERS.indexOf(c.quality || 'standard') + dir, 0, 3)]; }) });
     var softNow = function (c) {
       var t = typeOf(D, c.typeId);
-      return isNum(c.softCostPct) && c.softCostPct !== null ? c.softCostPct
-        : isNum(project.settings && project.settings.softCostPct) && project.settings.softCostPct !== null ? project.settings.softCostPct
+      return isNum(c.softCostPct) ? c.softCostPct : isNum(S0.softCostPct) ? S0.softCostPct
         : (t && t.softCosts && t.softCosts.pctOfHard ? t.softCosts.pctOfHard.mid : 0);
     };
     drivers.push({ id: 'soft', name: 'Soft cost %', lo: '×0.8', hi: '×1.2',
-      down: withComps(function (c) { c.softCostPct = softNow(c) * 0.8; }), up: withComps(function (c) { c.softCostPct = softNow(c) * 1.2; }) });
-    var escNow = isNum(project.settings && project.settings.escalationRate) && project.settings.escalationRate !== null
-      ? project.settings.escalationRate : null;
-    var fc = D.indices && D.indices.escalation && D.indices.escalation.forecast;
-    var fcMid = fc ? sum(Object.keys(fc).map(function (k) { return +fc[k]; })) / Math.max(1, Object.keys(fc).length) : null;
-    var e0 = escNow !== null ? escNow : fcMid;
-    if (e0 !== null && base.phases.some(function (p) { return p.midpoint; })) drivers.push({ id: 'escalation', name: 'Escalation rate', lo: '−2 pts', hi: '+2 pts',
-      down: function (p) { p.settings.escalationRate = e0 - 0.02; return p; }, up: function (p) { p.settings.escalationRate = e0 + 0.02; return p; } });
+      apply: each(function (c, i, dir) { c.softCostPct = softNow(c) * (1 + 0.2 * dir); }) });
+    var e0 = isNum(S0.escalationRate) ? S0.escalationRate : forecastMean(D);
+    if (e0 !== null && base.phases.some(function (p) { return p.midpoint; })) drivers.push({ id: 'escalation', name: 'Escalation rate',
+      lo: '−2 pts', hi: '+2 pts', apply: function (p, dir) { p.settings.escalationRate = e0 + 0.02 * dir; } });
     if (base.totals.financing > 0) {
       var rate0 = base.phases.filter(function (p) { return p.financing && p.financing.enabled; }).map(function (p) { return p.financing.rate; })[0];
-      drivers.push({ id: 'rate', name: 'Construction loan rate', lo: '−1 pt', hi: '+1 pt',
-        down: function (p) { p.phases.forEach(function (ph) { ph.financing = Object.assign({}, ph.financing, { rate: rate0 - 0.01 }); }); return p; },
-        up: function (p) { p.phases.forEach(function (ph) { ph.financing = Object.assign({}, ph.financing, { rate: rate0 + 0.01 }); }); return p; } });
-      drivers.push({ id: 'duration', name: 'Construction duration', lo: '−3 months', hi: '+3 months',
-        down: function (p) { p.phases.forEach(function (ph, i) { ph.months = Math.max(1, base.phases[i].months - 3); }); return p; },
-        up: function (p) { p.phases.forEach(function (ph, i) { ph.months = base.phases[i].months + 3; }); return p; } });
+      drivers.push({ id: 'rate', name: 'Construction loan rate', lo: '−1 pt', hi: '+1 pt', apply: function (p, dir) {
+        p.phases.forEach(function (ph) { ph.financing = Object.assign({}, ph.financing, { rate: rate0 + 0.01 * dir }); }); } });
+      drivers.push({ id: 'duration', name: 'Construction duration', lo: '−3 months', hi: '+3 months', apply: function (p, dir) {
+        p.phases.forEach(function (ph, i) { ph.months = Math.max(1, base.phases[i].months + 3 * dir); }); } });
     }
     if (base.totals.land > 0) drivers.push({ id: 'land', name: 'Land price', lo: '-10%', hi: '+10%',
-      down: function (p) { p.land.value = nz(p.land.value) * 0.9; return p; }, up: function (p) { p.land.value = nz(p.land.value) * 1.1; return p; } });
-    // The contingency in force: component override, else the project setting,
-    // else the type's researched mid (the same order calculate() uses).
-    var contNow = function (k, c) {
+      apply: function (p, dir) { p.land.value = nz(p.land.value) * (1 + 0.1 * dir); } });
+    // The hard contingency in force: component override, else the project
+    // setting, else the type's researched mid (the order calculate() uses).
+    var contNow = function (c) {
+      if (c.contingency && isNum(c.contingency.hard)) return c.contingency.hard;
+      if (isNum(S0.hardContingencyPct)) return S0.hardContingencyPct;
       var t = typeOf(D, c.typeId);
-      var ps = project.settings && project.settings.hardContingencyPct;
-      if (k === 'hard' && isNum(ps) && ps !== null) return ps;
-      return t && t.contingency && t.contingency[k] ? t.contingency[k].mid : 0;
+      return t && t.contingency && t.contingency.hard ? t.contingency.hard.mid : 0;
     };
-    drivers.push({ id: 'contingency', name: 'Hard cost contingency', lo: '−2 pts', hi: '+2 pts',
-      down: withComps(function (c) { c.contingency = Object.assign({}, c.contingency, { hard: Math.max(0, num(c.contingency && c.contingency.hard, contNow('hard', c)) - 0.02) }); }),
-      up: withComps(function (c) { c.contingency = Object.assign({}, c.contingency, { hard: num(c.contingency && c.contingency.hard, contNow('hard', c)) + 0.02 }); }) });
+    drivers.push({ id: 'contingency', name: 'Hard cost contingency', lo: '−2 pts', hi: '+2 pts', apply: each(function (c, i, dir) {
+      c.contingency = Object.assign({}, c.contingency, { hard: Math.max(0, contNow(c) + 0.02 * dir) }); }) });
+    var run = function (d, dir) { var p = clone(project); p.settings = p.settings || {}; d.apply(p, dir); return calculate(p, D, opts).totals.total; };
     return { base: B, drivers: drivers.map(function (d) {
-      var lo = calculate(d.down(clone(project)), D, opts).totals.total;
-      var hi = calculate(d.up(clone(project)), D, opts).totals.total;
+      var lo = run(d, -1), hi = run(d, 1);
       return { id: d.id, name: d.name, loLabel: d.lo, hiLabel: d.hi, low: lo, high: hi, lowDelta: lo - B, highDelta: hi - B,
         swing: Math.abs(hi - lo) };
     }).sort(function (a, b) { return b.swing - a.swing; }) };
+  }
+
+  /* The mean of the forecast escalation rates (the default the UI shows). */
+  function forecastMean(D) {
+    var fc = D && D.indices && D.indices.escalation && D.indices.escalation.forecast;
+    var ks = fc ? Object.keys(fc) : [];
+    return ks.length ? sum(ks, function (k) { return +fc[k]; }) / ks.length : null;
   }
 
   /* ------------------------------------------------------------ into the budget document */
@@ -1297,7 +1295,7 @@
     result.lines.forEach(function (l) {
       var c = Math.round(l.amount * 100);
       if (l.category === 'contingency') { contC += c; return; }
-      if (l.category === 'land') { if (/^land:price/.test(l.key)) landC += c; else clsC += c; return; }
+      if (l.category === 'land') { if (l.part === 'price') landC += c; else clsC += c; return; }
       if (l.category === 'developerFee') { devC += c; return; }
       var scope = l.category === 'hard' || l.category === 'ffe' ? 'res' : 'soft';
       var comp = result.components.filter(function (x) { return x.id === l.comp; })[0];
@@ -1334,21 +1332,37 @@
     return { engineVersion: result.engineVersion, dataVersion: result.dataVersion, baseYear: result.baseYear,
       region: result.region, totals: result.totals, metrics: result.metrics, split: result.split,
       components: result.components.map(function (c) { return { id: c.id, name: c.name, typeId: c.typeId, typeName: c.typeName,
-        phaseId: c.phaseId, size: c.size, unit: c.unit, sf: c.sf, acres: c.acres, totals: c.totals, metrics: c.metrics, range: c.range }; }),
+        phaseId: c.phaseId, size: c.size, unit: c.unit, sf: c.sf, acres: c.acres, feeUnits: c.feeUnits, totals: c.totals,
+        metrics: c.metrics, range: c.range }; }),
       phases: result.phases.map(function (p) { return { id: p.id, name: p.name, start: p.start, months: p.months,
         midpoint: p.midpoint, escalation: p.escalation.factor, totals: p.totals, financing: p.financing }; }),
       proforma: result.proforma };
   }
 
   /* ------------------------------------------------------------ fsdoc export sheets */
-  function fmtMoney(v) { return v === null || v === undefined ? '—' : '$' + Math.round(v).toLocaleString('en-US'); }
-  function sourceLabel(src, D) {
+  // The house money format (index.html usd(), export-render): −$1,234, never $-1,234.
+  function fmtMoney(v) {
+    if (v === null || v === undefined || !isFinite(v)) return '—';
+    var r = Math.round(v);
+    return (r < 0 ? '−$' : '$') + Math.abs(r).toLocaleString('en-US');
+  }
+  /* One classification of a line's source for every place that shows it:
+     'user' | 'computed' (financing, allocations) | 'derived' (derived estimate,
+     or no researched value) | 'research'. */
+  function sourceKind(src) {
+    if (!src) return null;
+    if (src.kind === 'user') return 'user';
+    if (src.kind === 'computed' || src.kind === 'allocation') return 'computed';
+    if (src.kind === 'missing' || src.kind === 'derived' || (src.ref && src.ref.derived)) return 'derived';
+    return 'research';
+  }
+  function sourceLabel(src) {
     if (!src) return '';
     if (src.kind === 'user') return 'User override' + (src.note && src.note !== 'Overridden' ? ' — ' + src.note : '');
     if (src.kind === 'allocation') return 'Allocated by ' + src.method;
     if (src.kind === 'computed') return src.note || 'Computed';
     if (src.kind === 'research-blend') return 'Type soft-cost % × soft-cost norm weights';
-    if (src.kind === 'missing') return 'No researched value';
+    if (src.kind === 'missing') return 'No researched value — derived estimate, verify';
     var ref = src.ref || src;
     if (src.baseline && src.baseline.kind === 'user') return 'User baseline price; split ' + (ref && ref.file ? ref.file : '');
     var tag = ref && ref.derived ? 'Derived estimate — verify' : 'Researched';
@@ -1430,7 +1444,7 @@
           var isPct = /^%/.test(l.uom || '');
           return { comp: compName[l.comp] || 'Project', phase: phaseName[l.phase] || '', group: l.group, code: l.code,
             name: l.name + (l.carveOut ? ' (within baseline)' : ''), qty: l.qty === null ? undefined : (isPct ? Math.round(l.qty * 10000) / 100 : Math.round(l.qty * 100) / 100),
-            uom: isPct ? l.uom.replace(/^%/, '%') : unitLabel(D, l.uom), rate: isPct ? undefined : (l.rate === null ? undefined : l.rate),
+            uom: isPct ? l.uom : unitLabel(D, l.uom), rate: isPct ? undefined : (l.rate === null ? undefined : l.rate),
             amount: l.amount, flag: l.overridden ? 'yes' : '' };
         }),
         totals: { name: 'Total project cost', amount: R.totals.total } }
@@ -1451,6 +1465,31 @@
     return sheets;
   }
 
+  /* Every evidence id behind a result's lines and baselines, sorted. One walk
+     of the source chain shared by the export and the Sources view. */
+  var SOURCE_LINKS = ['ref', 'was', 'of', 'typePct', 'weight', 'baseline', 'rate', 'ltc', 'fee'];
+  function evidenceIds(R) {
+    var refs = {};
+    var collect = function (src) {
+      if (!src || typeof src !== 'object') return;
+      if (src.evidence) src.evidence.forEach(function (e) { refs[e] = true; });
+      SOURCE_LINKS.forEach(function (k) { collect(src[k]); });
+    };
+    R.lines.forEach(function (l) { collect(l.source); });
+    R.components.forEach(function (c) { collect(c.baselineSource); });
+    return Object.keys(refs).sort();
+  }
+
+  /* The whole estimate export as fsdoc/1 — one builder for the app and the
+     sample runner. meta fields override the defaults. */
+  function toFsdoc(R, project, D, meta) {
+    var m = Object.assign({ title: 'Estimate', eyebrow: 'FINISHES SOLUTIONS · PROJECT ESTIMATE', subline: '',
+      rightLines: ['Research data ' + R.dataVersion], bandLine: 'Estimate · Total ' + fmtMoney(R.totals.total),
+      footnote: 'Budgeting engine ' + R.engineVersion + ' · research ' + R.dataVersion
+        + ' · derived estimates are marked — verify before relying on them.', footerRight: '' }, meta || {});
+    return { fsdoc: '1', meta: m, sheets: toFsdocSheets(R, project, D) };
+  }
+
   function sourcesBlocks(R, project, D) {
     var blocks = [];
     blocks.push({ kind: 'group', label: 'ASSUMPTIONS' });
@@ -1458,7 +1497,7 @@
     R.components.forEach(function (c) {
       var t = typeOf(D, c.typeId);
       rows.push({ k: c.name + ' — baseline price', v: fmtMoney(c.baselinePrice) + ' / ' + unitLabel(D, c.unit) + ' · '
-        + (c.baselineSource && c.baselineSource.kind === 'user' ? 'user entered' : sourceLabel({ ref: c.baselineSource && c.baselineSource.ref }, D)) });
+        + (c.baselineSource && c.baselineSource.kind === 'user' ? 'user entered' : sourceLabel({ ref: c.baselineSource && c.baselineSource.ref })) });
       rows.push({ k: c.name + ' — factors', v: 'regional ' + r4(c.factors.regional || 1) + ' · quality ' + r4(c.factors.quality || 1)
         + ' · size ' + r4(c.factors.size || 1) + ' · escalation ' + r4(c.factors.escalation || 1) });
       if (t && t.summary) rows.push({ k: c.name + ' — research note', v: t.summary });
@@ -1470,16 +1509,7 @@
         + '%, rate ' + (p.financing.rate * 100).toFixed(2) + '%, fee ' + (p.financing.feePct * 100).toFixed(2) + '%' });
     });
     blocks.push({ kind: 'kv', rows: rows.length ? rows : [{ k: 'No components', v: '—' }] });
-    // Every evidence item behind the lines on this budget.
-    var refs = {};
-    var collect = function (src) {
-      if (!src || typeof src !== 'object') return;
-      if (src.evidence) src.evidence.forEach(function (e) { refs[e] = true; });
-      ['ref', 'was', 'of', 'typePct', 'weight', 'baseline', 'rate', 'ltc', 'fee'].forEach(function (k) { collect(src[k]); });
-    };
-    R.lines.forEach(function (l) { collect(l.source); });
-    R.components.forEach(function (c) { collect(c.baselineSource); });
-    var ev = Object.keys(refs).sort().map(function (k) { return D.evidence && D.evidence[k]; }).filter(Boolean);
+    var ev = evidenceIds(R).map(function (k) { return D.evidence && D.evidence[k]; }).filter(Boolean);
     blocks.push({ kind: 'group', label: 'SOURCES (' + ev.length + ')' });
     if (ev.length) blocks.push({ kind: 'table', columns: [
       { key: 'id', label: 'Ref' }, { key: 'title', label: 'Source' }, { key: 'publisher', label: 'Publisher' },
@@ -1494,13 +1524,13 @@
   }
 
   return {
-    ENGINE_VERSION: ENGINE_VERSION, QUALITY_TIERS: QUALITY_TIERS, ALLOCATION_METHODS: ALLOCATION_METHODS, DRAW_CURVES: DRAW_CURVES,
+    ENGINE_VERSION: ENGINE_VERSION, QUALITY_TIERS: QUALITY_TIERS, CSI_TITLES: CSI_TITLES, FEE_USES: FEE_USES,
     newProject: newProject, newComponent: newComponent, newPhase: newPhase,
-    calculate: calculate, compareScenarios: compareScenarios, sensitivity: sensitivity, applyScenario: applyScenario,
-    toBudgetDoc: toBudgetDoc, summaryOf: summaryOf, toFsdocSheets: toFsdocSheets, sourceLabel: sourceLabel,
-    // exposed for tests and the UI
-    _: { allocateCents: allocateCents, escalation: escalation, regionInfo: regionInfo, geometry: geometry,
-      curveWeights: curveWeights, financePhase: financePhase, qualityFactor: qualityFactor, sizeFactor: sizeFactor,
-      csiTitle: csiTitle, unitLabel: unitLabel, typeOf: typeOf, addMonths: addMonths }
+    calculate: calculate, compareScenarios: compareScenarios, sensitivity: sensitivity,
+    toBudgetDoc: toBudgetDoc, toFsdocSheets: toFsdocSheets, toFsdoc: toFsdoc, sourceKind: sourceKind, evidenceIds: evidenceIds,
+    forecastMean: forecastMean,
+    // helpers shared with the UI, the tools and the tests
+    _: { allocateCents: allocateCents, curveWeights: curveWeights, csiTitle: csiTitle, unitLabel: unitLabel,
+      addMonths: addMonths, monthIndex: monthIndex, regionInfo: regionInfo }
   };
 });

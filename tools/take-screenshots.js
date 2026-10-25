@@ -15,7 +15,7 @@ const OUT = path.join(__dirname, '..', 'docs', 'screenshots');
   await p.evaluate(async () => { await fetch('/api/budget/OP-3001?scope=project', { method: 'PUT', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ create: true, name: 'Brazos Crossing', address: 'Fort Worth, TX' }) }); });
   await p.click('button:has-text("+ New Budget")'); await shot('00-new-budget');
-  await p.click('#newBudgetModal .tpl-row:has-text("Estimate Any Project Type")'); await p.waitForTimeout(400);
+  await p.click('#newBudgetModal .tpl-row[data-tpl="engine"]'); await p.waitForTimeout(400);
   await p.selectOption('#nbProject', 'OP-3001'); await p.fill('#nbName', 'Brazos Crossing'); await p.click('#nbCreate'); await p.waitForTimeout(700);
   await shot('01-type-picker');
   await p.fill('.v2-search[data-ui="q"]', 'garden'); await p.click('.v2-type[data-type="garden-multifamily"]'); await p.waitForTimeout(300);

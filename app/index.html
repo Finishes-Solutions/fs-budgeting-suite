@@ -331,7 +331,6 @@ input.set-locked:focus{border-color:var(--ink-300);box-shadow:none}
 .tpl-row .tpl-name{font-size:13.5px;font-weight:600;color:var(--ink-950)}
 .tpl-row .tpl-sub{font-size:12px;color:var(--ink-500)}
 /* Template types that do not exist yet are one quiet line, not three dead rows. */
-.tpl-soon{font-size:12px;color:var(--ink-400);padding:0 2px}
 /* The way out of an empty project list, right where the list is. */
 .nb-newproj{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
 .nb-newproj .set-note{margin-top:0}
@@ -2993,13 +2992,13 @@ th.sortable.sorted{color:var(--ink-900)}
     <div class="card-bd" style="overflow:auto" id="nbStep1">
       <div class="set-lab">Budget Templates</div>
       <div class="tpl-list">
-        <button class="tpl-row tpl-feature" onclick="pickNewBudget('engine')">
+        <button class="tpl-row tpl-feature" data-tpl="engine" onclick="pickNewBudget('engine')">
           <span class="tpl-name">Estimate Any Project Type</span>
           <span class="tpl-sub">Pick from 90+ researched types — apartments, hotels, retail, industrial, RV parks, marinas, data centers, mixed-use with phases, or a custom build — and get a detailed, sourced budget in under a minute</span></button>
-        <button class="tpl-row" onclick="pickNewBudget('multifamily')">
+        <button class="tpl-row" data-tpl="multifamily" onclick="pickNewBudget('multifamily')">
           <span class="tpl-name">Multifamily</span>
           <span class="tpl-sub">The standard template — unit mix, income, expenses, and every priced line from the current pricing library</span></button>
-        <button class="tpl-row" onclick="pickNewBudget('blank')">
+        <button class="tpl-row" data-tpl="blank" onclick="pickNewBudget('blank')">
           <span class="tpl-name">Blank Budget</span>
           <span class="tpl-sub">Genuinely empty — no units, no income, no scope. Build everything yourself from the CSI catalog</span></button>
       </div>
@@ -5185,7 +5184,7 @@ function discardDraftOffer(){
    rebuilt before the browser can hand focus to the next cell and the move is lost. We
    record the Tab direction, then re-issue it against the rebuilt DOM. A plain edit with
    no Tab (dir 0) just restores the same field and its caret. */
-let pendingFocusKey=null,tabDir=0;
+let pendingFocusKey=null,tabDir=0,requestedFocusKey=null;
 document.addEventListener('keydown',e=>{tabDir=e.key==='Tab'?(e.shiftKey?-1:1):0;},true);
 document.addEventListener('focusout',e=>{
   const rt=e.relatedTarget;
@@ -5194,7 +5193,9 @@ document.addEventListener('focusout',e=>{
 function withFocus(fn){
   const a=document.activeElement;
   const live=a&&a.dataset?a.dataset.k:null;
-  const k=live||pendingFocusKey,dir=tabDir;
+  // An explicit request (requestFocus) beats whatever has focus now.
+  const k=requestedFocusKey||live||pendingFocusKey,dir=tabDir;
+  requestedFocusKey=null;
   let s=null,e=null;
   if(live){try{s=a.selectionStart;e=a.selectionEnd;}catch(_){/* number inputs throw */}}
   fn();
@@ -5448,7 +5449,6 @@ function go(p){
   if(p==='version')renderVersionPage();
   if(p==='budget'||p==='input'||p==='csi')recalc();
   if(p==='fees')renderFeesPage();
-  if(!DOC_PAGES.includes(p))document.body.classList.remove('is-engine');
   window.scrollTo(0,0);
 }
 
@@ -5932,12 +5932,13 @@ function feeContext(){
     hard:scopeSum('res')+scopeSum('amen')};
 }
 /* Dwelling units for per-unit fee rows. An estimate has no unit mix
-   (doc.units is empty), so its count comes from the engine: the components
-   priced per dwelling unit, key or pad. Without this every per-unit row of a
-   jurisdiction schedule counted zero and replaced the engine's fee estimate. */
+   (doc.units is empty), so its count comes from the engine — the same units
+   its own fee estimate charges per-unit fees on. Without this every per-unit
+   row of a jurisdiction schedule counted zero and replaced the estimate. */
 function feeUnits(){
   if(doc&&doc.engine&&doc.engineSummary&&doc.engineSummary.components){
-    return doc.engineSummary.components.reduce((s,c)=>s+(['unit','key','pad'].includes(c.unit)?nz(c.size):0),0);
+    // The engine's own count (budget-engine.js feeDwellings), per component.
+    return doc.engineSummary.components.reduce((s,c)=>s+nz(c.feeUnits),0);
   }
   return totUnits();
 }
@@ -6668,9 +6669,9 @@ function newBudget(kind){
 /* The discard prompt has already been answered by the caller. */
 function applyNewBudget(kind){
   doc=blankDoc(kind==='engine'?'blank':kind);dirty=false;lastSaved=null;selected.clear();
-  // A project-type estimate is a blank budget whose lines the v2 engine owns.
-  if(kind==='engine'&&window.FSBudgetV2){FSBudgetV2.reset();FSBudgetV2.startNew(doc);FSBudgetV2.materialize(doc);}
   resetDocState();
+  // A project-type estimate is a blank budget whose lines the v2 engine owns.
+  if(kind==='engine'&&window.FSBudgetV2){FSBudgetV2.startNew(doc);FSBudgetV2.materialize(doc);}
   templateEdit=null;renderTemplateBanner();
   enableDocNav();fillForms();resetUndo();go('input');
   if(kind==='blank')toast('Blank budget — build the scope from the CSI catalog on the Budget page');
@@ -6687,6 +6688,7 @@ function resetDocState(){
   docIsNew=false;loadedId=null;loadedSnap=null;baseHash=null;saveError=null;
   newDraftTok=null;draftSeq=-1;clearTimeout(draftTimer);draftTimer=null;
   docGen++;hideDraftBanner();
+  if(window.FSBudgetV2)FSBudgetV2.reset();   // the estimate view's picker, drawer, tab and scope belong to the old document
 }
 /* Where the budget currently open was reached FROM.
 
@@ -6729,7 +6731,6 @@ async function openBudget(pid,page,origin,opt){
     return;
   }
   doc=migrate(d);dirty=false;lastSaved=null;selected.clear();
-  if(window.FSBudgetV2)FSBudgetV2.reset();
   resetDocState();
   docIsNew=false;                 // it exists: saving it is an update
   loadedId=pid;loadedSnap=JSON.stringify(doc);baseHash=h||null;
@@ -8326,7 +8327,10 @@ function recalc(){
   // A schedule can carry a %-of-hard-cost fee, so the fee total is not
   // independent of the rest of the budget. Re-derive before anything renders.
   applyImpactFees();
-  withFocus(()=>{renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();renderSiteMetrics();
+  // An estimate hides the classic inputs and grid (body.is-engine), so they are
+  // not rebuilt for it — the grid alone was most of every keystroke's cost.
+  withFocus(()=>{
+    if(!doc.engine){renderUnits();renderOther();renderExpenses();renderBudget();renderCos();renderSummary();renderSiteMetrics();}
     if(currentPage==='csi')renderCsi();});
   paintEngineMode();
 }
@@ -9992,12 +9996,11 @@ function endBoot(){
   setTheme(currentTheme());   // marks the active choice in the dock and menu
   try{
     if(window.FSBudgetV2)FSBudgetV2.init({
-      getDoc:()=>doc,esc,toast,withFocus,
+      getDoc:()=>doc,esc,toast,withFocus,usd,usd2,fmtWhen,safeRowId,
+      exportBaseName:()=>exportBaseName(),
       touch:()=>touch(),markDirty:()=>markDirty(),
       currentPage:()=>currentPage,go:p=>go(p),
-      // An explicit target wins over whatever has focus now (withFocus prefers
-      // the live element), so the clicked control is blurred first.
-      pendingFocus:k=>{pendingFocusKey=k;const a=document.activeElement;if(a&&a.blur&&a!==document.body)a.blur();},
+      pendingFocus:k=>{requestedFocusKey=k;},
       isDirty:()=>dirty||docIsNew,
       save:async()=>{await saveBudget(true);return !dirty&&!saveError&&!docIsNew;},
       createAnalysis:(pid,scope)=>window.FSInvestmentUI?FSInvestmentUI.createFromBudget(pid,null,null,scope):null,

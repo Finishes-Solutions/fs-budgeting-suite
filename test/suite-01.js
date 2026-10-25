@@ -43,7 +43,7 @@ const ok = (n, c, extra='') => R.push(`${c ? 'PASS' : 'FAIL'}  ${n}${extra ? ' â
   // Creating a budget is async now â€” it fetches the template's current published
   // version first, and offline it falls back to the built-in defaults. isVisible()
   // does not auto-wait, so give the fallback a moment to land.
-  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
+  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'));
   await p.waitForTimeout(400);
   // A budget belongs to a project, so the dialog asks which one. Offline the
   // list cannot be read at all, so the field says so and stops being required

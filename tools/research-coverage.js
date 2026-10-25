@@ -13,7 +13,8 @@ const D = require('../app/research-data.js');
 
 const mark = r => (!r ? '—' : r.source && !r.source.derived && r.source.evidence.length ? 'S' : 'D');
 const money = v => '$' + Math.round(v).toLocaleString('en-US');
-const unitL = id => { const u = D.units.find(x => x.id === id); return u ? u.label : id; };
+const { _: { unitLabel } } = require('../app/budget-engine.js');
+const unitL = id => unitLabel(D, id);
 
 function typeRows() {
   const cats = D.categories.map(c => c.id);

@@ -34,7 +34,7 @@ const printer = new PdfPrinter({ Montserrat: { normal: F('Montserrat-Regular.ttf
 
 const money = v => (v === null || v === undefined || !isFinite(v)) ? '—' : '$' + Math.round(v).toLocaleString('en-US');
 const pct = v => (v === null || v === undefined || !isFinite(v)) ? '—' : (100 * v).toFixed(1) + '%';
-const unitL = id => { const u = D.units.find(x => x.id === id); return u ? u.label : id; };
+const unitL = id => E._.unitLabel(D, id);
 
 function pdfBuffer(dd) {
   return new Promise((resolve, reject) => {
@@ -112,10 +112,11 @@ async function run() {
     }
 
     // Estimate exports (the same fsdoc the app builds).
-    const fsdoc = { fsdoc: '1', meta: { title: s.name, eyebrow: 'FINISHES SOLUTIONS · PROJECT ESTIMATE (SAMPLE)', subline: s.address,
-      rightLines: ['Research data ' + D.version], bandLine: s.name + ' · Total ' + money(r.totals.total),
+    // The same builder the app's Excel/PDF export uses (FSBudgetEngine.toFsdoc).
+    const fsdoc = E.toFsdoc(r, project, D, { title: s.name, eyebrow: 'FINISHES SOLUTIONS · PROJECT ESTIMATE (SAMPLE)', subline: s.address,
+      bandLine: s.name + ' · Total ' + money(r.totals.total),
       footnote: 'Sample output — revenue, land and exit-cap inputs are illustrative. Engine ' + r.engineVersion + '.',
-      footerRight: s.id, generatedAt: '2026-10-24T00:00:00.000Z' }, sheets: E.toFsdocSheets(r, project, D) };
+      footerRight: s.id, generatedAt: '2026-10-24T00:00:00.000Z' });
     const v = fsRender.validate(fsdoc);
     if (v && v.ok === false) throw new Error(s.id + ' fsdoc invalid: ' + JSON.stringify(v.errors));
     const wb = fsRender.buildWorkbook(ExcelJS, fsdoc, THEME);

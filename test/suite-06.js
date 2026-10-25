@@ -31,7 +31,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
      headers:{'Content-Type':'application/json'},
      body:JSON.stringify({create:true,name:a.n,address:'1 Test Way'})});
  },{p:'OP-0601',n:'Validation Test'});
- await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(300);
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]')); await p.waitForTimeout(300);
  await p.waitForTimeout(600);
  await p.selectOption('#nbProject','OP-0601');
  await p.fill('#nbId','BD-0601');

@@ -27,7 +27,7 @@ const num=t=>+String(t||'').replace(/[^0-9.\-]/g,'');
  await p.click('button:has-text("+ New Budget")'); await p.waitForTimeout(300);
  const first=await p.evaluate(()=>document.querySelector('#newBudgetModal .tpl-list .tpl-row .tpl-name').textContent.trim());
  ok('New Budget leads with Estimate Any Project Type', first==='Estimate Any Project Type', first);
- await p.click('#newBudgetModal .tpl-row:has-text("Estimate Any Project Type")'); await p.waitForTimeout(500);
+ await p.click('#newBudgetModal .tpl-row[data-tpl="engine"]'); await p.waitForTimeout(500);
  await p.selectOption('#nbProject','OP-2301');
  await p.fill('#nbName','Harbor Point Hotel');
  await p.click('#nbCreate'); await p.waitForTimeout(800);
@@ -181,7 +181,7 @@ const num=t=>+String(t||'').replace(/[^0-9.\-]/g,'');
  // ---------- 12. classic budgets are untouched ----------
  await p.evaluate(()=>{location.hash='#/home';}); await p.waitForTimeout(500);
  await p.click('button:has-text("+ New Budget")'); await p.waitForTimeout(300);
- await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'); await p.waitForTimeout(500);
+ await p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'); await p.waitForTimeout(500);
  await p.selectOption('#nbProject','OP-2301'); await p.fill('#nbName','Classic'); await p.click('#nbCreate'); await p.waitForTimeout(800);
  ok('a Multifamily template budget still shows the classic inputs',
     await p.locator('#page-input section:has-text("Unit Mix")').isVisible() && !(await p.locator('#v2Inputs').isVisible()));

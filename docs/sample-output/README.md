@@ -17,7 +17,7 @@ Every budget ties to the classic budget arithmetic (`parts(doc).project`) to the
 | Sample | Project | Location | Total project cost | Cost per primary unit | $/SF | Hard / soft / land | Range check |
 |---|---|---|---:|---:|---:|---|---|
 | [01-garden-multifamily](01-garden-multifamily/) | Cedar Hollow — garden multifamily | Katy, TX | $66,218,599 | $275,911 / unit | $262.77 | 69.4% / 23.2% / 7.4% | within |
-| [02-podium-mixed-use-2-phase](02-podium-mixed-use-2-phase/) | Station Square — podium mixed-use, 2 phases | Austin, TX | $140,902,626 | mixed — see components | $445.89 | 70.1% / 23.0% / 6.9% | within, within |
+| [02-podium-mixed-use-2-phase](02-podium-mixed-use-2-phase/) | Station Square — podium mixed-use, 2 phases | Austin, TX | $141,142,304 | mixed — see components | $446.65 | 70.0% / 23.1% / 6.9% | within, within |
 | [03-select-service-hotel](03-select-service-hotel/) | Harbor Point — select-service hotel | Nashville, TN | $30,605,903 | $246,822 / key | $398.10 | 70.0% / 19.2% / 10.8% | within |
 | [04-warehouse](04-warehouse/) | I-20 Logistics Center — bulk warehouse | Dallas–Fort Worth, TX | $47,072,339 | $147 / SF | $147.10 | 66.5% / 19.9% / 13.6% | within |
 | [05-medical-office](05-medical-office/) | Desert Ridge MOB | Phoenix, AZ | $33,836,122 | $752 / SF | $751.91 | 71.1% / 21.0% / 8.0% | within |
@@ -41,11 +41,11 @@ Purchase price = the scope's total project cost; Year-1 income from the componen
 | Sample | Scope | Cost (purchase price) | Year-1 potential income | Year-1 NOI | Yield on cost | 5-yr equity IRR |
 |---|---|---:|---:|---:|---:|---:|
 | 01-garden-multifamily | whole project | $66,218,599 | $5,184,000 | $3,079,776 | 4.7% | -4.2% |
-| 02-podium-mixed-use-2-phase | whole project | $140,902,626 | $9,404,000 | $5,898,924 | 4.2% | -9.5% |
-| 02-podium-mixed-use-2-phase | component Residential over podium | $123,989,981 | $8,568,000 | $5,241,430 | 4.2% | -8.7% |
-| 02-podium-mixed-use-2-phase | component Ground-floor retail | $16,912,645 | $836,000 | $653,752 | 3.9% | -16.5% |
-| 02-podium-mixed-use-2-phase | phase Phase 1 — podium + residential | $125,156,724 | $8,568,000 | $5,241,430 | 4.2% | -9.4% |
-| 02-podium-mixed-use-2-phase | phase Phase 2 — retail fit-out | $15,745,902 | $836,000 | $653,752 | 4.2% | -10.1% |
+| 02-podium-mixed-use-2-phase | whole project | $141,142,304 | $9,404,000 | $5,898,924 | 4.2% | -9.6% |
+| 02-podium-mixed-use-2-phase | component Residential over podium | $133,794,159 | $8,568,000 | $5,241,430 | 3.9% | -15.2% |
+| 02-podium-mixed-use-2-phase | component Ground-floor retail | $7,348,145 | $836,000 | $653,752 | 8.9% | 34.9% |
+| 02-podium-mixed-use-2-phase | phase Phase 1 — podium + residential | $134,962,678 | $8,568,000 | $5,241,430 | 3.9% | -16.0% |
+| 02-podium-mixed-use-2-phase | phase Phase 2 — retail fit-out | $6,179,626 | $836,000 | $653,752 | 10.6% | 44.0% |
 | 03-select-service-hotel | whole project | $30,605,903 | $7,936,000 | $2,211,581 | 7.2% | 6.2% |
 | 04-warehouse | whole project | $47,072,339 | $2,320,000 | $2,027,680 | 4.3% | -10.1% |
 | 05-medical-office | whole project | $33,836,122 | $1,620,000 | $1,416,204 | 4.2% | -27.3% |

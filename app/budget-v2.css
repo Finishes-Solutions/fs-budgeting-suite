@@ -118,8 +118,7 @@ body:not(.is-engine) .v2-only{display:none!important}
 
 /* Detail page */
 .v2-toolbar{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--ink-200)}
-.v2-views{display:flex;gap:4px;flex-wrap:wrap}
-.v2-tool-actions{display:flex;gap:8px;padding-bottom:8px}
+.v2-views,.v2-tool-actions{display:flex;gap:8px;padding-bottom:8px}
 .v2-stats{margin-bottom:14px}
 .v2-pfbar .card-bd{padding-top:14px;padding-bottom:14px}
 .v2-pf-row{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
