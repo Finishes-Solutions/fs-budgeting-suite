@@ -143,6 +143,13 @@ module.exports = async function (context, req) {
     const vacancy = input.vacancy && Number.isFinite(+input.vacancy.value) ? +input.vacancy.value : undefined;
     const proj = projectFromBudget(bdoc, v, { projectId: row.ProjectId, vacancy,
       scope: input.source && input.source.scope });
+    // Re-sync never turns a component or phase analysis into a whole-project
+    // one: if its slice is gone, refuse and change nothing.
+    if (proj.scopeMissing) {
+      context.res = jsonRes(409, { error: 'scope_missing',
+        message: 'The component or phase this analysis was built from is no longer in the budget. Nothing was changed.' });
+      return;
+    }
 
     input.property = Object.assign({}, input.property, {
       name: proj.imported.property.name,

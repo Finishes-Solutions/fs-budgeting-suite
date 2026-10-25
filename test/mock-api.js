@@ -1390,6 +1390,7 @@ http.createServer((req, res) => {
         const proj = fromBudget.projectFromBudget(doc, { Id: vn, VersionNumber: vn, Name: v.meta.name },
           { projectId, vacancy: INV_D.vacancy,
             projectName: pr ? pr.name : '', projectAddress: pr ? pr.address : '', scope: body.scope });
+        if (proj.scopeMissing) return json(res, 409, { error: 'scope_missing', message: 'That component or phase is not in the saved budget version.' });
         input = {
           schemaVersion: 1,
           analysisName: (body.analysisName || (v.meta.name + ' — Investment Analysis')).slice(0, 200),
@@ -1492,6 +1493,8 @@ http.createServer((req, res) => {
       const proj = fromBudget.projectFromBudget(v.doc,
         { Id: vn, VersionNumber: vn, Name: v.meta.name }, { projectId: live.projectId, vacancy: vac,
           scope: input.source && input.source.scope });
+      if (proj.scopeMissing) return json(res, 409, { error: 'scope_missing',
+        message: 'The component or phase this analysis was built from is no longer in the budget. Nothing was changed.' });
       input.property = Object.assign({}, input.property, {
         name: proj.imported.property.name, address: proj.imported.property.address,
         size: proj.imported.property.size, unitCount: proj.imported.property.unitCount });

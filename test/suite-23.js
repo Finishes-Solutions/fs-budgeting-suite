@@ -21,6 +21,8 @@ const num=t=>+String(t||'').replace(/[^0-9.\-]/g,'');
      body:JSON.stringify({create:true,name:'Harbor Point',address:'1 Bay Rd, Kemah TX'})});
  });
 
+ ok('the 2 MB research bundle is not loaded for classic pages', await p.evaluate(()=>!window.FSResearchData));
+
  // ---------- 1. New Budget offers the estimate first ----------
  await p.click('button:has-text("+ New Budget")'); await p.waitForTimeout(300);
  const first=await p.evaluate(()=>document.querySelector('#newBudgetModal .tpl-list .tpl-row .tpl-name').textContent.trim());
@@ -130,6 +132,15 @@ const num=t=>+String(t||'').replace(/[^0-9.\-]/g,'');
  await p.fill('[data-f^="sh."][data-f$=".qty"]','200'); await p.press('[data-f^="sh."][data-f$=".qty"]','Tab'); await p.waitForTimeout(300);
  const ids=await p.evaluate(()=>({c:doc.engine.components.map(c=>c.id),ph:doc.engine.phases.map(x=>x.id)}));
  await p.selectOption(`[data-f="c.${ids.c[1]}.phaseId"]`,ids.ph[1]); await p.waitForTimeout(300);
+ // A rename reaches the budget lines and the pro forma scope names.
+ const nameSel=`[data-f="c.${ids.c[1]}.name"]`;
+ await p.fill(nameSel,'Retail Row'); await p.press(nameSel,'Tab'); await p.waitForTimeout(300);
+ ok('renaming a component updates its budget lines',
+    await p.evaluate(()=>doc.lines.some(l=>/^Retail Row — /.test(l.grp))
+      && doc.engineSummary.proforma.components.some(c=>c.name==='Retail Row')));
+ ok('per-unit impact-fee rows count the estimate’s keys and units',
+    await p.evaluate(()=>feeUnits()===doc.engineSummary.components.filter(c=>['unit','key','pad'].includes(c.unit)).reduce((s,c)=>s+c.size,0)
+      && feeUnits()>0));
  const mx=await p.evaluate(()=>{const r=FSBudgetV2.result();const c=x=>Math.round(x*100);
    return {comp:r.components.reduce((s,x)=>s+c(x.totals.total),0)+r.lines.filter(l=>!l.comp).reduce((s,l)=>s+c(l.amount),0),
      ph:r.phases.reduce((s,x)=>s+c(x.totals.total),0),tot:c(r.totals.total),shared:r.shared[0]&&r.shared[0].shares.length,

@@ -17,7 +17,23 @@
 (function () {
   'use strict';
   var A = null;                       // adapter from index.html
-  var E = window.FSBudgetEngine, D = window.FSResearchData;
+  var E = window.FSBudgetEngine, D = window.FSResearchData || null;
+
+  /* The research bundle is ~2 MB, so it is not on the page for classic
+     budgets: ready() loads app/research-data.js once, the first time an
+     estimate is created or opened, and resolves false if it cannot. */
+  var loading = null;
+  function ready() {
+    if (D && D.types) return Promise.resolve(true);
+    if (!loading) loading = new Promise(function (resolve) {
+      var sc = document.createElement('script');
+      sc.src = 'research-data.js';
+      sc.onload = function () { D = window.FSResearchData || null; resolve(!!(D && D.types)); };
+      sc.onerror = function () { loading = null; resolve(false); };
+      document.head.appendChild(sc);
+    });
+    return loading;
+  }
   var SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
   var st = { result: null, resultFor: null, view: 'detail', open: {}, q: '', picker: null, drawer: null,
     blockQ: '', scope: 'project', sens: null, scen: null };
@@ -96,7 +112,7 @@
 
   /* Recompute and write the result into the budget's ordinary fields. */
   function materialize(doc) {
-    if (!isEngine(doc)) return null;
+    if (!isEngine(doc) || !D) return null;
     var r = E.calculate(doc.engine, D);
     if (!r || r.error) return null;
     var m = E.toBudgetDoc(r, doc.engine);
@@ -109,6 +125,7 @@
     doc.units = Array.isArray(doc.units) ? doc.units : [];
     doc.type = typeLabel(doc.engine, r);
     doc.engine.dataVersion = D.version;
+    doc.engine.engineVersion = E.ENGINE_VERSION;
     st.result = r;
     st.resultFor = doc;
     st.sens = null; st.scen = null;
@@ -121,17 +138,15 @@
     var k = Object.keys(names);
     return k.length === 1 ? k[0] : 'Mixed-use (' + k.length + ' types)';
   }
-  /* The result on screen. A budget saved with an older research bundle is NOT
-     re-priced on open — its saved lines stay the record until the user edits
-     it or chooses "Update to current research"; meanwhile the screen shows
-     what current research gives, next to the saved total (dataStale()). */
+  /* The result on screen. Opening a budget never rewrites it: the saved lines
+     stay the record until the user edits the estimate or chooses "Update to
+     current research". If the shipped research or engine has changed since
+     the save, the screen shows what they give now, next to the saved total
+     (dataStale()). Only changed() materializes. */
   function result() {
     var doc = A.getDoc();
-    if (!isEngine(doc)) return null;
-    if (!st.result || st.resultFor !== doc) {
-      if (dataStale(doc.engine)) { st.result = E.calculate(doc.engine, D); st.resultFor = doc; }
-      else materialize(doc);
-    }
+    if (!isEngine(doc) || !D) return null;
+    if (!st.result || st.resultFor !== doc) { st.result = E.calculate(doc.engine, D); st.resultFor = doc; }
     return st.result;
   }
   function sized(doc) {
@@ -668,14 +683,18 @@
     if (st.drawer) h += drawerHTML();
     host.innerHTML = h;
   }
-  function dataStale(p) { return !!(p && p.dataVersion && D.version && p.dataVersion !== D.version); }
+  function dataStale(p) {
+    return !!(p && ((p.dataVersion && D.version && p.dataVersion !== D.version)
+      || (p.engineVersion && p.engineVersion !== E.ENGINE_VERSION)));
+  }
   function staleBanner() {
     var doc = A.getDoc(), p = doc.engine;
     if (!dataStale(p)) return '';
     var saved = doc.engineSummary && doc.engineSummary.totals ? doc.engineSummary.totals.total : null;
     var r = st.result;
-    return '<div class="banner"><span>Saved with research data <b>' + esc(p.dataVersion) + '</b>' + (saved !== null ? ' (total ' + money(saved) + ')' : '')
-      + '. The app now ships <b>' + esc(D.version) + '</b>, which gives ' + (r ? money(r.totals.total) : '—')
+    return '<div class="banner"><span>Saved with research data <b>' + esc(p.dataVersion) + '</b>' + (p.engineVersion && p.engineVersion !== E.ENGINE_VERSION ? ' and ' + esc(p.engineVersion) : '')
+      + (saved !== null ? ' (total ' + money(saved) + ')' : '')
+      + '. The app now ships <b>' + esc(D.version) + '</b> / ' + esc(E.ENGINE_VERSION) + ', which gives ' + (r ? money(r.totals.total) : '—')
       + '. The saved budget is unchanged until you edit it or update.</span>' + btn('update-research', 'Update to current research', '', 'btn-sm btn-dark') + '</div>';
   }
 
@@ -1073,9 +1092,12 @@
     if (pk.purpose === 'retype' && pk.id) {
       var c = p.components.filter(function (x) { return x.id === pk.id; })[0];
       if (c) {
-        c.typeId = typeId; c.name = p.mode === 'quick' ? t.name : c.name; c.items = {};
-        c.size = t.sizing.typicalSize ? t.sizing.typicalSize.mid : c.size;
-        c.baseline = { price: null, basis: 'national' }; c.constructionType = null; c.stories = null;
+        // Everything measured in the old type's units goes back to defaults;
+        // only the name (in mixed mode), phase, quality and blocks carry over.
+        var fresh = E.newComponent(D, typeId, { id: c.id, phaseId: c.phaseId, quality: c.quality, blocks: c.blocks,
+          name: p.mode === 'quick' ? t.name : c.name });
+        Object.keys(c).forEach(function (k) { delete c[k]; });
+        Object.assign(c, fresh);
       }
     } else if (pk.purpose === 'add' || p.mode === 'mixed') {
       var phaseId = p.phases[p.phases.length - 1].id;
@@ -1189,6 +1211,10 @@
     if (!f) return;
     var isText = el.getAttribute('data-t') === 'text' && el.tagName === 'INPUT';
     if (isText && ev.type === 'input') { setPath(f, parse(el)); A.markDirty(); return; }   // names: no recompute per keystroke
+    if (isText && ev.type === 'change') { setPath(f, parse(el)); return changed(); }        // …but names reach lines, groups and scopes
+    // The project's Construction start is phase 1's start unless phase 1 has
+    // its own (set in Mixed-use & phases).
+    if (f === 'p.startMonth' && P().phases[0] && P().mode !== 'mixed') P().phases[0].startMonth = null;
     if (el.type === 'number' && ev.type === 'input') { /* recompute live while typing numbers */ }
     var m = /^sc\.([A-Za-z0-9_-]+)\.(name|q|price|esc|soft|cont|land)$/.exec(f);
     if (m) { if (ev.type === 'change' || m[2] !== 'name') scenarioSet(m[1], m[2], parse(el)); return; }
@@ -1218,14 +1244,26 @@
   function paint() {
     var doc = A ? A.getDoc() : null;
     if (!isEngine(doc)) return;
-    if (!E || !D || !D.types) {
+    if (E && (!D || !D.types)) {
       ['v2Inputs', 'v2Detail'].forEach(function (id) {
         var el = document.getElementById(id);
-        if (el) el.innerHTML = '<section class="card"><div class="card-bd v2-emptystate" role="alert"><h2>The estimate data did not load</h2>'
-          + '<p>The research data or the estimate engine is missing from this page. Reload; if it keeps happening, report a bug — your saved budget is unaffected.</p></div></section>';
+        if (el && !el.querySelector('.v2-loading')) el.innerHTML = '<section class="card"><div class="card-bd v2-emptystate v2-loading" role="status">'
+          + '<h2>Loading research data…</h2><p>The cost data for estimates loads the first time you open one.</p></div></section>';
       });
+      ready().then(function (okd) { if (okd) paint(); else { loading = null; showLoadError(); } });
       return;
     }
+    if (!E) { showLoadError(); return; }
+    paintNow();
+  }
+  function showLoadError() {
+    ['v2Inputs', 'v2Detail'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = '<section class="card"><div class="card-bd v2-emptystate" role="alert"><h2>The estimate data did not load</h2>'
+        + '<p>The research data or the estimate engine is missing from this page. Reload; if it keeps happening, report a bug — your saved budget is unaffected.</p></div></section>';
+    });
+  }
+  function paintNow() {
     if (painting) { pendingPaint = true; return; }
     painting = true;
     var page = A.currentPage();
@@ -1247,10 +1285,10 @@
   }
 
   window.FSBudgetV2 = {
-    init: init, isEngine: isEngine, startNew: startNew, migrate: migrate, materialize: materialize, paint: paint, sized: sized,
+    init: init, ready: ready, isEngine: isEngine, startNew: startNew, migrate: migrate, materialize: materialize, paint: paint, sized: sized,
     result: result, reset: function () { st.result = null; st.resultFor = null; st.picker = null; st.drawer = null; st.view = 'detail'; st.scope = 'project'; st.sens = null; st.scen = null; },
     setImpactFees: function (doc, amount) {
-      if (!isEngine(doc)) return;
+      if (!isEngine(doc) || !D) return;
       var v = amount === null || amount === undefined ? null : Math.round(amount * 100) / 100;
       if (doc.engine.settings.impactFeesOverride !== v) { doc.engine.settings.impactFeesOverride = v; materialize(doc); }
     },

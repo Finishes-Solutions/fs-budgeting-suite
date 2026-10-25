@@ -69,8 +69,8 @@ try{
 <link rel="stylesheet" href="feedback.css">
 <script src="guardrails.js"></script>
 <script src="impact-fees.js"></script>
-<!-- Budgeting v2: the shipped research bundle, the pure estimate engine, and the estimate workspace. -->
-<script src="research-data.js"></script>
+<!-- Budgeting v2: the pure estimate engine and the estimate workspace. The 2 MB research bundle
+     (research-data.js) is loaded on demand by FSBudgetV2.ready() when an estimate is opened or created. -->
 <script src="budget-engine.js"></script>
 <link rel="stylesheet" href="budget-v2.css">
 <script src="budget-v2.js"></script>
@@ -4079,6 +4079,7 @@ async function nbCreate(){
   btn.disabled=true;btn.textContent='Creating…';
   try{
     await refreshPricing();     // born on the CURRENT library, never a cached one
+    if(nbTemplateKey==='engine'&&window.FSBudgetV2&&!await FSBudgetV2.ready()){toast('The estimate data could not load — check the connection and try again.');return;}
     if(nbTemplateKey==='blank'||nbTemplateKey==='engine')applyNewBudget(nbTemplateKey);
     else if(!await applyTemplateBudget(nbTemplateKey))return;
     doc.projectId=id;
@@ -5927,8 +5928,18 @@ async function loadFeeSchedules(){
    already owns the SF-to-acres conversion; don't reimplement it here. */
 function feeContext(){
   const m=siteMetrics();
-  return {units:totUnits(),acres:m.acres,resSF:nz(doc.resSF),amenSF:nz(doc.amenSF),
+  return {units:feeUnits(),acres:m.acres,resSF:nz(doc.resSF),amenSF:nz(doc.amenSF),
     hard:scopeSum('res')+scopeSum('amen')};
+}
+/* Dwelling units for per-unit fee rows. An estimate has no unit mix
+   (doc.units is empty), so its count comes from the engine: the components
+   priced per dwelling unit, key or pad. Without this every per-unit row of a
+   jurisdiction schedule counted zero and replaced the engine's fee estimate. */
+function feeUnits(){
+  if(doc&&doc.engine&&doc.engineSummary&&doc.engineSummary.components){
+    return doc.engineSummary.components.reduce((s,c)=>s+(['unit','key','pad'].includes(c.unit)?nz(c.size):0),0);
+  }
+  return totUnits();
 }
 function feeResult(){
   if(!doc)return FSImpactFees.evaluate(null,null,{});

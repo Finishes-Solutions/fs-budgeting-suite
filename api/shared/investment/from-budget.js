@@ -136,7 +136,7 @@ function projectFromBudget(doc, v, opts) {
   // replace the unit-mix projection above; everything else about the handoff —
   // the badges, the locks, the re-sync — is unchanged.
   if (doc && doc.engineSummary && doc.engineSummary.proforma) {
-    return engineProjection(doc, p, imported, support, fieldOrigins, opts);
+    return engineProjection(doc, v, p, imported, support, fieldOrigins, opts);
   }
   return { imported, support, fieldOrigins, derived, scope: null };
 }
@@ -151,20 +151,24 @@ function normalizeScope(scope) {
   return SCOPE_ID.test(String(scope.id || '')) ? { kind: scope.kind, id: String(scope.id) } : { kind: 'project', id: 'project' };
 }
 
-function engineProjection(doc, p, imported, support, fieldOrigins, opts) {
+function engineProjection(doc, v, p, imported, support, fieldOrigins, opts) {
   const pf = doc.engineSummary.proforma;
-  let scope = normalizeScope(opts.scope);
+  const scope = normalizeScope(opts.scope);
   let s = pf.project;
   if (scope.kind === 'component') s = (pf.components || []).find(c => c.id === scope.id) || null;
   if (scope.kind === 'phase') s = (pf.phases || []).find(c => c.id === scope.id) || null;
-  if (!s) { scope = { kind: 'project', id: 'project' }; s = pf.project; }
+  // A component or phase that is not in this version is NOT quietly replaced
+  // by the whole project — that would turn a component analysis into a
+  // project one with a different price. The caller refuses (scopeMissing).
+  if (!s) return { imported, support, fieldOrigins, derived: null, scope, scopeMissing: true };
   // Rule 2 still holds for the whole project: the price is recomputed from the
   // document. A component or phase price is its materialized share.
   const price = scope.kind === 'project' ? round2(p.project) : round2(nz(s.totalCost));
   const label = scope.kind === 'project' ? '' : ' — ' + String(s.name || scope.id).slice(0, 120);
   imported.property.name = (imported.property.name + label).slice(0, 200);
+  const puSum = Object.keys(s.primaryUnits || {}).reduce((a, k) => a + nz(s.primaryUnits[k]), 0);
   imported.property.size = s.size && s.size.value > 0 ? { unit: s.size.unit, value: s.size.value }
-    : imported.property.size;
+    : puSum > 0 ? { unit: 'units', value: puSum } : imported.property.size;
   imported.property.unitCount = s.unitCount || null;
   imported.acquisition = { basis: { mode: 'purchasePrice', value: price } };
   imported.income = {
@@ -174,11 +178,19 @@ function engineProjection(doc, p, imported, support, fieldOrigins, opts) {
       : []
   };
   const ratio = Number.isFinite(+s.expenseRatio) && s.expenseRatio !== null ? round4(+s.expenseRatio) : null;
+  imported.vacancy = Number.isFinite(+s.vacancy) && s.vacancy !== null ? round4(+s.vacancy) : null;
+  // The same provenance shape the classic derivation writes (deriveExpenseRatio),
+  // because the analysis UI's badge, note and override-restore read it.
+  const potential = nz(s.income && s.income.year1PotentialIncome), otherYr = nz(s.income && s.income.otherIncome);
+  const vac = imported.vacancy !== null ? imported.vacancy : (Number.isFinite(+opts.vacancy) ? +opts.vacancy : D.vacancy);
+  const goi = potential * (1 - vac) + otherYr;
   imported.expenses = ratio !== null
     ? { mode: 'percentOfGOI', value: ratio, override: false,
-        derivedFrom: { projectId: opts.projectId, scope, source: 'estimate engine revenue inputs' } }
+        derivedFrom: { projectId: opts.projectId, budgetVersionNumber: v && v.VersionNumber, scope,
+          annualOpex: round2(ratio * goi), grossIncomeYr: round2(potential + otherYr), otherIncomeYr: round2(otherYr),
+          vacancy: vac, goi: round2(goi), opexSchemaVersion: nz(doc.opexSchemaVersion) || 1,
+          source: 'estimate engine revenue inputs' } }
     : { mode: 'percentOfGOI', value: null, override: false, derivedFrom: null };
-  imported.vacancy = Number.isFinite(+s.vacancy) && s.vacancy !== null ? round4(+s.vacancy) : null;
   support.scope = scope;
   support.scopeName = s.name || null;
   support.projectCost = price;

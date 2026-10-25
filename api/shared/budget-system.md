@@ -41,7 +41,8 @@ change, on 2026-10-15.
 15. [What an investment analysis takes from a budget](#15-what-an-investment-analysis-takes-from-a-budget)
 16. [What the Budget Assistant computes for itself](#16-what-the-budget-assistant-computes-for-itself)
 17. [Known discrepancies](#17-known-discrepancies)
-18. [Change log](#change-log)
+18. [Estimates (budgeting v2)](#18-estimates-budgeting-v2)
+19. [Change log](#change-log)
 
 ---
 
@@ -685,11 +686,79 @@ today. Remove an entry here when its fix ships (and say so in the change log).
 
 ---
 
+## 18. Estimates (budgeting v2)
+
+An **estimate** is a budget whose lines are produced by the v2 engine
+(`app/budget-engine.js`, design in `docs/BUDGET_ENGINE.md`) from the research
+bundle (`app/research-data.js`, built from `data/research/`). Its inputs live in
+`doc.engine` (components, shared elements, phases, land, settings, overrides,
+scenarios).
+
+**How it enters the budget.** Every change recomputes the engine and writes —
+*materializes* — ordinary fields, the same seam the Impact Fees step uses (§6):
+
+| Engine | Budget document |
+|---|---|
+| hard lines and FF&E | `lines`, scope `res`, `derived:'engine'`, basis `ls`, qty 1, `unit` = amount |
+| soft lines, fees, soft contingency, construction interest and loan fee | `lines`, scope `soft` |
+| design + construction contingency | `contingency = {mode:'amt'}` |
+| land price | `projectCosts.land` |
+| land closing + due diligence | `projectCosts.cls` (amt) |
+| developer fee | `projectCosts.dev` (amt) |
+| totals per component and phase, pro forma inputs | `engineSummary` |
+
+`companies` is empty (the researched baseline is a contractor price including
+OH&P). So `parts()` (§5), `budget-calc.js`, the CSI schedule (§8), SovLines and
+the classic exports need no change, and **`parts(doc).project` equals the engine
+total to the cent** (tested for every project type in
+`test/research-data.test.js`). `migrate()` passes an estimate to
+`FSBudgetV2.migrate()`, which repairs `doc.engine` and regenerates unsafe ids.
+
+**Opening does not re-price.** The saved lines are the record. If the shipped
+research or engine version differs from `doc.engine.dataVersion` /
+`engineVersion`, the page shows what they would give now beside the saved total;
+the document changes only when the estimate is edited or the user chooses
+*Update to current research*.
+
+**Impact fees.** The engine prices impact and water/sewer capacity fees from
+national norms by land use. Choosing a jurisdiction on the Impact Fees step does
+not write the fee line for an estimate: `applyImpactFees()` hands the schedule's
+total to the engine (`settings.impactFeesOverride`), which replaces its fee
+estimate and re-materializes. Per-unit schedule rows count the estimate's
+dwelling units, keys and pads (`feeUnits()`), not the empty unit mix.
+
+**Size.** An estimate with no building SF (an RV park, a solar farm) is sized by
+its primary units: the save accepts it (`engineSized()`), and the investment
+analysis imports those units as its size.
+
+**Investment analysis.** §15 applies to the whole project. An estimate can also
+hand one component or one phase (`scope` in the create request, kept in
+`input.source.scope`): purchase price = that slice's total cost, size = its
+building SF or units, income, vacancy and expense ratio from the revenue entered
+on its components. A slice that no longer exists is refused (409), never
+replaced by the whole project.
+
+---
+
 ## Change log
 
 Every change to the budget arithmetic, or to this specification, gets an entry:
 newest first, dated, naming what changed and the code that changed it. A change
 to a formula without an entry here is not finished.
+
+### 2026-10-24 — Estimates (budgeting v2)
+
+- New §18: estimates are materialized into ordinary budget fields; `parts()` and
+  `budget-calc.js` are unchanged and tie to the engine to the cent.
+- `migrate()` repairs `doc.engine` through `FSBudgetV2.migrate()`.
+- `applyImpactFees()`: for an estimate, a jurisdiction schedule's total replaces
+  the engine's fee estimate instead of writing the fee line; `feeContext()`
+  counts an estimate's dwelling units through `feeUnits()`.
+- `pullForms()` no longer reads the SF fields into an estimate (its areas are
+  engine output); `checkSaveable()` / the API accept an estimate sized in
+  primary units.
+- §15: per-component and per-phase handoff (`from-budget.js`
+  `engineProjection()`).
 
 ### 2026-10-15 — First edition
 

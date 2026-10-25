@@ -152,6 +152,10 @@ module.exports = async function (context, req) {
     // load-bearing.
     const proj = projectFromBudget(doc, v, { projectId, vacancy: D.vacancy,
       projectName: v.ProjectName || '', projectAddress: v.ProjectAddress || '', scope: body.scope });
+    if (proj.scopeMissing) {
+      context.res = jsonRes(409, { error: 'scope_missing', message: 'That component or phase is not in the saved budget version.' });
+      return;
+    }
     input = {
       schemaVersion: 1,
       analysisName: typeof body.analysisName === 'string' && body.analysisName.trim()

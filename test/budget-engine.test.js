@@ -281,7 +281,13 @@ test('pro forma handoff: from-budget reads the engine scope for engine budgets',
   near(ph.imported.acquisition.basis.value, r2.phases.find(x => x.id === 'p2').totals.total, 0.01);
   // A hostile or unknown scope falls back to the whole project.
   assert.deepEqual(fb.projectFromBudget(doc, v, { scope: { kind: 'phase', id: '<x>' } }).scope, { kind: 'project', id: 'project' });
-  assert.deepEqual(fb.projectFromBudget(doc, v, { scope: { kind: 'component', id: 'nope' } }).scope, { kind: 'project', id: 'project' });
+  // A slice that is not in this version is refused, never swapped for the project.
+  const gone = fb.projectFromBudget(doc, v, { scope: { kind: 'component', id: 'nope' } });
+  assert.equal(gone.scopeMissing, true);
+  // The expense provenance has the fields the analysis UI reads.
+  const df = comp.imported.expenses.derivedFrom;
+  ['goi', 'annualOpex', 'vacancy', 'budgetVersionNumber', 'grossIncomeYr', 'otherIncomeYr'].forEach(k => assert.ok(df[k] !== undefined, k));
+  near(df.annualOpex, 0.38 * df.goi, 0.01);
   // A classic budget still projects exactly as before (no scope).
   assert.equal(fb.projectFromBudget({ units: [], lines: [], other: [], expenses: [] }, v, {}).scope, null);
   void r;
@@ -299,4 +305,40 @@ test('save rules: an engine budget sized in primary units saves; hostile engine 
   assert.equal(ids.budgetIdentifierProblem(doc), null);
   doc.engine.components[0].id = 'x" onfocus="alert(1)';
   assert.equal(ids.budgetIdentifierProblem(doc), 'engine.components[0].id');
+});
+
+test('review fixes: sizes, land weights, line ids, stale overrides, sensitivity baseline, project start', () => {
+  const fb = require('../api/shared/investment/from-budget');
+  // A site-only estimate (no building SF, non-dwelling unit) still hands a size to the pro forma.
+  const mwType = Object.assign({}, D.types.park, { id: 'mw', primaryUnit: 'mw', sizing: { typicalSize: { low: 1, mid: 10, high: 50 },
+    sfPerPrimaryUnit: null, primaryUnitsPerAcre: { low: 4, mid: 5, high: 6 }, parkingPerPrimaryUnit: null }, lineItems: [] });
+  const D2 = Object.assign({}, D, { types: Object.assign({}, D.types, { mw: mwType }) });
+  const p = E.newProject(D2, { typeId: 'mw', size: 50 });
+  const r = E.calculate(p, D2);
+  const doc = Object.assign({ units: [], other: [], expenses: [] }, E.toBudgetDoc(r, p));
+  const proj = fb.projectFromBudget(doc, { VersionNumber: 1 }, {});
+  assert.deepEqual(proj.imported.property.size, { unit: 'units', value: 50 });
+  // Land splits by one measure for every component.
+  const m = mixed(); const rm = E.calculate(m, D);
+  const land = id => rm.lines.filter(l => l.comp === id && /^land:price/.test(l.key)).reduce((a, l) => a + l.amount, 0);
+  const ac = id => rm.components.find(c => c.id === id).acres;
+  near(land('res') / land('res2'), ac('res') / ac('res2'), 1e-6, 'land by acres');
+  // Line ids are unique even for long keys.
+  const ids = E.toBudgetDoc(rm, m).lines.map(l => l.lineId);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.ok(ids.every(x => /^[A-Za-z0-9_-]{1,64}$/.test(x)));
+  // Overriding a whole shared / land line is honoured and not reported stale.
+  m.overrides = { 'shared:garage': { amount: 5000000 }, 'land:price': { amount: 7000000 } };
+  const ro = E.calculate(m, D);
+  assert.equal(ro.shared.find(x => x.id === 'garage').amount, 5000000);
+  assert.ok(!ro.warnings.some(w => w.code === 'stale-overrides'), JSON.stringify(ro.warnings));
+  // Sensitivity contingency moves around the project setting, not the type mid.
+  const q = quick(); q.settings.hardContingencyPct = 0.10;
+  const sd = E.sensitivity(q, D).drivers.find(d => d.id === 'contingency');
+  assert.ok(sd.lowDelta < 0 && sd.highDelta > 0, JSON.stringify(sd));
+  // Construction start on the project moves phase 1.
+  const st = E.newProject(D, { typeId: 'apt', startMonth: '2027-01' });
+  assert.equal(st.phases[0].startMonth, null);
+  st.startMonth = '2029-06';
+  assert.equal(E.calculate(st, D).phases[0].start, '2029-06');
 });

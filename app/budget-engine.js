@@ -198,7 +198,9 @@
 
   function newProject(D, opts) {
     opts = opts || {};
-    var phase = newPhase({ id: 'p1', name: 'Phase 1', startMonth: opts.startMonth || null });
+    // Phase 1 starts with the project unless the user gives it its own start
+    // (its startMonth stays null), so the project's Construction start applies.
+    var phase = newPhase({ id: 'p1', name: 'Phase 1', startMonth: null });
     var p = {
       schema: 1, engineVersion: ENGINE_VERSION, dataVersion: D ? D.version : null,
       mode: opts.mode || 'quick',
@@ -254,6 +256,14 @@
     this.overrides = (project && project.overrides) || {};
     this.used = {};
   }
+  /* Build a line without listing it — for a whole shared, land or financing
+     cost that is overridable as one line and then split. Its override counts
+     as used. */
+  Lines.prototype.make = function (L) {
+    var line = this.add(L);
+    this.list.pop();
+    return line;
+  };
   /* Add one line. qty × rate (dollars) unless amountCents is given. An
      override replaces amount, rate or qty, or switches the line off. */
   Lines.prototype.add = function (L) {
@@ -779,7 +789,7 @@
       var sc = sharedCost(D, sh, ctx, ph);
       if (!sc) { warnings.push({ level: 'warn', code: 'shared-unpriced', message: (sh.name || sh.id) + ': no cost — choose a block or enter a unit cost.' }); return; }
       // The shared element is priced (and overridable) as one line, then split.
-      var whole = new Lines(project).add({ key: 'shared:' + sh.id, category: 'hard', qty: nz(sh.qty), rate: sc.rate,
+      var whole = lines.make({ key: 'shared:' + sh.id, category: 'hard', qty: nz(sh.qty), rate: sc.rate,
         name: sc.name, source: sc.source });
       var aw = allocationWeights(sh, project.components, info, revenue);
       if (!aw.targets.length) {
@@ -925,9 +935,15 @@
       landLines.push({ id: 'price', name: 'Land / acquisition', cents: landCents, source: { kind: 'user', note: 'Land price entered by the user' } });
       landLines.push({ id: 'closing', name: 'Land closing costs', cents: Math.round(landCents * closeP.v), source: closeP.source });
       if (ddC > 0) landLines.push({ id: 'dd', name: 'Land due diligence', cents: ddC, source: ddSrc });
-      var lw = project.components.map(function (c) { return info[c.id].geo.acres || info[c.id].geo.sf || 0; });
+      // One measure for every component — acres when all have acres, else
+      // building SF when all have SF, else direct hard cost — never a mix.
+      var gAll = function (k) { return project.components.every(function (c) { return (info[c.id].geo[k] || 0) > 0; }); };
+      var lw = project.components.map(function (c) {
+        var g = info[c.id].geo;
+        return gAll('acres') ? g.acres : gAll('sf') ? g.sf : (info[c.id].directHardCents || 0);
+      });
       landLines.forEach(function (ll) {
-        var whole = new Lines(project).add({ key: 'land:' + ll.id, category: 'land', amountCents: ll.cents, name: ll.name, source: ll.source });
+        var whole = lines.make({ key: 'land:' + ll.id, category: 'land', amountCents: ll.cents, name: ll.name, source: ll.source });
         if (!project.components.length) {
           lines.add({ key: 'land:' + ll.id + '>project', comp: null, phase: firstPhase.id, category: 'land', group: 'Land',
             code: 'LAND', name: ll.name, amountCents: whole.cents, source: whole.source });
@@ -995,7 +1011,7 @@
       [['interest', 'Construction loan interest (capitalized)', res.interestCents, { kind: 'computed', note: 'Monthly draw schedule × loan rate', rate: finSrc('constructionLoanRate'), ltc: finSrc('loanToCost') }],
        ['fee', 'Construction loan fee', res.feeCents, { kind: 'computed', note: 'Loan fee × committed loan', fee: finSrc('constructionLoanFee') }]].forEach(function (fx) {
         if (!fx[2]) return;
-        var whole = new Lines(project).add({ key: pi.id + ':fin:' + fx[0], category: 'financing', amountCents: fx[2], name: fx[1], source: fx[3] });
+        var whole = lines.make({ key: pi.id + ':fin:' + fx[0], category: 'financing', amountCents: fx[2], name: fx[1], source: fx[3] });
         var sp = allocateCents(whole.cents, keys.map(function (k) { return compsIn[k]; }));
         keys.forEach(function (k, j) {
           lines.add({ key: pi.id + ':fin:' + fx[0] + '>' + k, comp: k === 'project' ? null : k, phase: pi.id, category: 'financing',
@@ -1159,8 +1175,12 @@
       var dwelling = ['unit', 'key', 'bed', 'pad', 'site', 'slip', 'space'];
       var unitCount = uk.length === 1 && dwelling.indexOf(uk[0]) >= 0 ? units[uk[0]] : null;
       return { kind: kind, id: id, name: name, totalCost: Math.round(totalD * 100) / 100,
+        // The pro forma needs a positive size: building SF when there is any,
+        // else the primary units (sites, slips, MW, ports…) — never zero for a
+        // component that has a size at all.
         sizeSF: sf > 0 ? sf : null, size: sf > 0 ? { unit: 'squareFeet', value: sf }
-          : (unitCount ? { unit: 'units', value: unitCount } : null),
+          : (uk.length && sum(uk, function (k) { return units[k]; }) > 0
+            ? { unit: 'units', value: sum(uk, function (k) { return units[k]; }) } : null),
         unitCount: unitCount, primaryUnits: units,
         income: { year1PotentialIncome: Math.round(potential * 100) / 100, otherIncome: Math.round(other * 100) / 100 },
         vacancy: vacW > 0 ? r4(vacSum / vacW) : null, expenseRatio: expW > 0 ? r4(expSum / expW) : null,
@@ -1245,8 +1265,12 @@
     }
     if (base.totals.land > 0) drivers.push({ id: 'land', name: 'Land price', lo: '-10%', hi: '+10%',
       down: function (p) { p.land.value = nz(p.land.value) * 0.9; return p; }, up: function (p) { p.land.value = nz(p.land.value) * 1.1; return p; } });
+    // The contingency in force: component override, else the project setting,
+    // else the type's researched mid (the same order calculate() uses).
     var contNow = function (k, c) {
       var t = typeOf(D, c.typeId);
+      var ps = project.settings && project.settings.hardContingencyPct;
+      if (k === 'hard' && isNum(ps) && ps !== null) return ps;
       return t && t.contingency && t.contingency[k] ? t.contingency[k].mid : 0;
     };
     drivers.push({ id: 'contingency', name: 'Hard cost contingency', lo: '−2 pts', hi: '+2 pts',
@@ -1278,7 +1302,7 @@
       var scope = l.category === 'hard' || l.category === 'ffe' ? 'res' : 'soft';
       var comp = result.components.filter(function (x) { return x.id === l.comp; })[0];
       var grp = (comp ? comp.name + ' — ' : '') + (scope === 'res' ? (l.category === 'ffe' ? 'FF&E' : l.group) : l.group);
-      lines.push({ lineId: 'eng-' + l.key.replace(/[^A-Za-z0-9_\-]/g, '_').slice(0, 56), scope: scope, grp: grp,
+      lines.push({ lineId: lineIdFor(l.key), scope: scope, grp: grp,
         code: l.code || '', desc: l.name, basis: 'ls', qty: 1, auto: false, unit: dollars(c), baseUnit: dollars(c),
         derived: 'engine', engineKey: l.key, comp: l.comp, phase: l.phase });
     });
@@ -1293,6 +1317,17 @@
       siteSF: Math.round((result.metrics.acres || 0) * SQFT_PER_ACRE),
       engineSummary: summaryOf(result)
     };
+  }
+
+  /* A stable, safe, unique row id for an engine line (ROW_ID_RX: 64 chars of
+     [A-Za-z0-9_-]). Long keys keep a readable prefix plus a hash of the whole
+     key, so two keys that share a prefix never collide. */
+  function lineIdFor(key) {
+    var safe = 'eng-' + String(key).replace(/[^A-Za-z0-9_\-]/g, '_');
+    if (safe.length <= 64) return safe;
+    var h = 2166136261;
+    for (var i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return safe.slice(0, 55) + '-' + ('00000000' + h.toString(16)).slice(-8);
   }
 
   function summaryOf(result) {
