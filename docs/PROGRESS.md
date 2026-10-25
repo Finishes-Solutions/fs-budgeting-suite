@@ -16,7 +16,7 @@
 | 5 UI | DONE — estimate workspace (quick, mixed-use + shared + phases, custom builder), detail with per-line overrides and sources, draws, scenarios, sensitivity, Excel/PDF, project files, help + `docs/ESTIMATES_GUIDE.md`, `docs/screenshots/`; axe-core WCAG 2.1 AA clean |
 | 6 Samples | DONE — 16 samples in `docs/sample-output/` |
 | 7 Second research pass | DONE — see `docs/RESEARCH.md` → Second pass |
-| 8 Verify & review | DONE — syntax check, node tests, all browser suites, code review (10 findings fixed), security review (no findings), simplify (four reviews applied) |
+| 8 Verify & review | DONE — `npm run check` clean (128 scripts); 343/343 node tests incl. the unchanged pro forma goldens; all 23 browser suites pass (1,639 checks); code review (10 findings fixed), security review (no findings), simplify (four reviews applied); merged to `staging` |
 
 ## How to run things
 
