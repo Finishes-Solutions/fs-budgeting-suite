@@ -33,7 +33,7 @@ fails=0
 if [ $# -eq 0 ]; then
   echo "=== test/*.test.js (node:test)"
   node --test test/*.test.js >/tmp/fs-node-test.log 2>&1 \
-    && grep -E '^# (tests|pass|fail)' /tmp/fs-node-test.log \
+    && grep -E '^(#|ℹ) (tests|pass|fail)' /tmp/fs-node-test.log \
     || { fails=$((fails+1)); cat /tmp/fs-node-test.log; }
 fi
 for s in "${SUITES[@]}"; do

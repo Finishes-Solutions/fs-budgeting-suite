@@ -380,7 +380,7 @@ percentage is derived rather than typed.
 ```
 annualBudgetOpex     = 12 × grossIncome(budgetDoc).expMo
 budgetGrossIncomeYr  = 12 × (rent + other income)          per month, from the budget
-GOI                  = budgetGrossIncomeYr × (1 − vacancy)
+GOI                  = 12 × rent × (1 − vacancy) + 12 × other income
 derived              = annualBudgetOpex / GOI
 ```
 
@@ -397,6 +397,12 @@ the ratio by exactly the vacancy factor — a 45% expense load would arrive as
 40.5% at 10% vacancy, and NOI would be overstated all the way down the
 projection.
 
+Vacancy applies to **rent only**, exactly as the engine applies it. Until
+2026-10 the derivation vacated other income too, which overstated the ratio
+slightly (≈0.5% of operating expenses on a budget with typical other income).
+Analyses derived before then record no `derivedFrom.otherIncomeYr`, keep their
+saved ratio, and pick up the corrected one on their next re-sync.
+
 ### What is recorded
 
 `normalizedInput.expenses` carries, alongside `mode` and `value`:
@@ -406,7 +412,8 @@ projection.
 | `derivedFrom.projectId` | the budget it came from |
 | `derivedFrom.budgetVersionNumber` | the exact immutable version |
 | `derivedFrom.annualOpex` | the numerator |
-| `derivedFrom.grossIncomeYr` | the budget's gross income |
+| `derivedFrom.grossIncomeYr` | the budget's gross income (rent + other) |
+| `derivedFrom.otherIncomeYr` | the other-income part of it, not vacated (absent on derivations before 2026-10) |
 | `derivedFrom.vacancy` | the vacancy the GOI was computed at |
 | `derivedFrom.goi` | the denominator |
 | `derivedFrom.opexSchemaVersion` | 1 = service rows only, 2 = full schedule |

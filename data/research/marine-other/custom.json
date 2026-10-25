@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "id": "custom",
+  "name": "Custom (built from blocks)",
+  "category": "marine-other",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "ls",
+  "summary": "A Custom component has no baseline price of its own: its hard cost is the sum of the building blocks the user adds (each priced from data/research/_blocks with its own sources) plus any hand-priced items. Soft costs, contingencies, fees and financing use the shared norms in data/research/_common.",
+  "sizing": {
+    "typicalSize": {
+      "low": 1,
+      "mid": 1,
+      "high": 1,
+      "evidence": [],
+      "derived": true,
+      "method": "A custom component is one lump-sum assembly."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 0,
+      "mid": 0,
+      "high": 0,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "No baseline \u2014 the hard cost is the sum of the blocks added in the Custom builder."
+    },
+    "scope": {
+      "includesSitework": false,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Everything comes from the blocks the user adds."
+    }
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 1.0
+      }
+    ],
+    "derived": true,
+    "method": "Unused: a custom component has no baseline to split; each block carries its own division."
+  },
+  "lineItems": [],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.11,
+      "mid": 0.16,
+      "high": 0.25,
+      "evidence": [],
+      "derived": true,
+      "method": "The commercial/residential family totals in _common/soft-costs.json (totalSoftCostPctOfHard-*): 11\u201325%, mid 16% \u2014 a neutral blend for an unknown building."
+    },
+    "notes": "Excludes impact fees, developer fee, financing and contingency, which the engine adds separately."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.075,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "_common/contingency.json designContingency (GSA P-120 Table 3-1)."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.07,
+      "evidence": [],
+      "derived": true,
+      "method": "_common/contingency.json hardCostContingency (new construction)."
+    },
+    "soft": {
+      "low": 0.02,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "_common/contingency.json softCostContingency."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 0,
+      "max": 1000000000000.0,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "No range \u2014 a custom assembly has no comparable type."
+    }
+  },
+  "evidence": [],
+  "openQuestions": [
+    "None \u2014 a custom estimate is only as good as the blocks chosen; check each block's sources."
+  ]
+}

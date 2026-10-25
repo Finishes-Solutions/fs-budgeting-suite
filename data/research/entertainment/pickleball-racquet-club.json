@@ -1,0 +1,463 @@
+{
+  "schemaVersion": 1,
+  "id": "pickleball-racquet-club",
+  "name": "Pickleball / racquet club",
+  "category": "entertainment",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "court",
+  "summary": "Indoor (or covered) pickleball club: clear-span building (often pre-engineered metal or a converted big box) with ~2,500–3,500 gross SF per court including lobby, pro shop, restrooms/lockers and a small F&B bar. Outdoor municipal court bids ($61k–$172k per court, amenities block) set the floor for court-only work; indoor cost is derived from RSMeans racquetball/gym $/SF × SF per court. Three 2024–25 indoor projects give $154k (TX, pickleball-only), $367k (FL municipal contract) and $800k (FL premium club) per court; RSMeans racquetball/gym models cross-check $/SF.",
+  "sizing": {
+    "typicalSize": {
+      "low": 6,
+      "mid": 12,
+      "high": 24,
+      "unit": "court",
+      "evidence": [
+        "e3",
+        "e4",
+        "e5"
+      ],
+      "derived": true,
+      "method": "Examples: 9 courts (e4), 13 courts (e5), 25 courts (e3). Mid 12."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 2200,
+      "mid": 2800,
+      "high": 4000,
+      "evidence": [
+        "e5",
+        "e3"
+      ],
+      "derived": true,
+      "method": "e5 ≈ 2,230 SF per court (29,000 SF / 13 courts, pickleball-only); e3 4,000 SF per court (100,000 SF / 25 courts with wellness/coworking/restaurant). Gross building SF per court: recommended court playing area ~30x60 ft (1,800 SF) for one court plus spectator/circulation, lobby, pro shop, restrooms/lockers and F&B (~25–50% add). Derived."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 4,
+      "mid": 6,
+      "high": 9,
+      "evidence": [],
+      "derived": true,
+      "method": "Building at ~0.25–0.35 FAR with surface parking ≈ 11,000–15,000 SF building/acre ÷ 2,800 SF/court ≈ 4–6 courts/acre (higher in reused big boxes). Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 4,
+      "mid": 6,
+      "high": 8,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "4 players per court plus waiting/social players and staff ≈ 5–8 spaces per court. Derived."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 150000,
+      "mid": 400000,
+      "high": 800000,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e3",
+        "e4",
+        "e5",
+        "e1",
+        "e2",
+        "_blocks/amenities.json#e9",
+        "_blocks/amenities.json#e10",
+        "_blocks/amenities.json#e11"
+      ],
+      "derived": false,
+      "method": "2025 dollars. Sourced per-court points: Live Oak TX $154k (2024 TDLR estimate, pickleball-only, ~$69/SF, e5); Palmetto Bay FL $367k (2025 municipal construction contract with shop and bar, e4); Boca Raton FL $800k (2025, premium club with padel, wellness, restaurant; likely project cost, e3). Mid $400k ≈ e4 adjusted up slightly for national sitework/parking and to sit between e5 and e3; cross-check perSF $145 × 2,800 SF/court ≈ $405k, consistent with RSMeans 2019 racquetball club $172/SF union / $155 open shop (e1) escalated. Low = e5-type simple building/conversion; high = e3 premium club. Outdoor court-only bids ($61k–$172k per court, amenities e9–e11) are the floor."
+    },
+    "perSF": {
+      "low": 70,
+      "mid": 145,
+      "high": 260,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e5",
+        "e3",
+        "e1",
+        "e2"
+      ],
+      "derived": true,
+      "method": "Low ≈ e5 $69/SF (simple pickleball-only building, 2024); mid = perPrimaryUnit mid / 2,800 SF per court; high ≈ e3 $200/SF (2025 premium club) and RSMeans masonry club (e1 ≈ $172/SF 2019 → ~$225 2025) plus premium F&B finishes."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Building + court surfaces/nets + typical on-site work (parking, utilities, landscaping). Excludes land, soft costs, FF&E (furniture, ball machines, pro-shop fixtures), off-sites, impact/tap fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.4,
+    "standard": 1.0,
+    "premium": 1.4,
+    "luxury": 2.0,
+    "evidence": [
+      "e3",
+      "e5"
+    ],
+    "derived": true,
+    "method": "economy ≈ low/mid (150/400 ≈ 0.38, e5-type); luxury = high/mid (800/400 = 2.0, e3-type); premium interpolated."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "03",
+        "pct": 0.1
+      },
+      {
+        "division": "05",
+        "pct": 0.03
+      },
+      {
+        "division": "07",
+        "pct": 0.06
+      },
+      {
+        "division": "08",
+        "pct": 0.03
+      },
+      {
+        "division": "09",
+        "pct": 0.08
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.03
+      },
+      {
+        "division": "13",
+        "pct": 0.18
+      },
+      {
+        "division": "21",
+        "pct": 0.03
+      },
+      {
+        "division": "22",
+        "pct": 0.05
+      },
+      {
+        "division": "23",
+        "pct": 0.1
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "31",
+        "pct": 0.04
+      },
+      {
+        "division": "32",
+        "pct": 0.06
+      },
+      {
+        "division": "33",
+        "pct": 0.02
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived for a pre-engineered metal building club: the PEMB package sits in 13 (≈18%); slab and foundations 03; court surfacing/finishes split 09; HVAC 10% (conditioned play halls); lighting/power 8%; on-site work 12%. Not sourced from a published estimate."
+  },
+  "lineItems": [
+    {
+      "id": "court-surface-nets",
+      "name": "Indoor court surfacing (acrylic or cushioned), lines, posts and nets",
+      "division": "09",
+      "unit": "court",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 8000,
+        "mid": 15000,
+        "high": 30000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance per court on an existing slab; cushioned or modular tile systems at the high end."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of the baseline."
+    },
+    {
+      "id": "court-divider-netting",
+      "name": "Court divider / backstop netting",
+      "division": "11",
+      "unit": "court",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 2000,
+        "mid": 5000,
+        "high": 10000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance per court."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "outdoor-court",
+      "name": "Outdoor post-tension pickleball court (fenced)",
+      "division": "32",
+      "unit": "court",
+      "qty": {
+        "per": "project",
+        "value": 4
+      },
+      "cost": {
+        "low": 55000,
+        "mid": 85000,
+        "high": 170000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "_blocks/amenities.json#e9",
+          "_blocks/amenities.json#e10",
+          "_blocks/amenities.json#e11"
+        ],
+        "derived": false,
+        "method": "Amenities block pickleball-court-outdoor: municipal bids $61k (Troy MI), $95k (Farragut TN), $172k (Tuscaloosa AL) per court."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Optional outdoor courts beside the club."
+    },
+    {
+      "id": "court-lighting-outdoor",
+      "name": "Outdoor court LED lighting (per court)",
+      "division": "26",
+      "unit": "court",
+      "qty": {
+        "per": "project",
+        "value": 4
+      },
+      "cost": {
+        "low": 10000,
+        "mid": 20000,
+        "high": 40000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance per outdoor court for poles, fixtures and controls."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": ""
+    },
+    {
+      "id": "fnb-bar",
+      "name": "Clubhouse bar / café kitchen",
+      "division": "11",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 75000,
+        "mid": 200000,
+        "high": 450000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance for bar, small kitchen, hood where cooked food is served."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": ""
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 5000,
+      "mid": 12000,
+      "high": 25000,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Lounge furniture, benches, ball machines, scoring/video systems, pro shop fixtures per court. Derived."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.1,
+      "mid": 0.15,
+      "high": 0.22,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Simple PEMB buildings carry lower A&E (~5–7%; RSMeans model shows ~7–8% architectural fees, e1) plus civil, permits, testing → 10–22%. Derived."
+    },
+    "notes": "Conversions of big boxes need change-of-use permitting and often HVAC/sprinkler upgrades."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical; higher for conversions."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 140000,
+      "max": 1000000,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Covered outdoor/converted (~$150k hard × 1.1 soft, less margin) to premium ground-up ($800k × 1.25)."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "buildingHardCostPerSF",
+      "value": 171.9,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Racquetball Court - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/racquetball-court",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Racquetball Court with Brick Veneer / Rigid Steel ... SubTotal 100% $137.52 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $34.38",
+      "scopeNotes": "2019 RSMeans national model, 30,000 SF, 2 story, union labor. value = subtotal + 25% contractor fees = $171.9/SF; open shop = $155.06/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Indoor racquet club proxy (2-story model with courts, lockers, lobby).",
+      "confidence": "medium",
+      "low": 155.06,
+      "high": 171.9
+    },
+    {
+      "id": "e2",
+      "metric": "buildingHardCostPerSF",
+      "value": 176.85,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Gymnasium - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/gymnasium",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Gymnasium with Concrete Block / Rigid Steel ... SubTotal 100% $141.48 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $35.37",
+      "scopeNotes": "2019 RSMeans national model, 20,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $176.85/SF; open shop = $162.05/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Large clear-span court building proxy.",
+      "confidence": "medium",
+      "low": 162.05,
+      "high": 176.85
+    },
+    {
+      "id": "e3",
+      "metric": "projectCostPerCourt",
+      "value": 800000,
+      "unit": "USD/court",
+      "region": "Boca Raton, FL",
+      "regionKey": "FL-Miami",
+      "dataYear": 2025,
+      "source": {
+        "title": "Construction Begins on Florida’s $20 Million Indoor Pickleball Complex",
+        "url": "https://news.constructconnect.com/construction-begins-on-floridas-20-million-indoor-pickleball-complex",
+        "publisher": "ConstructConnect News",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Boca Paddle by CityPickle, a $20 million, 100,000-square-foot indoor pickleball and padel complex in Boca Raton. The public-private partnership project will include 25 courts, wellness spaces, coworking areas, cold plunges, saunas, and a restaurant.",
+      "scopeNotes": "Premium club with padel, wellness and restaurant; $20M / 25 courts ≈ $800k per court, ≈ $200/SF; likely project cost (scope of $20M not itemized). June 2025.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerCourt",
+      "value": 366667,
+      "unit": "USD/court",
+      "region": "Palmetto Bay, FL",
+      "regionKey": "FL-Miami",
+      "dataYear": 2025,
+      "source": {
+        "title": "Indoor pickleball courts in Palmetto Bay could be completed by November",
+        "url": "https://caplinnews.fiu.edu/pickleball-courts-palmetto-bay-nick-marano-jorge-lopez/",
+        "publisher": "Caplin News (FIU)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "may host nine courts, a sports shop, and a bar serving drinks and food ... The council awarded the $3.3 million construction contract to Waypoint Contracting.",
+      "scopeNotes": "Municipal new-build indoor facility on a 2+ acre lot; construction contract (hard cost) $3.3M / 9 courts ≈ $367k per court. Land ($2.94M) excluded. Contract awarded July 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerCourt",
+      "value": 153846,
+      "unit": "USD/court",
+      "region": "Live Oak, TX",
+      "regionKey": "TX-SanAntonio",
+      "dataYear": 2024,
+      "source": {
+        "title": "Indoor pickleball complex planned for North San Antonio suburb of Live Oak",
+        "url": "https://www.sacurrent.com/news/indoor-pickleball-complex-planned-for-north-san-antonio-suburb-of-live-oak-34682553/",
+        "publisher": "San Antonio Current",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The nearly 29,000-square-foot complex at 201 Shin Oak Drive will house 12 indoor courts and one outdoor stadium court, according to a Texas Department of Licensing and Regulation filing ... Construction of the space is projected to cost $2 million",
+      "scopeNotes": "TDLR-filed construction estimate; pickleball-only (no restaurant). $2M / 13 courts ≈ $154k per court; ≈ $69/SF; ≈ 2,230 SF per court. May 2024.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "More indoor club budgets outside Florida/Texas would firm up the national mid; e3 cost scope (hard vs. total) is unclear.",
+    "Confirm gross SF per court for clubs with significant F&B."
+  ]
+}

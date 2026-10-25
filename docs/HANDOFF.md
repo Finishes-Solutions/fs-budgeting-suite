@@ -177,7 +177,8 @@ which is why the history has merge commits on both sides.
   login page reads whatever survived and hands it back as the post-login target.
   Best-effort by design: worst case the user lands on Home.
 - **Application settings are per-environment.** Production and staging each need the
-  pair set. The same client ID/secret works for both — the difference is the redirect
+  pair set — and so does `ANTHROPIC_API_KEY`, in every environment that should
+  have the Budget Assistant (production, staging, feature). The same client ID/secret works for both — the difference is the redirect
   URI, which is per-hostname.
 - A blank white page on a new environment almost always means the redirect URI is not
   registered (or has not propagated — allow ~3 minutes), not a broken build.
@@ -241,6 +242,15 @@ body>header { … }            /* app chrome only — a bare `header` also hits 
 The printed report builds its own `<header>` inside `#printDoc`. Unscoped selectors
 either hide it or paint it dark, making the black logo invisible on white.
 
+Two more from the 2026-10 pass:
+
+- **Sticky cells stick at the scroll pane's padding edge.** `.budget-scroll` once had
+  `padding-top:8px`, so eight pixels of rows showed above the "pinned" header. A pane
+  with sticky `thead`/`tfoot` cells must have no padding on those sides.
+- **An absolutely positioned element inside a panning container escapes it.** On a
+  phone it widens the page; inside the tab bar it is clipped (which is why the More
+  menu is `position:fixed` at ≤760px).
+
 ### Dots and alignment
 
 The green auto-calculated dot and the blue manually-edited dot both render as a
@@ -276,7 +286,10 @@ Each budget line has `code` (CSI), `grp`, `scope` (`res` | `amen` | `soft`), `de
    `amenSF` is 0 there is no amenity building, so `scopeActive('amen')` is false and
    `scopeSum` returns **0** for it. Hiding the rows while still summing them was the
    original bug: lump-sum and manual-quantity amenity lines do not follow `amenSF` to
-   zero, so a $250k lump sum stayed in the contract sum invisibly.
+   zero, so a $250k lump sum stayed in the contract sum invisibly. The same rule now
+   holds in `api/shared/sov.js` (an inactive scope's `SovLines` rows write 0), and the
+   grid shows a muted "N lines excluded because Amenity SF is 0" row in the scope's
+   place so the section never silently vanishes.
 
 3. **Insert new lines next to their group; never append.** `renderBudget` starts a new
    heading whenever `grp` changes, so an appended line produces a *duplicate* group
@@ -669,6 +682,41 @@ update selectors alongside label changes.
   Deleting that test project and re-running the align script would move it;
   nothing depends on it either way. `dbo.ProjectIdMap` tracks the re-keys, so
   rollback still works from the *current* ids.
+
+**Database state — written, NOT YET RUN**
+
+- `sql/publish_multifamily_input_defaults.sql` — publishes a new pricing
+  library (`2026.10-v1`) **and** a new multifamily template version together,
+  in one transaction, so new budgets follow their inputs: the pool becomes an
+  amenity lump sum (gone when Amenity SF is 0), nine finish lines (appliances,
+  cabinets, countertops, interior doors, door hardware, mirrors, bath
+  accessories, blinds, mailboxes) are priced per unit, and the developer fee
+  becomes the equivalent percentage of project cost. Rates are back-solved so
+  the template's own default totals do not move (contract sum −$0.34, project
+  cost +$1.39 on the shipped template).
+
+  Run order: standalone, any time — it publishes only scopes and bases the
+  deployed code already understands, so no release has to precede it. Read the
+  preflight output before it commits; every verification row must read PASS or
+  INFO. Re-running is a no-op. If `2026.10-v1` has already been used as a
+  pricing version name, edit `@newPricingVersion` at the top.
+
+  What to review afterwards: the rates are **starting points, not house
+  numbers** — the per-unit rates are odd cents ($3,081.90 for appliances) and
+  the fee is `2.0046%`. Whoever owns pricing should round them and republish
+  from the Pricing page (and the template editor for the fee).
+
+  Two things that are deliberate, not bugs: the nine per-unit lines carry
+  `(per Unit)` in their descriptions — repricing copies a library RATE by
+  `scope|code|desc` but never its basis, so keeping the old key would put a
+  $3,081.90 per-unit rate on every existing budget's per-SF appliance line.
+  And existing budgets are not touched: they keep their residential per-SF
+  pool and finish lines, and Update Pricing leaves those ten lines at the
+  rates they have. `tools/input-driven-defaults.js` is the JavaScript mirror
+  of the script and `test/input-defaults.test.js` proves it (including
+  against output captured from SQL Server) — change them together.
+  `DEFAULT_PRICING` in `app/index.html` (the offline fallback) should be
+  brought into line with `2026.10-v1` once the script has run.
 
 **Housekeeping**
 

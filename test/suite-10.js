@@ -15,7 +15,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
      headers:{'Content-Type':'application/json'},
      body:JSON.stringify({create:true,name:a.n,address:'1 Test Way'})});
  },{p:'OP-1001',n:'Undo Test'});
- await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'));
  await p.waitForTimeout(700);
  await p.selectOption('#nbProject','OP-1001');
  await p.fill('#nbId','TST-9994');
@@ -98,6 +98,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('contract sum still renders', /^\$[\d,]+$/.test(before), before);
 
  // --- Download Guide: export popup opens, PDF downloads through the engine
+ // Leaving for Help with "Leave without saving?" accepted now really discards a
+ // budget that was never saved, and the tests below come back to this one —
+ // so it is saved first.
+ await p.evaluate(() => saveBudget(false)); await p.waitForTimeout(600);
  await p.evaluate(() => go('help')); await p.waitForTimeout(400);
  ok('Download Guide button present', await p.locator('button:has-text("Download Guide")').isVisible());
  await p.click('button:has-text("Download Guide")');
@@ -270,6 +274,35 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  });
  ok('Cancelling a single line delete keeps the line', single.afterCancel === single.before);
  ok('Confirming a single line delete removes it', single.afterOk === single.before - 1 && single.gone);
+
+ // ---- the catalog by keyboard ----
+ await p.click('button:has-text("+ Add Line Item")'); await p.waitForTimeout(300);
+ ok('the picker is a labelled modal dialog', await p.evaluate(() => {
+   const d = document.querySelector('#pickModal [role=dialog]');
+   return !!d && d.getAttribute('aria-modal') === 'true'
+     && document.getElementById(d.getAttribute('aria-labelledby')).textContent.includes('CSI Catalog');
+ }));
+ ok('catalog rows are reachable by keyboard',
+    await p.evaluate(() => [...document.querySelectorAll('#pickBody tr[data-code]')].every(r => r.tabIndex === 0)));
+ await p.fill('#pickSearch', 'elevator'); await p.waitForTimeout(250);
+ const nBefore = await p.evaluate(() => doc.lines.length);
+ await p.press('#pickSearch', 'Enter'); await p.waitForTimeout(400);
+ const added = await p.evaluate(() => {
+   const k = document.activeElement && document.activeElement.dataset.k || '';
+   const l = lineById(k.split('.')[1]);
+   return { n: doc.lines.length, k, desc: l && l.desc, open: document.getElementById('pickModal').style.display };
+ });
+ ok('Enter in the search adds the first match', added.n === nBefore + 1 && added.open === 'none', JSON.stringify(added));
+ ok('and lands in the new line\'s rate field', /\.unit$/.test(added.k) && /Elevator/i.test(added.desc || ''), added.k);
+ await p.click('button:has-text("+ Add Line Item")'); await p.waitForTimeout(300);
+ await p.fill('#pickSearch', 'flooring'); await p.waitForTimeout(250);
+ await p.press('#pickSearch', 'ArrowDown'); await p.waitForTimeout(100);
+ ok('ArrowDown steps from the search into the results',
+    await p.evaluate(() => document.activeElement.matches('#pickBody tr[data-code]')));
+ const want = await p.evaluate(() => document.activeElement.dataset.code);
+ await p.keyboard.press('Enter'); await p.waitForTimeout(400);
+ ok('Enter on a row adds that row',
+    await p.evaluate(c => doc.lines.some(l => l.code === c) && document.getElementById('pickModal').style.display === 'none', want), want);
 
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);

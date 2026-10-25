@@ -1,0 +1,896 @@
+{
+  "schemaVersion": 1,
+  "id": "hotel-extended-stay",
+  "name": "Extended-stay hotel",
+  "category": "hospitality",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "key",
+  "summary": "All-suite extended-stay hotel (midscale, e.g., economy/midscale studio brands, through upscale, e.g., Residence Inn / Homewood class) with in-room kitchens and minimal public space. Larger rooms but low public-space ratio make cost per SF lower than select-service; midscale and upscale segments differ by ~60–70% per key, so the default blends them. HVS reports both segments separately for four survey years, giving solid national data.",
+  "sizing": {
+    "typicalSize": {
+      "low": 90,
+      "mid": 120,
+      "high": 160,
+      "unit": "key",
+      "evidence": [
+        "e24"
+      ],
+      "derived": true,
+      "method": "HCEG extended-stay prototype: 150 guestrooms, 4 stories (e24); midscale extended-stay prototypes are commonly ~100–125 keys. Mid 120."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 450,
+      "mid": 650,
+      "high": 800,
+      "evidence": [
+        "e25"
+      ],
+      "derived": true,
+      "method": "HCEG extended-stay studio 548 SF incl. kitchen plus 12x8 bath (96 SF) ≈ 640 SF net (upscale) (e25); with ~0.80–0.85 guestroom share (little public space) → ~750–800 GSF/key for upscale. Midscale studios are ~300–350 SF net → ~450–500 GSF/key. Mid 650 blends the two."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 35,
+      "mid": 45,
+      "high": 60,
+      "evidence": [],
+      "derived": true,
+      "method": "3–4 story buildings of ~80,000 GSF on 2–3 acres with ~1 surface space per key; derived from footprint + parking arithmetic."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.9,
+      "mid": 1,
+      "high": 1.2,
+      "type": "surface",
+      "evidence": [
+        "e26"
+      ],
+      "derived": true,
+      "method": "HCEG extended-stay prototype: 175 spaces for 150 rooms = 1.17 (e26); long-stay guests mostly drive."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 95000,
+      "mid": 135000,
+      "high": 200000,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "e7"
+      ],
+      "derived": false,
+      "method": "HVS building & site improvements per key (median / average): upscale ES 2025 data $190,694 / $170,172 (e1), 2024 data $178,972 / $201,549 (e3), 2023 data $168,322 / $176,045 (e5); midscale ES 2025 data $110,057 / $111,724 (e2), 2024 data $113,958 / $116,160 (e4), 2023 data $109,368 / $109,126 (e6). Segment midpoint ≈ $148k; x0.91 (remove permits, engineering, hard contingency included by HVS) → $135k. Low $95k ≈ 0.91 x midscale ES (~$110k) less a small discount for 3-story wood/economy builds; high $200k ≈ 0.91 x upscale ES 2024 average ($183k) plus metro premium (RLB 3-star metro median-of-lows $343/SF x 650 SF ≈ $223k, e7)."
+    },
+    "perSF": {
+      "low": 150,
+      "mid": 210,
+      "high": 340,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e7",
+        "e8"
+      ],
+      "derived": true,
+      "method": "Mid = $135k ÷ 650 SF ≈ $208/SF. Low ≈ $95k ÷ ~600 SF (midscale rooms are smaller, so $/SF does not fall as fast as $/key); high ≈ RLB 2026 metro 3-star median of lows ($343/SF, e7); Phoenix 3-star $230–$350 (e8)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC and OH&P and typical on-site work; includes in-suite kitchen cabinetry/countertops (carved out below); excludes kitchen appliances (in FF&E), land, soft costs, pre-opening, permits, contingency, off-sites, impact/tap fees, financing."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.75,
+    "standard": 1,
+    "premium": 1.35,
+    "luxury": 1.5,
+    "evidence": [
+      "e2",
+      "e1"
+    ],
+    "derived": true,
+    "method": "Economy ≈ midscale ES / blend ($110k / $148k ≈ 0.74, e2); premium ≈ upscale ES / blend ($191k / $148k ≈ 1.3, e1); luxury = high/mid ($200k / $135k ≈ 1.5)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.06
+      },
+      {
+        "division": "04",
+        "pct": 0.02
+      },
+      {
+        "division": "05",
+        "pct": 0.03
+      },
+      {
+        "division": "06",
+        "pct": 0.11
+      },
+      {
+        "division": "07",
+        "pct": 0.06
+      },
+      {
+        "division": "08",
+        "pct": 0.05
+      },
+      {
+        "division": "09",
+        "pct": 0.11
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.02
+      },
+      {
+        "division": "12",
+        "pct": 0.03
+      },
+      {
+        "division": "14",
+        "pct": 0.02
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.09
+      },
+      {
+        "division": "23",
+        "pct": 0.07
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "27",
+        "pct": 0.02
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.04
+      },
+      {
+        "division": "33",
+        "pct": 0.03
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived from the select-service split (same wood-frame low-rise construction) with +1 pt casework (12, in-suite kitchens) and +1 pt plumbing (22, kitchen sinks/dishwashers), offset by −1 pt finishes (09, less public space) and −1 pt metals (05)."
+  },
+  "lineItems": [
+    {
+      "id": "suite-kitchen-cabinetry",
+      "name": "In-suite kitchen cabinetry and countertops",
+      "division": "12",
+      "unit": "key",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 3400,
+        "mid": 4500,
+        "high": 5300,
+        "dollarYear": 2021,
+        "region": "US",
+        "evidence": [
+          "e27"
+        ],
+        "derived": false,
+        "method": "HCEG 2021 extended-stay kitchen cabinetry $2,875–$4,500 per key (avg $3,840) (e27) x1.18 for the GC markups the guide excludes."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of the baseline hard cost."
+    },
+    {
+      "id": "suite-kitchen-appliances",
+      "name": "In-suite kitchen appliances (fridge, cooktop, microwave, dishwasher)",
+      "division": "11",
+      "unit": "key",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 2000,
+        "mid": 2400,
+        "high": 2800,
+        "dollarYear": 2021,
+        "region": "US",
+        "evidence": [
+          "e28"
+        ],
+        "derived": false,
+        "method": "HCEG 2021 extended-stay kitchen appliances $1,715–$2,345 per key (avg $2,066) (e28) x1.18 install/markup."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Normally carried in FF&E (HVS FF&E includes kitchen equipment) — switch on only if your FF&E budget excludes appliances."
+    },
+    {
+      "id": "pre-opening-working-capital",
+      "name": "Pre-opening, OS&E and working capital",
+      "division": "01",
+      "unit": "key",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 2400,
+        "mid": 4000,
+        "high": 6600,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e17",
+          "e18",
+          "e19"
+        ],
+        "derived": false,
+        "method": "HVS pre-opening & working capital per key: upscale ES 2025 data $4,863 median / $6,628 avg (e17); midscale ES $2,419 / $3,430 (e18); upscale ES 2024 data $5,100 / $5,622 (e19). Mid blends segments."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": false,
+      "notes": "Owner cost incl. OS&E (kitchenware packages add to OS&E vs. select-service)."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 15000,
+      "mid": 20000,
+      "high": 26000,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e9",
+        "e10",
+        "e11",
+        "e12"
+      ],
+      "derived": false,
+      "method": "HVS FF&E per key: upscale ES 2025 data $25,661 median / $24,361 avg (e9), 2024 data $20,796 / $23,253 (e11); midscale ES $16,594 (e10) and $17,032 (e12). Mid ≈ blend of segments."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.1,
+      "mid": 0.14,
+      "high": 0.2,
+      "evidence": [
+        "e13",
+        "e14",
+        "e15",
+        "e16"
+      ],
+      "derived": true,
+      "method": "HVS soft ÷ building & site improvements (medians): upscale ES 2025 data 19,165/190,694 = 10.1% (e13), 2024 data 26,415/178,972 = 14.8% (e15); midscale ES 16,127/110,057 = 14.7% (e14), 17,213/113,958 = 15.1% (e16). Prototype-driven design keeps soft costs lowest of the hotel types. Financing (in HVS soft) and permits/engineering (in HVS building) roughly offset."
+    },
+    "notes": "Includes A/E (prototype adaptation), brand application/technical-services fees (HVS lists the franchise application fee under soft costs), legal, insurance, permits, testing. Developer fee and financing handled separately."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Highly standardized brand prototypes."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical new-construction hard-cost contingency for repetitive wood-frame hotels."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 120000,
+      "max": 290000,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "HVS all-in totals less land: midscale ES 2025 data $169,901 − $11,886 ≈ $158k median (e21), 2024 data ≈ $157k (e23); upscale ES 2025 data $264,841 − $18,182 ≈ $247k (e20), 2024 data average $286,237 − $21,602 ≈ $265k (e22). Totals include FF&E, pre-opening, financing and developer fee."
+    }
+  },
+  "openQuestions": [
+    "Default blends midscale and upscale extended-stay; consider splitting into two types (costs differ ~65% per key).",
+    "Need a brand prototype GSF/key for midscale extended-stay to firm up $/SF."
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerUnit",
+      "value": 190694,
+      "low": 170172,
+      "high": 190694,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Extended-Stay Hotels (Upscale) — Building & Site Improvements: Average $170,172; Median $190,694",
+      "scopeNotes": "value = median; low/high = the median and average. HVS 'Building & Site Improvements' (cost-category exhibit) = GC bid, building/monument signage, building permits, contractor overhead, engineering, hard-cost contingency, landscaping, parking/parking garage, site improvements, subcontractor bids. Broader than our hard cost (permits, engineering, contingency); our conversion uses x0.91. Excludes land, soft costs, FF&E, pre-opening, developer fee. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerUnit",
+      "value": 110057,
+      "low": 110057,
+      "high": 111724,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Extended-Stay Hotels (Midscale) — Building & Site Improvements: Average $111,724; Median $110,057",
+      "scopeNotes": "value = median; low/high = the median and average. HVS 'Building & Site Improvements' (cost-category exhibit) = GC bid, building/monument signage, building permits, contractor overhead, engineering, hard-cost contingency, landscaping, parking/parking garage, site improvements, subcontractor bids. Broader than our hard cost (permits, engineering, contingency); our conversion uses x0.91. Excludes land, soft costs, FF&E, pre-opening, developer fee. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerUnit",
+      "value": 178972,
+      "low": 178972,
+      "high": 201549,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2025",
+        "url": "https://www.hvs.com/article/10219-hvs-us-hotel-development-cost-survey-2025",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilizes Since Our Last Survey', Extended-Stay Hotels (Upscale) — Building & Site Improvements: Average $201,549; Median $178,972",
+      "scopeNotes": "value = median; low/high = the median and average. HVS 'Building & Site Improvements' (cost-category exhibit) = GC bid, building/monument signage, building permits, contractor overhead, engineering, hard-cost contingency, landscaping, parking/parking garage, site improvements, subcontractor bids. Broader than our hard cost (permits, engineering, contingency); our conversion uses x0.91. Excludes land, soft costs, FF&E, pre-opening, developer fee. Survey covers budgets collected in calendar 2024.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerUnit",
+      "value": 113958,
+      "low": 113958,
+      "high": 116160,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2025",
+        "url": "https://www.hvs.com/article/10219-hvs-us-hotel-development-cost-survey-2025",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilizes Since Our Last Survey', Extended-Stay Hotels (Midscale) — Building & Site Improvements: Average $116,160; Median $113,958",
+      "scopeNotes": "value = median; low/high = the median and average. HVS 'Building & Site Improvements' (cost-category exhibit) = GC bid, building/monument signage, building permits, contractor overhead, engineering, hard-cost contingency, landscaping, parking/parking garage, site improvements, subcontractor bids. Broader than our hard cost (permits, engineering, contingency); our conversion uses x0.91. Excludes land, soft costs, FF&E, pre-opening, developer fee. Survey covers budgets collected in calendar 2024.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerUnit",
+      "value": 168322,
+      "low": 168322,
+      "high": 176045,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2023,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2024",
+        "url": "https://www.hvs.com/article/9999-hvs-us-hotel-development-cost-survey-2024",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost-per-room table (exhibit image \"HVS Hotel Development Cost Ranges\"), Extended-Stay Hotels (Upscale) — Building & Site Improvements: Average $176,045; Median $168,322",
+      "scopeNotes": "value = median; low/high = the median and average. HVS 'Building & Site Improvements' (cost-category exhibit) = GC bid, building/monument signage, building permits, contractor overhead, engineering, hard-cost contingency, landscaping, parking/parking garage, site improvements, subcontractor bids. Broader than our hard cost (permits, engineering, contingency); our conversion uses x0.91. Excludes land, soft costs, FF&E, pre-opening, developer fee. Survey covers budgets collected in calendar 2023.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostPerUnit",
+      "value": 109368,
+      "low": 109126,
+      "high": 109368,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2023,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2024",
+        "url": "https://www.hvs.com/article/9999-hvs-us-hotel-development-cost-survey-2024",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost-per-room table (exhibit image \"HVS Hotel Development Cost Ranges\"), Extended-Stay Hotels (Midscale) — Building & Site Improvements: Average $109,126; Median $109,368",
+      "scopeNotes": "value = median; low/high = the median and average. HVS 'Building & Site Improvements' (cost-category exhibit) = GC bid, building/monument signage, building permits, contractor overhead, engineering, hard-cost contingency, landscaping, parking/parking garage, site improvements, subcontractor bids. Broader than our hard cost (permits, engineering, contingency); our conversion uses x0.91. Excludes land, soft costs, FF&E, pre-opening, developer fee. Survey covers budgets collected in calendar 2023.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": 406,
+      "low": 343,
+      "high": 475,
+      "unit": "USD/sf",
+      "region": "Median of 18 major U.S. metros in the RLB table",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "North America Quarterly Construction Cost Report, Q2 2026",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/06/Q2-2026-QCR_7.7.2026.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "\"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\" — Indicative Construction Costs table, Hotels 3 Star (e.g., Dallas 310–455, Phoenix 230–350, Chicago 385–515, New York 385–530)",
+      "scopeNotes": "My arithmetic over the 18 U.S. city rows: median of lows $342.5, median of highs $475, median of range midpoints $406/SF. Hard construction cost per GSF; RLB markets are all large metros, so this sits above a true national average. Site scope not stated.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerSF",
+      "low": 230,
+      "high": 350,
+      "unit": "USD/sf",
+      "region": "Phoenix, AZ",
+      "regionKey": "AZ-Phoenix",
+      "dataYear": 2026,
+      "source": {
+        "title": "North America Quarterly Construction Cost Report, Q2 2026",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/06/Q2-2026-QCR_7.7.2026.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table, row Phoenix, Hotels 3 Star: Low 230, High 350",
+      "scopeNotes": "Hard construction cost per GSF; lowest 3-star range among the U.S. cities.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9",
+      "metric": "ffePerUnit",
+      "value": 25661,
+      "low": 24361,
+      "high": 25661,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Extended-Stay Hotels (Upscale) — FF&E: Average $24,361; Median $25,661",
+      "scopeNotes": "value = median; low/high = the median and average. HVS FF&E = guestroom/bath furniture and fixtures, kitchen and laundry equipment, public space and meeting furniture, softgoods, technology/telecom equipment. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e10",
+      "metric": "ffePerUnit",
+      "value": 16594,
+      "low": 16594,
+      "high": 16594,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Extended-Stay Hotels (Midscale) — FF&E: Average $16,594; Median $16,594",
+      "scopeNotes": "value = median; low/high = the median and average. HVS FF&E = guestroom/bath furniture and fixtures, kitchen and laundry equipment, public space and meeting furniture, softgoods, technology/telecom equipment. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e11",
+      "metric": "ffePerUnit",
+      "value": 20796,
+      "low": 20796,
+      "high": 23253,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2025",
+        "url": "https://www.hvs.com/article/10219-hvs-us-hotel-development-cost-survey-2025",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilizes Since Our Last Survey', Extended-Stay Hotels (Upscale) — FF&E: Average $23,253; Median $20,796",
+      "scopeNotes": "value = median; low/high = the median and average. HVS FF&E = guestroom/bath furniture and fixtures, kitchen and laundry equipment, public space and meeting furniture, softgoods, technology/telecom equipment. Survey covers budgets collected in calendar 2024.",
+      "confidence": "high"
+    },
+    {
+      "id": "e12",
+      "metric": "ffePerUnit",
+      "value": 17032,
+      "low": 17032,
+      "high": 17032,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2025",
+        "url": "https://www.hvs.com/article/10219-hvs-us-hotel-development-cost-survey-2025",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilizes Since Our Last Survey', Extended-Stay Hotels (Midscale) — FF&E: Average $17,032; Median $17,032",
+      "scopeNotes": "value = median; low/high = the median and average. HVS FF&E = guestroom/bath furniture and fixtures, kitchen and laundry equipment, public space and meeting furniture, softgoods, technology/telecom equipment. Survey covers budgets collected in calendar 2024.",
+      "confidence": "high"
+    },
+    {
+      "id": "e13",
+      "metric": "softCostPerUnit",
+      "value": 19165,
+      "low": 19165,
+      "high": 25282,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Extended-Stay Hotels (Upscale) — Soft Costs: Average $25,282; Median $19,165",
+      "scopeNotes": "value = median; low/high = the median and average. HVS soft costs = architectural fees, consultants, FINANCING costs (construction interest, reserves, loan closing), franchise application fee, holding costs, interior design, land closing and entitlement, professional fees, soft-cost contingency, survey. Includes financing, which our soft-cost % excludes. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e14",
+      "metric": "softCostPerUnit",
+      "value": 16127,
+      "low": 16127,
+      "high": 19768,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Extended-Stay Hotels (Midscale) — Soft Costs: Average $19,768; Median $16,127",
+      "scopeNotes": "value = median; low/high = the median and average. HVS soft costs = architectural fees, consultants, FINANCING costs (construction interest, reserves, loan closing), franchise application fee, holding costs, interior design, land closing and entitlement, professional fees, soft-cost contingency, survey. Includes financing, which our soft-cost % excludes. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e15",
+      "metric": "softCostPerUnit",
+      "value": 26415,
+      "low": 26415,
+      "high": 31273,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2025",
+        "url": "https://www.hvs.com/article/10219-hvs-us-hotel-development-cost-survey-2025",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilizes Since Our Last Survey', Extended-Stay Hotels (Upscale) — Soft Costs: Average $31,273; Median $26,415",
+      "scopeNotes": "value = median; low/high = the median and average. HVS soft costs = architectural fees, consultants, FINANCING costs (construction interest, reserves, loan closing), franchise application fee, holding costs, interior design, land closing and entitlement, professional fees, soft-cost contingency, survey. Includes financing, which our soft-cost % excludes. Survey covers budgets collected in calendar 2024.",
+      "confidence": "high"
+    },
+    {
+      "id": "e16",
+      "metric": "softCostPerUnit",
+      "value": 17213,
+      "low": 17213,
+      "high": 22373,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2025",
+        "url": "https://www.hvs.com/article/10219-hvs-us-hotel-development-cost-survey-2025",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilizes Since Our Last Survey', Extended-Stay Hotels (Midscale) — Soft Costs: Average $22,373; Median $17,213",
+      "scopeNotes": "value = median; low/high = the median and average. HVS soft costs = architectural fees, consultants, FINANCING costs (construction interest, reserves, loan closing), franchise application fee, holding costs, interior design, land closing and entitlement, professional fees, soft-cost contingency, survey. Includes financing, which our soft-cost % excludes. Survey covers budgets collected in calendar 2024.",
+      "confidence": "high"
+    },
+    {
+      "id": "e17",
+      "metric": "preOpeningPerUnit",
+      "value": 4863,
+      "low": 4863,
+      "high": 6628,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Extended-Stay Hotels (Upscale) — Pre-Opening & Working Capital: Average $6,628; Median $4,863",
+      "scopeNotes": "value = median; low/high = the median and average. HVS pre-opening & working capital = operating reserves, pre-opening recruiting/staffing/training, supply inventories (linen, operating supplies = OS&E), technical services fees. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e18",
+      "metric": "preOpeningPerUnit",
+      "value": 2419,
+      "low": 2419,
+      "high": 3430,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Extended-Stay Hotels (Midscale) — Pre-Opening & Working Capital: Average $3,430; Median $2,419",
+      "scopeNotes": "value = median; low/high = the median and average. HVS pre-opening & working capital = operating reserves, pre-opening recruiting/staffing/training, supply inventories (linen, operating supplies = OS&E), technical services fees. Survey covers budgets collected in calendar 2025.",
+      "confidence": "high"
+    },
+    {
+      "id": "e19",
+      "metric": "preOpeningPerUnit",
+      "value": 5100,
+      "low": 5100,
+      "high": 5622,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2025",
+        "url": "https://www.hvs.com/article/10219-hvs-us-hotel-development-cost-survey-2025",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilizes Since Our Last Survey', Extended-Stay Hotels (Upscale) — Pre-Opening & Working Capital: Average $5,622; Median $5,100",
+      "scopeNotes": "value = median; low/high = the median and average. HVS pre-opening & working capital = operating reserves, pre-opening recruiting/staffing/training, supply inventories (linen, operating supplies = OS&E), technical services fees. Survey covers budgets collected in calendar 2024.",
+      "confidence": "high"
+    },
+    {
+      "id": "e20",
+      "metric": "totalDevCostPerUnit",
+      "value": 264841,
+      "low": 250824,
+      "high": 264841,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Extended-Stay Hotels (Upscale) — Total: Average $250,824; Median $264,841",
+      "scopeNotes": "value = median; low/high = the median and average. All-in development cost per room incl. land, soft costs (incl. financing), FF&E, pre-opening and developer fee. Survey covers budgets collected in calendar 2025. Land: avg $20,580 / median $18,182.",
+      "confidence": "high"
+    },
+    {
+      "id": "e21",
+      "metric": "totalDevCostPerUnit",
+      "value": 169901,
+      "low": 167992,
+      "high": 169901,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2026",
+        "url": "https://www.hvs.com/article/10509-HVS-US-Hotel-Development-Cost-Survey-2026",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilized Since Our Last Survey', Extended-Stay Hotels (Midscale) — Total: Average $167,992; Median $169,901",
+      "scopeNotes": "value = median; low/high = the median and average. All-in development cost per room incl. land, soft costs (incl. financing), FF&E, pre-opening and developer fee. Survey covers budgets collected in calendar 2025. Land: avg $13,183 / median $11,886.",
+      "confidence": "high"
+    },
+    {
+      "id": "e22",
+      "metric": "totalDevCostPerUnit",
+      "value": 265692,
+      "low": 265692,
+      "high": 286237,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2025",
+        "url": "https://www.hvs.com/article/10219-hvs-us-hotel-development-cost-survey-2025",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilizes Since Our Last Survey', Extended-Stay Hotels (Upscale) — Total: Average $286,237; Median $265,692",
+      "scopeNotes": "value = median; low/high = the median and average. All-in development cost per room incl. land, soft costs (incl. financing), FF&E, pre-opening and developer fee. Survey covers budgets collected in calendar 2024. Land: avg $21,602 / median $16,615.",
+      "confidence": "high"
+    },
+    {
+      "id": "e23",
+      "metric": "totalDevCostPerUnit",
+      "value": 169910,
+      "low": 169910,
+      "high": 174968,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2025",
+        "url": "https://www.hvs.com/article/10219-hvs-us-hotel-development-cost-survey-2025",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilizes Since Our Last Survey', Extended-Stay Hotels (Midscale) — Total: Average $174,968; Median $169,910",
+      "scopeNotes": "value = median; low/high = the median and average. All-in development cost per room incl. land, soft costs (incl. financing), FF&E, pre-opening and developer fee. Survey covers budgets collected in calendar 2024. Land: avg $14,335 / median $12,956.",
+      "confidence": "high"
+    },
+    {
+      "id": "e24",
+      "metric": "typicalSize",
+      "unit": "text",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Economy 90 guestrooms, 3 stories; Extended Stay 150 guestrooms, 4 stories; Midscale 135 guestrooms, 5 stories; Upscale 304 guestrooms, 9 stories; Upper Upscale 192 guestrooms, 25 suites, 7 stories; Luxury 200 guestrooms, 20 suites, 6 stories",
+      "scopeNotes": "Prototype hotel assumptions per tier.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e25",
+      "metric": "guestroomNetSF",
+      "unit": "text",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Guestroom area assumptions: Economy 303 SF; Midscale 370 SF; Upscale 389 SF; Upper Upscale 472 SF; Luxury 578 SF; Extended Stay studio 548 SF (incl. 8x6 kitchen)",
+      "scopeNotes": "Net guestroom areas (excl. bath for most tiers) of the guide's prototype hotels; used to derive gross SF per key.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e26",
+      "metric": "parkingPerUnit",
+      "low": 1.11,
+      "high": 1.6,
+      "unit": "ratio",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Outdoor Parking ... Per Space (100) / (175) / (150) for Economy (90 rooms) / Extended Stay (150) / Midscale (135); Upscale: 'Assume 486 spaces ... (1.6 spaces per room to accommodate meeting attendance)'",
+      "scopeNotes": "Ratios are my arithmetic: economy 1.11, extended stay 1.17, midscale 1.11, upscale 1.6 spaces/room.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e27",
+      "metric": "lineItemCost",
+      "low": 2875,
+      "high": 4500,
+      "unit": "USD/key",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Extended Stay, Guestroom - Add for a Full Renovation: Kitchen Cabinetry $2,875.00 to $4,500.00 (avg $3,840.04)",
+      "scopeNotes": "HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e28",
+      "metric": "lineItemCost",
+      "low": 1715,
+      "high": 2345,
+      "unit": "USD/key",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Extended Stay, Guestroom - Add for a Full Renovation: Kitchen Appliances $1,715.06 to $2,344.50 (avg $2,066.09)",
+      "scopeNotes": "HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources.",
+      "confidence": "medium"
+    }
+  ]
+}

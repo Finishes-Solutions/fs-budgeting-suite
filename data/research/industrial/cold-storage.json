@@ -1,0 +1,489 @@
+{
+  "schemaVersion": 1,
+  "id": "cold-storage",
+  "name": "Cold storage",
+  "category": "industrial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Refrigerated/freezer warehouses cost roughly 2–3× a dry warehouse: insulated metal panel (IMP) envelope, heated and insulated slab for freezer zones, an ammonia or CO2 refrigeration plant (25–35% of cost), insulated dock doors and much larger electrical service; many new builds are 40–50'+ clear for automated storage. Public evidence is thin — the available per-SF ranges are contractor/advisory articles — so the default is cross-checked bottom-up against the dry-warehouse baseline plus the specialty-MEP building blocks.",
+  "sizing": {
+    "typicalSize": {
+      "low": 75000,
+      "mid": 175000,
+      "high": 400000,
+      "unit": "sf",
+      "evidence": [
+        "e5"
+      ],
+      "derived": true,
+      "method": "Terrapin lists typical cold-storage builds at 30k–200k SF (e5); modern 3PL/automated facilities run to 300–400k SF. Mid 175k SF (judgment)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 13000,
+      "mid": 15000,
+      "high": 17500,
+      "evidence": [],
+      "derived": true,
+      "method": "FAR ~0.30–0.40 (truck courts with reefer plug-ins, engine-room yard, larger setbacks): 43,560 × 0.345 ≈ 15,000 SF/acre."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0003,
+      "mid": 0.0005,
+      "high": 0.001,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Same employee-parking ratio as dry distribution (0.3–1.0 per 1,000 SF)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 170,
+      "mid": 240,
+      "high": 350,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "_blocks/specialty-mep.json#e1",
+        "_blocks/specialty-mep.json#e2",
+        "_blocks/specialty-mep.json#e5"
+      ],
+      "derived": true,
+      "method": "Top-down: Terrapin cooler $150–$250 and freezer $200–$350 (e1/e2); a typical multi-temperature facility (≈40% cooler/dock, 60% freezer) blends to ≈ $180–$310, midpoint ≈ $245. Bottom-up check: dry big-box shell + sitework ≈ $110/SF (warehouse-distribution mid $100 + 10% for taller 40–50' clear and smaller size; C&W medium $87, e6) + refrigeration $55 (specialty-mep block mid; e3 $15–$60) + IMP envelope ≈ 1.4 SF of wall/ceiling panel per floor SF × $24 = $34 + sub-slab heating on 60% of floor × $11 = $7 + insulated doors, vapour/slab insulation and electrical service upgrade ≈ $25–$35 → ≈ $231–$241. Mid $240. Low $170 = cooler-dominant facility in a low-cost market (e1 midpoint-low); high $350 = top of freezer range (e2), consistent with Terrapin tilt-up cold shell $215–$325 (e5) once MEP is added. Blast/ultra-low facilities can exceed this."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P, shell, IMP envelope, heated slab in freezer zones, refrigeration plant and distribution, insulated docks, electrical service and typical sitework (reefer truck courts). Excludes ASRS/racking/material handling, land, soft costs, utility off-sites (substation/line extensions) and fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.75,
+    "standard": 1,
+    "premium": 1.3,
+    "luxury": 1.6,
+    "evidence": [
+      "e2"
+    ],
+    "derived": true,
+    "method": "economy ≈ low/mid (cooler-only); premium ≈ high/mid (freezer-dominant, 1.46) tempered to 1.3; luxury 1.6 ≈ blast-freeze/ultra-low share (Terrapin blast $280–$450, e2) or high-bay automated facility."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "03",
+        "pct": 0.135
+      },
+      {
+        "division": "05",
+        "pct": 0.075
+      },
+      {
+        "division": "07",
+        "pct": 0.04
+      },
+      {
+        "division": "08",
+        "pct": 0.03
+      },
+      {
+        "division": "09",
+        "pct": 0.01
+      },
+      {
+        "division": "11",
+        "pct": 0.03
+      },
+      {
+        "division": "13",
+        "pct": 0.11
+      },
+      {
+        "division": "21",
+        "pct": 0.04
+      },
+      {
+        "division": "22",
+        "pct": 0.02
+      },
+      {
+        "division": "23",
+        "pct": 0.22
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "27",
+        "pct": 0.005
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.04
+      },
+      {
+        "division": "32",
+        "pct": 0.04
+      },
+      {
+        "division": "33",
+        "pct": 0.025
+      }
+    ],
+    "evidence": [
+      "e3",
+      "e4",
+      "_blocks/specialty-mep.json#e2"
+    ],
+    "derived": true,
+    "method": "Refrigeration (23) 22% ≈ lower end of the 25–35% refrigeration share (e4, specialty-mep e2) because some refrigeration electrical sits in 26. IMP insulated enclosure carried in 13 (11%) + 07 roofing (4%) ≈ $36/SF at mid, matching the bottom-up envelope check. Heated/insulated slab inflates 03. Pre-action/dry sprinklers in freezers (21) 4%. Sitework smaller share than dry warehouse because building cost is higher. Judgment — verify."
+  },
+  "lineItems": [
+    {
+      "id": "refrigeration-system",
+      "name": "Refrigeration plant & distribution (ammonia/CO2, evaporators, controls)",
+      "division": "23",
+      "block": "specialty-mep",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 30,
+        "mid": 55,
+        "high": 90,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/specialty-mep.json#e1",
+          "_blocks/specialty-mep.json#e2",
+          "e3"
+        ],
+        "derived": false,
+        "method": "From _blocks/specialty-mep.json cold-storage-refrigeration ($30/$55/$90 per SF): Pulse RevOps $30–$90/SF and 25–35% of a $175–$275/SF frozen facility; Terrapin $15–$60/SF (e3) brackets the cooler end."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "imp-envelope",
+      "name": "Insulated metal panel walls & ceiling (per SF of floor; ~1.4 SF panel per SF)",
+      "division": "13",
+      "block": "specialty-mep",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1.4
+      },
+      "cost": {
+        "low": 15,
+        "mid": 24,
+        "high": 35,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/specialty-mep.json#e3",
+          "_blocks/specialty-mep.json#e4",
+          "e3"
+        ],
+        "derived": false,
+        "method": "From _blocks/specialty-mep.json freezer-insulated-envelope ($15/$24/$35 per SF of panel): Terrapin IMP $12–$35/SF, freezer walls $18–$30/SF. Quantity 1.4 SF of panel per floor SF ≈ 200k SF box, 45–50 ft high (perimeter walls ≈ 0.45 SF/SF + insulated ceiling 1.0 SF/SF)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "subslab-heating",
+      "name": "Freezer sub-slab heating & insulation (freezer zones)",
+      "division": "23",
+      "block": "specialty-mep",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 0.6
+      },
+      "cost": {
+        "low": 8,
+        "mid": 11,
+        "high": 15,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/specialty-mep.json#e5",
+          "e3"
+        ],
+        "derived": false,
+        "method": "From _blocks/specialty-mep.json freezer-subslab-heating ($8/$11/$15 per SF): Terrapin $8–$12/SF sub-slab heating; \"+$8–$18/SF for heated slab\" (e3). Quantity = freezer share of floor area, assumed 60%."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out; set qty to 0 for cooler-only buildings."
+    },
+    {
+      "id": "blast-freezer-cells",
+      "name": "Blast-freeze cells (optional, per SF of cell)",
+      "division": "23",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 0.05
+      },
+      "cost": {
+        "low": 80,
+        "mid": 120,
+        "high": 180,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e2"
+        ],
+        "derived": true,
+        "method": "Premium over freezer space: Terrapin blast freeze $280–$450 vs freezer $200–$350 (e2) → +$80–$100/SF at the range ends; high adds dedicated low-temp compressors/evaporators (judgment). Quantity: 5% of building area."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Optional add for food-processing-adjacent facilities."
+    },
+    {
+      "id": "electrical-service-upgrade",
+      "name": "Utility service / switchgear upsizing for refrigeration load",
+      "division": "26",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 500000,
+        "mid": 1200000,
+        "high": 2500000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No public source fetched. A 175k SF freezer facility draws ~3–6 MW vs <1 MW for dry; medium-voltage switchgear, transformers and backup for refrigeration controls ≈ $0.5M–$2.5M (judgment). Off-site utility line extensions excluded."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out of the baseline electrical (26)."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.11,
+      "mid": 0.14,
+      "high": 0.19,
+      "evidence": [],
+      "derived": true,
+      "method": "Dry-warehouse soft costs (10–20%) applied to a 2–3× larger hard cost, so A/E and permits fall as a percentage, offset by refrigeration engineering, ammonia PSM/RMP compliance and commissioning: 11–19%, mid 14% (judgment)."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.05
+    },
+    "notes": "Type-specific soft items: refrigeration design-build engineering, ammonia process safety management (PSM) and risk management plan (RMP) if >10,000 lb NH3, commissioning/pull-down energy."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Refrigeration and automation integration add design risk (judgment)."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Long-lead refrigeration/electrical equipment and panel supply risk → 5–10% (judgment)."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard 5–10% of soft costs (judgment)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 175,
+      "max": 480,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "min ≈ hard low $170 × 1.03 (cooler-only, lean soft); max ≈ blast-freeze-heavy facility at Terrapin's $450 top (e2) × 1.07."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 150,
+      "high": 250,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Cold Storage Construction Cost (2026)",
+        "url": "https://terrapincg.com/news/cold-storage-construction-cost-2026",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost-per-SF-by-temperature-zone table: 'Cooler (35°F)' $150–$250 (2\"–4\" IMP, light-duty refrigeration)",
+      "scopeNotes": "Page states zone ranges are total construction cost incl. site work, structure, envelope, mechanical and GC fees. Contractor marketing article.",
+      "confidence": "low"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 200,
+      "high": 350,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Cold Storage Construction Cost (2026)",
+        "url": "https://terrapincg.com/news/cold-storage-construction-cost-2026",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost-per-SF-by-temperature-zone table: 'Freezer (0°F)' $200–$350 (5\"–6\" IMP, heated sub-slab); 'Blast freeze (–40°F)' $280–$450",
+      "scopeNotes": "Same table/scope as e1.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "refrigerationCostPerSF",
+      "value": null,
+      "low": 15,
+      "high": 60,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Cold Storage Construction Cost (2026)",
+        "url": "https://terrapincg.com/news/cold-storage-construction-cost-2026",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Refrigeration: $15–$60/SF; heated slab '+$8–$18/SF'; site work $12–$35/SF; insulated metal panels $12–$35 per SF of wall and ceiling area",
+      "scopeNotes": "Component allowances from the same article.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 130,
+      "high": 350,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Cold Storage Construction Cost Per Square Foot in 2026: Complete Cost Guide for Developers and Investors",
+        "url": "https://www.coradvisors.net/2026/05/cold-storage-construction-cost-per-square-foot-2026.html",
+        "publisher": "COR Advisors",
+        "accessed": "2026-10-24"
+      },
+      "quote": "headline range '$130 to $350+ per square foot'; 100,000+ SF facilities $125–$200; refrigeration equipment 'approximately 25% to 35% of total project costs'",
+      "scopeNotes": "Advisory blog aggregating Terrapin and other contractor guides; implies benchmarks exclude land, site prep, utility upgrades and soft costs but does not confirm. Not independent of e1/e2.",
+      "confidence": "low"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 215,
+      "high": 325,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Tilt-Up Concrete Construction Cost Per Square Foot (2026)",
+        "url": "https://terrapincg.com/news/tilt-up-concrete-construction-cost-per-square-foot-2026",
+        "publisher": "Terrapin Construction Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Building-type table row 'Cold storage (tilt-up shell + interior IMP liner)' $215–$325/SF, typical size 30k–200k SF",
+      "scopeNotes": "Same contractor; table note says shell figures exclude MEP and finishes (conflicting FAQ).",
+      "confidence": "low"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostPerSF",
+      "value": 87,
+      "unit": "USD/sf",
+      "region": "Americas average (46 markets)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "2026 Americas Industrial Construction Cost Guide (landing page)",
+        "url": "https://www.cushmanwakefield.com/en/united-states/insights/industrial-construction-cost-guide",
+        "publisher": "Cushman & Wakefield",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Small projects averaged $144 psf (+3.6% YOY), medium $87 psf (+2.8% YOY), and large $78 psf (+2.3% YOY).",
+      "scopeNotes": "Model 476,400-SF distribution building; ground-up core and shell (no office TI). Americas average incl. Canada/Mexico.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 140,
+      "high": 228,
+      "unit": "USD/sf",
+      "region": "United States (18 RLB metros)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Industrial - Warehouse column, 18 U.S. city rows (Austin 75-155 … Washington, D.C. 140-225; full range 75-370).",
+      "scopeNotes": "low/high here = median of the 18 U.S. city LOW values (140) and median of the HIGH values (227.5), computed by the researcher; un-weighted, coastal-heavy city sample, so above a true national average.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "All per-SF evidence is from contractor/advisory articles; obtain a cost-consultant or REIT (Americold/Lineage) disclosure of cost per SF or per pallet position.",
+    "Confirm whether Terrapin zone ranges include sitework (the article says yes, but also lists site work separately at $12–$35/SF).",
+    "Consider a per-pallet-position or per-cubic-foot unit for automated high-bay facilities."
+  ]
+}

@@ -1,0 +1,207 @@
+{
+  "sample": {
+    "id": "14-master-planned-3-phase",
+    "name": "Brazos Crossing — 3-phase master plan",
+    "address": "Fort Worth, TX",
+    "exitCap": 0.06
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "mixed",
+    "location": {
+      "region": "TX-FortWorth"
+    },
+    "startMonth": "2027-04",
+    "settings": {},
+    "land": {
+      "mode": "perAcre",
+      "value": 175000,
+      "acres": 62
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1 — infrastructure + apartments",
+        "startMonth": "2027-04",
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      },
+      {
+        "id": "p2",
+        "name": "Phase 2 — townhomes + retail",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      },
+      {
+        "id": "p3",
+        "name": "Phase 3 — hotel",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "mf",
+        "typeId": "garden-multifamily",
+        "name": "Garden apartments",
+        "phaseId": "p1",
+        "size": 300,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perUnitMonth",
+          "rate": 1750,
+          "otherIncome": 320000,
+          "vacancy": 0.06,
+          "expenseRatio": 0.4
+        }
+      },
+      {
+        "id": "th",
+        "typeId": "townhomes",
+        "name": "Rental townhomes",
+        "phaseId": "p2",
+        "size": 80,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perUnitMonth",
+          "rate": 2650,
+          "vacancy": 0.05,
+          "expenseRatio": 0.35
+        }
+      },
+      {
+        "id": "rt",
+        "typeId": "grocery-anchored-center",
+        "name": "Grocery-anchored center",
+        "phaseId": "p2",
+        "size": 65000,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perSFYear",
+          "rate": 24,
+          "vacancy": 0.07,
+          "expenseRatio": 0.15
+        }
+      },
+      {
+        "id": "ht",
+        "typeId": "hotel-select-service",
+        "name": "Select-service hotel",
+        "phaseId": "p3",
+        "size": 110,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perUnitYear",
+          "rate": 52000,
+          "otherIncome": 250000,
+          "vacancy": 0.3,
+          "expenseRatio": 0.66
+        }
+      }
+    ],
+    "shared": [
+      {
+        "id": "roads",
+        "name": "Spine road (private, 2-lane)",
+        "itemId": "private-road",
+        "qty": 4200,
+        "phaseId": "p1",
+        "allocation": {
+          "method": "sf"
+        }
+      },
+      {
+        "id": "detention",
+        "name": "Regional detention",
+        "itemId": "detention-pond",
+        "qty": 62,
+        "phaseId": "p1",
+        "allocation": {
+          "method": "sf"
+        }
+      },
+      {
+        "id": "utils",
+        "name": "Off-site water & sewer extension",
+        "itemId": "offsite-utility-extension",
+        "qty": 3800,
+        "phaseId": "p1",
+        "allocation": {
+          "method": "units"
+        }
+      },
+      {
+        "id": "amen",
+        "name": "Resident amenity center (MF + townhomes)",
+        "itemId": "clubhouse",
+        "qty": 6500,
+        "phaseId": "p1",
+        "allocation": {
+          "method": "manual",
+          "shares": {
+            "mf": 0.75,
+            "th": 0.25
+          }
+        }
+      }
+    ],
+    "overrides": {},
+    "scenarios": []
+  }
+}

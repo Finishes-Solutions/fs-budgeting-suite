@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "id": "cannabis-cultivation",
+  "name": "Cannabis cultivation facility",
+  "category": "agriculture-energy",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Indoor licensed cultivation priced per SF of gross building area. MEP dominates: HVAC/dehumidification and electrical service plus lighting are each about 20% of cost, and MEP overall ≈ 50–60%. Published all-in figures run $175–550/SF; watch the denominator (canopy is only 55–70% of gross area) and whether the figure is a warehouse conversion or ground-up. Sources are contractor/consultant statements in trade press (2017–2026), so confidence is medium.",
+
+  "sizing": {
+    "typicalSize": { "low": 10000, "mid": 30000, "high": 150000, "unit": "sf", "evidence": ["e2", "e1"], "derived": true, "method": "e2: facilities 'range in size from 3,000 sf to 1,000,000 sf or more'; e1 cost guide is framed around 20,000+ SF operations. Mid 30,000 SF ≈ mid-tier state license; low 10,000 SF small/craft tier; high 150,000 SF large multi-state-operator facility." },
+    "primaryUnitsPerAcre": { "low": 12000, "mid": 17000, "high": 22000, "evidence": [], "derived": true, "method": "Single-story industrial building on ~0.28–0.50 FAR site (truck court, parking, security setbacks, stormwater): 43,560 × 0.28–0.50." },
+    "parkingPerPrimaryUnit": { "low": 0.0005, "mid": 0.001, "high": 0.0015, "type": "surface", "evidence": [], "derived": true, "method": "Light-industrial staffing; ≈1 space per 1,000 SF (0.5–1.5 per 1,000)." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 225, "mid": 350, "high": 500,
+      "dollarYear": 2026, "region": "US",
+      "evidence": ["e1", "e2", "e3"],
+      "derived": false,
+      "method": "e1 (2026) total indoor buildout $250–550/SF of gross building area including soft costs at 8–12% of hard → ÷ 1.10 = $227–500 hard; component ranges in e1 (HVAC $30–100, electrical $30–65, security $5–15, plumbing/fire $8–18 per GBA SF; lighting $25–60 and racking $10–45 per canopy SF) sum to ~$135–370/SF before shell, so the totals are consistent with a complete facility. e2 (2019) $208–425/SF; $240/SF single-level renovation; $300–320/SF multi-level. e3 (2017, MA) $175–200/SF conversion buildout with ~$100/SF MEP. Mid $350 = e1 midpoint ($400) less soft (≈$364), rounded down to reflect older/conversion evidence (e2, e3). Low $225 = e1 low after soft ≈ e2 low; high $500 = e1 high after soft. Expressed in 2026$ (e1); e2/e3 are older (2017/2019) and used as cross-checks only."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Ground-up or full-gut facility: shell, insulated-panel grow rooms, HVAC/dehumidification, electrical service and distribution, LED grow lighting, benching/racking, fertigation, odor control, security/surveillance, fire protection, sitework; GC/OH&P. Excludes land/building acquisition, licensing fees, harvest/processing FF&E, off-site utility upgrades."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.65, "standard": 1.0, "premium": 1.25, "luxury": 1.45,
+    "evidence": ["e1", "e2", "e3"], "derived": true,
+    "method": "Economy ≈ low/mid ($225/$350, conversion with fixed benches); premium ≈ multi-tier vertical racking and full HVACD redundancy; luxury ≈ high/mid ($500/$350) GMP/EU-GMP-grade."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.08 },
+      { "division": "03", "pct": 0.0629 },
+      { "division": "05", "pct": 0.0714 },
+      { "division": "07", "pct": 0.0514 },
+      { "division": "08", "pct": 0.0171 },
+      { "division": "09", "pct": 0.0371 },
+      { "division": "11", "pct": 0.0471 },
+      { "division": "13", "pct": 0.0536 },
+      { "division": "21", "pct": 0.0143 },
+      { "division": "22", "pct": 0.0357 },
+      { "division": "23", "pct": 0.2014 },
+      { "division": "25", "pct": 0.0564 },
+      { "division": "26", "pct": 0.2087 },
+      { "division": "28", "pct": 0.0286 },
+      { "division": "31", "pct": 0.0143 },
+      { "division": "32", "pct": 0.0114 },
+      { "division": "33", "pct": 0.0086 }
+    ],
+    "evidence": ["e1"],
+    "derived": true,
+    "method": "Built on the $350/SF mid using e1 component midpoints (canopy = 60% of GBA): 23 = HVACD $65 + odor $5.5; 26 = electrical $47.5 + lighting $42.5×0.6; 22 = fertigation $7.5×0.6 + plumbing $8; 21 = fire protection $5; 13 = insulated metal panel rooms ≈ $18.75/GBA SF; 09 = flooring $13; 11 = racking/benching $27.5×0.6; 28 = security $10. Shell/site/GC (not itemized in e1) assumed: 01 $28, 03 $22, 05 $25, 07 $18, 08 $6, 31/32/33 $12; 25 = remaining $19.75 for environmental/BMS controls (e1 notes HVAC install and controls add 40–60% to equipment). Shell split is an assumption (verify)."
+  },
+
+  "lineItems": [
+    {
+      "id": "hvacd",
+      "name": "HVAC / dehumidification (HVACD) system",
+      "division": "23",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 1 },
+      "cost": { "low": 30, "mid": 65, "high": 100, "dollarYear": 2026, "region": "US", "evidence": ["e1"], "derived": false, "method": "e1 HVAC/HVACD $30–$100/SF of gross building area ($50–150 per canopy SF); mid = midpoint." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out; largest single system."
+    },
+    {
+      "id": "grow-lighting",
+      "name": "LED grow lighting (per SF of canopy; canopy ≈ 60% of GBA)",
+      "division": "26",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 0.6 },
+      "cost": { "low": 25, "mid": 42.5, "high": 60, "dollarYear": 2026, "region": "US", "evidence": ["e1"], "derived": false, "method": "e1 lighting $25–$60/SF of canopy; qty = canopy share 0.55–0.70 of GBA (e1), 0.6 used." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out. Some owners treat fixtures as equipment/FF&E."
+    },
+    {
+      "id": "electrical",
+      "name": "Electrical service & distribution (excl. fixtures)",
+      "division": "26",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 1 },
+      "cost": { "low": 30, "mid": 47.5, "high": 65, "dollarYear": 2026, "region": "US", "evidence": ["e1"], "derived": false, "method": "e1 electrical $30–$65/SF gross building area." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "racking-benching",
+      "name": "Rolling benches / multi-tier racking (per canopy SF)",
+      "division": "11",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 0.6 },
+      "cost": { "low": 10, "mid": 27.5, "high": 45, "dollarYear": 2026, "region": "US", "evidence": ["e1"], "derived": false, "method": "e1 racking/benching $10–$45/SF of canopy." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "security",
+      "name": "State-compliant security (surveillance, access control, alarm)",
+      "division": "28",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 1 },
+      "cost": { "low": 5, "mid": 10, "high": 15, "dollarYear": 2026, "region": "US", "evidence": ["e1"], "derived": false, "method": "e1 security $5–$15/SF GBA ($100K–$300K for 20,000 SF); monitoring $2,000–5,000/month is operating cost." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "odor-mitigation",
+      "name": "Odor mitigation (carbon filtration / scrubbers)",
+      "division": "23",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 1 },
+      "cost": { "low": 3, "mid": 5.5, "high": 8, "dollarYear": 2026, "region": "US", "evidence": ["e1"], "derived": false, "method": "e1 odor mitigation $3–$8/SF GBA." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out; local ordinances may require more."
+    },
+    {
+      "id": "standby-generator",
+      "name": "Standby generator for HVACD / lighting (per kW)",
+      "division": "26",
+      "unit": "kw",
+      "qty": { "per": "sf", "value": 0.02 },
+      "cost": { "low": 350, "mid": 550, "high": 750, "dollarYear": 2014, "region": "US", "evidence": ["_blocks/specialty-mep.json#e11", "_blocks/specialty-mep.json#e12"], "derived": true, "method": "Uses the shared emergency-generator block ($/kW, 2014$). Qty assumes partial backup ≈ 20 W/SF (critical HVACD/controls, not full lighting)." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Many sites rely on utility service only; crop-loss risk drives this."
+    },
+    {
+      "id": "utility-service-upgrade",
+      "name": "Utility service upgrade / new transformer (off-site share)",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 50000, "mid": 250000, "high": 1000000, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Placeholder: indoor grows draw ~50–100 W/SF; a 30,000 SF facility needs ~2–3 MW of service. Utility contribution varies widely. Verify with the utility." },
+      "inBaseline": false, "scales": false, "optional": false,
+      "notes": "Off-site/utility-side; excluded from baseline."
+    }
+  ],
+
+  "ffe": { "perPrimaryUnit": { "low": 5, "mid": 12, "high": 25, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Harvest, drying/curing, trimming, packaging and lab equipment plus office/break FF&E; e1 excludes FF&E for non-cultivation areas. Assumed $5–25/SF of gross area. Verify." } },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.08, "mid": 0.12, "high": 0.2, "evidence": ["e1"], "derived": true, "method": "e1 soft costs '8–12% of hard construction cost' ($15–40/SF) → low/mid. High 20% for MEP-heavy custom design, cannabis consultants, and longer entitlement/zoning processes. State license application/fees excluded (vary from <$10k to >$1M by state)." },
+    "notes": "Licensing fees, application costs and pre-opening operating capital are not included."
+  },
+
+  "contingency": {
+    "design": { "low": 0.05, "mid": 0.08, "high": 0.1, "evidence": [], "derived": true, "method": "MEP-intensive, owner-driven cultivation design; higher than typical industrial." },
+    "hard": { "low": 0.05, "mid": 0.08, "high": 0.12, "evidence": [], "derived": true, "method": "Electrical service and HVACD equipment lead times/pricing risk." },
+    "soft": { "low": 0.05, "mid": 0.1, "high": 0.1, "evidence": [], "derived": true, "method": "Regulatory/licensing schedule risk." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 175, "max": 650, "dollarYear": 2026, "region": "US", "method": "e3 $175/SF conversion buildout (2017) is the floor; e1 page header cites up to $650/SF all-in for 2026." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "totalProjectCostPerUnit",
+      "value": null,
+      "low": 250,
+      "high": 550,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "2026 Cost Guide: Indoor Cannabis Cultivation Facility Buildout — Total All-In Costs for 20,000+ SF Operations",
+        "url": "http://terrapincg.com/news/2026-cost-guide-indoor-cannabis-cultivation-facility-buildout",
+        "publisher": "Terrapin Consulting Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Total Indoor Cannabis Facility Buildout: $250 – $550 per square foot (gross building area). ... Soft costs: 8–12% of hard construction cost. HVAC/HVACD $30–$100/SF (GBA); Lighting $25–$60/SF (canopy); Electrical $30–$65/SF (GBA); Security $5–$15/SF (GBA).",
+      "scopeNotes": "Consultant cost guide (published March 1, 2026); all-in incl. soft costs; excludes real estate, licensing, operating capital and non-cultivation FF&E. Page header separately says $250 to $650/SF.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerUnit",
+      "value": null,
+      "low": 208,
+      "high": 425,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "The coming bonanza in marijuana facilities",
+        "url": "https://www.bdcnetwork.com/home/article/55145496/the-coming-bonanza-in-marijuana-facilities",
+        "publisher": "Building Design + Construction",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cultivation facilities can range in size from 3,000 sf to 1,000,000 sf or more ... come in anywhere from $208/sf to $425/sf ... will run $240/sf for a single-level cultivation facility with fixed benching ... these can cost $300–320/sf",
+      "scopeNotes": "Designer/contractor quotes (Jan 2019); $240 = renovation of existing building; $300–320 = multi-level vertical canopy. Hard vs soft scope not stated.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerUnit",
+      "value": null,
+      "low": 175,
+      "high": 200,
+      "unit": "USD/sf",
+      "region": "Massachusetts",
+      "regionKey": "MA",
+      "dataYear": 2017,
+      "source": {
+        "title": "Construction tips for marijuana cultivation facilities",
+        "url": "https://bankerandtradesman.com/construction-tips-marijuana-cultivation-facilities/",
+        "publisher": "Banker & Tradesman",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Vantage Builders has seen projects typically fall in the $175-$200 per square foot range for buildout, with close to $100 per square foot of that cost for the MEP (mechanical, electrical, plumbing) systems.",
+      "scopeNotes": "Contractor buildout (likely interior conversion of existing building), Feb 2017; MEP ≈ 50–57% of cost.",
+      "confidence": "medium"
+    }
+  ],
+
+  "openQuestions": [
+    "No public bid tab or cost-consultant (RLB/Cumming) model for cannabis cultivation found; the default rests on one 2026 consultant guide plus older trade-press quotes.",
+    "Split between warehouse conversion and ground-up projects — engine may need a conversion toggle (shell ≈ $70–120/SF less).",
+    "Shell portion of the CSI split is assumed; verify against an actual estimate.",
+    "Federal rescheduling/state market saturation since 2023 may have lowered build activity and pricing."
+  ]
+}

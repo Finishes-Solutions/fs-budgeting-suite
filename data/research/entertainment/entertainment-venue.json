@@ -1,0 +1,406 @@
+{
+  "schemaVersion": 1,
+  "id": "entertainment-venue",
+  "name": "Entertainment venue (bowling, golf sim, etc.)",
+  "category": "entertainment",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Eatertainment boxes (bowling, golf simulators, arcade, full kitchen and bars) of ~25,000–50,000 SF, often in converted big-box retail. Building cost tracks RSMeans bowling/theater models; the big swing items are games/lanes/simulators (FF&E) and the level of interior design. Public-company capital data (Dave & Buster's: ~$16M per new store, ≈$480/SF all-in) bracket the all-in cost; hard cost is derived from that and RSMeans.",
+  "sizing": {
+    "typicalSize": {
+      "low": 15000,
+      "mid": 30000,
+      "high": 50000,
+      "unit": "sf",
+      "evidence": [
+        "e4"
+      ],
+      "derived": false,
+      "method": "e4: D&B new stores averaged ~28,000 SF (target 25,000–45,000), Main Event ~50,000 SF. Independent bowling/sim venues often 15,000–25,000 SF. Mid 30,000."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 8000,
+      "mid": 11000,
+      "high": 15000,
+      "evidence": [],
+      "derived": true,
+      "method": "Freestanding box at ~0.20–0.30 FAR with ~10 spaces per 1,000 SF surface parking. Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.006,
+      "mid": 0.009,
+      "high": 0.012,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per SF: entertainment/assembly zoning typically 6–12 per 1,000 SF; shared center parking common. Derived."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 175,
+      "mid": 275,
+      "high": 425,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3"
+      ],
+      "derived": true,
+      "method": "2025 dollars. (a) RSMeans 2019 building hard cost bowling alley $167 union / $155 open shop (e1), movie theater $170 (e2); ×~1.30 to 2025 and +10% on-site work ≈ $220–240/SF for a plain new box. (b) D&B new-store capital ≈ $480/SF all-in (e3) × ~0.55 hard-cost share (remainder games/amusements, FF&E, kitchen equipment, soft) ≈ $265/SF. Mid $275 = (b) rounded up for eatertainment-grade interiors. Low $175 = conversion of an existing big box (interior + MEP); high $425 = ground-up, premium-design multi-level venue."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Building + interiors + typical on-site work. Excludes bowling lanes/pinsetters, simulators, arcade games, kitchen equipment, furniture (see lineItems/FF&E), land, soft costs, off-sites."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.65,
+    "standard": 1.0,
+    "premium": 1.25,
+    "luxury": 1.55,
+    "evidence": [],
+    "derived": true,
+    "method": "economy = low/mid (175/275); luxury = high/mid (425/275 = 1.55); premium interpolated."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "02",
+        "pct": 0.02
+      },
+      {
+        "division": "03",
+        "pct": 0.06
+      },
+      {
+        "division": "04",
+        "pct": 0.02
+      },
+      {
+        "division": "05",
+        "pct": 0.08
+      },
+      {
+        "division": "06",
+        "pct": 0.04
+      },
+      {
+        "division": "07",
+        "pct": 0.06
+      },
+      {
+        "division": "08",
+        "pct": 0.04
+      },
+      {
+        "division": "09",
+        "pct": 0.13
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.03
+      },
+      {
+        "division": "12",
+        "pct": 0.02
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.06
+      },
+      {
+        "division": "23",
+        "pct": 0.11
+      },
+      {
+        "division": "26",
+        "pct": 0.1
+      },
+      {
+        "division": "27",
+        "pct": 0.03
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.02
+      },
+      {
+        "division": "32",
+        "pct": 0.03
+      },
+      {
+        "division": "33",
+        "pct": 0.01
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived: assembly/restaurant-type box with long-span roof (05), heavy interior finishes and feature ceilings (09 ≈ 13%), high HVAC for occupant density/kitchen (23 ≈ 11%), heavy power and lighting/AV backbone (26/27). On-site work ≈ 6%. Not sourced from a published estimate."
+  },
+  "lineItems": [
+    {
+      "id": "bowling-lanes",
+      "name": "Bowling lanes with string pinsetters, masking, scoring (per lane)",
+      "division": "11",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 12
+      },
+      "cost": {
+        "low": 50000,
+        "mid": 85000,
+        "high": 130000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance for synthetic lanes, pinsetters, ball returns, scoring and masking units; boutique 'string' pinsetter lanes at the low/mid, free-fall at the high. Verify with Brunswick/QubicaAMF quotes."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Equipment; count per venue program."
+    },
+    {
+      "id": "golf-simulator-bay",
+      "name": "Golf simulator bay (launch monitor, projector, screen, enclosure)",
+      "division": "11",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 6
+      },
+      "cost": {
+        "low": 30000,
+        "mid": 55000,
+        "high": 90000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance per commercial simulator bay including enclosure and installation."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": ""
+    },
+    {
+      "id": "arcade-games",
+      "name": "Arcade/amusement game package",
+      "division": "11",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 6000
+      },
+      "cost": {
+        "low": 80,
+        "mid": 150,
+        "high": 250,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e3"
+        ],
+        "derived": true,
+        "method": "Derived: D&B reports separate 'Games' capital lines (e3 table) indicating games are a material FF&E item; per SF of game floor, verify with vendor."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": ""
+    },
+    {
+      "id": "kitchen-equipment",
+      "name": "Commercial kitchen equipment and hoods",
+      "division": "11",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 250000,
+        "mid": 500000,
+        "high": 900000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance for full-service kitchen supporting 300–600 seats."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 25,
+      "mid": 45,
+      "high": 75,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e3"
+      ],
+      "derived": true,
+      "method": "Furniture, bar fixtures, AV/TVs, signage (excluding games/lanes/simulators which are lineItems). D&B all-in ≈ $480/SF less hard ≈ $265/SF leaves ≈ $215/SF for games, FF&E, kitchen, soft; FF&E share assumed ~$45/SF."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.12,
+      "mid": 0.18,
+      "high": 0.25,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "RSMeans model shows ~6% architectural fees (e1); plus MEP/food-service/AV consultants, permits, legal, insurance → ~12–25%. Derived."
+    },
+    "notes": "Pre-opening costs are operating (D&B reports them separately) and not included."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Higher end for big-box conversions with unknown existing conditions."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 190,
+      "max": 550,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Hard + soft (excl. FF&E/games): low 175×1.1; high 425×1.25 ≈ 530, rounded."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "buildingHardCostPerSF",
+      "value": 167.29,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Bowling Alley - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/bowling-alley",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Bowling Alley with Concrete Block / Steel Roof Deck ... SubTotal 100% $133.83 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $33.46",
+      "scopeNotes": "2019 RSMeans national model, 20,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $167.29/SF; open shop = $154.61/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E.",
+      "confidence": "medium",
+      "low": 154.61,
+      "high": 167.29
+    },
+    {
+      "id": "e2",
+      "metric": "buildingHardCostPerSF",
+      "value": 170.45,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Movie Theater - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/movie-theater",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Movie Theater with Concrete Block / Steel Joists ... SubTotal 100% $136.36 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $34.09",
+      "scopeNotes": "2019 RSMeans national model, 12,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $170.45/SF; open shop = $156.18/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E.",
+      "confidence": "medium",
+      "low": 156.18,
+      "high": 170.45
+    },
+    {
+      "id": "e3",
+      "metric": "newStoreCapitalPerStore",
+      "value": 16100000,
+      "unit": "USD/ls",
+      "region": "US (company-wide)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Dave & Buster's Entertainment, Inc. Form 10-K for fiscal year ended February 3, 2026",
+        "url": "https://www.sec.gov/Archives/edgar/data/1525769/000152576926000008/play-20260203.htm",
+        "publisher": "U.S. SEC EDGAR (Dave & Buster's Entertainment, Inc.)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "New stores $ 193.2 $ 236.6 ... During fiscal 2025, we opened eleven new stores and relocated one additional Dave & Buster's branded store. During fiscal 2024, we opened fourteen new stores.",
+      "scopeNotes": "Capital additions for new stores ($ millions), gross of landlord reimbursements. $193.2M / 12 openings ≈ $16.1M (FY2025); $236.6M / 14 ≈ $16.9M (FY2024). Includes building/leasehold, games, FF&E and some pipeline timing; excludes pre-opening. ≈ $480/SF all-in at ~33,500 SF average (see e4).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "typicalSize",
+      "value": 28000,
+      "low": 25000,
+      "high": 50000,
+      "unit": "sf",
+      "region": "US (company-wide)",
+      "regionKey": "US",
+      "source": {
+        "title": "Dave & Buster's Entertainment, Inc. Form 10-K for fiscal year ended February 3, 2026",
+        "url": "https://www.sec.gov/Archives/edgar/data/1525769/000152576926000008/play-20260203.htm",
+        "publisher": "U.S. SEC EDGAR (Dave & Buster's Entertainment, Inc.)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The stores we opened in fiscal 2025 averaged approximately 28,000 square feet. ... The Main Event stores we opened in fiscal 2025 averaged approximately 50,000 square feet.",
+      "scopeNotes": "Store size for eatertainment (D&B small/medium format; Main Event with bowling).",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "Get Bowlero/Lucky Strike or Main Event per-center build cost disclosures (investor decks).",
+    "Lane and simulator equipment costs need vendor quotes."
+  ]
+}

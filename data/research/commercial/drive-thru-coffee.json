@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "id": "drive-thru-coffee",
+  "name": "Drive-thru coffee",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "site",
+  "summary": "Drive-thru-only coffee kiosk (≈500–1,000 SF, often modular or prefabricated) on a 0.2–1 acre pad with double stacking lanes. Site work (lanes, utilities, storm, curb cuts) is 40–55% of construction, so cost per SF of building is extreme and per-site budgeting is the right basis. Data are good: four 2026 franchise disclosure documents (Scooter's, 7 Brew, The Human Bean, Ziggi's) publish building and site ranges, cross-checked with one contractor guide.",
+
+  "sizing": {
+    "typicalSize": { "low": 1, "mid": 1, "high": 1, "unit": "site", "evidence": [], "derived": true, "method": "One kiosk per project is the norm; multi-site programs are budgeted per site." },
+    "sfPerPrimaryUnit": { "low": 510, "mid": 650, "high": 1000, "evidence": ["c1", "c2", "c3", "c4", "c5"], "derived": false, "method": "Building SF per site: 7 Brew modular 510 SF (c2); Scooter's kiosk 650–700 SF (c1); Ziggi's drive-thru 500–865 SF (c4); Human Bean 14–16 ft × 40–50 ft = 560–800 SF (c3); contractor guide 950–1,200 SF for a drive-thru-only shop (c5). Mid 650 SF." },
+    "primaryUnitsPerAcre": { "low": 1, "mid": 2, "high": 4, "evidence": ["c2"], "derived": true, "method": "7 Brew lot 'ranging from 8,000 to 50,000 square feet' (c2) → 0.18–1.15 acre per site; typical outparcel ≈ 0.5 ac → 2 sites/acre equivalent." },
+    "parkingPerPrimaryUnit": { "low": 3, "mid": 6, "high": 10, "type": "surface", "evidence": [], "derived": true, "method": "Drive-thru-only formats need only staff and walk-up parking (judgment: 3–10 stalls); stacking lanes carried in site work." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 500000, "mid": 775000, "high": 1250000, "dollarYear": 2025, "region": "US", "evidence": ["c1", "c2", "c3", "c4", "c5"], "derived": false, "method": "Building + site work per site (excl. equipment, signs, POS). Scooter's site & building improvements $725,200–$772,000 (c1); 7 Brew building $305–650k + site $200–800k (+ freight/install up to $60k) = $505k–$1.51M (c2); Human Bean new construction $710k–$1.295M less ≥$131k equipment and $23.5–72k signs ≈ $0.56–1.09M (c3); Ziggi's building + site up to $1.0M (c4); contractor guide building $360–630k + site $80–200k = $440–830k (c5, includes some equipment). Mid $775k ≈ median of midpoints (Scooter's 749k, 7 Brew 1.0M, Human Bean 0.82M, Terrapin 0.64M). Low/high trimmed from the extremes." },
+    "perSF": { "low": 700, "mid": 1200, "high": 1800, "dollarYear": 2025, "region": "US", "evidence": ["c1", "c2", "c5"], "derived": true, "method": "perPrimaryUnit ÷ sfPerPrimaryUnit: $775k / 650 SF ≈ $1,190/SF; $500k / 700 ≈ $715; $1.25M / 700 ≈ $1,790. Site work inflates $/SF; building-only cost is $375–525/SF per c5." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Building (site-built or modular, incl. delivery/set) plus on-site work (dual drive lanes, bypass lane, utilities, storm, landscaping, lighting). Excludes espresso/refrigeration equipment, signs and menu boards, POS/drive-thru technology (see ffe), land, soft costs, impact/tap fees and off-site work."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.7, "standard": 1.0, "premium": 1.3, "luxury": 1.6,
+    "evidence": ["c2", "c3"], "derived": true,
+    "method": "low/mid ($500k/$775k ≈ 0.65, rounded 0.7) and high/mid ($1.25M/$775k ≈ 1.6); premium = 7 Brew hurricane-rated / larger-site upper range."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.09 },
+      { "division": "03", "pct": 0.05 },
+      { "division": "05", "pct": 0.02 },
+      { "division": "06", "pct": 0.05 },
+      { "division": "07", "pct": 0.04 },
+      { "division": "08", "pct": 0.04 },
+      { "division": "09", "pct": 0.05 },
+      { "division": "10", "pct": 0.01 },
+      { "division": "13", "pct": 0.05 },
+      { "division": "22", "pct": 0.04 },
+      { "division": "23", "pct": 0.04 },
+      { "division": "26", "pct": 0.08 },
+      { "division": "27", "pct": 0.01 },
+      { "division": "28", "pct": 0.01 },
+      { "division": "31", "pct": 0.08 },
+      { "division": "32", "pct": 0.23 },
+      { "division": "33", "pct": 0.11 }
+    ],
+    "evidence": ["c2", "c5"], "derived": true,
+    "method": "Site share 0.42 = blend of 7 Brew site vs building midpoints (500k / 978k = 51%, c2) and contractor guide (140k / 635k = 22%, c5), weighted toward the franchisor data. Building 0.58 spread with a small-restaurant pattern; Div 13 holds modular/prefab building premium. Not from a published elemental estimate."
+  },
+
+  "lineItems": [
+    {
+      "id": "site-work",
+      "name": "Site work (dual drive lanes, utilities, storm, lighting, landscaping)",
+      "division": "32",
+      "unit": "ls",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 150000, "mid": 325000, "high": 650000, "dollarYear": 2025, "region": "US", "evidence": ["c2", "c4", "c5"], "derived": false, "method": "7 Brew site development $200,000–$800,000 (c2); Ziggi's site work up to $500,000 (c4); contractor guide $80,000–$200,000 (c5). Mid ≈ median of midpoints (500k, 250k, 140k) → ~$325k blended." },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of the baseline; varies most with utility distance and storm-water requirements."
+    },
+    {
+      "id": "modular-freight-install",
+      "name": "Modular building freight and installation",
+      "division": "13",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 15000, "mid": 35000, "high": 60000, "dollarYear": 2025, "region": "US", "evidence": ["c2"], "derived": true, "method": "7 Brew: freight 'can range up to $30,000 per building' and installation 'up to $30,000 per building', in addition to Item 7 ranges (c2). High = 60k; mid ≈ 35k assumed." },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Only for factory-built kiosks; not in 7 Brew's own Item 7 range."
+    },
+    {
+      "id": "brand-site-studies",
+      "name": "Site concept plan, site investigation report and energy consultant",
+      "division": "01",
+      "unit": "ls",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 5000, "mid": 7500, "high": 15000, "dollarYear": 2025, "region": "US", "evidence": ["c1"], "derived": true, "method": "Scooter's: site investigation report 'approximately $5,000 per Kiosk Store' and energy consultant 'approximately $2,500 per Kiosk Store' (c1) → $7.5k; high allows Phase I ESA/traffic study." },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Soft-cost-like pre-development item."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 175000, "mid": 290000, "high": 440000, "dollarYear": 2025, "region": "US", "evidence": ["c1", "c2", "c3", "c4"], "derived": false, "method": "Equipment + signs + POS/drive-thru tech per site: Scooter's $268,750–$290,700 (c1); 7 Brew $220,000–$320,000 (c2); Ziggi's $377,500–$438,000 (c4); Human Bean ≥$131k equipment + $23.5–72k signs ≈ $155–200k+ (c3). Mid $290k ≈ median." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.07, "mid": 0.11, "high": 0.16, "evidence": ["c1", "c2", "c4", "c5"], "derived": false, "method": "Scooter's A&E $46,700–$56,500 on ~$750k (6–7.5%, c1); 7 Brew A&E $10–60k + permits $2.5–25k (c2); Ziggi's A&E $55–90k + fees/permits up to $50.5k (to $100k if land is purchased/developed) on ≤$1.0M (c4); contractor guide 8–12% for A&E and permitting (c5). Add legal, survey, testing → mid 11%." },
+    "breakdown": { "architectureEngineering": 0.065, "permitsFees": 0.025 },
+    "notes": "Type-specific: initial franchise fee $35,000–$40,000 (Human Bean $35k; Scooter's/Ziggi's $40k) plus launch/opening-support fees ($10k–$20k); 7 Brew requires a $125,000 development fee for a 10-store commitment. Not included in pctOfHard."
+  },
+
+  "contingency": {
+    "design": { "low": 0.02, "mid": 0.04, "high": 0.06, "evidence": [], "derived": true, "method": "Standardized prototype/modular building limits design risk; judgment." },
+    "hard": { "low": 0.05, "mid": 0.08, "high": 0.12, "evidence": [], "derived": true, "method": "Site work is the volatile half of the budget (soils, utilities, storm) — mirrors QSR norm of 10–15% project contingency (see retail-pad-qsr.json#e10)." },
+    "soft": { "low": 0.05, "mid": 0.08, "high": 0.10, "evidence": [], "derived": true, "method": "Standard 5–10% on soft costs." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 450000, "max": 1600000, "dollarYear": 2025, "region": "US", "method": "Hard $500k–1.25M × (1.07–1.16 soft); min allows pad-ready sites (c5 all-in $550–950k incl. soft), max allows coastal/hurricane-rated modular on raw land (c2 high end)." }
+  },
+
+  "evidence": [
+    {
+      "id": "c1", "metric": "hardCostPerSite", "value": null, "low": 725200, "high": 772000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Scooter's Coffee, LLC Franchise Disclosure Document (Scooter's 2026 FDD, issued April 3, 2026), Item 7 — Kiosk", "url": "https://www.restfinance.com/app/pdf/fdd/Scooters-Coffee-2025.pdf", "publisher": "Scooter's Coffee, LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Site and Building Improvements (See note 2) $725,200 to $772,000 (not including the purchase of land) … On average, a Kiosk Store will range from 650 to 700 square feet.",
+      "scopeNotes": "Building + site work. Same table: A&E $46,700–$56,500; equipment $181,750–$191,300; signs $52,500–$58,400; technology $34,500–$41,000; SIR ~$5,000; energy consultant ~$2,500.",
+      "confidence": "high"
+    },
+    {
+      "id": "c2", "metric": "hardCostPerSite", "value": null, "low": 505000, "high": 1450000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "7 BREW Franchise Disclosure Document (7 BREW FDD (2026), issued May 11, 2026), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/7-Brew-2025.pdf", "publisher": "Brew Culture Franchise, LLC (7 BREW) (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Building / Build-Out Costs (Note 2) $305,000 to $650,000 … Site Development Costs (Note 2) $200,000 to $800,000 … the modular building—itself 510 square feet in size",
+      "scopeNotes": "Summed by us. Building includes modular building and related signage; freight up to $30k and installation up to $30k are additional; excludes impact fees. Lot 8,000–50,000 SF. A&E $10–60k; equipment $185–250k; POS $25–30k; signs $10–40k.",
+      "confidence": "high"
+    },
+    {
+      "id": "c3", "metric": "hardCostPerSite", "value": null, "low": 710000, "high": 1295000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "The Human Bean Franchise Disclosure Document (issued February 25, 2026, amended May 5, 2026), Item 7 note 7", "url": "https://www.restfinance.com/app/pdf/fdd/The-Human-Bean-2025.pdf", "publisher": "Casey Hawkins, Inc. (The Human Bean) (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "For new construction the estimated range is from $710,000 to $1,295,000. This includes at least $605,700 to $1,188,700 for a new building, site improvements, awnings, signage, furniture, fixtures, equipment, etc.",
+      "scopeNotes": "Includes FF&E (≥$131,000 equipment) and signs ($23,500–$72,000); structure 14'–16' wide × 40'–50' long. We net out equipment/signs for the hard-cost comparison.",
+      "confidence": "high"
+    },
+    {
+      "id": "c4", "metric": "hardCostPerSite", "value": null, "low": 0, "high": 1000000, "unit": "USD/site",
+      "region": "United States (Denver-based franchisor)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Ziggi's Coffee Franchise Disclosure Document (issued March 31, 2026), Item 7 — Drive Thru", "url": "https://www.restfinance.com/app/pdf/fdd/Ziggis-Coffee-2025.pdf", "publisher": "Ziggi's Coffee Franchise, LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Drive Thru Building (See Note 3) $-0- $500,000 … Site Work (See Note 3) $-0- $500,000 … Architecture/Engineering (See Note 3) $55,000 $90,000",
+      "scopeNotes": "Low end $0 = build-to-suit lease where landlord pays. Freestanding building ~500–865 SF. Equipment package incl. POS $325–375k; sign package $45–55k.",
+      "confidence": "medium"
+    },
+    {
+      "id": "c5", "metric": "hardCostPerSF", "value": null, "low": 375, "high": 525, "unit": "USD/sf",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Average Cost to Build a QSR Coffee Shop from the Ground Up in the USA (2026): Drive-Thru, With Seating, and By Region", "url": "https://terrapincg.com/news/average-cost-to-build-qsr-coffee-shop-usa", "publisher": "Terrapin Construction Group", "accessed": "2026-10-24" },
+      "quote": "Site work — the piece most developers underestimate on this format — adds $80,000 to $200,000 … a realistic all-in project cost, excluding land, of $550,000 to $950,000.",
+      "scopeNotes": "Building hard cost $375–525/SF for 950–1,200 SF (building $360–630k), includes kitchen equipment/FF&E; soft costs 8–12% of hard. Contractor marketing content; components do not sum exactly to the all-in total.",
+      "confidence": "low"
+    }
+  ],
+
+  "openQuestions": [
+    "Item 7 ranges are franchisor estimates, not closed-out costs; a few public site-plan or permit valuations for Dutch Bros / 7 Brew kiosks would validate the per-site mid.",
+    "Split between modular building cost and site-built kiosk cost is not separated in most FDDs.",
+    "Division split is derived; no elemental breakdown found."
+  ]
+}

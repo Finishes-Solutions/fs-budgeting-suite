@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "id": "demolition-remediation",
+  "name": "Demolition & environmental remediation",
+  "researchedAt": "2026-10-24",
+  "notes": "Public, authoritative per-unit prices for building demolition, hazardous-material abatement, UST removal and soil remediation were not retrievable in this session (search budget exhausted; consumer cost sites partially blocked). Values are therefore mostly derived, bounded by Fixr consumer guides (low confidence, residential) and DOT pavement-removal bid prices. Treat these as allowances pending a Phase I/II ESA and a hazardous-materials survey.",
+  "items": [
+    {
+      "id": "building-demolition",
+      "name": "Building demolition, complete (structure + slab/foundations, haul & disposal; excl. abatement)",
+      "division": "02",
+      "unit": "sf",
+      "cost": {
+        "low": 4, "mid": 8, "high": 15,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e1"],
+        "derived": true,
+        "method": "Fixr residential house demolition $5-$10/SF on average, ~$3/SF for older homes without foundations and up to ~$12/SF with full basements (e1). Commercial buildings benefit from scale (1-2 story wood/steel/masonry: ~$4-$8/SF) but concrete frames, multi-story and urban sites with shoring/dust control run $10-$15+/SF. Mid $8/SF for a typical 1-2 story commercial building incl. slab and footing removal and landfill fees, net of minimal salvage."
+      },
+      "notes": "Per gross SF demolished. Add asbestos/lead abatement, UST removal and utility disconnects separately. High-rise/implosion work is outside this range."
+    },
+    {
+      "id": "interior-demolition",
+      "name": "Interior demolition / selective strip-out (to shell; excl. abatement)",
+      "division": "02",
+      "unit": "sf",
+      "cost": {
+        "low": 3, "mid": 6, "high": 12,
+        "dollarYear": 2026, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived. Selective demolition is labor-intensive and protects remaining structure; for adaptive reuse and tenant-improvement strip-outs a typical range is ~40-80% of complete building demolition cost per SF (building-demolition mid $8) for a light strip of partitions/ceilings/finishes ($3-$5), rising to $8-$12 when MEP systems, floors and stairs are removed in occupied or multi-story buildings. Mid $6."
+      },
+      "notes": "Adaptive reuse / renovation projects (office-to-resi, retail repositioning, hotel PIPs)."
+    },
+    {
+      "id": "pavement-removal",
+      "name": "Pavement / slab removal & disposal (asphalt or concrete)",
+      "division": "02",
+      "unit": "sy",
+      "cost": {
+        "low": 8, "mid": 20, "high": 45,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e4", "e5"],
+        "derived": true,
+        "method": "FDOT removal of existing concrete $34.32/SY (192 contracts, 436,447 SY, e4); ArDOT removal & disposal of concrete pavement $9.70/SY (7,492 SY) and removal of existing PCC pavement $43.35/SY (e5). Highway concrete is thick and reinforced; private parking-lot asphalt removal is far cheaper. Mid $20 = between the ArDOT and FDOT weighted averages; low = asphalt lots in volume; high = thick reinforced concrete."
+      },
+      "notes": "Redevelopment of existing parking lots / pads. Recycled base can sometimes be reused on site."
+    },
+    {
+      "id": "asbestos-abatement",
+      "name": "Asbestos abatement (ACM removal under containment, disposal, clearance air testing) - per SF of affected material",
+      "division": "02",
+      "unit": "sf",
+      "cost": {
+        "low": 4, "mid": 9, "high": 20,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e2"],
+        "derived": true,
+        "method": "Fixr: licensed removal often '$5 to $20 per sq.ft.' (e2, 2022 residential), with easy materials (popcorn ceilings) at $3-$7/SF. Commercial abatement of floor tile/mastic and non-friable material in volume runs low ($4-$6/SF); friable pipe/fireproofing in containment at the high end. Mid $9 reflects a mix weighted to non-friable floor/ceiling materials."
+      },
+      "notes": "Quantity from the pre-demolition asbestos survey (required by NESHAP before demolition/renovation). If unknown for pre-1981 buildings, many owners carry $2-$5 per building SF as an allowance."
+    },
+    {
+      "id": "lead-paint-abatement",
+      "name": "Lead-based paint abatement (stabilization/removal) - per SF of painted surface treated",
+      "division": "02",
+      "unit": "sf",
+      "cost": {
+        "low": 2, "mid": 8, "high": 17,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e3"],
+        "derived": true,
+        "method": "Fixr: encapsulation $1-$4/SF, enclosure $6-$12/SF, removal $8-$17/SF (e3, Jan 2025). Mid $8 assumes a mix of encapsulation and component removal typical of housing rehab; low = mostly encapsulation; high = full removal."
+      },
+      "notes": "Pre-1978 housing (HUD Lead Safe Housing Rule applies to federally assisted rehab). Interim controls are cheaper than abatement."
+    },
+    {
+      "id": "soil-remediation",
+      "name": "Contaminated soil remediation - excavate, transport & dispose (non-hazardous / petroleum), incl. backfill",
+      "division": "02",
+      "unit": "cy",
+      "cost": {
+        "low": 60, "mid": 110, "high": 250,
+        "dollarYear": 2026, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived. Non-hazardous petroleum-impacted soil: excavation and loading ~$8-$15/CY (cf. DOT excavation $6.81-$18.51/CY in site-work.json#e3/#e5), transport and Subtitle D landfill disposal ~$30-$70 per ton x ~1.5 tons/CY = $45-$105/CY, confirmation sampling and clean backfill ~$10-$30/CY (import-fill) -> $63-$150; mid $110. High $250 covers longer hauls, special-waste profiling and characteristic (non-RCRA-listed) soils; RCRA hazardous soil can exceed $400/CY and is outside this range."
+      },
+      "notes": "Volume comes from a Phase II ESA. Brownfield grants/state cleanup programs may offset cost. In-situ treatment and vapor mitigation are separate."
+    },
+    {
+      "id": "ust-removal",
+      "name": "Underground storage tank removal & closure (one tank ≤12,000 gal, incl. product/sludge removal, closure sampling; excl. contaminated soil)",
+      "division": "02",
+      "unit": "ea",
+      "cost": {
+        "low": 8000, "mid": 15000, "high": 30000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived. Typical scope: permit and fire-marshal oversight, pumping residual product/sludge ($1k-$4k), excavation and tank cleaning/cutting and disposal ($4k-$12k), piping and dispenser removal, closure soil/groundwater sampling and report ($2k-$6k), and clean backfill/compaction ($1k-$5k) -> $8k-$27k per tank; mid $15k. High $30k = larger/fiberglass tanks or difficult urban access. Contaminated soil and groundwater work are carried in soil-remediation."
+      },
+      "notes": "Former gas stations, fleet yards, older commercial properties with heating-oil tanks. Multiple tanks in one excavation get economies of scale (~20-30% less per additional tank)."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "demolitionPerSF",
+      "low": 5, "high": 10,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Cost to Demolish House | Residential Demolition Cost",
+        "url": "https://www.fixr.com/costs/house-demolition",
+        "publisher": "Fixr.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "House demolition costs between $5 and $10 a square foot on average.",
+      "scopeNotes": "Residential consumer guide (Updated: January 31, 2025). Older homes without foundations ~$3/SF; newer with full basements up to ~$12/SF; commercial demolition shown only as a $12,000-$150,000 total.",
+      "confidence": "low"
+    },
+    {
+      "id": "e2",
+      "metric": "asbestosAbatementPerSF",
+      "low": 5, "high": 20,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2022,
+      "source": {
+        "title": "Asbestos Removal Cost | Asbestos Abatement Cost",
+        "url": "https://www.fixr.com/costs/asbestos-removal",
+        "publisher": "Fixr.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "$5 to $20 per sq.ft.",
+      "scopeNotes": "Residential consumer guide (Updated: August 18, 2022); popcorn ceilings $3-$7/SF on the same page. No commercial per-SF figure.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "leadAbatementPerSF",
+      "low": 1, "high": 17,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Lead Paint Removal Cost | Lead Abatement Cost",
+        "url": "https://www.fixr.com/costs/lead-paint-removal",
+        "publisher": "Fixr.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "costs about $1 to $4 per square foot ... ranges from $6 to $12 per square foot ... Lead paint removal can range in price from $8 to $17 per square foot.",
+      "scopeNotes": "Updated: January 31, 2025. Encapsulation $1-$4, enclosure $6-$12, removal $8-$17 per SF; residential.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "pavementRemovalPerSY",
+      "value": 34.32,
+      "unit": "USD/sy",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0110 4 10: 192 contracts, $34.32, 436,447.000 SY - REMOVAL OF EXISTING CONCRETE",
+      "scopeNotes": "Highway concrete (pavement, sidewalks, slabs) removal and disposal.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "pavementRemovalPerSY",
+      "value": 9.70, "high": 43.35,
+      "unit": "USD/sy",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "202 R&D OF CONCRETE PAVEMENT SQYD 7,492.00 49.00 7.53 9.70 ... 202 REMOVAL OF EXISTING PCC PAVEMENT SQYD 1,713.00 43.35 43.35 43.35 *",
+      "scopeNotes": "R&D = removal and disposal. Columns: quantity, high, low, weighted average.",
+      "confidence": "high"
+    }
+  ]
+}

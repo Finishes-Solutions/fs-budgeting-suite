@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "id": "bar-brewery-taproom",
+  "name": "Bar / brewery / taproom",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Production brewery with on-site taproom (≈3,000–15,000 SF; roughly 35–45% taproom/front-of-house, the rest brewhouse, cellar, cold storage and packaging) plus patio. Construction blends a bar-restaurant front of house with a wet light-industrial production floor (trench drains, sloped slabs, glycol and process utilities); the brewhouse and cellar tanks are equipment line items. No authoritative cost source for this type was found (search quota ran out), so the baseline is derived from the full-service restaurant data in this folder, RSMeans 2019 factory and social-club models, and bar-centric franchise disclosures, with low-confidence industry guides for equipment.",
+
+  "sizing": {
+    "typicalSize": { "low": 3000, "mid": 7000, "high": 15000, "unit": "sf", "evidence": ["b5", "b7"], "derived": true, "method": "Industry guide space need 3,000–8,000 SF (b5); a 7-bbl ground-up brewery/taproom built at 5,457 SF (b7). High end for regional production with packaging hall. Mid 7,000 SF." },
+    "primaryUnitsPerAcre": { "low": 4000, "mid": 7000, "high": 12000, "evidence": [], "derived": true, "method": "Building SF per site acre assuming ~0.25–0.3 FAR typical of freestanding restaurant/light-industrial pads with patio and parking (compare restaurant-full-service ≈3,900 SF/ac; production space needs less parking). Judgment." },
+    "parkingPerPrimaryUnit": { "low": 0.006, "mid": 0.01, "high": 0.015, "type": "surface", "evidence": [], "derived": true, "method": "Taproom/assembly area parked like a bar (≈1 per 50–100 SF of FOH) and production like industrial (≈1 per 1,000 SF); with FOH ≈40% → 0.006–0.015 per gross SF. Judgment; local codes vary widely." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 210, "mid": 315, "high": 475, "dollarYear": 2025, "region": "US", "evidence": ["restaurant-full-service.json#r1", "restaurant-full-service.json#r2", "b1", "b2", "b3", "b4", "b7"], "derived": true, "method": "Blend by program: taproom/FOH (40%) at ~$400/SF = full-service restaurant mid $475 (restaurant-full-service.json, from Applebee's/Chili's FDDs) less ~15% for a lighter kitchen; production/cellar (60%) at ~$260/SF = RSMeans 2019 1-story factory $120/SF building-only (b1) scaled by the same field-to-RSMeans ratio observed for restaurants (franchise $475 incl. site vs RSMeans $205 → ~2.3× incl. escalation and site; applied at ~2.15× for simpler industrial site) — plus wet-process premium. 0.4×400 + 0.6×260 = $316 → mid $315. Cross-checks: RSMeans 2019 social club $157/SF building-only (b2); bar-centric restaurant new construction Twin Peaks $2.9–5.0M for 6,000–8,000 SF ≈ $360–830/SF incl. deposits (b3) is the ceiling for an all-FOH program; a 7-bbl brewery/taproom ground-up at 5,457 SF is reported at $1.1M (b7, year not stated, so not used numerically). Low $210 = PEMB production-heavy; high $475 = taproom-heavy, restaurant-grade finishes." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Ground-up building incl. taproom bar build-out, restrooms, small kitchen, production floor with trench drains and sloped slab, process water/gas/power rough-ins, walk-in cold-room shell, and typical on-site work. Excludes brewhouse, cellar tanks, glycol, packaging equipment, draft system (line items/FF&E), land, soft costs, impact/tap and sewer-capacity fees. Conversions of existing industrial shells typically run well below the baseline."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.67, "standard": 1.0, "premium": 1.3, "luxury": 1.6,
+    "evidence": [], "derived": true,
+    "method": "low/mid (210/315) and high/mid (475/315 ≈ 1.5); luxury for destination brewpubs with full restaurants and event space. Judgment."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.09 },
+      { "division": "03", "pct": 0.09 },
+      { "division": "04", "pct": 0.02 },
+      { "division": "05", "pct": 0.07 },
+      { "division": "06", "pct": 0.04 },
+      { "division": "07", "pct": 0.06 },
+      { "division": "08", "pct": 0.04 },
+      { "division": "09", "pct": 0.07 },
+      { "division": "10", "pct": 0.01 },
+      { "division": "13", "pct": 0.02 },
+      { "division": "21", "pct": 0.02 },
+      { "division": "22", "pct": 0.09 },
+      { "division": "23", "pct": 0.08 },
+      { "division": "26", "pct": 0.09 },
+      { "division": "27", "pct": 0.01 },
+      { "division": "28", "pct": 0.01 },
+      { "division": "31", "pct": 0.04 },
+      { "division": "32", "pct": 0.10 },
+      { "division": "33", "pct": 0.05 }
+    ],
+    "evidence": [], "derived": true,
+    "method": "Derived from the restaurant-full-service split with production adjustments: heavier 03 (thick sloped slabs), 22 (trench drains, process water, floor drains), 26 (brewhouse power), 13 (insulated cold-room panels); lighter 09 finishes in production. Site 0.19 incl. patio."
+  },
+
+  "lineItems": [
+    {
+      "id": "brewhouse-system",
+      "name": "Brewhouse system (mash/lauter tun, kettle/whirlpool, HLT) 5–15 bbl, installed",
+      "division": "11",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 100000, "mid": 250000, "high": 500000, "dollarYear": 2025, "region": "US", "evidence": ["b5", "b6"], "derived": true, "method": "Guides: 5–10 bbl brewhouse $100,000–$150,000, 'sometimes up to $350,000' (b5); brewhouse system 'between $50,000 and $500,000 or more' (b6). Mid $250k assumes a 10–15 bbl steam/direct-fire system with installation and process piping. Low-confidence sources." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Scales with barrel size, not SF."
+    },
+    {
+      "id": "cellar-tanks-glycol",
+      "name": "Fermenters, brite tanks and glycol chiller",
+      "division": "11",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 40000, "mid": 120000, "high": 300000, "dollarYear": 2025, "region": "US", "evidence": ["b5", "b6"], "derived": true, "method": "Fermenters 5–10 bbl $3,500–$10,000 each and glycol $5,000–$15,000 (b5); brite tanks $5,000–$40,000 and glycol $10,000–$50,000 (b6). Mid ≈ 6 FVs + 2 brites (20 bbl) + glycol ≈ $120k." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Add packaging (canning line, keg washer $10–14k per b5) separately if needed."
+    },
+    {
+      "id": "process-wastewater-pretreatment",
+      "name": "Process wastewater pretreatment (solids interceptor, pH neutralization, sampling port)",
+      "division": "22",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 25000, "mid": 60000, "high": 150000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Judgment: many sewer utilities require brewery pretreatment; cost from comparable grease-interceptor + neutralization tank installations. Verify with local pretreatment ordinance." },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out inside Div 22; sewer capacity/strength surcharges excluded (fees)."
+    },
+    {
+      "id": "beer-garden-patio",
+      "name": "Patio / beer garden (paving, fencing, shade, lighting)",
+      "division": "32",
+      "unit": "sf",
+      "qty": { "per": "project", "value": 1500 },
+      "cost": { "low": 40, "mid": 85, "high": 160, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Judgment, aligned with restaurant-full-service outdoor-patio item (lower finish level)." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Catalog description includes a patio; switch on when programmed."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 15, "mid": 30, "high": 60, "dollarYear": 2025, "region": "US", "evidence": ["b5"], "derived": true, "method": "Taproom interiors/furniture $50,000–$150,000, draft system/glassware/POS $10,000–$25,000, basic kitchen $20,000–$40,000 (b5) → $80–215k on 3,000–8,000 SF ≈ $15–45/SF; high allows full-service kitchen." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.10, "mid": 0.13, "high": 0.18, "evidence": ["b5"], "derived": true, "method": "A&E incl. process engineering (≈7–9%), permits, legal and licensing. Licensing (brewing, sales, environmental) ≈ $5,000–$20,000 and legal $2,000–$20,000 (b5). Judgment for the percentage." },
+    "breakdown": { "architectureEngineering": 0.08, "permitsFees": 0.02 },
+    "notes": "Type-specific: federal TTB brewer's notice and state manufacturer/on-premise licenses; sewer pretreatment permits. Liquor-license cost varies by state (see restaurant-full-service notes)."
+  },
+
+  "contingency": {
+    "design": { "low": 0.03, "mid": 0.06, "high": 0.10, "evidence": [], "derived": true, "method": "Process layout often finalized after equipment purchase; judgment." },
+    "hard": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": [], "derived": true, "method": "Judgment; a 2026 news report notes a taproom project's construction costs 'had increased by 30%' after design completion (b8), indicating high volatility." },
+    "soft": { "low": 0.05, "mid": 0.08, "high": 0.10, "evidence": [], "derived": true, "method": "Standard 5–10%." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 150, "max": 650, "dollarYear": 2025, "region": "US", "method": "Hard $210–475 × 1.10–1.18; min allows shell conversions, max a restaurant-heavy brewpub (b3 ceiling). Excludes equipment and land." }
+  },
+
+  "evidence": [
+    {
+      "id": "b1", "metric": "hardCostPerSF", "value": 120.29, "unit": "USD/sf",
+      "region": "US national average", "regionKey": "US", "dataYear": 2019,
+      "source": { "title": "Construction Cost Estimates for Factory, 1 Story in National, US (model page)", "url": "https://www.rsmeans.com/model-pages/factory-1-story", "publisher": "Gordian / RSMeans", "accessed": "2026-10-24" },
+      "quote": "Factory, 1 Story with Concrete Block / Bearing Walls … 30,000 S.F. … Total $128.71/S.F. (union); architect fee $8.42/S.F.",
+      "scopeNotes": "Value = $128.71 − $8.42; building only, basic components, no process work or site. Proxy for brewery production space.",
+      "confidence": "low"
+    },
+    {
+      "id": "b2", "metric": "hardCostPerSF", "value": 157.45, "unit": "USD/sf",
+      "region": "US national average", "regionKey": "US", "dataYear": 2019,
+      "source": { "title": "Construction Cost Estimates for Social Club in National, US (model page)", "url": "https://www.rsmeans.com/model-pages/social-club", "publisher": "Gordian / RSMeans", "accessed": "2026-10-24" },
+      "quote": "Club, Social with Decorative Concrete Block / Steel Joists … 22,000 … Total Building Cost $168.47 … Architectural Fees $11.02",
+      "scopeNotes": "Value = $168.47 − $11.02; building only. Proxy for taproom/assembly space.",
+      "confidence": "low"
+    },
+    {
+      "id": "b3", "metric": "hardCostPerSite", "value": null, "low": 2900000, "high": 5000000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "Twin Peaks Franchise Disclosure Document (May 2025, issued May 13, 2025), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Twin-Peaks-2024.pdf", "publisher": "Twin Restaurant Franchise, LLC (Twin Peaks) (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Leasehold Improvements and Deposits(2) … New Construction Space … $2,900,000 to $5,000,000 … approximately 6,000 to 8,000 conditioned square feet with 150 or more parking spaces and a patio area.",
+      "scopeNotes": "Bar-centric sports-lodge restaurant, new construction; includes deposits. Equipment/furniture/fixtures/signage $1.4–1.5M; liquor license $1,000–$300,000. Upper bound for an all-FOH taproom.",
+      "confidence": "medium"
+    },
+    {
+      "id": "b4", "metric": "hardCostPerSite", "value": null, "low": 500000, "high": 4000000, "unit": "USD/site",
+      "region": "United States (Louisiana-based)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Walk-On's Franchise Disclosure Document (issued April 30, 2026), Item 7 — standard footprint", "url": "https://www.restfinance.com/app/pdf/fdd/Walk-Ons-2025.pdf", "publisher": "Walk-On's Enterprises Franchising, L.L.C. (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Construction and Leasehold Improvements See Note 6 $500,000 to $4,000,000 … interior space ranging from 5,000 to 7,000 square feet",
+      "scopeNotes": "Sports-bar restaurant; range spans leasehold build-out to ground-up. Equipment $500–800k; furniture $85–300k; TV/AV/POS $250–350k.",
+      "confidence": "medium"
+    },
+    {
+      "id": "b5", "metric": "equipmentCost", "value": null, "low": 100000, "high": 150000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Brewery Setup Cost Breakdown", "url": "https://www.restroworks.com/blog/brewery-setup-cost/", "publisher": "Restroworks", "accessed": "2026-10-24" },
+      "quote": "5–10 bbl brewhouse: $100,000–$150,000, sometimes up to $350,000 … Fermentation tanks, 5–10 bbl: $3,500–$10,000 each … Space needed: 3,000–8,000 sq ft",
+      "scopeNotes": "Vendor blog (updated July 24, 2025). Also: taproom interiors/furniture/design $50k–$150k; draft/glassware/POS $10k–$25k; licensing ~$5k–$20k; brewpub total $0.5–1.5M.",
+      "confidence": "low"
+    },
+    {
+      "id": "b6", "metric": "equipmentCost", "value": null, "low": 50000, "high": 500000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "How Much Does It Cost to Start a Brewery?", "url": "https://www.7shifts.com/blog/starting-brewery-cost/", "publisher": "7shifts", "accessed": "2026-10-24" },
+      "quote": "This system can cost between $50,000 and $500,000 or more.",
+      "scopeNotes": "Brewhouse system; brite tanks 'around $5,000 to $40,000'; glycol chillers $10,000–$50,000; 'opening a brewery can cost between $500,000 and $1.5 million' (citing WebstaurantStore). June 9, 2025 vendor blog.",
+      "confidence": "low"
+    },
+    {
+      "id": "b7", "metric": "buildingSF", "value": 5457, "unit": "count",
+      "region": "Rogers, AR", "regionKey": "AR",
+      "source": { "title": "Natural State Beer Company — project page", "url": "https://crossland.com/?p=12259", "publisher": "Crossland Construction", "accessed": "2026-10-24" },
+      "quote": "The brewery was built with concrete and metal to house the 1250 SF taproom, 1720 SF brewery, and 1675 SF office space.",
+      "scopeNotes": "Sizing/program only. Page also states a cost of $1,100,000 for 5,457 SF (~$202/SF) with a seven-barrel, two-vessel brewhouse, but no project year, so it is not used as a dated cost point.",
+      "confidence": "medium"
+    },
+    {
+      "id": "b8", "metric": "costIncrease", "value": 0.30, "unit": "pct",
+      "region": "Mount Holly, NC", "regionKey": "NC",
+      "source": { "title": "Olde Mecklenburg Brewery's Mount Holly taproom on track to open despite cost increase", "url": "https://www.wsoctv.com/news/local/olde-mecklenburg-brewerys-mount-holly-taproom-track-open-despite-cost-increase/HPKBP7T3GNDG5EDKMJQKWA4T4I", "publisher": "WSOC-TV", "accessed": "2026-10-24" },
+      "quote": "construction costs had increased by 30%",
+      "scopeNotes": "January 5, 2026 article; no dollar amounts. Used only to support a higher hard-cost contingency.",
+      "confidence": "low"
+    }
+  ],
+
+  "openQuestions": [
+    "No sourced, dated ground-up brewery/taproom construction cost — web search quota ran out. Look for Brewers Association startup surveys, state/municipal brewery incentive agreements, or SBA-financed project budgets.",
+    "Baseline is a program-weighted blend of restaurant and industrial proxies; verify the 40/60 FOH/production split for the project.",
+    "Equipment line items rely on vendor blogs."
+  ]
+}

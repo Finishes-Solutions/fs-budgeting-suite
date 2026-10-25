@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "id": "interior-finish-out",
+  "name": "Interior finish-out / TI (general)",
+  "category": "marine-other",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Tenant-improvement cost for a commercial shell is driven by use (retail soft goods < office < restaurant), MEP density, and first- vs. second-generation space (2nd gen runs 10-15% less per Cushman & Wakefield). Office fit-out is well benchmarked by Cushman & Wakefield's 2026 Americas Office Fit Out Cost Guide (US average $162/SF incl. a 10% contingency) with a published trade breakdown; retail and restaurant figures come from secondary sources (low confidence). Default = general commercial/office-grade TI.",
+
+  "sizing": {
+    "typicalSize": { "low": 2000, "mid": 6000, "high": 25000, "unit": "sf", "evidence": [], "derived": true, "method": "Typical inline retail/restaurant 1,500-5,000 SF and office suites 3,000-25,000 SF; mid 6,000 SF is judgment." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 75, "mid": 147, "high": 400, "dollarYear": 2026, "region": "US", "evidence": ["e1", "e2", "e3", "e4", "e5"], "derived": false, "method": "Mid = Cushman & Wakefield 2026 US average office fit-out $162/SF (e1) with its included 10% contingency removed (162 / 1.10 = $147) so the engine adds contingency separately; consistent with in-line retail ~$155/SF in 2025 (e4, secondary citation of C&W). City spread $108 (Cincinnati) - $219 (San Jose) (e2). Low = soft-goods retail low end $75/SF (e4) / 2nd-gen space (C&W: 10-15% discount, e1). High = full-service restaurant construction $250-400/SF (e4, e5)." },
+    "scope": {
+      "includesSitework": false,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Physical construction inside an existing shell (partitions, doors, ceilings, finishes, millwork, MEP/FP distribution, GC and fee), incl. OH&P. Excludes the base building/shell, low-voltage cabling, A/V, security, furniture/FF&E, signage permits and soft costs. C&W figures are 'limited to physical construction' (e3)."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.6, "standard": 1.0, "premium": 1.45, "luxury": 2.4,
+    "evidence": ["e1", "e2", "e4"], "derived": true,
+    "method": "Economy ~ low-cost market/2nd-gen soft goods (Cincinnati $108 x 0.85 2nd-gen / $147 = 0.62). Premium ~ San Jose $219 / $147 = 1.49 (rounded 1.45). Luxury ~ restaurant/high-end $350 / $147 = 2.4."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.1091 },
+      { "division": "06", "pct": 0.0655 },
+      { "division": "08", "pct": 0.1071 },
+      { "division": "09", "pct": 0.1994 },
+      { "division": "10", "pct": 0.0372 },
+      { "division": "21", "pct": 0.0300 },
+      { "division": "22", "pct": 0.0400 },
+      { "division": "23", "pct": 0.1807 },
+      { "division": "26", "pct": 0.2310 }
+    ],
+    "evidence": ["e3"], "derived": false,
+    "method": "Cushman & Wakefield 2026 New York City hard-cost breakdown (e3) with the $20.41 contingency removed (base $200.21/SF): GR/GC & fee $21.84 -> 01 10.91%; millwork $13.12 -> 06 6.55%; doors/frames/hardware $21.45 -> 08 10.71%; drywall/acoustic/carpentry $26.29 + general finishes $13.63 -> 09 19.94%; misc. architectural trades $7.44 -> 10 3.72%; mechanical/plumbing/fire protection $50.19 (25.07%) split by judgment into 21 3.0%, 22 4.0%, 23 18.07%; electrical $46.25 -> 26 23.10%. For restaurants shift ~10 points from 09/06 to 22/23 (kitchen exhaust, grease, gas)."
+  },
+
+  "lineItems": [
+    {
+      "id": "restaurant-kitchen-premium",
+      "name": "Restaurant kitchen MEP premium (hood/exhaust & make-up air, grease waste, gas, walk-in, fire suppression)",
+      "division": "23",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 1 },
+      "cost": { "low": 75, "mid": 150, "high": 250, "dollarYear": 2026, "region": "US", "evidence": ["e4", "e5"], "derived": true, "method": "Restaurant construction $200-480/SF (QSR) and $250-400/SF (full service) (e4, e5) less the general TI mid $147/SF -> ~$75-250/SF premium; mid $150. Applied per SF of restaurant area." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Switch on for restaurant/food-service TI; kitchen equipment itself is FF&E."
+    },
+    {
+      "id": "grease-interceptor",
+      "name": "Grease interceptor (in-ground, 1,000-1,500 gal) incl. connection",
+      "division": "22",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 15000, "mid": 30000, "high": 60000, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment; depends on whether the landlord provided one and on slab/site cutting. Verify locally." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Restaurants only."
+    },
+    {
+      "id": "storefront",
+      "name": "New storefront glazing and entry (retail/restaurant)",
+      "division": "08",
+      "unit": "lf",
+      "qty": { "per": "project", "value": 0 },
+      "cost": { "low": 600, "mid": 1000, "high": 1800, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment for aluminum storefront ~12 ft high incl. doors; usually landlord-provided in new shells." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Enter LF of storefront."
+    },
+    {
+      "id": "low-voltage-av-security",
+      "name": "Low-voltage cabling, A/V and security (percent of hard cost)",
+      "division": "27",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 1 },
+      "cost": { "low": 12, "mid": 25, "high": 45, "dollarYear": 2026, "region": "US", "evidence": ["e1"], "derived": true, "method": "C&W tier ranges: IT 4-5% plus A/V 12-17% of hard cost (e1) = 16-22% x $147 = ~$24-32/SF; low for retail with minimal A/V, high for Tier-1 office." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Excluded from C&W construction figures."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 23, "mid": 40, "high": 61, "dollarYear": 2026, "region": "US", "evidence": ["e1"], "derived": false, "method": "C&W 2026 furniture ranges by market tier: Tier 3 $23.39-35.09, Tier 2 $27.54-41.32, Tier 1 $38.83-60.67 per SF (e1). Mid ~ Tier 2 high / Tier 1 low. Restaurant kitchen equipment and retail fixtures vary widely — override per concept." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.10, "mid": 0.11, "high": 0.13, "evidence": ["e1", "e3"], "derived": false, "method": "C&W soft costs as % of hard cost: Tier 1 10%, Tier 2 11%, Tier 3 13% (e1, e3)." },
+    "breakdown": { "architectureEngineering": 0.06 },
+    "notes": "Restaurants add licensing, health permits and kitchen design (judgment +2-4%)."
+  },
+
+  "contingency": {
+    "design": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "Interior work in an existing shell; design contingency norm (judgment)." },
+    "hard": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": ["e1", "e3"], "derived": false, "method": "C&W includes 'a ten percent (10%) contingency allowance' in its fit-out figures (e1; NYC example $20.41 of $220.62, e3). Raise toward 15% for 2nd-gen space with unknown existing conditions." },
+    "soft": { "low": 0.02, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "General norm (judgment)." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 60, "max": 600, "dollarYear": 2026, "region": "US", "method": "Low 2nd-gen retail refresh ~ $60/SF; high = restaurant all-in ~ $535-555/SF incl. FF&E (e4) rounded up. Office all-in NYC $330.92 incl. furniture/IT/AV (e3) falls inside." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1", "metric": "hardCostPerSF", "value": 162, "unit": "USD/sf",
+      "region": "United States (average)", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "Americas Office Fit Out Cost Guide 2026", "url": "https://digital.cushmanwakefield.com/fitoutcostguide-03-2026-amer-regional-en-content-pds-office/", "publisher": "Cushman & Wakefield", "accessed": "2026-10-24" },
+      "quote": "broader U.S. average of $162 psf ... a ten percent (10%) contingency allowance has been included in the cost.",
+      "scopeNotes": "Generation 1 corporate office fit-out, market conditions as of December 2025; excludes low-voltage, A/V, security, FF&E. Generation 2 (adaptive reuse of existing partitions/MEP) is 10-15% less. Tier tables give soft costs 10-13%, IT 4-5%, A/V 12-17%, furniture 20-24% of hard cost.", "confidence": "high"
+    },
+    {
+      "id": "e2", "metric": "hardCostPerSF", "value": null, "low": 108.03, "high": 219.32, "unit": "USD/sf",
+      "region": "U.S. cities (Cincinnati low, San Jose high)", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "Office Fit Out Cost Guide (United States)", "url": "https://www.cushmanwakefield.com/en/united-states/insights/office-fit-out-cost-guide", "publisher": "Cushman & Wakefield", "accessed": "2026-10-24" },
+      "quote": "San Jose at $219.32/psf (down from $219.47/psf) San Francisco at $219.26/psf ... New York City at $212.59/psf ... Indianapolis at $113.97/psf ... Kansas City at $108.26/psf ... Cincinnati at $108.03/psf",
+      "scopeNotes": "Top-3 and bottom-3 US markets, 2026 guide, incl. 10% contingency.", "confidence": "high"
+    },
+    {
+      "id": "e3", "metric": "systemSplit", "value": 220.62, "unit": "USD/sf",
+      "region": "New York City, NY", "regionKey": "NY-NewYorkCity", "dataYear": 2026,
+      "source": { "title": "Office Fit Out Cost Guide (United States)", "url": "https://www.cushmanwakefield.com/en/united-states/insights/office-fit-out-cost-guide", "publisher": "Cushman & Wakefield", "accessed": "2026-10-24" },
+      "quote": "Mechanical, Plumbing, Fire Protection $50.19 Electrical $46.25 General Requirements, General Conditions and Fee $21.84 Contingency $20.41 TOTAL $220.62 ... Soft Costs: 10% $22.06 ... ALL-IN-TOTAL $330.92",
+      "scopeNotes": "Full NYC breakdown also lists Misc. Architectural Trades $7.44, Millwork $13.12, Doors/Frames/Hardware $21.45, Drywall/Acoustic/Carpentry $26.29, General Finishes $13.63. Fit-out figures are 'limited to physical construction'.", "confidence": "high"
+    },
+    {
+      "id": "e4", "metric": "hardCostPerSF", "value": 155, "low": 75, "high": 400, "unit": "USD/sf",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Retail Build-Out Costs", "url": "https://www.growthfactor.ai/resources/blog/retail-build-out-costs", "publisher": "GrowthFactor (blog, citing Cushman & Wakefield, Terrapin CG, KRG Hospitality)", "accessed": "2026-10-24" },
+      "quote": "The national average for an in-line retail fit-out reached roughly $155 per square foot in 2025 ... Full-service ... $250–$400/SF construction ... All-in ~$555/SF on a 4,000 SF space",
+      "scopeNotes": "Secondary aggregation; QSR $200-480/SF construction, ~$535/SF all-in with FF&E. Southeast ~$117/SF vs. Northern California ~$211/SF for the same store. Not verified against the primary C&W retail guide.", "confidence": "low"
+    },
+    {
+      "id": "e5", "metric": "hardCostPerSF", "value": 535, "low": 200, "high": 800, "unit": "USD/sf",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "The Build-Out Process for Quick Service Restaurants", "url": "https://www.blockrenovation.com/guides/restaurant-build-out-process-commercial", "publisher": "Block Renovation", "accessed": "2026-10-24" },
+      "quote": "The number you'll see cited most often is around $535 per square foot for a QSR build-out. ... A build in a second-tier market in a former restaurant space might come in at $200-250 per square foot.",
+      "scopeNotes": "Contractor marketing guide, unsourced; $535 likely all-in incl. equipment. Manhattan first-time kitchen $800+.", "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Obtain Cushman & Wakefield's retail fit-out guide (primary) to replace the secondary retail citation.",
+    "Source restaurant TI from a cost consultant (RLB/Cumming) rather than contractor blogs.",
+    "MEP split into 21/22/23 within the C&W combined line is judgment."
+  ]
+}

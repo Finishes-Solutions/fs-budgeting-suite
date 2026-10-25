@@ -14,7 +14,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
      headers:{'Content-Type':'application/json'},
      body:JSON.stringify({create:true,name:a.n,address:'1 Test Way'})});
  },{p:'OP-0801',n:'No Clubhouse'});
- await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'));
  await p.waitForTimeout(700);
  await p.selectOption('#nbProject','OP-0801');
  await p.fill('#nbId','TST-9997');
@@ -48,10 +48,35 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  // --- switch amenity off
  await p.click(".page.on [data-wf-pills] a:has-text('Inputs')"); await p.waitForTimeout(200);
  await p.fill('#pASF','0'); await p.locator('#pSF').click(); await p.waitForTimeout(300);
+ const nAmen=await p.evaluate(()=>doc.lines.filter(l=>l.scope==='amen').length);
+ // Said where it can be changed: a helper note under the Amenity SF input.
+ ok('Inputs explains the excluded amenity lines under Amenity SF',
+    await p.locator('#pASFNote').isVisible()
+    && (await p.locator('#pASFNote').textContent()).includes('the '+nAmen+' amenity lines are excluded from the budget'),
+    await p.locator('#pASFNote').textContent());
  await p.click(".page.on [data-wf-pills] a:has-text('Budget')"); await p.waitForTimeout(400);
 
  ok('amenity scope gone from the grid',
-    !(await p.locator('#budBody').textContent()).includes('Amenity / Clubhouse'));
+    !(await p.locator('#budBody .scope-hd').allTextContents()).some(t=>t.includes('Amenity / Clubhouse'))
+    && (await p.locator('#budBody').textContent()).match(/Amenity \/ Clubhouse/g).length===1);
+ // ...but it does not silently vanish: one muted, non-interactive row stands
+ // where the scope was and says why. Display only — no money, no controls.
+ const off=p.locator('#budBody tr.scope-off');
+ ok('a muted row says the amenity lines are excluded',
+    (await off.count())===1
+    && /Amenity \/ Clubhouse\s*— (\d+) lines excluded because Amenity SF is 0/.test(await off.textContent())
+    && (await off.textContent()).includes('— '+nAmen+' lines excluded'),
+    (await off.count())+' row(s): '+(await off.textContent().catch(()=>'')));
+ ok('the excluded-scope row is not interactive',
+    (await off.getAttribute('data-toggle'))===null
+    && (await off.locator('input,button,select').count())===0);
+ const offRows=await p.locator('#budBody tr').count();
+ await off.dispatchEvent('click'); await p.waitForTimeout(200);
+ ok('clicking it changes nothing', (await p.locator('#budBody tr').count())===offRows);
+ ok('it sits between the residential and soft-cost scopes',
+    await p.evaluate(()=>{const r=[...document.querySelectorAll('#budBody tr.scope-hd,#budBody tr.scope-off')]
+      .map(t=>t.classList.contains('scope-off')?'off':/Residential/.test(t.textContent)?'res':/Soft Costs/.test(t.textContent)?'soft':'?');
+      return r.join(',')==='res,off,soft';}));
  ok('grid has fewer rows', (await p.locator('#budBody tr').count()) < withAmenRows,
     withAmenRows+' -> '+(await p.locator('#budBody tr').count()));
  ok('amenity summary row hidden', !(await p.locator('#rAmenRow').isVisible()));
@@ -82,9 +107,11 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.waitForTimeout(700);
  await p.click(".page.on [data-wf-pills] a:has-text('Inputs')"); await p.waitForTimeout(200);
  await p.fill('#pASF','1200'); await p.locator('#pSF').click(); await p.waitForTimeout(300);
+ ok('the Amenity SF note clears once there is a clubhouse', !(await p.locator('#pASFNote').isVisible()));
  await p.click(".page.on [data-wf-pills] a:has-text('Budget')"); await p.waitForTimeout(400);
  ok('amenity returns when SF is set again',
     (await p.locator('#budBody').textContent()).includes('Amenity / Clubhouse'));
+ ok('the excluded-scope row is gone again', (await p.locator('#budBody tr.scope-off').count())===0);
  ok('contract sum returns to its earlier value',
     (await p.locator('#rContract').textContent())===withLump,
     (await p.locator('#rContract').textContent())+' vs '+withLump);

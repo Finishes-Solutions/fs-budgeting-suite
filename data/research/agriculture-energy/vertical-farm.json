@@ -1,0 +1,386 @@
+{
+  "schemaVersion": 1,
+  "id": "vertical-farm",
+  "name": "Vertical farm",
+  "category": "agriculture-energy",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Indoor controlled-environment farm (leafy greens/herbs/berries) with multi-tier hydroponic racks under LED lighting, priced per SF of gross building area. Cost is driven by the number of grow tiers (lighting and racking scale with tiers), HVAC/dehumidification sized to remove the lighting heat load, and the level of automation. No direct public per-SF benchmark could be retrieved this session (web search budget exhausted); the default is DERIVED from indoor cannabis cultivation component costs and a trade-press quote for multi-level indoor grows — verify.",
+  "sizing": {
+    "typicalSize": {
+      "low": 10000,
+      "mid": 60000,
+      "high": 250000,
+      "unit": "sf",
+      "evidence": [],
+      "derived": true,
+      "method": "Low ≈ small urban/container-cluster or retrofit farm; mid ≈ regional commercial farm (~1.4 acres under roof); high ≈ largest US flagship farms. Judgment — verify against operator disclosures."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 12000,
+      "mid": 17000,
+      "high": 22000,
+      "evidence": [],
+      "derived": true,
+      "method": "Single-story industrial building at 0.28–0.50 FAR (truck court, parking, stormwater), same as cannabis-cultivation."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0005,
+      "mid": 0.001,
+      "high": 0.0015,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Light-industrial/food-processing staffing ≈ 1 space per 1,000 SF."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 200,
+      "mid": 325,
+      "high": 550,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "agriculture-energy/cannabis-cultivation.json#e1"
+      ],
+      "derived": true,
+      "method": "Proxy build-up from indoor cannabis cultivation (mid $350/SF hard, 2026; Terrapin component costs in cannabis-cultivation e1): remove cannabis-specific security (−$10) and odor control (−$5.5) and part of insulated-panel room partitioning (−$10); add multi-tier grow-system premium: racking/automation from $16.5 to ≈ $45/GBA SF (+$28) and lighting raised for 3–6 tiers but at lower PPFD than flowering cannabis (≈ net −$27 vs cannabis lighting+HVAC, as leafy-greens light/heat loads per tier are lower). Net ≈ $325/SF. Cross-check e1: multi-level indoor cannabis canopies quoted at $300–320/SF (2019 $). Low $200 = warehouse retrofit with 2–3 tiers and manual handling; high $550 = highly automated, food-safety (cleanroom-style) facility with 8+ tiers. Verify with operator data."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Shell (or full-gut retrofit), insulated grow rooms, multi-tier hydroponic racking and LEDs, HVAC/dehumidification, water treatment/fertigation, electrical service, controls, food-safe finishes, packing/cold room, sitework, GC/OH&P. Excludes land, off-site utility upgrades, packaging line FF&E, soft costs."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.62,
+    "standard": 1,
+    "premium": 1.3,
+    "luxury": 1.7,
+    "evidence": [],
+    "derived": true,
+    "method": "Economy = low/mid ($200/$325) retrofit with manual systems; premium ≈ automated conveyor/robotic systems; luxury = high/mid ($550/$325)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.05
+      },
+      {
+        "division": "05",
+        "pct": 0.06
+      },
+      {
+        "division": "07",
+        "pct": 0.05
+      },
+      {
+        "division": "08",
+        "pct": 0.02
+      },
+      {
+        "division": "09",
+        "pct": 0.03
+      },
+      {
+        "division": "11",
+        "pct": 0.14
+      },
+      {
+        "division": "13",
+        "pct": 0.04
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.05
+      },
+      {
+        "division": "23",
+        "pct": 0.18
+      },
+      {
+        "division": "25",
+        "pct": 0.04
+      },
+      {
+        "division": "26",
+        "pct": 0.2
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.015
+      },
+      {
+        "division": "32",
+        "pct": 0.01
+      },
+      {
+        "division": "33",
+        "pct": 0.005
+      }
+    ],
+    "evidence": [
+      "agriculture-energy/cannabis-cultivation.json#e1"
+    ],
+    "derived": true,
+    "method": "Adapted from the cannabis-cultivation split (itself built from Terrapin component costs): grow racks/automation (11) raised to 0.14; HVAC (23) 0.20→0.18 and electrical+lighting (26) ~0.21→0.20 for lower light intensity; security (28) cut to 0.01; controls (25) 0.04; shell/site/GC shares similar. Judgment — verify. Shell shares (03 0.05, 05 0.06, 09 0.03) trimmed slightly vs cannabis to close the sum."
+  },
+  "lineItems": [
+    {
+      "id": "grow-racks-automation",
+      "name": "Multi-tier hydroponic grow racks, irrigation trays and handling automation",
+      "division": "11",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 20,
+        "mid": 45,
+        "high": 110,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "agriculture-energy/cannabis-cultivation.json#e1"
+        ],
+        "derived": true,
+        "method": "Cannabis racking/benching $10–45 per canopy SF (Terrapin) scaled for 3–6 tiers over ~60% of floor area; automation (conveyors, robotic transplant/harvest) drives the high end. Verify."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out; often vendor-supplied proprietary systems."
+    },
+    {
+      "id": "led-lighting",
+      "name": "LED grow lighting for all tiers",
+      "division": "26",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 20,
+        "mid": 40,
+        "high": 75,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "agriculture-energy/cannabis-cultivation.json#e1"
+        ],
+        "derived": true,
+        "method": "Cannabis lighting $25–60 per canopy SF at flowering intensity; leafy greens use roughly 1/3–1/2 the PPFD per tier but 3–6 tiers → ≈ $20–75 per floor SF. Verify."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "hvacd",
+      "name": "HVAC / dehumidification sized for lighting heat load",
+      "division": "23",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 30,
+        "mid": 58,
+        "high": 100,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "agriculture-energy/cannabis-cultivation.json#e1"
+        ],
+        "derived": true,
+        "method": "Cannabis HVACD $30–100/SF GBA (Terrapin); mid placed slightly below the cannabis mid ($65). Verify."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "water-treatment",
+      "name": "Water treatment (RO/UV), nutrient dosing and recirculation",
+      "division": "22",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 100000,
+        "mid": 300000,
+        "high": 750000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Assumption scaled to a 60,000 SF farm. Verify with vendor."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "utility-service-upgrade",
+      "name": "Utility service upgrade (off-site share)",
+      "division": "33",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 50000,
+        "mid": 300000,
+        "high": 1200000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Placeholder: multi-tier lighting loads ≈ 40–100 W per floor SF → several MW for a mid-size farm. Verify with utility."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Off-site; excluded from baseline."
+    },
+    {
+      "id": "onsite-solar",
+      "name": "Rooftop solar PV (offsets part of lighting load)",
+      "division": "48",
+      "unit": "kw",
+      "qty": {
+        "per": "sf",
+        "value": 0.008
+      },
+      "cost": {
+        "low": 1500,
+        "mid": 2300,
+        "high": 3300,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "_blocks/energy.json#e1",
+          "_blocks/energy.json#e2"
+        ],
+        "derived": true,
+        "method": "Shared rooftop-solar-commercial block ($/kW). Qty ≈ 8 W per SF of roof (≈ 60% roof coverage)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Optional."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 5,
+      "mid": 10,
+      "high": 25,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Seeding, harvest and packaging lines, food-safety lab, office/break FF&E. Assumption — verify."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.08,
+      "mid": 0.12,
+      "high": 0.18,
+      "evidence": [
+        "agriculture-energy/cannabis-cultivation.json#e1"
+      ],
+      "derived": true,
+      "method": "Same basis as cannabis cultivation (Terrapin: soft 8–12% of hard) without cannabis licensing/consultant premium; high for first-of-kind custom systems engineering."
+    },
+    "notes": "Excludes pre-opening operating losses and crop ramp-up."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Process-driven design with proprietary grow systems; integration risk."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "MEP-heavy, long-lead electrical gear."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard to elevated."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 175,
+      "max": 700,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "All-in hard + soft (excl. land): retrofit low ≈ $200 × 1.08 → ~$175–220; automated high ≈ $550 × 1.18 + contingency ≈ $700."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerUnit",
+      "value": null,
+      "low": 300,
+      "high": 320,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "The coming bonanza in marijuana facilities",
+        "url": "https://www.bdcnetwork.com/home/article/55145496/the-coming-bonanza-in-marijuana-facilities",
+        "publisher": "Building Design + Construction",
+        "accessed": "2026-10-24"
+      },
+      "quote": "will run $240/sf for a single-level cultivation facility with fixed benching ... these can cost $300–320/sf [vertical indoor grows with multi-level canopies]",
+      "scopeNotes": "Proxy: multi-level indoor cannabis grow (Jan 2019), not a produce vertical farm; scope (hard vs. soft) not stated.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Need direct vertical-farm capex data: operator disclosures (SEC filings, state incentive announcements, e.g., economic-development press releases with $ and SF), Agritecture or USDA CEA reports. Web search budget was exhausted before these could be found.",
+    "Tier count and light intensity drive cost — the engine may need a 'tiers' input.",
+    "Many vertical farms are warehouse retrofits; a conversion toggle would reduce shell cost."
+  ]
+}

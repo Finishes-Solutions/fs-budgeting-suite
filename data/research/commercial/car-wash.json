@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "id": "car-wash",
+  "name": "Car wash (express tunnel)",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "site",
+  "summary": "Ground-up express exterior tunnel wash (80–160 ft tunnel, ~2,400–5,500 SF building) on 1–1.5 acres with 15–30 free vacuum stalls. The budget splits into building + site work (baseline here) and a separately purchased tunnel equipment package (conveyor, arches, dryers, chemical, controls, pay stations) plus vacuum system, which together add $1.0–2.5M. Evidence is moderate: one full franchisor line-item table (Tommy's Express 2020 FDD, 2020 $), a secondary report of the 2026 Tommy's FDD, one consultant development budget, and one Texas registration.",
+
+  "sizing": {
+    "typicalSize": { "low": 1, "mid": 1, "high": 1, "unit": "site", "evidence": [], "derived": true, "method": "One tunnel per project." },
+    "sfPerPrimaryUnit": { "low": 2400, "mid": 4300, "high": 5500, "evidence": ["w3", "w4", "w5"], "derived": false, "method": "Building SF: MMCG example 4,307 SF (w3); Texas registration 4,586 SF (w4); EB3 80-ft conveyor example 2,400 SF (w5). Mid 4,300 SF ≈ 120–130 ft tunnel with equipment room." },
+    "primaryUnitsPerAcre": { "low": 0.67, "mid": 0.8, "high": 1.0, "evidence": ["w3", "w5"], "derived": true, "method": "Sites need 'roughly 1–1.5 acres' (w5); MMCG example 'just over one acre' (w3) → 0.67–1.0 sites per acre." },
+    "parkingPerPrimaryUnit": { "low": 15, "mid": 22, "high": 30, "type": "surface", "evidence": ["w3", "w5"], "derived": true, "method": "Vacuum stalls (which double as customer parking): 15–30 per site (w5); 29 in MMCG example (w3)." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 1600000, "mid": 2750000, "high": 4500000, "dollarYear": 2025, "region": "US", "evidence": ["w1", "w2", "w3", "w4", "w5"], "derived": false, "method": "Building + site work per site, EXCLUDING tunnel equipment and vacuums (line items). Evidence years mixed: Tommy's 2020 FDD site work & construction $1.70–2.64M + building package $1.01–1.07M = $2.70–3.70M (2020 $, glass flagship building, w1); Tommy's 2026 World Model site-specific $288k + building construction $961k + structure $283k + components $227k ≈ $1.76M (2025–26 $, compact model, w2); MMCG West Coast example hard cost incl. site work $3.2M (2025, w3); EB3 example ~$2M construction incl. site work for 2,400 SF / 80 ft (w5); Texas registration $1.5M for 4,586 SF (2025, likely building-only, w4). Mid $2.75M = midpoint of the 2025-dollar cluster ($1.76M compact – $3.2M West Coast) nudged up toward the Tommy's 2020 range, which would be higher after escalation (build script escalates evidence, not this mid). Low = compact/World-model; high = flagship 130-ft glass tunnel on a difficult site." },
+    "perSF": { "low": 450, "mid": 640, "high": 900, "dollarYear": 2025, "region": "US", "evidence": ["w3"], "derived": true, "method": "perPrimaryUnit ÷ sfPerPrimaryUnit (2.75M / 4,300 ≈ $640). MMCG reports ~$740/SF of building for hard cost incl. site in a West Coast market (w3). Site work inflates $/SF." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Building (tunnel + equipment room + office), MEP, slabs/trench drains, reclaim pits, and on-site work (stacking lanes, vacuum canopy footings, paving, utilities, landscaping). Excludes tunnel equipment package and vacuum system (lineItems), signage (ffe), land, soft costs, water/sewer tap and impact fees."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.65, "standard": 1.0, "premium": 1.3, "luxury": 1.6,
+    "evidence": ["w1", "w2"], "derived": true,
+    "method": "economy ≈ low/mid (Tommy's World / compact, 1.6/2.75 ≈ 0.58→0.65); premium/luxury ≈ glass-tunnel flagship and Flex-model ranges (w2 Flex building+site ≈ $5.7–7.3M is outside 'luxury' and treated as an outlier)."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.116 },
+      { "division": "03", "pct": 0.128 },
+      { "division": "04", "pct": 0.016 },
+      { "division": "05", "pct": 0.229 },
+      { "division": "07", "pct": 0.044 },
+      { "division": "08", "pct": 0.057 },
+      { "division": "09", "pct": 0.084 },
+      { "division": "10", "pct": 0.032 },
+      { "division": "22", "pct": 0.027 },
+      { "division": "23", "pct": 0.040 },
+      { "division": "26", "pct": 0.071 },
+      { "division": "31", "pct": 0.051 },
+      { "division": "32", "pct": 0.073 },
+      { "division": "33", "pct": 0.032 }
+    ],
+    "evidence": ["w1"], "derived": false,
+    "method": "From Tommy's Express 2020 FDD Item 7 trade breakdown (w1), average of low/high columns, building+site only ($3.20M). Mapping: GC general requirements→01; concrete→03; masonry→04; building structure (steel/glass package)→05; exterior finishes + ½ building components→07; windows/doors + ½ components→08; flooring + interior finishes→09; signage→10; mechanical (HVAC & plumbing) split ½/½ to 22/23, snowmelt→23; electrical + lighting→26; site work split 40/35/25 to 31/32/33; misc & landscaping→32. Div 05 is high because Tommy's uses a proprietary steel-and-glass building; masonry/CMU tunnels shift share from 05 to 04."
+  },
+
+  "lineItems": [
+    {
+      "id": "tunnel-equipment-package",
+      "name": "Tunnel equipment package (conveyor, arches/brushes, dryers, chemical, backroom, controls, pay stations/POS)",
+      "division": "11",
+      "unit": "ls",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 900000, "mid": 1300000, "high": 2100000, "dollarYear": 2025, "region": "US", "evidence": ["w1", "w3", "w5"], "derived": false, "method": "Tommy's 2020: equipment $871,299–$928,371 + wash controls $118,950–$156,660 + POS $76,534–$92,876 = $1.07–1.18M (2020 $, w1); MMCG 2025 equipment & systems $1,651,000 incl. 29 vacuum stations (w3) → ≈$1.3–1.4M ex-vacuums; 2025 trade estimates $1.4–2.1M typical (w5). Mid $1.3M; years mixed (2020 evidence noted)." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Usually bought from the equipment manufacturer/distributor, not the GC. Includes water reclaim in Tommy's package."
+    },
+    {
+      "id": "vacuum-system",
+      "name": "Free-vacuum system (central turbine, arches/booms, piping) for 15–30 stalls",
+      "division": "11",
+      "unit": "ls",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 90000, "mid": 175000, "high": 470000, "dollarYear": 2025, "region": "US", "evidence": ["w1", "w2"], "derived": false, "method": "Tommy's 2020 vacuums $103,160–$272,078 (w1); Tommy's 2026 World vacuum system $87,400–$147,462 and Flex $364,096–$469,910 (w2). Mid ≈ $175k for ~22 stalls." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Vacuum canopies/arches are often bundled; stall paving is in baseline site work."
+    },
+    {
+      "id": "water-reclaim",
+      "name": "Water reclamation system",
+      "division": "22",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 50000, "mid": 75000, "high": 100000, "dollarYear": 2025, "region": "US", "evidence": ["w5"], "derived": false, "method": "Trade estimates $50,000–100,000 (w5)." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Add only if the equipment package excludes reclaim (Tommy's package includes it). Often required by permit."
+    },
+    {
+      "id": "snowmelt",
+      "name": "Tunnel exit / apron snowmelt",
+      "division": "23",
+      "unit": "ls",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 0, "mid": 40000, "high": 80000, "dollarYear": 2020, "region": "US", "evidence": ["w1"], "derived": false, "method": "Tommy's 2020 SNOWMELT line $0–$80,000 (w1)." },
+      "inBaseline": true,
+      "scales": false,
+      "optional": true,
+      "notes": "Cold climates only; already reflected in the high end of the baseline."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 50000, "mid": 100000, "high": 150000, "dollarYear": 2025, "region": "US", "evidence": ["w1", "w2"], "derived": true, "method": "Signage + office furniture: Tommy's signage $101,448–$102,688 (2020, w1) and $95,000–$102,005 (World, 2026, w2); furniture & fixtures $2,500–$17,000 (w1). Range widened for independents with simpler pylon signs." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.06, "mid": 0.10, "high": 0.15, "evidence": ["w1", "w2", "w3"], "derived": false, "method": "Tommy's 2020 soft costs $137,000–$620,500 incl. water tap fee $15,000–$250,000 (excluded by definition) → $122k–$370k on $2.7–3.7M building+site ≈ 4.5–10% (w1); Tommy's 2026 World soft $122,347–$272,169 on ≈$1.76M ≈ 7–15% (w2); MMCG ~$430k excl. contingency on $3.2M hard ≈ 13% (w3). Mid 10% (of baseline hard; equipment line items carry little soft cost)." },
+    "breakdown": { "architectureEngineering": 0.05, "permitsFees": 0.02 },
+    "notes": "Type-specific: water/sewer tap fees can be large ($15k–$250k in w1) — excluded here as impact/tap fees. Franchise fee $50,000 (Tommy's). Traffic/stacking studies often required."
+  },
+
+  "contingency": {
+    "design": { "low": 0.02, "mid": 0.04, "high": 0.06, "evidence": [], "derived": true, "method": "Prototype tunnels; judgment." },
+    "hard": { "low": 0.05, "mid": 0.08, "high": 0.10, "evidence": ["w3"], "derived": false, "method": "MMCG example carries contingency of 10% of hard costs (w3); mid 8% with separate design contingency." },
+    "soft": { "low": 0.05, "mid": 0.08, "high": 0.10, "evidence": [], "derived": true, "method": "Standard 5–10%." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 2500000, "max": 8000000, "dollarYear": 2025, "region": "US", "method": "Hard (baseline + equipment + vacuums) $2.6–7.0M × 1.06–1.15 soft, excl. land. Consistent with irecruit/MMCG industry range '$3.85 million to well over $10 million' including land (w3, w5) and Tommy's 2026 totals $3.48M–$8.52M including fees and working capital (w2)." }
+  },
+
+  "evidence": [
+    {
+      "id": "w1", "metric": "hardCostPerSite", "value": null, "low": 2700979, "high": 3704339, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2020,
+      "source": { "title": "Tommy's Express Car Wash Franchise Disclosure Document (issued April 13, 2020), Item 7 table", "url": "https://keycommercialcapital.com/wp-content/uploads/2020/09/Tommys-Express-Car-Wash-FDD.pdf", "publisher": "Tommy's Express LLC (hosted by Key Commercial Capital)", "accessed": "2026-10-24" },
+      "quote": "Item 7 table: 'Site Work and Construction Sub-Total (3) $1,695,309 – $2,637,390'; 'Tommy Building Sub Total (4) $1,005,670 – $1,066,949'; 'Tommy Equipment Sub Total (6) $871,299 – $928,371'; 'Tommy Vacuums (6) $103,160.15 – $272,077.51'",
+      "scopeNotes": "Building+site = site work & construction + Tommy building package (incl. signage $101–103k). Also: soft cost subtotal $137,000–$620,500 (incl. water tap $15k–$250k); POS $76,534–$92,876; wash controls $118,950–$156,660; total $4,176,272–$5,973,349 excl. real estate. Tunnel 110–160 ft, typically 130 ft. Table read from the scanned page image.",
+      "confidence": "high"
+    },
+    {
+      "id": "w2", "metric": "hardCostPerSite", "value": 1759344, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Tommy's Express Car Wash Franchise Costs, Fees & Profit (2026 FDD figures)", "url": "https://1851franchise.com/tommys-express-car-wash-franchise-costs-fees-profit-2732879", "publisher": "1851 Franchise", "accessed": "2026-10-24" },
+      "quote": "World Model Tunnel: 'ranges from $3,482,389 to $4,163,279' … Site Specific Construction Costs $287,995 … Building Construction Costs $961,475 … Vacuum System $87,400 / $147,462",
+      "scopeNotes": "Secondary report of the 2026 FDD. Value = site-specific $287,995 + building construction $961,475 + building structure $283,224 + building components $226,650 (summed by us). Flex model building construction $2.91–3.58M; 90'/110'/130' totals $5.11M–$7.53M.",
+      "confidence": "medium"
+    },
+    {
+      "id": "w3", "metric": "hardCostPerSite", "value": 3200000, "unit": "USD/site",
+      "region": "Major West Coast city (unspecified)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Tunnel Car Wash Construction Cost Breakdown and Why a Feasibility Study Is Essential", "url": "https://www.mmcginvest.com/post/tunnel-car-wash-construction-cost-breakdown-and-why-a-feasibility-study-is-essential", "publisher": "MMCG Invest", "accessed": "2026-10-24" },
+      "quote": "Hard costs (construction, including site work) $3,200,000 … Equipment and systems $1,651,000 … 4,307 sq. ft. … 29 vacuum stations",
+      "scopeNotes": "Consultant example budget, total $10.47M incl. $4.2M land; soft $750k; contingency $320k = 10% of hard; financing $345k. West Coast high-cost market — treat as upper end; regionKey left US because the city is unnamed.",
+      "confidence": "medium"
+    },
+    {
+      "id": "w4", "metric": "hardCostPerSite", "value": 1500000, "unit": "USD/site",
+      "region": "Pearland, TX (Houston metro)", "regionKey": "TX-Houston", "dataYear": 2025,
+      "source": { "title": "TABS project TABS2025019202 — Elite Express Car Wash", "url": "https://www.tdlr.texas.gov/TABS/Projects/TABS2025019202", "publisher": "Texas Department of Licensing and Regulation", "accessed": "2026-10-24" },
+      "quote": "New construction of tunnel car wash. … 4,586 ft 2 … Estimated Cost: $1,500,000",
+      "scopeNotes": "Self-reported accessibility-registration estimate; likely building only and may exclude site work and equipment.",
+      "confidence": "low"
+    },
+    {
+      "id": "w5", "metric": "equipmentPerSite", "value": null, "low": 1400000, "high": 2100000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Car Wash Construction Cost — The 2026 Master Guide", "url": "https://www.irecruit.co/guides/car-wash-construction-cost", "publisher": "iRecruit", "accessed": "2026-10-24" },
+      "quote": "Express tunnel package (2025 trade estimates): $1.4–2.1M typical … Water reclaim … $50,000–100,000 … Roughly $2M of construction including sitework, with an 80-ft conveyor and a 2,400 SF building",
+      "scopeNotes": "Secondary aggregator citing trade estimates and EB3 example; site footprint 1–1.5 acres; 15–30 vacuum stalls.",
+      "confidence": "low"
+    }
+  ],
+
+  "openQuestions": [
+    "Obtain the actual 2026 Tommy's Express FDD Item 7 (the franchimp copy was blocked) to replace the secondary w2 figures.",
+    "Independent (non-franchise) express tunnel GMP contracts or municipal staff reports would firm up the baseline mid.",
+    "Mixed evidence years (2020 vs 2025) — the mid is a judgment between them; verify against a current bid."
+  ]
+}

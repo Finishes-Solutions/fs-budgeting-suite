@@ -1,0 +1,458 @@
+{
+  "schemaVersion": 1,
+  "id": "tiny-home-community",
+  "name": "Tiny home community",
+  "category": "specialty-residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "pad",
+  "summary": "A tiny home community is priced per pad: utility stubs (water, sewer, 50-100A electric), a foundation or pier/parking pad, roads, landscaping and a share of a community building, with the home itself either owner-supplied (tiny house on wheels) or developer-supplied (optional line item). Published budgets are almost all supportive/transitional villages (Quixote Village WA, Los Angeles tiny home villages), so the market-rate default is derived from those and from the RV park per-site evidence. Confidence low-medium.",
+  "sizing": {
+    "typicalSize": {
+      "low": 15,
+      "mid": 35,
+      "high": 100,
+      "unit": "pad",
+      "evidence": [
+        "t1",
+        "t2"
+      ],
+      "derived": true,
+      "method": "Quixote Village has 30 cottages (t1: $3.05M total / $101,567 per unit = 30); Los Angeles villages averaged 1,217 beds / 9 villages (~135 beds, many double-occupancy shelters) (t2). Market-rate tiny home communities are typically 20-60 pads; mid 35."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 6,
+      "mid": 12,
+      "high": 18,
+      "evidence": [
+        "t1",
+        "t3"
+      ],
+      "derived": true,
+      "method": "Quixote Village: 30 cottages on 'just over 2 acres' (t3) = ~14/acre with a community building. Market-rate communities give larger yards; mid 12."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.5,
+      "mid": 1.0,
+      "high": 1.5,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Supportive villages provide little parking; market-rate communities typically one space per pad plus guest parking. Judgment."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 20000,
+      "mid": 45000,
+      "high": 90000,
+      "dollarYear": 2024,
+      "region": "US",
+      "evidence": [
+        "t1",
+        "t2",
+        "specialty-residential/rv-park-resort.json#e8",
+        "specialty-residential/rv-park-resort.json#e6"
+      ],
+      "derived": true,
+      "method": "Per-pad site and shared infrastructure, excluding the home. (1) Quixote Village (2013, WA): paid cost ~$88k/unit incl. soft costs and road improvements, minus ~$19k cottage = ~$69k; less ~15% soft = ~$59k hard per pad (t1). (2) Los Angeles tiny home villages (2021-22): average construction $42,344 per bed incl. ~$8.3k Pallet shelter (Chandler: $299,000/36) = ~$34k infrastructure per bed (t2). (3) Full-hookup RV site: ~$42k mid (rv-park-resort default; OH Weekly $30k-$40k per site all-in, rv e8). Mid $45k = RV-site infrastructure plus pier/parking pad and larger landscaped lot, consistent with the midpoint of (1) and (2). Low $20k = rural community with gravel roads and minimal common building; high $90k = urban infill with paved roads, concrete foundations and full community building. Evidence years 2013-2024, not escalated by hand."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Per-pad contractor price incl. general conditions and OH&P: grading, roads, parking, on-site water/sewer/electric distribution and stubs to each pad, pad/foundation prep, landscaping and a share of the community building. Excludes the tiny home itself (optional line item), land, soft costs, off-site utilities, tap/impact fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.5,
+    "standard": 1.0,
+    "premium": 1.45,
+    "luxury": 2.0,
+    "evidence": [],
+    "derived": true,
+    "method": "low/mid = 0.44 tempered to 0.5; high/mid = 2.0."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.08
+      },
+      {
+        "division": "06",
+        "pct": 0.05
+      },
+      {
+        "division": "07",
+        "pct": 0.03
+      },
+      {
+        "division": "08",
+        "pct": 0.015
+      },
+      {
+        "division": "09",
+        "pct": 0.02
+      },
+      {
+        "division": "10",
+        "pct": 0.01
+      },
+      {
+        "division": "22",
+        "pct": 0.04
+      },
+      {
+        "division": "23",
+        "pct": 0.015
+      },
+      {
+        "division": "26",
+        "pct": 0.14
+      },
+      {
+        "division": "31",
+        "pct": 0.09
+      },
+      {
+        "division": "32",
+        "pct": 0.26
+      },
+      {
+        "division": "33",
+        "pct": 0.17
+      }
+    ],
+    "evidence": [
+      "specialty-residential/rv-park-resort.json#e8"
+    ],
+    "derived": true,
+    "method": "Adapted from the RV park split (OH Weekly itemization, rv e8): concrete raised to 0.08 for pier/slab pads, electrical raised to 0.14 for 100A residential services, utilities to 0.17 (permanent residential-grade laterals), roads/paving/landscape 0.26, community building (03-23 share) ~0.18, general conditions 0.08."
+  },
+  "lineItems": [
+    {
+      "id": "pad-utility-stub",
+      "name": "Per-pad utility connection (water, sewer lateral, 50-100A electric pedestal/meter)",
+      "division": "33",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 5000,
+        "mid": 9000,
+        "high": 16000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "specialty-residential/rv-park-resort.json#e8",
+          "specialty-residential/rv-park-resort.json#e9"
+        ],
+        "derived": true,
+        "method": "RV park per-site sewer ($2.5k) + water ($2.4k) + electrical ($4.0k) = $8.9k (rv e8/e9), rounded to $9k; high for individual 100-200A meters and deeper laterals."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "home-foundation-pad",
+      "name": "Foundation / pier pad and skirting for tiny home",
+      "division": "03",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 3000,
+        "mid": 6500,
+        "high": 10000,
+        "dollarYear": 2023,
+        "region": "US",
+        "evidence": [
+          "t4"
+        ],
+        "derived": false,
+        "method": "Bob Vila: foundation for a tiny home ~$5,000-$8,000 or more (t4); low = gravel pad with piers for a THOW."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "community-building",
+      "name": "Community building (kitchen, laundry, restrooms/showers, gathering room)",
+      "division": "06",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 200000,
+        "mid": 450000,
+        "high": 900000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "t1",
+          "specialty-residential/rv-park-resort.json#e17"
+        ],
+        "derived": true,
+        "method": "Quixote Village included a community building with kitchen and showers within its $3.05M total (t1, not broken out). Sized as 1,500-3,000 SF at ~$250-$300/SF; cross-check: SD comfort station $705k (rv e17). Judgment."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Essential where homes lack full plumbing (supportive villages); optional amenity for market-rate communities."
+    },
+    {
+      "id": "tiny-home-unit",
+      "name": "Developer-supplied tiny home (150-400 SF, delivered and set)",
+      "division": "06",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 30000,
+        "mid": 45000,
+        "high": 90000,
+        "dollarYear": 2023,
+        "region": "US",
+        "evidence": [
+          "t4",
+          "t1",
+          "t5"
+        ],
+        "derived": false,
+        "method": "Bob Vila: typical tiny house $30,000-$60,000, national average $45,000 (t4). Quixote cottages ~$19k (2013, no plumbing) and LIHI shelter houses $4.5k materials (t5) are shelter-grade floors, not used for the range. High = premium builder units."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Switch on for for-sale or rental communities where the developer supplies the homes."
+    },
+    {
+      "id": "septic-drainfield",
+      "name": "Community septic system / drainfield",
+      "division": "33",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 80000,
+        "mid": 200000,
+        "high": 450000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "specialty-residential/rv-park-resort.json#e14"
+        ],
+        "derived": true,
+        "method": "OH Weekly: small RV parks have done entire septic for ~$100k (rv e14); tiny homes generate year-round residential flows, so mid set at $200k for ~35 pads. Judgment."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Rural sites without sewer."
+    },
+    {
+      "id": "interior-roads",
+      "name": "Interior roads / shared drive (20 ft)",
+      "division": "32",
+      "unit": "lf",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 35
+      },
+      "cost": {
+        "low": 50,
+        "mid": 110,
+        "high": 220,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "specialty-residential/rv-park-resort.json#e8"
+        ],
+        "derived": true,
+        "method": "Same basis as rv-park-resort interior-roads (OH Weekly paving $3.6k/site, rv e8) with ~35 LF per pad; high = curb, sidewalk and storm."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 0,
+      "mid": 500,
+      "high": 2000,
+      "dollarYear": 2024,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Community building furnishings, laundry machines, mailboxes, site furniture spread per pad. Judgment."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.1,
+      "mid": 0.16,
+      "high": 0.25,
+      "evidence": [],
+      "derived": true,
+      "method": "Judgment: design/engineering ~8%, entitlements (rezoning/PUD or park licensing), surveys, permits and legal ~5-8%, developer overhead. Los Angeles supportive villages reportedly carried large permit/design/management costs relative to construction (not verified in this session). Mid 16%."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.08
+    },
+    "notes": "Zoning approvals for tiny home parks are often discretionary; budget extra entitlement time."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.1,
+      "high": 0.15,
+      "evidence": [],
+      "derived": true,
+      "method": "Judgment; code path (RV park vs. manufactured home park vs. subdivision) changes infrastructure requirements."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.1,
+      "high": 0.15,
+      "evidence": [],
+      "derived": true,
+      "method": "Judgment, consistent with RV park norms."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "General norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 20000,
+      "max": 130000,
+      "dollarYear": 2024,
+      "region": "US",
+      "method": "Min = rural gravel community with low soft costs; max = Quixote Village total $101,567/unit incl. donated land/services (t1, 2013) escalated, or LA high village $65,783/bed (t2) plus soft costs. Excludes the home unless the optional line is on."
+    }
+  },
+  "evidence": [
+    {
+      "id": "t1",
+      "metric": "totalProjectCost",
+      "value": 88000,
+      "unit": "USD/unit",
+      "region": "Olympia, WA",
+      "regionKey": "WA",
+      "dataYear": 2013,
+      "source": {
+        "title": "Quixote Village 5-Year Report (Department of Commerce transmittal to legislators)",
+        "url": "https://www.commerce.wa.gov/wp-content/uploads/2019/04/Commerce-Quixote-Village-5-Year-Report.pdf",
+        "publisher": "Washington State Department of Commerce / Quixote Communities",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost per unit, not including the value of donated land and services: Nearly $88,000 ... Cost for each cottage, not including shared facilities or land: About $19,000",
+      "scopeNotes": "Total development $3.05M incl. infrastructure, materials, labor, community building, permits, fees, required road improvements, donated land and services; $101,567/unit incl. donated land (~$333k) and services. Opened December 2013. Supportive housing for formerly homeless adults; cottages without plumbing (shared community building).",
+      "confidence": "high"
+    },
+    {
+      "id": "t2",
+      "metric": "constructionCostPerBed",
+      "value": 42344,
+      "low": 32712,
+      "high": 65783,
+      "unit": "USD/bed",
+      "region": "Los Angeles, CA",
+      "regionKey": "CA-LosAngeles",
+      "dataYear": 2022,
+      "source": {
+        "title": "What Are the Costs of Building Tiny Home Villages to Decrease Homelessness?",
+        "url": "https://amarkfoundation.org/?p=480",
+        "publisher": "Amark Foundation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The average construction cost per bed is $42,344. ... Construction costs per bed range from $32,712 to $65,783.",
+      "scopeNotes": "Nine LA city villages (1,217 beds) as of March 2022; includes pre-planning, infrastructure (electricity, sanitation, water, plumbing), Pallet shelters and hygiene trailers. Mostly pre-construction estimates. Line items: Pallet shelters at Chandler Blvd $299,000 for 36; hygiene trailers $112,000.",
+      "confidence": "medium"
+    },
+    {
+      "id": "t3",
+      "metric": "siteArea",
+      "value": 2,
+      "unit": "text",
+      "region": "Olympia, WA",
+      "source": {
+        "title": "Quixote Village 5-Year Report (Department of Commerce transmittal to legislators)",
+        "url": "https://www.commerce.wa.gov/wp-content/uploads/2019/04/Commerce-Quixote-Village-5-Year-Report.pdf",
+        "publisher": "Washington State Department of Commerce / Quixote Communities",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Quixote Village occupies just over 2 acres",
+      "scopeNotes": "30 cottages (derived from $3.05M / $101,567) plus community building => ~14 units per acre.",
+      "confidence": "high"
+    },
+    {
+      "id": "t4",
+      "metric": "tinyHomeCost",
+      "value": 45000,
+      "low": 30000,
+      "high": 60000,
+      "unit": "USD/unit",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2023,
+      "source": {
+        "title": "How Much Does a Tiny House Cost?",
+        "url": "https://www.bobvila.com/articles/tiny-house-cost.md",
+        "publisher": "Bob Vila (BobVila.com)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The typical range for the cost of a tiny house is $30,000 to $60,000, with a national average of $45,000.",
+      "scopeNotes": "Consumer cost guide (last modified 2023-09-19). Same page: 'Constructing a foundation for a tiny home will vary in cost from around $5,000 to $8,000 or more'; municipal sewer connection fees '$500 to $20,000'.",
+      "confidence": "low"
+    },
+    {
+      "id": "t5",
+      "metric": "shelterMaterialsCost",
+      "value": 4500,
+      "unit": "USD/unit",
+      "region": "Seattle, WA",
+      "regionKey": "WA-Seattle",
+      "dataYear": 2023,
+      "source": {
+        "title": "Tiny Houses | Low Income Housing",
+        "url": "https://www.lihihousing.org/tinyhouses",
+        "publisher": "Low Income Housing Institute (LIHI)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The cost of materials for a tiny house is $4,500.",
+      "scopeNotes": "Approximately 8 x 12 ft shelter with electricity, light, insulation and heater; volunteer-built; emergency shelter grade. Page undated; footer shows (c) 2023, so dataYear 2023 assumed.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Need market-rate (non-shelter) tiny home community budgets - e.g., Community First! Village (Austin) phase budgets, Habitat or land-trust tiny home projects - none could be retrieved in this session.",
+    "Per-pad utility stub cost assumes RV-park-like infrastructure; jurisdictions treating tiny homes as dwellings may require individual meters and fire hydrant spacing that raise cost.",
+    "Web search budget was exhausted mid-session; Community First! Village and Seattle/Portland village budgets were not verified."
+  ]
+}

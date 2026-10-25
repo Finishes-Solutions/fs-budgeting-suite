@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "id": "restaurant-full-service",
+  "name": "Restaurant — full service",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Freestanding casual-dining / family restaurant (≈3,400–7,500 SF, 115–250 seats) with full commercial kitchen and bar. Costs are driven by kitchen MEP (hood exhaust, make-up air, grease, gas), finishes and bar build-out; site work is a smaller share than for QSR because the building is larger. Data quality is good: five 2025–2026 franchise disclosure documents (Applebee's — actual franchisee costs 2022–2024 — Chili's, Denny's, IHOP, Hooters) publish building and site ranges, plus a dated RSMeans model.",
+
+  "sizing": {
+    "typicalSize": { "low": 3400, "mid": 5000, "high": 7500, "unit": "sf", "evidence": ["r1", "r2", "r3", "r4", "r5"], "derived": false, "method": "Applebee's 4,500–5,410 SF (r1); Chili's Prototype 18 4,800–5,200 SF (r2); Denny's Diner 2.0 3,400–5,200 SF, typical 4,200 (r3); IHOP 2,700–4,600 SF freestanding (r4); Hooters 5,000–7,500 SF (r5). Mid 5,000 SF." },
+    "primaryUnitsPerAcre": { "low": 3500, "mid": 3900, "high": 4500, "evidence": ["r1", "r3"], "derived": true, "method": "Building SF per site acre: Applebee's 4,961 SF on ~55,000 SF land (3,930 SF/ac) and 5,410 SF on ~60,000 SF (3,930 SF/ac) (r1); Denny's 4,200 SF on ~1 acre (r3, 4,200 SF/ac). Range widened ±15%." },
+    "parkingPerPrimaryUnit": { "low": 0.012, "mid": 0.018, "high": 0.021, "type": "surface", "evidence": ["r1"], "derived": true, "method": "Spaces per building SF: Applebee's ~85 spaces minimum for 4,961 SF (0.017) and ~110 for 5,410 SF (0.020) (r1). Low allows shared-parking pad sites." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 325, "mid": 475, "high": 700, "dollarYear": 2025, "region": "US", "evidence": ["r1", "r2", "r3", "r4", "r5", "r6"], "derived": false, "method": "Building + site work ÷ building SF. Applebee's Tower II actual franchisee costs: building $1.72–2.36M + site $168–230k on ~4,500–5,410 SF ≈ $380–520/SF (r1, 2022–2024 $); Chili's: construction $2.0–2.5M + site $0.3–1.0M on 4,800–5,200 SF ≈ $460–700/SF (r2); Denny's: building $0.95–1.5M + site $50–500k on ~4,200 SF ≈ $240–475/SF (r3); IHOP large format (3,500/4,600 SF) $1.87–3.07M incl. A&E/legal ≈ $410–880/SF, less ~6% professional services (r4); Hooters new construction $1.84–3.23M incl. architect & site on 5,000–7,500 SF ≈ $245–645/SF (r5); RSMeans 2019 restaurant model $205/SF building-only ex-architect (r6; ≈$265 in 2025 + site ≈ $310). Mid $475 ≈ median of brand midpoints (Applebee's ~$450, Chili's ~$580, Denny's ~$360, IHOP ~$600, Hooters ~$420). Low $325 ≈ RSMeans+site / Denny's low; high $700 ≈ Chili's/IHOP highs." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price for building (incl. kitchen hoods/exhaust, bar millwork, restrooms) and on-site work (paving/parking, utilities to building, lighting, landscaping). Excludes kitchen & bar equipment, furniture, sound/TV, signage, POS (ffe), land, soft costs, liquor license, impact/tap fees."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.72, "standard": 1.0, "premium": 1.3, "luxury": 1.8,
+    "evidence": ["r3", "r2"], "derived": true,
+    "method": "economy ≈ low/mid (Denny's-type family dining, 325/475 ≈ 0.68–0.72); premium ≈ high/mid (Chili's/IHOP upper ranges, 700/475 ≈ 1.47 → 1.3 for standard-high casual dining); luxury 1.8 = polished casual / fine dining with custom interiors (not sourced; verify)."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.09 },
+      { "division": "03", "pct": 0.05 },
+      { "division": "04", "pct": 0.04 },
+      { "division": "05", "pct": 0.04 },
+      { "division": "06", "pct": 0.05 },
+      { "division": "07", "pct": 0.05 },
+      { "division": "08", "pct": 0.04 },
+      { "division": "09", "pct": 0.10 },
+      { "division": "10", "pct": 0.01 },
+      { "division": "11", "pct": 0.01 },
+      { "division": "12", "pct": 0.01 },
+      { "division": "21", "pct": 0.02 },
+      { "division": "22", "pct": 0.08 },
+      { "division": "23", "pct": 0.10 },
+      { "division": "26", "pct": 0.10 },
+      { "division": "27", "pct": 0.02 },
+      { "division": "28", "pct": 0.01 },
+      { "division": "31", "pct": 0.04 },
+      { "division": "32", "pct": 0.09 },
+      { "division": "33", "pct": 0.05 }
+    ],
+    "evidence": ["r1", "r2", "r3"], "derived": true,
+    "method": "Site (31–33) = 0.18 from franchisor splits: Applebee's site 168–230k of 1.89–2.59M (9%, r1), Chili's 0.3–1.0M of 2.3–3.5M (13–29%, r2), Denny's 50–500k of 1.0–2.0M (5–25%, r3) → mid ~17–18%. Building 0.82 allocated with a restaurant elemental pattern (MEP 22+23+26 ≈ 28% for kitchen loads; finishes 10%; GCs 9%). No published elemental estimate found."
+  },
+
+  "lineItems": [
+    {
+      "id": "site-work",
+      "name": "On-site work (utilities to building, parking paving, curbs, lighting, landscaping)",
+      "division": "32",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 150000, "mid": 350000, "high": 1000000, "dollarYear": 2025, "region": "US", "evidence": ["r1", "r2", "r3"], "derived": false, "method": "Applebee's Tower II $168,274–$230,269 (r1); Chili's pad site $100–150k + landscaping $20–60k, 'up to $1,000,000 for a full site' (r2); Denny's $50,000–$500,000 (r3). Mid ≈ $350k for a raw-but-flat outparcel." },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out; already in hardCost."
+    },
+    {
+      "id": "outdoor-patio",
+      "name": "Outdoor dining patio (slab, rail/fence, shade, heaters, lighting)",
+      "division": "32",
+      "unit": "sf",
+      "qty": { "per": "project", "value": 800 },
+      "cost": { "low": 60, "mid": 110, "high": 200, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Derived: patio slab/pavers + fencing + shade/heaters priced as a fraction (~20–40%) of the interior dining-room $/SF mid ($475). Verify with a local quote." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Many prototypes include a patio; add when the program calls for one."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 100, "mid": 165, "high": 270, "dollarYear": 2025, "region": "US", "evidence": ["r1", "r2", "r3", "r5"], "derived": false, "method": "Kitchen/bar equipment + furniture + signage + POS per SF: Applebee's FF&E & signage $1,220,400–$1,348,864 / ~5,000 SF = $244–270 (r1); Chili's kitchen/bar equip $400–600k + furniture/sound/TV $140–175k + signage $50–160k + accessories $50–60k = $640–995k / 5,000 SF = $128–199 (r2); Denny's EF&F $350–450k + signs $80–120k + tech $25–40k = $455–610k / 4,200 SF = $108–145 (r3); Hooters new $630–865k / 6,250 SF = $100–138 (r5). Mid = median ≈ $165." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.08, "mid": 0.12, "high": 0.18, "evidence": ["r1", "r2", "r3"], "derived": false, "method": "Applebee's professional services $123,725–$143,261 + permits/fees $26,000–$28,900 on $1.89–2.59M (≈6–8%, r1); Chili's pre-construction $75,000–$350,000 on $2.3–3.5M (3–10%, r2); Denny's A&E $30–60k on $1.0–2.0M (3%, r3). Add legal, insurance during construction, testing, PM, utility deposits → mid 12%." },
+    "breakdown": { "architectureEngineering": 0.055, "permitsFees": 0.02 },
+    "notes": "Type-specific soft items: liquor license (Hooters lists $300–$10,000 in non-quota states; quota-license states can run six figures — verify locally), initial franchise fee $30,000–$60,000 (Denny's $30k; Chili's $40–60k; IHOP/Hooters $50k) for franchised builds."
+  },
+
+  "contingency": {
+    "design": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "Prototype-based restaurants carry modest design contingency; custom independents toward the high end. Judgment." },
+    "hard": { "low": 0.05, "mid": 0.08, "high": 0.12, "evidence": ["retail-pad-qsr.json#e10"], "derived": true, "method": "Restaurant industry guidance of 10–15% total project contingency (retail-pad-qsr.json#e10) split into design + hard." },
+    "soft": { "low": 0.05, "mid": 0.08, "high": 0.10, "evidence": [], "derived": true, "method": "Standard 5–10%." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 330, "max": 950, "dollarYear": 2025, "region": "US", "method": "Hard $325–700/SF × (1.08–1.18) ≈ $350–830/SF; widened to $950 for small-footprint high-cost (IHOP 2,700 SF prototype implies $667–947/SF incl. professional services, r4). Excludes land and FF&E." }
+  },
+
+  "evidence": [
+    {
+      "id": "r1", "metric": "hardCostPerSite", "value": null, "low": 1889866, "high": 2586132, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "Applebee's Franchisor LLC Franchise Disclosure Document (Applebee's - 03/26 FDD, issued March 27, 2026), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Applebees-2025.pdf", "publisher": "Applebee's Franchisor LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Building Costs … Tower II Prototype (23) $1,721,592 - $2,355,863 … Site Work Tower II Prototype (23) $168,274 - $230,269 … constructed between 2022 and 2024 … We relied on our franchisees who provided actual costs",
+      "scopeNotes": "Building + site summed by us; actual franchisee costs 2022–2024 (dataYear 2024 chosen as late-period). Free-standing 4,500–5,410 SF, 168–225 seats; 4,961 SF needs ~55,000 SF land and ~85 spaces. Professional services $123,725–$143,261; FF&E and signage $1,220,400–$1,348,864. New 'Celebration' prototype (2025 estimate): building $1,453,120–$1,961,712, site $129,918–$177,783.",
+      "confidence": "high"
+    },
+    {
+      "id": "r2", "metric": "hardCostPerSite", "value": null, "low": 2300000, "high": 3500000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Chili's Grill & Bar Franchise Disclosure Document (FDD-2025, issued September 19, 2025), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Chilis-2025.pdf", "publisher": "Brinker International Payroll Company, L.P. (Chili's) (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Construction Costs4b $2,000,000-$2,500,000 … Site Work5 $300,000-$1,000,000 … The Prototype 18 is a free-standing building, which includes a facility of approximately 4,800 to 5,200 square feet.",
+      "scopeNotes": "Summed by us. Construction includes foundation, slab, roof, plumbing, electrical, HVAC equipment and labor. Pre-construction $75,000–$350,000; kitchen/bar equipment $400–600k; furniture/sound/TVs $140–175k; exterior signage $50–160k. 166–206 seats.",
+      "confidence": "high"
+    },
+    {
+      "id": "r3", "metric": "hardCostPerSite", "value": null, "low": 1000000, "high": 2000000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "DFO, LLC (Denny's) Franchise Disclosure Document (April 30, 2026), Item 7 — Diner 2.0 facility", "url": "https://www.restfinance.com/app/pdf/fdd/Dennys-2025.pdf", "publisher": "DFO, LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Site Improvements $50,000 – $500,000 … Building and Improvements3 $950,000- $1,500,000 … Our Diner 2.0 prototype is approximately 4,200 square feet with 150 seats.",
+      "scopeNotes": "Summed by us. Requires roughly 1 acre; scalable 3,400–5,200 SF. A&E $30–60k; EF&F $350–450k; signs $80–120k; technology $25–40k.",
+      "confidence": "high"
+    },
+    {
+      "id": "r4", "metric": "hardCostPerSite", "value": null, "low": 1871500, "high": 3067612, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "IHOP Franchisor LLC Franchise Disclosure Document (IHOP-TR FDD – 03/26), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/IHOP-2025.pdf", "publisher": "IHOP Franchisor LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Large Format Prototype $1,871,500 $3,067,612 … 2700 Prototype $1,800,250 $2,558,250 … Construction costs include the costs of construction, remodeling, leasehold improvements, and professional services such as architecture, engineering, and legal.",
+      "scopeNotes": "Large Format = freestanding 3,500 or 4,600 SF; 2700 Prototype = 2,700 SF. Includes A&E and legal (soft) — we net ~6% for comparison. Ground-up new construction.",
+      "confidence": "high"
+    },
+    {
+      "id": "r5", "metric": "hardCostPerSite", "value": null, "low": 1840000, "high": 3225000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "HOA Future Franchising, LLC – Hooters FDD (April 30, 2026), Item 7", "url": "https://www.restfinance.com/app/pdf/fdd/Hooters-2025.pdf", "publisher": "HOA Future Franchising, LLC (hosted by Restaurant Finance Monitor)", "accessed": "2026-10-24" },
+      "quote": "Leasehold Improvement, Architect, and Other Site-Related Fees (Excludes land purchase costs)(Note 3) … New Construction … $1,840,000 $3,225,000 … a typical facility of about 5,000 to 7,500 square feet.",
+      "scopeNotes": "New construction column; includes architect and site improvements. FF&E/signage/technology $630,000–$865,000; liquor license $300–$10,000.",
+      "confidence": "high"
+    },
+    {
+      "id": "r6", "metric": "hardCostPerSF", "value": 205.16, "unit": "USD/sf",
+      "region": "US national average", "regionKey": "US", "dataYear": 2019,
+      "source": { "title": "Construction Cost Estimates for Restaurant in National, US (model page)", "url": "https://www.rsmeans.com/model-pages/restaurant", "publisher": "Gordian / RSMeans", "accessed": "2026-10-24" },
+      "quote": "Total Building Cost $219.52/SF (union) incl. Contractor Fees (25%) $41.03/SF and Architectural Fees (7%) $14.36/SF; 'uses 2019 RSMeans data'.",
+      "scopeNotes": "Value = $219.52 − $14.36 = $205.16/SF; 5,000 SF single-story model, building only, no sitework or kitchen equipment. Open shop total $199.37.",
+      "confidence": "medium"
+    }
+  ],
+
+  "openQuestions": [
+    "Independent (non-franchise) full-service restaurant costs in urban markets likely exceed franchise prototypes; a public city-owned restaurant lease/build budget would help.",
+    "No sourced elemental (CSI) breakdown — systemSplit is derived.",
+    "Liquor license cost varies by state quota system; not modeled numerically."
+  ]
+}

@@ -1,0 +1,267 @@
+{
+  "schemaVersion": 1,
+  "id": "site-work",
+  "name": "Site work & earthwork",
+  "researchedAt": "2026-10-24",
+  "notes": "Earthwork unit prices are anchored on DOT weighted-average bid prices (FDOT statewide Sep 2025-Aug 2026, MDT 2025, ArDOT Jun 2025-Jun 2026). DOT clearing & grubbing per acre is highway right-of-way work (narrow, linear, often urban, with disposal and removals bundled) and runs far above private pad clearing; it is kept as evidence but not used as the mid. The all-in site-development items are assembled from this file plus the paving, utilities, stormwater and landscaping blocks and are therefore derived.",
+  "items": [
+    {
+      "id": "clearing-grubbing",
+      "name": "Clearing & grubbing (wooded to lightly wooded, incl. disposal)",
+      "division": "31",
+      "unit": "acre",
+      "cost": {
+        "low": 2500, "mid": 6000, "high": 15000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e1", "e2"],
+        "derived": true,
+        "method": "DOT evidence spans $2,812/acre (MDT 2025, rural, 19.9 ac, e2) to $15,395/acre (FDOT selective C&G, trees to remain) and $48,456/acre (FDOT full C&G, 225 contracts, e1). The FDOT full item is highway R/W work that bundles removal of obstructions, small odd-shaped areas and urban disposal, so it is treated as an outlier for private sites. Mid $6,000 = geometric middle of the rural MDT price and the FDOT selective price; low $2,500 = open/brushy land (≈MDT); high $15,000 = heavily wooded with off-site disposal (≈FDOT selective)."
+      },
+      "notes": "Per acre actually cleared. Open pasture/farmland: use the low end or $0. Excludes demolition of structures and pavement (see demolition-remediation block)."
+    },
+    {
+      "id": "mass-grading",
+      "name": "Mass / rough grading (balanced cut-fill, incl. fine grading of pad)",
+      "division": "31",
+      "unit": "acre",
+      "cost": {
+        "low": 8000, "mid": 18000, "high": 40000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e3", "e4", "e5"],
+        "derived": true,
+        "method": "Unit prices: FDOT regular excavation $6.81/CY and embankment $12.63/CY (e3); MDT unclassified excavation $8.17/CY (e4); ArDOT unclassified excavation $18.51/CY (e5). Typical commercial pad moves 1,000-2,500 CY of cut per acre (avg 0.6-1.5 ft) at ~$7-$10/CY = $7k-$25k, plus fine grading of building pad and paved areas (~$0.10-$0.25/SF = $4k-$11k/acre). Mid: 1,500 CY x $8 + $6k fine grade = $18k. Low: flat site, 750 CY. High: rolling site 3,000+ CY at $10-$12/CY with moisture conditioning."
+      },
+      "notes": "Per acre disturbed. Import/export of surplus or deficit soil is extra (import-fill, export-haul); rock is extra (rock-excavation)."
+    },
+    {
+      "id": "erosion-control",
+      "name": "Erosion & sediment control (SWPPP measures for duration of construction)",
+      "division": "31",
+      "unit": "acre",
+      "cost": {
+        "low": 1500, "mid": 3000, "high": 6500,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e6", "e7", "e8"],
+        "derived": true,
+        "method": "Assembled per acre disturbed: perimeter silt fence ~400-800 LF/acre (perimeter per acre falls as site size grows) at FDOT sediment barrier $2.26/LF (e6) to ArDOT silt fence $3.36/LF (e7) = $1k-$2.7k; inlet protection 1-3 per acre at FDOT $164.67 each = $0.2k-$0.5k; temporary seeding at ArDOT $775.94/acre (e7) / MDT seeding $769.04/acre (e8); construction entrance, concrete washout and inspection/maintenance allowance $0.5k-$2k. Mid ~$3,000/acre."
+      },
+      "notes": "Excludes permanent stabilization (sod/seed in landscaping block) and permanent detention (stormwater block). NPDES permit/SWPPP preparation is a soft cost."
+    },
+    {
+      "id": "site-development-light",
+      "name": "Site development, typical commercial pad - all-in on-site (grading, utilities, paving, storm, lighting, landscaping)",
+      "division": "32",
+      "unit": "acre",
+      "cost": {
+        "low": 150000, "mid": 260000, "high": 400000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e3", "_blocks/paving.json#e1", "_blocks/paving.json#e4"],
+        "derived": true,
+        "method": "Bottom-up per gross acre of a typical retail/office/industrial pad with ~25% building footprint, ~55% paved, ~20% landscape: mass grading $18k + erosion control $3k; asphalt paving 0.55 x 4,840 SY = 2,660 SY x $45 = $120k; curb & gutter ~600 LF x $38 = $23k; on-site storm (inlets, pipe) ~$30k; on-site water/sewer/fire services ~$20k; site lighting ~$15k; landscaping & irrigation 0.20 x 43,560 SF x $5 = $44k; walks/signage/striping ~$8k -> ~$281k. Mid rounded to $260k (≈$6.00/SF of site) because many pads have less landscaping; low $150k (≈$3.45/SF: flat site, gravel/minimal landscaping, short utility runs); high $400k (≈$9.20/SF: more paving, concrete, irrigation and storm structures). Excludes detention (stormwater block), off-site work, retaining walls and rock."
+      },
+      "notes": "Use when the user does not itemize site work. Per GROSS site acre (including building footprint). Do not stack with the individual paving/utility/landscaping items for the same area."
+    },
+    {
+      "id": "site-development-heavy",
+      "name": "Site development, difficult site - all-in on-site (significant cut/fill, walls, import/export, detention, heavy paving)",
+      "division": "32",
+      "unit": "acre",
+      "cost": {
+        "low": 400000, "mid": 550000, "high": 850000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "site-development-light mid ($260k) plus typical difficult-site adders per acre: extra earthwork/import or export 3,000-5,000 CY x $25-$30/CY (import-fill / export-haul mids) = $75k-$150k; retaining walls ~150-300 SF of face x $45-$95/SF = $10k-$30k; detention/water quality ~$40k-$80k (stormwater block); heavier pavement sections / concrete truck areas +$30k-$60k; rock allowance $0-$100k -> $415k-$680k; mid $550k (≈$12.60/SF), high $850k (≈$19.50/SF) for hillside or poor-soil sites."
+      },
+      "notes": "Hillside, poor soils, or tight urban sites requiring import/export and walls. Excludes off-site improvements."
+    },
+    {
+      "id": "rock-excavation",
+      "name": "Rock excavation (rippable to blasting, incl. load & on-site placement)",
+      "division": "31",
+      "unit": "cy",
+      "cost": {
+        "low": 25, "mid": 60, "high": 120,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e3", "e5"],
+        "derived": true,
+        "method": "No current public rock-excavation unit price was captured in this session (WVDOT 2025 publishes rock borrow excavation but its PDF text was not machine-readable). Derived as a multiple of common excavation: DOT common excavation runs $6.81-$18.51/CY (e3, e5); rippable rock typically costs ~3-5x common excavation ($25-$40/CY) and drill-and-blast rock ~6-15x ($60-$120/CY) owing to drilling, blasting, vibration monitoring and secondary breaking. Mid $60 = blend assuming roughly half rippable / half blasted."
+      },
+      "notes": "Apply only to the rock volume identified by geotechnical borings. Trench rock for utilities runs at the high end."
+    },
+    {
+      "id": "import-fill",
+      "name": "Imported fill / borrow (furnished, hauled, placed and compacted)",
+      "division": "31",
+      "unit": "cy",
+      "cost": {
+        "low": 15, "mid": 30, "high": 50,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e3", "e4"],
+        "derived": false,
+        "method": "FDOT borrow excavation, truck measure $38.31/CY (52 contracts, e3); MDT unclassified borrow $14.30/CY and special borrow (neat line) $29.21/CY (e4). Mid $30 = midpoint of MDT special borrow and FDOT borrow; low = MDT common borrow rounded; high = select/structural fill hauled >15 miles in metro markets."
+      },
+      "notes": "Measured in compacted place; structural select fill at the high end."
+    },
+    {
+      "id": "export-haul",
+      "name": "Export & haul-off of surplus soil (load, haul, dump fees; clean soil)",
+      "division": "31",
+      "unit": "cy",
+      "cost": {
+        "low": 12, "mid": 25, "high": 45,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e3"],
+        "derived": true,
+        "method": "No direct public unit price captured. Derived: excavate/load ~$5-$8/CY (FDOT regular excavation $6.81/CY, e3), truck haul 10-25 miles round trip ~$6-$20/CY (18-20 CY trucks at $110-$150/hr, 2-4 loads/hr), and receiving-site tipping fee $0-$15/CY for clean fill -> $12-$45; mid $25. Contaminated soil is in the demolition-remediation block."
+      },
+      "notes": "Clean, non-hazardous soil only. Dense urban sites with long hauls run at the high end."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "clearingGrubbingPerAcre",
+      "value": 48455.73, "low": 15395.49,
+      "unit": "USD/acre",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0110 1 1: 225 contracts, $48,455.73, 2,372.110 AC - CLEARING & GRUBBING; Item 0110 2 2: 26 contracts, $15,395.49, 46.820 AC - SELECTIVE CLEARING AND GRUBBING, AREAS WITH TREES TO REMAIN",
+      "scopeNotes": "Highway right-of-way clearing; small, linear and often urban areas with broad removal scope. Not representative of greenfield private pad clearing.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "clearingGrubbingPerAcre",
+      "value": 2811.56,
+      "unit": "USD/acre",
+      "region": "Montana statewide",
+      "regionKey": "MT",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Prices Catalog (2025)",
+        "url": "https://mdt.mt.gov/other/webdata/external/contractplans/contract/Archives/Average_prices/2025.pdf",
+        "publisher": "Montana Department of Transportation, Construction Contracting Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "201130005 20 CLEARING AND GRUBBING ACRE 19.9 $2,811.56",
+      "scopeNotes": "Rural highway work, small total quantity (19.9 acres).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "earthworkPerCY",
+      "value": 6.81, "low": 6.81, "high": 38.31,
+      "unit": "USD/cy",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0120 1: 137 contracts, $6.81, 4,589,089.900 CY - REGULAR EXCAVATION; Item 0120 6: 127 contracts, $12.63, 7,762,833.500 CY - EMBANKMENT; Item 0120 2 2: 52 contracts, $38.31 - BORROW EXCAVATION, TRUCK MEASURE",
+      "scopeNotes": "value = regular excavation; high = borrow excavation (truck measure, furnished). Embankment $12.63/CY.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "earthworkPerCY",
+      "value": 8.17, "low": 8.17, "high": 29.21,
+      "unit": "USD/cy",
+      "region": "Montana statewide",
+      "regionKey": "MT",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Prices Catalog (2025)",
+        "url": "https://mdt.mt.gov/other/webdata/external/contractplans/contract/Archives/Average_prices/2025.pdf",
+        "publisher": "Montana Department of Transportation, Construction Contracting Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "203020100 20 EXCAVATION-UNCLASSIFIED CUYD 1,346,735 $8.17 ... 203020200 20 EXCAVATION-UNCLASS BORROW CUYD 20,298 $14.30 ... 203020310 20 SPECIAL BORROW-NEAT LINE CUYD 328,482 $29.21",
+      "scopeNotes": "value = unclassified excavation; high = special borrow (neat line). Embankment in place $11.50/CY also listed.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "earthworkPerCY",
+      "value": 18.51, "low": 9.98, "high": 200.00,
+      "unit": "USD/cy",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "210 UNCLASSIFIED EXCAVATION CUYD 328,477.00 200.00 9.98 18.51",
+      "scopeNotes": "Columns: quantity, high, low, weighted average. Unclassified = may include some rock.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "erosionControlUnitPrices",
+      "value": 2.26, "high": 164.67,
+      "unit": "USD/lf",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0104 10 3: 196 contracts, $2.26, 1,624,986.000 LF - SEDIMENT BARRIER; Item 0104 18: 201 contracts, $164.67, 10,751.000 EA - INLET PROTECTION SYSTEM",
+      "scopeNotes": "value = sediment barrier per LF; high = inlet protection per EACH (different unit).",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "erosionControlUnitPrices",
+      "value": 3.36, "high": 775.94,
+      "unit": "USD/lf",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "621 SILT FENCE LF 141,929.00 20.00 0.10 3.36 ... 621 TEMPORARY SEEDING ACRE 259.99 15,850.00 10.00 775.94",
+      "scopeNotes": "value = silt fence per LF; high = temporary seeding per ACRE (different unit). Permanent seeding $1,365.47/acre.",
+      "confidence": "high"
+    },
+    {
+      "id": "e8",
+      "metric": "seedingPerAcre",
+      "value": 769.04,
+      "unit": "USD/acre",
+      "region": "Montana statewide",
+      "regionKey": "MT",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Prices Catalog (2025)",
+        "url": "https://mdt.mt.gov/other/webdata/external/contractplans/contract/Archives/Average_prices/2025.pdf",
+        "publisher": "Montana Department of Transportation, Construction Contracting Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "610100101 20 SEEDING AREA NO 1 ACRE 293.2 $769.04 ... 208010150 20 TEMPORARY EROSION CONTROL-LS LS 23 $57,262.55",
+      "scopeNotes": "Temporary erosion control lump sum averages $57,263 per highway contract (project size not stated).",
+      "confidence": "medium"
+    }
+  ]
+}

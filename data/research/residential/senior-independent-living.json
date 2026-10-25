@@ -1,0 +1,471 @@
+{
+  "schemaVersion": 1,
+  "id": "senior-independent-living",
+  "name": "Senior / independent living",
+  "category": "residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "unit",
+  "summary": "Age-restricted, service-enriched rental (or entry-fee) apartments with central dining, commercial kitchen, wellness, activity and transportation spaces; usually 3-5 story wood or podium buildings, sometimes with cottages. Per-SF cost is close to podium multifamily but the large common-area share (~30-40%) raises gross SF per unit. Per-SF data come from Weitz's national senior-living cost survey (2025-26); per-unit figures are derived via gross SF per unit.",
+  "sizing": {
+    "typicalSize": {
+      "low": 90,
+      "mid": 150,
+      "high": 250,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical stand-alone IL community 100-200 units; campus IL buildings larger (judgment)."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 1100,
+      "mid": 1300,
+      "high": 1500,
+      "evidence": [
+        "e5"
+      ],
+      "derived": true,
+      "method": "Gross SF per unit: IL apartments average ~850-1,050 net SF (vs Census median new rental 1,000 SF, e5) and common areas (dining, kitchen, wellness, lounges, corridors) take 30-40% of gross => ~1,200-1,450."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 20,
+      "mid": 35,
+      "high": 60,
+      "evidence": [],
+      "derived": true,
+      "method": "Suburban 3-4 story IL ~25-40 units/acre; urban podium IL higher (judgment from multifamily densities)."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.6,
+      "mid": 0.9,
+      "high": 1.2,
+      "evidence": [],
+      "derived": true,
+      "method": "IL residents own fewer cars than general-market renters; zoning commonly 0.75-1.0 per unit plus staff (judgment).",
+      "type": "surface"
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 250000,
+      "mid": 350000,
+      "high": 530000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2"
+      ],
+      "derived": true,
+      "method": "Derived: perSF x sfPerPrimaryUnit: mid $270 x 1,300 = ~$350k; low $225 x 1,100 = ~$250k; high $360 x 1,450 = ~$520-530k."
+    },
+    "perSF": {
+      "low": 225,
+      "mid": 270,
+      "high": 360,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2"
+      ],
+      "derived": false,
+      "method": "Weitz 2026 mid-level IL $240-292/SF (midpoint $266) and high-level $283-362 (e1), essentially unchanged from the April 2025 brief ($239-290 / $282-361, e2). Mid $270 = mid-level midpoint + a small on-site allowance; low $225 = below mid-level for value suburban product; high $360 = top of the high-level range."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. general conditions, OH&P, commercial kitchen equipment, on-site work; excludes land, soft costs, FF&E, off-sites, impact fees, financing, pre-opening/marketing. Weitz does not state whether its ranges include sitework - verify."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.85,
+    "standard": 1.0,
+    "premium": 1.2,
+    "luxury": 1.4,
+    "evidence": [
+      "e1"
+    ],
+    "derived": true,
+    "method": "Weitz high-level vs mid-level IL midpoints: $322.5 / $266 = 1.21 (e1) sets premium; luxury (entry-fee CCRC-grade) and economy (age-restricted, light services) by judgment."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.115
+      },
+      {
+        "division": "03",
+        "pct": 0.12
+      },
+      {
+        "division": "04",
+        "pct": 0.015
+      },
+      {
+        "division": "05",
+        "pct": 0.027
+      },
+      {
+        "division": "06",
+        "pct": 0.135
+      },
+      {
+        "division": "07",
+        "pct": 0.055
+      },
+      {
+        "division": "08",
+        "pct": 0.035
+      },
+      {
+        "division": "09",
+        "pct": 0.085
+      },
+      {
+        "division": "10",
+        "pct": 0.007
+      },
+      {
+        "division": "11",
+        "pct": 0.047
+      },
+      {
+        "division": "12",
+        "pct": 0.03
+      },
+      {
+        "division": "14",
+        "pct": 0.025
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.07
+      },
+      {
+        "division": "23",
+        "pct": 0.06
+      },
+      {
+        "division": "26",
+        "pct": 0.085
+      },
+      {
+        "division": "27",
+        "pct": 0.012
+      },
+      {
+        "division": "28",
+        "pct": 0.012
+      },
+      {
+        "division": "31",
+        "pct": 0.02
+      },
+      {
+        "division": "32",
+        "pct": 0.015
+      },
+      {
+        "division": "33",
+        "pct": 0.01
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived from the podium split in this category: +2.5 pts equipment (11, commercial kitchen/servery, laundry), +1.0 pt HVAC (23, dining/kitchen exhaust, more conditioned common area), +0.5 pt elevators (14), +0.4 pt each low-voltage (27, emergency call) and fire alarm (28); offset by -2.0 pts concrete (03, less podium parking), -0.5 framing, -1.0 site; 01 absorbs rounding."
+  },
+  "lineItems": [
+    {
+      "id": "commercial-kitchen",
+      "name": "Commercial kitchen, servery and dining equipment",
+      "division": "11",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 500000,
+        "mid": 900000,
+        "high": 1500000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: full-service restaurant-style kitchen and bistro equipment, hoods, walk-ins (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "emergency-call",
+      "name": "Emergency call / resident pendant system",
+      "division": "27",
+      "unit": "unit",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 1000,
+        "mid": 1800,
+        "high": 3000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: wireless pendant/pull-cord call system with locating (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "cottages",
+      "name": "IL cottages / villas (per SF of cottage)",
+      "division": "06",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 0
+      },
+      "cost": {
+        "low": 187,
+        "mid": 205,
+        "high": 322,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e3"
+        ],
+        "derived": false,
+        "method": "Weitz 2026 cottage ranges: mid-level $187-221/SF (midpoint ~$204), high-level $263-322 (e3)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Optional - set qty to the cottage SF planned."
+    },
+    {
+      "id": "under-building-parking",
+      "name": "Under-building parking (per SF of parking area)",
+      "division": "03",
+      "block": "parking",
+      "unit": "sf",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 0
+      },
+      "cost": {
+        "low": 153,
+        "mid": 171,
+        "high": 238,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": false,
+        "method": "Weitz 2026 under-building parking: mid-level $153-190/SF (midpoint ~$171), high-level $190-238 (e4)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Optional - roughly 350 SF of parking area per space."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 8000,
+      "mid": 12000,
+      "high": 18000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: dining room, bistro, lounges, theater, fitness/wellness, library and outdoor furniture plus smallwares ~ $1.2-2.7M for 150 units (2026 judgment); IL units are unfurnished."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.14,
+      "mid": 0.21,
+      "high": 0.31,
+      "evidence": [
+        "e6"
+      ],
+      "derived": true,
+      "method": "Derived: RAND multifamily soft/hard 0.19-0.33 incl. financing (e6) plus senior-specific design/consulting and pre-opening; mid 0.25 excluding construction interest and operating pre-opening/marketing (model separately). | Second pass (2026-10-24, main session): Reduced 4 points: RAND-based, includes developer costs. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.055
+    },
+    "notes": "Add pre-opening, marketing/lease-up and operating deficit reserves separately - lease-up of IL is slow (often 18-30 months)."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    },
+    "hard": {
+      "low": 0.04,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 280000,
+      "max": 780000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Hard low $250k x 1.12 ~= $280k; hard high $530k x 1.45 ~= $770k."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 240,
+      "high": 362,
+      "unit": "USD/sf",
+      "region": "US (Weitz national survey)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Assisted Living Construction Costs Rise in 2026, Independent Living Costs Remain Flat (Feb 3, 2026; Weitz 'Senior Living Construction Costs' report)",
+        "url": "https://seniorhousingnews.com/2026/02/03/assisted-living-construction-costs-rise-in-2026-independent-living-costs-remain-flat/",
+        "publisher": "Senior Housing News",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Costs of mid-level independent living projects registered between $240 and $292 per square foot ... high-level projects are said to cost between $283 to $362 per square foot",
+      "scopeNotes": "Weitz 'Senior Living Construction Costs' report (first edition, early 2026) as reported by SHN; scope (sitework, FF&E) not stated.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 239,
+      "high": 361,
+      "unit": "USD/sf",
+      "region": "US (Weitz brief)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Senior Living Construction Costs Could Rise 4% to 6% in Next 12 Months (Apr 21, 2025; Weitz construction costs brief)",
+        "url": "https://seniorhousingnews.com/?p=50686",
+        "publisher": "Senior Housing News",
+        "accessed": "2026-10-24"
+      },
+      "quote": "construction costs for independent living range from $239 to $290 per square foot for mid-level projects ... while high-level projects range from $282 to $361 per square foot",
+      "scopeNotes": "Weitz construction cost brief, April 2025, as reported by SHN.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 187,
+      "high": 322,
+      "unit": "USD/sf",
+      "region": "US (Weitz national survey)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Assisted Living Construction Costs Rise in 2026, Independent Living Costs Remain Flat (Feb 3, 2026; Weitz 'Senior Living Construction Costs' report)",
+        "url": "https://seniorhousingnews.com/2026/02/03/assisted-living-construction-costs-rise-in-2026-independent-living-costs-remain-flat/",
+        "publisher": "Senior Housing News",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Pricing for mid-level cottage projects ranged between $187 and $221 per square foot ... high-level projects ranged between $263 to $322 per square foot",
+      "scopeNotes": "Detached/duplex IL cottages (Weitz 2026).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "parkingPerSF",
+      "value": null,
+      "low": 153,
+      "high": 238,
+      "unit": "USD/sf",
+      "region": "US (Weitz national survey)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Assisted Living Construction Costs Rise in 2026, Independent Living Costs Remain Flat (Feb 3, 2026; Weitz 'Senior Living Construction Costs' report)",
+        "url": "https://seniorhousingnews.com/2026/02/03/assisted-living-construction-costs-rise-in-2026-independent-living-costs-remain-flat/",
+        "publisher": "Senior Housing News",
+        "accessed": "2026-10-24"
+      },
+      "quote": "$153 to $190 per square foot ... $190 to $238 per square foot",
+      "scopeNotes": "Weitz 2026 under-building parking, mid-level and high-level respectively, per SF of parking area.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "unitSizeNetSF",
+      "value": 1000,
+      "unit": "sf",
+      "region": "US",
+      "regionKey": "US",
+      "source": {
+        "title": "Characteristics of New Housing - Highlights",
+        "url": "https://www.census.gov/construction/chars/highlights.html",
+        "publisher": "U.S. Census Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The median size of multifamily units completed that were built for rent was 1,000 square feet",
+      "scopeNotes": "All new multifamily rental units completed in 2025 (all building types); net unit area.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "softCostPctOfHard",
+      "value": null,
+      "low": 0.19,
+      "high": 0.33,
+      "unit": "ratio",
+      "region": "Texas / Colorado / California",
+      "regionKey": "US",
+      "source": {
+        "title": "The High Cost of Producing Multifamily Housing in California (RAND RR-A3743-1, Ward & Schlake, 2025) - copy hosted by San Diego Housing Commission",
+        "url": "https://sdhc.org/wp-content/uploads/2025/04/Att-2_RAND_RRA3743-1.pdf",
+        "publisher": "RAND Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 3.1 Panel C. Soft Costs: Texas Market rate $22; Colorado Market rate $44; California Market rate $84 (vs Panel A hard costs $115 / $237 / $253 per NRSF)",
+      "scopeNotes": "Soft/hard ratios derived: TX 0.19, CO 0.19, CA 0.33. RAND soft costs include A&E, legal, fees and financing costs; market-rate sample mixes garden, podium, wrap, high-rise.",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "Weitz per-SF scope (sitework, FF&E) not stated in the public summaries; the full report would confirm.",
+    "No public per-unit IL project budgets (e.g., state CON filings, HUD 231 or tax-exempt bond offering documents) were captured - the per-unit mid is derived via SF per unit.",
+    "Common-area ratio varies 25-45% by service level; it moves per-unit cost more than per-SF cost."
+  ]
+}

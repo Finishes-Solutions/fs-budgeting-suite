@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "id": "energy",
+  "name": "Energy (solar, storage, EV charging, interconnection)",
+  "researchedAt": "2026-10-24",
+  "items": [
+    {
+      "id": "rooftop-solar-commercial",
+      "name": "Rooftop solar PV, commercial (100 kW–1 MW, host-owned, installed)",
+      "division": "48",
+      "unit": "kw",
+      "cost": {
+        "low": 1500, "mid": 2300, "high": 3300,
+        "dollarYear": 2024, "region": "US",
+        "evidence": ["e1", "e2"],
+        "derived": false,
+        "method": "Lazard 2024 Community & C&I PV capital cost $1,300–2,900/kW (e2); LBNL Tracking the Sun 2024 state medians for 2023 installs: large (>=100 kW) non-residential $1.8–2.6/W, small non-residential $2.6–4.1/W (e1). Mid $2,300/kW = midpoint of Lazard range (~$2,100) nudged toward LBNL large non-residential state-median midpoint (~$2,200) plus a small rooftop premium because ~46% of LBNL large non-res systems are ground-mounted. Low $1,500 = just above Lazard low (large flat roofs, >500 kW); high $3,300 = within LBNL small non-res band (<100 kW or complex roofs). LBNL dollars are 2023 real; gap to 2024 is 1 year, so the range is stated in 2024 dollars per rule 5."
+      },
+      "notes": "Unit = kWdc of PV nameplate. Turnkey EPC price before incentives (no ITC deducted). Excludes roof replacement/structural reinforcement and utility interconnection upgrades (use utility-interconnection for large systems). Tax-exempt owners (schools, government) pay notably more in LBNL data."
+    },
+    {
+      "id": "carport-solar",
+      "name": "Solar carport / parking canopy PV (steel canopy + PV, installed)",
+      "division": "48",
+      "unit": "kw",
+      "cost": {
+        "low": 2600, "mid": 3200, "high": 4300,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e3", "e1", "e2"],
+        "derived": false,
+        "method": "GreenLancer 2026 planning range $2.75–3.50/W for larger commercial carports, $3.75–4.50+/W for smaller jobs (e3, low confidence). Mid $3,200/kW = upper-middle of the large-project band, cross-checked as rooftop mid ($2,300, e1/e2) + ~$900/kW canopy structure and foundations premium. Low $2,600 = large multi-row canopies; high $4,300 = small/complex jobs per e3."
+      },
+      "notes": "Unit = kWdc. Includes canopy steel, foundations (drilled piers), PV modules, inverters, under-canopy lighting typically excluded. Excludes parking-lot repaving, utility upgrades, and EV chargers. Replaces surface-parking shade structure cost where both would be built."
+    },
+    {
+      "id": "ev-l2-port",
+      "name": "EV charger, Level 2 networked (per port, all-in incl. make-ready)",
+      "division": "26",
+      "unit": "port",
+      "cost": {
+        "low": 6000, "mid": 9000, "high": 16000,
+        "dollarYear": 2021, "region": "US",
+        "evidence": ["e4", "e5"],
+        "derived": false,
+        "method": "Atlas EV Hub sample of utility program progress reports (2021): average ~$8,000 per L2 port including utility- and customer-side make-ready and hardware; California non-residential average $15,453/port; ICCT estimate ~$6,000/port (e4). PSEG Long Island 2022 make-ready alone $8,650/port (e5), which supports a mid above $8,000 once hardware is added. Mid $9,000 = Atlas average rounded up toward e5; low = ICCT; high = California average rounded."
+      },
+      "notes": "All-in per port: networked dual-port pedestal share, conduit/wire, panel capacity, trenching, utility-side make-ready. Costs fall per port as more ports are clustered at one site. Do not also add ev-make-ready for the same port."
+    },
+    {
+      "id": "ev-dcfc-port",
+      "name": "EV DC fast charger, 150 kW class (per port, all-in)",
+      "division": "26",
+      "unit": "port",
+      "cost": {
+        "low": 100000, "mid": 150000, "high": 250000,
+        "dollarYear": 2024, "region": "US",
+        "evidence": ["e4", "e5", "e6"],
+        "derived": false,
+        "method": "Evidence: utility programs averaged ~$115,000 per DCFC charger in 2021 (e4); PSEG Long Island make-ready alone $77,555 (community) to $116,330 (corridor) per port in 2022, before charger hardware (e5); Colorado NEVI total project cost $183,116–192,614 per port as of Oct 2024 (e6). Evidence spans 2021–2024 (>1 year), so the range is anchored on the 2024 NEVI data: mid $150,000 = between the 2021 utility average and the 2024 NEVI corridor figure (NEVI sites carry 4-port minimums, high-power 150 kW+ and corridor make-ready, so a non-NEVI commercial site sits below them). High $250,000 = corridor sites with transformer/service upgrades; low $100,000 = sites with existing capacity."
+      },
+      "notes": "Per port (one vehicle at a time). Includes charger hardware, installation, switchgear/transformer share and utility make-ready. Excludes land, canopy, amenities and ongoing network fees. Utility transformer upgrades are the main source of spread."
+    },
+    {
+      "id": "ev-make-ready",
+      "name": "EV make-ready / EV-capable space (conduit, wire, panel capacity; no charger)",
+      "division": "26",
+      "unit": "port",
+      "cost": {
+        "low": 2500, "mid": 4000, "high": 8650,
+        "dollarYear": 2022, "region": "US",
+        "evidence": ["e5"],
+        "derived": true,
+        "method": "PSEG Long Island 2022 implementation plan Level 2 make-ready per port: utility-side $5,000 + customer-side $3,650 = $8,650 (e5). A building-code 'EV-ready' space in new construction normally needs only the customer-side portion with a shared service, so mid $4,000 ≈ e5 customer-side $3,650 rounded up for panel/raceway capacity; low $2,500 = conduit-only EV-capable space in new construction (judgment, verify); high = full e5 utility + customer make-ready. Region left US although e5 is NY (higher-cost market) — treat high as NY-type."
+      },
+      "notes": "Use for code-required EV-ready/EV-capable parking spaces where the developer does not install chargers. Do not stack with ev-l2-port on the same space."
+    },
+    {
+      "id": "battery-storage-commercial",
+      "name": "Battery energy storage, commercial & industrial (behind-the-meter, ~1 MW / 2 MWh)",
+      "division": "48",
+      "unit": "kwh",
+      "cost": {
+        "low": 400, "mid": 500, "high": 630,
+        "dollarYear": 2024, "region": "US",
+        "evidence": ["e7"],
+        "derived": false,
+        "method": "Lazard LCOS v9.0 (June 2024) C&I Standalone 1 MW / 2 MWh key assumptions (e7): initial capital cost DC $318–430/kWh + AC $45–80/kW (= $22.5–40/kWh at 2-hour duration) + EPC $59–159/kWh. Sum low = 318+22.5+59 ≈ $400/kWh; high = 430+40+159 ≈ $629/kWh; mid $500 = midpoint rounded."
+      },
+      "notes": "Unit = usable kWh. Installed LFP/Li-ion system incl. PCS and EPC; excludes utility interconnection upgrades and augmentation. Smaller (<100 kWh) systems run materially higher per kWh; 4-hour systems lower."
+    },
+    {
+      "id": "utility-interconnection",
+      "name": "Utility interconnection and network upgrades (generation / storage)",
+      "division": "33",
+      "unit": "mw",
+      "cost": {
+        "low": 30000, "mid": 100000, "high": 250000,
+        "dollarYear": 2022, "region": "US",
+        "evidence": ["e8", "e9"],
+        "derived": false,
+        "method": "Berkeley Lab interconnection cost studies as reported: MISO complete projects averaged $102/kW (2019–2021) and recent storage $248/kW, solar $209/kW (e8); PJM complete projects median $30/kW, mean $84/kW (e9). $/kW × 1,000 = $/MW. Low = PJM median complete ($30k/MW); mid = MISO complete average (~$100k/MW); high = MISO storage average (~$250k/MW). Active/withdrawn queue projects ran far higher (PJM active mean $240/kW), so treat high as a non-extreme case."
+      },
+      "notes": "Transmission-queue interconnection (POI substation + network upgrades) for utility-scale solar, storage or wind, per MW of injection capacity. Behind-the-meter commercial systems usually face distribution-level studies and smaller fixed costs — do not apply per MW to small rooftop systems. Highly site- and queue-specific; verify with a utility study."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "solarInstalledPricePerW",
+      "value": null, "low": 1800, "high": 2600,
+      "unit": "USD/kw",
+      "region": "United States (state-level medians)",
+      "regionKey": "US",
+      "dataYear": 2023,
+      "source": {
+        "title": "Tracking the Sun: Pricing and Design Trends for Distributed Photovoltaic Systems in the United States, 2024 Edition — Technical Brief",
+        "url": "https://eta-publications.lbl.gov/sites/default/files/2024-08/tracking_the_sun_2024_executive_summary.pdf",
+        "publisher": "Lawrence Berkeley National Laboratory",
+        "accessed": "2026-10-24"
+      },
+      "quote": "state-level median prices ranging from $3.2-5.2/W for residential, $2.6-4.1/W for small non-residential, and $1.8-2.6/W for large non-residential systems.",
+      "scopeNotes": "Host-owned systems installed in 2023, pre-incentive installed price, inflation-adjusted. Large non-res = >=100 kW, includes ground-mount (46%). Small non-res band $2,600–4,100/kW recorded in notes.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "solarCapitalCostPerKw",
+      "value": null, "low": 1300, "high": 2900,
+      "unit": "USD/kw",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "Lazard's Levelized Cost of Energy+ (June 2024) — LCOE v17.0 Key Assumptions: Solar PV",
+        "url": "https://www.lazard.com/media/xemfey0k/lazards-lcoeplus-june-2024-_vf.pdf",
+        "publisher": "Lazard",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Units Rooftop Residential Community and C&I Utility ... Total Capital Cost $/kW $2,300 – $4,150 $1,300 – $2,900 $850 – $1,400",
+      "scopeNotes": "Community & C&I solar (5 MW reference) capital cost; includes ground-mount community solar, so low end is below typical rooftop.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "solarCarportCostPerW",
+      "value": null, "low": 2750, "high": 3500,
+      "unit": "USD/kw",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "The Essential Solar Carport Guide",
+        "url": "https://www.greenlancer.com/post/solar-carports",
+        "publisher": "GreenLancer",
+        "accessed": "2026-10-24"
+      },
+      "quote": "larger commercial projects tend to benefit from economies of scale, which can bring the planning estimate down to roughly $2.75 to $3.50 per watt",
+      "scopeNotes": "Vendor planning estimate (page modified 2026-09); also states $3.75 to $4.50 or more per watt for residential and smaller commercial jobs.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "evChargerCostPerPort",
+      "value": 8000, "low": 1423, "high": 17892,
+      "unit": "USD/port",
+      "region": "United States (sample of utility programs)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Utilities have Installed 37% of Planned EV Chargers: A Sample of Utility Progress Reports",
+        "url": "https://atlasevhub.com/?p=26017",
+        "publisher": "Atlas EV Hub (Atlas Public Policy)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "utilities spent on average about $8,000 per port ... an average reported cost of $15,453 per port for non-residential chargers [California]",
+      "scopeNotes": "Per-port costs include utility-side make-ready, customer-side make-ready and EVSE hardware. Same article: DCFC average $115,000 per charger (ranging from just under $46,000 in Duke Energy Florida); ICCT L2 estimate ~$6,000/port.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "evMakeReadyCostPerPort",
+      "value": 8650, "low": 8650, "high": 116330,
+      "unit": "USD/port",
+      "region": "Long Island, NY",
+      "regionKey": "NY",
+      "dataYear": 2022,
+      "source": {
+        "title": "EV Make-Ready Program Implementation Plan, revision for Phase 2 (February 2022)",
+        "url": "https://www.psegliny.com/saveenergyandmoney/greenenergy/ev/-/media/33E840B825A94B45838B8E60C940592F.ashx",
+        "publisher": "PSEG Long Island",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 2. EV Make-Ready Infrastructure Costs (per port): DCFC Corridor $6,000 $110,330 $116,330; DCFC Community $10,000 $67,555 $77,555; Level 2 $5,000 $3,650 $8,650",
+      "scopeNotes": "Columns are utility-side make-ready, customer-side make-ready, total. Excludes charger hardware. value = Level 2 total; range spans L2 to DCFC corridor.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "evDcfcProjectCostPerPort",
+      "value": null, "low": 183116, "high": 192614,
+      "unit": "USD/port",
+      "region": "Colorado",
+      "regionKey": "CO",
+      "dataYear": 2024,
+      "source": {
+        "title": "Colorado granted another $17.3 million by the federal government to add more EV fast-chargers",
+        "url": "https://www.denvergazette.com/2024/12/31/colorado-granted-another-17-3-million-by-the-federal-government-to-add-more-ev-fast-chargers-c1197d88-c70c-11ef-bf3d-07ca681e048a/",
+        "publisher": "Denver Gazette (citing Paren data)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The per-port cost ranges from $183,116 to $192,614.",
+      "scopeNotes": "NEVI-funded DCFC projects; Paren notes these are total project costs, not grant amounts. Data as of Oct 29, 2024.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "batteryStorageCapitalCost",
+      "value": null, "low": 318, "high": 430,
+      "unit": "USD/kwh",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "Lazard's Levelized Cost of Energy+ (June 2024) — LCOS v9.0 Key Assumptions",
+        "url": "https://www.lazard.com/media/xemfey0k/lazards-lcoeplus-june-2024-_vf.pdf",
+        "publisher": "Lazard (with Roland Berger)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "C&I Standalone (1 MW / 2 MWh): Initial Capital Cost—DC $/kWh $318 – $430; Initial Capital Cost—AC $/kW $45 – $80; EPC Costs $/kWh $59 – $159",
+      "scopeNotes": "low/high recorded = DC equipment only; AC ($45–80/kW) and EPC ($59–159/kWh) are added in the item method to get installed $/kWh.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "interconnectionCostPerKw",
+      "value": 102, "low": 102, "high": 248,
+      "unit": "USD/kw",
+      "region": "MISO footprint (Midwest)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "MISO interconnection costs are rising fast, Berkeley Lab says",
+        "url": "https://www.renewableenergyworld.com/power-grid/transmission/miso-interconnection-costs-are-rising-fast-berkeley-lab-says/",
+        "publisher": "Renewable Energy World (reporting Berkeley Lab)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Costs averaged $102/kW for complete projects from 2019 through 2021. ... wind ($399/kW), storage ($248/kW), and solar ($209/kW)",
+      "scopeNotes": "Generator interconnection cost from MISO study data, all technologies; technology averages are for recent projects regardless of status. Multi-state RTO recorded as US.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9",
+      "metric": "interconnectionCostPerKw",
+      "value": 30, "low": 30, "high": 84,
+      "unit": "USD/kw",
+      "region": "PJM footprint (Mid-Atlantic)",
+      "regionKey": "US",
+      "dataYear": 2022,
+      "source": {
+        "title": "Upswing in PJM interconnection costs amid energy transition, report says",
+        "url": "https://pv-magazine-usa.com/?p=10565",
+        "publisher": "pv magazine USA (reporting Berkeley Lab)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "average costs have doubled relative to pre-pandemic costs, from $42 per kW to $84 per kW ... with a median of $18 per kW to $30 per kW",
+      "scopeNotes": "Completed PJM projects 2020–2022 vs pre-2020; active projects reached $240/kW. Multi-state RTO recorded as US.",
+      "confidence": "medium"
+    }
+  ]
+}

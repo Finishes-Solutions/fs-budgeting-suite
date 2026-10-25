@@ -286,6 +286,78 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.waitForTimeout(200);
  ok('stale result disables the Export button', await p.evaluate(()=>document.getElementById('invExportBtn').disabled));
 
+ // ---- The BUDGET workbook (exportExcel), re-read with the same ExcelJS build.
+ // A budget priced from the template's expense schedule (two % of income rows)
+ // with the impact-fee line derived from the City of Waller schedule.
+ // BUDGET-SYSTEM.md §17 D2 (expense rows printed $0) and D3 (derived as edited).
+ await p.evaluate(async()=>{
+   await fetch('/api/budget/OP-1401?scope=project',{method:'PUT',
+     headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({create:true,name:'Workbook Budget',address:'1 Test Way'})});
+ });
+ await p.goto('http://127.0.0.1:8100/index.html',{waitUntil:'networkidle'});
+ await p.waitForTimeout(400);
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'));
+ await p.waitForTimeout(700);
+ await p.selectOption('#nbProject','OP-1401');
+ await p.fill('#nbId','TST-1401');
+ await p.fill('#nbName','Workbook Budget');
+ await p.click('#nbCreate'); await p.waitForTimeout(700);
+ await p.click('#page-input button:has-text("Continue to Impact Fees")'); await p.waitForTimeout(400);
+ await p.selectOption('#feeSchedule','tx-waller'); await p.waitForTimeout(600);
+ // Meters are picked from a list and each selection has its own id (the
+ // feature branch's meter picker), so add one, then set its quantity.
+ await p.selectOption('#feeAddMeter','m-4-250');
+ await p.click('#feeAddBtn'); await p.waitForTimeout(500);
+ const mid14=await p.evaluate(()=>doc.impactFees.meters[doc.impactFees.meters.length-1].id);
+ await p.fill(`#feeMeterTbl input[data-k="fee.${mid14}.qty"]`,'2'); await p.waitForTimeout(500);
+ const bx=await p.evaluate(async()=>{
+   let captured=null;
+   const orig=HTMLAnchorElement.prototype.click;
+   HTMLAnchorElement.prototype.click=function(){captured=this.href;};
+   try{ await exportExcel(); }
+   finally{ HTMLAnchorElement.prototype.click=orig; }
+   if(!captured)return {error:'no download produced'};
+   const wb2=new ExcelJS.Workbook();
+   await wb2.xlsx.load(await (await fetch(captured)).arrayBuffer());
+   const rows=name=>{const out=[];wb2.getWorksheet(name).eachRow({includeEmpty:false},r=>{
+     out.push({v:r.values.slice(1),fmt:r.getCell(3).numFmt});});return out;};
+   const g=grossIncome();
+   return {ie:rows('Income & Expenses'),sov:rows('Budget-SOV').map(r=>r.v),
+     want:doc.expenses.map(e=>({label:e.label,pct:e.per==='pctIncome',rate:e.rate,mo:expenseMonthly(e,g.incomeMo)})),
+     expMo:g.expMo,feeLine:doc.lines.find(l=>l.derived==='impactFees')};
+ });
+ ok('budget workbook produced', !bx.error, bx.error||'');
+ const ieRow=l=>(bx.ie||[]).find(r=>r.v[0]===l);
+ const pctW=(bx.want||[]).filter(w=>w.pct);
+ ok('budget carries % of income expense rows', pctW.length>0&&pctW.every(w=>w.mo>0), JSON.stringify(pctW));
+ ok('Excel: a % of income row exports its real monthly and annual amount, as numbers',
+    pctW.every(w=>{const r=ieRow(w.label);return r&&typeof r.v[4]==='number'&&typeof r.v[5]==='number'
+      &&Math.abs(r.v[4]-w.mo)<1e-6&&Math.abs(r.v[5]-12*w.mo)<1e-6;}),
+    JSON.stringify(pctW.map(w=>ieRow(w.label))));
+ ok('Excel: its rate is a numeric percent cell, basis "% of income", no count',
+    pctW.every(w=>{const r=ieRow(w.label);return r&&r.v[1]==='% of income'&&typeof r.v[2]==='number'
+      &&Math.abs(r.v[2]-w.rate/100)<1e-9&&/%$/.test(r.fmt)&&(r.v[3]===undefined||r.v[3]===null);}),
+    JSON.stringify(pctW.map(w=>ieRow(w.label))));
+ const expRows=(bx.want||[]).map(w=>ieRow(w.label));
+ const expTot=ieRow('Total Operating Expenses');
+ ok('Excel: expense rows sum to the operating-expense total',
+    expRows.every(Boolean)&&expTot
+    &&Math.abs(expRows.reduce((a,r)=>a+r.v[4],0)-expTot.v[expTot.v.length-1])<0.01
+    &&Math.abs(expTot.v[expTot.v.length-1]-bx.expMo)<0.01,
+    JSON.stringify({rows:expRows.reduce((a,r)=>a+(r?r.v[4]:0),0),total:expTot&&expTot.v,expMo:bx.expMo}));
+ // Budget-SOV columns: Code, Description, Basis, Qty, Rate, Total, Edited, Library Rate, Provenance
+ const sc20=(bx.sov||[]).find(r=>r[0]==='SC-20');
+ ok('Excel: the derived impact-fee line is "Derived", not "YES" edited',
+    !!sc20&&sc20[6]==='Derived', JSON.stringify(sc20));
+ ok('Excel: it carries no $/SF library rate, and its provenance names the schedule',
+    !!sc20&&(sc20[7]===undefined||sc20[7]===null)
+    &&/^Derived from the impact fee schedule — City of Waller, TX \(high side, v1\)$/.test(sc20[8]),
+    JSON.stringify(sc20));
+ ok('Excel: the derived line still totals the fee', !!sc20&&!!bx.feeLine
+    &&Math.abs(sc20[5]-bx.feeLine.unit)<0.01&&Math.round(bx.feeLine.unit*100)===Math.round(2*318972.18*100),
+    JSON.stringify(sc20));
+
  ok('no JS errors', errs.length===0, errs.join(' | '));
  console.log(R.join('\n')); console.log('\n'+R.filter(r=>r.startsWith('FAIL')).length+' failures of '+R.length);
  await b.close();

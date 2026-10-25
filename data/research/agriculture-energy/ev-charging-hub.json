@@ -1,0 +1,444 @@
+{
+  "schemaVersion": 1,
+  "id": "ev-charging-hub",
+  "name": "EV charging hub",
+  "category": "agriculture-energy",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "port",
+  "summary": "DC fast-charging plaza (150–350 kW dispensers) priced per port, including charger hardware, make-ready (switchgear, transformer, conduit), paving and canopy. Charger hardware is ~45–60% of cost; installation cost per charger falls sharply with site size (ICCT: ~$45k for a single 50 kW unit vs ~$18k each at 6+ units), while utility make-ready is the main wildcard (PSEG-LI: $78k–116k per port). Default anchored on 2024 Colorado NEVI awards (~$183–193k total per port); canopy and paving adders are derived.",
+  "sizing": {
+    "typicalSize": {
+      "low": 4,
+      "mid": 8,
+      "high": 20,
+      "unit": "port",
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Low 4 = NEVI minimum of four 150 kW ports per site (federal rule, not retrieved here — verify); mid 8 ports typical of newer branded hubs; high 20 = large travel-center plaza. ICCT (e1) projected 67% of DC fast chargers at sites with 6+ chargers by 2025."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 15,
+      "mid": 25,
+      "high": 40,
+      "evidence": [],
+      "derived": true,
+      "method": "Each port needs a ~10×20 ft stall (200 SF) plus share of drive aisle (~200 SF), equipment/transformer pad, landscaping and access ≈ 1,100–2,900 SF of site per port → 43,560 ÷ 1,750 ≈ 25 ports/acre."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0,
+      "mid": 0,
+      "high": 0.5,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "The charging stall itself is inside the per-port hard cost (paving line). Additional parking only where the hub includes a lounge/retail amenity (up to 0.5 extra spaces per port)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 120000,
+      "mid": 175000,
+      "high": 280000,
+      "dollarYear": 2024,
+      "region": "US",
+      "evidence": [
+        "e4",
+        "e5",
+        "e1",
+        "e2",
+        "e3"
+      ],
+      "derived": true,
+      "method": "Anchored on 2024 NEVI data: e4 Colorado NEVI total project cost $183,116–$192,614 per port (≈5.8 ports/site) × ~0.87 hard-cost share (soft ≈ 15%, see softCosts) ≈ $160–168k hard per port for 150 kW corridor sites, typically without canopies. Add canopy ≈ $10–15k/port → mid $175k. Cross-checks: e5 PSEG-LI utility make-ready alone $77,555 (community) – $116,330 (corridor) per DCFC port (2022) before charger hardware ($75.6k–$150k per e3 RMI 2019); e1 ICCT 2019 hardware+install at 6+ chargers/site $93.6k (150 kW) – $165.7k (350 kW); e2 ICCT 2021 average 150 kW $103,636 — older studies omit utility make-ready, canopy and paving, so they sit below. Low $120k = large 150 kW site with existing service and no canopy (≈ e2 + minimal make-ready). High $280k = 350 kW dispensers ($128–150k hardware, e3) + corridor make-ready (~$110k, e5) + canopy/paving. Evidence years 2019–2024; default expressed in 2024$ (NEVI anchor); older figures used only as cross-checks."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Charger hardware (power cabinets + dispensers), on-site make-ready (switchgear, transformer pad and customer-side transformer share, conduit/trenching, wiring), paving, lighting, canopy, signage, GC/OH&P. Excludes utility line extension beyond the property, utility contributions-in-aid, land, network/software contracts, soft costs."
+    }
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.03
+      },
+      {
+        "division": "05",
+        "pct": 0.05
+      },
+      {
+        "division": "07",
+        "pct": 0.01
+      },
+      {
+        "division": "26",
+        "pct": 0.62
+      },
+      {
+        "division": "27",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.07
+      },
+      {
+        "division": "33",
+        "pct": 0.1
+      }
+    ],
+    "evidence": [
+      "e1",
+      "e3"
+    ],
+    "derived": true,
+    "method": "Built from the mid composition: charger hardware ≈ $100k of $175k (~0.57) and electrical installation labor/materials (e1 install split ≈ 40% labor / 60% materials) ≈ 0.05 → 26 = 0.62 (EVSE treated as electrical equipment); transformer/service pad & duct bank → 33 = 0.10; canopy steel 05 = 0.05 with roofing 07 = 0.01; equipment pads 03 = 0.03; paving/striping/bollards 32 = 0.07; grading 31 = 0.03; network/comms 27 = 0.01; general conditions 01 = 0.08. Proportions are estimates (verify)."
+  },
+  "lineItems": [
+    {
+      "id": "dcfc-hardware",
+      "name": "DC fast charger hardware (150–350 kW, per port)",
+      "division": "26",
+      "unit": "port",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 75600,
+        "mid": 100000,
+        "high": 150000,
+        "dollarYear": 2019,
+        "region": "US",
+        "evidence": [
+          "e3",
+          "e1"
+        ],
+        "derived": false,
+        "method": "e3 RMI: DCFC (150 kW) $75,600–$100,000; DCFC (350 kW) $128,000–$150,000. e1 ICCT: networked 150 kW $75,000, 350 kW $140,000. Mid = top of the 150 kW range ≈ blended 150/350 kW mix."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of the baseline. Distributed-architecture (shared cabinet) systems lower per-port cost."
+    },
+    {
+      "id": "dcfc-installation",
+      "name": "DCFC installation labor, materials, permit (6+ chargers per site)",
+      "division": "26",
+      "unit": "port",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 17692,
+        "mid": 18577,
+        "high": 25654,
+        "dollarYear": 2019,
+        "region": "US",
+        "evidence": [
+          "e1"
+        ],
+        "derived": false,
+        "method": "e1 ICCT Table 4 totals at 6+ chargers per site: 50 kW $17,692; 150 kW $18,577; 350 kW $25,654. Small sites cost far more (1 charger/site: $45.5k–$66.0k)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of the baseline."
+    },
+    {
+      "id": "utility-transformer",
+      "name": "Utility transformer, 1,000+ kVA (customer-funded)",
+      "division": "33",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 66000,
+        "mid": 110000,
+        "high": 173000,
+        "dollarYear": 2019,
+        "region": "US",
+        "evidence": [
+          "e3"
+        ],
+        "derived": false,
+        "method": "e3 RMI Exhibit 1: Transformer (1,000+ kVA) $66,000–$173,000; mid ≈ geometric midpoint. A 8 × 150–350 kW hub (~1.5–2.5 MW) may need two units or a 2,500 kVA unit."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Often utility-owned and covered by make-ready programs; remove if the utility provides it."
+    },
+    {
+      "id": "canopy",
+      "name": "Charging canopy (steel, LED lighting), per port",
+      "division": "05",
+      "unit": "port",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 10000,
+        "mid": 15000,
+        "high": 25000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Assumed: ~250–400 SF of canopy per port at roughly $40–60/SF installed (fuel-canopy analog). Not sourced — verify with a canopy quote."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Solar-PV canopy adds cost; see optional item."
+    },
+    {
+      "id": "offsite-service-extension",
+      "name": "Utility service extension / line work beyond property line",
+      "division": "33",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 0,
+        "mid": 75000,
+        "high": 400000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Placeholder: $0 where a utility make-ready program covers it, up to several hundred thousand where feeder upgrades are needed. Verify with the utility service request / will-serve."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Off-site; excluded from baseline by definition."
+    },
+    {
+      "id": "battery-buffer",
+      "name": "Battery buffer / demand-charge mitigation storage",
+      "division": "48",
+      "unit": "kwh",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 100
+      },
+      "cost": {
+        "low": 300,
+        "mid": 450,
+        "high": 700,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Small behind-the-meter C&I storage priced above utility-scale (Lazard C&I 1 MW/2 MWh DC $238–445/kWh plus AC/EPC — see battery-storage.json e2). 100 kWh per port assumed. Verify."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Used where utility capacity is limited or demand charges are high."
+    },
+    {
+      "id": "payment-cables",
+      "name": "Credit card reader + replacement/dual connector cable",
+      "division": "26",
+      "unit": "port",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 1825,
+        "mid": 3000,
+        "high": 4500,
+        "dollarYear": 2019,
+        "region": "US",
+        "evidence": [
+          "e3"
+        ],
+        "derived": false,
+        "method": "e3 RMI: credit card reader $325–$1,000; cable cost $1,500–$3,500; summed."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Dual NACS/CCS cables now common; carve-out of baseline."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.1,
+      "mid": 0.15,
+      "high": 0.25,
+      "evidence": [
+        "e2"
+      ],
+      "derived": true,
+      "method": "e2 ICCT notes planning costs 'in some cases can increase total cost by more than 25%' → high. Mid 15% covers design/engineering, utility applications, permitting, commissioning and PM for a repeatable hub design; low 10% for programmatic rollouts."
+    },
+    "notes": "Excludes network/software subscriptions and utility demand charges (operating costs)."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Utility service design often unknown until late; above typical site-civil norms."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "e1 notes 350 kW sites may 'require very expensive upgrades' to switchgear/distribution; higher than typical 5% sitework contingency."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard soft-cost contingency."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 110000,
+      "max": 400000,
+      "dollarYear": 2024,
+      "region": "US",
+      "method": "All-in hard + soft: low ≈ 150 kW port at a large site with existing service; Colorado NEVI totals $183–193k sit near the middle; high ≈ 350 kW port with corridor make-ready, canopy and transformer (~$280k hard × 1.25 + contingency)."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerUnit",
+      "value": 93577,
+      "low": 93577,
+      "high": 165654,
+      "unit": "USD/port",
+      "region": "United States (major metro areas)",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Estimating Electric Vehicle Charging Infrastructure Costs Across Major U.S. Metropolitan Areas (Working Paper 2019-14)",
+        "url": "https://theicct.org/wp-content/uploads/2021/06/ICCT_EV_Charging_Cost_20190813.pdf",
+        "publisher": "International Council on Clean Transportation (ICCT)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 2: DC fast Networked 150 kW $75,000; Networked 350 kW $140,000. Table 4 totals, 6+ chargers per site: 150 kW $18,577; 350 kW $25,654. 'at a site with one 50-kW charger, installation costs are approximately $45,000.'",
+      "scopeNotes": "Value = 150 kW hardware + installation at 6–20 chargers/site; high = 350 kW at 6–10/site. One port per charger assumed. Excludes canopy, paving, utility-side upgrades and planning soft costs.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerUnit",
+      "value": 103636,
+      "unit": "USD/port",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Charging Up America: Assessing the Growing Need for U.S. Charging Infrastructure Through 2030 (White Paper, July 2021)",
+        "url": "https://theicct.org/wp-content/uploads/2021/12/charging-up-america-jul2021.pdf",
+        "publisher": "International Council on Clean Transportation (ICCT)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "the average cost for a 150 kW fast charger in 2030 is $100,416 versus $103,636 in 2021 ... This analysis does not include planning costs, which in some cases can increase total cost by more than 25%",
+      "scopeNotes": "Hardware + installation, average across site sizes; excludes planning/soft costs, canopy and utility-side work.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "componentCost",
+      "value": null,
+      "low": 75600,
+      "high": 150000,
+      "unit": "USD/port",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Reducing EV Charging Infrastructure Costs (Nelder & Rogers)",
+        "url": "https://rmi.org/wp-content/uploads/2020/01/RMI-EV-Charging-Infrastructure-Costs.pdf",
+        "publisher": "Rocky Mountain Institute",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 1: DCFC (150 kW) $75,600–$100,000; DCFC (350 kW) $128,000–$150,000; Transformer (1,000+ kVA) $66,000–$173,000; Credit card reader $325–$1,000; Cable cost $1,500–$3,500.",
+      "scopeNotes": "Charger hardware only (per charger) and component costs; installation excluded.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "totalProjectCostPerUnit",
+      "value": null,
+      "low": 183116,
+      "high": 192614,
+      "unit": "USD/port",
+      "region": "Colorado (29 NEVI sites, 168 ports)",
+      "regionKey": "CO",
+      "dataYear": 2024,
+      "source": {
+        "title": "Colorado granted another $17.3 million by the federal government to add more EV fast-chargers",
+        "url": "https://www.denvergazette.com/2024/12/31/colorado-granted-another-17-3-million-by-the-federal-government-to-add-more-ev-fast-chargers-c1197d88-c70c-11ef-bf3d-07ca681e048a/",
+        "publisher": "The Denver Gazette",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The per-port cost ranges from $183,116 to $192,614.",
+      "scopeNotes": "Total project cost estimates (Paren) for NEVI corridor sites incl. federal share of more than $103,000 per port; likely includes soft costs and make-ready; charger power not stated (NEVI requires 150 kW+).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "makeReadyCostPerUnit",
+      "value": null,
+      "low": 77555,
+      "high": 116330,
+      "unit": "USD/port",
+      "region": "Long Island, New York",
+      "regionKey": "NY",
+      "dataYear": 2022,
+      "source": {
+        "title": "EV Make-Ready Program Implementation Plan (PSEG Long Island), Phase 2 revision",
+        "url": "https://www.psegliny.com/saveenergyandmoney/greenenergy/ev/-/media/33E840B825A94B45838B8E60C940592F.ashx",
+        "publisher": "PSEG Long Island / LIPA",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 2. EV Make-Ready Infrastructure Costs (per port): DCFC Corridor $6,000 | $110,330 | $116,330; DCFC Community $10,000 | $67,555 | $77,555 (columns US-MR, CS-MR, Total)",
+      "scopeNotes": "Utility-side (US-MR) + customer-side (CS-MR) make-ready only; excludes charger hardware, canopy, paving.",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "More NEVI award data (PA, OH, TX, etc.) to broaden the 2024 anchor beyond Colorado; split of NEVI totals into hard vs soft.",
+    "NREL '2030 National Charging Network' per-port cost assumptions (nrel.gov unreachable during research).",
+    "Canopy and paving per-port adders are assumptions; a public bid tab for a DCFC plaza would replace them.",
+    "Charger hardware prices per kW have likely fallen since 2019 while installation labor rose; net effect unverified."
+  ]
+}

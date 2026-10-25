@@ -1,0 +1,514 @@
+{
+  "schemaVersion": 1,
+  "id": "self-storage-climate",
+  "name": "Self-storage — climate controlled",
+  "category": "industrial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "nrsf",
+  "summary": "Multi-story (typically 3–5 stories) interior-access climate-controlled storage on 1.5–4 acre infill sites. Cost drivers: structural system (steel/PEMB vs. concrete podium), number of stories and elevators, unit-mix partitions and roll-up doors, HVAC, and efficiency (rentable vs gross area ≈ 70–80%). Public evidence is a scatter of announced project costs (Inside Self Storage roundups) whose scope (construction vs total, gross vs rentable) is unclear, plus one vendor cost table; the default is a reasoned midpoint, medium-low confidence.",
+  "sizing": {
+    "typicalSize": {
+      "low": 60000,
+      "mid": 85000,
+      "high": 130000,
+      "unit": "nrsf",
+      "evidence": [
+        "e4",
+        "e5",
+        "e6",
+        "e7",
+        "e9"
+      ],
+      "derived": true,
+      "method": "Announced projects 70,000–150,000 SF (e4–e7, e9); converted to NRSF at ~75–85% when the source SF is gross. Mid 85,000 NRSF."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 1.18,
+      "mid": 1.33,
+      "high": 1.54,
+      "evidence": [],
+      "derived": true,
+      "method": "Gross building SF per NRSF = 1 / efficiency. Multi-story interior-access buildings typically 65–85% efficient (corridors, elevators, stairs, office, loading); mid 75% → 1.33 (judgment, industry rule of thumb)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 22000,
+      "mid": 38000,
+      "high": 55000,
+      "evidence": [
+        "e4",
+        "e5",
+        "e6",
+        "e9"
+      ],
+      "derived": true,
+      "method": "Site densities in the announced projects: Riverhead 70,000 SF on 3.3 ac (21k/ac, e5), Katy 150,000 SF on 4 ac (37.5k/ac, e6), Fort Lauderdale 97,862 SF on 1.8 ac (54k/ac, e9), Jacksonville 110,000 SF on 1.8 ac (61k/ac, e4). Treated as rentable SF; mid ≈ 38,000 NRSF/acre for a 3–4 story suburban building."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.00004,
+      "mid": 0.00006,
+      "high": 0.0001,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Self-storage zoning typically requires ~4–10 spaces per facility plus loading (≈ 1 per 10,000–25,000 NRSF) — judgment."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 80,
+      "mid": 130,
+      "high": 200,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e4",
+        "e5",
+        "e6",
+        "e7",
+        "e8",
+        "e9"
+      ],
+      "derived": true,
+      "method": "Per gross SF: vendor table multi-story construction $105–$175 and climate-controlled $80–$125 excluding sitework (e1/e2). Announced projects scatter $55–$58/SF in low-cost TX/FL suburbs (e4/e6, likely building contract only) to $135–$186/SF where the figure is probably total development cost (e5/e7/e8). Hard cost incl. modest sitework taken as ≈ $62–$150 per GSF, mid ≈ $98/GSF (midpoint of the $55–$58 contract values plus ~45% for sitework/GC/full scope, and ~70% of the $135–$150 total-cost figures). × 1.33 GSF/NRSF (75% efficiency) → $130/NRSF mid; low $80 (3-story PEMB in a low-cost market, 80% efficient), high $200 (4–5 story urban/concrete, 65–70% efficient; consistent with e9 loan of $204/SF)."
+    },
+    "perSF": {
+      "low": 62,
+      "mid": 98,
+      "high": 150,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e4",
+        "e6",
+        "e7",
+        "e8"
+      ],
+      "derived": true,
+      "method": "Per gross SF = perPrimaryUnit ÷ sfPerPrimaryUnit (80/1.29, 130/1.33, 200/1.33 rounded); see perPrimaryUnit method."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P; building, unit partitions and roll-up doors, HVAC, elevators, security/access hardware, rental office build-out, and typical on-site work (small sites, mostly paving/utilities/detention). Excludes land, soft costs, off-sites, impact fees and operator FF&E/software."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.75,
+    "standard": 1,
+    "premium": 1.25,
+    "luxury": 1.55,
+    "evidence": [],
+    "derived": true,
+    "method": "economy ≈ low/mid (80/130 = 0.62) tempered to 0.75; premium 1.25 for 4-story with glass façade/retail-style office; luxury ≈ high/mid (200/130 = 1.54) for 5+ story urban concrete product."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "03",
+        "pct": 0.14
+      },
+      {
+        "division": "05",
+        "pct": 0.14
+      },
+      {
+        "division": "07",
+        "pct": 0.07
+      },
+      {
+        "division": "08",
+        "pct": 0.09
+      },
+      {
+        "division": "09",
+        "pct": 0.06
+      },
+      {
+        "division": "10",
+        "pct": 0.07
+      },
+      {
+        "division": "14",
+        "pct": 0.03
+      },
+      {
+        "division": "21",
+        "pct": 0.04
+      },
+      {
+        "division": "22",
+        "pct": 0.02
+      },
+      {
+        "division": "23",
+        "pct": 0.07
+      },
+      {
+        "division": "26",
+        "pct": 0.06
+      },
+      {
+        "division": "27",
+        "pct": 0.01
+      },
+      {
+        "division": "28",
+        "pct": 0.02
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.04
+      },
+      {
+        "division": "33",
+        "pct": 0.02
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "No public elemental breakdown found. Judgment split for a 3–4 story steel-framed storage building: structure 03/05 28% (elevated slabs/deck), envelope 07 7%, roll-up unit doors + storefront 08 9%, steel unit partitions/corridor system in 10 7%, elevators 14 3%, climate HVAC 23 7%, sprinklers 4%, electrical/lighting 6%, security/access 28 2%, small-site sitework 31–33 9%, GC 9%. Verify with a self-storage contractor estimate."
+  },
+  "lineItems": [
+    {
+      "id": "elevators",
+      "name": "Freight/passenger elevators (hydraulic or MRL)",
+      "division": "14",
+      "block": "building-systems",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 2
+      },
+      "cost": {
+        "low": 75000,
+        "mid": 115000,
+        "high": 160000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/building-systems.json#e1"
+        ],
+        "derived": true,
+        "method": "From _blocks/building-systems.json elevator-hydraulic ($75k/$115k/$160k each). Typical 3–4 story storage building has 2 elevators (judgment)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "unit-partition-door-system",
+      "name": "Steel unit partitions, corridor system and roll-up unit doors",
+      "division": "10",
+      "unit": "nrsf",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 9,
+        "mid": 13,
+        "high": 18,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No public unit price fetched. Pre-engineered storage partition and door packages are typically quoted per rentable SF; judgment $9–$18/NRSF depending on unit mix (smaller units = more door and wall per SF)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out; spans divisions 08 and 10."
+    },
+    {
+      "id": "security-access-package",
+      "name": "Gate/keypad access control, door alarms, CCTV and kiosk",
+      "division": "28",
+      "block": "building-systems",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 40000,
+        "mid": 80000,
+        "high": 150000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/building-systems.json#e7"
+        ],
+        "derived": true,
+        "method": "Building-systems block: access-control door $1.5k–$4.5k each (e7) and CCTV camera ~$1k–$3k each. Typical facility ≈ 6–12 controlled doors/gates + 25–40 cameras + kiosk/software → $40k–$150k (judgment)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "drive-thru-loading-bay",
+      "name": "Enclosed drive-thru loading bay (optional)",
+      "division": "08",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 75000,
+        "mid": 150000,
+        "high": 300000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Judgment: two overhead doors, ~1,500–2,500 SF of conditioned loading area at building cost plus canopy/drive apron."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional upgrade."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.15,
+      "mid": 0.2,
+      "high": 0.28,
+      "evidence": [
+        "e3"
+      ],
+      "derived": true,
+      "method": "Vendor guide gives soft costs at 15–22% of TOTAL project cost incl. land (e3). That definition includes financing. Removing financing (~5–8 points of total) leaves ~8–15% of total; dividing by a hard-cost share of total of ~55–70% (land 15–30%) gives ≈ 0.12–0.27 of hard. Range set at 0.15–0.28 (small projects carry fixed design/permit costs), mid 0.20 (judgment)."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.06
+    },
+    "notes": "Type-specific soft items: market feasibility study, lease-up marketing/digital ads, management-software setup and third-party management onboarding. Financing excluded."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Repeatable prototype designs keep design contingency moderate (judgment)."
+    },
+    "hard": {
+      "low": 0.04,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard 4–8% for new-build commercial (judgment)."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard 5–10% of soft costs (judgment)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 85,
+      "max": 280,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "min ≈ hard low $80 × 1.08; max ≈ hard high $200 × 1.4 (urban 5-story with full soft costs). Compare e8 total development ≈ $135/SF ≈ $160–$180/NRSF incl. land."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 105,
+      "high": 175,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Self Storage Building Costs in 2026: A Comprehensive Guide",
+        "url": "https://storeganise.com/blog/Self-Storage-Building-Costs",
+        "publisher": "Storeganise",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost table rows: 'Climate-controlled' $80-125 per sq ft; 'Multi-story' $105-175 per sq ft. \"This cost does not include land or site improvement cost and represents construction costs only.\"",
+      "scopeNotes": "Operator-software vendor blog citing Marcus & Millichap and C&W self-storage surveys without per-figure attribution. Building construction only (no sitework); basis (gross vs rentable SF) not stated — assumed gross.",
+      "confidence": "low"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 80,
+      "high": 125,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Self Storage Building Costs in 2026: A Comprehensive Guide",
+        "url": "https://storeganise.com/blog/Self-Storage-Building-Costs",
+        "publisher": "Storeganise",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost table row: 'Climate-controlled' $80-125 per sq ft (construction only, excludes land and site improvement)",
+      "scopeNotes": "Same source as e1; single/two-story climate-controlled product.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "softCostPctOfTotalProject",
+      "value": null,
+      "low": 0.15,
+      "high": 0.22,
+      "unit": "pct",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Self Storage Building Costs in 2026: A Comprehensive Guide",
+        "url": "https://storeganise.com/blog/Self-Storage-Building-Costs",
+        "publisher": "Storeganise",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Soft costs (architecture, engineering, permitting, insurance, and financing fees) typically run 15-22% of total project cost.",
+      "scopeNotes": "Percent of TOTAL project cost including land and financing, not of hard cost.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "projectCostPerSF",
+      "value": 55.45,
+      "unit": "USD/sf",
+      "region": "Jacksonville, FL",
+      "regionKey": "FL-Jacksonville",
+      "dataYear": 2025,
+      "source": {
+        "title": "Self-Storage Development and Zoning Activity: March 2025",
+        "url": "https://www.insideselfstorage.com/self-storage-development/self-storage-development-and-zoning-activity-march-2025",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "open a $6.1 million, three-story self-storage facility in Jacksonville, Florida … The 1.8-acre property at 3909 Philips Highway comprises 110,000 square feet in more than 700 climate-controlled and drive-up units.",
+      "scopeNotes": "$6.1M / 110,000 SF = $55.45/SF. Unclear whether the $6.1M is construction only or total and whether SF is gross or rentable; low outlier.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "projectCostPerSF",
+      "value": 185.71,
+      "unit": "USD/sf",
+      "region": "Riverhead, NY",
+      "regionKey": "NY",
+      "dataYear": 2025,
+      "source": {
+        "title": "Self-Storage Development and Zoning Activity: March 2025",
+        "url": "https://www.insideselfstorage.com/self-storage-development/self-storage-development-and-zoning-activity-march-2025",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "developing a self-storage facility on a 3.3-acre parcel in Riverhead, New York for $13 million. The building at 61 Main Road comprises 70,000 square feet in 530 units",
+      "scopeNotes": "$13M / 70,000 SF = $185.71/SF; likely total development cost (may include land). High-cost Long Island market.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "projectCostPerSF",
+      "value": 58,
+      "unit": "USD/sf",
+      "region": "Katy, TX (Houston)",
+      "regionKey": "TX-Houston",
+      "dataYear": 2026,
+      "source": {
+        "title": "Self-Storage Development and Zoning Activity: October 2026",
+        "url": "https://www.insideselfstorage.com/self-storage-development/self-storage-development-and-zoning-activity-october-2026",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "C3 Katy Ventures is building Freeman Self-Storage in Katy, Texas, for $8.7 million. The three-story facility at 23920 FM 529 will comprise 150,000 square feet in 850 climate-controlled units.",
+      "scopeNotes": "$8.7M / 150,000 SF = $58/SF; likely building contract/permit value only; built on 4 of 13 acres.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "projectCostPerSF",
+      "value": 149.83,
+      "unit": "USD/sf",
+      "region": "Albuquerque, NM",
+      "regionKey": "NM-Albuquerque",
+      "dataYear": 2026,
+      "source": {
+        "title": "Self-Storage Development and Zoning Activity: July 2026",
+        "url": "https://www.insideselfstorage.com/self-storage-development/self-storage-development-and-zoning-activity-july-2026",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "U-Haul International Inc. … is building a new location in Albuquerque, New Mexico, for $15.7 million. The facility at 8200 Jefferson St. N.E. will comprise 104,787 square feet of climate-controlled space and offer vehicle storage.",
+      "scopeNotes": "$15.7M / 104,787 SF = $149.83/SF; scope (land, vehicle-storage area, U-Haul retail) not stated.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "projectCostPerSF",
+      "value": 134.68,
+      "unit": "USD/sf",
+      "region": "Florida and Virginia (3 facilities)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Self-Storage Development and Zoning Activity: August 2026",
+        "url": "https://www.insideselfstorage.com/self-storage-development/self-storage-development-and-zoning-activity-august-2026",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Space Shop Self Storage … is developing three facilities in Florida and Virginia for $40 million. Together, they’ll comprise 297,000 square feet in 2,088 units.",
+      "scopeNotes": "$40M / 297,000 SF = $134.68/SF; most likely total development cost incl. land and soft costs.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9",
+      "metric": "loanPerSF",
+      "value": 204.37,
+      "unit": "USD/sf",
+      "region": "Fort Lauderdale, FL",
+      "regionKey": "FL-Miami",
+      "dataYear": 2026,
+      "source": {
+        "title": "Self-Storage Development and Zoning Activity: October 2026",
+        "url": "https://www.insideselfstorage.com/self-storage-development/self-storage-development-and-zoning-activity-october-2026",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Tarpon River Self Storage on a 1.8-acre site in Fort Lauderdale, Florida. The five-story building … will comprise 97,862 square feet in 1,070 climate-controlled units. The $20 million construction loan",
+      "scopeNotes": "Construction LOAN $20M / 97,862 SF = $204/SF — a loan amount (typically 55–70% of total cost), so total cost is higher; urban 5-story South Florida. Used only as an upper-bound indicator; also gives site density (≈54,000 SF/acre).",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Announced project costs mix construction-only, total-development and loan amounts; an SSA or Yardi Matrix development-cost survey (public excerpt) would anchor the default.",
+    "Gross vs rentable SF basis in news items is unclear; efficiency assumption (75%) drives the $/NRSF figure.",
+    "Unit partition/door package and security costs are derived — get vendor (Janus/Trac-Rite/DBCI) budget pricing."
+  ]
+}

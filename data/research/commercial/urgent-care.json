@@ -1,0 +1,369 @@
+{
+  "schemaVersion": 1,
+  "id": "urgent-care",
+  "name": "Urgent care clinic",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Freestanding single-story walk-in clinic (\u22483,000\u20136,000 SF) with exam rooms, procedure room, X-ray and point-of-care lab, usually on a retail pad with high visibility signage. No urgent-care-specific public benchmark was retrieved; cost is derived from medical office/clinic data with a small-building premium and a larger site share.",
+  "sizing": {
+    "typicalSize": {
+      "low": 3000,
+      "mid": 4500,
+      "high": 7000,
+      "unit": "sf",
+      "evidence": [],
+      "derived": true,
+      "method": "Judgment: typical freestanding urgent care prototypes 3,000\u20137,000 SF."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 4000,
+      "mid": 5500,
+      "high": 8000,
+      "unit": "sf",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: 4,500-SF building on a 0.6\u20131.0 acre pad with \u224825\u201335 spaces."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.005,
+      "mid": 0.006,
+      "high": 0.008,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per GSF (judgment; walk-in demand peaks)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 300,
+      "mid": 410,
+      "high": 600,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4"
+      ],
+      "derived": true,
+      "method": "Derived from medical-office.json mid ($400, 2025). RSMeans 2019 models show the 1-story MOB at 1.03\u00d7 the 2-story (e2 $217.02 vs e3 $210.81) \u2014 the small-building premium. Pad sitework is a larger share (\u2248$35\u201350/GSF vs \u2248$30 for an MOB) but there are no elevators or multi-story structure. Net: $400 \u00d7 1.03 \u2248 $410. Low/high follow the MOB range shifted \u2248+$10; RSMeans clinic quartiles $188\u2013330 (2022, e1) sit at the low end."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/fee, building + pad sitework; excludes X-ray equipment, furniture, land, soft costs, off-sites."
+    }
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "03",
+        "pct": 0.06
+      },
+      {
+        "division": "04",
+        "pct": 0.02
+      },
+      {
+        "division": "05",
+        "pct": 0.05
+      },
+      {
+        "division": "06",
+        "pct": 0.04
+      },
+      {
+        "division": "07",
+        "pct": 0.06
+      },
+      {
+        "division": "08",
+        "pct": 0.06
+      },
+      {
+        "division": "09",
+        "pct": 0.12
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "13",
+        "pct": 0.01
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.07
+      },
+      {
+        "division": "23",
+        "pct": 0.1
+      },
+      {
+        "division": "26",
+        "pct": 0.1
+      },
+      {
+        "division": "27",
+        "pct": 0.02
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.08
+      },
+      {
+        "division": "33",
+        "pct": 0.04
+      }
+    ],
+    "evidence": [
+      "e1"
+    ],
+    "derived": true,
+    "method": "Derived from medical-office split with MEP per RSMeans clinic medians (plumbing 6.65%, mechanical 10.9%, electrical 11.4%, e1), X-ray shielding (13, 1%), and sitework raised to 15% for a pad site."
+  },
+  "lineItems": [
+    {
+      "id": "xray-room",
+      "name": "Digital X-ray room (shielding + DR equipment)",
+      "division": "11",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 100000,
+        "mid": 175000,
+        "high": 300000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived judgment (no public source fetched): lead shielding/room prep \u2248 $20k\u201350k + digital radiography system \u2248 $80k\u2013250k."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Imaging is in the catalog definition, so this is on by default."
+    },
+    {
+      "id": "monument-sign",
+      "name": "Monument sign",
+      "division": "10",
+      "block": "signage",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 8000,
+        "mid": 25000,
+        "high": 60000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/signage.json#e1"
+        ],
+        "derived": false,
+        "method": "From _blocks/signage.json monument-sign (most urgent-care pads use monument signs; pylons are higher)."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": ""
+    },
+    {
+      "id": "pad-sitework",
+      "name": "Pad sitework (carve-out)",
+      "division": "32",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 30,
+        "mid": 45,
+        "high": 65,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: \u22480.8-acre pad with \u224830 stalls, utilities and landscaping \u2248 $150k\u2013300k spread over 4,500 SF."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Inside baseline."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 30,
+      "mid": 50,
+      "high": 80,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived judgment: exam tables, procedure lights, lab analyzers, nurse station and waiting furniture (X-ray separate)."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.11,
+      "mid": 0.16,
+      "high": 0.24,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: A/E 7\u20139% (RSMeans medical models carry 9%), permits 1\u20132%, survey/geotech 1%, insurance/legal 2%, developer fee 3\u20135%; prototype designs reduce A/E. | Second pass (2026-10-24, main session): Reduced 4 points to remove the developer fee (3\u20135%). The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.08
+    },
+    "notes": "Operator prototypes reduce design cost; state clinic licensing is minor."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Prototype-based designs need less design contingency."
+    },
+    "hard": {
+      "low": 0.04,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical small commercial new-build."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 250,
+      "max": 900,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Min \u2248 RSMeans clinic 1/4 quartile escalated + pad sitework + 15% soft; max \u2248 Cumming MOB high in high-cost metros ($690\u2013750) \u00d7 1.2."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 250,
+      "low": 188,
+      "high": 330,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2022,
+      "source": {
+        "title": "2022 Project Costs \u2014 50 17 00 Project Costs per S.F.",
+        "url": "https://www.rsmeans.com/media/wysiwyg/quarterly_updates/2022-Project-Costs-per-Square-Foot.pdf",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Medical Clinics & Offices, Total Project Costs per S.F.: 1/4 = 188, Median = 250, 3/4 = 330 (Plumbing 6.65%, Mechanical 10.90%, Electrical 11.40% of total, medians).",
+      "scopeNotes": "Completed medical clinics & offices, January 2022 national dollars, incl. contractor OH&P; sitework scope not stated.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": 217.02,
+      "low": 197.75,
+      "high": 217.02,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Construction Cost Estimates for a Medical Office, 1 Story in National, US (2019 RSMeans data)",
+        "url": "https://www.rsmeans.com/model-pages/medical-office-1-story.aspx",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Medical Office, 1 Story ... Floor Area (S.F.): 7,000 ... SubTotal 100% $173.62 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $43.40 ... Architectural Fees 9% (union); open shop SubTotal $158.20",
+      "scopeNotes": "Basic-component model, excl. sitework. Hard cost = SubTotal + 25% contractor fees (open $197.75, union $217.02). 2-story model: $191.90\u2013$210.81.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": 210.81,
+      "low": 191.9,
+      "high": 210.81,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Construction Cost Estimates for a Medical Office, 2 Story in National, US (2019 RSMeans data)",
+        "url": "https://www.rsmeans.com/model-pages/medical-office-2-story.aspx",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Medical Office, 2 Story ... SubTotal 100% $168.65 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $42.16 (union); open shop SubTotal $153.52",
+      "scopeNotes": "Hard = SubTotal + contractor fees. Used with e2 for the 1-story/small-building premium (217.02/210.81 = 1.03).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 450,
+      "high": 690,
+      "unit": "USD/sf",
+      "region": "Dallas, TX",
+      "regionKey": "TX-Dallas",
+      "dataYear": 2025,
+      "source": {
+        "title": "Market Analysis Q4 2025 \u2014 Typical Construction Cost Range (Cost Per Unit 2025)",
+        "url": "https://cumming-group.com/wp-content/uploads/2025/12/CummingGroup_Q4_2025_MarketingAnalysis_2.13.26.pdf",
+        "publisher": "Cumming Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Healthcare | Medical Office Building | SF: Dallas $450\u2013$690; Nashville $400\u2013$620; Denver $490\u2013$750; Chicago $590\u2013$900",
+      "scopeNotes": "Values are the Dallas column; Nashville $400\u2013620, Denver $490\u2013750, 10-metro median $570\u2013875. Cumming notes: \"Costs represent new-build projects for complete structure shell and interior build-out to five feet out and excludes sitework.\" Excludes land, professional fees, permits, FF&E, soft costs.",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "No urgent-care-specific cost source retrieved; operator prototype budgets or municipal site-plan staff reports would validate the derived mid."
+  ]
+}

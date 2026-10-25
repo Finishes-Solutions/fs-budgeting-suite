@@ -1,0 +1,321 @@
+{
+  "schemaVersion": 1,
+  "id": "paving",
+  "name": "Paving, curbs & walks",
+  "researchedAt": "2026-10-24",
+  "notes": "Anchored on state DOT weighted-average bid prices (FDOT statewide 12-month Sep 2025-Aug 2026; ArDOT Jun 2025-Jun 2026; MDT calendar 2025). DOT prices are for public right-of-way work bid in large quantities under DOT specifications (traffic control, testing, prevailing wages on federal-aid jobs); private parking-lot work is usually smaller quantity but lighter spec, so DOT unit prices are used as the anchor and assembled into typical private-site sections in each method. Values are contractor prices in place.",
+  "items": [
+    {
+      "id": "asphalt-paving",
+      "name": "Asphalt paving, parking/drive section (≈3\" HMA on ≈8\" aggregate base, incl. subgrade prep)",
+      "division": "32",
+      "unit": "sy",
+      "cost": {
+        "low": 30, "mid": 45, "high": 70,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e1", "e2", "e12"],
+        "derived": true,
+        "method": "Assembled from FDOT 12-month statewide weighted averages: HMA Superpave Traffic C $136.23/ton (e1) x 0.165 ton/SY for 3\" (110 lb/SY-in) = $22.5/SY; aggregate base (FDOT optional base groups 01-09 $17.50-$25.46/SY, e2) ~$20/SY; subgrade prep, prime/tack and proof-roll allowance ~$3/SY -> ~$45/SY mid. Low $30 = 2\" HMA on 6\" base in large flat lots; high $70 = 4\" HMA on 10\" base in small quantities/remote markets. MDT 2025 plant mix (e12) excludes binder so is used only as a cross-check that DOT mix prices span $60-$150/ton across states."
+      },
+      "notes": "≈$5.00/SF at mid. Heavy truck areas: use heavy-duty-concrete or add 1-2\" HMA. Excludes curb, striping, storm drainage."
+    },
+    {
+      "id": "concrete-paving",
+      "name": "Concrete paving, standard (5-6\" PCC on base; parking, drives, walks at vehicle areas)",
+      "division": "32",
+      "unit": "sy",
+      "cost": {
+        "low": 55, "mid": 75, "high": 105,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e7", "e8"],
+        "derived": false,
+        "method": "FDOT 6\" plain cement concrete pavement $82.00/SY (single contract, e7) and ArDOT P.C. concrete base 6\" weighted average $67.98/SY on 12,085 SY (e8). Mid $75 = midpoint of the two DOT 6\" prices; low/high = ArDOT 6\" range adjusted for private-lot quantities and base course."
+      },
+      "notes": "≈$8.30/SF at mid. Includes jointing, forming, finishing and base. Excludes reinforcement beyond typical fiber/WWF and curbs."
+    },
+    {
+      "id": "heavy-duty-concrete",
+      "name": "Heavy-duty concrete paving (7-9\" PCC; truck courts, dumpster pads, loading aprons)",
+      "division": "32",
+      "unit": "sy",
+      "cost": {
+        "low": 85, "mid": 115, "high": 170,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e7", "e8"],
+        "derived": true,
+        "method": "FDOT plain cement concrete pavement 9\" $169.84/SY (4 contracts, 15,523 SY) and 10\" $140.37/SY (e7); ArDOT PCC pavement 12\" $145.86/SY (e8). Highway thicknesses exceed typical private heavy-duty sections (7-8\"), so mid $115 = 6\" price (~$75) scaled by thickness (8/6 x $75 = $100) plus doweling/reinforcement allowance (~$15). High = FDOT 9\" weighted average."
+      },
+      "notes": "≈$12.80/SF at mid. For distribution/industrial truck courts and drive-thru lanes."
+    },
+    {
+      "id": "gravel-road",
+      "name": "Gravel / crushed-aggregate road or lot (≈8\" compacted aggregate on prepared subgrade)",
+      "division": "32",
+      "unit": "sy",
+      "cost": {
+        "low": 9, "mid": 15, "high": 25,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e10"],
+        "derived": true,
+        "method": "MDT 2025 crushed aggregate course weighted average $45.38/CY on 325,970 CY (e10). 8\" = 0.222 CY/SY x $45.38 = $10.1/SY; add subgrade shaping, geotextile and compaction ~$3-5/SY -> mid $15. Low = 6\" section with local pit-run (MDT traffic gravel $15.96/CY); high = 10-12\" section with geotextile in markets without nearby quarries."
+      },
+      "notes": "RV/boat storage, rural access drives, overflow lots, construction roads."
+    },
+    {
+      "id": "private-road",
+      "name": "Private road, 24' two-lane asphalt with curb & gutter both sides",
+      "division": "32",
+      "unit": "lf",
+      "cost": {
+        "low": 200, "mid": 300, "high": 450,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e1", "e2", "e4", "e5"],
+        "derived": true,
+        "method": "Per LF of centerline: 24' of asphalt = 2.67 SY/LF x $45/SY (asphalt-paving mid) = $120; curb & gutter both sides 2 x $38/LF (curb-gutter mid, FDOT/ArDOT e4/e5) = $76; roadway subgrade/fine grading ~$25; storm drainage allowance (inlets ~every 300 ft at ~$10k each per FDOT curb inlet prices + pipe) ~$60; striping/signage ~$5 -> ~$286, rounded to $300 mid. Low = thinner section, inverted-crown drainage; high = thicker section, more drainage structures, smaller jobs. Excludes sidewalks, street lights and water/sewer mains (see utilities block)."
+      },
+      "notes": "Internal subdivision / campus / RV park loop road. Add sidewalk (sy) and utilities separately."
+    },
+    {
+      "id": "curb-gutter",
+      "name": "Concrete curb & gutter (standard 2' section)",
+      "division": "32",
+      "unit": "lf",
+      "cost": {
+        "low": 28, "mid": 38, "high": 55,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e4", "e5"],
+        "derived": false,
+        "method": "FDOT Type F $38.56/LF (146 contracts, 314,814 LF) and Type E $35.45/LF (e4); ArDOT curb & gutter-A $31.25/LF on 84,431 LF (e5). Mid $38 = FDOT Type F (largest sample); low = ArDOT weighted average less ~10% for long machine-placed runs; high = small hand-formed quantities (ArDOT range tops at $100/LF)."
+      },
+      "notes": "Use ~2 LF per LF of two-sided road; parking islands add ~0.5-1.0 LF per space."
+    },
+    {
+      "id": "sidewalk",
+      "name": "Concrete sidewalk, 4\" (and 6\" at driveways via high end)",
+      "division": "32",
+      "unit": "sy",
+      "cost": {
+        "low": 55, "mid": 72, "high": 100,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e3", "e6"],
+        "derived": false,
+        "method": "FDOT concrete sidewalk and driveways 4\" $67.93/SY (123 contracts, 146,864 SY) and 6\" $94.98/SY (e3); ArDOT concrete walks $92.13/SY on 33,130 SY (e6). Mid $72 = FDOT 4\" price weighted with the ArDOT walk price; high = 6\" sections / ArDOT; low = large private-site pours."
+      },
+      "notes": "≈$8/SF at mid. 5' walk = 0.56 SY per LF."
+    },
+    {
+      "id": "striping-per-space",
+      "name": "Parking stall striping, wheel stop excluded (per space)",
+      "division": "32",
+      "unit": "space",
+      "cost": {
+        "low": 15, "mid": 35, "high": 75,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e9"],
+        "derived": true,
+        "method": "FDOT thermoplastic, white, solid 6\" for parking spaces $2.94/LF (e9). One stall needs ~18-20 LF of stall line plus a share of end/aisle markings ~20-25 LF -> $59-$74 thermoplastic (high). Painted (waterborne) striping, the norm on private lots, runs roughly 1/3-1/2 of thermoplastic -> $15-$35. Mid $35 assumes paint plus a share of ADA symbols/arrows."
+      },
+      "notes": "Add ADA stall signage/symbols (~$300-$600 per accessible stall) and wheel stops (~$75-$150 each) if required."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hmaPricePerTon",
+      "value": 136.23,
+      "unit": "USD/ton",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0334 1 13: 87 contracts, weighted average $136.23, 440,388.000 TN - SUPERPAVE ASPHALTIC CONC, TRAFFIC C",
+      "scopeNotes": "Highway mix, furnished and placed, per ton; unit is tons (not a units.json id) - converted to SY in item methods at 110 lb/SY-inch. Traffic B $153.32 and Traffic E $144.58 also listed.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "aggregateBasePerSY",
+      "value": 17.50, "low": 17.50, "high": 25.46,
+      "unit": "USD/sy",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0285701: 78 contracts, $17.50, 422,205.000 SY - OPTIONAL BASE, BASE GROUP 01; Item 0285709: 59 contracts, $25.46, 670,559.000 SY - OPTIONAL BASE, BASE GROUP 09",
+      "scopeNotes": "FDOT base groups are thickness classes (thinner = lower group). Groups 01-12 range $17.50-$29.30/SY.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "sidewalkPerSY",
+      "value": 67.93, "high": 94.98,
+      "unit": "USD/sy",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0522 1: 123 contracts, $67.93, 146,864.000 SY - CONCRETE SIDEWALK AND DRIVEWAYS, 4\" THICK; Item 0522 2: 167 contracts, $94.98 - CONCRETE SIDEWALK AND DRIVEWAYS, 6\" THICK",
+      "scopeNotes": "Public right-of-way sidewalks; includes forming, concrete, finishing.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "curbGutterPerLF",
+      "value": 38.56, "low": 35.45,
+      "unit": "USD/lf",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0520 1 10: 146 contracts, $38.56, 314,814.000 LF - CONCRETE CURB & GUTTER, TYPE F; Item 0520 1 7: 68 contracts, $35.45 - CONCRETE CURB & GUTTER, TYPE E",
+      "scopeNotes": "Type F = barrier curb & gutter; Type E = mountable.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "curbGutterPerLF",
+      "value": 31.25, "low": 22.50, "high": 100.00,
+      "unit": "USD/lf",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "634 CC CURB & GUTTER-A (1'6\") LF 84,431.00 100.00 22.50 31.25",
+      "scopeNotes": "Columns: quantity, high, low, weighted average.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "sidewalkPerSY",
+      "value": 92.13, "low": 76.00, "high": 375.00,
+      "unit": "USD/sy",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "633 CONCRETE WALKS SQYD 33,130.00 375.00 76.00 92.13",
+      "scopeNotes": "Columns: quantity, high, low, weighted average. Thickness not stated in the item name.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "concretePavementPerSY",
+      "value": 82.00, "low": 82.00, "high": 169.84,
+      "unit": "USD/sy",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0350 3 1: 1 contract, $82.00, 1,458.000 SY - PLAIN CEMENT CONCRETE PAVEMENT, 6\"; Item 0350 3 7: 4 contracts, $169.84, 15,523.000 SY - 9\"; Item 0350 3 9: 2 contracts, $140.37 - 10\"",
+      "scopeNotes": "Highway PCC pavement; the 6\" price is a single contract.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "concretePavementPerSY",
+      "value": 67.98, "high": 145.86,
+      "unit": "USD/sy",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "309 P.C.CONCRETE BASE-6\" SQYD 12,085.00 110.00 67.39 67.98 ... 501 P.C.C.PAVEMENT-12\" SQYD 14,479.00 145.86 145.86 145.86",
+      "scopeNotes": "value = 6\" PCC base weighted average; high = 12\" PCC pavement (single price).",
+      "confidence": "high"
+    },
+    {
+      "id": "e9",
+      "metric": "parkingStripePerLF",
+      "value": 2.94,
+      "unit": "USD/lf",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0711 11121: 8 contracts, $2.94, 48,218.000 LF - THERMOPLASTIC, STANDARD, WHITE, SOLID, 6\" FOR PARKING SPACES",
+      "scopeNotes": "Thermoplastic (more durable and costlier than the waterborne paint usually used on private lots).",
+      "confidence": "high"
+    },
+    {
+      "id": "e10",
+      "metric": "aggregateCoursePerCY",
+      "value": 45.38, "low": 15.96,
+      "unit": "USD/cy",
+      "region": "Montana statewide",
+      "regionKey": "MT",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Prices Catalog (2025)",
+        "url": "https://mdt.mt.gov/other/webdata/external/contractplans/contract/Archives/Average_prices/2025.pdf",
+        "publisher": "Montana Department of Transportation, Construction Contracting Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "301020340 20 CRUSHED AGGREGATE COURSE CUYD 325,970 $45.38 ... 301020268 20 TRAFFIC GRAVEL CUYD 31,269 $15.96",
+      "scopeNotes": "Furnished and placed; rural Montana market.",
+      "confidence": "high"
+    },
+    {
+      "id": "e12",
+      "metric": "plantMixPerTon",
+      "value": 61.57, "low": 45.95,
+      "unit": "USD/ton",
+      "region": "Montana statewide",
+      "regionKey": "MT",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Prices Catalog (2025)",
+        "url": "https://mdt.mt.gov/other/webdata/external/contractplans/contract/Archives/Average_prices/2025.pdf",
+        "publisher": "Montana Department of Transportation, Construction Contracting Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "401020048 20 PLANT MIX SURF-1/2 IN TON 96,339 $61.57 ... 402020192 20 ASPHALT BINDER PG 58V-34 TON 23,999.4 $641.09",
+      "scopeNotes": "MDT pays asphalt binder as a separate item (~$630-$640/ton of binder), so the mix price excludes binder; with ~5.5% binder the all-in is roughly $95-$100/ton. Cross-check only.",
+      "confidence": "medium"
+    }
+  ]
+}

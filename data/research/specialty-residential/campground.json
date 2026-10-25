@@ -1,0 +1,221 @@
+{
+  "schemaVersion": 1,
+  "id": "campground",
+  "name": "Campground",
+  "category": "specialty-residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "site",
+  "summary": "A tent / partial-hookup (water + electric) campground's per-site cost is dominated by the comfort station(s) spread over the sites, the loop roads and parking spurs, and whichever sites get water/electric. Public park projects (state and national parks) run far above private campgrounds because of accessibility upgrades, demolition, remote locations and prevailing wages. Evidence is public-sector bid/estimate data plus thin private data; the default is a derived build-up, confidence medium-low.",
+
+  "sizing": {
+    "typicalSize": { "low": 30, "mid": 75, "high": 200, "unit": "site", "evidence": ["c1"], "derived": true, "method": "Judgment from public examples: Tuolumne Meadows 329 sites (c1) is a large national-park campground; Missouri state-park loops are 17-63 sites (rv-park-resort e1-e4). Private campgrounds commonly 30-150 sites." },
+    "primaryUnitsPerAcre": { "low": 5, "mid": 9, "high": 14, "evidence": ["specialty-residential/rv-park-resort.json#e20"], "derived": true, "method": "RV parks plan ~12.5 sites/acre (Richmond BC, rv-park-resort e20). Tent/partial-hookup campgrounds keep more vegetation and buffers between sites, so ~25% lower (mid 9); low for wooded/primitive layouts." },
+    "parkingPerPrimaryUnit": { "low": 1.0, "mid": 1.2, "high": 1.5, "type": "surface", "evidence": [], "derived": true, "method": "One parking spur per site plus overflow/visitor and comfort-station parking; judgment." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 10000, "mid": 30000, "high": 80000,
+      "dollarYear": 2024, "region": "US",
+      "evidence": ["c1", "c2", "c3", "c4", "c5", "specialty-residential/rv-park-resort.json#e6"],
+      "derived": true,
+      "method": "Build-up for a 75-site campground, half tent sites and half water/electric sites, one comfort station per ~50 sites. Tent site (graded pad, parking spur, table, fire ring, share of loop road) ~$9k; water/electric site ~$20k (industry estimate $15k-$25k per developed site, c4; Menahga MN full-hookup sites $9.2k materials only, c5); comfort station $0.7M (South Dakota bid $705,540, c2) / 50 sites = ~$14k per site. Mid = 0.5 x 9k + 0.5 x 20k + 14k = $28.5k, rounded to $30k. Low $10k = private primitive campground with vault toilets and gravel roads. High $80k = public-park rehabilitation: Tuolumne Meadows estimate $26.2M / 329 sites = $79.6k per site all-in (c1, 2021); Missouri full-hookup average $55k (rv-park-resort e6, 2020). Evidence years 2020-2025, not escalated by hand."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Per-site contractor price incl. general conditions and OH&P: clearing/grading, loop roads and parking spurs, tent pads, water/electric to the partial-hookup sites, on-site water and sewer mains to the comfort station, and the comfort station share. Excludes land, soft costs, site furnishings (FF&E), off-site utilities and on-site wastewater treatment (separate line items)."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.4, "standard": 1.0, "premium": 1.6, "luxury": 2.4,
+    "evidence": [], "derived": true,
+    "method": "Economy ~= low/mid (10k/30k = 0.33) tempered to 0.4; luxury ~= high/mid (80k/30k = 2.67) tempered to 2.4 since the high anchor is a public national-park rehab; premium interpolated."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.080 },
+      { "division": "03", "pct": 0.050 },
+      { "division": "04", "pct": 0.020 },
+      { "division": "06", "pct": 0.030 },
+      { "division": "07", "pct": 0.030 },
+      { "division": "08", "pct": 0.015 },
+      { "division": "09", "pct": 0.020 },
+      { "division": "10", "pct": 0.020 },
+      { "division": "22", "pct": 0.080 },
+      { "division": "23", "pct": 0.015 },
+      { "division": "26", "pct": 0.080 },
+      { "division": "31", "pct": 0.100 },
+      { "division": "32", "pct": 0.310 },
+      { "division": "33", "pct": 0.150 }
+    ],
+    "evidence": ["specialty-residential/rv-park-resort.json#e8"],
+    "derived": true,
+    "method": "Started from the RV park split (OH Weekly itemization, rv-park-resort e8) and shifted weight: electrical 0.12 -> 0.08 (only half the sites have power), buildings 0.23 -> 0.28 (comfort station is ~45% of the mid build-up; masonry/precast typical in public parks, hence 04 and 22 larger), earthwork up to 0.10 (wooded sites, clearing), roads/pads/site furnishings 0.31, utilities 0.15."
+  },
+
+  "lineItems": [
+    {
+      "id": "comfort-station",
+      "name": "Comfort station with flush toilets and showers",
+      "division": "22",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 350000, "mid": 700000, "high": 1100000, "dollarYear": 2024, "region": "US", "evidence": ["c2", "c3"], "derived": true, "method": "South Dakota Palisades SP comfort station low bid $705,540 (c2, 2023) = mid; Oregon State Parks prototype restroom/shower building $1.1M (c3, 2024) = high; low = smaller/prefab private building (judgment)." },
+      "inBaseline": true, "scales": false, "optional": false,
+      "notes": "Carve-out. One per ~40-60 sites; add a second for larger campgrounds."
+    },
+    {
+      "id": "vault-toilet",
+      "name": "Precast vault toilet (double)",
+      "division": "22",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 2 },
+      "cost": { "low": 30000, "mid": 50000, "high": 80000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Planning judgment for a delivered and set precast double vault toilet; no bid tab retrieved in this session. Verify." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Used in primitive loops instead of, or in addition to, a comfort station."
+    },
+    {
+      "id": "water-electric-hookup",
+      "name": "Water + 30/50A electric hookup per partial-hookup site",
+      "division": "26",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 0.5 },
+      "cost": { "low": 3000, "mid": 5500, "high": 9000, "dollarYear": 2024, "region": "US", "evidence": ["specialty-residential/rv-park-resort.json#e9", "specialty-residential/rv-park-resort.json#e8", "specialty-residential/rv-park-resort.json#e13"], "derived": true, "method": "OH Weekly electrical ~$4.0k/site (rv e9) + water lines ~$2.4k/site (rv e8) less ~15% for no sewer trench sharing = ~$5.5k; pedestal hardware $500-$600 (rv e13)." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Qty 0.5 per site assumes half the sites are partial-hookup."
+    },
+    {
+      "id": "tent-pad-site-improvements",
+      "name": "Tent pad, parking spur and site grading",
+      "division": "32",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 2000, "mid": 5000, "high": 12000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment: timber-edged gravel tent pad, aggregate spur, grading and erosion control. High = ADA-accessible hardened pads typical of public projects (Tuolumne 'hardened parking pads', c1)." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "loop-road",
+      "name": "Campground loop road (aggregate to asphalt)",
+      "division": "32",
+      "unit": "lf",
+      "qty": { "per": "primaryUnit", "value": 50 },
+      "cost": { "low": 40, "mid": 90, "high": 180, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment: one-way 12-14 ft loop (cheaper per LF than RV park two-way roads) with ~50 LF per site given wider site spacing. Verify with site plan." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "dump-station",
+      "name": "RV dump station",
+      "division": "33",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 15000, "mid": 35000, "high": 75000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Same as rv-park-resort dump-station line (judgment)." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Common where partial-hookup sites have no sewer."
+    },
+    {
+      "id": "septic-drainfield",
+      "name": "Septic system / drainfield for comfort station",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 60000, "mid": 150000, "high": 350000, "dollarYear": 2024, "region": "US", "evidence": ["specialty-residential/rv-park-resort.json#e14"], "derived": true, "method": "OH Weekly: small parks have done entire septic for ~$100k (rv e14); campground loads lower than full-hookup RV parks (only the comfort station + dump station), mid $150k." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Switch on where no municipal sewer."
+    },
+    {
+      "id": "well-water-system",
+      "name": "Water well and small public water system",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 40000, "mid": 100000, "high": 250000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment; verify locally." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Rural sites only."
+    },
+    {
+      "id": "group-shelter",
+      "name": "Group picnic shelter / pavilion",
+      "division": "13",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 40000, "mid": 90000, "high": 200000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment for a prefabricated steel or timber shelter on slab." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Common amenity in public campgrounds."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 400, "mid": 900, "high": 2000, "dollarYear": 2024, "region": "US", "evidence": ["c1"], "derived": true, "method": "Picnic table, fire ring and lantern post per site (~$400-$900); high adds bear-proof food storage locker and accessible table, as specified at Tuolumne (c1). Judgment on prices." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.08, "mid": 0.13, "high": 0.20, "evidence": ["specialty-residential/rv-park-resort.json#e18"], "derived": true, "method": "Missouri State Parks design and bidding ~11.4% of construction (rv e18); add permitting/environmental review (NEPA on federal land pushes to the high end)." },
+    "breakdown": { "architectureEngineering": 0.09 },
+    "notes": "Public projects on federal land carry environmental and cultural-resource review."
+  },
+
+  "contingency": {
+    "design": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": [], "derived": true, "method": "Judgment; concept estimates for park loops often lack survey/geotech." },
+    "hard": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": ["specialty-residential/rv-park-resort.json#e19"], "derived": true, "method": "Missouri State Parks carried 15% on concept estimates (rv e19)." },
+    "soft": { "low": 0.03, "mid": 0.05, "high": 0.10, "evidence": [], "derived": true, "method": "General norm; judgment." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 8000, "max": 120000, "dollarYear": 2024, "region": "US", "method": "Min = primitive private campground with vault toilets plus minimal soft costs; max = public-park rehab all-in (Tuolumne $79.6k/site in 2021, c1) with escalation headroom and Missouri small-loop totals ($98k-$118k/site, rv e1/e4)." }
+  },
+
+  "evidence": [
+    {
+      "id": "c1", "metric": "totalProjectCost", "value": 79635, "unit": "USD/site",
+      "region": "Yosemite National Park, CA", "regionKey": "CA", "dataYear": 2021,
+      "source": { "title": "Tuolumne Meadows Campground in Yosemite National Park To Be Repaired and Improved through GAOA Funding", "url": "https://www.nps.gov/articles/000/gaoa-tuolumne-meadows-campground.htm", "publisher": "U.S. National Park Service", "accessed": "2026-10-24" },
+      "quote": "Project Costs: Approximately $26.2 million (estimate); 'This $20 million dollar project will rehabilitate the 329-site Tuolumne Meadows Campground, including walk-in...'",
+      "scopeNotes": "Value = $26.2M / 329 sites. The page states both $20M and ~$26.2M; the later estimate used. Scope: comfort stations modernized/added, roads and culverts, hardened parking pads, tables, fire rings, food lockers, water and sewer systems, relocation of sites from riverbanks. Contract awarded Sept 15, 2021. Remote high-elevation site; total project cost, not hard cost only.",
+      "confidence": "medium"
+    },
+    {
+      "id": "c2", "metric": "comfortStationEach", "value": 705540, "unit": "USD/ea",
+      "region": "Palisades State Park, SD", "regionKey": "SD", "dataYear": 2023,
+      "source": { "title": "Bid Tabulation - Campground Development Phase II, Comfort Station - Rebid, Palisades State Park, GFP Project No. Pali23Oa", "url": "https://gfp.sd.gov/UserDocs/nav/Bid_Tab_Comfort_Station_Rebid.pdf", "publisher": "South Dakota Department of Game, Fish and Parks", "accessed": "2026-10-24" },
+      "quote": "1.00 Comfort Station LS 1 $705,540.06 ... Bid Opening Date: January 10, 2023",
+      "scopeNotes": "Low of two bids (second bid $707,000). Building size not on the tab.",
+      "confidence": "high"
+    },
+    {
+      "id": "c3", "metric": "comfortStationEach", "value": 1100000, "unit": "USD/ea",
+      "region": "Fort Stevens State Park, OR", "regionKey": "OR", "dataYear": 2024,
+      "source": { "title": "Oregon State Parks and Recreation Commission, Nov. 20, 2024, Agenda Item 8d - Ft. Stevens Utility Upgrade Construction Contract", "url": "https://oregon.gov/oprd/CAC/Documents/2024-11-8d.pdf", "publisher": "Oregon Parks and Recreation Department", "accessed": "2026-10-24" },
+      "quote": "This includes $13.5M of GO Bond funds for the campground improvements and $1.1M for POP funds for the restroom building.",
+      "scopeNotes": "Engineer's estimate for replacing the C Loop restroom with an OPRD standard prototype restroom/shower design.",
+      "confidence": "high"
+    },
+    {
+      "id": "c4", "metric": "hardCostPerUnit", "low": 15000, "high": 25000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Campgrounds - Freakonomics", "url": "https://freakonomics.com/podcast/campgrounds/", "publisher": "Freakonomics Radio Network - The Economics of Everyday Things, Ep. 112 (Oct 26, 2025)", "accessed": "2026-10-24" },
+      "quote": "And it's estimated that it would be about fifteen thousand to twenty five thousand dollars per site.",
+      "scopeNotes": "Campground infrastructure per site, excludes land; site type not specified.",
+      "confidence": "low"
+    },
+    {
+      "id": "c5", "metric": "materialsPerSite", "value": 9200, "unit": "USD/site",
+      "region": "Menahga, MN", "regionKey": "MN", "dataYear": 2025,
+      "source": { "title": "Menahga City Council Advances Plans for 10 Permanent Campsites at Memorial Forest Park", "url": "https://moderncampground.com/?p=68943", "publisher": "Modern Campground", "accessed": "2026-10-24" },
+      "quote": "each site is projected to cost around $9,200 in materials, excluding electrical pedestals",
+      "scopeNotes": "Municipal campground, full water/sewer/electric sites; materials only.",
+      "confidence": "low"
+    }
+  ],
+
+  "openQuestions": [
+    "No clean private-campground (tent + water/electric) budget was found; a state campground association survey or USDA/RD loan feasibility would help.",
+    "Vault toilet, loop road and group shelter costs are judgment; public bid tabs (USFS, state parks) should be pulled.",
+    "Tuolumne Meadows page gives two different totals ($20M and $26.2M); confirm which is current."
+  ]
+}

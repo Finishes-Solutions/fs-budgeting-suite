@@ -1,0 +1,421 @@
+{
+  "schemaVersion": 1,
+  "id": "adu",
+  "name": "Accessory dwelling unit (ADU)",
+  "category": "residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "unit",
+  "summary": "Backyard or attached second unit on an existing single-family lot. Per-SF cost is high ($150\u2013400/SF), because a full kitchen, bath and utility service are spread over only 400\u2013900 SF and projects are one-offs with tight site access. Utility connections, especially new meters and long trenches, are the biggest swing items. The evidence is owner surveys from California and Portland, which report all-in cost including design and permits, plus 2026 contractor ranges. There is no national government benchmark, so confidence is medium-low.",
+  "sizing": {
+    "typicalSize": {
+      "low": 1,
+      "mid": 1,
+      "high": 2,
+      "unit": "unit",
+      "evidence": [],
+      "derived": true,
+      "method": "ADUs are built one per lot. California allows an ADU plus a JADU, hence the high of 2."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 450,
+      "mid": 650,
+      "high": 950,
+      "evidence": [
+        "e2"
+      ],
+      "derived": false,
+      "method": "Portland owner data (e2): average detached new construction 676 SF, garage conversion 504 SF, attached 556 SF, above-garage 978 SF. Mid \u2248 detached average, rounded down; low/high span conversions to above-garage units."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0,
+      "mid": 0,
+      "high": 1,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Many states (e.g., CA, OR, WA) restrict ADU parking mandates; typically none required. Judgment."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 80000,
+      "mid": 180000,
+      "high": 360000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3"
+      ],
+      "derived": false,
+      "method": "= perSF \u00d7 sfPerPrimaryUnit for a detached new-construction ADU: mid $275 \u00d7 650 \u2248 $180k; low $175 \u00d7 450 \u2248 $80k (conversions, prefab shells); high $400 \u00d7 900 = $360k. Cross-checks: Block Renovation 2026 national all-in totals of $150k\u2013$400k+ for detached and $50k\u2013$150k for garage conversions (e3); Terner 2020 CA median $150k all-in (e1); Portland 2016\u201319 detached average $180,833 all-in (e2)."
+    },
+    "perSF": {
+      "low": 175,
+      "mid": 275,
+      "high": 400,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3"
+      ],
+      "derived": false,
+      "method": "Evidence years are mixed: 2016\u201319 (e2), 2020 (e1), 2026 (e3), labeled 2026 because the range is set from the 2026 source. Block Renovation 2026 national range is $150\u2013400/SF (e3), with its examples at $275/SF for 800 SF and $350/SF for 500 SF. Older owner-survey medians are all-in: CA $250/SF (e1) and Portland detached $305/SF (e2). Removing ~15\u201320% design/permit/utility soft cost gives ~$205\u2013255 hard in their years, consistent with ~$250\u2013300 after 2020\u201326 escalation. Mid $275 = the Block 800 SF example and the center of the escalated survey values. Low $175 is above Block's $150 floor because conversions reuse shell/foundation and are better modeled with low SF. High $400 = Block's ceiling."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC general conditions and OH&P for the ADU and work on the host lot (foundation, utility trenching from the main house of typical length, small hardscape). Excludes design/engineering, permit and impact fees, utility-company meter/connection charges (see line items), long utility runs, furniture and land."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.65,
+    "standard": 1.0,
+    "premium": 1.3,
+    "luxury": 1.6,
+    "evidence": [
+      "e3"
+    ],
+    "derived": true,
+    "method": "Economy = low/mid (175/275 \u2248 0.64), representing conversions and prefab kits. Premium \u2248 Block's $350/SF small-unit example (e3) / 275 \u2248 1.27. Luxury is judgment (custom design, high-cost metros)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.15
+      },
+      {
+        "division": "03",
+        "pct": 0.08
+      },
+      {
+        "division": "05",
+        "pct": 0.005
+      },
+      {
+        "division": "06",
+        "pct": 0.14
+      },
+      {
+        "division": "07",
+        "pct": 0.095
+      },
+      {
+        "division": "08",
+        "pct": 0.06
+      },
+      {
+        "division": "09",
+        "pct": 0.09
+      },
+      {
+        "division": "10",
+        "pct": 0.005
+      },
+      {
+        "division": "11",
+        "pct": 0.025
+      },
+      {
+        "division": "12",
+        "pct": 0.04
+      },
+      {
+        "division": "22",
+        "pct": 0.1
+      },
+      {
+        "division": "23",
+        "pct": 0.05
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "31",
+        "pct": 0.025
+      },
+      {
+        "division": "32",
+        "pct": 0.015
+      },
+      {
+        "division": "33",
+        "pct": 0.04
+      }
+    ],
+    "evidence": [
+      "residential/single-family.json#e3"
+    ],
+    "derived": true,
+    "method": "Derived from the single-family split (NAHB 2024 Table 1 mapped to CSI). Adjustments, all judgment: Div 01 up to 15% (small one-off project, mobilization and tight access); 22 and 26 up (full kitchen and bath plus a new electrical sub-panel/service over few SF); 33 at 4% (utility trenching from the main house); 32 down (little landscaping/paving); 04 and 05 minimal."
+  },
+  "lineItems": [
+    {
+      "id": "separate-electric-meter",
+      "name": "Separate electric meter/service from utility",
+      "division": "26",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 3000,
+        "mid": 7500,
+        "high": 10500,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": true,
+        "method": "High = SDG&E's required new-ADU meter at 'roughly $10,500' (e4, CA-SanDiego). Low/mid are judgment for utilities that allow a sub-meter or cheaper service drop."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Some utilities require a separate meter for new detached ADUs."
+    },
+    {
+      "id": "separate-water-meter",
+      "name": "Separate water meter / service",
+      "division": "33",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 5000,
+        "mid": 12000,
+        "high": 30000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": true,
+        "method": "High = Austin example 'a separate water meter can run around $30,000' (e4, TX-Austin). Low/mid are judgment, as many cities allow a shared meter."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Only where the water utility requires a separate meter."
+    },
+    {
+      "id": "long-utility-trenching",
+      "name": "Extra-long utility trenching (far rear-lot siting)",
+      "division": "33",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 15000,
+        "mid": 20000,
+        "high": 30000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": false,
+        "method": "Block Renovation: utility trenching for far-off sites 'can easily add $15,000\u2013$30,000' (e4)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Typical-length laterals are already in the baseline."
+    },
+    {
+      "id": "difficult-site",
+      "name": "Slope/access, tree removal and soils allowance",
+      "division": "31",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 5000,
+        "mid": 10000,
+        "high": 30000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": false,
+        "method": "Block Renovation: slope/access 'an additional $5,000\u2013$15,000'; soil/foundation '$5,000\u2013$15,000 or more'; large tree removal '$2,000\u2013$4,000' (e4). High \u2248 the sum of the high ends."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Turn on for constrained lots."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 5000,
+      "mid": 9000,
+      "high": 15000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e4"
+      ],
+      "derived": false,
+      "method": "Block Renovation: furnishing a one-bedroom ADU 'typically costs around $8,000\u2013$10,000' (e4). Mid = midpoint; low/high widened."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.08,
+      "mid": 0.16,
+      "high": 0.26,
+      "evidence": [
+        "e2",
+        "e4"
+      ],
+      "derived": false,
+      "method": "Design and engineering 'typically run 10\u201315% of total ADU construction cost' (e4). Permits and impact fees run $1,500\u2013$25,000 by municipality (\u22481\u201314% of a $180k hard cost), with Seattle permitting alone at $20k\u201340k (e4). Mid 20% = design 12% + permits/fees 6% + survey/misc 2%. Portland all-in owner figures include design, permits and utility connections (e2), consistent with ~15\u201320%. | Second pass (2026-10-24, main session): Reduced 4 points to remove impact/connection fees; developer fee 0 (owner project). The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.12,
+      "permitsAndFees": 0.06,
+      "surveyGeotech": 0.02
+    },
+    "notes": "Pre-approved city plans can cut design cost by up to 40% (Block Renovation). Many states cap or waive impact fees for ADUs under 750 SF (e.g., California).",
+    "developerFee": {
+      "low": 0,
+      "mid": 0,
+      "high": 0,
+      "evidence": [],
+      "derived": true,
+      "method": "Owner project on an existing lot: no developer fee."
+    }
+  },
+  "contingency": {
+    "design": {
+      "low": 0.02,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Judgment: lower with pre-approved/prefab plans."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.1,
+      "high": 0.15,
+      "evidence": [],
+      "derived": true,
+      "method": "Judgment: existing-lot unknowns (buried utilities, soils, access), one-off small contractors."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "General norm. Judgment."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 70000,
+      "max": 550000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Low: conversion at ~$60k hard + 12% soft. High: Seattle/LA detached ADUs, which Block Renovation reports at $300k\u2013$500k all-in (e3), plus headroom."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "allInCostPerSF",
+      "value": 250,
+      "unit": "USD/sf",
+      "region": "California",
+      "regionKey": "CA",
+      "dataYear": 2020,
+      "source": {
+        "title": "Implementing the Backyard Revolution: Perspectives of California's ADU Owners (blog synopsis)",
+        "url": "https://ternercenter.berkeley.edu/blog/cci-adu-survey",
+        "publisher": "Terner Center for Housing Innovation, UC Berkeley",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The median statewide construction cost of an ADU is $150,000, or $250/square foot (sf).",
+      "scopeNotes": "Owner survey published April 2021; the data year is assumed to be 2020 (not stated). Owner-reported cost, likely including design/permits. All ADU types pooled. Also: 71% of ADUs cost under $200,000.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "allInCostPerSF",
+      "value": 305,
+      "unit": "USD/sf",
+      "region": "Portland, OR",
+      "regionKey": "OR-Portland",
+      "dataYear": 2019,
+      "source": {
+        "title": "Calculating The Costs of Building an ADU",
+        "url": "https://buildinganadu.com/cost-of-building-an-adu",
+        "publisher": "Building an ADU (Kol Peterson)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Detached new construction: average cost $180,833, average size 676 sq ft, $305/sq ft ... These costs include design costs, permit costs, utility connection costs, and all construction costs.",
+      "scopeNotes": "Self-reported owner costs, 2016\u20132019 projects (dataYear = latest year). Other types: basement $265/SF, attached $300/SF (556 SF), garage conversion $297/SF (504 SF), above-garage $212/SF (978 SF). Landscaping and furniture are excluded. Small samples.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 150,
+      "high": 400,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "A Deep Dive Into ADU Construction Costs: What the Per-Square-Foot Numbers Don't Tell You",
+        "url": "https://www.blockrenovation.com/guides/a-deep-dive-into-adu-construction-costs-what-the-per-square-foot-numbers-dont-tell-you",
+        "publisher": "Block Renovation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "expect to pay $150 to $400 per square foot ... a 500 sq ft detached ADU might come in at $350 per square foot, while an 800 sq ft unit could land at $275 per square foot",
+      "scopeNotes": "Contractor/marketplace guide dated April 2026. Totals by type: detached $150,000\u2013$400,000+; garage conversion $50,000\u2013$150,000; prefab $80,000\u2013$250,000+. Metro totals: LA detached $300k\u2013450k+, Seattle $300k\u2013500k, Denver $230k\u2013310k.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "softAndUtilityItems",
+      "value": null,
+      "unit": "text",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "A Deep Dive Into ADU Construction Costs: What the Per-Square-Foot Numbers Don't Tell You",
+        "url": "https://www.blockrenovation.com/guides/a-deep-dive-into-adu-construction-costs-what-the-per-square-foot-numbers-dont-tell-you",
+        "publisher": "Block Renovation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "SDG&E now requires all new construction ADUs to have a separate electric meter at a cost of roughly $10,500 ... In Austin, a separate water meter can run around $30,000.",
+      "scopeNotes": "The same page gives: design/engineering 10\u201315% of construction; permits/impact fees $1,500\u2013$25,000; trenching $15,000\u2013$30,000; slope $5,000\u2013$15,000; furnishing $8,000\u2013$10,000.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "No national government ADU cost series. City permit-valuation data (Los Angeles, Seattle and Portland ADU dashboards) and a newer Terner Center statewide survey would firm up the per-SF range.",
+    "Conversion and detached ADUs differ ~2\u00d7 in total cost; the engine may want an ADU-type selector rather than one type."
+  ]
+}

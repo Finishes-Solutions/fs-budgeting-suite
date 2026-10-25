@@ -1,0 +1,401 @@
+{
+  "schemaVersion": 1,
+  "id": "truck-terminal-parking",
+  "name": "Truck terminal / truck parking",
+  "category": "industrial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "space",
+  "summary": "Secured, paved tractor-trailer parking (and optionally a cross-dock terminal building) priced per truck space. Cost is mostly heavy-duty paving, grading and stormwater, plus fencing, lighting, gate/guard house and cameras; driver amenities, a cross-dock building or reefer plug-ins are add-ons. Public evidence is limited to FHWA benefit-cost case-study assumptions ($35k–$75k/space incl. land or amenities), so the baseline is a bottom-up derivation from the paving building block.",
+  "sizing": {
+    "typicalSize": {
+      "low": 50,
+      "mid": 120,
+      "high": 300,
+      "unit": "space",
+      "evidence": [
+        "e1",
+        "e2",
+        "e4"
+      ],
+      "derived": true,
+      "method": "FHWA case studies use 60–100-space facilities (e1/e2/e4); private secured truck yards commonly 50–300 spaces (judgment)."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 1600,
+      "mid": 1900,
+      "high": 2400,
+      "evidence": [],
+      "derived": true,
+      "method": "Gross paved SITE area per truck space (not building SF): 12×70–75 ft stall (~860 SF) + share of 60–75 ft maneuvering aisles and entry ≈ 1,600–2,400 SF."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 18,
+      "mid": 22,
+      "high": 26,
+      "evidence": [],
+      "derived": true,
+      "method": "43,560 SF/acre × ~0.9 usable ÷ 1,500–2,200 SF per space (judgment)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 14000,
+      "mid": 22000,
+      "high": 35000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e4",
+        "_blocks/paving.json#e7",
+        "_blocks/paving.json#e8",
+        "_blocks/paving.json#e1"
+      ],
+      "derived": true,
+      "method": "Bottom-up: ~1,900 SF gross per space ≈ 211 SY, of which ~85% paved = 180 SY. Heavy-duty asphalt (thicker section than paving-block asphalt $45/SY → ~$55–$70/SY) to heavy-duty concrete ($85–$170/SY, paving block, mid $115) → $9.9k–$20.7k. + grading/drainage/detention $2k–$5k + perimeter fence, gate, high-mast lighting and CCTV share $2k–$4k ≈ $14k–$30k; mid ≈ asphalt/concrete mix $15k + $4k + $3k = $22k. High $35k adds concrete throughout, poor soils and a guard building. Cross-check: FHWA Phoenix low-cost facility $35k/space INCLUDING land (e2) and Portland $75k/space with driver amenities and public-project overheads (e1)."
+    },
+    "perSF": {
+      "low": 8,
+      "mid": 11.5,
+      "high": 15,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Per SF of gross paved site: perPrimaryUnit ÷ sfPerPrimaryUnit (14,000/1,750 ≈ 8; 22,000/1,900 ≈ 11.6; 35,000/2,300 ≈ 15)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P: clearing/grading, heavy-duty pavement and base, striping, storm drainage/detention, perimeter fence and gate, lighting, CCTV, small guard/office. Excludes cross-dock terminal building, driver amenity building, reefer plug-ins, parking-availability sensors (optional lines), land, soft costs, off-site road/signal work and fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.65,
+    "standard": 1,
+    "premium": 1.3,
+    "luxury": 1.6,
+    "evidence": [],
+    "derived": true,
+    "method": "economy = low/mid (14/22; stabilized aggregate or thin asphalt); premium ≈ (mid+high)/2/mid (full concrete, guard house); luxury ≈ high/mid uplifted for amenitised public-style facility."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.02
+      },
+      {
+        "division": "26",
+        "pct": 0.07
+      },
+      {
+        "division": "28",
+        "pct": 0.05
+      },
+      {
+        "division": "31",
+        "pct": 0.15
+      },
+      {
+        "division": "32",
+        "pct": 0.55
+      },
+      {
+        "division": "33",
+        "pct": 0.08
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "From the bottom-up mid: pavement + fence ≈ $12k (32), earthwork $3.3k (31), storm $1.8k (33), lighting $1.5k (26), cameras/gate controls $1.1k (28), guard-house footings 03, GC 8%. Judgment."
+  },
+  "lineItems": [
+    {
+      "id": "heavy-duty-paving",
+      "name": "Heavy-duty pavement per truck space (~180 SY)",
+      "division": "32",
+      "block": "paving",
+      "unit": "sy",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 180
+      },
+      "cost": {
+        "low": 55,
+        "mid": 85,
+        "high": 170,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/paving.json#e7",
+          "_blocks/paving.json#e8"
+        ],
+        "derived": true,
+        "method": "Low = heavy asphalt section (~$55/SY, above paving-block asphalt $45); mid $85 = asphalt/concrete mix; high = paving-block heavy-duty concrete high $170/SY."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "gate-guard-house",
+      "name": "Entry gate, guard house and access control",
+      "division": "28",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 50000,
+        "mid": 120000,
+        "high": 250000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Judgment: prefabricated guard booth $25k–$80k + motorized gates/arms, card readers and intercom $25k–$170k."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "parking-availability-system",
+      "name": "Truck parking availability sensors (per space)",
+      "division": "28",
+      "unit": "space",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 3000,
+        "mid": 3500,
+        "high": 4500,
+        "dollarYear": 2020,
+        "region": "US",
+        "evidence": [
+          "e3"
+        ],
+        "derived": false,
+        "method": "NCDOT estimate $3,500 per space installed (e3); range ±(lot-size economies of scale noted in the same study)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Optional; typical for public/TPIMS facilities."
+    },
+    {
+      "id": "driver-amenity-building",
+      "name": "Driver restroom / amenity building (~800 SF)",
+      "division": "22",
+      "block": "amenities",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 800
+      },
+      "cost": {
+        "low": 450,
+        "mid": 750,
+        "high": 1250,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "From _blocks/amenities.json restroom-building ($450/$750/$1,250 per SF, 2025); ~800 SF (judgment)."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional; drives the FHWA Portland case ($75k/space, e1)."
+    },
+    {
+      "id": "reefer-plug-ins",
+      "name": "Electric reefer/TRU plug-in pedestals (optional)",
+      "division": "26",
+      "unit": "space",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 0.25
+      },
+      "cost": {
+        "low": 6000,
+        "mid": 10000,
+        "high": 18000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Judgment: 480V pedestal, conduit/trenching and share of service upgrade per equipped space. Quantity 25% of spaces."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Optional."
+    },
+    {
+      "id": "cross-dock-terminal",
+      "name": "Cross-dock terminal building (per door, optional)",
+      "division": "11",
+      "unit": "door",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 0.4
+      },
+      "cost": {
+        "low": 100000,
+        "mid": 145000,
+        "high": 200000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "industrial/warehouse-distribution.json#e3"
+        ],
+        "derived": true,
+        "method": "Narrow (~100–120 ft) cross-dock with doors both sides at 12 ft centers ≈ 600–720 SF of building per door × $140–$220/SF (C&W small-building $144/SF as base, heavier slab/door density) + dock package ~$18k ≈ $100k–$200k per door. Quantity ≈ 0.4 doors per trailer space (2–3 trailer stalls per door)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Turn on for a terminal (LTL) project; the engine can report per door."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.08,
+      "mid": 0.12,
+      "high": 0.18,
+      "evidence": [],
+      "derived": true,
+      "method": "Civil-only design, traffic study, stormwater permits, survey/geotech: 8–18% of hard cost (judgment)."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.05
+    },
+    "notes": "Type-specific soft items: traffic impact study and driveway/curb-cut permits; zoning/conditional-use approval is often the critical path."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.02,
+      "mid": 0.04,
+      "high": 0.07,
+      "evidence": [],
+      "derived": true,
+      "method": "Simple civil design (judgment)."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Earthwork/soils and stormwater quantities dominate risk (judgment)."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard 5–10% of soft costs (judgment)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 13000,
+      "max": 50000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "min ≈ hard low × 1.05 for a gravel/asphalt yard; max ≈ concrete yard with guard house (high $35k) × 1.3 for soft and contingency; amenitised public facilities (FHWA $75k, e1) exceed this."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "capitalCostPerSpace",
+      "value": 75000,
+      "unit": "USD/space",
+      "region": "Portland, OR (I-84 corridor)",
+      "regionKey": "OR-Portland",
+      "dataYear": 2021,
+      "source": {
+        "title": "Truck Parking Development Handbook (2022, updated 2026)",
+        "url": "https://ops.fhwa.dot.gov/Freight/infrastructure/truck_parking/docs/FHWA_Truck_Parking_Development_Handbook_2026.pdf",
+        "publisher": "Federal Highway Administration (USDOT)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The hypothetical project involves the construction of a 100-space parking facility that offers amenities to truck drivers. The project is assumed to have capital costs of $7.5 million",
+      "scopeNotes": "FHWA benefit-cost case study (analysis dated 2021): $7.5M / 100 spaces = $75,000/space. Public facility with driver amenities; capital cost incl. planning/design; assumption, not a bid.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "capitalCostPerSpace",
+      "value": 35000,
+      "unit": "USD/space",
+      "region": "Tolleson / Phoenix, AZ",
+      "regionKey": "AZ-Phoenix",
+      "dataYear": 2021,
+      "source": {
+        "title": "Truck Parking Development Handbook (2022, updated 2026)",
+        "url": "https://ops.fhwa.dot.gov/Freight/infrastructure/truck_parking/docs/FHWA_Truck_Parking_Development_Handbook_2026.pdf",
+        "publisher": "Federal Highway Administration (USDOT)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "repurposes a vacant lot … into a low-cost public truck parking facility with the capacity to accommodate 100 trucks … assumed to cost $3.5 million (including land acquisition and construction costs)",
+      "scopeNotes": "$3.5M / 100 spaces = $35,000/space INCLUDING land; construction-only share not given. Assumption in an FHWA case study.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "parkingAvailabilitySensorPerSpace",
+      "value": 3500,
+      "unit": "USD/space",
+      "region": "North Carolina",
+      "regionKey": "NC",
+      "dataYear": 2020,
+      "source": {
+        "title": "Truck Parking Study Phase II: Concepts of Operations (2020)",
+        "url": "https://connect.ncdot.gov/projects/planning/Statewide-Freight-Plan/Documents/NCDOT_TruckParkingStudy_PhaseII_Concepts_of_Operations_2020.pdf",
+        "publisher": "North Carolina Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "A vehicle occupancy detection approach is based on an estimated cost of $3,500 for installation per truck parking space.",
+      "scopeNotes": "Truck parking availability system (in-ground sensors) only; excludes electrical, paving.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "projectCost",
+      "value": 3000000,
+      "unit": "USD/ls",
+      "region": "Mount Olive, NC",
+      "regionKey": "NC",
+      "dataYear": 2021,
+      "source": {
+        "title": "Truck Parking Development Handbook (2022, updated 2026)",
+        "url": "https://ops.fhwa.dot.gov/Freight/infrastructure/truck_parking/docs/FHWA_Truck_Parking_Development_Handbook_2026.pdf",
+        "publisher": "Federal Highway Administration (USDOT)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "a staging area … that will handle up to 60 trucks at one time with included weight scales, restrooms, and refrigeration hookups … The cost of the new road and staging area is reported to be approximately $3 million.",
+      "scopeNotes": "Combined new public road + 60-truck staging area with scales/restrooms/reefer hookups; ≤ $50,000 per truck space as an upper bound only.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Find a state DOT truck-parking project bid tab (per-space construction cost) to replace the derived baseline.",
+    "Cross-dock terminal per-door cost is derived; a public LTL terminal budget would firm it up."
+  ]
+}

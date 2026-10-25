@@ -1,0 +1,64 @@
+{
+  "sample": {
+    "id": "16-solar-farm",
+    "name": "Prairie Sun — 50 MWdc solar farm",
+    "address": "Texas (statewide factor)",
+    "exitCap": 0.07
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "quick",
+    "location": {
+      "region": "TX"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "perAcre",
+      "value": 9000
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "c1",
+        "typeId": "solar-farm",
+        "name": "Solar array",
+        "phaseId": "p1",
+        "size": 50,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "annual",
+          "rate": 4600000,
+          "vacancy": 0.02,
+          "expenseRatio": 0.18
+        }
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

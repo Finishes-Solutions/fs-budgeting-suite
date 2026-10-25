@@ -1,0 +1,124 @@
+{
+  "sample": {
+    "id": "15-custom-event-retreat",
+    "name": "Hill Country event barn & retreat (Custom)",
+    "address": "Texas (statewide factor)",
+    "exitCap": 0.085
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "custom",
+    "location": {
+      "region": "TX"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "amount",
+      "value": 1400000,
+      "acres": 18
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "k",
+        "typeId": "custom",
+        "name": "Event barn & retreat",
+        "phaseId": "p1",
+        "size": 1,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [
+          {
+            "id": "b1",
+            "itemId": "building-steel-preengineered",
+            "qty": 9000
+          },
+          {
+            "id": "b2",
+            "itemId": "tenant-improvement-standard",
+            "qty": 9000
+          },
+          {
+            "id": "b3",
+            "itemId": "site-development-light",
+            "qty": 6
+          },
+          {
+            "id": "b4",
+            "itemId": "restroom-building",
+            "qty": 900
+          },
+          {
+            "id": "b5",
+            "itemId": "pavilion-shade",
+            "qty": 3500
+          },
+          {
+            "id": "b6",
+            "itemId": "parking-surface",
+            "qty": 180
+          },
+          {
+            "id": "b7",
+            "itemId": "septic-system",
+            "qty": 2
+          },
+          {
+            "id": "b8",
+            "itemId": "water-well",
+            "qty": 1
+          },
+          {
+            "id": "b9",
+            "itemId": "commercial-kitchen",
+            "qty": 1200
+          },
+          {
+            "id": "b10",
+            "itemId": "monument-sign",
+            "qty": 1
+          },
+          {
+            "id": "b11",
+            "itemId": "",
+            "name": "Owner-supplied lighting package",
+            "unitCost": 85000,
+            "qty": 1,
+            "unit": "ls"
+          }
+        ],
+        "contingency": {},
+        "revenue": {
+          "mode": "annual",
+          "rate": 1250000,
+          "vacancy": 0.1,
+          "expenseRatio": 0.55
+        }
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

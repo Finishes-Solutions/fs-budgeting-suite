@@ -21,6 +21,13 @@
   #fbFab{left:12px;bottom:12px;padding:0;width:38px;justify-content:center}
   #fbFab .fb-fab-lab{display:none}
 }
+/* On the editors (Inputs, Budget, CSI, Pricing) the labelled pill sat over the
+   first column of the grids and the + Add buttons. There it shrinks to the
+   icon — the label is still its accessible name and its tooltip — and the
+   page gains bottom room (index.html) so the last row can scroll clear. */
+body:has(#page-input.on,#page-fees.on,#page-budget.on,#page-csi.on,#page-pricing.on) #fbFab{
+  padding:0;width:38px;justify-content:center}
+body:has(#page-input.on,#page-fees.on,#page-budget.on,#page-csi.on,#page-pricing.on) #fbFab .fb-fab-lab{display:none}
 
 /* ---- dialog ---- */
 #fbModal .fb-kinds{display:flex;gap:8px;margin-bottom:14px}

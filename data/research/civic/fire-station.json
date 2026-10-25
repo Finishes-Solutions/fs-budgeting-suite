@@ -1,0 +1,721 @@
+{
+  "schemaVersion": 1,
+  "id": "fire-station",
+  "name": "Fire station",
+  "category": "civic",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Fire stations are essential-facility (Risk Category IV) buildings: tall long-span apparatus bays with heavy slabs and aprons, oversized bay doors, vehicle exhaust capture, decon/gear rooms, 24/7 living quarters and emergency generators, plus large paved site areas - so they price well above other civic buildings of similar size. Data is good: 2023-2026 public estimates and bid awards from TX, FL, MD, OH, CA and MA cluster at ~$420-$720/SF in low-cost states and ~$950-$1,000+/SF in CA/MA.",
+  "sizing": {
+    "typicalSize": {
+      "low": 8000,
+      "mid": 15000,
+      "high": 22000,
+      "unit": "sf",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "e8"
+      ],
+      "derived": true,
+      "method": "Recent projects: 7,900 SF (e4), 9,608 (e6), 12,195 (e1), 17,500 (e7), 17,877 (e3), 19,400 (e5), 20,619 (e2), ~20,000 (e8). Mid 15,000 SF = typical 3-bay career station with quarters for one shift."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 3500,
+      "mid": 6000,
+      "high": 10000,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Building SF per site acre. Cameron Park assumes 3.0 acres for 12,195 SF (~4,065 SF/acre, e1). Drive-through bays need deep front and rear aprons plus staff/visitor parking and secured yard; 1.5-3 acres for 10-20k SF stations gives ~3,500-10,000 SF/acre."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0012,
+      "mid": 0.002,
+      "high": 0.003,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per SF of building (= 1.2-3.0 per 1,000 SF). Sized for two overlapping shifts plus visitors/training: ~20-35 spaces for a 15,000 SF station. Derived; local code governs."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 425,
+      "mid": 625,
+      "high": 950,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "e7",
+        "e8",
+        "e9",
+        "e10",
+        "e11",
+        "e12",
+        "e14",
+        "e15"
+      ],
+      "derived": false,
+      "method": "Hard cost incl. sitework per SF of building. 2023-2026 evidence: TX $420 (e4), $460 (e2, 2023), $719 (e3); MD $503 (e5); OH $503-$628 (e7); FL $652-$678 (e6); Northeast avg $705 (e9); CA $951 (e1); MA ~$1,015 (e8). Median of these nine anchors ~ $680; because the upper anchors are high-cost CA/MA markets (national-equivalent ~$750-$800), the national mid is set lower at $625/SF in 2025 dollars. Low $425 = small/simple rural station in a low-cost market (e4); high $950 = CA/MA-level pricing or heavy program (e1, e8). Older rules of thumb ($275-$400 in 2017, e10; RSMeans 2019 ~$160-$183 building-only, e11/e12) are retained as evidence but sit well below current bids."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. general conditions and OH&P, apparatus apron, on-site paving/utilities/landscaping, fixed bay equipment (exhaust capture, gear extractor); excludes land, soft costs, loose FF&E, station alerting/IT where owner-furnished, off-site improvements, impact/tap fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.75,
+    "standard": 1.0,
+    "premium": 1.25,
+    "luxury": 1.5,
+    "evidence": [
+      "e4",
+      "e5",
+      "e8"
+    ],
+    "derived": true,
+    "method": "Economy ~ pre-engineered metal bay with simple CMU quarters (e4/e5 ~$420-$503 vs. $625 mid); premium/luxury ~ masonry, two-story, training features, high-performance/net-zero (Williamstown in e9 was adjusted for net-zero design) at 1.25-1.5x."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.08
+      },
+      {
+        "division": "04",
+        "pct": 0.06
+      },
+      {
+        "division": "05",
+        "pct": 0.06
+      },
+      {
+        "division": "06",
+        "pct": 0.02
+      },
+      {
+        "division": "07",
+        "pct": 0.06
+      },
+      {
+        "division": "08",
+        "pct": 0.07
+      },
+      {
+        "division": "09",
+        "pct": 0.06
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.03
+      },
+      {
+        "division": "12",
+        "pct": 0.01
+      },
+      {
+        "division": "21",
+        "pct": 0.015
+      },
+      {
+        "division": "22",
+        "pct": 0.045
+      },
+      {
+        "division": "23",
+        "pct": 0.09
+      },
+      {
+        "division": "26",
+        "pct": 0.12
+      },
+      {
+        "division": "27",
+        "pct": 0.02
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.045
+      },
+      {
+        "division": "32",
+        "pct": 0.085
+      },
+      {
+        "division": "33",
+        "pct": 0.02
+      }
+    ],
+    "evidence": [
+      "e1",
+      "e2",
+      "e10"
+    ],
+    "derived": true,
+    "method": "Derived. Site share (31+32+33 = 15%) anchored on Cameron Park site & civil $1.9M of $11.6M hard (16%, e1); Div 01 ~8% from West University Place GC conditions 3.5% + fee 5.5% (e2). Electrical set as the largest trade (12%, incl. generator/ATS) per Firehouse ('biggest expense ... is electrical, followed by site work', e10). Openings 7% reflect 4-fold/overhead apparatus doors; Div 11 3% = exhaust capture, extractors, kitchen. Remaining splits follow a typical masonry/steel municipal building."
+  },
+  "lineItems": [
+    {
+      "id": "vehicle-exhaust-capture",
+      "name": "Vehicle exhaust capture system (per apparatus bay)",
+      "division": "11",
+      "unit": "bay",
+      "qty": {
+        "per": "project",
+        "value": 3
+      },
+      "cost": {
+        "low": 15000,
+        "mid": 25000,
+        "high": 40000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance for a source-capture (hose rail) system per drive-through bay; Firehouse notes exhaust systems 'have become standard in new fire stations' (e10). Verify with vendor quote."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Qty = number of apparatus bays (3 typical; Terrell, Hernando and Corpus Christi stations are all 3-bay, e3/e6/e14)."
+    },
+    {
+      "id": "apparatus-bay-doors",
+      "name": "Apparatus bay doors - 4-fold or high-speed sectional (per door)",
+      "division": "08",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 6
+      },
+      "cost": {
+        "low": 20000,
+        "mid": 45000,
+        "high": 90000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: insulated overhead sectional doors at the low end, 4-fold bi-fold doors at the high end; 2 doors per drive-through bay."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "6 doors = 3 drive-through bays x front and rear. Inside Div 08 share."
+    },
+    {
+      "id": "emergency-generator",
+      "name": "Emergency standby generator + ATS (100% station load)",
+      "division": "26",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 250000,
+        "high": 400000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance for a 150-400 kW diesel/natural-gas genset with ATS, pad and enclosure; essential-facility stations must stay operational (e8)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carved out of Div 26."
+    },
+    {
+      "id": "gear-extractor-decon",
+      "name": "Turnout gear extractor/dryer and decon room fit-out",
+      "division": "11",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 30000,
+        "mid": 60000,
+        "high": 120000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance: commercial gear washer-extractor(s), drying cabinet, decon sinks/showers."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Contamination-reduction ('hot zone') design is now standard."
+    },
+    {
+      "id": "station-alerting",
+      "name": "Station alerting / dispatch interface and IT",
+      "division": "27",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 50000,
+        "mid": 100000,
+        "high": 200000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance; often owner-furnished through the dispatch/IT budget."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Add when not carried in the owner's technology budget."
+    },
+    {
+      "id": "training-tower",
+      "name": "Training tower / drill prop (masonry, 3-4 stories)",
+      "division": "13",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 300000,
+        "mid": 600000,
+        "high": 1200000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e5"
+        ],
+        "derived": true,
+        "method": "Derived allowance; Green Valley Station 25 includes a 3-story masonry training tower in its $9.76M award (e5) but the tower is not priced separately."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional program element; headquarters stations only."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 15,
+      "mid": 22,
+      "high": 30,
+      "dollarYear": 2020,
+      "region": "US",
+      "evidence": [
+        "e13"
+      ],
+      "derived": false,
+      "method": "Firehouse soft-cost guidance: FF&E 'target budget of $15-$30 per square foot of the facility' (e13); mid = midpoint."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.15,
+      "mid": 0.2,
+      "high": 0.3,
+      "evidence": [
+        "e1",
+        "e2",
+        "e8",
+        "e10",
+        "e13",
+        "e16"
+      ],
+      "derived": false,
+      "method": "Cameron Park carries soft costs at ~25% of construction incl. FF&E and owner contingency (e1); Firehouse 2017 'another 25 percent' (e10); Firehouse 2020 10%-30% of project budget (e13). Excluding FF&E and contingency: West University Place soft cost $1.247M on $9.49M construction = 13% (e2); Tyngsborough final design + OPM $2.72M on $20.3M = 13.4% (+ $0.3M schematic design, e8). Mid 20% of hard (pure soft, ex-FF&E/contingency, incl. design, PM/OPM, permits, testing, builder's risk, commissioning)."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.08
+    },
+    "notes": "A/E 6.13%-9.21% of construction for a ~$5M station (e13); testing 0.25%-0.75%; builder's risk ~1%; commissioning $1.20-$3.50/SF. Many states require an OPM/CM for public buildings (MA, e8)."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.1,
+      "high": 0.15,
+      "evidence": [
+        "e2",
+        "e8",
+        "e16"
+      ],
+      "derived": true,
+      "method": "West University Place carries 5% design contingency at concept (e2); Tyngsborough 10% at schematic design (e8); RFM: 20% is not uncommon at the earliest stage (e16)."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [
+        "e6",
+        "e13"
+      ],
+      "derived": true,
+      "method": "Hernando County Station 15 contract carries a $250k owner's contingency = ~4% (e6); Firehouse: owner contingency 3%-8% of budget (e13)."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [
+        "e2",
+        "e16"
+      ],
+      "derived": true,
+      "method": "Derived; West University Place carries a separate 6% owner contingency (e2) and RFM recommends tapering to 5%-10% (e16)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 450,
+      "max": 1400,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "All-in (hard + soft, excl. land) per building SF: low ~ $420 hard (e4) x ~1.1-1.15; high ~ Tyngsborough $24.8M / ~20,000 SF = ~$1,240 (e8) and Missoula's $16.5M/14,000 SF (~$1,180, in 2028 dollars); allow to $1,400 for CA/MA headquarters stations."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 951,
+      "low": 798,
+      "unit": "USD/sf",
+      "region": "Cameron Park (El Dorado County), CA",
+      "regionKey": "CA",
+      "dataYear": 2025,
+      "source": {
+        "title": "New Fire Station Cost Summary (Planning-Level Estimate) - CPCSD Fire Facilities Strategic Plan",
+        "url": "https://www.cameronpark.org/files/574e1e1f5/New+Fire+Station+Cost+Summary.docx",
+        "publisher": "Cameron Park Community Services District",
+        "accessed": "2026-10-24"
+      },
+      "quote": "RSMeans updated cost: $798.27 per sq. ft. (2025 dollars) ... Building Cost:12,195 sq. ft. x $798.27 ≈ $9.7 million ... Site & Civil Improvements ... ≈ $1.9 million Total Hard Construction: ≈ $11.6 million",
+      "scopeNotes": "Value = total hard construction incl. site ($11.6M / 12,195 SF = ~$951/SF); low = building-only $798/SF. 3 oversized bays, unfinished 2nd-floor shell. Soft costs separately ~25%.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": 460.46,
+      "unit": "USD/sf",
+      "region": "West University Place (Houston area), TX",
+      "regionKey": "TX-Houston",
+      "dataYear": 2023,
+      "source": {
+        "title": "City of West University Place Facilities Master Plan - Conceptual Project Budget - Construct New Fire Department at 6104 and 6108 Auden",
+        "url": "https://westutx.gov/DocumentCenter/View/8988",
+        "publisher": "City of West University Place, TX",
+        "accessed": "2026-10-24"
+      },
+      "quote": "New Two Story Fire Department 20,619 355.00 ... Construction Total 9,494,139.54$ 460.46$ ... 2023 Project Budget 10,741,139.54$ 520.93$",
+      "scopeNotes": "Construction total $460/SF incl. $14/SF sitework on 45,000 SF, demolition, 5% design contingency, GC general conditions 3.5% and fee 5.5%; soft cost $1.247M (~13%), FF&E and owner contingency 6% each listed separately; 2023 dollars.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": 719,
+      "unit": "USD/sf",
+      "region": "Terrell (Kaufman County), TX",
+      "regionKey": "TX-DFW",
+      "dataYear": 2024,
+      "source": {
+        "title": "TABS2024024613 - City of Terrell Fire Station No 3",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2024024613",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $12,853,250 ... 17,877 ft2 ... a new, 17,877 square foot, ground up, fire station on a greenfield site",
+      "scopeNotes": "Owner-registered estimated construction cost / SF = ~$719/SF; 3 apparatus bays, quarters for a ten-firefighter shift; start 10/2024.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": 420,
+      "unit": "USD/sf",
+      "region": "Gainesville (Cooke County), TX",
+      "regionKey": "TX",
+      "dataYear": 2024,
+      "source": {
+        "title": "TABS2024009472 - Gainesville Fire Station No.2",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2024009472",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $3,318,000 ... New 7,900 sq/ ft Fire Station with Living Quarters",
+      "scopeNotes": "Registered estimated construction cost / SF = ~$420/SF; small rural station, 2024.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": 503,
+      "unit": "USD/sf",
+      "region": "Monrovia (Frederick County), MD",
+      "regionKey": "MD",
+      "dataYear": 2025,
+      "source": {
+        "title": "Green Valley Fire Station 25 - project record",
+        "url": "https://projects.constructconnect.com/details/7136507-green-valley-fire-station-25%26find_loc=maryland-21770",
+        "publisher": "ConstructConnect",
+        "accessed": "2026-10-24"
+      },
+      "quote": "19,400-square-foot ... fire / police facility ... (4) drive-through apparatus bays housed within a pre-engineered metal structure ... awarded amount of $9,756,158.50",
+      "scopeNotes": "Award / SF = ~$503/SF (Nov 2025). Pre-engineered metal bay structure, includes access roads, aprons and a 3-story training tower; SF description inconsistent on the listing.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostPerSF",
+      "value": 678,
+      "low": 652,
+      "unit": "USD/sf",
+      "region": "Hernando County, FL",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Hernando commission awards $6.5 million contract for Fire Station 15",
+        "url": "https://www.tampabaybeacons.com/2026/06/01/hernando-commission-awards-65-million-contract-for-fire-station-15/",
+        "publisher": "Tampa Bay Beacons",
+        "accessed": "2026-10-24"
+      },
+      "quote": "winning bid was $6,511,800 ... 9,608-square-foot ... includes a $250,000 owner's contingency ... three-bay station",
+      "scopeNotes": "Contract / SF = ~$678/SF incl. $250k owner contingency (~$652/SF without). Includes MEP/FP, sidewalks, paving, drainage, landscaping.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": 503.4,
+      "low": 416.68,
+      "high": 627.74,
+      "unit": "USD/sf",
+      "region": "Broadview Heights, OH",
+      "regionKey": "OH",
+      "dataYear": 2025,
+      "source": {
+        "title": "Fire Station Construction Cost: $503-$798/SF in 2025-26",
+        "url": "https://buildermuse.com/public-works/fire-station-construction-costs-hit-650sf-/",
+        "publisher": "Buildermuse (citing Broadview Heights estimate of probable cost, May 19, 2025)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Subtotal direct building cost: $7,291,965 ($416.68/SF) ... Direct building and site cost: $8,809,466 ($503.40/SF) ... Estimate of probable cost including A/E fees: $10,985,496 ($627.74/SF)",
+      "scopeNotes": "17,500 SF station. $503/SF = direct building + site (likely before some markups/contingency); $628/SF includes A/E fees. Secondary citation of a scanned city PDF that could not be read directly.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerSF",
+      "value": 1015,
+      "unit": "USD/sf",
+      "region": "Tyngsborough, MA",
+      "regionKey": "MA",
+      "dataYear": 2026,
+      "source": {
+        "title": "Fire Station Project FAQ 4.13.26 - Fire Station Building Committee, Town of Tyngsborough",
+        "url": "https://www.tyngsboroughma.gov/DocumentCenter/View/3299/Fire-Station-Project-FAQ-41326-2",
+        "publisher": "Town of Tyngsborough, MA",
+        "accessed": "2026-10-24"
+      },
+      "quote": "In Massachusetts, the per square foot cost for constructing a new fire station ranges between $700 and $1000 per square foot. ... Construction Estimate $20,295,614",
+      "scopeNotes": "Schematic construction estimate $20.3M for a station 'just shy of 20,000 square feet' (~$1,015/SF) incl. sitework; plus final design $1.71M, OPM $1.01M, 10% design contingency $1.79M = $24.8M total. MA prevailing wage.",
+      "confidence": "high"
+    },
+    {
+      "id": "e9",
+      "metric": "totalProjectCostPerSF",
+      "value": 705,
+      "low": 503,
+      "high": 1126,
+      "unit": "USD/sf",
+      "region": "Northeast US (MA, NY, CT)",
+      "regionKey": "MA",
+      "dataYear": 2024,
+      "source": {
+        "title": "Recent Fire Station Construction Costs Adjusted for Inflation (Some selected costs - escalated to a future date, 1/12/2023)",
+        "url": "https://static1.squarespace.com/static/61f2f063e0407a202dbae75c/t/63c6b7b4547f89728d2b96da/1673967540658/230112+-+Some+selected+costs+-+escalated+to+a+future+date.pdf",
+        "publisher": "Mitchell Associates Architects (MAA) for Williamstown, MA",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Average $/sq ft (3) 734$ 705$ ... 8.0% Escallation Rate",
+      "scopeNotes": "~40 Northeast fire/public-safety projects 2018-2024 escalated at 8%/yr to 2024; mean $705/SF without outliers; unescalated values $431-$828/SF. Unclear whether each figure is construction or total project cost; heavy prevailing-wage region.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e10",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 275,
+      "high": 400,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2017,
+      "source": {
+        "title": "Why Do Fire Stations Cost So Much?",
+        "url": "https://www.firehouse.com/stations/article/12369981/fire-station-costs-architects-explain-why-fire-station-construction-planning-has-high-costs",
+        "publisher": "Firehouse",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Many stations today are being built between $275 and $400 a square foot. ... excluding soft costs that could easily be another 25 percent of construction costs.",
+      "scopeNotes": "Architects' rule of thumb, Sept 2017. Also: 'The biggest expense in a new fire station is electrical, followed by site work including grading, paving and site utilities.'",
+      "confidence": "medium"
+    },
+    {
+      "id": "e11",
+      "metric": "hardCostPerSF",
+      "value": 173.15,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "RSMeans square foot cost model: Fire Station, 1 story (Decorative Concrete Block / Bearing Walls)",
+        "url": "https://www.rsmeans.com/model-pages/fire-station-1-story",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Model page cost table (6,000 SF, 2019 data): SubTotal $128.26/SF; Contractor Fees 25%; Architectural Fees 8%; Total Building Cost $173.15/SF (union)",
+      "scopeNotes": "Building only, union labor, 2019 national average; includes contractor GC/OH&P (25%) AND architect fees; excludes sitework, land, FF&E. Hard cost w/o A/E fee = SubTotal x 1.25. Stale (2019) and well below current bids; used for relative ratios between types only.",
+      "confidence": "low"
+    },
+    {
+      "id": "e12",
+      "metric": "hardCostPerSF",
+      "value": 197.32,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "RSMeans square foot cost model: Fire Station, 2 story (Brick Veneer / Reinforced Concrete)",
+        "url": "https://www.rsmeans.com/model-pages/fire-station-2-story",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Model page cost table (10,000 SF, 2019 data): SubTotal $146.16/SF; Contractor Fees 25%; Architectural Fees 8%; Total Building Cost $197.32/SF (union)",
+      "scopeNotes": "Building only, union labor, 2019 national average; includes contractor GC/OH&P (25%) AND architect fees; excludes sitework, land, FF&E. Hard cost w/o A/E fee = SubTotal x 1.25. Stale (2019) and well below current bids; used for relative ratios between types only.",
+      "confidence": "low"
+    },
+    {
+      "id": "e13",
+      "metric": "softCostPct",
+      "value": null,
+      "low": 0.1,
+      "high": 0.3,
+      "unit": "pct",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2020,
+      "source": {
+        "title": "Station Design: Station Construction: Budgeting for Soft Costs",
+        "url": "https://www.firehouse.com/stations/article/21150704/station-design-station-construction-budgeting-for-soft-costs",
+        "publisher": "Firehouse (Henry Pittner, Oct 1 2020)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "They usually account for approximately 10 percent-30 percent of a project budget. ... a target budget of $15-$30 per square foot of the facility ... Owner contingency costs account for approximately 3 percent-8 percent of the budget.",
+      "scopeNotes": "Soft costs as % of total project budget. A/E fee 6.13%-9.21% of construction for a $5M station; materials testing 0.25%-0.75% of hard cost; builder's risk 1.0%; commissioning $1.20-$3.50/SF.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e14",
+      "metric": "contractValue",
+      "value": 9600000,
+      "low": 9300000,
+      "high": 9600000,
+      "unit": "USD/ls",
+      "region": "Corpus Christi, TX",
+      "regionKey": "TX",
+      "dataYear": 2025,
+      "source": {
+        "title": "City Council Approves Construction Contracts for New Fire Stations 8 & 10",
+        "url": "https://www.corpuschristitx.gov/news/posts/city-council-approves-construction-contracts-for-new-fire-stations-8-10/",
+        "publisher": "City of Corpus Christi",
+        "accessed": "2026-10-24"
+      },
+      "quote": "$9.6 million construction contract ... three drive-through apparatus bays ... $9.3 million ... three double-stacked apparatus bays",
+      "scopeNotes": "Two 3-bay stations, Oct 2025; SF not stated. Shows a typical 3-bay station hard cost of ~$9-10M in Texas.",
+      "confidence": "high"
+    },
+    {
+      "id": "e15",
+      "metric": "hardCostPerSF",
+      "value": 400,
+      "unit": "USD/sf",
+      "region": "Richmond, VA (state database)",
+      "regionKey": "VA-Richmond",
+      "dataYear": 2026,
+      "source": {
+        "title": "Virginia Building Construction Cost Database (VBCCD) - 2026, rates per 01/01/2026",
+        "url": "https://aemassets.dgs.virginia.gov/site-assets/deb/Miscellaneous/R_2%20PUBLISHED%20Virginia%20Building%20Construction%20Cost%20Database%20-%202026.pdf",
+        "publisher": "Virginia Department of General Services, Division of Engineering & Buildings",
+        "accessed": "2026-10-24"
+      },
+      "quote": "New Police Station Yes Sq. Ft. 1,933 - 97,866 15,700 $400",
+      "scopeNotes": "Proxy only (police station, not fire): median 15,700 SF at $400/SF incl. utilities and site work. Average construction cost of actual state/regional projects set to Richmond VA Jan 2026; 'Prices also include utilities and site work where applicable.' Excludes soft costs. Mostly higher-ed/state agency buildings.",
+      "confidence": "low"
+    },
+    {
+      "id": "e16",
+      "metric": "contingencyPct",
+      "value": 0.2,
+      "low": 0.05,
+      "high": 0.2,
+      "unit": "pct",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2008,
+      "source": {
+        "title": "Fire Station Budgeting and Cost Control",
+        "url": "https://rfmarch.com/fire-station-budgeting-and-cost-control/",
+        "publisher": "Rice Fergus Miller",
+        "accessed": "2026-10-24"
+      },
+      "quote": "It would not be uncommon to budget 20% at the early stage of a project.",
+      "scopeNotes": "Early-stage owner contingency (as % of hard+soft), reduced to 5-10% over the project. Also: 'soft costs can easily total 25% of your hard costs, and can sometimes be as high as 50%'.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Broadview Heights OH estimate (e7) is a scanned PDF and is cited via a secondary article; verify against the city document.",
+    "No sourced per-bay costs for exhaust capture, bay doors, generator or alerting - all line items are derived allowances; vendor quotes would firm them up.",
+    "A national fire-station $/SF survey (e.g., Firehouse Station Design Awards data book) would let the mid be set from a larger sample than nine projects."
+  ]
+}

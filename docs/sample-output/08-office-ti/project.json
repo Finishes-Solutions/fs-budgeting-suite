@@ -1,0 +1,59 @@
+{
+  "sample": {
+    "id": "08-office-ti",
+    "name": "Fulton Market office TI",
+    "address": "Chicago, IL",
+    "exitCap": 0.07
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "quick",
+    "location": {
+      "region": "IL-Chicago"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "amount",
+      "value": 0
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "c1",
+        "typeId": "office-ti",
+        "name": "Tenant improvement — floors 6–7",
+        "phaseId": "p1",
+        "size": 22000,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": null
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

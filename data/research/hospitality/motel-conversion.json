@@ -1,0 +1,995 @@
+{
+  "schemaVersion": 1,
+  "id": "motel-conversion",
+  "name": "Motel conversion / renovation",
+  "category": "hospitality",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "key",
+  "summary": "Renovation of an existing 1–3 story exterior-corridor motel (rooms, baths, exterior, systems), repositioned as a refreshed/boutique motel or converted to interim or permanent housing. Cost per key spans ~10x with scope: light life-safety/ADA work for interim housing (~$16k–$19k/unit in California Homekey projects) up to full gut with kitchenettes and MEP replacement. Hard cost here excludes acquisition. Sources: Homekey case studies, the Nehmer/HVS Design Hotel Cost Estimating Guide (2021 renovation unit costs) and RSMeans new-motel cost as a ceiling; the mid is a build-up, so verify.",
+  "sizing": {
+    "typicalSize": {
+      "low": 25,
+      "mid": 55,
+      "high": 100,
+      "unit": "key",
+      "evidence": [
+        "e26",
+        "e27",
+        "e9",
+        "e10",
+        "e23"
+      ],
+      "derived": true,
+      "method": "Observed conversions: Best Inn 23 rooms (e26), San Diego Ramada 64 rooms (e27), Commerce 80 units (e9), Burbank Housing motels 20, 55 and 60 units (e10); HCEG economy prototype 90 rooms (e23). Mid 55."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 350,
+      "mid": 420,
+      "high": 500,
+      "evidence": [
+        "e24",
+        "e26"
+      ],
+      "derived": true,
+      "method": "Economy guestroom ~303 SF net (HCEG, e24); Best Inn rooms ~250 SF (e26); plus bath (~40 SF) and a small office/laundry/lobby share, exterior walkways excluded → ~350–500 GSF/key."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 25,
+      "mid": 35,
+      "high": 50,
+      "evidence": [],
+      "derived": true,
+      "method": "1–2 story motels with ~1 surface space per room: ~25–50 rooms/acre (2-story courtyard plans at the high end)."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.5,
+      "mid": 1,
+      "high": 1.1,
+      "type": "surface",
+      "evidence": [
+        "e25"
+      ],
+      "derived": true,
+      "method": "Existing motels typically park ~1 per room (HCEG economy prototype 100 spaces / 90 rooms = 1.11, e25); housing conversions for formerly homeless residents often need far fewer."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 15000,
+      "mid": 45000,
+      "high": 85000,
+      "dollarYear": 2022,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "e7"
+      ],
+      "derived": true,
+      "method": "Scope build-up (2021–2022 evidence, expressed as 2022 $). LOW (life-safety/ADA/systems only): Best Inn interim conversion $19,026/unit (2021, e1) and Commerce extended-stay motel $1.3M/80 = $16,250/unit for plumbing, electrical, fire alarm, roofing and security (2022, e2) → $15k. MID (full repositioning): HCEG 2021 full room + bath + corridor renovation, economy $9.4k–$13.2k and midscale $19.7k–$26.8k per key (e4, e5) x1.18 GC markups (e6), taking only the ~55% construction share (rest is FF&E) at a midscale finish → ~$15k; + PTAC ~$1.4k, locks ~$0.3k, 5% accessible rooms ~$1.4k/key, systems/roof/fire alarm at Commerce level ~$16k, exterior paint/windows/doors ~$6–8k, site/signage/landscape ~$1–2k → ~$42k–$45k. HIGH (gut + kitchenettes/MEP replacement, e.g., permanent housing): Best Inn permanent conversion estimate $62,448/unit total development (2021, e3) ≈ $52k hard, plus sprinklers/unit combinations → $85k, capped near new-build replacement (RSMeans new 2-3 story motel $157–$173/SF in 2019 $, incl. 6% A/E, x ~420 SF ≈ $66k–$73k before escalation, e7). California evidence was not regionalized by hand."
+    },
+    "perSF": {
+      "low": 35,
+      "mid": 107,
+      "high": 200,
+      "dollarYear": 2022,
+      "region": "US",
+      "evidence": [
+        "e7"
+      ],
+      "derived": true,
+      "method": "perPrimaryUnit ÷ 420 SF/key (low $15k → $36, mid $45k → $107, high $85k → $202). New motel construction for comparison: RSMeans $157–$173/SF (2019 $, e7)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Renovation contractor price incl. GC and OH&P: interior demo, room/bath/corridor construction, PTACs, life safety, roof/exterior, ADA rooms, parking lot reseal, landscape and signage. Excludes acquisition, loose FF&E (beds, casegoods, TVs), soft costs, permits, contingency, relocation, off-sites, impact/tap fees, financing."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.35,
+    "standard": 1,
+    "premium": 1.4,
+    "luxury": 1.9,
+    "evidence": [],
+    "derived": true,
+    "method": "Economy = light life-safety/ADA scope (low/mid = 0.33); premium = boutique-grade reposition with upgraded baths and exterior (~1.4); luxury = high/mid (1.89), gut renovation approaching replacement cost."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.12
+      },
+      {
+        "division": "02",
+        "pct": 0.08
+      },
+      {
+        "division": "06",
+        "pct": 0.04
+      },
+      {
+        "division": "07",
+        "pct": 0.08
+      },
+      {
+        "division": "08",
+        "pct": 0.06
+      },
+      {
+        "division": "09",
+        "pct": 0.22
+      },
+      {
+        "division": "10",
+        "pct": 0.03
+      },
+      {
+        "division": "12",
+        "pct": 0.03
+      },
+      {
+        "division": "21",
+        "pct": 0.03
+      },
+      {
+        "division": "22",
+        "pct": 0.1
+      },
+      {
+        "division": "23",
+        "pct": 0.07
+      },
+      {
+        "division": "26",
+        "pct": 0.07
+      },
+      {
+        "division": "27",
+        "pct": 0.01
+      },
+      {
+        "division": "28",
+        "pct": 0.02
+      },
+      {
+        "division": "32",
+        "pct": 0.04
+      }
+    ],
+    "evidence": [
+      "e4",
+      "e2"
+    ],
+    "derived": true,
+    "method": "Derived from the mid build-up: room/bath/corridor finishes (09) and bath plumbing (22) dominate (HCEG room/bath lines, e4); demolition (02) ~8%; roofing/exterior envelope (07) and doors/windows (08) per Commerce scope (e2); PTACs (23); panels/wiring (26); fire alarm/security (28); partial sprinkler retrofit (21); parking/landscape (32); renovation general conditions are a higher share (01, 12%) due to phasing in occupied or small buildings."
+  },
+  "lineItems": [
+    {
+      "id": "ptac-replacement",
+      "name": "PTAC unit replacement",
+      "division": "23",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 1230,
+        "mid": 1420,
+        "high": 1620,
+        "dollarYear": 2021,
+        "region": "US",
+        "evidence": [
+          "e12"
+        ],
+        "derived": false,
+        "method": "HCEG 2021 economy PTAC direct replacement $1,039–$1,372 each (e12) x1.18 GC markup."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline; one per room."
+    },
+    {
+      "id": "electronic-locks",
+      "name": "Electronic guestroom key/lock system",
+      "division": "08",
+      "unit": "key",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 270,
+        "mid": 330,
+        "high": 390,
+        "dollarYear": 2021,
+        "region": "US",
+        "evidence": [
+          "e13"
+        ],
+        "derived": false,
+        "method": "HCEG 2021 economy new electronic key system $230–$332 per key (e13) x1.18."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Housing conversions often use fob access control instead (Commerce scope included electronic door fobs)."
+    },
+    {
+      "id": "accessible-room-conversion",
+      "name": "Accessible guestroom conversion (roll-in shower)",
+      "division": "09",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 0.05
+      },
+      "cost": {
+        "low": 21070,
+        "mid": 27060,
+        "high": 33040,
+        "dollarYear": 2021,
+        "region": "US",
+        "evidence": [
+          "e14"
+        ],
+        "derived": false,
+        "method": "HCEG 2021 economy ADA roll-in-shower room $17,857–$28,000 per room (e14) x1.18. Qty ~5% of rooms (Commerce made 5 of 80 units accessible)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Multi-trade (doors, bath, plumbing); count set by the accessibility code applicable to the use."
+    },
+    {
+      "id": "monument-sign",
+      "name": "Monument / identity sign",
+      "division": "10",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 7050,
+        "mid": 8710,
+        "high": 10360,
+        "dollarYear": 2021,
+        "region": "US",
+        "evidence": [
+          "e15"
+        ],
+        "derived": false,
+        "method": "HCEG 2021 economy monument sign $5,974–$8,782 (e15) x1.18."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "dumpster-enclosure",
+      "name": "Dumpster enclosure (CMU, gates, bollards, pad)",
+      "division": "32",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 18540,
+        "mid": 19840,
+        "high": 21150,
+        "dollarYear": 2021,
+        "region": "US",
+        "evidence": [
+          "e16"
+        ],
+        "derived": false,
+        "method": "HCEG 2021 $15,711–$17,922 each (e16) x1.18."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "landscape-refresh",
+      "name": "Landscaping refresh allowance",
+      "division": "32",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 14100,
+        "mid": 18890,
+        "high": 23680,
+        "dollarYear": 2021,
+        "region": "US",
+        "evidence": [
+          "e17"
+        ],
+        "derived": false,
+        "method": "HCEG 2021 economy landscaping allowance $11,948–$20,072 (e17) x1.18."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Varies geographically."
+    },
+    {
+      "id": "parking-reseal-stripe",
+      "name": "Parking lot seal and restripe",
+      "division": "32",
+      "unit": "space",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 440,
+        "mid": 840,
+        "high": 1240,
+        "dollarYear": 2021,
+        "region": "US",
+        "evidence": [
+          "e18"
+        ],
+        "derived": false,
+        "method": "HCEG 2021 outdoor parking seal & stripe $375–$1,050 per space (e18) x1.18."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Full repaving is extra."
+    },
+    {
+      "id": "kitchenette-cabinetry",
+      "name": "Kitchenette cabinetry and countertop (housing conversion)",
+      "division": "12",
+      "unit": "key",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 3390,
+        "mid": 4530,
+        "high": 5310,
+        "dollarYear": 2021,
+        "region": "US",
+        "evidence": [
+          "e19"
+        ],
+        "derived": false,
+        "method": "HCEG 2021 extended-stay kitchen cabinetry $2,875–$4,500 (avg $3,840) per key (e19) x1.18. Plumbing/electrical rough-in for a new sink and range circuit is extra."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Switch on for permanent-housing conversions that add kitchenettes."
+    },
+    {
+      "id": "kitchenette-appliances",
+      "name": "Kitchenette appliances (housing conversion)",
+      "division": "11",
+      "unit": "key",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 2020,
+        "mid": 2440,
+        "high": 2770,
+        "dollarYear": 2021,
+        "region": "US",
+        "evidence": [
+          "e20"
+        ],
+        "derived": false,
+        "method": "HCEG 2021 extended-stay kitchen appliances $1,715–$2,345 (avg $2,066) per key (e20) x1.18."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Switch on with kitchenette cabinetry."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 4000,
+      "mid": 8000,
+      "high": 16000,
+      "dollarYear": 2022,
+      "region": "US",
+      "evidence": [
+        "e4",
+        "e28"
+      ],
+      "derived": true,
+      "method": "Loose FF&E for a renovated economy room (bed set, casegoods, seating, lamps, TV, window treatments) ≈ 45% of the HCEG economy room+bath renovation totals ($9.4k–$13.2k, 2021, e4) ≈ $4k–$6k; new-build limited-service FF&E is ~$17k/key (HVS 2024 data, e28) as the high (boutique repositioning). Mid $8k."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.12,
+      "mid": 0.18,
+      "high": 0.25,
+      "evidence": [
+        "e22"
+      ],
+      "derived": true,
+      "method": "HCEG: design, interior design, PM and procurement ≈ 10% of a renovation budget (e22); add permits/plan check, physical-needs assessment, hazardous-materials and Phase I surveys (Homekey due diligence lists appraisal, PNA, hazmat, Phase I, pest, sewer inspection, zoning review), legal and insurance → ~18% mid. Excludes acquisition closing costs and financing."
+    },
+    "notes": "For brand reflag add the franchise application fee and brand PIP inspection fees; for housing conversions add relocation, zoning/use-change entitlements and accessibility consultant."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Existing-conditions unknowns at concept stage before a physical-needs assessment."
+    },
+    "hard": {
+      "low": 0.1,
+      "mid": 0.15,
+      "high": 0.2,
+      "evidence": [
+        "e21"
+      ],
+      "derived": true,
+      "method": "HCEG guidance for hotel renovations: 15% for a quick budget, 10% for a detailed one (e21); 20% high for older (pre-1970) buildings with hazmat or structural unknowns."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 18000,
+      "max": 130000,
+      "dollarYear": 2022,
+      "region": "US",
+      "method": "Hard $15k–$85k + soft 12–25% + FF&E $4k–$16k, excluding acquisition. Cross-checks: Best Inn permanent conversion $62,448/unit total development excl. acquisition (e3). Acquisition-inclusive Homekey totals are NOT comparable: statewide avg $147,974/unit (2020, e11), Commerce $204,000 (e9), Burbank Housing motels $262,776–$443,886 (e10); HVS redevelopment projects (building conversions into hotels) median $193,644 building cost (e8) represent heavier scopes than a motel refresh."
+    }
+  },
+  "openQuestions": [
+    "Need a rehab-only hard cost from a Homekey Round 3 / Homekey+ permanent-housing motel conversion with kitchenettes (sources/uses tables are often images in agency packets — San Diego Ramada budget was image-only).",
+    "HCEG 2021 renovation unit costs predate 2022–2024 escalation; a current HCEG edition (2025/2026) would update them.",
+    "Consider splitting into \"motel refresh / reflag\" and \"motel-to-housing conversion\" types — scope and code triggers differ."
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "renovationCostPerUnit",
+      "value": 19026,
+      "unit": "USD/key",
+      "region": "Los Angeles, CA",
+      "regionKey": "CA-LosAngeles",
+      "dataYear": 2021,
+      "source": {
+        "title": "Best Inn, The People Concern, Los Angeles, CA — Hotels to Housing case study (Aug 2021)",
+        "url": "https://endhomelessness.org/wp-content/uploads/2024/10/Best-Inn-H2H-Case-Study_8-4-21.pdf",
+        "publisher": "National Alliance to End Homelessness",
+        "accessed": "2026-10-24"
+      },
+      "quote": "$437, 612 ($19,026 per unit) was needed to prepare the property for interim housing",
+      "scopeNotes": "23-room motel; light scope: ADA parking space, one ADA bathroom, building-wide fire alarm. Excludes $169,565/unit acquisition and $8,293/unit closing/due diligence.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "renovationCostPerUnit",
+      "value": 16250,
+      "unit": "USD/key",
+      "region": "Commerce, CA (Los Angeles County)",
+      "regionKey": "CA-LosAngeles",
+      "dataYear": 2022,
+      "source": {
+        "title": "Homekey Commerce case study",
+        "url": "https://www.enterprisecommunity.org/sites/default/files/2022-12/Homekey%20Commerce%20Case%20Study.pdf",
+        "publisher": "Enterprise Community Partners",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The total renovation costs are estimated at $1.3 million though not all of the work is complete. The scope ... involved plumbing, electrical (wiring and panels), fire alarm upgrades, roofing, and security",
+      "scopeNotes": "My arithmetic: $1.3M / 80 units = $16,250/unit. Former Studio 6 extended-stay motel (1990s, good condition); 5 units made ADA. Excludes ~$15M purchase.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "totalDevCostPerUnit",
+      "value": 62448,
+      "unit": "USD/key",
+      "region": "Los Angeles, CA",
+      "regionKey": "CA-LosAngeles",
+      "dataYear": 2021,
+      "source": {
+        "title": "Best Inn, The People Concern, Los Angeles, CA — Hotels to Housing case study (Aug 2021)",
+        "url": "https://endhomelessness.org/wp-content/uploads/2024/10/Best-Inn-H2H-Case-Study_8-4-21.pdf",
+        "publisher": "National Alliance to End Homelessness",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The total development cost of converting the property to permanent housing is currently estimated at approximately $1.5 million, or $62,448 per unit",
+      "scopeNotes": "Estimate for a later interim-to-permanent conversion; total development cost (hard + soft), excludes acquisition.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "renovationCostPerUnit",
+      "low": 9391,
+      "high": 13205,
+      "unit": "USD/key",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Summary p.10, Economy: Guestroom Softgoods $2,261–$3,277; Add for Full $2,187–$2,819; Bathroom Softgoods $709–$1,135; Add for Full $3,819–$5,332; Guestroom Corridors $415–$642 per guestroom",
+      "scopeNotes": "My sum of the five economy-tier lines (full guestroom + bath + corridor renovation incl. FF&E items). HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources. Economy prototype: 90 rooms, 3 stories, 303 SF rooms.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "renovationCostPerUnit",
+      "low": 19715,
+      "high": 26807,
+      "unit": "USD/key",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Summary p.10, Midscale: Guestroom Softgoods $5,207–$7,122; Add for Full $4,897–$6,342; Bathroom Softgoods $1,304–$2,210; Add for Full $7,300–$9,766; Corridors $1,007–$1,367 per guestroom",
+      "scopeNotes": "My sum of the five midscale-tier lines. HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "constructionMarkupPct",
+      "value": 0.18,
+      "unit": "pct",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Construction Markups (18% of Construction)",
+      "scopeNotes": "Guide's example adjustment for GC general conditions/OH&P, which its unit costs exclude.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": 173.01,
+      "low": 157.1,
+      "high": 173.01,
+      "unit": "USD/sf",
+      "region": "US National Average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Motel, 2-3 Story with Brick Veneer / Wood Frame — square foot model",
+        "url": "https://www.rsmeans.com/model-pages/motel-2-3-story",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Motel, 2-3 Story, Brick Veneer / Wood Frame; 3 stories; 49,000 SF; Total Building Cost $173.01/SF (union) / $157.10/SF (open shop); contractor fees 25%, architectural fees 6% included",
+      "scopeNotes": "2019 RSMeans model for NEW motel construction; building only; includes 6% architect fee. Used as the replacement-cost ceiling for a motel renovation.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerUnit",
+      "value": 193644,
+      "low": 193644,
+      "high": 287189,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2023,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2024",
+        "url": "https://www.hvs.com/article/9999-hvs-us-hotel-development-cost-survey-2024",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost-per-room table (exhibit image \"HVS Hotel Development Cost Ranges\"), Redevelopment Projects — Building & Site Improvements: Average $287,189; Median $193,644",
+      "scopeNotes": "value = median; low/high = the median and average. HVS 'Building & Site Improvements' (cost-category exhibit) = GC bid, building/monument signage, building permits, contractor overhead, engineering, hard-cost contingency, landscaping, parking/parking garage, site improvements, subcontractor bids. Broader than our hard cost (permits, engineering, contingency); our conversion uses x0.91. Excludes land, soft costs, FF&E, pre-opening, developer fee. Survey covers budgets collected in calendar 2023. HVS describes this category as 'redevelopments of existing buildings throughout the United States'.",
+      "confidence": "high"
+    },
+    {
+      "id": "e9",
+      "metric": "totalDevCostPerUnit",
+      "value": 204000,
+      "unit": "USD/key",
+      "region": "Commerce, CA",
+      "regionKey": "CA-LosAngeles",
+      "dataYear": 2021,
+      "source": {
+        "title": "Homekey Commerce case study",
+        "url": "https://www.enterprisecommunity.org/sites/default/files/2022-12/Homekey%20Commerce%20Case%20Study.pdf",
+        "publisher": "Enterprise Community Partners",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Site Acquisition & Renovations Cost: $16,300,000 (approximately); Total Cost Per Unit: $204,000; Number of Units: 80",
+      "scopeNotes": "Includes acquisition.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e10",
+      "metric": "totalDevCostPerUnit",
+      "low": 262776,
+      "high": 443886,
+      "unit": "USD/key",
+      "region": "Sonoma and Napa counties, CA",
+      "regionKey": "CA",
+      "dataYear": 2022,
+      "source": {
+        "title": "Rehab, Remediation, Renovation (Burbank Housing Homekey portfolio)",
+        "url": "https://www.enterprisecommunity.org/sites/default/files/2023-06/Rehab_Remed_Renovation.pdf",
+        "publisher": "Enterprise Community Partners",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Motel Acquisition & Rehab: Kashia (20 units) $310,271; Valley Lodge (55 units) $443,886; Studios at Montero (60 units) $262,776 Total Cost Per Unit",
+      "scopeNotes": "Permanent supportive housing; totals include acquisition, rehab and soft costs. Data year approximate (Homekey rounds 2020-2022; deck dated 2023).",
+      "confidence": "low"
+    },
+    {
+      "id": "e11",
+      "metric": "totalDevCostPerUnit",
+      "value": 147974,
+      "unit": "USD/key",
+      "region": "California statewide (Homekey Round 1)",
+      "regionKey": "CA",
+      "dataYear": 2020,
+      "source": {
+        "title": "A Guide to Converting Hotels to Housing",
+        "url": "https://steinberghart.com/wp-content/uploads/2021/02/Steinberg-Hart_A-Guide-to-Converting-Hotels-to-Housing_sm.pdf",
+        "publisher": "Steinberg Hart",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Homekey utilized $846 million to rapidly purchase and subsidize 6,029 units ... With the average total cost per unit at $147 ,974",
+      "scopeNotes": "Includes acquisition; mostly hotels/motels bought in 2020 with minimal rehab.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e12",
+      "metric": "lineItemCost",
+      "low": 1039,
+      "high": 1372,
+      "unit": "USD/ea",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "PTAC Unit Direct Replacement, NIC Finishes $1,039 to $1,372 Each (Economy)",
+      "scopeNotes": "HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e13",
+      "metric": "lineItemCost",
+      "low": 230,
+      "high": 332,
+      "unit": "USD/key",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "New Electronic Key System $230 to $332 Per Key (Economy)",
+      "scopeNotes": "HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e14",
+      "metric": "lineItemCost",
+      "low": 17857,
+      "high": 28000,
+      "unit": "USD/key",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Guestroom ADA Modifications — Roll-in Shower Room $17,857 to $28,000 Per Key (Economy)",
+      "scopeNotes": "Per converted accessible room. HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e15",
+      "metric": "lineItemCost",
+      "low": 5974,
+      "high": 8782,
+      "unit": "USD/ea",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exterior Signage - Monument $5,974 to $8,782 Each (Economy)",
+      "scopeNotes": "HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e16",
+      "metric": "lineItemCost",
+      "low": 15711,
+      "high": 17922,
+      "unit": "USD/ea",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Dumpster Enclosure (CMU Walls, Wood Gate, Bollards, Concrete Pad) $15,711 to $17,922 Each",
+      "scopeNotes": "HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e17",
+      "metric": "lineItemCost",
+      "low": 11948,
+      "high": 20072,
+      "unit": "USD/ls",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Landscaping (10) $11,948 to $20,072 Allowance (Economy)",
+      "scopeNotes": "Allowance; varies geographically. HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e18",
+      "metric": "lineItemCost",
+      "low": 375,
+      "high": 1050,
+      "unit": "USD/space",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Outdoor Parking (Seal Lot & Stripe Spaces) $375 to $1,050 Per Space",
+      "scopeNotes": "HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e19",
+      "metric": "lineItemCost",
+      "low": 2875,
+      "high": 4500,
+      "unit": "USD/key",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Extended Stay, Guestroom - Add for a Full Renovation: Kitchen Cabinetry $2,875.00 to $4,500.00 (avg $3,840.04)",
+      "scopeNotes": "HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e20",
+      "metric": "lineItemCost",
+      "low": 1715,
+      "high": 2345,
+      "unit": "USD/key",
+      "region": "United States (geographically diverse)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Extended Stay, Guestroom - Add for a Full Renovation: Kitchen Appliances $1,715.06 to $2,344.50 (avg $2,066.09)",
+      "scopeNotes": "HCEG 2021 general notes: costs exclude professional fees, contingency, OS&E, attic stock, freight, sales tax, and the contractor's general conditions, overhead and profit (the guide suggests ~18% construction markups). 2021 dollars, geographically diverse U.S. sources.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e21",
+      "metric": "contingencyPct",
+      "low": 0.1,
+      "high": 0.15,
+      "unit": "pct",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "If you are doing a quick budget, you might apply 15%. If you are doing a detailed version, it might be 10%.",
+      "scopeNotes": "Guidance for hotel renovation budgets.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e22",
+      "metric": "softCostPct",
+      "value": 0.1,
+      "unit": "pct",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Typically, the design cost of a project including the Architecture, Interior Design, Project Management, and Procurement make up about 10% of the overall budget.",
+      "scopeNotes": "Renovation design/PM/procurement fees only; excludes permits, legal, insurance, etc.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e23",
+      "metric": "typicalSize",
+      "unit": "text",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Economy 90 guestrooms, 3 stories; Extended Stay 150 guestrooms, 4 stories; Midscale 135 guestrooms, 5 stories; Upscale 304 guestrooms, 9 stories; Upper Upscale 192 guestrooms, 25 suites, 7 stories; Luxury 200 guestrooms, 20 suites, 6 stories",
+      "scopeNotes": "Prototype hotel assumptions per tier.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e24",
+      "metric": "guestroomNetSF",
+      "unit": "text",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Guestroom area assumptions: Economy 303 SF; Midscale 370 SF; Upscale 389 SF; Upper Upscale 472 SF; Luxury 578 SF; Extended Stay studio 548 SF (incl. 8x6 kitchen)",
+      "scopeNotes": "Net guestroom areas (excl. bath for most tiers) of the guide's prototype hotels; used to derive gross SF per key.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e25",
+      "metric": "parkingPerUnit",
+      "low": 1.11,
+      "high": 1.6,
+      "unit": "ratio",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "Hotel Cost Estimating Guide 2021",
+        "url": "https://www.hvs.com/WebContent/bookstore/HVS%20Hotel%20Cost%20Estimating%20Guide%202021.pdf",
+        "publisher": "Nehmer and HVS Design",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Outdoor Parking ... Per Space (100) / (175) / (150) for Economy (90 rooms) / Extended Stay (150) / Midscale (135); Upscale: 'Assume 486 spaces ... (1.6 spaces per room to accommodate meeting attendance)'",
+      "scopeNotes": "Ratios are my arithmetic: economy 1.11, extended stay 1.17, midscale 1.11, upscale 1.6 spaces/room.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e26",
+      "metric": "typicalSize",
+      "value": 23,
+      "unit": "count",
+      "region": "Los Angeles, CA",
+      "regionKey": "CA-LosAngeles",
+      "source": {
+        "title": "Best Inn, The People Concern, Los Angeles, CA — Hotels to Housing case study (Aug 2021)",
+        "url": "https://endhomelessness.org/wp-content/uploads/2024/10/Best-Inn-H2H-Case-Study_8-4-21.pdf",
+        "publisher": "National Alliance to End Homelessness",
+        "accessed": "2026-10-24"
+      },
+      "quote": "formerly operated as a 23-unit motel ... The rooms are small at about 250 square feet",
+      "scopeNotes": "Small urban motel.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e27",
+      "metric": "typicalSize",
+      "value": 64,
+      "unit": "count",
+      "region": "San Diego, CA",
+      "regionKey": "CA-SanDiego",
+      "source": {
+        "title": "Homekey Funds for Proposed Acquisition of Ramada Inn (Pacific Village) — presentation",
+        "url": "https://sdhc.org/wp-content/uploads/2023/11/108_Homekey_Ramada_final.pdf",
+        "publisher": "San Diego Housing Commission",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Constructed circa 1959 • 64 existing rooms (post-rehab: 62 units) • 1 Building – two-story walk-up",
+      "scopeNotes": "Motel to housing conversion; construction Feb–Sep 2024.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e28",
+      "metric": "ffePerUnit",
+      "value": 16991,
+      "low": 16233,
+      "high": 16991,
+      "unit": "USD/key",
+      "region": "United States (national survey of proposed / under-construction hotels)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "HVS U.S. Hotel Development Cost Survey 2025",
+        "url": "https://www.hvs.com/article/10219-hvs-us-hotel-development-cost-survey-2025",
+        "publisher": "HVS",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Exhibit 6 'Median Hotel Development Cost Stabilizes Since Our Last Survey', Limited-Service Hotels — FF&E: Average $16,233; Median $16,991",
+      "scopeNotes": "value = median; low/high = the median and average. HVS FF&E = guestroom/bath furniture and fixtures, kitchen and laundry equipment, public space and meeting furniture, softgoods, technology/telecom equipment. Survey covers budgets collected in calendar 2024.",
+      "confidence": "high"
+    }
+  ]
+}

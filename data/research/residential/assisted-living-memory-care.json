@@ -1,0 +1,447 @@
+{
+  "schemaVersion": 1,
+  "id": "assisted-living-memory-care",
+  "name": "Assisted living / memory care",
+  "category": "residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "bed",
+  "summary": "Licensed assisted living with a secured memory-care wing: small private units (~350-550 SF), large dining/activity/care common areas, commercial kitchen, nurse call, wander management, generator and institutional-grade fire protection. Per-SF cost runs ~20% above independent living (Weitz 2025-26), and per bed it depends on gross SF per bed. Per-SF data are national survey ranges; per-bed figures are derived, with one older project as a check. Memory-care-specific cost data were not found publicly.",
+  "sizing": {
+    "typicalSize": {
+      "low": 60,
+      "mid": 100,
+      "high": 150,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical stand-alone AL/MC building 60-80 AL + 20-32 MC units; Fairfield County example 90 AL + 40 MC units (e3). Beds ~1.05-1.1x units (companion suites)."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 700,
+      "mid": 800,
+      "high": 950,
+      "evidence": [],
+      "derived": true,
+      "method": "Gross SF per bed: AL units ~450-550 net SF and MC units ~300-375 net SF; common/care/dining/kitchen/corridors take ~40-50% of gross => AL ~850-950, MC ~650-750 GSF per bed; blended ~800."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 20,
+      "mid": 30,
+      "high": 50,
+      "evidence": [],
+      "derived": true,
+      "method": "Single- or two-story suburban AL/MC ~15-30 beds/acre; three-story and urban projects higher (judgment)."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.4,
+      "mid": 0.5,
+      "high": 0.75,
+      "evidence": [],
+      "derived": true,
+      "method": "Few residents drive; parking serves staff shifts and visitors - typically 0.4-0.75 spaces per bed (judgment; local code governs).",
+      "type": "surface"
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 195000,
+      "mid": 255000,
+      "high": 380000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3"
+      ],
+      "derived": true,
+      "method": "Derived: perSF x sfPerPrimaryUnit: mid $320 x 800 = $256k (rounded $255k); low $280 x 700 = $196k; high $400 x 950 = $380k. Check: Fairfield County CT 2020 AL/MC ~$290k/unit (e3; low confidence, scope unclear, older dollars)."
+    },
+    "perSF": {
+      "low": 280,
+      "mid": 320,
+      "high": 410,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e4"
+      ],
+      "derived": false,
+      "method": "Weitz 2026 mid-level AL $280-356 (midpoint $318) and high-level $363-452 (e1); April 2025 mid-level $278-354 (e2). Mid $320 = mid-level midpoint; low = bottom of mid-level; high ~ middle of high-level range (luxury tier extends further). Memory care is assumed at the AL rate per SF (secure courtyards and higher common-area share show up in SF per bed rather than $/SF)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. general conditions, OH&P, commercial kitchen and laundry equipment, nurse call, generator, secured courtyard and on-site work; excludes land, soft costs, FF&E, off-sites, impact fees, financing, licensing and pre-opening. Weitz does not state whether its ranges include sitework - verify."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.88,
+    "standard": 1.0,
+    "premium": 1.25,
+    "luxury": 1.45,
+    "evidence": [
+      "e1"
+    ],
+    "derived": true,
+    "method": "Weitz high-level vs mid-level AL midpoints: $407.5 / $318 = 1.28 (e1) sets premium ~1.25; economy = bottom of mid-level ($280/$318 = 0.88); luxury by judgment."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.115
+      },
+      {
+        "division": "03",
+        "pct": 0.105
+      },
+      {
+        "division": "04",
+        "pct": 0.015
+      },
+      {
+        "division": "05",
+        "pct": 0.027
+      },
+      {
+        "division": "06",
+        "pct": 0.123
+      },
+      {
+        "division": "07",
+        "pct": 0.055
+      },
+      {
+        "division": "08",
+        "pct": 0.035
+      },
+      {
+        "division": "09",
+        "pct": 0.079
+      },
+      {
+        "division": "10",
+        "pct": 0.009
+      },
+      {
+        "division": "11",
+        "pct": 0.047
+      },
+      {
+        "division": "12",
+        "pct": 0.025
+      },
+      {
+        "division": "14",
+        "pct": 0.02
+      },
+      {
+        "division": "21",
+        "pct": 0.023
+      },
+      {
+        "division": "22",
+        "pct": 0.08
+      },
+      {
+        "division": "23",
+        "pct": 0.075
+      },
+      {
+        "division": "26",
+        "pct": 0.09
+      },
+      {
+        "division": "27",
+        "pct": 0.016
+      },
+      {
+        "division": "28",
+        "pct": 0.016
+      },
+      {
+        "division": "31",
+        "pct": 0.02
+      },
+      {
+        "division": "32",
+        "pct": 0.015
+      },
+      {
+        "division": "33",
+        "pct": 0.01
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived from the independent-living split in this category: +1.5 pts HVAC (23, PTAC/VRF per unit plus kitchen/laundry exhaust, care-area ventilation), +1.0 pt plumbing (22, accessible showers, assisted bathing, laundry), +0.5 pt electrical (26, generator), +0.4 pt each nurse call (27) and wander management/fire alarm (28), +0.3 pt sprinklers (21, I-2/I-1 occupancy), +0.2 pt specialties (10, grab bars); offset by less concrete (-1.5, mostly 1-3 stories on grade), framing, finishes, casework and elevators; 01 absorbs rounding."
+  },
+  "lineItems": [
+    {
+      "id": "commercial-kitchen",
+      "name": "Commercial kitchen, servery and central laundry",
+      "division": "11",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 450000,
+        "mid": 800000,
+        "high": 1300000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: institutional kitchen with hoods, walk-ins, dish and central laundry for ~100 beds (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "nurse-call-wander",
+      "name": "Nurse call and wander-management / access control",
+      "division": "27",
+      "unit": "bed",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 2500,
+        "mid": 4000,
+        "high": 6500,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: UL 1069 / wireless nurse call with locating and secured-unit door controls (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "emergency-generator",
+      "name": "Emergency generator (life safety + resident comfort loads)",
+      "division": "26",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 250000,
+        "mid": 450000,
+        "high": 800000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: 300-750 kW diesel/natural gas set with ATS; several states now require backup power for AL temperature control (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "secured-courtyard",
+      "name": "Secured memory-care courtyard and wandering path",
+      "division": "32",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 300000,
+        "high": 600000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: fenced courtyard, looped path, shade, lighting and landscaping (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 10000,
+      "mid": 15000,
+      "high": 22000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: common-area furniture, dining, activity, therapy/wellness, kitchen smallwares and furnished MC rooms ~ $1.0-2.2M for ~100 beds (2026 judgment). Operator-specific; verify."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.16,
+      "mid": 0.24,
+      "high": 0.34,
+      "evidence": [
+        "e5"
+      ],
+      "derived": true,
+      "method": "Derived: RAND multifamily soft/hard 0.19-0.33 incl. financing (e5) plus healthcare-specific items (licensing/CON consultants, operator technical services, life-safety/state health plan review); mid 0.28 excluding construction interest and operating pre-opening. | Second pass (2026-10-24, main session): Reduced 4 points: RAND-based, includes developer costs. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.06
+    },
+    "notes": "Model pre-opening (staffing, training, marketing) and operating-deficit reserves separately; certificate-of-need states add application costs and time."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.04,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm for licensed healthcare-adjacent buildings."
+    },
+    "hard": {
+      "low": 0.04,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 220000,
+      "max": 560000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Hard low $195k x 1.15 ~= $225k; hard high $380k x 1.48 ~= $560k."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 280,
+      "high": 452,
+      "unit": "USD/sf",
+      "region": "US (Weitz national survey)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Assisted Living Construction Costs Rise in 2026, Independent Living Costs Remain Flat (Feb 3, 2026; Weitz 'Senior Living Construction Costs' report)",
+        "url": "https://seniorhousingnews.com/2026/02/03/assisted-living-construction-costs-rise-in-2026-independent-living-costs-remain-flat/",
+        "publisher": "Senior Housing News",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Mid-level assisted living projects cost between $280 and $356 ... High level assisted living construction costs remain the same since August at a range of $363 to $452 per square foot.",
+      "scopeNotes": "Weitz 'Senior Living Construction Costs' report (early 2026) via SHN; memory care not separately reported; scope (sitework, FF&E) not stated.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 278,
+      "high": 354,
+      "unit": "USD/sf",
+      "region": "US (Weitz brief)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Senior Living Construction Costs Could Rise 4% to 6% in Next 12 Months (Apr 21, 2025; Weitz construction costs brief)",
+        "url": "https://seniorhousingnews.com/?p=50686",
+        "publisher": "Senior Housing News",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Assisted living projects range in cost from $278 to $354 per square foot",
+      "scopeNotes": "Weitz April 2025 brief, mid-level assisted living, via SHN.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "costPerUnit",
+      "value": 290000,
+      "unit": "USD/unit",
+      "region": "Fairfield County, CT",
+      "regionKey": "CT",
+      "dataYear": 2020,
+      "source": {
+        "title": "Carnegie Capital closes Fairfield County construction loan (Dec 27, 2020)",
+        "url": "https://seniorcare.levinassociates.com/2020/12/27/carnegie-capital-closes-fairfield-county-construction-loan",
+        "publisher": "Levin Associates - The SeniorCare Investor",
+        "accessed": "2026-10-24"
+      },
+      "quote": "90 assisted living and 40 memory care units ... that puts the construction cost at nearly $37.7 million ... The five-year construction loan totaled $24.5 million",
+      "scopeNotes": "One AL/MC project (130 units), 2020; ~$290k/unit. The 'construction cost' appears to be inferred from the loan and may be total project cost; scope unclear.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 240,
+      "high": 292,
+      "unit": "USD/sf",
+      "region": "US (Weitz national survey)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Assisted Living Construction Costs Rise in 2026, Independent Living Costs Remain Flat (Feb 3, 2026; Weitz 'Senior Living Construction Costs' report)",
+        "url": "https://seniorhousingnews.com/2026/02/03/assisted-living-construction-costs-rise-in-2026-independent-living-costs-remain-flat/",
+        "publisher": "Senior Housing News",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Costs of mid-level independent living projects registered between $240 and $292 per square foot",
+      "scopeNotes": "IL comparison from the same Weitz survey - AL mid-level runs ~17-22% above IL per SF.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "softCostPctOfHard",
+      "value": null,
+      "low": 0.19,
+      "high": 0.33,
+      "unit": "ratio",
+      "region": "Texas / Colorado / California",
+      "regionKey": "US",
+      "source": {
+        "title": "The High Cost of Producing Multifamily Housing in California (RAND RR-A3743-1, Ward & Schlake, 2025) - copy hosted by San Diego Housing Commission",
+        "url": "https://sdhc.org/wp-content/uploads/2025/04/Att-2_RAND_RRA3743-1.pdf",
+        "publisher": "RAND Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 3.1 Panel C. Soft Costs: Texas Market rate $22; Colorado Market rate $44; California Market rate $84 (vs Panel A hard costs $115 / $237 / $253 per NRSF)",
+      "scopeNotes": "Soft/hard ratios derived: TX 0.19, CO 0.19, CA 0.33. RAND soft costs include A&E, legal, fees and financing costs; market-rate sample mixes garden, podium, wrap, high-rise.",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "Memory-care-specific $/SF and GSF per bed (state CON filings, e.g., NC/KY/GA, list project cost, beds and SF) would sharpen the mid and allow a separate MC adjustment.",
+    "Weitz scope (sitework/FF&E) is not stated in the public summaries.",
+    "Kitchen, nurse call, generator and courtyard items are derived."
+  ]
+}

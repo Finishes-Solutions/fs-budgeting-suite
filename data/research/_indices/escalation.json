@@ -1,0 +1,532 @@
+{
+ "schemaVersion": 1,
+ "id": "escalation",
+ "name": "Construction cost escalation index (US, selling-price basis)",
+ "researchedAt": "2026-10-24",
+ "seriesName": "Turner Building Cost Index (US nonresidential building selling-price index), annual average; 2026 = Q1-Q3 2026 average (YTD)",
+ "series": {
+  "2010": 799,
+  "2011": 812,
+  "2012": 830,
+  "2013": 864,
+  "2014": 902,
+  "2015": 943,
+  "2016": 989,
+  "2017": 1038,
+  "2018": 1096,
+  "2019": 1156,
+  "2020": 1177,
+  "2021": 1199,
+  "2022": 1295,
+  "2023": 1373,
+  "2024": 1426,
+  "2025": 1485,
+  "2026": 1552.3
+ },
+ "latest": {
+  "year": 2026,
+  "basis": "YTD average of Q1-Q3 2026",
+  "quarters": {
+   "2025Q4": 1510,
+   "2026Q1": 1530,
+   "2026Q2": 1552,
+   "2026Q3": 1575
+  }
+ },
+ "forecast": {
+  "2026": 0.044,
+  "2027": 0.04,
+  "2028": 0.04,
+  "2029": 0.04,
+  "2030": 0.04
+ },
+ "forecastRange": {
+  "2026": {
+   "low": 0.0425,
+   "mid": 0.044,
+   "high": 0.0525,
+   "evidence": [
+    "e11",
+    "e13",
+    "e14",
+    "e17"
+   ],
+   "derived": false,
+   "method": "Mid = Construction Analytics 2026 nonres 4.4% (e14), matching RLB YoY 4.45% (e11). Low = T&T 4.25% (e13). High = Q3 2026 quarterly momentum annualized (RLB +1.28%/qtr = 5.2%)."
+  },
+  "2027": {
+   "low": 0.032,
+   "mid": 0.04,
+   "high": 0.055,
+   "evidence": [
+    "e12",
+    "e13",
+    "e14",
+    "e10"
+   ],
+   "derived": false,
+   "method": "Mid = median of the published US/North America forecasts: JLL NA mid 3.7% (e12), T&T 4.0% (e13), Construction Analytics 4.0% (e14) -> 4.0%. Low = JLL NA low 3.2%. High = current momentum (Turner Q3 2026 +1.48%/qtr = 6.1% annualized; RLB 5.2%), tempered. DoD 2.0% (e10) is budget guidance and is excluded from the midpoint."
+  },
+  "2028": {
+   "low": 0.03,
+   "mid": 0.04,
+   "high": 0.06,
+   "evidence": [
+    "e14",
+    "e12",
+    "e16"
+   ],
+   "derived": false,
+   "method": "Mid = Construction Analytics 2028 4.0% (e14). Low/high = JLL 3-6% baseline band (e12). T&T Las Vegas 3.0% (e16) supports the low end."
+  },
+  "2029": {
+   "low": 0.03,
+   "mid": 0.04,
+   "high": 0.06,
+   "evidence": [
+    "e12",
+    "e15",
+    "e1",
+    "e3"
+   ],
+   "derived": true,
+   "method": "No published US point forecast found. Mid 4.0% = long-run anchors: Turner 2010-2025 CAGR 4.2% ((1485/799)^(1/15)-1, e1/e3) and Construction Analytics since-2011 average excluding 2021-22 = 3.9% (e15). Range = JLL 3-6% baseline (e12)."
+  },
+  "2030": {
+   "low": 0.03,
+   "mid": 0.04,
+   "high": 0.06,
+   "evidence": [
+    "e12",
+    "e15",
+    "e1",
+    "e3"
+   ],
+   "derived": true,
+   "method": "Same as 2029."
+  }
+ },
+ "alternateSeries": {
+  "BLS PPI Final Demand: Construction (FRED PPIFDC = BLS WPUFD43; NSA; Nov 2009=100; annual average; 2026 = Jan-Sep average)": {
+   "2010": 100.29,
+   "2011": 102.52,
+   "2012": 105.52,
+   "2013": 107.48,
+   "2014": 110.64,
+   "2015": 112.74,
+   "2016": 114.0,
+   "2017": 116.48,
+   "2018": 121.22,
+   "2019": 127.23,
+   "2020": 130.18,
+   "2021": 136.91,
+   "2022": 163.23,
+   "2023": 175.56,
+   "2024": 175.95,
+   "2025": 178.99,
+   "2026": 185.24
+  },
+  "BLS PPI Net Inputs to Nonresidential Construction, Goods (WPUIP2312001; Jun 2010=100; annual average; 2010 = Jun-Dec only; 2026 = Jan-Sep) [input cost, not selling price]": {
+   "2010": 100.6,
+   "2011": 107.87,
+   "2012": 109.69,
+   "2013": 110.42,
+   "2014": 111.31,
+   "2015": 106.21,
+   "2016": 104.39,
+   "2017": 108.47,
+   "2018": 115.96,
+   "2019": 116.44,
+   "2020": 114.59,
+   "2021": 136.54,
+   "2022": 161.77,
+   "2023": 161.08,
+   "2024": 161.66,
+   "2025": 164.97,
+   "2026": 176.25
+  },
+  "BLS PPI Net Inputs to Residential Construction, Goods (WPUIP2311001; Jun 1986=100; annual average; 2026 = Jan-Sep) [input cost, not selling price]": {
+   "2010": 191.25,
+   "2011": 202.58,
+   "2012": 207.58,
+   "2013": 211.1,
+   "2014": 214.66,
+   "2015": 208.69,
+   "2016": 206.11,
+   "2017": 214.29,
+   "2018": 228.31,
+   "2019": 227.87,
+   "2020": 226.3,
+   "2021": 266.39,
+   "2022": 312.36,
+   "2023": 311.4,
+   "2024": 315.2,
+   "2025": 322.07,
+   "2026": 341.55
+  },
+  "DoD Selling Price Index (avg of RLB, Turner and BLS PPI 236223; value at October of each year; UFS 3-701-01 Table 4-2)": {
+   "2010": 96.54,
+   "2011": 98.94,
+   "2012": 100.79,
+   "2013": 104.48,
+   "2014": 108.69,
+   "2015": 113.08,
+   "2016": 117.49,
+   "2017": 122.23,
+   "2018": 128.94,
+   "2019": 134.83,
+   "2020": 136.23,
+   "2021": 147.63,
+   "2022": 165.56,
+   "2023": 172.87,
+   "2024": 179.05,
+   "2025": 186.35
+  },
+  "Construction Analytics (E. Zarenski) Nonresidential Buildings composite, base 2024=100 (2026-2028 are forecasts, data as of Q1 2026)": {
+   "2015": 61.4,
+   "2016": 63.8,
+   "2017": 66.4,
+   "2018": 70.1,
+   "2019": 73.5,
+   "2020": 75.4,
+   "2021": 81.5,
+   "2022": 91.9,
+   "2023": 97.1,
+   "2024": 100.0,
+   "2025": 104.6,
+   "2026": 109.2,
+   "2027": 113.6,
+   "2028": 118.1
+  },
+  "Construction Analytics (E. Zarenski) Residential composite, base 2024=100 (2026-2028 are forecasts, data as of Q1 2026)": {
+   "2015": 57.5,
+   "2016": 60.1,
+   "2017": 63.3,
+   "2018": 66.5,
+   "2019": 68.9,
+   "2020": 71.8,
+   "2021": 81.6,
+   "2022": 94.5,
+   "2023": 96.9,
+   "2024": 100.0,
+   "2025": 103.8,
+   "2026": 108.2,
+   "2027": 112.5,
+   "2028": 117.0
+  }
+ },
+ "method": "Primary series: Turner Building Cost Index, annual averages. It is a public, nationwide selling-price index covering labor rates and productivity, material prices and market competition (e4), i.e. what owners pay. 2010-2012 come from Turner's Q4 2022 release (e3); 2013-2025 from the Q3 2026 release (e1); the two releases agree on every overlapping year. 2026 = average of Q1-Q3 2026 (1530, 1552, 1575; e2) = 1552.3. This is a year-to-date value: Q4 2026 is not yet published, and Turner labels each quarter a 'forecast'. If Q4 follows the recent ~1.4%/qtr pace, the full-year average would be about 1564 (+0.7%). No year is interpolated. Escalation A->B = series[B]/series[A] (e.g. 2019->2026 = 1552.3/1156 = 1.343). Cross-checks (alternateSeries): BLS PPI final-demand construction (selling price, nonresidential buildings) 2019->2025 = 1.407 vs Turner 1.285. The PPI shows a larger 2022-23 jump and a flatter 2024-25. DoD SPI (blend of RLB, Turner and the BLS office PPI) 2010->2025 = 1.93 vs Turner 1.86. Input-cost PPIs are kept as alternates for residential and materials-heavy types. They exclude labor and margin, so they are not used as the primary series. forecast = annual escalation rates for years after the base-year mid-point (2026 rate covers the rest of 2026). 2027-2028 are midpoints of published forecasts; 2029-2030 are derived from long-run averages (see forecastRange). Note: 2026 Q3 momentum (Turner +1.48%/qtr, RLB +1.28%/qtr) runs above the 4.0% mid; tariffs on metals and energy are the main upside risk (RLB: input costs +8.9% YoY).",
+ "evidence": [
+  {
+   "id": "e1",
+   "metric": "escalationIndex",
+   "value": 1485,
+   "unit": "ratio",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2025,
+   "source": {
+    "title": "Turner Building Cost Index - 2026 3rd Quarter Forecast",
+    "url": "https://turnerconstruction.com/uploads/cost-index-Q3-2026.pdf",
+    "publisher": "Turner Construction Company",
+    "accessed": "2026-10-24"
+   },
+   "quote": "YEAR / AVERAGE INDEX table: 2025 1485 4.1; 2024 1426 3.9; 2023 1373 6.0; 2022 1295 8.0; ... 2013 864 4.1",
+   "scopeNotes": "Annual average Turner Building Cost Index (index level, not USD), 2013-2025.",
+   "confidence": "high"
+  },
+  {
+   "id": "e2",
+   "metric": "escalationIndex",
+   "value": 1575,
+   "unit": "ratio",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "Turner Building Cost Index - 2026 3rd Quarter Forecast",
+    "url": "https://turnerconstruction.com/uploads/cost-index-Q3-2026.pdf",
+    "publisher": "Turner Construction Company",
+    "accessed": "2026-10-24"
+   },
+   "quote": "3rd Quarter 2026 1575 1.48; 2nd Quarter 2026 1552 1.44; 1st Quarter 2026 1530 1.32; 4th Quarter 2025 1510 1.14",
+   "scopeNotes": "Quarterly values; 2026 series value = mean of Q1-Q3 2026 = 1552.3 (Turner labels its quarterly release a 'forecast').",
+   "confidence": "high"
+  },
+  {
+   "id": "e3",
+   "metric": "escalationIndex",
+   "value": 799,
+   "unit": "ratio",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2010,
+   "source": {
+    "title": "Turner Building Cost Index - 2022 Fourth Quarter Forecast",
+    "url": "https://turnerconstruction.com/uploads/Q4-2022.pdf",
+    "publisher": "Turner Construction Company",
+    "accessed": "2026-10-24"
+   },
+   "quote": "Year / Average Index table: 2012 830 2.1; 2011 812 1.6; 2010 799 -4.0",
+   "scopeNotes": "Supplies 2010-2012 annual averages (2013-2022 values match e1).",
+   "confidence": "high"
+  },
+  {
+   "id": "e4",
+   "metric": "indexDefinition",
+   "value": null,
+   "unit": "text",
+   "region": "United States",
+   "regionKey": "US",
+   "source": {
+    "title": "Turner Building Cost Index - 2026 3rd Quarter Forecast",
+    "url": "https://turnerconstruction.com/uploads/cost-index-Q3-2026.pdf",
+    "publisher": "Turner Construction Company",
+    "accessed": "2026-10-24"
+   },
+   "quote": "The Turner Building Cost Index is determined by the following factors considered on a nationwide basis: labor rates and productivity, material prices and the competitive condition of the marketplace.",
+   "scopeNotes": "Selling-price (bid) index: includes contractor margin and market competition, i.e. what owners pay.",
+   "confidence": "high"
+  },
+  {
+   "id": "e5",
+   "metric": "escalationIndex",
+   "value": 188.186,
+   "unit": "ratio",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "Producer Price Index by Commodity: Final Demand: Final Demand Construction (PPIFDC)",
+    "url": "https://fred.stlouisfed.org/series/PPIFDC",
+    "publisher": "Federal Reserve Bank of St. Louis (data: U.S. Bureau of Labor Statistics)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "PPIFDC, Index Nov 2009=100, Not Seasonally Adjusted: 2026-09 = 188.186; 2025-12 = 181.435",
+   "scopeNotes": "Monthly values downloaded as CSV and averaged by calendar year for alternateSeries.",
+   "confidence": "high"
+  },
+  {
+   "id": "e6",
+   "metric": "indexDefinition",
+   "value": null,
+   "unit": "text",
+   "region": "United States",
+   "regionKey": "US",
+   "source": {
+    "title": "A Guide to Construction Cost Indexes (PPI explanation)",
+    "url": "https://www.agc.org/sites/default/files/PPI%20explanation.pdf",
+    "publisher": "Associated General Contractors of America",
+    "accessed": "2026-10-24"
+   },
+   "quote": "Each month, BLS gets contractors' estimaties of what they would charge to construct buildings with those specifications. Thus, the indexes cover both materials costs and contractors' estimated overhead and profits.",
+   "scopeNotes": "Final demand construction (WPUFD43) = weighted average of five new nonresidential building PPIs (warehouse, school, office, industrial, health care); a selling-price index. ('estimaties' is the source's spelling.)",
+   "confidence": "high"
+  },
+  {
+   "id": "e7",
+   "metric": "escalationIndex",
+   "value": 184.909,
+   "unit": "ratio",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "Producer Price Index by Commodity: Inputs to Industries: Net Inputs to Nonresidential Construction, Goods (WPUIP2312001)",
+    "url": "https://fred.stlouisfed.org/series/WPUIP2312001",
+    "publisher": "Federal Reserve Bank of St. Louis (data: U.S. Bureau of Labor Statistics)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "WPUIP2312001: 2010-06-01 = 100.000; 2026-09-01 = 184.909",
+   "scopeNotes": "Input-cost (materials) index; excludes labor and contractor margin. The task brief suggested WPUIP2312301, which FRED titles 'Net Inputs to Other Nonresidential Construction, Goods', so the all-nonresidential series WPUIP2312001 is used.",
+   "confidence": "high"
+  },
+  {
+   "id": "e8",
+   "metric": "escalationIndex",
+   "value": 355.225,
+   "unit": "ratio",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "Producer Price Index by Commodity: Inputs to Industries: Net Inputs to Residential Construction, Goods (WPUIP2311001)",
+    "url": "https://fred.stlouisfed.org/series/WPUIP2311001",
+    "publisher": "Federal Reserve Bank of St. Louis (data: U.S. Bureau of Labor Statistics)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "WPUIP2311001: 2026-09-01 = 355.225",
+   "scopeNotes": "Residential input-cost index; there is no BLS selling-price index for residential construction.",
+   "confidence": "high"
+  },
+  {
+   "id": "e9",
+   "metric": "escalationIndex",
+   "value": 186.35,
+   "unit": "ratio",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2025,
+   "source": {
+    "title": "UFS 3-701-01 DoD Facilities Pricing Guide (2026) - Data Tables workbook, sheet 'Table 4-2'",
+    "url": "https://legacy.wbdg.org/FFC/DOD/UFC/ufs_3_701_01_2026_Data_Tables.xlsx",
+    "publisher": "U.S. Department of Defense / Whole Building Design Guide (NIBS)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "Note 2: ... DoD Selling Price Index (SPI), representing the average of the RLB Construction Cost Index, Turner Construction Cost Index, and Saylor Subcontracting Index. ... BLS PPI for NAICS 236223 is now the third index",
+   "scopeNotes": "Table 4-2 'DoD SPI (ACTUAL)' October values 2007=100 through 2025-10 = 186.35. Independent blend used to cross-check Turner (2010->2025: SPI x1.93, Turner x1.86).",
+   "confidence": "high"
+  },
+  {
+   "id": "e10",
+   "metric": "escalationForecast",
+   "value": 0.02,
+   "unit": "pct",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2027,
+   "source": {
+    "title": "UFS 3-701-01 DoD Facilities Pricing Guide (2026) - Data Tables workbook, sheet 'Table 4-2'",
+    "url": "https://legacy.wbdg.org/FFC/DOD/UFC/ufs_3_701_01_2026_Data_Tables.xlsx",
+    "publisher": "U.S. Department of Defense / Whole Building Design Guide (NIBS)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "Table 4-2 Budget Guidance: FY 2026 0.021; 2027 0.02; 2028 0.02; 2029 0.02; 2030 0.02; 2031 0.02 (Note 3: per 'Inflation Guidance - FY 2027 President's Budget', OUSD (Comptroller), March 25, 2026)",
+   "scopeNotes": "Federal budget-authority inflation guidance, not a market forecast; treated as the low bound only.",
+   "confidence": "medium"
+  },
+  {
+   "id": "e11",
+   "metric": "escalationIndex",
+   "value": 292.28,
+   "unit": "ratio",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "RLB Quarterly Construction Cost Report North America, Third Quarter 2026",
+    "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+    "publisher": "Rider Levett Bucknall",
+    "accessed": "2026-10-24"
+   },
+   "quote": "In July, the RLB National Construction Cost Index advanced to 292.28 ... Year-over-year, national cost escalation moved up to 4.45% from 4.37%",
+   "scopeNotes": "Current US selling-price momentum (Q3 2026); quarterly +1.28%.",
+   "confidence": "high"
+  },
+  {
+   "id": "e12",
+   "metric": "escalationForecast",
+   "value": null,
+   "low": 0.032,
+   "high": 0.042,
+   "unit": "pct",
+   "region": "North America",
+   "regionKey": "US",
+   "dataYear": 2027,
+   "source": {
+    "title": "Global Construction Costs Index 2026",
+    "url": "https://www.jll.com/en-us/insights/global-construction-costs-index",
+    "publisher": "JLL",
+    "accessed": "2026-10-24"
+   },
+   "quote": "JLL forecasts that global construction costs will rise by a further 3.1% to 4.2% in 2027. ... In North America (3.2% to 4.2%)",
+   "scopeNotes": "Published 15 October 2026. Same page: 'Annual escalation of 3% to 6% now represents the baseline' for the next three to five years.",
+   "confidence": "high"
+  },
+  {
+   "id": "e13",
+   "metric": "escalationForecast",
+   "value": 0.04,
+   "unit": "pct",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2027,
+   "source": {
+    "title": "The US tariff divide",
+    "url": "https://www.turnerandtownsend.com/en-us/insights/the-us-tariff-divide/",
+    "publisher": "Turner & Townsend",
+    "accessed": "2026-10-24"
+   },
+   "quote": "In 2027, we're expecting bid-price escalation to ease to 4.0%.",
+   "scopeNotes": "Dated 15 April 2026; the same article puts 2026 at 4.25% ('expected to rise slightly from 4.0% to 4.25%').",
+   "confidence": "high"
+  },
+  {
+   "id": "e14",
+   "metric": "escalationForecast",
+   "value": 0.04,
+   "unit": "pct",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2028,
+   "source": {
+    "title": "Construction Cost Inflation 2026 (index table 2015 to 2028, updated 4-14-26)",
+    "url": "https://edzarenski.com/2026/05/13/construction-cost-inflation-2026/",
+    "publisher": "Construction Analytics (Edward Zarenski)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "ESCALATION from Prev Year, nonresidential bldgs: 2026 4.4%, 2027 4.0%, 2028 4.0%; residential: 4.3%, 4.0%, 4.0%; nonbuilding: 3.9%, 3.5%, 3.5%",
+   "scopeNotes": "Table image 'bci-annual-pct-index-2011-2028-4-14-26' on the post dated May 13, 2026; 'Data as of Q1'2026'; 'All future forecast by Construction Analytics'.",
+   "confidence": "medium"
+  },
+  {
+   "id": "e15",
+   "metric": "escalationLongRunAverage",
+   "value": 0.039,
+   "unit": "pct",
+   "region": "United States",
+   "regionKey": "US",
+   "dataYear": 2026,
+   "source": {
+    "title": "Construction Cost Inflation 2026 (index table 2015 to 2028, updated 4-14-26)",
+    "url": "https://edzarenski.com/2026/05/13/construction-cost-inflation-2026/",
+    "publisher": "Construction Analytics (Edward Zarenski)",
+    "accessed": "2026-10-24"
+   },
+   "quote": "Without those two years, since 2011, average inflation for Nonres Bldgs is 3.9%, Residential is 3.9% and Non-bldg is 2.5%.",
+   "scopeNotes": "'Those two years' = 2021-2022. A long-run anchor for out-years.",
+   "confidence": "medium"
+  },
+  {
+   "id": "e16",
+   "metric": "escalationForecast",
+   "value": 0.03,
+   "unit": "pct",
+   "region": "Las Vegas, NV",
+   "regionKey": "NV-LasVegas",
+   "dataYear": 2027,
+   "source": {
+    "title": "Construction price escalation - LVMI 2025",
+    "url": "https://marketintelligence.turnerandtownsend.com/lvmi-2025/construction-price-escalation",
+    "publisher": "Turner & Townsend",
+    "accessed": "2026-10-24"
+   },
+   "quote": "stabilizing in 2027 and 2028 at around 3.0 percent",
+   "scopeNotes": "2025 Las Vegas market report; regional and older. Supporting evidence only.",
+   "confidence": "low"
+  },
+  {
+   "id": "e17",
+   "metric": "escalationForecast",
+   "value": 0.045,
+   "unit": "pct",
+   "region": "San Francisco, CA",
+   "regionKey": "CA-SanFrancisco",
+   "dataYear": 2026,
+   "source": {
+    "title": "2026 Annual Infrastructure Construction Cost Inflation Estimate (AICCIE) presentation, Dec 2025",
+    "url": "https://onesanfrancisco.org/sites/default/files/2025-11/Agenda%20Item%206%20-%202026%20AICCIE%20Presentation%20Dec%202025.pdf",
+    "publisher": "City and County of San Francisco, Capital Planning Committee",
+    "accessed": "2026-10-24"
+   },
+   "quote": "Today's action item: Adopt rate for CY 2026 \u2013 proposing 4.5%",
+   "scopeNotes": "Local public-owner escalation rate for 2026; supporting evidence only.",
+   "confidence": "medium"
+  }
+ ],
+ "openQuestions": [
+  "Replace the 2026 YTD value with the full-year average once Turner's Q4 2026 release is out (about January 2027).",
+  "No published US 2029-2030 point forecasts found; out-years rest on long-run averages.",
+  "A residential selling-price index (e.g. the Census constant-quality new single-family house price index) was not pulled; residential types use the nonresidential primary series."
+ ]
+}

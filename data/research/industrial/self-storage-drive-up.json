@@ -1,0 +1,370 @@
+{
+  "schemaVersion": 1,
+  "id": "self-storage-drive-up",
+  "name": "Self-storage — drive-up",
+  "category": "industrial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "nrsf",
+  "summary": "Single-story pre-engineered metal buildings with exterior roll-up doors, separated by 25–30 ft paved drive aisles, fenced and gated. Building cost per SF is low, but paving, drainage and fencing are a large share because site coverage is only ~35–45%. Evidence: one vendor cost table and two announced Texas projects; default is a derived midpoint with low-medium confidence.",
+  "sizing": {
+    "typicalSize": {
+      "low": 40000,
+      "mid": 70000,
+      "high": 120000,
+      "unit": "nrsf",
+      "evidence": [
+        "e2",
+        "e3"
+      ],
+      "derived": true,
+      "method": "Announced Texas projects 91,200–128,900 SF (e2/e3); typical suburban drive-up facilities 40k–120k NRSF (judgment)."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 1.04,
+      "mid": 1.08,
+      "high": 1.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Gross building SF per NRSF: exterior-access buildings have no corridors; only partitions, office and wall thickness are lost → ~89–96% efficiency (judgment)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 12000,
+      "mid": 16000,
+      "high": 20000,
+      "evidence": [],
+      "derived": true,
+      "method": "Building coverage ~30–45% of site (drive aisles 25–30 ft between rows, detention, setbacks) → 13,000–19,600 GSF/acre ÷ 1.08 ≈ 12,000–18,000 NRSF/acre; mid 16,000 (judgment)."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.00004,
+      "mid": 0.00006,
+      "high": 0.0001,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Office parking only (≈ 4–8 spaces per facility); customers park at units in drive aisles."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 55,
+      "mid": 80,
+      "high": 115,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4"
+      ],
+      "derived": true,
+      "method": "Building: vendor single-story $55–$90/GSF construction only (e1; illustrative midpoint $72.50, e4); Austin expansion $60/SF (e2). Sitework added bottom-up: ~1.3–1.6 SF of paved aisle per GSF of building × ~$7–$12/SF for asphalt on base + drainage/fencing share (paving block asphalt $30–$70/SY ≈ $3.3–$7.8/SF plus base/drainage) ≈ $10–$18/GSF. Total ≈ $65–$108/GSF, consistent with Forney project $101/SF incl. canopies (e3). × 1.08 GSF/NRSF → ≈ $70–$117/NRSF; mid $80 (building $62 + site $12 = $74/GSF × 1.08), low $55 (Austin-type expansion, minimal sitework), high $115."
+    },
+    "perSF": {
+      "low": 51,
+      "mid": 74,
+      "high": 106,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3"
+      ],
+      "derived": true,
+      "method": "perPrimaryUnit ÷ 1.08 GSF/NRSF."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P; PEMB storage buildings with roll-up doors, small office/kiosk, drive-aisle paving, grading, detention, perimeter fence/gate, lighting and on-site utilities. Excludes land, soft costs, off-sites, fees and covered RV/boat canopies (see boat-rv-storage)."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.72,
+    "standard": 1,
+    "premium": 1.25,
+    "luxury": 1.45,
+    "evidence": [],
+    "derived": true,
+    "method": "economy ≈ low/mid (55/80 = 0.69); premium ≈ (mid+high)/2/mid = 1.22 rounded (concrete aisles, masonry façade); luxury ≈ high/mid (1.44)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "03",
+        "pct": 0.12
+      },
+      {
+        "division": "05",
+        "pct": 0.17
+      },
+      {
+        "division": "07",
+        "pct": 0.08
+      },
+      {
+        "division": "08",
+        "pct": 0.14
+      },
+      {
+        "division": "09",
+        "pct": 0.01
+      },
+      {
+        "division": "10",
+        "pct": 0.03
+      },
+      {
+        "division": "21",
+        "pct": 0.005
+      },
+      {
+        "division": "22",
+        "pct": 0.005
+      },
+      {
+        "division": "26",
+        "pct": 0.05
+      },
+      {
+        "division": "28",
+        "pct": 0.02
+      },
+      {
+        "division": "31",
+        "pct": 0.07
+      },
+      {
+        "division": "32",
+        "pct": 0.17
+      },
+      {
+        "division": "33",
+        "pct": 0.04
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "No public elemental breakdown. Judgment: PEMB frame/girts 05 17%, metal roof/wall panels 07 8%, slab-on-grade 03 12%, roll-up doors 08 14%, partitions 10 3%, lighting/power 26 5%, gate/cameras 28 2%; sitework 31–33 28% (paving/aisles 17%, grading 7%, storm 4%) per the bottom-up site build-up in hardCost; GC 9%."
+  },
+  "lineItems": [
+    {
+      "id": "drive-aisle-paving",
+      "name": "Drive-aisle asphalt paving on aggregate base",
+      "division": "32",
+      "block": "paving",
+      "unit": "sy",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 0.16
+      },
+      "cost": {
+        "low": 30,
+        "mid": 45,
+        "high": 70,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/paving.json#e1",
+          "_blocks/paving.json#e2"
+        ],
+        "derived": true,
+        "method": "From _blocks/paving.json asphalt-paving ($30/$45/$70 per SY). Quantity ≈ 1.4 SF of paving per NRSF = 0.156 SY/NRSF (25–30 ft aisles between 30–40 ft deep building rows)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out; concrete aisles roughly double this."
+    },
+    {
+      "id": "perimeter-fence-gate",
+      "name": "Perimeter security fence with keypad gate",
+      "division": "32",
+      "unit": "lf",
+      "qty": {
+        "per": "acre",
+        "value": 450
+      },
+      "cost": {
+        "low": 35,
+        "mid": 60,
+        "high": 110,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No public unit price fetched. 6–8 ft chain-link to ornamental steel fence $35–$110/LF incl. posts/footings, with automated gate allowance spread over the run (judgment). ~450 LF per acre for a 4–6 acre site (perimeter of a 5-acre square ≈ 1,870 LF; buildings often form part of the perimeter)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "security-access-package",
+      "name": "Gate keypad, access control and CCTV",
+      "division": "28",
+      "block": "building-systems",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 25000,
+        "mid": 50000,
+        "high": 100000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/building-systems.json#e7"
+        ],
+        "derived": true,
+        "method": "Building-systems block access-control $1.5k–$4.5k per door (e7) and CCTV ~$1k–$3k per camera; drive-up sites need 1–2 gates + 20–35 cameras (judgment)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.12,
+      "mid": 0.17,
+      "high": 0.24,
+      "evidence": [
+        "e4",
+        "industrial/self-storage-climate.json#e3"
+      ],
+      "derived": true,
+      "method": "Vendor guide uses 18% soft costs on a single-story example (e4) and 15–22% of total project cost generally (climate file e3); simpler single-story design → slightly below climate-controlled. Mid 17%."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.05
+    },
+    "notes": "Includes feasibility study and lease-up marketing; excludes financing."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.02,
+      "mid": 0.04,
+      "high": 0.07,
+      "evidence": [],
+      "derived": true,
+      "method": "Simple pre-engineered prototype (judgment)."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Sitework-heavy projects carry earthwork/drainage risk (judgment)."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard 5–10% of soft costs (judgment)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 58,
+      "max": 150,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "min ≈ hard low $55 × 1.05; max ≈ hard high $115 × 1.3."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 55,
+      "high": 90,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Self Storage Building Costs in 2026: A Comprehensive Guide",
+        "url": "https://storeganise.com/blog/Self-Storage-Building-Costs",
+        "publisher": "Storeganise",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost table row 'Single-story conventional' $55-90 per sq ft. \"This cost does not include land or site improvement cost and represents construction costs only.\"",
+      "scopeNotes": "Vendor blog citing Marcus & Millichap / C&W surveys without per-figure attribution; building only, no sitework.",
+      "confidence": "low"
+    },
+    {
+      "id": "e2",
+      "metric": "projectCostPerSF",
+      "value": 60.31,
+      "unit": "USD/sf",
+      "region": "Austin, TX",
+      "regionKey": "TX-Austin",
+      "dataYear": 2026,
+      "source": {
+        "title": "Self-Storage Development and Zoning Activity: July 2026",
+        "url": "https://www.insideselfstorage.com/self-storage-development/self-storage-development-and-zoning-activity-july-2026",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "9900 Darden Hill Road in Austin includes seven single-story buildings comprising a total of 91,200 square feet. The $5.5 million addition is expected to be complete in February.",
+      "scopeNotes": "$5.5M / 91,200 SF = $60.31/SF for an expansion (Storelocal); likely building construction with limited new sitework.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "projectCostPerSF",
+      "value": 100.85,
+      "unit": "USD/sf",
+      "region": "Forney, TX (Dallas)",
+      "regionKey": "TX-DFW",
+      "dataYear": 2026,
+      "source": {
+        "title": "Self-Storage Development and Zoning Activity: April 2026",
+        "url": "https://www.insideselfstorage.com/self-storage-development/self-storage-development-and-zoning-activity-april-2026",
+        "publisher": "Inside Self Storage (Informa)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The $13 million project at 8078 FM 741 will contain five buildings comprising 128,900 square feet. It’ll also include two vehicle-storage canopy structures.",
+      "scopeNotes": "$13M / 128,900 SF = $100.85/SF; \"project\" cost probably includes sitework, canopies and possibly soft costs/land; mix of building types not stated.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "unitCostExample",
+      "value": 15700,
+      "unit": "USD/unit",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Self Storage Building Costs in 2026: A Comprehensive Guide",
+        "url": "https://storeganise.com/blog/Self-Storage-Building-Costs",
+        "publisher": "Storeganise",
+        "accessed": "2026-10-24"
+      },
+      "quote": "\"Per-unit cost: roughly $15,700\" (worked example: single-story, 100-unit facility)",
+      "scopeNotes": "Illustrative calculation from the vendor guide (total project incl. land); per the page the example uses a $72.50/SF construction midpoint and 18% soft costs.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Only two announced project costs found (both Texas); a broader public sample or an SSA/Yardi development-cost survey would help.",
+    "Fence and access-control costs are derived."
+  ]
+}

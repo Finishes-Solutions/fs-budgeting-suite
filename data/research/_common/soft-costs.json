@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 1,
+  "id": "soft-costs",
+  "name": "Soft cost norms",
+  "researchedAt": "2026-10-24",
+  "summary": "Shared soft-cost components that every project type falls back on. Unless an item says otherwise the basis is a fraction of the baseline hard cost (contractor price incl. GC/OH&P). Totals by product family EXCLUDE developer fee, construction-loan interest (financing.json), contingency (contingency.json), impact/tap fees (fees.json), land and land closing (land-closing.json), FF&E and commercial leasing commissions/TI. The best-sourced component is A/E fees (public fee curves); most other components are derived from public caps and budgets and should be verified.",
+  "items": [
+    {
+      "id": "architectureEngineering",
+      "name": "Architecture & engineering (basic services, design + CA)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.04, "mid": 0.065, "high": 0.10, "evidence": ["e1", "e2", "e3", "e4", "e5", "e6"], "derived": false,
+        "method": "Public fee curves at a ~$10M-$50M construction cost: PHFA multifamily cap 4.0%-5.0% (e4, low end, residential walk-up/elevator); WA OFM schedule B (apartments, offices, schools) 6.7%-8.5% (e1); Henderson Co. NC school 6% (e5); OFM schedule C (warehouse/industrial/parking) 5.6%-7.2% (e3); OFM schedule A (hospitals/labs/museums) 7.8%-9.9% (e2, high end). Mid 6.5% = approx. median of e1/e4/e5 at $10M-$25M, weighted toward the residential/commercial projects the engine sees most. Scale: fees fall ~1 point per doubling of construction cost (e1)." },
+      "notes": "Fee curves fall with project size; type files may override (simple warehouses ~0.04-0.06, hospitals/labs ~0.08-0.10). Includes MEP/structural subconsultants; civil, survey and geotech are separate below."
+    },
+    {
+      "id": "civilSurveyGeotech",
+      "name": "Civil engineering, ALTA/topo survey, geotechnical report",
+      "basis": "pctOfHard",
+      "range": { "low": 0.005, "mid": 0.01, "high": 0.02, "evidence": ["e6"], "derived": true,
+        "method": "No public source isolates these items. Henderson Co. budget (e6) bundles A/E, CM pre-con, survey, permitting, geotech, special inspection and testing at 12% of construction with the architect alone at 6% (e5), leaving ~6% for the rest; allocated ~1% to civil/survey/geotech by judgment. High end for large greenfield or difficult sites." },
+      "notes": "Site-centric types (RV parks, marinas, solar) are civil-led; their type files should carry a higher share here and a lower A/E share."
+    },
+    {
+      "id": "permitsPlanReview",
+      "name": "Building permit & plan review fees (excl. impact / tap fees)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.005, "mid": 0.01, "high": 0.02, "evidence": ["e7"], "derived": true,
+        "method": "ICC's worked example applies a permit-fee multiplier of 0.0075 (0.75%) to building valuation (e7); plan-review and other trade permits are commonly charged on top, so mid set at 1.0%; range 0.5%-2% by judgment. Jurisdiction-specific — verify locally." },
+      "notes": "Impact, capacity and tap fees are in fees.json. Where the GC pulls permits the cost may already sit inside the hard cost."
+    },
+    {
+      "id": "legalAccounting",
+      "name": "Legal, accounting, cost certification",
+      "basis": "pctOfHard",
+      "range": { "low": 0.003, "mid": 0.007, "high": 0.015, "evidence": ["e8", "e9"], "derived": true,
+        "method": "LIHTC agencies cap developer legal at $150,000 (DSHA, e9) to $175,000 plus $15,000 accounting/cost certification (PHFA, e8). $190,000 on a $25M hard-cost project = 0.76%; on $10M = 1.9%; on $60M = 0.3%. Mid 0.7% for a typical $20M-$30M project." },
+      "notes": "Capped amounts are for affordable deals; complex entitlements or condo documents can exceed the high end."
+    },
+    {
+      "id": "buildersRiskInsurance",
+      "name": "Builder's risk insurance",
+      "basis": "pctOfHard",
+      "range": { "low": 0.001, "mid": 0.004, "high": 0.009, "evidence": ["e10", "e11"], "derived": false,
+        "method": "Terrapin 2026 planning ranges: fire-resistive/non-combustible 0.07%-0.19% of insured value (e11); wood frame commercial and mixed use 0.35%-0.90% (e10). Mid 0.4% weights toward wood-frame residential, the most common product; non-combustible types should use ~0.15%." },
+      "notes": "Often carried by the GC in general requirements (PHFA requires it inside the construction contract, e12). If the baseline hard cost already includes it, set to 0. Coastal/CAT-exposed wood frame can exceed 1%."
+    },
+    {
+      "id": "generalLiabilityInsurance",
+      "name": "Owner's general liability / OCIP-OCP during construction",
+      "basis": "pctOfHard",
+      "range": { "low": 0.001, "mid": 0.003, "high": 0.006, "evidence": [], "derived": true,
+        "method": "No public rate source found. Set below builder's risk by judgment (owner GL during construction is typically a small premium; the contractor's GL is inside the hard cost). Verify with broker." },
+      "notes": "Wrap-up programs (OCIP/CCIP) shift contractor insurance cost to the owner and can run 1%-2%; those should be modeled separately."
+    },
+    {
+      "id": "propertyTaxesDuringConstruction",
+      "name": "Real estate taxes during construction",
+      "basis": "pctOfLandValuePerYear",
+      "range": { "low": 0.005, "mid": 0.011, "high": 0.025, "evidence": ["e13"], "derived": true,
+        "method": "Basis is the land (pre-improvement) assessed value per year of construction, per the PHFA method of using the current assessment and millage from notice-to-proceed to completion (e13). Rates: no public national effective-rate source fetched; ~1.1% mid is a typical US effective property tax rate by judgment, 0.5%-2.5% covers low-tax and high-tax states. Engine: rate x land value x construction years." },
+      "notes": "Some jurisdictions assess work-in-progress; abatements/PILOTs can zero this out."
+    },
+    {
+      "id": "developerFee",
+      "name": "Developer fee (overhead & profit of the developer)",
+      "basis": "pctOfTotalCost",
+      "range": { "low": 0.03, "mid": 0.04, "high": 0.05, "evidence": ["e14", "e15", "e16"], "derived": false,
+        "method": "Market-rate norm 3%-5% of total project cost (hard + soft) per e14 (low confidence secondary source). Mid 4% = midpoint. LIHTC caps (12%-15% of TDC excl. land/reserves, e15/e16) are a ceiling for affordable deals, not the market default." },
+      "notes": "Affordable/LIHTC: use 10%-15% subject to the state QAP cap (DSHA lesser of $1M-$4M or 15%; PHFA 15% of first $10M, 10% thereafter). Development consultant and org costs are typically paid out of the fee."
+    },
+    {
+      "id": "marketingLeasing",
+      "name": "Marketing, lease-up / rent-up (excl. commercial leasing commissions)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.003, "mid": 0.008, "high": 0.02, "evidence": ["e17", "e18"], "derived": true,
+        "method": "LIHTC caps: rent-up up to $1,200/unit (PHFA, e17) and management rent-up fee up to $500/unit (DSHA, e18). At ~$250k-$350k hard cost per unit, $1,200-$2,500/unit is ~0.4%-1.0%; mid 0.8%. Market-rate lease-up with concessions, models and signage pushes toward 2%." },
+      "notes": "Commercial leasing commissions (typically a % of lease value) and tenant improvements are excluded; for-sale product sales commissions are excluded."
+    },
+    {
+      "id": "titleClosingRecording",
+      "name": "Construction-loan title, closing & recording",
+      "basis": "pctOfHard",
+      "range": { "low": 0.002, "mid": 0.004, "high": 0.008, "evidence": ["e19", "e20"], "derived": true,
+        "method": "Texas promulgated title premium is 0.52% of a $1M policy and 0.38% of a $10M policy (e19); a lender policy sized at ~60%-70% loan-to-cost on the hard cost gives ~0.25%-0.35% of hard cost, plus recording/escrow and mortgage-related taxes where they apply (e20). Mid 0.4%." },
+      "notes": "Land acquisition closing costs are in land-closing.json; mortgage recording taxes (e.g., NY, FL notes/mortgages) can push this toward the high end."
+    },
+    {
+      "id": "thirdPartyReports",
+      "name": "Third-party reports (appraisal, Phase I ESA, market study, PCA/CNA)",
+      "basis": "perProject",
+      "range": { "low": 10000, "mid": 25000, "high": 60000, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true,
+        "method": "No public price source fetched in this session. Built up by judgment: appraisal $3k-$15k + Phase I ESA $2k-$6k + market/feasibility study $5k-$20k + misc (zoning report, energy/HERS, PCA) $0-$20k. Verify with local vendors." },
+      "notes": "Phase II ESA, remediation and specialist studies (traffic, noise, historic) are excluded."
+    },
+    {
+      "id": "testingInspections",
+      "name": "Special inspections, materials testing, commissioning",
+      "basis": "pctOfHard",
+      "range": { "low": 0.004, "mid": 0.008, "high": 0.015, "evidence": ["e6", "e21"], "derived": true,
+        "method": "Henderson Co. school budget carries commissioning at a separate 1.0% (e21) and special inspection/testing inside a 12% soft bundle (e6). Private residential projects without full commissioning run lower; mid 0.8% by judgment." },
+      "notes": "Civic, healthcare and lab projects (full Cx, LEED) should use the high end."
+    },
+    {
+      "id": "ownersRepPM",
+      "name": "Owner's representative / project management",
+      "basis": "pctOfHard",
+      "range": { "low": 0.0, "mid": 0.015, "high": 0.03, "evidence": ["e8"], "derived": true,
+        "method": "Low 0 because many developers self-perform PM and LIHTC agencies require development consultant costs to be paid from the developer fee (e8 context). Third-party owner's rep fees of ~1%-3% of construction by judgment; mid 1.5%." },
+      "notes": "Public owners using CM-agency services are at the high end."
+    },
+    {
+      "id": "constructionLoanFees",
+      "name": "Construction loan origination / commitment fees",
+      "basis": "pctOfLoan",
+      "range": { "low": 0.005, "mid": 0.01, "high": 0.015, "evidence": ["e22"], "derived": true,
+        "method": "No public market survey fetched. Origination of 0.5-1.5 points on the construction loan by judgment (1 point mid). PHFA allows only construction-period financing fees in basis and requires lender verification (e22). Interest carry is modeled in financing.json, not here." },
+      "notes": "Excludes interest reserve, lender's legal (in legalAccounting) and title (in titleClosingRecording)."
+    },
+    {
+      "id": "totalSoftCostPctOfHard-residential",
+      "name": "Total soft costs, residential (multifamily, single-family, senior)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.11, "mid": 0.16, "high": 0.25, "evidence": ["e4", "e23", "e24", "e25", "e26"], "derived": true,
+        "method": "Bottom-up: sum of component mids above with residential A/E of ~5% (e4) = ~0.13 of hard. Top-down: soft costs are 20%-30% of total cost (e23) and 25%-30% for LIHTC (e24); those totals include developer fee (~4%), construction interest (~5%) and impact fees (~3%), so the remainder is ~10%-15% of total; with hard cost 50%-70% of total (e25, e26 >60%) that is ~0.15-0.25 of hard. Mid 0.16 = between bottom-up 0.13 and top-down ~0.20." },
+      "notes": "Excludes developer fee, construction interest, contingency, impact/tap fees, land, FF&E."
+    },
+    {
+      "id": "totalSoftCostPctOfHard-commercial",
+      "name": "Total soft costs, commercial (office, retail, mixed-use, medical office)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.12, "mid": 0.17, "high": 0.25, "evidence": ["e1", "e2"], "derived": true,
+        "method": "Bottom-up from the component mids with A/E at OFM schedule B/A levels (6.7%-9.9% at $10M-$50M, e1/e2) instead of the residential 5%; marketing lower, testing similar. Sum ~0.15-0.17; mid 0.17." },
+      "notes": "Excludes leasing commissions and tenant improvements; medical office toward the high end."
+    },
+    {
+      "id": "totalSoftCostPctOfHard-hospitality",
+      "name": "Total soft costs, hospitality (hotels, resorts)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.13, "mid": 0.18, "high": 0.25, "evidence": ["e1"], "derived": true,
+        "method": "Commercial build-up (0.17) plus brand technical-services/design-review and interior design, by judgment +1 point. HVS reports soft costs as a separate budget category but its per-room table is image-only and was not readable, so it is not cited." },
+      "notes": "Franchise application fees, pre-opening and working capital, and FF&E/OS&E belong in the hotel type files."
+    },
+    {
+      "id": "totalSoftCostPctOfHard-industrial",
+      "name": "Total soft costs, industrial (warehouse, flex, manufacturing shell)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.07, "mid": 0.11, "high": 0.16, "evidence": ["e3"], "derived": true,
+        "method": "Bottom-up with A/E at the low OFM schedule C level (5.6%-7.2% for public work, e3; private design-build tilt-up commonly lower), minimal marketing and small insurance (non-combustible). Sum ~0.10-0.12; mid 0.11." },
+      "notes": "Data centers and process manufacturing are MEP-heavy and should use the commercial or civic family."
+    },
+    {
+      "id": "totalSoftCostPctOfHard-civic",
+      "name": "Total soft costs, civic / institutional (schools, public buildings, healthcare)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.13, "mid": 0.20, "high": 0.30, "evidence": ["e2", "e5", "e6", "e21", "e27"], "derived": true,
+        "method": "Henderson Co. school: 12% soft bundle + 1% commissioning = 13% of construction excl. FF&E and technology (e6/e21) = low end. OFM schedules A/B put A/E alone at 8%-10% at $10M (e2), and public owners add CM-agency, testing, art-in-architecture (GSA 0.5%, e27) and moving. Mid 0.20; high 0.30 for hospitals/labs and small projects." },
+      "notes": "Excludes FF&E/technology, which civic budgets often carry separately."
+    },
+    {
+      "id": "totalSoftCostPctOfHard-site-centric",
+      "name": "Total soft costs, site-centric (RV parks, marinas, campgrounds, solar/BESS, parking)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.06, "mid": 0.10, "high": 0.15, "evidence": ["e3"], "derived": true,
+        "method": "Civil-led design with little vertical building: A/E at or below OFM schedule C (civil and utility projects, e3) and minimal marketing/testing. Sum of components with A/E ~4% and civil ~2% = ~0.10. Low confidence." },
+      "notes": "Permitting-heavy marinas (USACE/state submerged-land permits) can exceed the high end."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1", "metric": "aeFeePctOfConstruction", "value": 0.0852, "low": 0.067, "high": 0.0852, "unit": "pct",
+      "region": "Washington State", "regionKey": "WA", "dataYear": 2026,
+      "source": { "title": "Chapter 08: Architect/Engineer Fee Guidelines and Fee Schedule (2027-29 capital budget instructions)", "url": "https://ofm.wa.gov/budget/state-budget-2027-29/instructions/capital/chapter-08/", "publisher": "Washington State Office of Financial Management", "accessed": "2026-10-24" },
+      "quote": "A/E fee schedule (percent of MACC), design-bid-build schedule B: $10,000,000 row 8.52%; $25,000,000 row 7.50%; $50,000,000 row 6.70%. Schedule B includes apartment buildings, office buildings, schools.",
+      "scopeNotes": "Basic services maximum for public projects as % of maximum allowable construction cost; GC/CM delivery adds ~1 point. Excludes additional services.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2", "metric": "aeFeePctOfConstruction", "value": 0.0988, "low": 0.0781, "high": 0.0988, "unit": "pct",
+      "region": "Washington State", "regionKey": "WA", "dataYear": 2026,
+      "source": { "title": "Chapter 08: Architect/Engineer Fee Guidelines and Fee Schedule (2027-29 capital budget instructions)", "url": "https://ofm.wa.gov/budget/state-budget-2027-29/instructions/capital/chapter-08/", "publisher": "Washington State Office of Financial Management", "accessed": "2026-10-24" },
+      "quote": "A/E fee schedule, DBB schedule A: $10,000,000 row 9.88%; $50,000,000 row 7.81%. Schedule A includes hospitals, laboratories (research), museums, courthouses.",
+      "scopeNotes": "Complex building types; public basic services.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3", "metric": "aeFeePctOfConstruction", "value": 0.0716, "low": 0.0558, "high": 0.0716, "unit": "pct",
+      "region": "Washington State", "regionKey": "WA", "dataYear": 2026,
+      "source": { "title": "Chapter 08: Architect/Engineer Fee Guidelines and Fee Schedule (2027-29 capital budget instructions)", "url": "https://ofm.wa.gov/budget/state-budget-2027-29/instructions/capital/chapter-08/", "publisher": "Washington State Office of Financial Management", "accessed": "2026-10-24" },
+      "quote": "A/E fee schedule, DBB schedule C: $10,000,000 row 7.16%; $50,000,000 row 5.58%. Schedule C includes warehouses, parking structures and garages, civil and utility projects.",
+      "scopeNotes": "Simple building types; public basic services.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4", "metric": "aeFeePctOfConstruction", "value": 0.0483, "low": 0.0397, "high": 0.0498, "unit": "pct",
+      "region": "Pennsylvania", "regionKey": "PA", "dataYear": 2025,
+      "source": { "title": "PHFA 2025 Underwriting Application — Development Cost Limits (revised 1-17-25)", "url": "https://www.phfa.org/forms/multifamily_application_guidelines/application/2025-2026-mai-07.pdf", "publisher": "Pennsylvania Housing Finance Agency", "accessed": "2026-10-24" },
+      "quote": "Architect Fees chart: 10,000,000 — 4.83% (Regular), 4.98% (Complex), 5.23% (Rehabilitation); 35,000,000 — 3.97% / 4.16% / 4.38%.",
+      "scopeNotes": "Maximum architectural fee (design + CA) for LIHTC multifamily, as % of construction cost incl. contingency.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5", "metric": "aeFeePctOfConstruction", "value": 0.06, "unit": "pct",
+      "region": "Henderson County, NC", "regionKey": "NC", "dataYear": 2017,
+      "source": { "title": "Board of Commissioners agenda item — Edneyville Elementary School proposal (Feb 15, 2017)", "url": "https://www.hendersoncountync.gov/sites/default/files/archives/Meetings/Board_of_Commissioners/agenda170215/DI.B.pdf", "publisher": "Henderson County, North Carolina", "accessed": "2026-10-24" },
+      "quote": "The architect’s proposed fee is 6% of the construction budget which totals $1,257,000.",
+      "scopeNotes": "87,000 SF public elementary school; construction budget incl. contingency $20,951,500.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6", "metric": "softCostPctOfConstruction", "value": 0.12, "unit": "pct",
+      "region": "Henderson County, NC", "regionKey": "NC", "dataYear": 2017,
+      "source": { "title": "Board of Commissioners agenda item — Edneyville Elementary School proposal (Feb 15, 2017)", "url": "https://www.hendersoncountync.gov/sites/default/files/archives/Meetings/Board_of_Commissioners/agenda170215/DI.B.pdf", "publisher": "Henderson County, North Carolina", "accessed": "2026-10-24" },
+      "quote": "Soft Costs(AE fees, CM pre-con fee, survey, permitting, geotech, special inspector, material testing agent, Air Monitoring etc.) 12.0%",
+      "scopeNotes": "Applied to grand total construction cost; FF&E ($10/SF), technology and 1% commissioning are separate lines; owner contingency 5% separate.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7", "metric": "permitFeeMultiplier", "value": 0.0075, "unit": "pct",
+      "region": "United States (illustrative)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Building Valuation Data – August 2025", "url": "https://www.kirklandwa.gov/files/sharedassets/public/v/2/development-services/pdfs/building-pdfs/icc-august-2025.pdf", "publisher": "International Code Council (posted by City of Kirkland, WA)", "accessed": "2026-10-24" },
+      "quote": "Permit Fee Multiplier = $300,000 x 75% / $30,000,000 = 0.0075",
+      "scopeNotes": "Worked example of how a jurisdiction sets a permit fee as a share of building valuation; not a survey of actual fees.",
+      "confidence": "low"
+    },
+    {
+      "id": "e8", "metric": "legalFeeCap", "value": 175000, "unit": "USD/project",
+      "region": "Pennsylvania", "regionKey": "PA", "dataYear": 2025,
+      "source": { "title": "PHFA 2025 Underwriting Application — Development Cost Limits (revised 1-17-25)", "url": "https://www.phfa.org/forms/multifamily_application_guidelines/application/2025-2026-mai-07.pdf", "publisher": "Pennsylvania Housing Finance Agency", "accessed": "2026-10-24" },
+      "quote": "The total amount of legal fees included in the Development Budget shall not exceed $175,000.",
+      "scopeNotes": "Same document: accounting/cost certification may not exceed $15,000; development consultant fees must be paid from the developer's fee.",
+      "confidence": "high"
+    },
+    {
+      "id": "e9", "metric": "legalFeeCap", "value": 150000, "unit": "USD/project",
+      "region": "Delaware", "regionKey": "DE", "dataYear": 2025,
+      "source": { "title": "2025-2026 Delaware State Housing Authority Low Income Housing Tax Credit Guidelines", "url": "https://www.destatehousing.com/wp-content/uploads/2026/06/2025-2026-LIHTC-Guidelines.pdf", "publisher": "Delaware State Housing Authority", "accessed": "2026-10-24" },
+      "quote": "The total amount of legal fees for any single Development shall not exceed $150,000",
+      "scopeNotes": "Excludes lender/DSHA legal and syndication legal.",
+      "confidence": "high"
+    },
+    {
+      "id": "e10", "metric": "buildersRiskRate", "low": 0.0035, "high": 0.009, "unit": "pct",
+      "region": "United States", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "Builders Risk Insurance in 2026: What It Costs, Who Pays, and the Exclusions That Wreck Commercial Projects", "url": "https://terrapincg.com/news/builders-risk-insurance-commercial-construction-cost-2026", "publisher": "Terrapin Construction Group", "accessed": "2026-10-24" },
+      "quote": "Wood frame commercial and mixed use: $0.35 to $0.90 per $100 · 0.35% to 0.90%",
+      "scopeNotes": "Contractor-published 2026 national planning ranges, 12-month term; page FAQ says up to 1.0%. Not quotes.",
+      "confidence": "low"
+    },
+    {
+      "id": "e11", "metric": "buildersRiskRate", "low": 0.0007, "high": 0.0019, "unit": "pct",
+      "region": "United States", "regionKey": "US", "dataYear": 2026,
+      "source": { "title": "Builders Risk Insurance in 2026: What It Costs, Who Pays, and the Exclusions That Wreck Commercial Projects", "url": "https://terrapincg.com/news/builders-risk-insurance-commercial-construction-cost-2026", "publisher": "Terrapin Construction Group", "accessed": "2026-10-24" },
+      "quote": "Fire resistive concrete and protected steel: $0.07 to $0.15 per $100; Non-combustible steel frame with insulated metal panel envelope: $0.09 to $0.19 per $100",
+      "scopeNotes": "Same table; renovation/adaptive reuse 0.30%-0.60% on work value.",
+      "confidence": "low"
+    },
+    {
+      "id": "e12", "metric": "buildersRiskScope", "value": null, "unit": "text",
+      "region": "Pennsylvania", "regionKey": "PA", "dataYear": 2025,
+      "source": { "title": "PHFA 2025 Underwriting Application — Development Cost Limits (revised 1-17-25)", "url": "https://www.phfa.org/forms/multifamily_application_guidelines/application/2025-2026-mai-07.pdf", "publisher": "Pennsylvania Housing Finance Agency", "accessed": "2026-10-24" },
+      "quote": "The general contractor’s builder’s risk policy is part of the construction costs and must be included in the construction contract under either General Requirements or Builder’s overhead.",
+      "scopeNotes": "Shows builder's risk is often inside the hard cost.",
+      "confidence": "high"
+    },
+    {
+      "id": "e13", "metric": "taxesDuringConstructionMethod", "value": null, "unit": "text",
+      "region": "Pennsylvania", "regionKey": "PA", "dataYear": 2025,
+      "source": { "title": "PHFA 2025 Underwriting Application — Development Cost Limits (revised 1-17-25)", "url": "https://www.phfa.org/forms/multifamily_application_guidelines/application/2025-2026-mai-07.pdf", "publisher": "Pennsylvania Housing Finance Agency", "accessed": "2026-10-24" },
+      "quote": "Real estate taxes during construction will be determined in accordance with the current tax assessment and millages applicable from the “Notice to Proceed” to construction completion.",
+      "scopeNotes": "Method only; no rate.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e14", "metric": "developerFeePct", "low": 0.03, "high": 0.05, "unit": "pct",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "What are Typical Developer Fees on a Multifamily Development?", "url": "https://www.hellodata.ai/help-articles/what-are-typical-developer-fees-on-a-multifamily-development", "publisher": "HelloData", "accessed": "2026-10-24" },
+      "quote": "typically range between 3% and 5% of the total project cost (hard and soft costs)",
+      "scopeNotes": "Market-rate; same page says affordable 'closer to 5% to 7%' and LIHTC up to 15%. Unattributed help article; dataYear approximate.",
+      "confidence": "low"
+    },
+    {
+      "id": "e15", "metric": "developerFeeCap", "value": 0.15, "unit": "pct",
+      "region": "Delaware", "regionKey": "DE", "dataYear": 2025,
+      "source": { "title": "2025-2026 Delaware State Housing Authority Low Income Housing Tax Credit Guidelines", "url": "https://www.destatehousing.com/wp-content/uploads/2026/06/2025-2026-LIHTC-Guidelines.pdf", "publisher": "Delaware State Housing Authority", "accessed": "2026-10-24" },
+      "quote": "The developer fee is limited to the lesser of $1,000,000 or 15% of the Total Development Costs, excluding the developer fee, transferred reserves, relocation and/or operating deficit reserves",
+      "scopeNotes": "9% credit deals up to 70 units; dollar cap rises to $1.15M-$4M for larger/4% deals; 12% for identity-of-interest acquisitions.",
+      "confidence": "high"
+    },
+    {
+      "id": "e16", "metric": "developerFeeCap", "value": 0.15, "low": 0.10, "high": 0.15, "unit": "pct",
+      "region": "Pennsylvania", "regionKey": "PA", "dataYear": 2025,
+      "source": { "title": "PHFA 2025 Underwriting Application — Development Cost Limits (revised 1-17-25)", "url": "https://www.phfa.org/forms/multifamily_application_guidelines/application/2025-2026-mai-07.pdf", "publisher": "Pennsylvania Housing Finance Agency", "accessed": "2026-10-24" },
+      "quote": "The developer's fee is limited to 15 percent of the first $10 million of replacement cost of the development less all costs of acquisition and 10 percent on every $1 of replacement cost thereafter.",
+      "scopeNotes": "LIHTC cap; affordable only.",
+      "confidence": "high"
+    },
+    {
+      "id": "e17", "metric": "rentUpCap", "value": 1200, "unit": "USD/unit",
+      "region": "Pennsylvania", "regionKey": "PA", "dataYear": 2025,
+      "source": { "title": "PHFA 2025 Underwriting Application — Development Cost Limits (revised 1-17-25)", "url": "https://www.phfa.org/forms/multifamily_application_guidelines/application/2025-2026-mai-07.pdf", "publisher": "Pennsylvania Housing Finance Agency", "accessed": "2026-10-24" },
+      "quote": "but shall not exceed $1,200 per unit, or $600 per unit for Preservation applications.",
+      "scopeNotes": "Pre-operational lease-up costs, LIHTC.",
+      "confidence": "high"
+    },
+    {
+      "id": "e18", "metric": "rentUpFeeCap", "value": 500, "unit": "USD/unit",
+      "region": "Delaware", "regionKey": "DE", "dataYear": 2025,
+      "source": { "title": "2025-2026 Delaware State Housing Authority Low Income Housing Tax Credit Guidelines", "url": "https://www.destatehousing.com/wp-content/uploads/2026/06/2025-2026-LIHTC-Guidelines.pdf", "publisher": "Delaware State Housing Authority", "accessed": "2026-10-24" },
+      "quote": "Management companies can charge a rent-up fee of up to $500 per unit for new construction or unoccupied rehabilitation developments",
+      "scopeNotes": "Management rent-up fee only; marketing costs separate.",
+      "confidence": "high"
+    },
+    {
+      "id": "e19", "metric": "titlePremiumPctOfPolicy", "value": 0.005226, "low": 0.003822, "high": 0.0078, "unit": "pct",
+      "region": "Texas", "regionKey": "TX", "dataYear": 2026,
+      "source": { "title": "Title Rate Chart (effective March 1, 2026)", "url": "https://www.tdi.texas.gov/title/titlerates2026.html", "publisher": "Texas Department of Insurance", "accessed": "2026-10-24" },
+      "quote": "Basic premium: $100,000 policy $780; $1,000,000 $5,226; $5,000,000 $21,466; $10,000,000 $38,216 (rate chart and over-$100,000 formula).",
+      "scopeNotes": "Promulgated basic premium (owner's/loan policy) in Texas; value = $5,226/$1M; low = $38,216/$10M; high = $780/$100k. Other states differ.",
+      "confidence": "high"
+    },
+    {
+      "id": "e20", "metric": "mortgageDocStampRate", "value": 0.0035, "unit": "pct",
+      "region": "Florida", "regionKey": "FL", "dataYear": 2026,
+      "source": { "title": "Documentary Stamp Tax", "url": "https://floridarevenue.com/taxes/taxesfees/Pages/doc_stamp.aspx", "publisher": "Florida Department of Revenue", "accessed": "2026-10-24" },
+      "quote": "The rate of tax is 35 cents per $100, or portion thereof, of the amount secured thereby.",
+      "scopeNotes": "Tax on mortgages (no cap); example of a state tax on construction-loan recording.",
+      "confidence": "high"
+    },
+    {
+      "id": "e21", "metric": "commissioningPctOfConstruction", "value": 0.01, "unit": "pct",
+      "region": "Henderson County, NC", "regionKey": "NC", "dataYear": 2017,
+      "source": { "title": "Board of Commissioners agenda item — Edneyville Elementary School proposal (Feb 15, 2017)", "url": "https://www.hendersoncountync.gov/sites/default/files/archives/Meetings/Board_of_Commissioners/agenda170215/DI.B.pdf", "publisher": "Henderson County, North Carolina", "accessed": "2026-10-24" },
+      "quote": "Commissioning agent 1.0% 199,537.95",
+      "scopeNotes": "Public school; 1% of grand total construction cost.",
+      "confidence": "high"
+    },
+    {
+      "id": "e22", "metric": "financingFeeTreatment", "value": null, "unit": "text",
+      "region": "Pennsylvania", "regionKey": "PA", "dataYear": 2025,
+      "source": { "title": "PHFA 2025 Underwriting Application — Development Cost Limits (revised 1-17-25)", "url": "https://www.phfa.org/forms/multifamily_application_guidelines/application/2025-2026-mai-07.pdf", "publisher": "Pennsylvania Housing Finance Agency", "accessed": "2026-10-24" },
+      "quote": "Only those financing fees applicable to the construction financing of the development are includible in eligible basis.",
+      "scopeNotes": "Treatment only; no rate given.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e23", "metric": "softCostShareOfTotal", "low": 0.20, "high": 0.30, "unit": "pct",
+      "region": "United States", "regionKey": "US", "dataYear": 2020,
+      "source": { "title": "Making apartments more affordable starts with understanding the costs of building them", "url": "https://www.brookings.edu/research/making-apartments-more-affordable-starts-with-understanding-the-costs-of-building-them/", "publisher": "Brookings Institution (Hoyt & Schuetz, May 5, 2020)", "accessed": "2026-10-24" },
+      "quote": "Soft costs average around 20% to 30% of total costs for a relatively straightforward project, though they can be higher in some metro areas and for subsidized affordable housing projects.",
+      "scopeNotes": "Share of TOTAL development cost incl. land; soft includes design, engineering, financing, permitting and impact fees. Same article: hard costs 50%-70%, land 10%-20%.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e24", "metric": "softCostShareOfTDC", "value": 0.30, "low": 0.25, "high": 0.30, "unit": "pct",
+      "region": "United States (LIHTC)", "regionKey": "US", "dataYear": 2018,
+      "source": { "title": "Development Costs in the Housing Credit Program: GAO and Abt Associates Studies, Side by Side", "url": "https://ncsha.org/wp-content/uploads/2018/09/Side-by-Side-Study-Comparison-GAO-and-Abt-Assoc-Sept-2018.pdf", "publisher": "National Council of State Housing Agencies", "accessed": "2026-10-24" },
+      "quote": "Table row Soft Costs — GAO: '30 percent, consistent across the 12 allocating agencies.' Abt Associates: '25 – 30 percent, broadly consistent across states and between new construction and rehabilitation.'",
+      "scopeNotes": "LIHTC cost-certification data 2011-2016; soft includes developer fee and financing.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e25", "metric": "hardCostShareOfTotal", "low": 0.50, "high": 0.70, "unit": "pct",
+      "region": "United States", "regionKey": "US", "dataYear": 2020,
+      "source": { "title": "Making apartments more affordable starts with understanding the costs of building them", "url": "https://www.brookings.edu/research/making-apartments-more-affordable-starts-with-understanding-the-costs-of-building-them/", "publisher": "Brookings Institution (Hoyt & Schuetz, May 5, 2020)", "accessed": "2026-10-24" },
+      "quote": "On average, hard costs account for 50% to 70% of construction costs.",
+      "scopeNotes": "Used to convert share-of-total to share-of-hard.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e26", "metric": "hardCostShareOfTotal", "value": 0.62, "unit": "pct",
+      "region": "California", "regionKey": "CA", "dataYear": 2018,
+      "source": { "title": "The Hard Costs of Construction: Recent Trends in Labor and Materials Costs for Apartment Buildings in California", "url": "https://ternercenter.berkeley.edu/wp-content/uploads/2020/08/Hard_Construction_Costs_March_2020.pdf", "publisher": "Terner Center for Housing Innovation, UC Berkeley (March 2020)", "accessed": "2026-10-24" },
+      "quote": "Hard construction costs comprise more than sixty percent of total development costs.",
+      "scopeNotes": "Mostly affordable CA multifamily 2009-2018; footnote: excluding donated land, hard costs drop to 62% of total.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e27", "metric": "artInArchitecturePct", "value": 0.005, "unit": "pct",
+      "region": "United States (federal)", "regionKey": "US", "dataYear": 2022,
+      "source": { "title": "P120 Project Cost and Schedule Management Requirements for the Public Buildings Service (PBS 1000.6B, Nov. 7, 2022)", "url": "https://www.wbdg.org/FFC/GSA/p120_2022.pdf", "publisher": "U.S. General Services Administration (via WBDG)", "accessed": "2026-10-24" },
+      "quote": "It is set at 0.5% of the Estimated Cost of Construction.",
+      "scopeNotes": "Federal new construction and major modernization above prospectus level; many states/cities have similar percent-for-art rules.",
+      "confidence": "high"
+    }
+  ]
+}

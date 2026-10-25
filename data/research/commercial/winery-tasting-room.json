@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "id": "winery-tasting-room",
+  "name": "Winery / tasting room",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Ground-up winery building combining a hospitality tasting room (bar, retail, restrooms, catering pantry) with production space (crush/fermentation, barrel room, case goods) on a rural parcel with an event lawn. Cost depends on the hospitality share and finish level (destination wineries are architect-designed), plus rural infrastructure (well, on-site wastewater, long drives). Evidence is limited: two Texas Hill Country accessibility registrations (2021, 2023) at ~$370–400/SF and one California project listing at ~$1,900/SF (outlier); the rest is derived from restaurant and industrial proxies.",
+
+  "sizing": {
+    "typicalSize": { "low": 4000, "mid": 8000, "high": 20000, "unit": "sf", "evidence": ["v1", "v2", "v3"], "derived": true, "method": "Siboney Cellars winery + tasting room 10,720 SF (v1); Portree Cellars tasting facility 5,000 SF (v2); Delfino winery & tasting room 3,078 SF + 3,658 SF covered crush pad (v3). Mid 8,000 SF for a combined boutique winery; high for 20k+ case production." },
+    "primaryUnitsPerAcre": { "low": 1000, "mid": 2500, "high": 5000, "evidence": [], "derived": true, "method": "Building SF per acre of the developed winery pad (excluding vineyard): building + parking + event lawn + crush pad on 2–5 acres. Judgment." },
+    "parkingPerPrimaryUnit": { "low": 0.004, "mid": 0.006, "high": 0.01, "type": "surface", "evidence": [], "derived": true, "method": "Tasting/assembly portion parked like a bar or event space; production lightly parked. Often gravel overflow lots for events. Judgment." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 250, "mid": 400, "high": 750, "dollarYear": 2023, "region": "US", "evidence": ["v1", "v2", "v3", "restaurant-full-service.json#r1", "bar-brewery-taproom.json#b1"], "derived": true, "method": "Evidence years 2019 (v3), 2021 (v1), 2023 (v2); range expressed in 2023 dollars. Texas Hill Country registrations: Siboney Cellars winery + tasting $3,965,000 / 10,720 SF = $370/SF (v1, 2021, includes production and barrel room); Portree Cellars tasting facility with pavilion $1,994,960 / 5,000 SF = $399/SF (v2, 2023, hospitality-heavy). Texas costs run below national, offsetting registration under-reporting → mid $400/SF. Low $250 = pre-engineered production-heavy building with a modest tasting bar (cf. industrial proxy bar-brewery-taproom.json#b1 scaled); high $750 = architect-designed destination tasting room (restaurant-grade FOH, restaurant-full-service.json#r1-type finishes). Delfino Winery (Camino, CA) $12.9M / 6,736 SF ≈ $1,915/SF (v3) is recorded but treated as an outlier (likely includes major site/infrastructure and bespoke design)." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Building (tasting room, production, barrel room with insulated envelope and humidity control, restrooms, catering pantry) plus typical on-site work (drive, parking, utilities within the property, landscaping around building). Excludes winemaking equipment and tanks, covered crush pad, event lawn, rural wastewater/well systems (line items), FF&E, land, vineyard, soft costs, off-site road/utility extensions."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.65, "standard": 1.0, "premium": 1.4, "luxury": 1.9,
+    "evidence": ["v3"], "derived": true,
+    "method": "low/mid (250/400 ≈ 0.63) and high/mid (750/400 ≈ 1.9 as luxury); premium 1.4 interpolated. Delfino (v3) shows destination projects can exceed even the luxury tier."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.09 },
+      { "division": "03", "pct": 0.09 },
+      { "division": "04", "pct": 0.03 },
+      { "division": "05", "pct": 0.07 },
+      { "division": "06", "pct": 0.06 },
+      { "division": "07", "pct": 0.08 },
+      { "division": "08", "pct": 0.05 },
+      { "division": "09", "pct": 0.07 },
+      { "division": "10", "pct": 0.01 },
+      { "division": "13", "pct": 0.01 },
+      { "division": "21", "pct": 0.02 },
+      { "division": "22", "pct": 0.07 },
+      { "division": "23", "pct": 0.08 },
+      { "division": "26", "pct": 0.08 },
+      { "division": "27", "pct": 0.01 },
+      { "division": "28", "pct": 0.01 },
+      { "division": "31", "pct": 0.04 },
+      { "division": "32", "pct": 0.09 },
+      { "division": "33", "pct": 0.04 }
+    ],
+    "evidence": [], "derived": true,
+    "method": "Derived from bar-brewery-taproom split: heavier 07 (insulated barrel-room envelope), 06 (wood finishes in tasting room), 23 (barrel-room cooling/humidification, glycol rough-in); lighter kitchen plumbing. Site 0.17. Not from a published estimate."
+  },
+
+  "lineItems": [
+    {
+      "id": "winemaking-equipment",
+      "name": "Winemaking equipment (destemmer/crusher, press, stainless tanks, pumps, glycol, barrels)",
+      "division": "11",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 150000, "mid": 400000, "high": 1000000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Judgment for a 2,000–20,000 case winery; scales with tank capacity. Older anecdotal small-winery packages ($60–120k, 2010) are not used. Verify with equipment vendor quotes." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Omit for tasting-room-only projects (no on-site production)."
+    },
+    {
+      "id": "covered-crush-pad",
+      "name": "Covered crush pad (slab with trench drains + open-sided roof)",
+      "division": "13",
+      "unit": "sf",
+      "qty": { "per": "project", "value": 2500 },
+      "cost": { "low": 60, "mid": 100, "high": 180, "dollarYear": 2025, "region": "US", "evidence": ["v3"], "derived": true, "method": "Delfino program includes a 3,658 SF covered crush pad (v3); unit cost is judgment (pre-engineered canopy + heavy slab + trench drains)." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Production wineries only."
+    },
+    {
+      "id": "rural-wastewater-well",
+      "name": "On-site process + sanitary wastewater system and well (rural sites)",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 75000, "mid": 200000, "high": 450000, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Judgment: winery process wastewater (high-strength, seasonal) usually needs pretreatment and land application or engineered septic when no sewer is available, plus a commercial well and storage. Highly site/state specific — verify." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Switch on when the site has no public sewer/water."
+    },
+    {
+      "id": "event-lawn",
+      "name": "Event lawn and landscape (grading, irrigation, turf, lighting, paths)",
+      "division": "32",
+      "unit": "sf",
+      "qty": { "per": "project", "value": 20000 },
+      "cost": { "low": 4, "mid": 8, "high": 15, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Judgment for irrigated turf with festoon lighting and hardscape paths." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Catalog description includes an event lawn; switch on when programmed. Portree (v2) included a pavilion within its reported cost."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 20, "mid": 35, "high": 70, "dollarYear": 2025, "region": "US", "evidence": [], "derived": true, "method": "Tasting-room furniture, bar equipment, retail fixtures, POS and signage spread over gross SF (hospitality ≈ 30–50% of area). Judgment, cf. restaurant-full-service FF&E $100–270/SF of FOH-heavy area." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.10, "mid": 0.14, "high": 0.20, "evidence": [], "derived": true, "method": "Higher than urban commercial because of rural entitlements (agricultural/event use permits), civil design for wells/wastewater, and architect-led design for destination tasting rooms. Judgment." },
+    "breakdown": { "architectureEngineering": 0.08, "permitsFees": 0.02 },
+    "notes": "Type-specific: TTB bonded winery permit, state winery/tasting licenses, conditional/special use permits for events."
+  },
+
+  "contingency": {
+    "design": { "low": 0.03, "mid": 0.06, "high": 0.10, "evidence": [], "derived": true, "method": "Custom design typical; judgment." },
+    "hard": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": [], "derived": true, "method": "Rural site unknowns (rock, utilities); judgment." },
+    "soft": { "low": 0.05, "mid": 0.08, "high": 0.10, "evidence": [], "derived": true, "method": "Standard 5–10%." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 250, "max": 1500, "dollarYear": 2023, "region": "US", "method": "Hard $250–750 × 1.10–1.20; max widened toward destination projects like v3. Excludes equipment, vineyard and land." }
+  },
+
+  "evidence": [
+    {
+      "id": "v1", "metric": "hardCostPerSite", "value": 3965000, "unit": "USD/site",
+      "region": "Johnson City, TX (Hill Country)", "regionKey": "TX", "dataYear": 2021,
+      "source": { "title": "TABS project TABS2021016345 — Siboney Cellars Phase II", "url": "https://www.tdlr.texas.gov/TABS/Projects/TABS2021016345", "publisher": "Texas Department of Licensing and Regulation", "accessed": "2026-10-24" },
+      "quote": "New construction of a 10,720 sf winery and tasting room housing a production facility, barrel room, and tasting areas. … Estimated Cost: $3,965,000",
+      "scopeNotes": "$370/SF; start 12/1/2020, completion 11/1/2021. Self-reported registration estimate; site scope unknown.",
+      "confidence": "medium"
+    },
+    {
+      "id": "v2", "metric": "hardCostPerSite", "value": 1994960, "unit": "USD/site",
+      "region": "Johnson City, TX (Hill Country)", "regionKey": "TX", "dataYear": 2023,
+      "source": { "title": "TABS project TABS2024003484 — Portree Cellars Tasting Room", "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2024003484", "publisher": "Texas Department of Licensing and Regulation", "accessed": "2026-10-24" },
+      "quote": "New Construction, ground-up, 5,000 SF Wine Tasting Facility with Pavilion … Estimated Cost: $1,994,960",
+      "scopeNotes": "$399/SF; started 1/24/2023, completed 11/9/2023. Hospitality-only (no production).",
+      "confidence": "medium"
+    },
+    {
+      "id": "v3", "metric": "hardCostPerSite", "value": 12900000, "unit": "USD/site",
+      "region": "Camino, CA (El Dorado County)", "regionKey": "CA", "dataYear": 2019,
+      "source": { "title": "Delfino Winery Building — project listing", "url": "https://www.zfa.com/?p=1165", "publisher": "ZFA Structural Engineers", "accessed": "2026-10-24" },
+      "quote": "Size 6,736 sf … $12.9M … Completed 2019",
+      "scopeNotes": "3,078 SF winery & tasting room + 3,658 SF covered crush pad; ≈$1,915/SF. Scope of the $12.9M (site, infrastructure, other buildings) not stated — treated as an outlier.",
+      "confidence": "low"
+    }
+  ],
+
+  "openQuestions": [
+    "Only Texas registrations and one California listing found — web search quota ran out. Seek county planning staff reports for winery use permits (Napa, Sonoma, Paso Robles, Willamette Valley) that state construction valuation.",
+    "Winemaking equipment, crush pad, rural wastewater and event lawn costs are judgment values.",
+    "Split between tasting-room and production costs is not separated by any source."
+  ]
+}

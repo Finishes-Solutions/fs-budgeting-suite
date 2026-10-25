@@ -1,0 +1,189 @@
+{
+  "totals": {
+    "hard": 19581080.86,
+    "ffe": 1732182.74,
+    "contingency": 2962538.45,
+    "soft": 5821795.25,
+    "financing": 1046924.57,
+    "land": 2691600,
+    "total": 33836121.87,
+    "hardContingency": 2731712.02,
+    "softContingency": 230826.43,
+    "fees": 329125.96,
+    "developerFee": 1157599.9,
+    "hardAll": 24044975.62,
+    "softAll": 7099546.25,
+    "cents": 3383612187
+  },
+  "metrics": {
+    "sf": 45000,
+    "acres": 4.090909090909091,
+    "primaryUnits": 45000,
+    "unit": "sf",
+    "perSF": 751.9138193333333,
+    "perAcre": 8271052.012666666,
+    "perPrimaryUnit": 751.9138193333333,
+    "byUnit": {
+      "sf": 45000
+    }
+  },
+  "split": {
+    "hard": 0.710630364566659,
+    "soft": 0.2098215119710467,
+    "land": 0.07954812346229441
+  },
+  "components": [
+    {
+      "id": "c1",
+      "name": "Medical office building",
+      "type": "Medical office building",
+      "size": 45000,
+      "unit": "sf",
+      "totals": {
+        "hard": 19581080.86,
+        "ffe": 1732182.74,
+        "contingency": 2962538.45,
+        "soft": 5821795.25,
+        "financing": 1046924.57,
+        "land": 2691600,
+        "total": 33836121.87,
+        "hardContingency": 2731712.02,
+        "softContingency": 230826.43,
+        "fees": 329125.96,
+        "developerFee": 1157599.9,
+        "hardAll": 24044975.62,
+        "softAll": 7099546.25,
+        "cents": 3383612187
+      },
+      "metrics": {
+        "sf": 45000,
+        "acres": 4.090909090909091,
+        "primaryUnits": 45000,
+        "unit": "sf",
+        "perSF": 751.9138193333333,
+        "perAcre": 8271052.012666666,
+        "perPrimaryUnit": 751.9138193333333
+      },
+      "range": {
+        "min": 261.33,
+        "max": 1202.12,
+        "value": 657.8855855269892,
+        "status": "within",
+        "unit": "sf"
+      }
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "name": "Phase 1",
+      "start": "2027-03",
+      "months": 20,
+      "midpoint": "2028-01",
+      "escalation": 1.0626337092338076,
+      "totals": {
+        "hard": 19581080.86,
+        "ffe": 1732182.74,
+        "contingency": 2962538.45,
+        "soft": 5821795.25,
+        "financing": 1046924.57,
+        "land": 2691600,
+        "total": 33836121.87,
+        "hardContingency": 2731712.02,
+        "softContingency": 230826.43,
+        "fees": 329125.96,
+        "developerFee": 1157599.9,
+        "hardAll": 24044975.62,
+        "softAll": 7099546.25,
+        "cents": 3383612187
+      },
+      "financing": {
+        "enabled": true,
+        "ltc": 0.6,
+        "rate": 0.07,
+        "feePct": 0.01,
+        "loan": 20301673.12,
+        "equity": 13534448.75,
+        "interest": 843907.84,
+        "fee": 203016.73,
+        "iterations": 6
+      }
+    }
+  ],
+  "shared": [],
+  "warnings": [],
+  "proformas": [
+    {
+      "scope": {
+        "kind": "project",
+        "id": "project"
+      },
+      "purchasePrice": 33836121.87,
+      "year1PotentialIncome": 1620000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 45000
+      },
+      "unitCount": null,
+      "error": null,
+      "summary": {
+        "year1NOI": 1416204,
+        "yieldOnCost": 0.0418547966413268,
+        "equityIRR": -0.2726929554963271,
+        "equityMultiple": 0.14896119753354956,
+        "warnings": [
+          "An IRR could not be calculated for at least one sale year (no valid sign change) — the affected cells are shown as not available.",
+          "Year 1 cash flow before taxes is negative.",
+          "Year 2 cash flow before taxes is negative.",
+          "Year 3 cash flow before taxes is negative.",
+          "Year 4 cash flow before taxes is negative.",
+          "Year 5 cash flow before taxes is negative.",
+          "DSCR falls below 1.00 in at least one year.",
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate building SF (or units)",
+        "property.unitCount": "Estimate primary units",
+        "acquisition.basis": "Estimate total project cost",
+        "income.year1PotentialIncome": "Estimate revenue inputs",
+        "income.otherIncome": "Estimate other income",
+        "expenses": "Estimate expense ratio"
+      },
+      "irrRow": [
+        {
+          "year": 1,
+          "NOI": 1416204,
+          "cashFlow": -365814.5603107335,
+          "equityIRR": null
+        },
+        {
+          "year": 2,
+          "NOI": 1458690.12,
+          "cashFlow": -323328.4403107334,
+          "equityIRR": null
+        },
+        {
+          "year": 3,
+          "NOI": 1502450.8236,
+          "cashFlow": -279567.7367107335,
+          "equityIRR": -0.6509032145003515
+        },
+        {
+          "year": 4,
+          "NOI": 1547524.348308,
+          "cashFlow": -234494.2120027335,
+          "equityIRR": -0.41035513389800005
+        },
+        {
+          "year": 5,
+          "NOI": 1593950.0787572402,
+          "cashFlow": -188068.4815534933,
+          "equityIRR": -0.2726929554963271
+        }
+      ]
+    }
+  ]
+}

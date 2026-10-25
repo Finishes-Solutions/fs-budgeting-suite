@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 1,
+  "id": "btr-attached",
+  "name": "Build-to-rent \u2014 attached/horizontal",
+  "category": "residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "unit",
+  "summary": "Single-owner rental communities of attached townhomes, duplex/cottage clusters or one-story 'horizontal apartments', with private drives and an amenity center. Cost sits between for-sale townhomes and garden apartments: shared walls and compact 1\u20133 bedroom plans, but every unit has its own ground-floor entry, roof and often a yard. Per NAHB's 2016 profile, 77% of single-family built-for-rent homes were attached. The only cost line-items found are an illustrative 2026 Sun Belt BTR townhome pro forma and NAHB's community-level capitalization figure, so the default is derived from the townhomes file. Confidence is low-medium.",
+  "sizing": {
+    "typicalSize": {
+      "low": 48,
+      "mid": 150,
+      "high": 250,
+      "unit": "unit",
+      "evidence": [
+        "residential/btr-detached.json#e1",
+        "e1"
+      ],
+      "derived": true,
+      "method": "The pro forma example is 48 units (e1); NAHB cites a typical 200-unit BTR project (btr-detached e1). Horizontal-apartment communities commonly run 120\u2013250 units. Judgment."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 900,
+      "mid": 1200,
+      "high": 1450,
+      "evidence": [
+        "e1",
+        "residential/btr-detached.json#e4"
+      ],
+      "derived": true,
+      "method": "The pro forma's 3-bed BTR townhomes average 1,350 SF (e1). Single-story horizontal apartments (1\u20132 bed) run ~700\u20131,100 SF. The 2016 SFBFR median was 1,500 SF (btr-detached e4). Mid 1,200 SF blends townhome and cottage product."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 8,
+      "mid": 12,
+      "high": 16,
+      "evidence": [],
+      "derived": true,
+      "method": "Horizontal apartments and attached BTR typically run ~10\u201315 units per gross acre, between detached BTR (~6.5) and garden apartments (~20+). Judgment."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 1.25,
+      "mid": 1.75,
+      "high": 2,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Surface stalls/carports for horizontal apartments; attached-garage townhomes at the high end. Judgment."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 150000,
+      "mid": 228000,
+      "high": 335000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "residential/townhomes.json#e1",
+        "residential/townhomes.json#e4"
+      ],
+      "derived": true,
+      "method": "= perSF \u00d7 sfPerPrimaryUnit (incl. horizontal share): mid $190 \u00d7 1,200 = $228k; low $150 \u00d7 1,000 = $150k; high $240 \u00d7 1,400 = $336k. Anchor: the 2026 Sun Belt BTR townhome pro forma (e1) shows vertical $165/SF \u00d7 1,350 SF = $222.8k plus horizontal $35k = $257.8k/unit, i.e. $191/SF all-in hard. The for-sale townhomes file (mid $150/SF vertical, 2025$) plus ~$30k/unit horizontal gives $150 \u00d7 1,200 + 30k = $210k ($175/SF). Mid $190/SF follows the pro forma. Labeled 2026$."
+    },
+    "perSF": {
+      "low": 150,
+      "mid": 190,
+      "high": 240,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "All-in hard per unit SF incl. horizontal infrastructure. Mid \u2248 the e1 pro forma ($257.8k / 1,350 SF = $191). Low = townhome low ($115) + horizontal (~$30/SF) \u2248 $145\u2013150. High = premium/high-cost-region townhome ($200) + horizontal ($40) = $240."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Buildings plus in-community horizontal work (private drives, parking, wet/dry utilities, stormwater, landscaping, fencing) incl. GC general conditions and OH&P. Excludes the amenity center (line item), land, off-sites, impact/tap fees, soft costs and FF&E."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.8,
+    "standard": 1.0,
+    "premium": 1.2,
+    "luxury": 1.4,
+    "evidence": [],
+    "derived": true,
+    "method": "Economy \u2248 low/mid (150/190). Premium/luxury follow btr-detached (judgment)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.11
+      },
+      {
+        "division": "03",
+        "pct": 0.065
+      },
+      {
+        "division": "04",
+        "pct": 0.008
+      },
+      {
+        "division": "05",
+        "pct": 0.004
+      },
+      {
+        "division": "06",
+        "pct": 0.14
+      },
+      {
+        "division": "07",
+        "pct": 0.085
+      },
+      {
+        "division": "08",
+        "pct": 0.042
+      },
+      {
+        "division": "09",
+        "pct": 0.082
+      },
+      {
+        "division": "10",
+        "pct": 0.005
+      },
+      {
+        "division": "11",
+        "pct": 0.02
+      },
+      {
+        "division": "12",
+        "pct": 0.035
+      },
+      {
+        "division": "21",
+        "pct": 0.008
+      },
+      {
+        "division": "22",
+        "pct": 0.072
+      },
+      {
+        "division": "23",
+        "pct": 0.05
+      },
+      {
+        "division": "26",
+        "pct": 0.064
+      },
+      {
+        "division": "31",
+        "pct": 0.045
+      },
+      {
+        "division": "32",
+        "pct": 0.085
+      },
+      {
+        "division": "33",
+        "pct": 0.08
+      }
+    ],
+    "evidence": [
+      "residential/single-family.json#e3",
+      "e1"
+    ],
+    "derived": true,
+    "method": "The townhomes split is scaled to ~86% for the buildings. The ~14% horizontal share ($35k of $258k in e1) goes to 31 (grading), 32 (drives, parking, landscape, fencing) and 33 (utilities). Div 21 covers sprinklers where buildings exceed IRC limits."
+  },
+  "lineItems": [
+    {
+      "id": "horizontal-infrastructure",
+      "name": "In-community horizontal infrastructure per unit",
+      "division": "33",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 20000,
+        "mid": 30000,
+        "high": 45000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e1"
+        ],
+        "derived": true,
+        "method": "The e1 pro forma carries $35k/door for 'lot development and infrastructure'. Mid is set lower at $30k for the higher density of horizontal apartments; the range is judgment."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of the hard cost."
+    },
+    {
+      "id": "amenity-package",
+      "name": "Amenity center: clubhouse/leasing, pool, dog park",
+      "division": "13",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 800000,
+        "mid": 1800000,
+        "high": 3000000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Judgment, same build-up as btr-detached (clubhouse ~$300/SF, pool, dog park, mail kiosk), slightly smaller for denser product."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Added on top of the per-unit hard cost."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 1000,
+      "mid": 2500,
+      "high": 4000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Judgment: window coverings, smart-home kits and the clubhouse furniture share. Appliances are in the hard cost."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.1,
+      "mid": 0.15,
+      "high": 0.22,
+      "evidence": [
+        "e1"
+      ],
+      "derived": false,
+      "method": "The e1 pro forma uses soft costs at 13% of hard plus carry/interest reserve at 5.5% of total project cost. Mid 17% includes financing fees and lease-up marketing on top of the 13%. | Second pass (2026-10-24, main session): Reduced 2 points to remove financing fees the mid added. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.035,
+      "permitsAndFees": 0.05,
+      "financing": 0.04,
+      "legalInsurance": 0.015,
+      "developerOverhead": 0.02,
+      "marketing": 0.01
+    },
+    "notes": "Interest reserve may be modeled separately via the financing norms."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.02,
+      "mid": 0.03,
+      "high": 0.05,
+      "evidence": [],
+      "derived": true,
+      "method": "Repeat product. Judgment."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [
+        "e1"
+      ],
+      "derived": false,
+      "method": "The e1 pro forma carries 'Contingency (8% of hard cost)'; that is the mid. Low/high is judgment."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "General norm. Judgment."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 165000,
+      "max": 450000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Low $150k \u00d7 1.12 \u2248 $168k; high $335k \u00d7 1.24 + amenity share \u2248 $430k, rounded. The e1 pro forma total of $383k/door includes $50k land, so it sits at ~$333k excluding land."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 165,
+      "unit": "USD/sf",
+      "region": "Sun Belt (unspecified)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Build-to-Rent Pro Forma: BTR Townhomes",
+        "url": "https://rivereditor.com/blogs/build-to-rent-pro-forma-btr-townhomes",
+        "publisher": "River (rivereditor.com blog)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Vertical hard costs $10.69M ($165/SF); Horizontal/site (lot development and infrastructure) $1.68M [$35K per door]; Total project cost $18.41M [$383K per door]",
+      "scopeNotes": "Illustrative 48-unit, 1,350 SF average 3-bed BTR townhome pro forma (May 2026), not an actual project. Land $2.4M ($50K/door); soft costs 13% of hard; contingency 8% of hard; carry/interest 5.5% of total project cost. 'Sun Belt' is mapped to US because no market is specified.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Only one cost line-item source (illustrative). Public budgets for horizontal-apartment communities (e.g., NexMetro/Avilla, Christopher Todd) in city incentive or PID filings would materially improve this.",
+    "Unit-size mix (cottage flats vs 3-bed townhomes) moves per-unit cost \u00b130%; the engine may want a unit-mix input."
+  ]
+}

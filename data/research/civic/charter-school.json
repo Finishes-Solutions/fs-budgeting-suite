@@ -1,0 +1,453 @@
+{
+  "schemaVersion": 1,
+  "id": "charter-school",
+  "name": "K-12 charter school",
+  "category": "civic",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Charter schools are typically 35k-90k SF one- or two-story buildings with standard classrooms, a combined gym/cafetorium, a serving kitchen and limited athletic facilities, often built design-build by charter networks or developers with leaner specs than district schools. No charter-specific cost dataset could be retrieved in this session, so the hard cost is DERIVED from state K-12 contract data (NC DPI 2024-25, ~$400-$480/SF incl. site) discounted for charter program and spec; verify against charter bond offering documents or network build costs.",
+  "sizing": {
+    "typicalSize": {
+      "low": 30000,
+      "mid": 55000,
+      "high": 90000,
+      "unit": "sf",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: charter campuses commonly serve 400-900 students at ~80-110 GSF/student (vs. ~120-150 for district schools; NC district elementary average ~122,000 SF per school in e1). Mid 55,000 SF ~ 550 students at 100 GSF/student."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 6000,
+      "mid": 10000,
+      "high": 20000,
+      "evidence": [],
+      "derived": true,
+      "method": "Building SF per site acre: suburban charter elementary ~4-8 acres for 40-60k SF (~8,000-12,000 SF/acre); urban two-story campuses on 2-3 acres reach ~20,000 SF/acre. Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0012,
+      "mid": 0.0016,
+      "high": 0.0025,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per building SF (= 1.2-2.5 per 1,000 SF): ~1 per staff plus visitors, with a separate stacking lane for car-rider queue. Derived; local code governs."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 260,
+      "mid": 360,
+      "high": 500,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5"
+      ],
+      "derived": true,
+      "method": "Derived. Anchors (site + building contract cost): NC district elementary $421.62/SF and high $483.37/SF in 2025 (e1), all 2024 schools $452.05/SF with range $376-$526 (e2); VA classroom buildings $474/SF (2026, e3). Charter schools omit most district athletic facilities, auditoriums and stadium sitework, use smaller sites and simpler finishes, and are frequently design-build - taken as ~0.85 x the NC elementary average: 0.85 x $422 = ~$360/SF (2025). Low $260 ~ RSMeans/Gordian model-level building cost ($239 in 2024, e4) plus ~10% site = shell-and-classroom charter on a simple site; high $500 ~ district-equivalent spec / high-cost market (e1 high school, e3)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P and on-site work (parking, car-rider loop, play areas, utilities, landscaping); excludes land, soft costs, classroom furniture/technology (FF&E), athletic stadiums/turf fields, off-sites and impact/tap fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.75,
+    "standard": 1.0,
+    "premium": 1.2,
+    "luxury": 1.4,
+    "evidence": [
+      "e1",
+      "e2",
+      "e4"
+    ],
+    "derived": true,
+    "method": "Economy ~ model-level/simple charter ($260/$360 = 0.72); premium ~ district-standard elementary ($422-$452 / $360 = 1.17-1.26, e1/e2); luxury ~ high school / STEM-heavy campus (~$500/$360 = 1.39)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.07
+      },
+      {
+        "division": "04",
+        "pct": 0.06
+      },
+      {
+        "division": "05",
+        "pct": 0.06
+      },
+      {
+        "division": "06",
+        "pct": 0.02
+      },
+      {
+        "division": "07",
+        "pct": 0.06
+      },
+      {
+        "division": "08",
+        "pct": 0.06
+      },
+      {
+        "division": "09",
+        "pct": 0.09
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.02
+      },
+      {
+        "division": "12",
+        "pct": 0.02
+      },
+      {
+        "division": "14",
+        "pct": 0.01
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.05
+      },
+      {
+        "division": "23",
+        "pct": 0.12
+      },
+      {
+        "division": "26",
+        "pct": 0.09
+      },
+      {
+        "division": "27",
+        "pct": 0.03
+      },
+      {
+        "division": "28",
+        "pct": 0.02
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.05
+      },
+      {
+        "division": "33",
+        "pct": 0.02
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived from a typical one/two-story masonry-and-steel school: HVAC 12% (classroom ventilation rates), electrical 9% + communications 3% + security/fire alarm 2%, finishes 9%, site 10% (31-33). No public CSI-level charter or K-12 bid breakdown was retrieved in this session - replace with a state school-facility cost-model split when available."
+  },
+  "lineItems": [
+    {
+      "id": "gym-cafetorium",
+      "name": "Gym / cafetorium (multi-purpose) incl. stage and gym equipment",
+      "division": "11",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 350000,
+        "high": 700000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance for fixed gym equipment, stage rigging/AV and folding tables in a combined gym/cafetorium (the room itself is in baseline building SF)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Inside baseline."
+    },
+    {
+      "id": "food-service-equipment",
+      "name": "Serving / warming kitchen equipment (NSLP)",
+      "division": "11",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 100000,
+        "mid": 250000,
+        "high": 600000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: warming/serving line for satellite meals (low) to full production kitchen with hood and walk-ins (high)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Inside baseline."
+    },
+    {
+      "id": "playground-play-field",
+      "name": "Playground equipment and natural-grass play field",
+      "division": "32",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 100000,
+        "mid": 250000,
+        "high": 500000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance (K-5 playground with surfacing plus a graded/irrigated multi-use field)."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Add for elementary/K-8 campuses."
+    },
+    {
+      "id": "synthetic-turf-field",
+      "name": "Synthetic turf athletic field with lighting",
+      "division": "32",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 1200000,
+        "mid": 1800000,
+        "high": 2800000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance; secondary charters only."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional."
+    },
+    {
+      "id": "secure-vestibule",
+      "name": "Secure entry vestibule, access control, cameras",
+      "division": "28",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 50000,
+        "mid": 120000,
+        "high": 250000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance; many states now require secured vestibules for new schools."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Inside baseline."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 15,
+      "mid": 22,
+      "high": 35,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: classroom furniture, cafeteria tables, library/media and instructional technology ~$1,500-$3,500 per student at ~100 GSF/student. NC contract data excludes furnishings (e1), confirming FF&E sits outside hard cost."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.12,
+      "mid": 0.18,
+      "high": 0.25,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Derived. NC contract data explicitly excludes 'design fees, surveys, testing or legal expense' (e1); typical K-12 A/E 6%-8%, testing/inspection 1%-2%, survey/geotech/legal 1%-2%, owner's rep 2%-3%, permits 1%. Charter projects add bond/financing transaction costs (carried in financing, not here). Excludes FF&E and contingency."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.07
+    },
+    "notes": "Charter schools typically finance through tax-exempt conduit bonds; issuance costs, capitalized interest and debt-service reserve funds belong to financing."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: repeatable network prototypes need less design contingency than bespoke district schools."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: typical owner construction contingency."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: typical owner soft-cost contingency."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 280,
+      "max": 700,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Low ~ $260 hard x 1.1; high ~ $500 hard x 1.3 + FF&E. Per student at ~100 GSF/student this is ~$28k-$70k per seat."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 421.62,
+      "low": 421.62,
+      "high": 483.37,
+      "unit": "USD/sf",
+      "region": "North Carolina (statewide)",
+      "regionKey": "NC",
+      "dataYear": 2025,
+      "source": {
+        "title": "Average School Costs (Years 2020-2025)",
+        "url": "https://www.dpi.nc.gov/documents/schoolplanning/nc-school-construction-costs-year-2020-2025/download",
+        "publisher": "North Carolina Department of Public Instruction, School Planning (04.30.26)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Elementary (K-5/ PK-5) 3 $154,187,997.00 365,701 $421.62 ... High (9-12) 2 $210,974,120.00 436,469 $483.37 ... Totals 2025 5 $365,162,117.00 802,170 $455.22",
+      "scopeNotes": "Contract amounts (site + building) for new district schools; 'do not include land, furnishings, design fees, surveys, testing or legal expense'. District schools are large (NC elementary avg ~122,000 SF) and built to full district standards.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": 452.05,
+      "low": 376.28,
+      "high": 526.0,
+      "unit": "USD/sf",
+      "region": "North Carolina (statewide)",
+      "regionKey": "NC",
+      "dataYear": 2024,
+      "source": {
+        "title": "Average School Costs (Years 2020-2025)",
+        "url": "https://www.dpi.nc.gov/documents/schoolplanning/nc-school-construction-costs-year-2020-2025/download",
+        "publisher": "North Carolina Department of Public Instruction, School Planning (04.30.26)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Elementary (K-5/ PK-5) 3 $131,948,663.51 329,985 $399.86 ... Grades 3-8 1 ... $376.28 ... Middle (6-8) 1 ... $512.20 ... Totals 2024 12 $950,781,039.22 2,103,270 $452.05",
+      "scopeNotes": "Contract amounts (site + building) for new district schools; 'do not include land, furnishings, design fees, surveys, testing or legal expense'. District schools are large (NC elementary avg ~122,000 SF) and built to full district standards. 2024: 12 schools, range $376-$526/SF by grade configuration.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": 474,
+      "unit": "USD/sf",
+      "region": "Richmond, VA (state database)",
+      "regionKey": "VA-Richmond",
+      "dataYear": 2026,
+      "source": {
+        "title": "Virginia Building Construction Cost Database (VBCCD) - 2026, rates per 01/01/2026",
+        "url": "https://aemassets.dgs.virginia.gov/site-assets/deb/Miscellaneous/R_2%20PUBLISHED%20Virginia%20Building%20Construction%20Cost%20Database%20-%202026.pdf",
+        "publisher": "Virginia Department of General Services, Division of Engineering & Buildings",
+        "accessed": "2026-10-24"
+      },
+      "quote": "New Classroom Buildings Yes Sq. Ft. 21,686 - 299,748 102,000 $474",
+      "scopeNotes": "Mostly higher-education classroom buildings (proxy for K-12 academic space). Average construction cost of actual state/regional projects set to Richmond VA Jan 2026; 'Prices also include utilities and site work where applicable.' Excludes soft costs. Mostly higher-ed/state agency buildings.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": 239.21,
+      "low": 230.36,
+      "high": 239.21,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "K-12 school construction costs for 2024",
+        "url": "https://www.bdcnetwork.com/home/news/55165792/k-12-school-construction-costs-for-2024",
+        "publisher": "Building Design+Construction (Gordian RSMeans data), Feb 22 2024",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table: Elementary $239.21; Junior high $230.36; High school $233.16; Vocational $221.39 (cost per SF)",
+      "scopeNotes": "RSMeans square-foot model costs for school buildings with green building considerations; model-level building cost intended for planning, 'not meant for detailed estimates'; far below actual 2024-25 contract awards (e1, e2).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": 192.37,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "RSMeans square foot cost model: Elementary School (Brick Veneer / Reinforced Concrete), 1 story",
+        "url": "https://www.rsmeans.com/model-pages/elementary-school",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Model page cost table (45,000 SF, 2019 data): SubTotal $143.83/SF; Contractor Fees 25%; Architectural Fees 7%; Total Building Cost $192.37/SF (union)",
+      "scopeNotes": "Building only, union labor, 2019 national average; includes contractor GC/OH&P (25%) AND architect fees; excludes sitework, land, FF&E. Hard cost w/o A/E fee = SubTotal x 1.25. Stale (2019) and well below current bids; used for relative ratios between types only.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "No charter-specific source was retrievable (search budget exhausted): pull charter school conduit bond official statements (EMMA) or network build budgets (IDEA, KIPP, Great Hearts, BASIS) for actual $/SF and $/seat.",
+    "State cost-cap data (Washington OSPI Construction Cost Allocation, Ohio OFCC, MSBA, Texas TABS charter registrations) would add independent anchors and a CSI split.",
+    "SF per student for charters (~80-110 GSF) is a derived assumption."
+  ]
+}

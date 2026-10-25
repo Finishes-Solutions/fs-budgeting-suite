@@ -1,0 +1,69 @@
+{
+  "sample": {
+    "id": "10-food-truck-park",
+    "name": "Pearl Yard food truck park",
+    "address": "San Antonio, TX",
+    "exitCap": 0.08
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "quick",
+    "location": {
+      "region": "TX-SanAntonio"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "amount",
+      "value": 850000
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "c1",
+        "typeId": "food-truck-park",
+        "name": "Food truck park",
+        "phaseId": "p1",
+        "size": 12,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {
+          "grease-interceptor": {
+            "on": true
+          }
+        },
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perUnitMonth",
+          "rate": 1800,
+          "otherIncome": 240000,
+          "vacancy": 0.1,
+          "expenseRatio": 0.45
+        }
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

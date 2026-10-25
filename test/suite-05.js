@@ -34,7 +34,7 @@ async function nbFinish(p,id,name){
  });
 
  // ---- BLANK budget
- await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Blank Budget")'));
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row[data-tpl="blank"]'));
  await p.waitForTimeout(400);
  await p.selectOption('#nbProject','OP-0501');
  await p.fill('#nbId','BD-0501');
@@ -81,7 +81,7 @@ async function nbFinish(p,id,name){
 
  // ---- CSI view on the multifamily template
  await p.click('#nav-home'); await p.waitForTimeout(200);
- await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(400);
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]')); await p.waitForTimeout(400);
  await nbFinish(p,'BD-0502','Export Multifamily');
  await p.fill('#pId','TST-9998'); await p.fill('#pName','CSI Format Check');
  await p.click('#page-input button:has-text("Continue to Impact Fees")'); await p.waitForTimeout(250); await p.click('#page-fees button:has-text("Continue to Budget")'); await p.waitForTimeout(400);
@@ -149,7 +149,7 @@ async function nbFinish(p,id,name){
 
  // publishing affects only future budgets — existing ones must not move
  await p.click('#nav-home'); await p.waitForTimeout(300);
- await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(500);
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]')); await p.waitForTimeout(500);
  await nbFinish(p,null,'Export Multifamily');
  await p.fill('#pId','TST-4242'); await p.fill('#pName','Before Publish');
  const beforeDoc = await p.evaluate(async () => {
@@ -191,7 +191,7 @@ async function nbFinish(p,id,name){
 
  // a budget created now picks up the new version, with fresh line IDs
  await p.click('#nav-home'); await p.waitForTimeout(300);
- await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")')); await p.waitForTimeout(500);
+ await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]')); await p.waitForTimeout(500);
  await nbFinish(p,null,'Export Multifamily');
  const fresh = await p.evaluate(() => ({ver: doc.templateVersionId, rate: doc.lines[0].unit,
                                         ids: doc.lines.slice(0,3).map(l => l.lineId)}));

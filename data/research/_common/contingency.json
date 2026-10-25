@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "id": "contingency",
+  "name": "Contingency norms",
+  "researchedAt": "2026-10-24",
+  "summary": "Owner-carried contingencies. Design (estimating) contingency covers undefined scope while drawings are incomplete and falls to zero at final CDs; hard-cost (construction) contingency covers changes during construction; soft-cost contingency covers overruns in professional fees and other soft items. Design and hard-cost contingency are fractions of the hard cost; soft-cost contingency is a fraction of soft costs. Primary sources: GSA P-120 (2022) Table 3-1 and state housing finance agency underwriting rules, which agree on ~5% new / ~10% renovation construction contingency.",
+  "items": [
+    {
+      "id": "designContingency",
+      "name": "Design contingency — engine default (early design, new construction)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.05, "mid": 0.075, "high": 0.10, "evidence": ["e1"], "derived": false,
+        "method": "GSA P-120 Table 3-1, new construction: concept design 7.5%-10%, design development 5%-7.5% (e1). The engine budgets at concept/schematic stage, so mid 7.5% (bottom of concept band / top of DD band); low 5% (DD), high 10% (top of concept)." },
+      "notes": "Use the stage-specific items below when the user states a design stage. Percent of direct cost (hard cost before markups in GSA usage)."
+    },
+    {
+      "id": "designContingency-concept",
+      "name": "Design contingency — planning / programming (pre-design)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.10, "mid": 0.10, "high": 0.15, "evidence": ["e1"], "derived": false,
+        "method": "GSA P-120 Table 3-1 'Planning and Development': 10% for capital new construction, capital R&A and simple non-capital; 15% for complex non-capital projects (e1)." },
+      "notes": ""
+    },
+    {
+      "id": "designContingency-schematic",
+      "name": "Design contingency — concept / schematic design",
+      "basis": "pctOfHard",
+      "range": { "low": 0.075, "mid": 0.085, "high": 0.10, "evidence": ["e1"], "derived": false,
+        "method": "GSA P-120 Table 3-1 'Concept Design', new construction 7.5%-10% (e1); mid = midpoint rounded down." },
+      "notes": ""
+    },
+    {
+      "id": "designContingency-dd",
+      "name": "Design contingency — design development",
+      "basis": "pctOfHard",
+      "range": { "low": 0.05, "mid": 0.06, "high": 0.075, "evidence": ["e1"], "derived": false,
+        "method": "GSA P-120 Table 3-1 'Design Development', new construction 5%-7.5% (e1); mid = midpoint rounded." },
+      "notes": ""
+    },
+    {
+      "id": "designContingency-cd",
+      "name": "Design contingency — construction documents (~75%)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.02, "mid": 0.035, "high": 0.05, "evidence": ["e1"], "derived": false,
+        "method": "GSA P-120 Table 3-1 '75% Construction Documents', new construction 2%-5% (e1); at 90% CDs 1%-3%; at final CDs 0%." },
+      "notes": "Goes to 0 at bid / GMP."
+    },
+    {
+      "id": "designContingency-renovation-concept",
+      "name": "Design contingency — renovation, concept / schematic",
+      "basis": "pctOfHard",
+      "range": { "low": 0.10, "mid": 0.125, "high": 0.15, "evidence": ["e1"], "derived": false,
+        "method": "GSA P-120 Table 3-1 'Concept Design', capital repair & alteration 10%-15% (e1)." },
+      "notes": "Renovation/adaptive reuse carries more design uncertainty than new construction."
+    },
+    {
+      "id": "designContingency-renovation-dd",
+      "name": "Design contingency — renovation, design development",
+      "basis": "pctOfHard",
+      "range": { "low": 0.075, "mid": 0.0875, "high": 0.10, "evidence": ["e1"], "derived": false,
+        "method": "GSA P-120 Table 3-1 'Design Development', capital R&A 7.5%-10% (e1)." },
+      "notes": ""
+    },
+    {
+      "id": "designContingency-renovation-cd",
+      "name": "Design contingency — renovation, construction documents (~75%)",
+      "basis": "pctOfHard",
+      "range": { "low": 0.035, "mid": 0.055, "high": 0.075, "evidence": ["e1"], "derived": false,
+        "method": "GSA P-120 Table 3-1 '75% Construction Documents', capital R&A 3.5%-7.5% (e1)." },
+      "notes": ""
+    },
+    {
+      "id": "hardCostContingency",
+      "name": "Hard-cost (construction) contingency — new construction",
+      "basis": "pctOfHard",
+      "range": { "low": 0.03, "mid": 0.05, "high": 0.07, "evidence": ["e2", "e3", "e4", "e5", "e7"], "derived": false,
+        "method": "Housing finance agencies require 5% for new construction (DSHA e3, PHFA e4, CalHFA minimum e5) and a county school budget carries a 5% owner contingency (e7) -> mid 5%. GSA uses 7% for new capital construction (e2) -> high. Low 3% by judgment for simple, repeat or GMP projects where the GC also carries its own contingency (CalHFA notes its 5% is over and above the GC contingency)." },
+      "notes": "Owner contingency on top of any contingency inside the GC's price."
+    },
+    {
+      "id": "hardCostContingency-renovation",
+      "name": "Hard-cost (construction) contingency — renovation / rehab / adaptive reuse",
+      "basis": "pctOfHard",
+      "range": { "low": 0.08, "mid": 0.10, "high": 0.15, "evidence": ["e2", "e3", "e4"], "derived": false,
+        "method": "10% is the consistent requirement for rehabilitation (DSHA e3, PHFA e4) and for GSA modernization / repair & alteration (e2) -> mid. Low 8% and high 15% (adaptive reuse, historic, occupied buildings) by judgment." },
+      "notes": ""
+    },
+    {
+      "id": "softCostContingency",
+      "name": "Soft-cost contingency",
+      "basis": "pctOfSoft",
+      "range": { "low": 0.02, "mid": 0.05, "high": 0.10, "evidence": ["e3", "e5", "e6"], "derived": true,
+        "method": "CalHFA minimum 2% of soft costs (e5) and PHFA 2.5% of professional fees (e6) set the low end. DSHA allocates 20% of a 5% total contingency to soft costs (e3) = 1% of hard; with soft costs at ~15%-20% of hard that is ~5%-7% of soft -> mid 5%. High 10% by judgment for entitlement-risky projects." },
+      "notes": "Basis is the soft-cost subtotal (excluding developer fee and financing)."
+    },
+    {
+      "id": "estimateAccuracy-orderOfMagnitude",
+      "name": "Estimate accuracy band — order of magnitude (informational)",
+      "basis": "pctOfEstimate",
+      "range": { "low": -0.40, "mid": 0.0, "high": 0.75, "evidence": ["e8"], "derived": false,
+        "method": "GSA training: order of magnitude +75% to -40% (e8). Informational only — this is the uncertainty band of an early estimate, not an amount to add. AACE RP 18R-97/56R-08 class tables are paywalled and not cited." },
+      "notes": "Budgetary estimate +/-30%; construction estimate +10% / -5% (e8)."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1", "metric": "designContingencyByPhase", "low": 0.0, "high": 0.15, "unit": "pct",
+      "region": "United States (federal)", "regionKey": "US", "dataYear": 2022,
+      "source": { "title": "P120 Project Cost and Schedule Management Requirements for the Public Buildings Service (PBS 1000.6B, Nov. 7, 2022)", "url": "https://www.wbdg.org/FFC/GSA/p120_2022.pdf", "publisher": "U.S. General Services Administration (via WBDG)", "accessed": "2026-10-24" },
+      "quote": "Table 3-1, Guidelines for Standard Design Contingencies (percentage of Direct Cost): Planning and Development 10% / 10% / 10% / 15%; Concept Design 7.5% – 10% (New) / 10% - 15% (R&A); Design Development 5% - 7.5% / 7.5% – 10%; 75% Construction Documents 2% - 5% / 3.5% - 7.5%; Final Construction Documents 0%",
+      "scopeNotes": "Columns: Capital New Construction, Capital R&A, Non-Capital Simple, Non-Capital Complex. 90% CDs: 1%-3% new, 1.5%-3.5% R&A.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2", "metric": "constructionContingency", "value": 0.07, "low": 0.07, "high": 0.10, "unit": "pct",
+      "region": "United States (federal)", "regionKey": "US", "dataYear": 2022,
+      "source": { "title": "P120 Project Cost and Schedule Management Requirements for the Public Buildings Service (PBS 1000.6B, Nov. 7, 2022)", "url": "https://www.wbdg.org/FFC/GSA/p120_2022.pdf", "publisher": "U.S. General Services Administration (via WBDG)", "accessed": "2026-10-24" },
+      "quote": "Table 3-1, Guidelines for Standard Construction Contingencies (percentage of ECCA): New Capital Construction, Capital 7%; Modernization. Capital 10%; Limited Scope Repair and Alteration, Capital 10%",
+      "scopeNotes": "ECCA = estimated cost of construction at award. Scope changes are funded separately, not from contingency.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3", "metric": "constructionContingency", "value": 0.05, "low": 0.05, "high": 0.10, "unit": "pct",
+      "region": "Delaware", "regionKey": "DE", "dataYear": 2025,
+      "source": { "title": "2025-2026 Delaware State Housing Authority Low Income Housing Tax Credit Guidelines", "url": "https://www.destatehousing.com/wp-content/uploads/2026/06/2025-2026-LIHTC-Guidelines.pdf", "publisher": "Delaware State Housing Authority", "accessed": "2026-10-24" },
+      "quote": "Budgets must include a 5% contingency for new construction and a 10% contingency for rehabilitation based on the cost of buildings, site work, general requirements, and contractor’s overhead and profit.",
+      "scopeNotes": "Same section: 80% of the total contingency allocated to hard costs and 20% (up to $200,000) to soft costs.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4", "metric": "constructionContingency", "value": 0.05, "low": 0.05, "high": 0.10, "unit": "pct",
+      "region": "Pennsylvania", "regionKey": "PA", "dataYear": 2025,
+      "source": { "title": "PHFA 2025 Underwriting Application — Development Cost Limits (revised 1-17-25)", "url": "https://www.phfa.org/forms/multifamily_application_guidelines/application/2025-2026-mai-07.pdf", "publisher": "Pennsylvania Housing Finance Agency", "accessed": "2026-10-24" },
+      "quote": "5% of improvement cost for new construction developments and 10% of improvement cost for rehabilitation and preservation developments.",
+      "scopeNotes": "Required contingency for all applications; pro-rated for mixed new/rehab.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5", "metric": "minimumContingency", "value": 0.05, "low": 0.02, "high": 0.05, "unit": "pct",
+      "region": "California", "regionKey": "CA", "dataYear": 2025,
+      "source": { "title": "Mixed-Income Program Application Guide (MIP FAQs updated 4/16/2025)", "url": "https://www.calhfa.ca.gov/multifamily/mixedincome/forms/application-guide-mip-2025.pdf", "publisher": "California Housing Finance Agency", "accessed": "2026-10-24" },
+      "quote": "CalHFA requires a minimum Hard Cost Contingency of 5% of hard costs",
+      "scopeNotes": "Hard contingency is 'over and above the GC contingency built into the GC Contract'; separately: 'CalHFA requires a minimum Soft Cost Contingency of 2% of soft costs' (soft costs = TDC less construction cost lines).",
+      "confidence": "high"
+    },
+    {
+      "id": "e6", "metric": "softCostContingency", "value": 0.025, "unit": "pct",
+      "region": "Pennsylvania", "regionKey": "PA", "dataYear": 2025,
+      "source": { "title": "PHFA 2025 Underwriting Application — Development Cost Limits (revised 1-17-25)", "url": "https://www.phfa.org/forms/multifamily_application_guidelines/application/2025-2026-mai-07.pdf", "publisher": "Pennsylvania Housing Finance Agency", "accessed": "2026-10-24" },
+      "quote": "A Soft Cost Contingency of 2.5% of the total “Professional Fees” section of the Capital Budget will be allowable.",
+      "scopeNotes": "Professional fees = architect, legal, engineering, survey, soils, environmental, appraisal, market study, cost certification.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7", "metric": "ownerContingency", "value": 0.05, "unit": "pct",
+      "region": "Henderson County, NC", "regionKey": "NC", "dataYear": 2017,
+      "source": { "title": "Board of Commissioners agenda item — Edneyville Elementary School proposal (Feb 15, 2017)", "url": "https://www.hendersoncountync.gov/sites/default/files/archives/Meetings/Board_of_Commissioners/agenda170215/DI.B.pdf", "publisher": "Henderson County, North Carolina", "accessed": "2026-10-24" },
+      "quote": "Owner Contingency 5.0% 997,689.76",
+      "scopeNotes": "Conceptual budget for a new public school; on grand total construction cost.",
+      "confidence": "high"
+    },
+    {
+      "id": "e8", "metric": "estimateAccuracyBands", "low": -0.40, "high": 0.75, "unit": "pct",
+      "region": "United States (federal)", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "Cost Estimating and Cost Management Principles — Client Enrichment Series (January 18, 2024)", "url": "https://origin-www.gsa.gov/system/files/508%202024%2001%20CES%20Cost%20Estimating%20and%20Cost%20Management%20Principles.pdf", "publisher": "U.S. General Services Administration", "accessed": "2026-10-24" },
+      "quote": "A) Order of Magnitude (+75% to -40%) B) Budgetary Estimate (+ or - 30%) C) Construction Estimate (+10% to -5%)",
+      "scopeNotes": "Accuracy bands by estimate type, not contingency amounts.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9", "metric": "contingencyPressure", "value": null, "unit": "text",
+      "region": "California", "regionKey": "CA", "dataYear": 2020,
+      "source": { "title": "The Costs of Affordable Housing Production: Insights from California’s 9% Low-Income Housing Tax Credit Program", "url": "https://ternercenter.berkeley.edu/wp-content/uploads/2020/08/LIHTC_Construction_Costs_2020.pdf", "publisher": "Terner Center for Housing Innovation, UC Berkeley (March 2020)", "accessed": "2026-10-24" },
+      "quote": "developers reported that they have needed to increase their contingencies because cost escalations make it more difficult to accurately assess the final costs of development.",
+      "scopeNotes": "Qualitative support for using the upper part of the ranges in volatile markets.",
+      "confidence": "medium"
+    }
+  ]
+}

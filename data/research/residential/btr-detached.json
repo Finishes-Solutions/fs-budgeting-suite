@@ -1,0 +1,404 @@
+{
+  "schemaVersion": 1,
+  "id": "btr-detached",
+  "name": "Build-to-rent \u2014 detached",
+  "category": "residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "unit",
+  "summary": "Purpose-built single-family rental community of detached homes on one parcel, held by one owner, with private streets and an amenity package. Homes are smaller and simpler than for-sale product (a 2016 NAHB/Census profile shows a 1,500 SF median, mostly one story, fewer garages). Because the whole community is on-site, the baseline hard cost includes the horizontal infrastructure (streets, utilities, stormwater). Public cost data is thin: NAHB's community-level capitalization figure and two 2026 trade-guide estimates. The default is derived from production single-family costs plus horizontal infrastructure. Confidence is low-medium.",
+  "sizing": {
+    "typicalSize": {
+      "low": 50,
+      "mid": 150,
+      "high": 300,
+      "unit": "unit",
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "NAHB describes 'a typical development project with 200 units' (e1). Mid 150 reflects many 80\u2013200 home communities; judgment."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 1300,
+      "mid": 1600,
+      "high": 1900,
+      "evidence": [
+        "e4",
+        "residential/single-family.json#e5"
+      ],
+      "derived": true,
+      "method": "NAHB analysis of 2016 Census microdata: SFBFR median 1,500 SF vs 2,419 SF for-sale (e4). That median includes attached product, so detached BTR is set slightly higher at 1,600 SF. The high end is still below the for-sale median of 2,216 SF (Census 2025). Judgment within those bounds."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 5,
+      "mid": 6.5,
+      "high": 9,
+      "evidence": [
+        "e4"
+      ],
+      "derived": true,
+      "method": "Median SFBFR lot 6,200 SF (e4) \u2248 7 homes per net acre; ~10\u201320% is taken out for internal streets, amenity center and detention, and narrow-lot/cottage plans are allowed for at the high end."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 1,
+      "mid": 2,
+      "high": 2,
+      "type": "garage",
+      "evidence": [
+        "e4"
+      ],
+      "derived": true,
+      "method": "Per e4, 40% of SFBFR homes had a two-car garage, 25% a one-car garage, and 35% no garage. Mid 2 counts the driveway/garage spaces typical of newer detached BTR."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 175000,
+      "mid": 270000,
+      "high": 410000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e5",
+        "residential/single-family.json#e2"
+      ],
+      "derived": true,
+      "method": "Built up from vertical + horizontal. Vertical: production single-family per-SF ($145 mid, 2025$) less ~3\u20135% for rental-grade specs \u2248 $140/SF \u00d7 1,600 SF \u2248 $224k. Horizontal (in-community streets, utilities, stormwater, landscaping): ~$40k/home. That is consistent with $35k/door in a 2026 BTR townhome pro forma (e5) and with horizontal at '15\u201330% of total' (e3). Amenity area flatwork/landscape ~$6k/home. Total \u2248 $270k. Low \u2248 1,300 SF \u00d7 $115 + $25k \u2248 $175k; high \u2248 1,900 SF \u00d7 $185 + $60k \u2248 $410k. Checks: the 2026 guide's vertical-only $180k\u2013$350k per home (e2) brackets the vertical portion. NAHB's $60M per 200 units = $300k (e1) is capitalization 'to cover construction costs' and likely includes soft and financing, consistent with ~$270k hard. Labeled 2026$ (the newest evidence is 2026; the single-family baseline is 2025$)."
+    },
+    "perSF": {
+      "low": 135,
+      "mid": 169,
+      "high": 216,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e2",
+        "e5"
+      ],
+      "derived": true,
+      "method": "= perPrimaryUnit / sfPerPrimaryUnit (incl. the per-home share of horizontal infrastructure): 175k/1,300, 270k/1,600, 410k/1,900."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Homes plus all in-community horizontal work (private streets, water/sewer/storm, dry utilities, grading, landscaping, fencing) incl. GC general conditions and OH&P. Excludes the clubhouse/pool amenity package (separate line item), land, off-site improvements, impact/tap fees, soft costs and FF&E."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.8,
+    "standard": 1.0,
+    "premium": 1.2,
+    "luxury": 1.45,
+    "evidence": [],
+    "derived": true,
+    "method": "Economy \u2248 low/mid per-SF (135/169). Premium/luxury are judgment; BTR finishes cluster near standard because of durability-driven spec sheets."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.11
+      },
+      {
+        "division": "03",
+        "pct": 0.075
+      },
+      {
+        "division": "04",
+        "pct": 0.008
+      },
+      {
+        "division": "05",
+        "pct": 0.004
+      },
+      {
+        "division": "06",
+        "pct": 0.15
+      },
+      {
+        "division": "07",
+        "pct": 0.08
+      },
+      {
+        "division": "08",
+        "pct": 0.043
+      },
+      {
+        "division": "09",
+        "pct": 0.08
+      },
+      {
+        "division": "10",
+        "pct": 0.004
+      },
+      {
+        "division": "11",
+        "pct": 0.02
+      },
+      {
+        "division": "12",
+        "pct": 0.035
+      },
+      {
+        "division": "22",
+        "pct": 0.068
+      },
+      {
+        "division": "23",
+        "pct": 0.055
+      },
+      {
+        "division": "26",
+        "pct": 0.063
+      },
+      {
+        "division": "31",
+        "pct": 0.05
+      },
+      {
+        "division": "32",
+        "pct": 0.085
+      },
+      {
+        "division": "33",
+        "pct": 0.07
+      }
+    ],
+    "evidence": [
+      "residential/single-family.json#e3",
+      "e3"
+    ],
+    "derived": true,
+    "method": "The single-family split (NAHB 2024 Table 1 mapped to CSI) is scaled to ~85% for the vertical home. The remaining ~15% horizontal share (e3: '15\u201330% of total'; ~$40k of $270k) goes to 31 (grading), 32 (streets, paving, landscape, fencing) and 33 (wet and dry utilities). Div 11 stays at ~2% because BTR homes include a washer/dryer and refrigerator."
+  },
+  "lineItems": [
+    {
+      "id": "horizontal-infrastructure",
+      "name": "In-community horizontal infrastructure (streets, utilities, stormwater) per home",
+      "division": "33",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 25000,
+        "mid": 40000,
+        "high": 60000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e3",
+          "e5"
+        ],
+        "derived": true,
+        "method": "Mid \u2248 the $35k/door horizontal in a 2026 BTR pro forma (e5), raised for the longer street frontage per detached home. Range = 15\u201330% of a $175k\u2013$410k hard cost (e3)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of the hard cost; shown separately because it varies most by site."
+    },
+    {
+      "id": "amenity-package",
+      "name": "Amenity center: clubhouse/leasing office, pool, dog park, trails",
+      "division": "13",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 1000000,
+        "mid": 2000000,
+        "high": 3500000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e2"
+        ],
+        "derived": true,
+        "method": "The 2026 guide names clubhouse, pool, dog park and trails as standard amenities that 'add cost' but gives no figures (e2). Judgment: 2,000\u20134,000 SF clubhouse/leasing at ~$300/SF + pool deck ~$400\u2013800k + dog park, mail kiosk, trails ~$200\u2013500k."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Added on top of the per-home hard cost; ~$13k/home at 150 homes."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 1500,
+      "mid": 3000,
+      "high": 5000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Judgment: window coverings, smart-home locks/thermostat kits and the clubhouse furniture share. Major appliances are in the hard cost."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.1,
+      "mid": 0.15,
+      "high": 0.22,
+      "evidence": [
+        "e5"
+      ],
+      "derived": true,
+      "method": "A 2026 BTR pro forma carries soft costs at 13% of hard cost, plus carry/interest reserve at 5.5% of total project cost (e5). Mid 17% \u2248 13% + ~4% for financing fees and lease-up marketing. No for-sale commissions. High = entitlement-heavy jurisdictions. | Second pass (2026-10-24, main session): Reduced 2 points to remove financing fees the mid added. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.035,
+      "permitsAndFees": 0.05,
+      "financing": 0.04,
+      "legalInsurance": 0.015,
+      "developerOverhead": 0.02,
+      "marketing": 0.01
+    },
+    "notes": "Lease-up costs and an operating deficit reserve are often carried as soft costs in BTR underwriting."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.02,
+      "mid": 0.03,
+      "high": 0.05,
+      "evidence": [],
+      "derived": true,
+      "method": "Repeat production plans. Judgment."
+    },
+    "hard": {
+      "low": 0.04,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [
+        "e5"
+      ],
+      "derived": false,
+      "method": "A 2026 BTR townhome pro forma carries 8% of hard cost (e5); mid set slightly lower for repeat detached product. Low/high is judgment."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "General norm. Judgment."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 190000,
+      "max": 550000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Low hard $175k \u00d7 1.12 \u2248 $195k; high $410k \u00d7 1.24 + amenity share \u2248 $525k, rounded up. NAHB's $300k/unit construction capitalization (e1) sits inside."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "capitalizationPerUnit",
+      "value": 300000,
+      "unit": "USD/unit",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Investor Ban Toolkit",
+        "url": "https://www.nahb.org/advocacy/public-toolkits/investor-ban-toolkit",
+        "publisher": "National Association of Home Builders",
+        "accessed": "2026-10-24"
+      },
+      "quote": "A typical development project with 200 units requires a total capitalization of $60 million to cover construction costs.",
+      "scopeNotes": "Value computed by the researcher: $60M / 200 units. An advocacy round number; scope (land, soft, financing) is not defined. The page also notes ~62,000 built-for-rent starts over the last four quarters, down 26%.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "verticalCostPerUnit",
+      "value": null,
+      "low": 180000,
+      "high": 350000,
+      "unit": "USD/unit",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Build to Rent Community Cost",
+        "url": "https://www.costtobuildhouse.com/build-to-rent-community-cost",
+        "publisher": "CostToBuildHouse.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "BTR homes typically cost $180,000 to $350,000 per home to build, before land.",
+      "scopeNotes": "Trade cost guide, 2026; covers vertical construction only. Community-size totals table (vertical, excl. land and horizontal): 26\u201350 homes $5M\u2013$17M; 51\u2013100+ homes $10M\u2013$35M+.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "horizontalSharePct",
+      "value": null,
+      "low": 0.15,
+      "high": 0.3,
+      "unit": "pct",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Build to Rent Community Cost",
+        "url": "https://www.costtobuildhouse.com/build-to-rent-community-cost",
+        "publisher": "CostToBuildHouse.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "often 15\u201330% of total",
+      "scopeNotes": "Refers to horizontal costs (roads, grading, utilities, stormwater). Trade guide; low confidence.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "sfPerUnit",
+      "value": 1500,
+      "unit": "count",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2016,
+      "source": {
+        "title": "Contrasting Built-for-Rent and For-Sale New Single-Family Homes",
+        "url": "https://eyeonhousing.org/2019/08/contrasting-built-for-rent-and-for-sale-new-single-family-homes/",
+        "publisher": "NAHB Eye on Housing",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The median square footage of SFBFR homes in 2016 was 1,500 square feet",
+      "scopeNotes": "From 2016 Census SOC microdata. Also: 77% of SFBFR were townhouses/attached; median lot 6,200 SF vs 8,500 for-sale; 61% one story; 35% no garage. The data is old; BTR detached product has grown since.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "horizontalCostPerUnit",
+      "value": 35000,
+      "unit": "USD/unit",
+      "region": "Sun Belt (unspecified)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Build-to-Rent Pro Forma: BTR Townhomes",
+        "url": "https://rivereditor.com/blogs/build-to-rent-pro-forma-btr-townhomes",
+        "publisher": "River (rivereditor.com blog)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Horizontal/site (lot development and infrastructure) $1.68M [$35K per door]; Vertical hard costs $10.69M ($165/SF); Soft costs (13% of hard cost); Contingency (8% of hard cost)",
+      "scopeNotes": "Illustrative 48-unit BTR townhome pro forma (May 2026), not an actual project. Sun Belt is mapped to regionKey US because no specific market is named.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "No audited BTR community budget found. Public REIT development disclosures (e.g., AMH development program per-home investment) or municipal PID/TIRZ documents for BTR communities would give direct per-home figures.",
+    "The amenity package cost is a judgment.",
+    "NAHB's 2016 SFBFR profile is old; a newer Census microdata cut for detached BTR size would improve sizing."
+  ]
+}

@@ -131,3 +131,60 @@ test('unit SF above residential SF blocks; a blank type carries only the hard ra
   const ids = run(blank).rails.map(r => r.id);
   assert.ok(!ids.includes('opexRatio'), 'a blank budget is not judged by the multifamily rails');
 });
+
+// ---- D6: a budget nobody has reached the expenses for is not judged.
+test('income with NO expense rows is not judged; rows that total zero are', () => {
+  const none = healthyDoc();
+  none.expenses = [];
+  const r = run(none);
+  assert.ok(!r.rails.some(x => x.id === 'opexRatio'),
+    'no expense rows reads as "not entered yet", like a zero developer fee');
+  assert.equal(r.blocking, 0, r.breaches.map(b => b.message).join(' | '));
+
+  const absent = healthyDoc();
+  delete absent.expenses;
+  assert.ok(!run(absent).rails.some(x => x.id === 'opexRatio'), 'an absent schedule is the same');
+
+  // A schedule somebody filled in at zero is a real 0% and still blocks.
+  const zero = healthyDoc();
+  zero.expenses = [{ label: 'Operations', per: 'pctIncome', rate: 0 }];
+  const rail = run(zero).breaches.find(b => b.id === 'opexRatio');
+  assert.ok(rail && rail.severity === 'error' && rail.actual === 0, 'zeroed rows are judged');
+});
+
+// ---- D7: the server chooses the rail table; the document cannot.
+function runWith(doc, policy) {
+  const p = parts(doc);
+  return G.evaluate({ doc, parts: p, gross: grossIncome(doc), fee: p.fee, policy });
+}
+
+test('policyForType: only Blank is Blank; anything unknown is judged as Multifamily', () => {
+  assert.strictEqual(G.policyForType('Multifamily'), G.DEFAULT_POLICY.Multifamily);
+  assert.strictEqual(G.policyForType('Blank'), G.DEFAULT_POLICY.Blank);
+  assert.strictEqual(G.policyForType('Commercial'), G.DEFAULT_POLICY.Multifamily);
+  assert.strictEqual(G.policyForType(undefined), G.DEFAULT_POLICY.Multifamily);
+  assert.strictEqual(G.policyForType('constructor'), G.DEFAULT_POLICY.Multifamily,
+    'an inherited property name is not a policy');
+});
+
+test('an explicit policy ignores doc.guardrails and doc.type', () => {
+  const doc = healthyDoc();
+  doc.expenses = [{ label: 'Operations', per: 'pctIncome', rate: 20 }];   // blocks
+  assert.equal(run(doc).blocking, 1);
+
+  // The forgeries a hand-built save could carry. Without a policy the
+  // document's own word is taken — fine for the browser's courtesy check...
+  const forgedPolicy = Object.assign(healthyDoc(), { expenses: doc.expenses,
+    guardrails: { Multifamily: {} } });
+  assert.equal(run(forgedPolicy).blocking, 0, 'the document can switch its own rails off');
+  const forgedType = Object.assign(healthyDoc(), { expenses: doc.expenses, type: 'Blank' });
+  assert.equal(run(forgedType).blocking, 0, 'or claim to be Blank');
+
+  // ...which is why the server passes the table itself.
+  const mf = G.policyForType('Multifamily');
+  assert.equal(runWith(forgedPolicy, mf).blocking, 1, 'doc.guardrails is ignored');
+  assert.equal(runWith(forgedType, mf).blocking, 1, 'doc.type is ignored');
+  const blankTable = runWith(healthyDoc(), G.policyForType('Blank'));
+  assert.deepEqual(blankTable.rails.map(r => r.id).sort(), ['feeSum', 'unitSF'],
+    'a Blank table judges only the two hard rails, whatever doc.type says');
+});

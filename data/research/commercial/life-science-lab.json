@@ -1,0 +1,397 @@
+{
+  "schemaVersion": 1,
+  "id": "life-science-lab",
+  "name": "Life science / lab",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Purpose-built lab building: 15\u201316 ft floor-to-floor, vibration-stiff structure, 100% outside-air HVAC with energy recovery, generator, lab plumbing and gases, delivered with a typical wet-lab fit-out (\u224850\u201360% lab / 40\u201350% office). Cumming 2025 metro data are the best public source; academic-lab data (RSMeans) run lower. Costs vary 2\u20133\u00d7 with lab intensity and market.",
+  "sizing": {
+    "typicalSize": {
+      "low": 50000,
+      "mid": 120000,
+      "high": 300000,
+      "unit": "sf",
+      "evidence": [],
+      "derived": true,
+      "method": "Judgment: suburban/urban speculative lab buildings 3\u20136 floors."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 12000,
+      "mid": 20000,
+      "high": 40000,
+      "unit": "sf",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: 3\u20134 story building with 2.5\u20133 spaces/1,000 SF surface or partly structured parking."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.002,
+      "mid": 0.0025,
+      "high": 0.003,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per GSF (judgment: lab occupancy lower than office)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 480,
+      "mid": 750,
+      "high": 1200,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4"
+      ],
+      "derived": false,
+      "method": "Complete lab building incl. typical lab fit-out and \u2248$25\u201335/SF sitework. Cumming 2025 (excl. sitework) midpoints: Nashville $770, Dallas $855, Boston $1,110 (e1, e2). RSMeans 2022 academic lab median $355 (e3) is a lower-intensity proxy. Mid = $750 \u2248 lower-cost-metro Cumming midpoints trimmed toward RSMeans (national mix of markets and dry/wet labs) + sitework. Low = $480 \u2248 Cumming Nashville low / RSMeans 3/4 quartile escalated (light/dry lab). High = $1,200 \u2248 Cumming Dallas high / Boston midpoint (wet lab, vivarium-ready). Derived blend \u2014 verify."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/fee; shell, core and typical lab fit-out (casework, fume hoods, lab MEP); excludes lab equipment, furniture, vivarium, land, soft costs."
+    }
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.08
+      },
+      {
+        "division": "05",
+        "pct": 0.07
+      },
+      {
+        "division": "06",
+        "pct": 0.01
+      },
+      {
+        "division": "07",
+        "pct": 0.05
+      },
+      {
+        "division": "08",
+        "pct": 0.06
+      },
+      {
+        "division": "09",
+        "pct": 0.06
+      },
+      {
+        "division": "10",
+        "pct": 0.01
+      },
+      {
+        "division": "11",
+        "pct": 0.02
+      },
+      {
+        "division": "12",
+        "pct": 0.05
+      },
+      {
+        "division": "14",
+        "pct": 0.02
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.06
+      },
+      {
+        "division": "23",
+        "pct": 0.22
+      },
+      {
+        "division": "25",
+        "pct": 0.01
+      },
+      {
+        "division": "26",
+        "pct": 0.12
+      },
+      {
+        "division": "27",
+        "pct": 0.01
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.01
+      },
+      {
+        "division": "32",
+        "pct": 0.02
+      },
+      {
+        "division": "33",
+        "pct": 0.01
+      }
+    ],
+    "evidence": [
+      "e3"
+    ],
+    "derived": true,
+    "method": "Derived from RSMeans 2022 academic lab medians (e3): mechanical 19.4% \u2192 23 22% (+25 controls 1%) for 100% OA commercial labs; electrical 12.05% \u2192 26 12% + 27/28; plumbing 3.77% raised to 6% for lab waste/RODI/gases. Lab casework/fume hoods 12 5%, lab equipment rough-ins 11 2%. Sitework 4%."
+  },
+  "lineItems": [
+    {
+      "id": "lab-hvac-premium",
+      "name": "Lab HVAC premium over office HVAC (carve-out)",
+      "division": "23",
+      "block": "specialty-mep",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 0.55
+      },
+      "cost": {
+        "low": 45,
+        "mid": 70,
+        "high": 110,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "From _blocks/specialty-mep.json lab-hvac-upgrade (derived there); qty = 55% lab area share (judgment)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Inside baseline."
+    },
+    {
+      "id": "emergency-generator",
+      "name": "Standby generator (lab + life safety)",
+      "division": "26",
+      "block": "specialty-mep",
+      "unit": "kw",
+      "qty": {
+        "per": "sf",
+        "value": 0.01
+      },
+      "cost": {
+        "low": 350,
+        "mid": 550,
+        "high": 750,
+        "dollarYear": 2014,
+        "region": "US",
+        "evidence": [
+          "_blocks/specialty-mep.json#e11",
+          "_blocks/specialty-mep.json#e12"
+        ],
+        "derived": false,
+        "method": "From _blocks/specialty-mep.json emergency-generator; \u224810 W/SF standby (judgment) \u2192 1,200 kW for 120,000 SF."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Inside baseline."
+    },
+    {
+      "id": "vivarium",
+      "name": "Vivarium build-out premium",
+      "division": "13",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 0.05
+      },
+      "cost": {
+        "low": 300,
+        "mid": 500,
+        "high": 800,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived judgment: vivarium premium over wet lab per SF of vivarium area; default 5% of GSF."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": ""
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 20,
+      "mid": 40,
+      "high": 75,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived judgment: office/break furniture and movable lab benches; scientific equipment excluded (tenant)."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.16,
+      "mid": 0.21,
+      "high": 0.28,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: A/E + lab planner 8\u201310%, commissioning 1\u20132%, permits 1\u20132%, testing/survey 1%, insurance/legal 2\u20133%, developer fee 3\u20135%, leasing 2\u20134%. | Second pass (2026-10-24, main session): Reduced 4 points to remove the developer fee (3\u20135%). The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.09
+    },
+    "notes": "Lab planning and enhanced commissioning raise A/E above office norms."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Lab MEP complexity; tenant requirements often unknown at shell design."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Complex MEP new-build norm."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 450,
+      "max": 2000,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Min \u2248 RSMeans academic lab 3/4 quartile escalated + 20% soft; max \u2248 Cumming San Francisco high ($1,600) \u00d7 1.25."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 540,
+      "high": 1170,
+      "unit": "USD/sf",
+      "region": "Dallas, TX",
+      "regionKey": "TX-Dallas",
+      "dataYear": 2025,
+      "source": {
+        "title": "Market Analysis Q4 2025 \u2014 Typical Construction Cost Range (Cost Per Unit 2025)",
+        "url": "https://cumming-group.com/wp-content/uploads/2025/12/CummingGroup_Q4_2025_MarketingAnalysis_2.13.26.pdf",
+        "publisher": "Cumming Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Office | Life Sciences / Lab | SF: Dallas $540\u2013$1,170; Nashville $490\u2013$1,050; Boston $700\u2013$1,520; San Francisco $750\u2013$1,600",
+      "scopeNotes": "Values are the Dallas column; Nashville $490\u20131,050, Boston $700\u20131,520, San Francisco $750\u20131,600, 10-metro median $675\u20131,450. Cumming notes: \"Costs represent new-build projects for complete structure shell and interior build-out to five feet out and excludes sitework.\" Excludes land, professional fees, permits, FF&E, soft costs.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 700,
+      "high": 1520,
+      "unit": "USD/sf",
+      "region": "Boston, MA",
+      "regionKey": "MA-Boston",
+      "dataYear": 2025,
+      "source": {
+        "title": "Market Analysis Q4 2025 \u2014 Typical Construction Cost Range (Cost Per Unit 2025)",
+        "url": "https://cumming-group.com/wp-content/uploads/2025/12/CummingGroup_Q4_2025_MarketingAnalysis_2.13.26.pdf",
+        "publisher": "Cumming Group",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Office | Life Sciences / Lab | SF: Boston, Massachusetts $700\u2013$1,520",
+      "scopeNotes": "Largest US life-science cluster. Cumming notes: \"Costs represent new-build projects for complete structure shell and interior build-out to five feet out and excludes sitework.\" Excludes land, professional fees, permits, FF&E, soft costs.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": 355,
+      "low": 325,
+      "high": 480,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2022,
+      "source": {
+        "title": "2022 Project Costs \u2014 50 17 00 Project Costs per S.F.",
+        "url": "https://www.rsmeans.com/media/wysiwyg/quarterly_updates/2022-Project-Costs-per-Square-Foot.pdf",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "University, College & Private School Science, Eng. & Lab Buildings, Total Project Costs per S.F.: 1/4 = 325, Median = 355, 3/4 = 480 (Mechanical 19.40%, Electrical 12.05%, Plumbing 3.77% medians).",
+      "scopeNotes": "Academic science/lab buildings (a proxy for commercial lab), January 2022 national dollars.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": 1090,
+      "unit": "USD/sf",
+      "region": "New York City, NY",
+      "regionKey": "NY-NewYorkCity",
+      "dataYear": 2021,
+      "source": {
+        "title": "The 12 most expensive US cities for construction (Construction Dive, Apr 2021, on Cumming Q1 2021 data)",
+        "url": "https://cumming-group.com/en/news-insights/news/the-12-most-expensive-us-cities-for-construction/",
+        "publisher": "Cumming Group / Construction Dive",
+        "accessed": "2026-10-24"
+      },
+      "quote": "A higher-ed lab in New York City ($1,090).",
+      "scopeNotes": "Upper-bound gateway-metro academic lab; excludes land.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 103,
+      "high": 122,
+      "unit": "USD/sf",
+      "region": "Houston, TX",
+      "regionKey": "TX-Houston",
+      "dataYear": 2025,
+      "source": {
+        "title": "Construction Cost Trends / 2025 \u2014 Houston",
+        "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=1c8a21ff-de0e-4629-b9b0-7f38f62c502b",
+        "publisher": "Kirksey Architecture",
+        "accessed": "2026-10-24"
+      },
+      "quote": "ONE-STORY FLEX OFFICE BUILDINGS $103 to $122/SF ... One-story shell buildings ranging from traditional offices to light assembly, high-technology lab applications.",
+      "scopeNotes": "Cold dark flex shell incl. sitework \u2014 floor of the range for converting flex to lab (no lab infrastructure).",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "No CBRE/JLL commercial lab cost report retrieved (search budget exhausted); split shell vs. lab-TI costs would help users who build lab-ready shells only."
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "sample": {
+    "id": "05-medical-office",
+    "name": "Desert Ridge MOB",
+    "address": "Phoenix, AZ",
+    "exitCap": 0.0675
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "quick",
+    "location": {
+      "region": "AZ-Phoenix"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "amount",
+      "value": 2600000
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "c1",
+        "typeId": "medical-office",
+        "name": "Medical office building",
+        "phaseId": "p1",
+        "size": 45000,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perSFYear",
+          "rate": 36,
+          "otherIncome": 0,
+          "vacancy": 0.07,
+          "expenseRatio": 0.06
+        }
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

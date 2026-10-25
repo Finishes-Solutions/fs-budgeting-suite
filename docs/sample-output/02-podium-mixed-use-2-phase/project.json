@@ -1,0 +1,113 @@
+{
+  "sample": {
+    "id": "02-podium-mixed-use-2-phase",
+    "name": "Station Square — podium mixed-use, 2 phases",
+    "address": "Austin, TX",
+    "exitCap": 0.055
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "mixed",
+    "location": {
+      "region": "TX-Austin"
+    },
+    "startMonth": "2027-01",
+    "settings": {},
+    "land": {
+      "mode": "amount",
+      "value": 9500000,
+      "acres": 3.2
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1 — podium + residential",
+        "startMonth": "2027-01",
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      },
+      {
+        "id": "p2",
+        "name": "Phase 2 — retail fit-out",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "res",
+        "typeId": "podium-multifamily",
+        "name": "Residential over podium",
+        "phaseId": "p1",
+        "size": 280,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perUnitMonth",
+          "rate": 2550,
+          "otherIncome": 400000,
+          "vacancy": 0.06,
+          "expenseRatio": 0.38
+        }
+      },
+      {
+        "id": "ret",
+        "typeId": "retail-strip",
+        "name": "Ground-floor retail",
+        "phaseId": "p2",
+        "size": 22000,
+        "sf": null,
+        "acres": 0,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perSFYear",
+          "rate": 38,
+          "vacancy": 0.08,
+          "expenseRatio": 0.15
+        }
+      }
+    ],
+    "shared": [
+      {
+        "id": "garage",
+        "name": "Structured parking (shared)",
+        "itemId": "parking-structured-above",
+        "qty": 420,
+        "phaseId": "p1",
+        "allocation": {
+          "method": "sf"
+        }
+      }
+    ],
+    "overrides": {},
+    "scenarios": []
+  }
+}

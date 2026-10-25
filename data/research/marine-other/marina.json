@@ -1,0 +1,312 @@
+{
+  "schemaVersion": 1,
+  "id": "marina",
+  "name": "Marina",
+  "category": "marine-other",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "slip",
+  "summary": "Per-slip cost is driven by slip length/vessel class, dock system (timber vs. concrete floats, steel vs. concrete piles), utilities (power, water, fire suppression, pump-out) and exposure (wave attenuation). Site-specific heavy items — dredging, breakwaters, bulkheads, fuel systems — vary by orders of magnitude and are carried as separate line items. Evidence is a set of recent public project budgets (USFWS Boating Infrastructure Grant FY2025-26 summaries, Treasure Island, Berkeley); these are total project costs for transient facilities, so the default is medium confidence.",
+
+  "sizing": {
+    "typicalSize": { "low": 40, "mid": 150, "high": 400, "unit": "slip", "evidence": ["e9", "e10"], "derived": true, "method": "Public examples: Treasure Island rebuild 168 slips (e9); Berkeley Marina has 1,000 slips overall but rebuilds dock-by-dock (e10); BIG transient projects 10-66 slips. Mid 150 = typical small/medium recreational marina (judgment)." },
+    "parkingPerPrimaryUnit": { "low": 0.5, "mid": 0.6, "high": 0.75, "type": "surface", "evidence": [], "derived": true, "method": "Common marina planning ratio of ~0.5-0.75 parking spaces per slip (judgment; local zoning governs)." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 27000, "mid": 60000, "high": 150000, "dollarYear": 2026, "region": "US", "evidence": ["e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9"], "derived": false, "method": "Per-slip total project cost from public budgets (our arithmetic, total / slips): Georgetown SC $26.6k (e4, replacement docks + pedestals), Old Point Comfort VA $53.0k (e5), Ashley Marina SC $61.6k (e3, incl. welcome building), New Rochelle NY $75.0k (e1), Bayfield WI $78.3k (e8), Clayton NY $78.9k (e2, incl. services building), Conneaut OH $100.4k (e6, 26-100 ft slips), Treasure Island CA $148.8k (e9), Bristol PA $175.3k (e7). Median $78.3k is a total project cost for mostly large transient slips; x ~0.85 hard-cost share = ~$66k, rounded down to $60k for an average 30-40 ft recreational slip. Low = Georgetown (replacement on existing basin); high = Treasure Island-type full rebuild (~$150k). Dredging, breakwater, bulkhead and fuel are line items, not in this baseline." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Baseline per slip = floating dock system (main walk + fingers), piles, share of gangway/abutment, utility pedestals (power + water), dock electrical distribution, fire suppression standpipes, lighting, security gate and a modest landside share (parking, walks). Excludes dredging, breakwater/wave attenuation, bulkhead/seawall, fuel dock, boater-services building (see line items), land/submerged land lease, permits and design."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.6, "standard": 1.0, "premium": 1.5, "luxury": 2.5,
+    "evidence": ["e4", "e9", "e7"], "derived": true,
+    "method": "Economy = low/mid (27k/60k = 0.45, raised to 0.6 since the low case reused existing infrastructure). Premium = concrete floats, wider fingers, 50A/100A power (~$90k). Luxury = high/mid (150k/60k = 2.5): mega-yacht / exposed sites (Bristol PA $175k, Treasure Island $149k)."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.10 },
+      { "division": "02", "pct": 0.03 },
+      { "division": "03", "pct": 0.03 },
+      { "division": "10", "pct": 0.02 },
+      { "division": "21", "pct": 0.03 },
+      { "division": "22", "pct": 0.05 },
+      { "division": "26", "pct": 0.15 },
+      { "division": "31", "pct": 0.02 },
+      { "division": "32", "pct": 0.05 },
+      { "division": "33", "pct": 0.04 },
+      { "division": "35", "pct": 0.48 }
+    ],
+    "evidence": ["e10"], "derived": true,
+    "method": "No public elemental breakdown found. Derived: marine construction (35: floats, piles, gangway, abutment) ~48%; dock electrical/pedestals/lighting (26) ~15% (Berkeley scope lists 'code compliant utilities such as electrical, potable water and fire suppression', e10); potable water (22) 5%; fire suppression (21) 3%; demolition of old docks (02) 3%; landside concrete/abutment (03) 3%; signage/dock boxes (10) 2%; landside paving/landscape (32) 5%; site utilities (33) 4%; earthwork/shore slope protection (31) 2%; marine mobilization/general conditions (01) 10%. Verify against a bid schedule of values."
+  },
+
+  "lineItems": [
+    {
+      "id": "pedestals",
+      "name": "Utility pedestals (power + water, lighting) per slip",
+      "division": "26",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 0.5 },
+      "cost": { "low": 3000, "mid": 6000, "high": 12000, "dollarYear": 2026, "region": "US", "evidence": ["e11"], "derived": true, "method": "One pedestal typically serves two slips (qty 0.5 per slip). Queen City Marina pairs 12 new pedestals with 21 berths (e11). Installed $/pedestal incl. feeders is estimating judgment; higher for 100A/3-phase large-vessel service." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out of the baseline per-slip cost."
+    },
+    {
+      "id": "gangway",
+      "name": "ADA gangway (80-120 ft aluminum) with abutment and landing float",
+      "division": "35",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 150000, "mid": 300000, "high": 600000, "dollarYear": 2026, "region": "US", "evidence": ["e12", "e1"], "derived": true, "method": "Gangways appear in BIG scopes (Westport '80-by-5-foot gangway', e12; New Rochelle 'a new gangway', e1) but are not priced separately. Range is estimating judgment; ADA slope rules drive length with tidal range." },
+      "inBaseline": true, "scales": false, "optional": false,
+      "notes": "Carve-out; one per dock access point."
+    },
+    {
+      "id": "side-tie-dock",
+      "name": "Side-tie / transient floating dock with utilities (per LF)",
+      "division": "35",
+      "unit": "lf",
+      "qty": { "per": "project", "value": 0 },
+      "cost": { "low": 1000, "mid": 1800, "high": 4500, "dollarYear": 2026, "region": "US", "evidence": ["e13", "e14", "e15", "e16", "e17"], "derived": false, "method": "Total project cost / LF of side-tie dock (our arithmetic): Meigs St Pier renovation $996/LF (e16), Willoughby VA $1,392/LF (e13), Skull Creek SC $1,566/LF incl. fuel and gangway (e14), Reefpoint WI $1,802/LF (e15), Herreshoff RI $2,196/LF (e17), Ann St Pier fixed pier extension $4,719/LF (e17). Mid ~ median of floating-dock cases; high = fixed pier extension." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Use for linear dockage not counted as slips; enter LF as qty."
+    },
+    {
+      "id": "bulkhead",
+      "name": "Bulkhead / seawall replacement (per LF)",
+      "division": "35",
+      "unit": "lf",
+      "qty": { "per": "project", "value": 0 },
+      "cost": { "low": 1200, "mid": 2000, "high": 4000, "dollarYear": 2026, "region": "US", "evidence": ["e11"], "derived": true, "method": "Queen City Marina NJ: inner and outer bulkhead replacement along 500 ft plus 12 pedestals and protection system, total $1,000,675 = ~$2,000/LF (e11). Single data point; low/high +/- for vinyl/steel sheet vs. concrete/king-pile walls and soil conditions (judgment)." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Enter LF of new or replaced bulkhead."
+    },
+    {
+      "id": "dredging",
+      "name": "Basin / channel dredging incl. disposal (per CY)",
+      "division": "35",
+      "unit": "cy",
+      "qty": { "per": "project", "value": 0 },
+      "cost": { "low": 25, "mid": 45, "high": 120, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "No authoritative unit price found in this session. Range is estimating judgment for small-marina mechanical/hydraulic dredging: low = clean sand with nearby open-water or beneficial-use placement; high = contaminated sediment requiring upland dewatering and landfill. Mobilization ($150k-$500k) often dominates small jobs — verify with a dredging contractor." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Corpus Christi T-Head project combined dock replacement with basin dredging ($19.4M total, e18)."
+    },
+    {
+      "id": "wave-attenuator",
+      "name": "Wave attenuator / breakwater",
+      "division": "35",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 500000, "mid": 1500000, "high": 6000000, "dollarYear": 2026, "region": "US", "evidence": ["e19"], "derived": true, "method": "Guntersville State Park wave break protecting a 300-ft dock and 12-slip dock: $1,042,750 total (e19). Exposed coastal rubble-mound breakwaters run far higher (judgment for high)." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Only for exposed sites."
+    },
+    {
+      "id": "fuel-system",
+      "name": "Fuel dock: USTs/ASTs, piping, dispensers, containment",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 300000, "mid": 600000, "high": 1200000, "dollarYear": 2026, "region": "US", "evidence": ["e20"], "derived": true, "method": "Naples City Dock UST replacement (diesel + ethanol-free gasoline) total $624,580 (e20) sets the mid; low/high for small AST systems vs. new fuel dock with float and multiple dispensers (judgment)." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Off by default."
+    },
+    {
+      "id": "pumpout",
+      "name": "Sewage pump-out station (fixed) incl. piping to sanitary",
+      "division": "22",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 20000, "mid": 45000, "high": 100000, "dollarYear": 2026, "region": "US", "evidence": [], "derived": true, "method": "Estimating judgment; in-slip pump-out systems (as at Seaport Marine, e21) cost more. Often grant-funded under the Clean Vessel Act." },
+      "inBaseline": false, "scales": false, "optional": false,
+      "notes": "Usually required by permit for marinas with overnight berthing."
+    },
+    {
+      "id": "boater-services-building",
+      "name": "Boater services building (restrooms, showers, laundry, office)",
+      "division": "01",
+      "unit": "sf",
+      "qty": { "per": "project", "value": 1500 },
+      "cost": { "low": 400, "mid": 550, "high": 800, "dollarYear": 2026, "region": "US", "evidence": ["e2", "e3"], "derived": true, "method": "Clayton NY and Ashley Marina SC BIG scopes include such buildings (e2, e3) but are not priced separately. $/SF is estimating judgment for small wet-core buildings." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Division set to 01 as a whole-building allowance."
+    }
+  ],
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.15, "mid": 0.22, "high": 0.30, "evidence": ["e10"], "derived": true, "method": "Marine work carries heavy permitting (USACE, state coastal agency, water quality; e.g., Berkeley lists BCDC, USACE and RWQCB permits, e10), environmental studies, marine engineering and inspection. Judgment: 15-30% of hard cost, mid 22%." },
+    "breakdown": { "architectureEngineering": 0.08 },
+    "notes": "Long lead times for floats/piles (Berkeley cites 'very long lead time for the procurement of specialized material', e10) — consider escalation to procurement date."
+  },
+
+  "contingency": {
+    "design": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": [], "derived": true, "method": "Marine/geotechnical uncertainty at concept stage (judgment)." },
+    "hard": { "low": 0.08, "mid": 0.10, "high": 0.15, "evidence": ["e10"], "derived": false, "method": "Berkeley Marina Docks D & E carried a 10% construction contingency on the base bid (e10); 8-15% typical for marine work." },
+    "soft": { "low": 0.03, "mid": 0.05, "high": 0.10, "evidence": [], "derived": true, "method": "General norm (judgment)." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 25000, "max": 250000, "dollarYear": 2026, "region": "US", "method": "BIG/Treasure Island all-in per-slip totals span ~$27k-$175k (e1-e9); max allows for full rebuild with soft costs and contingency. Dredging/breakwater-heavy projects can exceed this." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1", "metric": "totalProjectCostPerUnit", "value": 75000, "unit": "USD/slip",
+      "region": "New Rochelle, NY", "regionKey": "NY-NewYorkCity", "dataYear": 2026,
+      "source": { "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — funded application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "dock reconstruction, 20 new and rebuilt slips, a new gangway, and updated shore power, water, and pumpout facilities ... Total Cost: $1,500,000",
+      "scopeNotes": "Municipal Marina, New Rochelle. $1,500,000 / 20 = $75,000/slip (our arithmetic). Total project cost (likely incl. design).", "confidence": "medium"
+    },
+    {
+      "id": "e2", "metric": "totalProjectCostPerUnit", "value": 78920, "unit": "USD/slip",
+      "region": "Clayton, NY", "regionKey": "NY", "dataYear": 2026,
+      "source": { "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — funded application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "These docks will provide 24 slips for eligible boaters. The project also includes a new boater services building featuring showers, laundry ... Total Cost: $1,894,085",
+      "scopeNotes": "$1,894,085 / 24 = $78,920/slip incl. services building (our arithmetic).", "confidence": "medium"
+    },
+    {
+      "id": "e3", "metric": "totalProjectCostPerUnit", "value": 61627, "unit": "USD/slip",
+      "region": "Charleston, SC", "regionKey": "SC-Charleston", "dataYear": 2026,
+      "source": { "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — funded application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "a complete rebuild of the marina that will provide 33 transient slips with electrical and water service and a building for use as a boater welcome center ... Total Cost: $2,033,691",
+      "scopeNotes": "Ashley Marina. $2,033,691 / 33 = $61,627/slip incl. building and 5,000 SF deck (our arithmetic).", "confidence": "medium"
+    },
+    {
+      "id": "e4", "metric": "totalProjectCostPerUnit", "value": 26622, "unit": "USD/slip",
+      "region": "Georgetown, SC", "regionKey": "SC", "dataYear": 2026,
+      "source": { "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — funded application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "removal of existing infrastructure and replacement with new docks and pedestals providing power and water service to 52 dedicated transient slips ... Total Cost: $1,384,365",
+      "scopeNotes": "Georgetown Landing Marina. $1,384,365 / 52 = $26,622/slip incl. restroom renovation and fuel update (our arithmetic). Replacement in existing basin — low case.", "confidence": "medium"
+    },
+    {
+      "id": "e5", "metric": "totalProjectCostPerUnit", "value": 53023, "unit": "USD/slip",
+      "region": "Hampton, VA", "regionKey": "VA", "dataYear": 2026,
+      "source": { "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — funded application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "construction of new docks providing 66 slips and an additional 1,600 feet of side-tie berthing ... Total Cost: $3,499,546",
+      "scopeNotes": "Old Point Comfort Marina. $3,499,546 / 66 = $53,023/slip, also covering 1,600 LF side-tie, fuel, pump-out, restrooms (our arithmetic).", "confidence": "medium"
+    },
+    {
+      "id": "e6", "metric": "totalProjectCostPerUnit", "value": 100375, "unit": "USD/slip",
+      "region": "Conneaut, OH", "regionKey": "OH", "dataYear": 2025,
+      "source": { "title": "Boating Infrastructure Grant Program, FY 2025 — Tier 2 application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2025-05/fy-2025-big-tier-2-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "construct 20 BIG-dedicated slips with the capacity to handle eligible vessels 26-100 feet in length ... Total: $2,007,500.00",
+      "scopeNotes": "$2,007,500 / 20 = $100,375/slip (our arithmetic); large-vessel slips.", "confidence": "medium"
+    },
+    {
+      "id": "e7", "metric": "totalProjectCostPerUnit", "value": 175289, "unit": "USD/slip",
+      "region": "Bristol Borough, PA", "regionKey": "PA-Philadelphia", "dataYear": 2025,
+      "source": { "title": "Boating Infrastructure Grant Program, FY 2025 — Tier 2 application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2025-05/fy-2025-big-tier-2-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "construct 14 transient slips and associated structures that can be utilized for securing eligible vessels and for shore access ... Total: $2,454,050.00",
+      "scopeNotes": "$2,454,050 / 14 = $175,289/slip (our arithmetic); new facility on the Delaware River incl. shore access.", "confidence": "medium"
+    },
+    {
+      "id": "e8", "metric": "totalProjectCostPerUnit", "value": 78300, "unit": "USD/slip",
+      "region": "Bayfield, WI", "regionKey": "WI", "dataYear": 2025,
+      "source": { "title": "Boating Infrastructure Grant Program, FY 2025 — Tier 2 application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2025-05/fy-2025-big-tier-2-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "add 10 new slips for public transient docking with full utilities and ADA-compliant access to/from shore ... Total: $783,000.00",
+      "scopeNotes": "$783,000 / 10 = $78,300/slip (our arithmetic).", "confidence": "medium"
+    },
+    {
+      "id": "e9", "metric": "totalProjectCostPerUnit", "value": 148810, "unit": "USD/slip",
+      "region": "Treasure Island, San Francisco, CA", "regionKey": "CA-SanFrancisco", "dataYear": 2025,
+      "source": { "title": "$25M Treasure Island marina project moves forward after new funding partnership", "url": "https://localnewsmatters.org/2025/10/14/25m-treasure-island-marina-project-moves-forward-after-new-funding-partnership/", "publisher": "Local News Matters (Bay City News)", "accessed": "2026-10-24" },
+      "quote": "capital for the $25 million project ... a modernized 168-slip marina built to withstand sea level rise",
+      "scopeNotes": "$25M / 168 = $148,810/slip (our arithmetic). Total project figure; scope breakdown (breakwater, landside) not stated. BCDC staff presentation confirms the 168-slip plan.", "confidence": "low"
+    },
+    {
+      "id": "e10", "metric": "contractValue", "value": 7812000, "unit": "USD/ls",
+      "region": "Berkeley, CA", "regionKey": "CA-SanFrancisco", "dataYear": 2024,
+      "source": { "title": "Construction Contract: The Dutra Group for the Docks D & E Replacement Project at the Berkeley Marina (Council report, May 7, 2024)", "url": "https://berkeleyca.gov/sites/default/files/documents/2024-05-07%20Item%2005%20Construction%20Contract%20%20THE%20DUTRA%20GROUP.pdf", "publisher": "City of Berkeley", "accessed": "2026-10-24" },
+      "quote": "base bid of $7,812,000 and a 10% contingency in the amount of $781,200 ... ADA slips and gangway, longer lasting concrete docks, chemically-inert concrete piles, code compliant utilities such as electrical, potable water and fire suppression",
+      "scopeNotes": "Four bids $7.812M-$8.765M. Slip count for Docks D & E not stated in the report, so not used for per-slip math; used for scope, contingency and permitting context.", "confidence": "high"
+    },
+    {
+      "id": "e11", "metric": "bulkheadCostPerLF", "value": 2001, "unit": "USD/lf",
+      "region": "Beach Haven, NJ", "regionKey": "NJ", "dataYear": 2026,
+      "source": { "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — funded application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "replace 21 berths along the 500-foot span of the bulkhead and install a bulkhead protection system. In addition, 12 new power pedestals ... Total Cost: $1,000,675",
+      "scopeNotes": "Queen City Marina. $1,000,675 / 500 LF = $2,001/LF incl. pedestals (our arithmetic).", "confidence": "medium"
+    },
+    {
+      "id": "e12", "metric": "totalProjectCost", "value": 8800000, "unit": "USD/ls",
+      "region": "Westport, WA", "regionKey": "WA", "dataYear": 2026,
+      "source": { "title": "$6.2 Million Grant Awarded for Westport Marina Modernization", "url": "https://www.marinadockage.com/6-2-million-grant-awarded-for-westport-marina-modernization/", "publisher": "Marina Dock Age", "accessed": "2026-10-24" },
+      "quote": "15 55-foot slips, six 90-foot slips, one 100-foot slip, and a 154-foot end tie ... an 80-by-5-foot gangway",
+      "scopeNotes": "EDA grant $6.2M + $2.6M match = ~$8.8M (our sum) for Float 21, 22 commercial-fishing slips (~$400k/slip) — commercial outlier, not used in the recreational per-slip default.", "confidence": "low"
+    },
+    {
+      "id": "e13", "metric": "dockCostPerLF", "value": 1392, "unit": "USD/lf",
+      "region": "Norfolk, VA", "regionKey": "VA", "dataYear": 2025,
+      "source": { "title": "Boating Infrastructure Grant Program, FY 2025 — Tier 2 application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2025-05/fy-2025-big-tier-2-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "construct floating docks specifically dedicated to transient boaters, with services including shore power and water. The project will add a total 2,292 liner feet of dockage ... Total: $3,191,489.37",
+      "scopeNotes": "Willoughby Marina. $3,191,489 / 2,292 LF = $1,392/LF (our arithmetic).", "confidence": "medium"
+    },
+    {
+      "id": "e14", "metric": "dockCostPerLF", "value": 1566, "unit": "USD/lf",
+      "region": "Hilton Head, SC", "regionKey": "SC", "dataYear": 2026,
+      "source": { "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — funded application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "a new dock with 2,769 feet of side-tie berthing, electrical and water upgrades, fuel dispensers, and a new gangway ... Total Cost: $4,336,800",
+      "scopeNotes": "Skull Creek Marina. $4,336,800 / 2,769 LF = $1,566/LF incl. fuel dispensers and gangway (our arithmetic).", "confidence": "medium"
+    },
+    {
+      "id": "e15", "metric": "dockCostPerLF", "value": 1802, "unit": "USD/lf",
+      "region": "Racine, WI", "regionKey": "WI", "dataYear": 2026,
+      "source": { "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — funded application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "renovate two existing docks in the marina to provide 1,450 feet of side-tie berthing with utility connections ... Total Cost: $2,612,600",
+      "scopeNotes": "Reefpoint Marina. $2,612,600 / 1,450 LF = $1,802/LF (our arithmetic); ADA compliant, up to 38 vessels (~$68.8k/vessel).", "confidence": "medium"
+    },
+    {
+      "id": "e16", "metric": "dockCostPerLF", "value": 996, "unit": "USD/lf",
+      "region": "Sandusky, OH", "regionKey": "OH", "dataYear": 2025,
+      "source": { "title": "Boating Infrastructure Grant Program, FY 2025 — Tier 2 application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2025-05/fy-2025-big-tier-2-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "create approximately 1,000 linear feet of side-tie dockage ... by renovating the existing Meigs Street Pier. It will include 10 power pedestals, one common sewage pump out facility, fire suppression ... Total: $996,204.00",
+      "scopeNotes": "Renovation of an existing pier: ~$996/LF (our arithmetic) — low case.", "confidence": "medium"
+    },
+    {
+      "id": "e17", "metric": "dockCostPerLF", "value": 2196, "low": 2196, "high": 4719, "unit": "USD/lf",
+      "region": "Bristol and Newport, RI", "regionKey": "RI", "dataYear": 2025,
+      "source": { "title": "Boating Infrastructure Grant Program, FY 2025 — Tier 2 application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2025-05/fy-2025-big-tier-2-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "add 437 linear feet of transient side-tie dockage ... Total: $959,682.00 ... extend the Ann Street Pier to add 410 linear feet of transient side-tie dockage along with six new utility pedestals ... Total: $1,934,778.00",
+      "scopeNotes": "Herreshoff $959,682 / 437 = $2,196/LF; Ann Street Pier $1,934,778 / 410 = $4,719/LF (pier extension) (our arithmetic).", "confidence": "medium"
+    },
+    {
+      "id": "e18", "metric": "totalProjectCost", "value": 19400000, "unit": "USD/ls",
+      "region": "Corpus Christi, TX", "regionKey": "TX-CorpusChristi", "dataYear": 2024,
+      "source": { "title": "New Marina Piers Coming to Lawrence Street T-Head", "url": "https://www.corpuschristitx.gov/news/posts/new-marina-piers-coming-to-lawrence-street-t-head/", "publisher": "City of Corpus Christi", "accessed": "2026-10-24" },
+      "quote": "$19.4 million project ... demolishing existing Docks A, B, C, and D, dredging the Marina basin near the docks",
+      "scopeNotes": "Dock replacement + basin dredging + new concrete floating docks; slip count not stated, so not used in per-slip math.", "confidence": "medium"
+    },
+    {
+      "id": "e19", "metric": "totalProjectCost", "value": 1042750, "unit": "USD/ls",
+      "region": "Guntersville, AL", "regionKey": "AL", "dataYear": 2026,
+      "source": { "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — funded application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "construction of a wave break device to provide protection for an existing 300-foot dock and a 12-slip dock ... Total Cost: $1,042,750",
+      "scopeNotes": "Lake (inland) wave break.", "confidence": "medium"
+    },
+    {
+      "id": "e20", "metric": "totalProjectCost", "value": 624580, "unit": "USD/ls",
+      "region": "Naples, FL", "regionKey": "FL", "dataYear": 2026,
+      "source": { "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — funded application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "replace existing underground storage tanks providing diesel and ethanol-free gasoline to transient boaters ... Total Cost: $624,580",
+      "scopeNotes": "Fuel tank replacement only (dispensers/float not stated).", "confidence": "medium"
+    },
+    {
+      "id": "e21", "metric": "totalProjectCost", "value": 7959492, "unit": "USD/ls",
+      "region": "Mystic, CT", "regionKey": "CT", "dataYear": 2026,
+      "source": { "title": "FY 2026 Boating Infrastructure Grant Program, Tier 2 — funded application summaries", "url": "https://www.fws.gov/sites/default/files/documents/2026-06/fy-2026-big-tier-2-funded-application-summaries.pdf", "publisher": "U.S. Fish and Wildlife Service", "accessed": "2026-10-24" },
+      "quote": "floating docks outfitted with state-of-the-art utilities, including upgraded 480 Volt, 3-phase shore power and in-slip pumpouts. The dock will provide seven slips and 1,245 linear feet of side-tie docking for large vessels. ... Total Cost: $7,959,492",
+      "scopeNotes": "Superyacht-class transient facility — luxury-tier context only.", "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "BIG totals are project costs for transient (mostly 26 ft+) facilities; a few private-marina or municipal bid tabs with slip counts and slip-length mix would firm up the recreational baseline.",
+    "Berkeley Docks D & E slip count would turn e10 into a per-slip data point.",
+    "Dredging $/CY, pump-out, pedestal and gangway unit costs are estimating judgment — need sourced unit prices (state DOT/USACE bid abstracts)."
+  ]
+}

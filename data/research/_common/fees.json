@@ -1,0 +1,441 @@
+{
+  "schemaVersion": 1,
+  "id": "fees",
+  "name": "Impact, capacity and tap fees",
+  "researchedAt": "2026-10-24",
+  "summary": "Development impact fees and water/sewer capacity (tap) fees, by land use. The national baseline is the Duncan Associates National Impact Fee Survey: 2019 (270 jurisdictions), the most recent public national survey; values are in 2019 dollars and the build script escalates them. Important: survey averages cover only jurisdictions that charge fees, so mids use the national average EXCLUDING California (CA fees are 2-4x the rest of the country and belong in regional evidence). Fees are extremely local \u2014 the engine should treat these as a placeholder the user overrides with the local schedule.",
+  "items": [
+    {
+      "id": "impactFee-singleFamily",
+      "name": "Total impact fees \u2014 single-family detached",
+      "basis": "perUnit",
+      "range": {
+        "low": 3000,
+        "mid": 6367,
+        "high": 14000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "e1",
+          "e2",
+          "e8",
+          "residential/single-family.json#e10"
+        ],
+        "derived": false,
+        "method": "Mid = Duncan 2019 national average excluding California, $9,841 (e1). High = national average including California, $13,627 (e1, same figure in NAHB primer e8). Low = first quartile of the 34 state averages on the survey's state sheet, $3,158 (computed from e2). Includes utility (water/sewer) impact fees. | Second pass (2026-10-24): Mid recalibrated to the NAHB 2024 Cost of Constructing a Home average impact fee of $6,367 (residential/single-family.json#e10). The Duncan 2019 survey average ($9,841, ex-CA) covers only jurisdictions that charge fees and, escalated with a construction-cost index, roughly doubles a national average; it is kept as evidence for the upper range. Range $3,000\u2013$14,000 brackets both."
+      },
+      "notes": "Standard unit: 3-BR, 2,000 SF on a 10,000 SF lot. NAHB inflated the 2019 average to ~$16,394 in 2024 dollars with ENR CCI (e8). California averages $37,471 (e2)."
+    },
+    {
+      "id": "impactFee-multifamily",
+      "name": "Total impact fees \u2014 multifamily unit",
+      "basis": "perUnit",
+      "range": {
+        "low": 2030,
+        "mid": 5864,
+        "high": 8034,
+        "dollarYear": 2019,
+        "region": "US",
+        "evidence": [
+          "e3",
+          "e9"
+        ],
+        "derived": false,
+        "method": "Mid = Duncan 2019 national average excluding California, $5,864 (e3); high = national average incl. CA, $8,034; low = first quartile of the 34 state averages, ~$2,030 (computed from the survey's multi-family state sheet)."
+      },
+      "notes": "Standard unit: 2-BR, 1,000 SF at 12 units/acre. California cities run $12,000-$75,000/unit in total development fees (Terner, e9)."
+    },
+    {
+      "id": "impactFee-retail",
+      "name": "Total impact fees \u2014 retail",
+      "basis": "per1000SF",
+      "range": {
+        "low": 2282,
+        "mid": 5228,
+        "high": 6760,
+        "dollarYear": 2019,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": false,
+        "method": "Mid = national average excl. CA $5,228/1,000 SF; high = national average $6,760; low = first quartile of 33 state averages ~$2,282 (e4). Road fees dominate ($5,970 of the national average)."
+      },
+      "notes": "Standard: 100,001 SF shopping center, 0.15 FAR."
+    },
+    {
+      "id": "impactFee-office",
+      "name": "Total impact fees \u2014 office",
+      "basis": "per1000SF",
+      "range": {
+        "low": 1516,
+        "mid": 4178,
+        "high": 5408,
+        "dollarYear": 2019,
+        "region": "US",
+        "evidence": [
+          "e5"
+        ],
+        "derived": false,
+        "method": "Mid = national average excl. CA $4,178/1,000 SF; high = national average $5,408; low = first quartile of 33 state averages ~$1,516 (e5)."
+      },
+      "notes": "Standard: 100,001 SF general office, 0.25 FAR."
+    },
+    {
+      "id": "impactFee-industrial",
+      "name": "Total impact fees \u2014 industrial",
+      "basis": "per1000SF",
+      "range": {
+        "low": 1163,
+        "mid": 3147,
+        "high": 3942,
+        "dollarYear": 2019,
+        "region": "US",
+        "evidence": [
+          "e6"
+        ],
+        "derived": false,
+        "method": "Mid = national average excl. CA $3,147/1,000 SF; high = national average $3,942; low = first quartile of 33 state averages ~$1,163 (e6)."
+      },
+      "notes": "Standard: 100,001 SF building, 0.15 FAR."
+    },
+    {
+      "id": "impactFee-hotel",
+      "name": "Total impact fees \u2014 hotel room",
+      "basis": "perRoom",
+      "range": {
+        "low": 1000,
+        "mid": 2500,
+        "high": 5000,
+        "dollarYear": 2019,
+        "region": "US",
+        "evidence": [
+          "e5",
+          "e3"
+        ],
+        "derived": true,
+        "method": "The national survey has no lodging category. Derived: office fee $4,178 per 1,000 SF (e5) x ~0.6 (about 600 gross SF per key) = ~$2,500/room; bracketed by roughly 0.2x-0.6x of a multifamily unit fee (e3) on the low side and 1.2x office on the high side. Low confidence \u2014 many schedules charge hotels per room mainly for roads."
+      },
+      "notes": "Verify against the local schedule."
+    },
+    {
+      "id": "waterCapacityFee",
+      "name": "Water capacity / tap / impact fee",
+      "basis": "perEDU",
+      "range": {
+        "low": 1500,
+        "mid": 3130,
+        "high": 5300,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "e1",
+          "e2",
+          "residential/single-family.json#e10"
+        ],
+        "derived": false,
+        "method": "One single-family unit = 1 EDU. Mid = Duncan 2019 single-family water fee, national average excl. CA, $3,603 (e1; incl. CA $4,249, n=128). Low/high = first and third quartile of the 22 state water averages ($1,887 / $5,271) computed from the state sheet (e2). | Second pass (2026-10-24): Mid recalibrated so water + sewer per EDU equals the NAHB 2024 survey's 'water and sewer fees/inspections' of $6,260 per single-family home (1 EDU; residential/single-family.json#e10), split evenly between water and sewer (the split is derived). Duncan 2019 per-EDU averages are kept as evidence for the high end."
+      },
+      "notes": "Excludes meter set and service-line installation charges. Some utilities price by meter size, not EDU."
+    },
+    {
+      "id": "sewerCapacityFee",
+      "name": "Sewer (wastewater) capacity / tap / impact fee",
+      "basis": "perEDU",
+      "range": {
+        "low": 1500,
+        "mid": 3130,
+        "high": 5300,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "e1",
+          "e2",
+          "residential/single-family.json#e10"
+        ],
+        "derived": false,
+        "method": "Mid = Duncan 2019 single-family wastewater fee, national average excl. CA, $3,420 (e1; incl. CA $3,896, n=138). Low/high = first and third quartile of the 27 state sewer averages ($1,843 / $5,135) from the state sheet (e2). | Second pass (2026-10-24): Mid recalibrated so water + sewer per EDU equals the NAHB 2024 survey's 'water and sewer fees/inspections' of $6,260 per single-family home (1 EDU; residential/single-family.json#e10), split evenly between water and sewer (the split is derived). Duncan 2019 per-EDU averages are kept as evidence for the high end."
+      },
+      "notes": "Phoenix shows how large utility fees can be: $22,157 water + $12,486 sewer for a single-family unit in 2019 (e10)."
+    },
+    {
+      "id": "eduPerUnit-singleFamily",
+      "name": "EDU conversion \u2014 single-family detached unit",
+      "basis": "EDUperUnit",
+      "range": {
+        "low": 1.0,
+        "mid": 1.0,
+        "high": 1.0,
+        "evidence": [],
+        "derived": true,
+        "method": "Definition: one equivalent dwelling unit (EDU/ERU) = one single-family detached home on a standard (3/4-inch or 5/8-inch) meter."
+      },
+      "notes": ""
+    },
+    {
+      "id": "eduPerUnit-multifamily",
+      "name": "EDU conversion \u2014 multifamily unit",
+      "basis": "EDUperUnit",
+      "range": {
+        "low": 0.4,
+        "mid": 0.6,
+        "high": 0.8,
+        "evidence": [
+          "e1",
+          "e3"
+        ],
+        "derived": true,
+        "method": "Implied by the 2019 national averages: multifamily/single-family water fee $1,680/$4,249 = 0.40 and sewer $1,986/$3,896 = 0.51 (e1, e3). Many utility schedules (not fetched) assign 0.5-0.8 ERU per apartment; mid 0.6 sits between the survey-implied ~0.45 and common schedule values. Verify locally."
+      },
+      "notes": "Senior and studio units sit at the low end; townhomes near 1.0."
+    },
+    {
+      "id": "eduPer1000SF-nonresidential",
+      "name": "EDU conversion \u2014 nonresidential per 1,000 SF",
+      "basis": "EDUper1000SF",
+      "range": {
+        "low": 0.15,
+        "mid": 0.25,
+        "high": 0.45,
+        "evidence": [
+          "e1",
+          "e4",
+          "e5",
+          "e6"
+        ],
+        "derived": true,
+        "method": "Ratios of 2019 national average utility fees per 1,000 SF to the single-family fee: retail water 654/4,249 = 0.15, sewer 852/3,896 = 0.22; office 855/4,249 = 0.20, 1,217/3,896 = 0.31; industrial 889/4,249 = 0.21, 1,662/3,896 = 0.43 (e1, e4-e6). Mid 0.25 ~ median of the six ratios."
+      },
+      "notes": "Restaurants, car washes, laundries and process users are far higher; utilities usually size these by meter or fixture units."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "impactFeeSingleFamily",
+      "value": 13627,
+      "unit": "USD/unit",
+      "region": "United States (270 jurisdictions)",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "National Impact Fee Survey: 2019",
+        "url": "https://www.impactfees.com/publications%20pdf/2019survey.pdf",
+        "publisher": "Duncan Associates (Clancy Mullen)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Single-Family Unit sheet (page 4 of 20): National Average $13,627 total, $9,887 non-utility, $4,249 water, $3,896 sewer; National Avg w/o CA $9,841 total, $3,603 water, $3,420 sewer; sample size 270.",
+      "scopeNotes": "Average of jurisdictions that charge impact fees (not of all jurisdictions); includes water/wastewater capacity fees. Standard 3-BR, 2,000 SF unit.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "impactFeeSingleFamilyStateAvg",
+      "value": 6460,
+      "low": 3158,
+      "high": 10270,
+      "unit": "USD/unit",
+      "region": "United States (34 states)",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "National Impact Fee Survey: 2019",
+        "url": "https://www.impactfees.com/publications%20pdf/2019survey.pdf",
+        "publisher": "Duncan Associates (Clancy Mullen)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "State Average Fees, single-family (page 4 of 20): CA $37,471; WA $16,079; CO $12,337; FL $10,878; AZ $10,068; TX $6,906; GA $2,735; MO $900.",
+      "scopeNotes": "Value/low/high = median, first and third quartile of the 34 state average totals, computed by the researcher from this sheet. State water-fee quartiles $1,887/$3,059/$5,271 (22 states), sewer $1,843/$2,600/$5,135 (27 states).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "impactFeeMultifamily",
+      "value": 8034,
+      "low": 5864,
+      "high": 8034,
+      "unit": "USD/unit",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "National Impact Fee Survey: 2019",
+        "url": "https://www.impactfees.com/publications%20pdf/2019survey.pdf",
+        "publisher": "Duncan Associates (Clancy Mullen)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Multi-Family Unit sheet (page 8 of 20): National Average $8,034 total, $1,680 water, $1,986 sewer; National Avg w/o CA $5,864; state averages CA $21,703, FL $7,774, CO $6,915, AZ $4,325.",
+      "scopeNotes": "2-BR, 1,000 SF unit, 12 units/acre, 240-unit complex. First quartile of state averages ~$2,030 (computed).",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "impactFeeRetail",
+      "value": 6760,
+      "low": 5228,
+      "high": 6760,
+      "unit": "USD/1000sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "National Impact Fee Survey: 2019",
+        "url": "https://www.impactfees.com/publications%20pdf/2019survey.pdf",
+        "publisher": "Duncan Associates (Clancy Mullen)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Retail per 1,000 sq. ft. sheet (page 12 of 20): National Average $6,760 total, $5,970 roads, $654 water, $852 sewer; National Avg w/o CA $5,228.",
+      "scopeNotes": "100,001 SF shopping center. State-average quartiles $2,282 / $3,097 / $5,376 (computed).",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "impactFeeOffice",
+      "value": 5408,
+      "low": 4178,
+      "high": 5408,
+      "unit": "USD/1000sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "National Impact Fee Survey: 2019",
+        "url": "https://www.impactfees.com/publications%20pdf/2019survey.pdf",
+        "publisher": "Duncan Associates (Clancy Mullen)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Office per 1,000 sq. ft. sheet (page 16 of 20): National Average $5,408 total, $3,772 roads, $855 water, $1,217 sewer; National Avg w/o CA $4,178.",
+      "scopeNotes": "100,001 SF general office. State-average quartiles $1,516 / $3,070 / $5,055 (computed).",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "impactFeeIndustrial",
+      "value": 3942,
+      "low": 3147,
+      "high": 3942,
+      "unit": "USD/1000sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "National Impact Fee Survey: 2019",
+        "url": "https://www.impactfees.com/publications%20pdf/2019survey.pdf",
+        "publisher": "Duncan Associates (Clancy Mullen)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Industrial per 1,000 sq. ft. sheet (page 20 of 20): National Average $3,942 total, $2,143 roads, $889 water, $1,662 sewer; National Avg w/o CA $3,147.",
+      "scopeNotes": "100,001 SF building. State-average quartiles $1,163 / $1,966 / $2,564 (computed).",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "surveyCaveat",
+      "value": null,
+      "unit": "text",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "National Impact Fee Survey: 2019",
+        "url": "https://www.impactfees.com/publications%20pdf/2019survey.pdf",
+        "publisher": "Duncan Associates (Clancy Mullen)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "an \u201caverage impact fee\u201d must be understood as an average fee for those communities that charge impact fees, not as an average for all communities.",
+      "scopeNotes": "Why the engine should let the user zero these out where no fees apply.",
+      "confidence": "high"
+    },
+    {
+      "id": "e8",
+      "metric": "impactFeeSingleFamily",
+      "value": 13627,
+      "unit": "USD/unit",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Impact Fee Primer (March 2025)",
+        "url": "https://www.nahb.org/advocacy/industry-issues/land-use-101/tools-and-research/tools-pages/impact-fee-primer",
+        "publisher": "National Association of Home Builders (by Launch Development Finance Advisors)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "In 2019, the average impact fee was $13,627.",
+      "scopeNotes": "Restates Duncan 2019; the primer then escalates it by ENR CCI (+20.3%) to an estimated $16,394 for 2024; same primer gives California $22,154 (2012) and $37,471 (2019).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9",
+      "metric": "developmentFeesMultifamily",
+      "low": 12000,
+      "high": 75000,
+      "unit": "USD/unit",
+      "region": "California (7 cities)",
+      "regionKey": "CA",
+      "dataYear": 2018,
+      "source": {
+        "title": "It All Adds Up: The Cost of Housing Development Fees in Seven California Cities",
+        "url": "https://ternercenter.berkeley.edu/wp-content/uploads/2020/08/Development_Fees_Report_Final_2.pdf",
+        "publisher": "Terner Center for Housing Innovation, UC Berkeley (March 2018)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "We found that development fees for multifamily housing range from a low of $12,000 per unit in Los Angeles to $75,000 per unit in Fremont.",
+      "scopeNotes": "All city development fees (impact + service/permit fees) for a 100-unit prototype; single family $21,000-$157,000 per home.",
+      "confidence": "high"
+    },
+    {
+      "id": "e10",
+      "metric": "impactFeeSingleFamily",
+      "value": 39363,
+      "unit": "USD/unit",
+      "region": "Phoenix, AZ",
+      "regionKey": "AZ-Phoenix",
+      "dataYear": 2019,
+      "source": {
+        "title": "National Impact Fee Survey: 2019",
+        "url": "https://www.impactfees.com/publications%20pdf/2019survey.pdf",
+        "publisher": "Duncan Associates (Clancy Mullen)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "AZ Maricopa Phoenix 1/29/19 $39,363 $4,721 $1,138 $22,157 $12,486",
+      "scopeNotes": "Total, non-utility, roads, water, sewer. Multifamily row: $11,824 total. Phoenix figures reflect a fee area with high water resource charges.",
+      "confidence": "high"
+    },
+    {
+      "id": "e11",
+      "metric": "impactFeeSingleFamily",
+      "value": 15862,
+      "unit": "USD/unit",
+      "region": "Orlando, FL",
+      "regionKey": "FL-Orlando",
+      "dataYear": 2019,
+      "source": {
+        "title": "National Impact Fee Survey: 2019",
+        "url": "https://www.impactfees.com/publications%20pdf/2019survey.pdf",
+        "publisher": "Duncan Associates (Clancy Mullen)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "FL Orange Orlando 3/24/19 $15,862 $13,324 $3,574",
+      "scopeNotes": "Total, non-utility, roads; multifamily row $11,038; retail $6,148, office $4,115, industrial $2,676 per 1,000 SF.",
+      "confidence": "high"
+    },
+    {
+      "id": "e12",
+      "metric": "impactFeeSingleFamily",
+      "value": 9422,
+      "unit": "USD/unit",
+      "region": "Tucson, AZ",
+      "regionKey": "AZ-Tucson",
+      "dataYear": 2019,
+      "source": {
+        "title": "National Impact Fee Survey: 2019",
+        "url": "https://www.impactfees.com/publications%20pdf/2019survey.pdf",
+        "publisher": "Duncan Associates (Clancy Mullen)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "AZ Pima Tucson 1/31/19 $9,422 $7,455 $4,838",
+      "scopeNotes": "Total, non-utility, roads; multifamily row $4,378; industrial $1,564 per 1,000 SF.",
+      "confidence": "high"
+    }
+  ]
+}

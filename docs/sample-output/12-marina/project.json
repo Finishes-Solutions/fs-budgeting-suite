@@ -1,0 +1,65 @@
+{
+  "sample": {
+    "id": "12-marina",
+    "name": "Ashley River Marina",
+    "address": "Charleston, SC",
+    "exitCap": 0.075
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "quick",
+    "location": {
+      "region": "SC-Charleston"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "amount",
+      "value": 3500000
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "c1",
+        "typeId": "marina",
+        "name": "Marina",
+        "phaseId": "p1",
+        "size": 200,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perUnitYear",
+          "rate": 11500,
+          "otherIncome": 450000,
+          "vacancy": 0.15,
+          "expenseRatio": 0.5
+        }
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

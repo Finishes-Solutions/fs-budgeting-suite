@@ -1,0 +1,411 @@
+{
+  "schemaVersion": 1,
+  "id": "house-of-worship",
+  "name": "Church / house of worship",
+  "category": "civic",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Houses of worship combine a tall, long-span assembly room (sanctuary/worship center) with fellowship hall, classrooms/children's wing and offices; cost swings with structure (pre-engineered metal vs. masonry/steel truss), acoustics and worship AV/lighting. Public data is thin: the hard cost is DERIVED (in 2019 dollars, escalated by the build script) from the RSMeans 2019 church model and one 2019 Texas megachurch permit value - low confidence, verify against local church-builder bids. Rule of thumb for the seat alternate unit: ~18-22 SF per seat in the worship room and ~40-60 total building SF per sanctuary seat.",
+  "sizing": {
+    "typicalSize": {
+      "low": 8000,
+      "mid": 20000,
+      "high": 50000,
+      "unit": "sf",
+      "evidence": [
+        "e1",
+        "e2"
+      ],
+      "derived": true,
+      "method": "RSMeans model 17,000 SF (e1); PaulAnn Baptist 35,000 SF (e2). Neighborhood congregations 5k-15k SF; regional churches 30k-100k+ SF. Mid 20,000 SF ~ 400-500-seat worship center with education wing."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 4000,
+      "mid": 6000,
+      "high": 10000,
+      "evidence": [],
+      "derived": true,
+      "method": "Building SF per site acre; worship uses are parking-driven (peak Sunday demand), so sites are large: ~3-5 acres for 20,000 SF. Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.005,
+      "mid": 0.0065,
+      "high": 0.008,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per building SF (= 5-8 per 1,000 SF), from the common zoning ratio of 1 space per 3-4 sanctuary seats at ~40-60 building SF per seat. Derived; local code governs."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 160,
+      "mid": 240,
+      "high": 375,
+      "dollarYear": 2019,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2"
+      ],
+      "derived": true,
+      "method": "Derived, in 2019 dollars (both anchors are 2019). RSMeans church model hard cost w/o A/E = $133.31 x 1.25 = ~$167/SF building-only (e1, national); PaulAnn Baptist permit value ~$280/SF (e2, TX). Adding typical on-site work (large surface parking, stormwater, landscaping ~10%-15%) gives ~$185-$315; mid $240 ~ midpoint. Low $160 = pre-engineered metal worship building with simple finishes; high $375 = masonry/steel-truss sanctuary with acoustic treatment and higher finishes. Expect ~+40%-50% escalation to 2025-26 (BLS nonresidential PPI rose ~47% Dec 2019-Sep 2026 per the e2 source)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P, surface parking, on-site utilities and landscaping; excludes land, soft costs, pews/chairs and worship AV/lighting (line items / FF&E), organs, steeples, off-sites and fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.7,
+    "standard": 1.0,
+    "premium": 1.3,
+    "luxury": 1.75,
+    "evidence": [
+      "e1",
+      "e2"
+    ],
+    "derived": true,
+    "method": "Low/mid and high/mid of the derived range ($160/$240 = 0.67; $375/$240 = 1.56), with luxury extended for traditional masonry/stone sanctuaries, stained glass and pipe organs."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.07
+      },
+      {
+        "division": "04",
+        "pct": 0.06
+      },
+      {
+        "division": "05",
+        "pct": 0.09
+      },
+      {
+        "division": "06",
+        "pct": 0.04
+      },
+      {
+        "division": "07",
+        "pct": 0.08
+      },
+      {
+        "division": "08",
+        "pct": 0.06
+      },
+      {
+        "division": "09",
+        "pct": 0.1
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.01
+      },
+      {
+        "division": "12",
+        "pct": 0.01
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.04
+      },
+      {
+        "division": "23",
+        "pct": 0.11
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "27",
+        "pct": 0.02
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.05
+      },
+      {
+        "division": "33",
+        "pct": 0.02
+      }
+    ],
+    "evidence": [
+      "e1"
+    ],
+    "derived": true,
+    "method": "Derived for a steel-truss assembly building (e1 model structure): metals 9% for long-span trusses, roofing/thermal 8% for a large roof area, finishes 10% incl. acoustic treatment, HVAC 11% for high-occupancy assembly ventilation; site 10%. Worship AV/lighting is carried as a separate line item, not in Div 27 here."
+  },
+  "lineItems": [
+    {
+      "id": "worship-av-lighting",
+      "name": "Worship audio/video/theatrical lighting system",
+      "division": "27",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 15,
+        "mid": 35,
+        "high": 80,
+        "dollarYear": 2019,
+        "region": "US",
+        "evidence": [
+          "e3"
+        ],
+        "derived": true,
+        "method": "PaulAnn Baptist: ~$2.0M for furniture and AV on 35,000 SF (~$57/SF combined, e3); AV/lighting alone taken at ~$15-$80 per building SF depending on production level."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": false,
+      "notes": "Owner-procured or design-build AV integrator; scales with worship-room size."
+    },
+    {
+      "id": "sanctuary-seating",
+      "name": "Sanctuary seating - pews or interlocking theater chairs (per seat)",
+      "division": "12",
+      "unit": "seat",
+      "qty": {
+        "per": "sf",
+        "value": 0.025
+      },
+      "cost": {
+        "low": 150,
+        "mid": 300,
+        "high": 600,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: stackable/interlocking chairs ~$150, theater seats ~$300, custom hardwood pews ~$400-$600 per seat. Qty assumes ~1 seat per 40 building SF."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": false,
+      "notes": "Counted in FF&E when seating is loose; listed here because seat count drives it."
+    },
+    {
+      "id": "baptistry",
+      "name": "Baptistry (heated, with changing rooms access)",
+      "division": "13",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 25000,
+        "mid": 75000,
+        "high": 200000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance; tradition-specific."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional."
+    },
+    {
+      "id": "steeple-bell-tower",
+      "name": "Steeple / bell tower / cupola",
+      "division": "13",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 40000,
+        "mid": 150000,
+        "high": 600000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: prefabricated fiberglass steeple (low) to masonry bell tower (high)."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional."
+    },
+    {
+      "id": "pipe-organ",
+      "name": "Pipe or digital organ",
+      "division": "11",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 80000,
+        "mid": 400000,
+        "high": 1500000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: digital organ low; new pipe organ high."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 15,
+      "mid": 25,
+      "high": 45,
+      "dollarYear": 2019,
+      "region": "US",
+      "evidence": [
+        "e3"
+      ],
+      "derived": true,
+      "method": "Derived: loose furniture for fellowship hall, classrooms, offices and nursery (excl. worship AV and sanctuary seating line items). e3 implies ~$57/SF for furniture + AV combined in 2019."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.1,
+      "mid": 0.15,
+      "high": 0.22,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Derived. RSMeans church model carries architectural fees at 10% of building cost (e1); add survey/geotech, permits, testing, AV/acoustic consultants and owner's rep. Many churches use design-build church specialists, compressing fees toward the low end. Excludes FF&E and contingency."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.08
+    },
+    "notes": "Capital campaign and church-lender (bond/loan) costs belong in financing."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: assembly building norm."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: typical owner construction contingency."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: typical owner soft-cost contingency."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 180,
+      "max": 500,
+      "dollarYear": 2019,
+      "region": "US",
+      "method": "2019 dollars: low ~ $160 hard x 1.1; high ~ $375 hard x 1.22 + furniture/AV (~$57/SF per e3)."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 183.3,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "RSMeans square foot cost model: Church (Decorative Concrete Block / Steel Truss), 1 story",
+        "url": "https://www.rsmeans.com/model-pages/church",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Model page cost table (17,000 SF, 2019 data): SubTotal $133.31/SF; Contractor Fees 25%; Architectural Fees 10%; Total Building Cost $183.3/SF (union)",
+      "scopeNotes": "Building only, union labor, 2019 national average; includes contractor GC/OH&P (25%) AND architect fees; excludes sitework, land, FF&E. Hard cost w/o A/E fee = SubTotal x 1.25. Stale (2019) and well below current bids; used for relative ratios between types only.",
+      "confidence": "low"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": 280,
+      "unit": "USD/sf",
+      "region": "San Angelo, TX",
+      "regionKey": "TX",
+      "dataYear": 2019,
+      "source": {
+        "title": "Church Construction Cost Per Square Foot: RSMeans Benchmark",
+        "url": "https://buildermuse.com/commercial/church-construction-cost-per-square-foot/",
+        "publisher": "Buildermuse (citing San Angelo LIVE, Oct 8 2019)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Dividing the permit value by the 35,000 combined square feet gives roughly $280 per square foot",
+      "scopeNotes": "PaulAnn Baptist Church: 25,000 SF sanctuary + 10,000 SF education wing; building permit value $9,790,000 (construction, likely excl. some sitework); total with furniture and AV approximately $11.8M, i.e. ~$2.0M (~$57/SF) for furniture and AV.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "totalProjectCost",
+      "value": 11800000,
+      "unit": "USD/ls",
+      "region": "San Angelo, TX",
+      "regionKey": "TX",
+      "dataYear": 2019,
+      "source": {
+        "title": "Church Construction Cost Per Square Foot: RSMeans Benchmark",
+        "url": "https://buildermuse.com/commercial/church-construction-cost-per-square-foot/",
+        "publisher": "Buildermuse (citing San Angelo LIVE, Oct 8 2019)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Permit: \"$9,790,000\"; total with furniture and AV: \"approximately $11.8 million\"",
+      "scopeNotes": "Implies furniture + AV/lighting ~ $2.0M on 35,000 SF (~$57/SF, 2019).",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Only two anchors (RSMeans 2019 model and one 2019 Texas permit value); current church-builder bids, denominational facility guides or TX TABS registrations for churches are needed to replace this derived estimate.",
+    "Cost per seat (alternate unit) is not sourced; ~40-60 building SF per sanctuary seat is a planning assumption."
+  ]
+}

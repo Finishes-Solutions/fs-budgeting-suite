@@ -1,0 +1,416 @@
+{
+  "schemaVersion": 1,
+  "id": "big-box-retail",
+  "name": "Big box retail",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Single-tenant 50,000\u2013200,000 SF store: tilt-up or CMU walls, steel joist roof, large clear spans, loading docks and a big parking field. Very price-efficient per SF; retailer prototypes drive scope. Evidence is thin (RSMeans department-store model and national retail quartiles); value is a reasoned derivation.",
+  "sizing": {
+    "typicalSize": {
+      "low": 50000,
+      "mid": 120000,
+      "high": 200000,
+      "unit": "sf",
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Catalog definition (50k\u2013200k SF); RSMeans department store model uses 110,000 SF (e1)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 9000,
+      "mid": 11000,
+      "high": 13000,
+      "unit": "sf",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: FAR \u2248 0.2\u20130.3 with 4\u20135 spaces/1,000 SF and truck court."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0035,
+      "mid": 0.0045,
+      "high": 0.005,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per GSF (judgment; big-box retailers typically 4\u20135/1,000)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 130,
+      "mid": 180,
+      "high": 260,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e4",
+        "e5"
+      ],
+      "derived": true,
+      "method": "RSMeans 2019 1-story department store (110,000 SF, complete basic building, excl. site) $113.46\u2013123.00 (e1) \u00d7 \u22481.3 = $147\u2013160; + sitework \u2248$25\u201335/SF for 4\u20135/1,000 parking and truck court (Kirksey one-story 5/1,000 sitework $16\u201337, e6) \u2192 \u2248$175\u2013190. Mid = $180. Low = $130 \u2248 RSMeans retail 1/4 quartile ($96, 2022, e2) escalated + site. High = $260 \u2248 RLB strip Dallas high ($270, e4) \u2014 big boxes rarely exceed small-shop strip costs. RSMeans model escalation 2019\u21922026 \u2248 \u00d71.3, inferred from RSMeans' own office 2\u20134 story model: 2019 total $187.02 (open) / $204.43 (union) vs. 2026 national $253.63 (BD+C) = \u00d71.24\u20131.36. This is only used to compare evidence; the build script escalates from the stated dollarYear."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Complete building delivered to the retailer (basic finishes and MEP) plus on-site work; excludes store fixtures/racking, refrigeration, land, soft costs, off-site road improvements."
+    }
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.13
+      },
+      {
+        "division": "04",
+        "pct": 0.03
+      },
+      {
+        "division": "05",
+        "pct": 0.13
+      },
+      {
+        "division": "07",
+        "pct": 0.09
+      },
+      {
+        "division": "08",
+        "pct": 0.04
+      },
+      {
+        "division": "09",
+        "pct": 0.06
+      },
+      {
+        "division": "10",
+        "pct": 0.01
+      },
+      {
+        "division": "21",
+        "pct": 0.03
+      },
+      {
+        "division": "22",
+        "pct": 0.03
+      },
+      {
+        "division": "23",
+        "pct": 0.07
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "27",
+        "pct": 0.01
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.05
+      },
+      {
+        "division": "32",
+        "pct": 0.11
+      },
+      {
+        "division": "33",
+        "pct": 0.04
+      }
+    ],
+    "evidence": [
+      "e2"
+    ],
+    "derived": true,
+    "method": "Derived. MEP from RSMeans 2022 retail medians (plumbing 5.45%, mechanical 6.15%, electrical 11.25%, e2) adjusted for a large open box (ESFR sprinklers 21 3%). Sitework 20%. Structure/envelope (tilt-up 03, joists/deck 05, roofing 07) by judgment."
+  },
+  "lineItems": [
+    {
+      "id": "loading-docks",
+      "name": "Loading docks (levelers, seals, doors)",
+      "division": "11",
+      "unit": "door",
+      "qty": {
+        "per": "project",
+        "value": 4
+      },
+      "cost": {
+        "low": 15000,
+        "mid": 25000,
+        "high": 40000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived judgment per dock position: pit leveler + seal + insulated overhead door + bumpers."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Inside baseline."
+    },
+    {
+      "id": "sitework",
+      "name": "On-site work incl. parking field and truck court (carve-out)",
+      "division": "32",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 25,
+        "mid": 36,
+        "high": 55,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e6"
+        ],
+        "derived": true,
+        "method": "Derived: 20% of mid; Kirksey one-story 5/1,000 sitework $16\u201337/SF (e6) plus truck court and detention."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Inside baseline."
+    },
+    {
+      "id": "pylon-sign",
+      "name": "Pylon sign",
+      "division": "10",
+      "block": "signage",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 25000,
+        "mid": 75000,
+        "high": 200000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "_blocks/signage.json#e2"
+        ],
+        "derived": true,
+        "method": "From _blocks/signage.json pylon-sign (derived there)."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": ""
+    },
+    {
+      "id": "rooftop-solar",
+      "name": "Rooftop solar PV",
+      "division": "48",
+      "block": "energy",
+      "unit": "kw",
+      "qty": {
+        "per": "sf",
+        "value": 0.005
+      },
+      "cost": {
+        "low": 1500,
+        "mid": 2300,
+        "high": 3300,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "From _blocks/energy.json rooftop-solar-commercial; qty \u2248 5 W per SF of roof (judgment)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": ""
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.07,
+      "mid": 0.11,
+      "high": 0.17,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: prototype designs keep A/E at 4\u20136% (RSMeans department store model carries 6%); permits/platting 1\u20132%, survey/geotech 1%, insurance/legal 2%, developer fee 2\u20134%. | Second pass (2026-10-24, main session): Reduced 3 points to remove the developer fee (2\u20134%). The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.05
+    },
+    "notes": "Build-to-suit for a credit tenant typically carries low leasing cost."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Simple commercial shells: low design contingency."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical new-build commercial hard contingency."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 120,
+      "max": 350,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Min \u2248 $110 \u00d7 1.1; max \u2248 $290 high-cost metro \u00d7 1.2."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 123.0,
+      "low": 113.46,
+      "high": 123.0,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Construction Cost Estimates for a Store, Department, 1 Story in National, US (2019 RSMeans data)",
+        "url": "https://www.rsmeans.com/model-pages/department-store-1-story.aspx",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Store, Department, 1 Story ... Floor Area (S.F.): 110,000 ... SubTotal 100% $98.40 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $24.60 (union); open shop SubTotal $90.77, fees $22.69",
+      "scopeNotes": "Basic-component model building, excludes sitework. Hard = SubTotal + contractor fees (open $113.46, union $123.00); architectural fee 6% excluded. ",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": 171,
+      "low": 96,
+      "high": 325,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2022,
+      "source": {
+        "title": "2022 Project Costs \u2014 50 17 00 Project Costs per S.F.",
+        "url": "https://www.rsmeans.com/media/wysiwyg/quarterly_updates/2022-Project-Costs-per-Square-Foot.pdf",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Retail, Total Project Costs per S.F.: 1/4 = 96, Median = 171, 3/4 = 325 (Plumbing 5.45%, Mechanical 6.15%, Electrical 11.25% medians).",
+      "scopeNotes": "Completed retail buildings, January 2022 national dollars, incl. contractor OH&P; sitework scope not stated.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": 141.15,
+      "low": 129.75,
+      "high": 141.15,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Construction Cost Estimates for a Supermarket in National, US (2019 RSMeans data)",
+        "url": "https://www.rsmeans.com/model-pages/supermarket.aspx",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Supermarket ... Floor Area (S.F.): 44,000 ... SubTotal 100% $112.92 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $28.23 (union); open shop SubTotal $103.80, fees $25.95",
+      "scopeNotes": "Basic-component model building, excludes sitework. Hard = SubTotal + contractor fees (open $129.75, union $141.15); architectural fee 7% excluded. ",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 200,
+      "high": 270,
+      "unit": "USD/sf",
+      "region": "Dallas, TX",
+      "regionKey": "TX-Dallas",
+      "dataYear": 2026,
+      "source": {
+        "title": "North America Quarterly Construction Cost Report, Q3 2026 (Indicative Construction Costs table)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall (RLB)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative construction costs, Retail Shopping \u2014 Strip: Dallas 200\u2013270; Phoenix 135\u2013220; Charlotte 205\u2013290 (USD/SF GFA, hard construction costs).",
+      "scopeNotes": "Values are the Dallas column; Phoenix 135\u2013220; 18-US-city median 202.5\u2013295. RLB does not say whether strip figures are shell-only or include sitework.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": 253.63,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Office building construction costs for 2026",
+        "url": "https://www.bdcnetwork.com/construction-costs/article/55389026/office-building-construction-costs-for-2026",
+        "publisher": "Building Design + Construction (data: Gordian RSMeans)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Square Foot Costs: Office Building, 2-4 Story \u2014 National Average Q2 2026 $253.63.",
+      "scopeNotes": "Used only to infer RSMeans model escalation 2019\u21922026 (vs. 2019 office 2\u20134 story model total $187.02\u2013204.43).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "sitework",
+      "value": null,
+      "low": 16,
+      "high": 22,
+      "unit": "USD/sf",
+      "region": "Houston, TX",
+      "regionKey": "TX-Houston",
+      "dataYear": 2025,
+      "source": {
+        "title": "Construction Cost Trends / 2025 \u2014 Houston",
+        "url": "https://www.kirksey.com/CMSPages/GetFile.aspx?guid=1c8a21ff-de0e-4629-b9b0-7f38f62c502b",
+        "publisher": "Kirksey Architecture",
+        "accessed": "2026-10-24"
+      },
+      "quote": "ONE-STORY FLEX OFFICE BUILDINGS $103 to $122/SF ... Cost includes $16 to $22/sf for sitework, assuming five spaces/1,000 sf in a surface parking lot.",
+      "scopeNotes": "One-story building with 5/1,000 surface parking \u2014 closest published proxy for retail sitework per building SF (Austin $21\u201330, Dallas $23\u201337 for the same building).",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "Only an RSMeans 2019 department-store model was retrievable; a recent public big-box development agreement or TIF budget would validate the mid."
+  ]
+}

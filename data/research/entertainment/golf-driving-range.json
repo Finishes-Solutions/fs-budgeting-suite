@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "id": "golf-driving-range",
+  "name": "Golf driving range",
+  "category": "entertainment",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "bay",
+  "summary": "Ranges span from single-level covered tee lines (tens of thousands of dollars per bay) to multi-level climate-controlled entertainment venues with full kitchens (Drive Shack $25–40M for 72–96 bays; Topgolf $15–60M per venue). Per-bay cost is dominated by the hitting structure, outfield netting/poles and, for entertainment formats, the restaurant/bar building. Entertainment-format costs are sourced from SEC filings; traditional-range costs are derived.",
+  "sizing": {
+    "typicalSize": {
+      "low": 30,
+      "mid": 60,
+      "high": 100,
+      "unit": "bay",
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Traditional/two-level ranges ~30–60 bays; entertainment venues 72–96 bays (e1) to ~100+. Mid 60."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 120,
+      "mid": 300,
+      "high": 750,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Building SF per bay: e1 60,000 SF / ~84 bays ≈ 714 SF/bay for entertainment venues (incl. kitchen, bars, event space); covered traditional tee lines ~100–150 SF/bay plus a small clubhouse. Mid 300 for a two-level covered range with clubhouse."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 2.5,
+      "mid": 4,
+      "high": 7,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "e1: 72–96 bays on 12–15 acres ≈ 6–7 bays/acre (multi-level, ~200-yd outfield). Single-level ranges with 300-yd fields ≈ 2–4 bays/acre. Mid 4."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 1.5,
+      "mid": 2.5,
+      "high": 4,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Traditional ranges ~1.5–2 spaces per bay; entertainment venues with event space ~3–4 per bay. Derived."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 30000,
+      "mid": 110000,
+      "high": 350000,
+      "dollarYear": 2024,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2"
+      ],
+      "derived": true,
+      "method": "2024 dollars. High: e1 total investment ≈ $387k/bay mid (2021) × ~0.70 hard share (excl. tech, FF&E, soft) ≈ $270k, rounded up for 2021→2024 escalation ≈ $350k for an entertainment venue (e2's $15–60M range is consistent). Mid $110k: two-level covered steel hitting structure (~$40–60k/bay), outfield netting/poles and target greens (~$25–35k/bay at 60 bays), lighting, ball system and a ~3,000–5,000 SF clubhouse (~$25k/bay). Low $30k: single-level covered tee line with netting and lighting. Mid and low are derived, not sourced."
+    },
+    "perSF": {
+      "low": 250,
+      "mid": 365,
+      "high": 470,
+      "dollarYear": 2024,
+      "region": "US",
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "perPrimaryUnit / sfPerPrimaryUnit at each tier (30k/120; 110k/300; 350k/750) — per SF of building/hitting structure; outfield cost is folded in, so not comparable to building $/SF."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Hitting structure/building, outfield grading, target greens, netting and poles, lighting, parking and utilities. Excludes ball-tracking technology (lineItem), FF&E, kitchen equipment, land, soft costs, off-sites."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.3,
+    "standard": 1.0,
+    "premium": 1.8,
+    "luxury": 3.2,
+    "evidence": [
+      "e1"
+    ],
+    "derived": true,
+    "method": "economy = low/mid (30/110 ≈ 0.27); luxury = high/mid (350/110 ≈ 3.2, i.e., entertainment-venue format); premium ≈ climate-controlled two-level with restaurant."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "03",
+        "pct": 0.1
+      },
+      {
+        "division": "05",
+        "pct": 0.14
+      },
+      {
+        "division": "07",
+        "pct": 0.04
+      },
+      {
+        "division": "08",
+        "pct": 0.02
+      },
+      {
+        "division": "09",
+        "pct": 0.05
+      },
+      {
+        "division": "11",
+        "pct": 0.04
+      },
+      {
+        "division": "13",
+        "pct": 0.08
+      },
+      {
+        "division": "22",
+        "pct": 0.04
+      },
+      {
+        "division": "23",
+        "pct": 0.05
+      },
+      {
+        "division": "26",
+        "pct": 0.1
+      },
+      {
+        "division": "31",
+        "pct": 0.08
+      },
+      {
+        "division": "32",
+        "pct": 0.13
+      },
+      {
+        "division": "33",
+        "pct": 0.04
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived: steel hitting structure (05) and netting/pole system (13) dominate the vertical; outfield grading (31) and target greens/synthetic turf/landscape (32) are large; field and structure lighting (26) ≈ 10%; clubhouse finishes/MEP modest. Not sourced."
+  },
+  "lineItems": [
+    {
+      "id": "outfield-netting",
+      "name": "Outfield containment netting and poles (60–170 ft)",
+      "division": "13",
+      "unit": "lf",
+      "qty": {
+        "per": "project",
+        "value": 1600
+      },
+      "cost": {
+        "low": 300,
+        "mid": 550,
+        "high": 900,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance per LF of netting run including poles/foundations; height drives cost. Verify with netting contractor."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out of baseline."
+    },
+    {
+      "id": "ball-tracking-tech",
+      "name": "Ball-tracking / game technology per bay (e.g., radar/camera system, screens)",
+      "division": "11",
+      "unit": "bay",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 5000,
+        "mid": 12000,
+        "high": 25000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance per bay; vendor-specific (often licensed)."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": ""
+    },
+    {
+      "id": "ball-dispensing",
+      "name": "Ball dispenser, washer and collection system",
+      "division": "11",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 25000,
+        "mid": 75000,
+        "high": 300000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: dispenser + washer for traditional ranges at the low/mid; automated ball return/sorting for entertainment venues at the high."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "restaurant-bar-building",
+      "name": "Restaurant / bar / event building (entertainment format)",
+      "division": "13",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 0
+      },
+      "cost": {
+        "low": 300,
+        "mid": 425,
+        "high": 600,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "e1"
+        ],
+        "derived": true,
+        "method": "Derived $/SF for kitchen/bar building; e1 entertainment venues ~60,000 SF total. Qty defaults to 0 (traditional range)."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": ""
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 2000,
+      "mid": 8000,
+      "high": 30000,
+      "dollarYear": 2024,
+      "region": "US",
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "Bay furniture/heaters, mats, range equipment; entertainment venues add lounge seating, TVs (e1 mentions 300-plus television screens). Derived."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.1,
+      "mid": 0.15,
+      "high": 0.22,
+      "evidence": [],
+      "derived": true,
+      "method": "Design-build is common for venues (e2 notes use of design/build contractors); A&E, netting engineering, civil/stormwater for large outfield, permits. Derived."
+    },
+    "notes": "Netting height may require FAA/zoning variances; lighting studies for neighbors."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Outfield earthwork/drainage risk."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 30000,
+      "max": 600000,
+      "dollarYear": 2024,
+      "region": "US",
+      "method": "Traditional single-level hard ~$30k to entertainment-venue total investment ~$556k/bay (e1 high, 2021) plus escalation."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "totalInvestmentPerVenue",
+      "value": 32500000,
+      "low": 25000000,
+      "high": 40000000,
+      "unit": "USD/ls",
+      "region": "US (company-wide)",
+      "regionKey": "US",
+      "dataYear": 2021,
+      "source": {
+        "title": "Drive Shack Inc. Form 10-K for fiscal year 2021",
+        "url": "https://www.sec.gov/Archives/edgar/data/1175483/000117548322000002/ds-20211231.htm",
+        "publisher": "U.S. SEC EDGAR (Drive Shack Inc.)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "generally open-air 60,000 square feet venues on average built on approximately 12 to 15 acres of land. This format features 72 to 96 climate-controlled bays ... The total investment cost of a new Drive Shack venue ranges from $25 to $40 million.",
+      "scopeNotes": "Total investment (building, outfield, tech, FF&E, soft costs; land may be ground-leased or purchased). Per bay ≈ $260k (25M/96) to $556k (40M/72); mid ≈ $387k (32.5M/84).",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "grossDevelopmentCostPerVenue",
+      "value": null,
+      "low": 15000000,
+      "high": 60000000,
+      "unit": "USD/ls",
+      "region": "US (company-wide)",
+      "regionKey": "US",
+      "dataYear": 2023,
+      "source": {
+        "title": "Topgolf Callaway Brands Corp. Form 10-K for fiscal year 2023",
+        "url": "https://www.sec.gov/Archives/edgar/data/837465/000083746524000016/ely-20231231.htm",
+        "publisher": "U.S. SEC EDGAR (Topgolf Callaway Brands Corp.)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "we generally estimate the gross development cost to build a venue to be between $15 million and $60 million depending on the size, location and various other factors.",
+      "scopeNotes": "Gross development cost of a Topgolf venue (bay count not stated in the excerpt; venues range from single-level small formats to three-level large formats). Includes building, outfield, technology, FF&E and soft costs.",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "Need sourced costs for traditional and two-level covered ranges (municipal range rebuild bids).",
+    "Topgolf bay counts by format to convert e2 to a per-bay figure."
+  ]
+}

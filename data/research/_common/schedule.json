@@ -1,0 +1,919 @@
+{
+  "schemaVersion": 1,
+  "id": "schedule",
+  "name": "Construction duration norms",
+  "researchedAt": "2026-10-24",
+  "summary": "Start-to-completion months by project type and construction value, from the Census Bureau's C30 length-of-time tables (2024\u20132025 completions) and NAHB's summary of the Survey of Construction for single-family homes.",
+  "method": "The engine maps each project type to a Census category (catalog.json durationClass), estimates the component's hard cost, and takes the months for that value band; a phase lasts as long as its longest component.",
+  "items": [
+    {
+      "id": "duration-office",
+      "name": "Construction duration \u2014 Office",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 4.2,
+        "mid": 7.0,
+        "high": 28.8,
+        "evidence": [
+          "e1"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 4.2
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 5.9
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 8.6
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 11.3
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 12.3
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 18.0
+          },
+          {
+            "maxValue": null,
+            "months": 28.8
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-commercial",
+      "name": "Construction duration \u2014 Commercial",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 4.2,
+        "mid": 7.7,
+        "high": 22.8,
+        "evidence": [
+          "e1"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 4.2
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 5.8
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 8.3
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 11.8
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 13.6
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 17.6
+          },
+          {
+            "maxValue": null,
+            "months": 22.8
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-healthCare",
+      "name": "Construction duration \u2014 Health care",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 3.9,
+        "mid": 9.8,
+        "high": 35.2,
+        "evidence": [
+          "e1"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 3.9
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 5.7
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 8.9
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 12.3
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 14.3
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 19.6
+          },
+          {
+            "maxValue": null,
+            "months": 35.2
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-education",
+      "name": "Construction duration \u2014 Education",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 2.2,
+        "mid": 10.6,
+        "high": 34.4,
+        "evidence": [
+          "e1"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 2.2
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 5.0
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 7.5
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 9.5
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 15.2
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 20.5
+          },
+          {
+            "maxValue": null,
+            "months": 34.4
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-religious",
+      "name": "Construction duration \u2014 Religious",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 6.7,
+        "mid": 9.6,
+        "high": 21.3,
+        "evidence": [
+          "e1"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 1000000.0,
+            "months": 6.7
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 10.4
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 13.1
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 15.4
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 21.3
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-amusement",
+      "name": "Construction duration \u2014 Amusement & recreation",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 4.4,
+        "mid": 8.1,
+        "high": 26.1,
+        "evidence": [
+          "e1"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 4.4
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 5.9
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 9.2
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 10.9
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 13.2
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 18.2
+          },
+          {
+            "maxValue": null,
+            "months": 26.1
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-manufacturing",
+      "name": "Construction duration \u2014 Manufacturing",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 2.5,
+        "mid": 11.3,
+        "high": 27.7,
+        "evidence": [
+          "e1"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 2.5
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 6.3
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 8.5
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 11.1
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 12.2
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 18.4
+          },
+          {
+            "maxValue": null,
+            "months": 27.7
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-privateNonresidential",
+      "name": "Construction duration \u2014 All private nonresidential",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 4.1,
+        "mid": 8.2,
+        "high": 28.2,
+        "evidence": [
+          "e1"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 4.1
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 5.8
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 8.6
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 11.5
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 13.6
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 18.8
+          },
+          {
+            "maxValue": null,
+            "months": 28.2
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-publicSafety",
+      "name": "Construction duration \u2014 Public safety (state & local)",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 3.1,
+        "mid": 11.1,
+        "high": 49.1,
+        "evidence": [
+          "e2"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 3.1
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 8.0
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 11.4
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 16.1
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 19.1
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 24.5
+          },
+          {
+            "maxValue": null,
+            "months": 49.1
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-publicAmusement",
+      "name": "Construction duration \u2014 Amusement & recreation (state & local)",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 4.3,
+        "mid": 8.0,
+        "high": 25.9,
+        "evidence": [
+          "e2"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 4.3
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 6.7
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 10.3
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 14.8
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 17.6
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 22.2
+          },
+          {
+            "maxValue": null,
+            "months": 25.9
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-publicEducation",
+      "name": "Construction duration \u2014 Education (state & local)",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 3.7,
+        "mid": 10.7,
+        "high": 39.5,
+        "evidence": [
+          "e2"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 3.7
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 6.1
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 9.8
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 12.7
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 16.1
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 24.9
+          },
+          {
+            "maxValue": null,
+            "months": 39.5
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-publicOffice",
+      "name": "Construction duration \u2014 Office (state & local)",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 4.9,
+        "mid": 9.2,
+        "high": 41.9,
+        "evidence": [
+          "e2"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 4.9
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 6.8
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 12.4
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 15.4
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 19.6
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 24.8
+          },
+          {
+            "maxValue": null,
+            "months": 41.9
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-highway",
+      "name": "Construction duration \u2014 Highway (state & local)",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 3.9,
+        "mid": 9.8,
+        "high": 52.8,
+        "evidence": [
+          "e2"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 3.9
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 6.3
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 8.6
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 13.9
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 15.4
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 26.5
+          },
+          {
+            "maxValue": null,
+            "months": 52.8
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-sewer",
+      "name": "Construction duration \u2014 Sewer system (state & local)",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 3.8,
+        "mid": 10.0,
+        "high": 51.3,
+        "evidence": [
+          "e2"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 3.8
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 6.2
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 11.1
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 16.1
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 20.4
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 28.5
+          },
+          {
+            "maxValue": null,
+            "months": 51.3
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-water",
+      "name": "Construction duration \u2014 Water supply (state & local)",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 4.8,
+        "mid": 10.3,
+        "high": 42.5,
+        "evidence": [
+          "e2"
+        ],
+        "derived": false,
+        "method": "low/high = smallest and largest value band; mid = 'All Values'. extra.bands gives months by project value (maxValue in dollars, null = no upper bound)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 250000.0,
+            "months": 4.8
+          },
+          {
+            "maxValue": 1000000.0,
+            "months": 7.3
+          },
+          {
+            "maxValue": 3000000.0,
+            "months": 11.6
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 15.6
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 19.4
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 27.7
+          },
+          {
+            "maxValue": null,
+            "months": 42.5
+          }
+        ]
+      },
+      "notes": "Census reports durations by the project's construction value; the engine picks the band for the component's estimated hard cost."
+    },
+    {
+      "id": "duration-multifamily",
+      "name": "Construction duration \u2014 Private multifamily",
+      "basis": "monthsByProjectValue",
+      "range": {
+        "low": 12.1,
+        "mid": 20.8,
+        "high": 36.3,
+        "evidence": [
+          "e3",
+          "e4",
+          "e5"
+        ],
+        "derived": false,
+        "method": "2024\u20132025 table (e3); 2023\u20132024 (e4) and 2022\u20132023 (e5) corroborate within a month."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": 3000000.0,
+            "months": 12.1
+          },
+          {
+            "maxValue": 5000000.0,
+            "months": 14.9
+          },
+          {
+            "maxValue": 10000000.0,
+            "months": 18.3
+          },
+          {
+            "maxValue": 100000000.0,
+            "months": 24.8
+          },
+          {
+            "maxValue": null,
+            "months": 36.3
+          }
+        ]
+      },
+      "notes": "Private multifamily housing projects."
+    },
+    {
+      "id": "duration-singleFamily",
+      "name": "Construction duration \u2014 Single-family (built for sale)",
+      "basis": "months",
+      "range": {
+        "low": 7.4,
+        "mid": 7.4,
+        "high": 12.4,
+        "evidence": [
+          "e6"
+        ],
+        "derived": false,
+        "method": "Built for sale 7.4 months permit to completion (mid); built for rent 12.4; contractor-built custom 11.7; owner-built 14.3 (e6)."
+      },
+      "extra": {
+        "bands": [
+          {
+            "maxValue": null,
+            "months": 7.4
+          }
+        ],
+        "byTenure": {
+          "forSale": 7.4,
+          "forRent": 12.4,
+          "customContractor": 11.7,
+          "customOwner": 14.3
+        }
+      },
+      "notes": "NAHB summary of the Census Survey of Construction."
+    },
+    {
+      "id": "constructionMonths-default",
+      "name": "Construction duration \u2014 fallback",
+      "basis": "months",
+      "range": {
+        "low": 4.1,
+        "mid": 8.2,
+        "high": 28.2,
+        "evidence": [
+          "e1"
+        ],
+        "derived": false,
+        "method": "All private nonresidential projects, 2024\u20132025 (e1)."
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "constructionMonths",
+      "value": 8.2,
+      "unit": "count",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Table 1. Average Number of Months from Start to Completion for Private Nonresidential Construction Projects Completed in 2024-2025, by Value and Type of Construction.",
+        "url": "https://www.census.gov/construction/c30/pdf/t125.pdf",
+        "publisher": "U.S. Census Bureau (Construction Spending / C30)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "All projects* \u2014 All Values 8.2; $100,000 or more 28.2 (thousands of dollars); Office 7.0; Commercial 7.7; Health Care 9.8; Education 10.6; Religious 9.6; Amusement 8.1; Manufacturing 11.3",
+      "confidence": "high",
+      "scopeNotes": "Months from construction start to completion (Census C30 / Survey of Construction)."
+    },
+    {
+      "id": "e2",
+      "metric": "constructionMonths",
+      "value": 9.9,
+      "unit": "count",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Table 2. Average Number of Months from Start to Completion for State and Local Construction Projects Completed in 2024 - 2025, by Value and Type of Construction.",
+        "url": "https://www.census.gov/construction/c30/pdf/t225.pdf",
+        "publisher": "U.S. Census Bureau (Construction Spending / C30)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "All projects* \u2014 All Values 9.9; Public Safety 11.1; Amusement 8.0; Highway 9.8; Sewer System 10.0; Water Supply 10.3",
+      "confidence": "high",
+      "scopeNotes": "Months from construction start to completion (Census C30 / Survey of Construction)."
+    },
+    {
+      "id": "e3",
+      "metric": "constructionMonths",
+      "value": 20.8,
+      "unit": "count",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Table 3. Average Number of Months from Start to Completion for Private Multifamily Construction Projects Completed in 2024-2025, by Value and Type of Construction.",
+        "url": "https://www.census.gov/construction/c30/pdf/t325.pdf",
+        "publisher": "U.S. Census Bureau (Construction Spending / C30)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "All Values 20.8; $100,000 or more 36.3; $10,000 - $99,999 24.8; $5,000 - $9,999 18.3; $3,000 - $4,999 14.9; Less than $3,000 12.1",
+      "confidence": "high",
+      "scopeNotes": "Months from construction start to completion (Census C30 / Survey of Construction)."
+    },
+    {
+      "id": "e4",
+      "metric": "constructionMonths",
+      "value": 21.2,
+      "unit": "count",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "Table 3. Average Number of Months from Start to Completion for Private Multifamily Construction Projects Completed in 2023-2024, by Value and Type of Construction.",
+        "url": "https://www.census.gov/construction/c30/pdf/t324.pdf",
+        "publisher": "U.S. Census Bureau (Construction Spending / C30)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "All Values 21.2; $100,000 or more 37.9; $10,000 - $99,999 25.7",
+      "confidence": "high",
+      "scopeNotes": "Months from construction start to completion (Census C30 / Survey of Construction)."
+    },
+    {
+      "id": "e5",
+      "metric": "constructionMonths",
+      "value": 20.7,
+      "unit": "count",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2023,
+      "source": {
+        "title": "Table 3. Average Number of Months from Start to Completion for Private Multifamily Construction Projects Completed in 2022-2023, by Value and Type of Construction.",
+        "url": "https://www.census.gov/construction/c30/pdf/t323.pdf",
+        "publisher": "U.S. Census Bureau (Construction Spending / C30)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "All Values 20.7; $100,000 or more 37.9; $10,000 - $99,999 24.9",
+      "confidence": "high",
+      "scopeNotes": "Months from construction start to completion (Census C30 / Survey of Construction)."
+    },
+    {
+      "id": "e6",
+      "metric": "constructionMonths",
+      "value": 7.4,
+      "unit": "count",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Single-Family Home Construction Time Declines in 2025",
+        "url": "https://eyeonhousing.org/2026/09/single-family-home-construction-time-declines-in-2025/",
+        "publisher": "NAHB Eye on Housing",
+        "accessed": "2026-10-24"
+      },
+      "quote": "homes built for sale required the shortest amount of time, 7.4 months from obtaining building permits to completion ... homes built-for-rent required about 12.4 months",
+      "confidence": "high",
+      "scopeNotes": "Months from construction start to completion (Census C30 / Survey of Construction)."
+    }
+  ]
+}

@@ -1,0 +1,626 @@
+{
+ "capturedFrom": "staging@63ef1a4",
+ "input": {
+  "schemaVersion": 1,
+  "projection": {
+   "years": 5,
+   "taxMode": "beforeTax"
+  },
+  "capitalExpenses": [],
+  "reportOptions": {
+   "includeSensitivity": true
+  },
+  "analysisName": "Bulk warehouse 250k SF",
+  "property": {
+   "name": "Logistics Center",
+   "address": "FM 1960 & Hwy 6, Houston TX",
+   "size": {
+    "unit": "squareFeet",
+    "value": 250000
+   },
+   "purchaseMonth": "2026-11"
+  },
+  "acquisition": {
+   "basis": {
+    "mode": "acquisitionCapRate",
+    "value": 0.0625
+   },
+   "costPercent": 0.015
+  },
+  "income": {
+   "mode": "aggregate",
+   "year1PotentialIncome": 2375000,
+   "growth": {
+    "mode": "constant",
+    "value": 0.035
+   },
+   "otherIncome": []
+  },
+  "vacancy": {
+   "mode": "constant",
+   "value": 0.05
+  },
+  "expenses": {
+   "mode": "annualDollar",
+   "value": 187500,
+   "growth": {
+    "mode": "constant",
+    "value": 0.03
+   }
+  },
+  "financing": {
+   "loans": []
+  },
+  "disposition": {
+   "exitCapRate": {
+    "mode": "constant",
+    "value": 0.065
+   },
+   "sellingCostPercent": 0.02
+  }
+ },
+ "output": {
+  "inputSchemaVersion": 1,
+  "calculationVersion": "before-tax-1.1.0",
+  "normalizedInput": {
+   "schemaVersion": 1,
+   "analysisName": "Bulk warehouse 250k SF",
+   "source": null,
+   "property": {
+    "name": "Logistics Center",
+    "address": "FM 1960 & Hwy 6, Houston TX",
+    "city": "",
+    "state": "",
+    "postalCode": "",
+    "size": {
+     "unit": "squareFeet",
+     "value": 250000,
+     "normalizedSquareFeet": 250000
+    },
+    "unitCount": null,
+    "purchaseMonth": "2026-11"
+   },
+   "projection": {
+    "years": 5,
+    "taxMode": "beforeTax"
+   },
+   "acquisition": {
+    "basis": {
+     "mode": "acquisitionCapRate",
+     "value": 0.0625
+    },
+    "costPercent": 0.015
+   },
+   "income": {
+    "mode": "aggregate",
+    "year1PotentialIncome": 2375000,
+    "growth": {
+     "mode": "constant",
+     "value": 0.035
+    },
+    "otherIncome": []
+   },
+   "vacancy": {
+    "mode": "constant",
+    "value": 0.05
+   },
+   "expenses": {
+    "mode": "annualDollar",
+    "value": 187500,
+    "growth": {
+     "mode": "constant",
+     "value": 0.03
+    },
+    "override": false,
+    "derivedFrom": null
+   },
+   "capitalExpenses": [],
+   "financing": {
+    "loans": []
+   },
+   "disposition": {
+    "exitCapRate": {
+     "mode": "constant",
+     "value": 0.065
+    },
+    "sellingCostPercent": 0.02
+   },
+   "reportOptions": {
+    "includeSensitivity": true
+   }
+  },
+  "summary": {
+   "purchasePrice": 33100000,
+   "acquisitionCapRate": 0.0625,
+   "acquisitionCosts": 496500,
+   "loanFees": 0,
+   "unleveragedInitialInvestment": 33596500,
+   "initialEquity": 33596500,
+   "year1NOI": 2068750,
+   "year1PotentialIncome": 2375000,
+   "grossRentMultiplier": 13.936842105263159,
+   "pricePerSquareFoot": 132.4,
+   "pricePerUnit": null,
+   "normalizedSquareFeet": 250000,
+   "initialLTV": null,
+   "terminalYearNOI": 2462353.3381845104,
+   "optimalHoldingYear": 5,
+   "optimalHoldingYield": 0.08350636070900527,
+   "finalYearEquityIRR": 0.08350636070900527,
+   "finalYearEquityMultiple": 1.4355055040704807
+  },
+  "loans": [],
+  "annual": [
+   {
+    "year": 1,
+    "periodEnd": "2027-10",
+    "potentialIncome": 2375000,
+    "vacancyLoss": 118750,
+    "effectiveRentalIncome": 2256250,
+    "otherIncome": 0,
+    "grossOperatingIncome": 2256250,
+    "operatingExpenses": 187500,
+    "netOperatingIncome": 2068750,
+    "capitalExpenses": 0,
+    "debtService": 0,
+    "cashFlowBeforeTaxes": 2068750,
+    "endingLoanBalance": 0,
+    "grossSalePrice": 32955000,
+    "sellingCosts": 659100,
+    "netSaleProceeds": 32295900,
+    "projectedLTV": null,
+    "dscr": null,
+    "debtYield": null,
+    "cashOnCash": 0.06157635467980296,
+    "unleveragedCashOnCash": 0.06157635467980296,
+    "returnOnEquity": 0.06405611857851926,
+    "equityMultiple": 1.022863988808358,
+    "propertyIRR": 0.022863988808487612,
+    "effectiveLoanRate": null,
+    "equityIRR": 0.022863988808487612,
+    "leverageImpact": 0
+   },
+   {
+    "year": 2,
+    "periodEnd": "2028-10",
+    "potentialIncome": 2458125,
+    "vacancyLoss": 122906.25,
+    "effectiveRentalIncome": 2335218.75,
+    "otherIncome": 0,
+    "grossOperatingIncome": 2335218.75,
+    "operatingExpenses": 193125,
+    "netOperatingIncome": 2142093.75,
+    "capitalExpenses": 0,
+    "debtService": 0,
+    "cashFlowBeforeTaxes": 2142093.75,
+    "endingLoanBalance": 0,
+    "grossSalePrice": 34124000,
+    "sellingCosts": 682480,
+    "netSaleProceeds": 33441520,
+    "projectedLTV": null,
+    "dscr": null,
+    "debtYield": null,
+    "cashOnCash": 0.06375943178604915,
+    "unleveragedCashOnCash": 0.06375943178604915,
+    "returnOnEquity": 0.06405491586506834,
+    "equityMultiple": 1.120722805947048,
+    "propertyIRR": 0.06039701720629451,
+    "effectiveLoanRate": null,
+    "equityIRR": 0.06039701720629451,
+    "leverageImpact": 0
+   },
+   {
+    "year": 3,
+    "periodEnd": "2029-10",
+    "potentialIncome": 2544159.3749999995,
+    "vacancyLoss": 127207.96874999999,
+    "effectiveRentalIncome": 2416951.4062499995,
+    "otherIncome": 0,
+    "grossOperatingIncome": 2416951.4062499995,
+    "operatingExpenses": 198918.75,
+    "netOperatingIncome": 2218032.6562499995,
+    "capitalExpenses": 0,
+    "debtService": 0,
+    "cashFlowBeforeTaxes": 2218032.6562499995,
+    "endingLoanBalance": 0,
+    "grossSalePrice": 35333000,
+    "sellingCosts": 706660,
+    "netSaleProceeds": 34626340,
+    "projectedLTV": null,
+    "dscr": null,
+    "debtYield": null,
+    "cashOnCash": 0.06601975373178752,
+    "unleveragedCashOnCash": 0.06601975373178752,
+    "returnOnEquity": 0.06405622587457986,
+    "equityMultiple": 1.2220087332385814,
+    "propertyIRR": 0.07318579441323876,
+    "effectiveLoanRate": null,
+    "equityIRR": 0.07318579441323876,
+    "leverageImpact": 0
+   },
+   {
+    "year": 4,
+    "periodEnd": "2030-10",
+    "potentialIncome": 2633204.9531249995,
+    "vacancyLoss": 131660.24765625,
+    "effectiveRentalIncome": 2501544.7054687496,
+    "otherIncome": 0,
+    "grossOperatingIncome": 2501544.7054687496,
+    "operatingExpenses": 204886.3125,
+    "netOperatingIncome": 2296658.3929687496,
+    "capitalExpenses": 0,
+    "debtService": 0,
+    "cashFlowBeforeTaxes": 2296658.3929687496,
+    "endingLoanBalance": 0,
+    "grossSalePrice": 36586000,
+    "sellingCosts": 731720,
+    "netSaleProceeds": 35854280,
+    "projectedLTV": null,
+    "dscr": null,
+    "debtYield": null,
+    "cashOnCash": 0.06836004920062357,
+    "unleveragedCashOnCash": 0.06836004920062357,
+    "returnOnEquity": 0.06405534828669686,
+    "equityMultiple": 1.3269184230267663,
+    "propertyIRR": 0.079634567141946,
+    "effectiveLoanRate": null,
+    "equityIRR": 0.079634567141946,
+    "leverageImpact": 0
+   },
+   {
+    "year": 5,
+    "periodEnd": "2031-10",
+    "potentialIncome": 2725367.126484374,
+    "vacancyLoss": 136268.3563242187,
+    "effectiveRentalIncome": 2589098.7701601554,
+    "otherIncome": 0,
+    "grossOperatingIncome": 2589098.7701601554,
+    "operatingExpenses": 211032.90187500004,
+    "netOperatingIncome": 2378065.8682851554,
+    "capitalExpenses": 0,
+    "debtService": 0,
+    "cashFlowBeforeTaxes": 2378065.8682851554,
+    "endingLoanBalance": 0,
+    "grossSalePrice": 37882000,
+    "sellingCosts": 757640,
+    "netSaleProceeds": 37124360,
+    "projectedLTV": null,
+    "dscr": null,
+    "debtYield": null,
+    "cashOnCash": 0.07078314313351555,
+    "unleveragedCashOnCash": 0.07078314313351555,
+    "returnOnEquity": 0.06405675056176471,
+    "equityMultiple": 1.4355055040704807,
+    "propertyIRR": 0.08350636070900527,
+    "effectiveLoanRate": null,
+    "equityIRR": 0.08350636070900527,
+    "leverageImpact": 0
+   }
+  ],
+  "sensitivity": [
+   {
+    "factor": 0.9,
+    "purchasePrice": 29790000,
+    "acquisitionCapRate": 0.06944444444444445,
+    "pricePerSquareFoot": 119.16,
+    "loanAmount": null,
+    "initialEquity": 30236850,
+    "unleveragedCoC": [
+     0.06841817186644773,
+     0.07084381309561016,
+     0.07335528192420836,
+     0.07595561022291507,
+     0.07864793681501729
+    ],
+    "leveragedCoC": [
+     0.06841817186644773,
+     0.07084381309561016,
+     0.07335528192420836,
+     0.07595561022291507,
+     0.07864793681501729
+    ],
+    "unleveragedIRR": [
+     0.1365155431205592,
+     0.11956600964880393,
+     0.11396646410269004,
+     0.11119067539983704,
+     0.10952583055482132
+    ],
+    "leveragedIRR": [
+     0.1365155431205592,
+     0.11956600964880393,
+     0.11396646410269004,
+     0.11119067539983704,
+     0.10952583055482132
+    ]
+   },
+   {
+    "factor": 0.95,
+    "purchasePrice": 31445000,
+    "acquisitionCapRate": 0.06578947368421052,
+    "pricePerSquareFoot": 125.78,
+    "loanAmount": null,
+    "initialEquity": 31916675,
+    "unleveragedCoC": [
+     0.06481721545242417,
+     0.06711519135373593,
+     0.06949447761240791,
+     0.07195794652697217,
+     0.07450857171949006
+    ],
+    "leveragedCoC": [
+     0.06481721545242417,
+     0.06711519135373593,
+     0.06949447761240791,
+     0.07195794652697217,
+     0.07450857171949006
+    ],
+    "unleveragedIRR": [
+     0.07669893558798466,
+     0.08878984534295098,
+     0.09283166727359904,
+     0.09486217162553788,
+     0.09607218939472259
+    ],
+    "leveragedIRR": [
+     0.07669893558798466,
+     0.08878984534295098,
+     0.09283166727359904,
+     0.09486217162553788,
+     0.09607218939472259
+    ]
+   },
+   {
+    "factor": 1,
+    "purchasePrice": 33100000,
+    "acquisitionCapRate": 0.0625,
+    "pricePerSquareFoot": 132.4,
+    "loanAmount": null,
+    "initialEquity": 33596500,
+    "unleveragedCoC": [
+     0.06157635467980296,
+     0.06375943178604915,
+     0.06601975373178752,
+     0.06836004920062357,
+     0.07078314313351555
+    ],
+    "leveragedCoC": [
+     0.06157635467980296,
+     0.06375943178604915,
+     0.06601975373178752,
+     0.06836004920062357,
+     0.07078314313351555
+    ],
+    "unleveragedIRR": [
+     0.022863988808487612,
+     0.06039701720629451,
+     0.07318579441323876,
+     0.079634567141946,
+     0.08350636070900527
+    ],
+    "leveragedIRR": [
+     0.022863988808487612,
+     0.06039701720629451,
+     0.07318579441323876,
+     0.079634567141946,
+     0.08350636070900527
+    ]
+   },
+   {
+    "factor": 1.05,
+    "purchasePrice": 34755000,
+    "acquisitionCapRate": 0.05952380952380952,
+    "pricePerSquareFoot": 139.02,
+    "loanAmount": null,
+    "initialEquity": 35276325,
+    "unleveragedCoC": [
+     0.058644147314098054,
+     0.06072326836766585,
+     0.06287595593503574,
+     0.06510480876249863,
+     0.06741251727001482
+    ],
+    "leveragedCoC": [
+     0.058644147314098054,
+     0.06072326836766585,
+     0.06287595593503574,
+     0.06510480876249863,
+     0.06741251727001482
+    ],
+    "unleveragedIRR": [
+     -0.02584382018248969,
+     0.03409602334547626,
+     0.054855587943614476,
+     0.0653822197129846,
+     0.07172769238268517
+    ],
+    "leveragedIRR": [
+     -0.02584382018248969,
+     0.03409602334547626,
+     0.054855587943614476,
+     0.0653822197129846,
+     0.07172769238268517
+    ]
+   },
+   {
+    "factor": 1.1,
+    "purchasePrice": 36410000,
+    "acquisitionCapRate": 0.056818181818181816,
+    "pricePerSquareFoot": 145.64,
+    "loanAmount": null,
+    "initialEquity": 36956150,
+    "unleveragedCoC": [
+     0.055978504254366325,
+     0.05796311980549922,
+     0.060017957937988656,
+     0.06214549927329415,
+     0.0643483119395596
+    ],
+    "leveragedCoC": [
+     0.055978504254366325,
+     0.05796311980549922,
+     0.060017957937988656,
+     0.06214549927329415,
+     0.0643483119395596
+    ],
+    "unleveragedIRR": [
+     -0.07012364653764397,
+     0.009642861338612906,
+     0.03769513403432455,
+     0.05199910885637038,
+     0.06065122402547968
+    ],
+    "leveragedIRR": [
+     -0.07012364653764397,
+     0.009642861338612906,
+     0.03769513403432455,
+     0.05199910885637038,
+     0.06065122402547968
+    ]
+   }
+  ],
+  "warnings": []
+ },
+ "annualRows": [
+  {
+   "analysisYear": 1,
+   "periodEnd": "2027-10",
+   "potentialIncome": 2375000,
+   "vacancyLoss": 118750,
+   "effectiveRentalIncome": 2256250,
+   "otherIncome": 0,
+   "grossOperatingIncome": 2256250,
+   "operatingExpenses": 187500,
+   "netOperatingIncome": 2068750,
+   "capitalExpenses": 0,
+   "debtService": 0,
+   "cashFlowBeforeTaxes": 2068750,
+   "endingLoanBalance": 0,
+   "grossSalePrice": 32955000,
+   "sellingCosts": 659100,
+   "netSaleProceeds": 32295900,
+   "projectedLTV": null,
+   "dscr": null,
+   "debtYield": null,
+   "cashOnCash": 0.06157635467980296,
+   "returnOnEquity": 0.06405611857851926,
+   "equityMultiple": 1.022863988808358,
+   "propertyIRR": 0.022863988808487612,
+   "effectiveLoanRate": null,
+   "equityIRR": 0.022863988808487612,
+   "leverageImpact": 0
+  },
+  {
+   "analysisYear": 2,
+   "periodEnd": "2028-10",
+   "potentialIncome": 2458125,
+   "vacancyLoss": 122906.25,
+   "effectiveRentalIncome": 2335218.75,
+   "otherIncome": 0,
+   "grossOperatingIncome": 2335218.75,
+   "operatingExpenses": 193125,
+   "netOperatingIncome": 2142093.75,
+   "capitalExpenses": 0,
+   "debtService": 0,
+   "cashFlowBeforeTaxes": 2142093.75,
+   "endingLoanBalance": 0,
+   "grossSalePrice": 34124000,
+   "sellingCosts": 682480,
+   "netSaleProceeds": 33441520,
+   "projectedLTV": null,
+   "dscr": null,
+   "debtYield": null,
+   "cashOnCash": 0.06375943178604915,
+   "returnOnEquity": 0.06405491586506834,
+   "equityMultiple": 1.120722805947048,
+   "propertyIRR": 0.06039701720629451,
+   "effectiveLoanRate": null,
+   "equityIRR": 0.06039701720629451,
+   "leverageImpact": 0
+  },
+  {
+   "analysisYear": 3,
+   "periodEnd": "2029-10",
+   "potentialIncome": 2544159.3749999995,
+   "vacancyLoss": 127207.96874999999,
+   "effectiveRentalIncome": 2416951.4062499995,
+   "otherIncome": 0,
+   "grossOperatingIncome": 2416951.4062499995,
+   "operatingExpenses": 198918.75,
+   "netOperatingIncome": 2218032.6562499995,
+   "capitalExpenses": 0,
+   "debtService": 0,
+   "cashFlowBeforeTaxes": 2218032.6562499995,
+   "endingLoanBalance": 0,
+   "grossSalePrice": 35333000,
+   "sellingCosts": 706660,
+   "netSaleProceeds": 34626340,
+   "projectedLTV": null,
+   "dscr": null,
+   "debtYield": null,
+   "cashOnCash": 0.06601975373178752,
+   "returnOnEquity": 0.06405622587457986,
+   "equityMultiple": 1.2220087332385814,
+   "propertyIRR": 0.07318579441323876,
+   "effectiveLoanRate": null,
+   "equityIRR": 0.07318579441323876,
+   "leverageImpact": 0
+  },
+  {
+   "analysisYear": 4,
+   "periodEnd": "2030-10",
+   "potentialIncome": 2633204.9531249995,
+   "vacancyLoss": 131660.24765625,
+   "effectiveRentalIncome": 2501544.7054687496,
+   "otherIncome": 0,
+   "grossOperatingIncome": 2501544.7054687496,
+   "operatingExpenses": 204886.3125,
+   "netOperatingIncome": 2296658.3929687496,
+   "capitalExpenses": 0,
+   "debtService": 0,
+   "cashFlowBeforeTaxes": 2296658.3929687496,
+   "endingLoanBalance": 0,
+   "grossSalePrice": 36586000,
+   "sellingCosts": 731720,
+   "netSaleProceeds": 35854280,
+   "projectedLTV": null,
+   "dscr": null,
+   "debtYield": null,
+   "cashOnCash": 0.06836004920062357,
+   "returnOnEquity": 0.06405534828669686,
+   "equityMultiple": 1.3269184230267663,
+   "propertyIRR": 0.079634567141946,
+   "effectiveLoanRate": null,
+   "equityIRR": 0.079634567141946,
+   "leverageImpact": 0
+  },
+  {
+   "analysisYear": 5,
+   "periodEnd": "2031-10",
+   "potentialIncome": 2725367.126484374,
+   "vacancyLoss": 136268.3563242187,
+   "effectiveRentalIncome": 2589098.7701601554,
+   "otherIncome": 0,
+   "grossOperatingIncome": 2589098.7701601554,
+   "operatingExpenses": 211032.90187500004,
+   "netOperatingIncome": 2378065.8682851554,
+   "capitalExpenses": 0,
+   "debtService": 0,
+   "cashFlowBeforeTaxes": 2378065.8682851554,
+   "endingLoanBalance": 0,
+   "grossSalePrice": 37882000,
+   "sellingCosts": 757640,
+   "netSaleProceeds": 37124360,
+   "projectedLTV": null,
+   "dscr": null,
+   "debtYield": null,
+   "cashOnCash": 0.07078314313351555,
+   "returnOnEquity": 0.06405675056176471,
+   "equityMultiple": 1.4355055040704807,
+   "propertyIRR": 0.08350636070900527,
+   "effectiveLoanRate": null,
+   "equityIRR": 0.08350636070900527,
+   "leverageImpact": 0
+  }
+ ]
+}

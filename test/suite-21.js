@@ -19,10 +19,48 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the Projects tab lights up',
     await p.locator('#nav-projects').evaluate(e=>e.classList.contains('on')));
 
+ // ---------- 1b. no projects yet: New Budget is not a dead end ----------
+ // A budget must belong to a project. With none, step 2 used to say "create
+ // one first" over a disabled Create and offer no way to do it.
+ await p.evaluate(()=>go('home')); await p.waitForTimeout(700);
+ await p.click('#newBudgetBtn'); await p.waitForTimeout(400);
+ await p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'); await p.waitForTimeout(700);
+ ok('with no projects, Create waits for one', await p.locator('#nbCreate').isDisabled());
+ ok('the Budget ID waits for the project instead of offering a legacy BD- id',
+    (await p.locator('#nbId').inputValue())==='', await p.locator('#nbId').inputValue());
+ ok('and step 2 offers + New Project as the way forward',
+    await p.locator('#nbNewProjectBtn').isVisible()
+      && /\+ New Project/.test(await p.locator('#nbNewProjectBtn').textContent())
+      && await p.locator('#nbNewProjectBtn').evaluate(e=>e.classList.contains('btn-dark')));
+ await p.click('#nbNewProjectBtn'); await p.waitForTimeout(400);
+ ok('it opens New Project over the New Budget dialog',
+    await p.locator('#newProjectModal').isVisible() && await p.locator('#newBudgetModal').isVisible());
+ await p.fill('#npId','OP-7300');
+ await p.fill('#npName','Quayside Lofts');
+ await p.fill('#npAddress','9 Quay Street');
+ const urlBefore=p.url();
+ await p.click('#npCreate'); await p.waitForTimeout(1200);
+ ok('creating it returns to the budget, not to the project page',
+    !(await p.locator('#newProjectModal').isVisible()) && await p.locator('#newBudgetModal').isVisible()
+      && p.url()===urlBefore, p.url());
+ ok('with the new project chosen',
+    (await p.locator('#nbProject').inputValue())==='OP-7300', await p.locator('#nbProject').inputValue());
+ ok('its name and address carried across',
+    (await p.locator('#nbName').inputValue())==='Quayside Lofts'
+      && (await p.locator('#nbAddress').inputValue())==='9 Quay Street',
+    await p.locator('#nbName').inputValue()+' | '+await p.locator('#nbAddress').inputValue());
+ ok('the Budget ID is now the project\u2019s first child',
+    (await p.locator('#nbId').inputValue())==='BDG-7300-01', await p.locator('#nbId').inputValue());
+ ok('and Create is ready', await p.locator('#nbCreate').isEnabled());
+ ok('the project really exists, made the one way projects are made',
+    (await p.evaluate(async()=>(await fetch('/api/budgets?scope=project&id=OP-7300')).status))===200);
+ await p.click('#newBudgetModal button:has-text("Cancel")'); await p.waitForTimeout(300);
+ await p.click('#nav-projects'); await p.waitForTimeout(700);
+
  // ---------- 2. a project is created explicitly; a budget belongs to it ----------
  // A budget id can no longer name a project, so saving one does not conjure
  // its parent. The project is made first, with its own OP-#### identity.
- await p.click('#page-projects button:has-text("+ Create Project")');
+ await p.click('#page-projects button:has-text("+ New Project")');
  await p.waitForTimeout(500);
  await p.fill('#npId','OP-7301');
  await p.fill('#npName','Harbour Point');
@@ -46,9 +84,18 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // its first budget, created from the project so the name and address carry
  await p.click('#projectsBody tr:has-text("OP-7301")'); await p.waitForTimeout(900);
+ // With no budget yet, starting one is the page's next step.
+ ok('an empty project makes + New Budget the filled button',
+    await p.evaluate(()=>{
+      const b=[...document.querySelectorAll('#projectBody .card-hd button')].find(x=>/\+ New Budget/.test(x.textContent));
+      return !!b && b.classList.contains('btn-primary');
+    }));
+ ok('and repeats it inside the empty message',
+    await p.evaluate(()=>!![...document.querySelectorAll('#projectBody .hm-empty button')]
+      .find(x=>/\+ New Budget/.test(x.textContent))));
  await p.click('#page-project button:has-text("+ New Budget")');
  await p.waitForTimeout(700);
- await p.click('#newBudgetModal .tpl-row:has-text("Multifamily")');
+ await p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]');
  await p.waitForTimeout(800);
  await p.fill('#nbId','BD-7301');
  await p.click('#nbCreate'); await p.waitForTimeout(800);
@@ -101,6 +148,17 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('there is still exactly one project',
     (await p.evaluate(async()=>(await (await fetch('/api/budgets?scope=projects')).json())
       .projects.filter(x=>x.projectId==='OP-7301').length))===1);
+ ok('with budgets in place, + New Budget steps back to a plain button',
+    await p.evaluate(()=>{
+      const b=[...document.querySelectorAll('#projectBody .card-hd button')].find(x=>/\+ New Budget/.test(x.textContent));
+      return !!b && b.classList.contains('btn-ghost');
+    }));
+ // Home's "No Analysis" nudge is about the project's PRIMARY budget only — an
+ // alternate is another way of pricing the same work.
+ await p.evaluate(()=>{FSHome.invalidate();return FSHome.show();}); await p.waitForTimeout(800);
+ const noA=await p.evaluate(()=>FSHome._attention().filter(x=>x.reason==='No Analysis').map(x=>x.rec.projectId));
+ ok('Home nudges the primary budget toward an analysis', noA.includes('BD-7301'), JSON.stringify(noA));
+ ok('but not its alternate', !noA.includes('BD-7301-02'), JSON.stringify(noA));
 
  // ---------- 5. an analysis rolls up to the project ----------
  const made=await p.evaluate(async()=>{
@@ -113,6 +171,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  await p.evaluate(()=>FSProjects.show('OP-7301',true)); await p.waitForTimeout(1000);
  ok('and it appears under the project',
     /Harbour Underwriting/.test(await p.locator('#projectBody').textContent()));
+ await p.evaluate(()=>{FSHome.invalidate();return FSHome.show();}); await p.waitForTimeout(800);
+ ok('once the project is underwritten, Home stops nudging any of its budgets',
+    !(await p.evaluate(()=>FSHome._attention().some(x=>x.reason==='No Analysis'&&/^BD-7301/.test(x.rec.projectId)))),
+    JSON.stringify(await p.evaluate(()=>FSHome._attention().map(x=>x.reason+':'+x.rec.projectId))));
 
  // ---------- 5b. the page as the review asked for it ----------
  // Four headline numbers as real cards, carrying the number and nothing that
@@ -133,6 +195,15 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
    .map(t=>t.textContent.trim()));
  ok('the Budgets table splits the id from the name',
     bHead.includes('Budget ID')&&bHead.includes('Budget Name'), bHead.join('|'));
+ ok('and its money columns use the list labels',
+    bHead.includes('Contract Sum')&&bHead.includes('Total Project Cost'), bHead.join('|'));
+ // The same coloured chip every list uses, not a grey badge.
+ ok('budget and analysis statuses wear the shared status chip',
+    await p.evaluate(()=>{
+      const cells=[...document.querySelectorAll('#projectBody .pj-tbl-budgets tbody tr, #projectBody .pj-tbl-analyses tbody tr')]
+        .map(tr=>tr.querySelector('.st-chip'));
+      return cells.length>=3 && cells.every(c=>c && /st-(draft|review|done|cancel)/.test(c.className));
+    }));
 
  // Open → is gone from both tables; the shared ⋮ row menus replace it.
  ok('neither table still ends in a bare Open link',
@@ -153,10 +224,10 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     /Open Analysis/.test(aMenu)&&/Versions/.test(aMenu)&&/Favorites/.test(aMenu), aMenu);
  await p.keyboard.press('Escape'); await p.waitForTimeout(250);
 
- // Add Investment Analysis: two budgets here, so it must ASK which one.
- ok('the analyses card carries an Add Investment Analysis button',
-    await p.locator('#projectBody button:has-text("+ Add Investment Analysis")').isVisible());
- await p.click('#projectBody button:has-text("+ Add Investment Analysis")');
+ // New Investment Analysis: two budgets here, so it must ASK which one.
+ ok('the analyses card carries a New Investment Analysis button',
+    await p.locator('#projectBody button:has-text("+ New Investment Analysis")').isVisible());
+ await p.click('#projectBody button:has-text("+ New Investment Analysis")');
  await p.waitForTimeout(400);
  ok('with two budgets it asks which one', await p.locator('#invPickModal').isVisible());
  const pickTxt=await p.locator('#invPickModal').textContent();
@@ -244,6 +315,9 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     (await p.locator('#projectsBody .hm-card').count())>0
       && (await p.locator('#projectsBody table').count())===0,
     String(await p.locator('#projectsBody .hm-card').count()));
+ ok('project cards wear the project tag, not the budget one',
+    (await p.locator('#projectsBody .hm-kind-project').count())===(await p.locator('#projectsBody .hm-card').count())
+      && (await p.locator('#projectsBody .hm-kind-budget').count())===0);
  await p.waitForTimeout(1200);        // the settings save is debounced, like every preference
  ok('and the choice is stored on the account',
     (await p.evaluate(async()=>(await (await fetch('/api/user-settings')).json()).settings.projectView))==='cards');
@@ -280,6 +354,32 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the project reports an OP-#### id and its budgets report BD- ids',
     /^OP-\d{4}$/.test(shapes.project) && shapes.budgets.every(x=>/^BD-\d{4}(-\d{2})?$/.test(x)),
     JSON.stringify(shapes));
+
+ // ---------- 10. Back from a NEW budget goes where the dialog was opened ----------
+ // Open a budget from OP-7301 (Back would say OP-7301), then create another
+ // from Home under OP-7300: Back must not still point at OP-7301.
+ await p.evaluate(()=>FSProjects.open('OP-7301')); await p.waitForTimeout(900);
+ await p.click('#projectBody .pj-tbl-budgets tr:has-text("BD-7301-02") td:nth-child(2)'); await p.waitForTimeout(900);
+ ok('a budget opened from the project points Back at it',
+    await p.evaluate(()=>budgetOrigin&&budgetOrigin.id==='OP-7301'), JSON.stringify(await p.evaluate(()=>budgetOrigin)));
+ await p.evaluate(()=>go('home')); await p.waitForTimeout(700);
+ await p.click('#newBudgetBtn'); await p.waitForTimeout(400);
+ await p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'); await p.waitForTimeout(700);
+ await p.selectOption('#nbProject','OP-7300'); await p.waitForTimeout(500);
+ await p.click('#nbCreate'); await p.waitForTimeout(900);
+ ok('a budget created from Home has no project origin',
+    (await p.evaluate(()=>budgetOrigin))===null, JSON.stringify(await p.evaluate(()=>budgetOrigin)));
+ ok('so Back says Budgets, not the previous budget\u2019s project',
+    (await p.locator('.page.on .btn-back').getAttribute('title'))==='Back to Budgets',
+    await p.locator('.page.on .btn-back').getAttribute('title'));
+ // and from a project page, Back returns to THAT project
+ await p.evaluate(()=>FSProjects.open('OP-7300')); await p.waitForTimeout(900);
+ await p.click('#page-project button:has-text("+ New Budget")'); await p.waitForTimeout(500);
+ await p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'); await p.waitForTimeout(800);
+ await p.click('#nbCreate'); await p.waitForTimeout(900);
+ ok('a budget created from a project page points Back at that project',
+    (await p.locator('.page.on .btn-back').getAttribute('title'))==='Back to OP-7300',
+    await p.locator('.page.on .btn-back').getAttribute('title'));
 
  ok('No uncaught JS errors', errs.length===0, errs.join(' | '));
  await b.close();

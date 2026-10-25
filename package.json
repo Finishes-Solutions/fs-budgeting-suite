@@ -4,9 +4,17 @@
   "private": true,
   "description": "Developer-local test harness dependencies only \u2014 the frontend has no build step and nothing here is bundled or deployed. Playwright drives test/run-all.sh; exceljs and pdfmake let test/mock-api.js and the node tests run the real shared export renderers (api/shared/investment/export-render.js).",
   "devDependencies": {
+    "axe-core": "^4.10.2",
     "exceljs": "^4.4.0",
+    "fs-render": "file:api/shared/fs-render",
     "pdfmake": "^0.2.20",
-    "playwright": "^1.49.0",
-    "fs-render": "file:api/shared/fs-render"
+    "playwright": "^1.49.0"
+  },
+  "scripts": {
+    "check": "node tools/check-syntax.js && node tools/validate-research.js > /dev/null && node tools/build-research-data.js --check",
+    "test": "node --test test/*.test.js",
+    "test:browser": "./test/run-all.sh",
+    "research:build": "node tools/build-research-data.js",
+    "samples": "node tools/run-samples.js"
   }
 }

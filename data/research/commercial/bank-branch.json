@@ -1,0 +1,376 @@
+{
+  "schemaVersion": 1,
+  "id": "bank-branch",
+  "name": "Bank branch",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Freestanding 2,500\u20135,000 SF branch with drive-up lanes, canopy, vault, ATM and heavy security/low-voltage. Small building size and specialty items push $/SF well above general retail. RSMeans 2022 project data (national quartiles) are a solid anchor; specialty equipment costs are derived.",
+  "sizing": {
+    "typicalSize": {
+      "low": 2500,
+      "mid": 3500,
+      "high": 5000,
+      "unit": "sf",
+      "evidence": [
+        "e2"
+      ],
+      "derived": true,
+      "method": "Judgment; RSMeans bank model uses 4,100 SF (e2)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 2500,
+      "mid": 3500,
+      "high": 5000,
+      "unit": "sf",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: 3,500-SF branch on a \u22481-acre pad (drive-up stacking, 15\u201325 spaces)."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.004,
+      "mid": 0.005,
+      "high": 0.006,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per GSF (judgment)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 280,
+      "mid": 360,
+      "high": 480,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3"
+      ],
+      "derived": false,
+      "method": "RSMeans 2022 bank quartiles $300 / $335 / $415 (e1). RSMeans 2019 bank model $219.29\u2013244.65 hard excl. site (e2) \u00d7 \u22481.3 = $285\u2013318, + \u2248$40\u201350/SF pad sitework and drive-up lanes \u2192 \u2248$330\u2013365. Mid = $360 (2026) \u2248 RSMeans 2022 median carried forward modestly and the model build-up. Low $280, High $480 \u2248 3/4 quartile carried forward. RSMeans model escalation 2019\u21922026 \u2248 \u00d71.3, inferred from RSMeans' own office 2\u20134 story model: 2019 total $187.02 (open) / $204.43 (union) vs. 2026 national $253.63 (BD+C) = \u00d71.24\u20131.36. This is only used to compare evidence; the build script escalates from the stated dollarYear."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. building, drive-up canopy, vault room construction and pad sitework; excludes vault door/teller equipment/ATMs (line items), furniture, land, soft costs."
+    }
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "03",
+        "pct": 0.07
+      },
+      {
+        "division": "04",
+        "pct": 0.06
+      },
+      {
+        "division": "05",
+        "pct": 0.05
+      },
+      {
+        "division": "06",
+        "pct": 0.04
+      },
+      {
+        "division": "07",
+        "pct": 0.06
+      },
+      {
+        "division": "08",
+        "pct": 0.08
+      },
+      {
+        "division": "09",
+        "pct": 0.08
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.04
+      },
+      {
+        "division": "13",
+        "pct": 0.02
+      },
+      {
+        "division": "21",
+        "pct": 0.01
+      },
+      {
+        "division": "22",
+        "pct": 0.03
+      },
+      {
+        "division": "23",
+        "pct": 0.05
+      },
+      {
+        "division": "26",
+        "pct": 0.1
+      },
+      {
+        "division": "27",
+        "pct": 0.03
+      },
+      {
+        "division": "28",
+        "pct": 0.03
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.08
+      },
+      {
+        "division": "33",
+        "pct": 0.03
+      }
+    ],
+    "evidence": [
+      "e1"
+    ],
+    "derived": true,
+    "method": "Derived. MEP from RSMeans 2022 bank medians (plumbing 3.39%, mechanical 5.1%, electrical 13.05% \u2192 26 10% + 27 3%, with security 28 3%, e1). Sitework 14% for a pad with drive-up lanes. Architectural remainder by judgment (masonry 04, storefront/teller glazing 08, millwork 06)."
+  },
+  "lineItems": [
+    {
+      "id": "vault-door-equipment",
+      "name": "Vault door, safe deposit boxes and night depository",
+      "division": "11",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 60000,
+        "mid": 120000,
+        "high": 250000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived judgment (no public source fetched): modular vault panels/door \u2248 $40k\u2013150k, safe deposit box nests and night drop \u2248 $20k\u2013100k."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "drive-up-lane-equipment",
+      "name": "Drive-up lane equipment (pneumatic tube / ITM)",
+      "division": "11",
+      "unit": "lane",
+      "qty": {
+        "per": "project",
+        "value": 3
+      },
+      "cost": {
+        "low": 30000,
+        "mid": 60000,
+        "high": 110000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived judgment per lane: pneumatic tube system or interactive teller machine incl. installation."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "atm",
+      "name": "Walk-up / drive-up ATM incl. surround",
+      "division": "11",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 40000,
+        "mid": 60000,
+        "high": 90000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived judgment: ATM unit + surround/kiosk + installation and security."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "security-systems",
+      "name": "Security: access control, CCTV, alarm",
+      "division": "28",
+      "block": "building-systems",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 25000,
+        "mid": 50000,
+        "high": 90000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/building-systems.json#e1"
+        ],
+        "derived": true,
+        "method": "Derived from _blocks/building-systems.json unit costs: \u22486 controlled doors \u00d7 $2,800 + \u224816 cameras \u00d7 $1,800 + alarm/hold-up system \u2248 $10k\u201320k."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Often bank-vendor contracted, outside the GC."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 30,
+      "mid": 50,
+      "high": 80,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived judgment: teller line/pods, offices, lobby furniture, signage-adjacent fixtures."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.14,
+      "mid": 0.18,
+      "high": 0.25,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: A/E 7\u20138% (RSMeans bank model carries 8%), permits 1\u20132%, survey/geotech 1%, insurance/legal 2%, developer/PM fee 3\u20135%; prototype designs lower A/E."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.08
+    },
+    "notes": "Bank regulatory approvals for a new branch are owner costs outside construction."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Simple commercial shells: low design contingency."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical new-build commercial hard contingency."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 280,
+      "max": 820,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Min \u2248 $250 \u00d7 1.12; max \u2248 $480 hard + specialty equipment ($100+/SF on 3,500 SF) \u00d7 1.2. | Revised 2026-10-24 (second pass, main session): the engine's all-in includes FF&E (~$50/SF here) and design/construction contingency, which the original max omitted \u2014 max = ($480 hard + $100 specialty equipment + $52 FF&E) \u00d7 1.30 soft + contingency \u2248 $820. Derived."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 335,
+      "low": 300,
+      "high": 415,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2022,
+      "source": {
+        "title": "2022 Project Costs \u2014 50 17 00 Project Costs per S.F.",
+        "url": "https://www.rsmeans.com/media/wysiwyg/quarterly_updates/2022-Project-Costs-per-Square-Foot.pdf",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Banking Institutions, Total Project Costs per S.F.: 1/4 = 300, Median = 335, 3/4 = 415 (Plumbing 3.39%, Mechanical 5.10%, Electrical 13.05% medians).",
+      "scopeNotes": "Completed bank buildings, January 2022 national dollars, incl. contractor OH&P; sitework scope not stated.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": 244.65,
+      "low": 219.29,
+      "high": 244.65,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Construction Cost Estimates for a Bank in National, US (2019 RSMeans data)",
+        "url": "https://www.rsmeans.com/model-pages/bank.aspx",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Bank ... Floor Area (S.F.): 4,100 ... SubTotal 100% $195.72 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $48.93 (union); open shop SubTotal $175.43, fees $43.86",
+      "scopeNotes": "Basic-component model building, excludes sitework. Hard = SubTotal + contractor fees (open $219.29, union $244.65); architectural fee 8% excluded. Face brick & concrete block / reinforced concrete model.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": 253.63,
+      "unit": "USD/sf",
+      "region": "US",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Office building construction costs for 2026",
+        "url": "https://www.bdcnetwork.com/construction-costs/article/55389026/office-building-construction-costs-for-2026",
+        "publisher": "Building Design + Construction (data: Gordian RSMeans)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Square Foot Costs: Office Building, 2-4 Story \u2014 National Average Q2 2026 $253.63.",
+      "scopeNotes": "Used only to infer RSMeans model escalation 2019\u21922026 (vs. 2019 office 2\u20134 story model total $187.02\u2013204.43).",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "Vault, drive-up and ATM equipment costs are derived; a bank capital budget or municipal permit valuation would verify them."
+  ]
+}

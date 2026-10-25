@@ -30,19 +30,22 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
      lines:[{lineId:'s1',scope:'res',grp:'General',code:'',desc:'Shell',basis:'ls',auto:true,qty:0,unit:1500000}],
      companies:[],contingency:{mode:'fixed',val:0},projectCosts:{land:0,dev:0,mkt:0,cls:0},
      pricingVersion:'2026.08-v2',updated:new Date().toISOString()};
-   await fetch('/api/budget/TST-9960',{method:'PUT',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({meta:{projectId:'TST-9960',name:'Dashboard Test',status:'Draft',
-       projectKey:'OP-9601'},doc})});
    // The analytics aggregates deliberately exclude TST-% ids, so the status
    // and value charts need at least one real budget to have anything to plot.
-   for(const [pid,nm,st,rate] of [['BD-7001','Northgate Flats','Draft',2400000],
-                                  ['BD-7002','Harbor Row','Completed',1750000]]){
+   // BD-7001 is saved onto OP-9601 first, so it is that project's primary;
+   // BD-7001-02 is an ALTERNATE pricing of the same project, deliberately the
+   // biggest number here — it must never be added into the project money.
+   for(const [pid,nm,st,rate,key] of [['BD-7001','Northgate Flats','Draft',2400000,'OP-9601'],
+                                      ['BD-7002','Harbor Row','Completed',1750000,'OP-9602'],
+                                      ['BD-7001-02','Northgate Flats Alternate','Draft',9000000,'OP-9601']]){
      const d=Object.assign({},doc,{projectId:pid,name:nm,status:st,
        lines:[{lineId:'s1',scope:'res',grp:'General',code:'',desc:'Shell',basis:'ls',auto:true,qty:0,unit:rate}]});
      await fetch('/api/budget/'+pid,{method:'PUT',headers:{'Content-Type':'application/json'},
-       body:JSON.stringify({meta:{projectId:pid,name:nm,status:st,
-         projectKey:pid==='BD-7001'?'OP-9601':'OP-9602'},doc:d})});
+       body:JSON.stringify({meta:{projectId:pid,name:nm,status:st,projectKey:key},doc:d})});
    }
+   await fetch('/api/budget/TST-9960',{method:'PUT',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({meta:{projectId:'TST-9960',name:'Dashboard Test',status:'Draft',
+       projectKey:'OP-9601'},doc})});
    // one analysis too, so the budget and analysis avatars can be compared
    await fetch('/api/investment-analyses',{method:'POST',headers:{'Content-Type':'application/json'},
      body:JSON.stringify({mode:'fromBudget',projectId:'TST-9960',analysisName:'Dashboard Deal'})});
@@ -431,12 +434,37 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('each row says what share of the total it is',
     await p.evaluate(()=>[...document.querySelectorAll('#dashTop .dash-rank-p')]
       .every(x=>/^\d+%$/.test(x.textContent.trim()))));
- ok('the ranking names the project, not just the id',
+ // Two namespaces: the ranking is of PROJECTS, so it shows the project's own
+ // id (OP-####) and name — never a budget id standing in for one.
+ ok('the ranking names the project by its own id and name',
     await p.evaluate(()=>{
+      const ids=[...document.querySelectorAll('#dashTop .dash-rank-id')].map(x=>x.textContent.trim());
       const r=document.querySelector('#dashTop .dash-rank-row');
-      return /BD-|OP-|AS-/.test(r.querySelector('.dash-rank-id').textContent)
+      return ids.length>0 && ids.every(i=>/^OP-\d{4}$/.test(i))
         && r.querySelector('.dash-rank-nm').textContent.trim().length>0;
-    }));
+    }),
+    (await p.locator('#dashTop .dash-rank-id').allTextContents()).join(', '));
+ // The project's money is its primary budget's alone. BD-7001-02 is an
+ // alternate of OP-9601 and the biggest number seeded; adding it in is the
+ // double-count this guards against.
+ const money=await p.evaluate(async()=>{
+   const a=await (await fetch('/api/analytics')).json();
+   const pj=(await (await fetch('/api/budgets?scope=projects')).json()).projects;
+   const live=pj.filter(x=>x.projectId==='OP-9601'||x.projectId==='OP-9602')
+     .reduce((s,x)=>s+x.liveProjectCost,0);
+   const bs=await (await fetch('/api/budgets')).json();
+   const alt=bs.find(x=>x.projectId==='BD-7001-02');
+   return {total:a.budgets.totalProjectCost,basis:a.budgets.moneyBasis,live,alt:alt&&alt.projectCost,
+     top:(a.topProjects||[]).map(t=>t.projectId+':'+t.budgetId)};
+ });
+ ok('the totals take each project’s primary budget, never a sum of its alternates',
+    money.basis==='primary' && Math.abs(money.total-money.live)<0.01 && money.total<money.alt,
+    JSON.stringify(money));
+ ok('and the ranking ranks each project by its primary budget',
+    money.top.includes('OP-9601:BD-7001') && !money.top.some(t=>/BD-7001-02/.test(t)),
+    JSON.stringify(money.top));
+ ok('the money tiles say what they add up',
+    /Primary budget per project/.test(await p.locator('#dashKpis').textContent()));
 
  ok('status breakdown renders donut charts',
     (await p.evaluate(()=>document.querySelectorAll('#dashBreakdowns svg.dash-donut').length))===2,
@@ -478,7 +506,8 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
  ok('the snapshot includes the KPIs, both donuts and the trend line',
     await p.evaluate(()=>{
       const d=document.createElement('div'); d.innerHTML=window.__dashPdf;
-      return d.querySelectorAll('.dpdf-kpi').length===8
+      // ten tiles: the eight it always had plus the two converted-project ones
+      return d.querySelectorAll('.dpdf-kpi').length===10
         && d.querySelectorAll('svg.dash-donut').length===2
         && d.querySelectorAll('svg.dash-line').length===1;
     }),
@@ -487,6 +516,23 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       return 'kpi='+d.querySelectorAll('.dpdf-kpi').length
         +' donut='+d.querySelectorAll('svg.dash-donut').length
         +' line='+d.querySelectorAll('svg.dash-line').length;
+    }));
+ ok('the snapshot carries the converted-project figures the screen leads with',
+    await p.evaluate(()=>/Converted Contract Amount/.test(window.__dashPdf)
+      && /Converted Project Amount/.test(window.__dashPdf)));
+ ok('and the project pipeline, in pipeline order',
+    await p.evaluate(()=>{
+      const d=document.createElement('div'); d.innerHTML=window.__dashPdf;
+      const t=d.querySelector('.dpdf-pipe');
+      if(!t||!/Project Pipeline/.test(window.__dashPdf)) return false;
+      const stages=[...t.querySelectorAll('tbody tr td:first-child')].map(x=>x.textContent.trim());
+      return stages[0]==='Lead' && stages.includes('Qualified') && stages.includes('Awarded');
+    }));
+ ok('the snapshot ranks projects, not budgets',
+    await p.evaluate(()=>{
+      const d=document.createElement('div'); d.innerHTML=window.__dashPdf;
+      const ids=[...d.querySelectorAll('.dash-rank-id')].map(x=>x.textContent.trim());
+      return ids.length>0 && ids.every(i=>/^OP-\d{4}$/.test(i));
     }));
  ok('the snapshot includes an activity table',
     await p.evaluate(()=>{
@@ -530,6 +576,31 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
       return r.status===400;
     }));
 
+ // ---- the log reads a role change as a sentence, not a blank Details cell
+ await p.evaluate(()=>go('dashboard')); await p.waitForTimeout(300);
+ await p.evaluate(()=>FSDashboard.refresh()); await p.waitForTimeout(900);
+ ok('a role change reads as a sentence in the Activity Log',
+    /Role changed to Director/.test(await p.locator('#dashActivityBody').textContent()),
+    (await p.locator('#dashActivityBody tr').first().textContent()).replace(/\s+/g,' ').slice(0,140));
+
+ // ---- failures say so, instead of leaving stale rows or a partial file
+ const failActivity=u=>u.toString().includes('scope=activity');
+ await p.route(failActivity,r=>r.fulfill({status:500,contentType:'text/plain',body:'boom'}));
+ await p.evaluate(()=>FSDashboard.applyFilter()); await p.waitForTimeout(500);
+ ok('an activity page that fails to load says so in place',
+    await p.locator('#dashActivityEmpty').isVisible()
+    && /Could not load the activity log/.test(await p.locator('#dashActivityEmpty').textContent()),
+    await p.locator('#dashActivityEmpty').textContent());
+ const csvFail=await p.evaluate(async()=>{
+   let clicked=false; const orig=HTMLAnchorElement.prototype.click;
+   HTMLAnchorElement.prototype.click=function(){clicked=true;};
+   try{ await FSDashboard.exportCSV(); } finally { HTMLAnchorElement.prototype.click=orig; }
+   return {clicked,toast:document.getElementById('toast').textContent};
+ });
+ ok('a CSV export whose request fails downloads nothing and says why',
+    !csvFail.clicked && /Export failed/.test(csvFail.toast), JSON.stringify(csvFail));
+ await p.unroute(failActivity);
+
  // ---- every dialog shares one look: card radius, larger title
  await p.evaluate(()=>go('home'));
  await p.waitForTimeout(600);
@@ -557,6 +628,20 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
     JSON.stringify({budget:budgetModal.size,inv:invModal&&invModal.size}));
  ok('the dialog title is larger than a section header',
     parseFloat(budgetModal.size)>15, budgetModal.size);
+ // ---- the New Investment Analysis picker: budgets under their PROJECT
+ const pick=await p.evaluate(()=>{
+   const t=document.getElementById('invProjectPick'); if(!t) return null;
+   return {grp:[...t.querySelectorAll('.inv-pick-grp')].map(g=>g.textContent.replace(/\s+/g,' ').trim()),
+     prim:[...t.querySelectorAll('tr[data-pick]')].filter(r=>r.querySelector('.inv-primary'))
+       .map(r=>r.querySelector('td').textContent.replace(/\s+/g,' ').trim())};
+ });
+ ok('the picker groups budgets under their project, by the project’s id and name',
+    !!pick && pick.grp.some(g=>/^OP-9601 · Northgate Flats/.test(g)), JSON.stringify(pick&&pick.grp));
+ ok('and marks each project’s primary budget, not its alternates',
+    !!pick && pick.prim.some(x=>/^BD-7001 Primary/.test(x)) && !pick.prim.some(x=>/BD-7001-02/.test(x)),
+    JSON.stringify(pick&&pick.prim));
+ await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+ ok('Escape closes the picker', (await p.locator('#invModal').count())===0);
  await p.evaluate(()=>{const m=document.getElementById('invModal');if(m)m.remove();});
  await p.waitForTimeout(250);
 

@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "id": "cabin-str-resort",
+  "name": "Cabin / short-term rental resort",
+  "category": "specialty-residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "key",
+  "summary": "Clusters of 400-900 SF furnished cabins operated as short-term rentals. Cost per key = the cabin (prefab/kit vs. site-built custom is the biggest swing, roughly $80-$500/SF per consumer cost guides) plus per-cabin site infrastructure (septic or sewer, water, power, driveway/parking, decks) and a share of shared amenities. No resort-scale budget was retrieved; the default is a derived build-up from consumer cost guides and the RV/campground infrastructure evidence. Confidence low.",
+
+  "sizing": {
+    "typicalSize": { "low": 6, "mid": 15, "high": 40, "unit": "key", "evidence": [], "derived": true, "method": "Judgment: small STR cabin clusters are 4-12 cabins; branded cabin resorts 20-60. Mid 15." },
+    "sfPerPrimaryUnit": { "low": 400, "mid": 600, "high": 900, "evidence": ["b1"], "derived": true, "method": "Bob Vila cites a 500-SF cabin as its national-average benchmark (b1); STR cabins range from 1-bedroom 400 SF to 2-bedroom + loft ~900 SF. Mid 600 SF." },
+    "primaryUnitsPerAcre": { "low": 1, "mid": 3, "high": 6, "evidence": [], "derived": true, "method": "Judgment: privacy-driven spacing (one cabin per 0.2-1 acre) with septic setbacks; denser where on sewer." },
+    "parkingPerPrimaryUnit": { "low": 1.0, "mid": 1.5, "high": 2.0, "type": "surface", "evidence": [], "derived": true, "method": "One to two guest vehicles per cabin plus staff; judgment." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 90000, "mid": 180000, "high": 350000,
+      "dollarYear": 2023, "region": "US",
+      "evidence": ["b1", "b2", "b3", "specialty-residential/rv-park-resort.json#e8"],
+      "derived": true,
+      "method": "Cabin + site build-up. Cabin: Bob Vila prefab cabins $80-$230/SF, custom $300-$500/SF, national average $75,000 for a 500-SF cabin (b1, b2). Mid cabin = 600 SF x ~$230/SF (top of prefab / high-finish STR spec) = ~$138k. Per-cabin site work ~$40k: utilities, septic tank ($3,500-$11,100, b3) and drainfield, driveway/parking, deck, share of roads and grading - benchmarked to the full-hookup RV site infrastructure (~$30k-$40k per site, rv e8). Mid = $138k + $40k = ~$180k. Low = 400 SF kit/prefab at ~$150/SF ($60k) + $30k site; high = 800-900 SF custom at ~$350/SF (~$280k) + $70k site (well, engineered septic, long drives)."
+    },
+    "perSF": {
+      "low": 200, "mid": 300, "high": 400,
+      "dollarYear": 2023, "region": "US",
+      "evidence": ["b2"],
+      "derived": true,
+      "method": "perPrimaryUnit / sfPerPrimaryUnit (90k/400 ~ $225; 180k/600 = $300; 350k/900 ~ $390), rounded; includes per-cabin site work, which is why it sits above the prefab $80-$230/SF building-only range (b2)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. general conditions and OH&P for the cabin (delivered/assembled or site-built, finished) and per-cabin and shared on-site work (grading, roads, parking, utilities, septic, landscaping). Excludes land, soft costs, FF&E/OS&E, off-site utility extensions, tap/impact fees."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.6, "standard": 1.0, "premium": 1.4, "luxury": 1.95,
+    "evidence": [], "derived": true,
+    "method": "low/mid = 0.5 tempered to 0.6; high/mid = 1.94."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.07 },
+      { "division": "03", "pct": 0.07 },
+      { "division": "06", "pct": 0.17 },
+      { "division": "07", "pct": 0.08 },
+      { "division": "08", "pct": 0.05 },
+      { "division": "09", "pct": 0.08 },
+      { "division": "10", "pct": 0.01 },
+      { "division": "11", "pct": 0.02 },
+      { "division": "12", "pct": 0.03 },
+      { "division": "22", "pct": 0.06 },
+      { "division": "23", "pct": 0.04 },
+      { "division": "26", "pct": 0.06 },
+      { "division": "31", "pct": 0.06 },
+      { "division": "32", "pct": 0.08 },
+      { "division": "33", "pct": 0.12 }
+    ],
+    "evidence": ["specialty-residential/cottage-court.json#k3"],
+    "derived": true,
+    "method": "Cabin portion (~78%) split per NAHB construction-stage shares (cottage-court k3) mapped to CSI; site portion (~22%) weighted to utilities/septic (33) and roads/parking/decks (32) given rural sites with on-site wastewater."
+  },
+
+  "lineItems": [
+    {
+      "id": "cabin-structure",
+      "name": "Cabin structure, finished (prefab/kit or site-built)",
+      "division": "06",
+      "unit": "sf",
+      "qty": { "per": "sf", "value": 1 },
+      "cost": { "low": 150, "mid": 230, "high": 400, "dollarYear": 2023, "region": "US", "evidence": ["b2"], "derived": true, "method": "Bob Vila: prefab $80-$230/SF; custom $300-$500/SF; kits $50-$80/SF materials only (b2). Mid at top of prefab range for STR-grade finishes." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out; per SF of cabin."
+    },
+    {
+      "id": "septic-per-cabin",
+      "name": "Septic tank and drainfield per cabin (or shared cluster system)",
+      "division": "33",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 8000, "mid": 15000, "high": 30000, "dollarYear": 2023, "region": "US", "evidence": ["b3"], "derived": true, "method": "Bob Vila septic tank $3,500-$11,100 (b3) plus drainfield/lines; high for engineered/mound systems." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out. Replace with sewer laterals where municipal sewer exists."
+    },
+    {
+      "id": "foundation",
+      "name": "Cabin foundation (piers/slab/crawlspace)",
+      "division": "03",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 7000, "mid": 12000, "high": 19000, "dollarYear": 2023, "region": "US", "evidence": ["b1"], "derived": false, "method": "Bob Vila: average foundation cost $7,000-$19,000 (b1)." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "hot-tub-deck",
+      "name": "Private hot tub on deck (STR amenity)",
+      "division": "13",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 8000, "mid": 14000, "high": 25000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment: 4-6 person hot tub, dedicated 50A circuit and reinforced deck area." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Strong STR revenue driver; often standard in premium tier."
+    },
+    {
+      "id": "well-water-system",
+      "name": "Shared well and water system",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 30000, "mid": 80000, "high": 200000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment; public water system rules may apply above ~15 connections/25 people." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Rural sites without municipal water."
+    },
+    {
+      "id": "check-in-amenity-building",
+      "name": "Check-in / amenity / maintenance building",
+      "division": "06",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 100000, "mid": 300000, "high": 800000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment: 600-2,500 SF at ~$170-$320/SF; many small STR clusters have none (self check-in)." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Resort-scale projects."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 12000, "mid": 25000, "high": 50000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Judgment: furnishing a 1-2 bedroom STR cabin (beds, linens, kitchenware, living furniture, outdoor furniture, smart lock/TV/Wi-Fi). No source retrieved; verify with STR furnishing packages." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.10, "mid": 0.15, "high": 0.22, "evidence": [], "derived": true, "method": "Judgment: prefab/repeat cabin plans lower A&E; septic design, rural entitlements (STR permits, conditional use) and survey add. Mid 15%." },
+    "breakdown": { "architectureEngineering": 0.06 },
+    "notes": "Excludes pre-opening/marketing and OS&E."
+  },
+
+  "contingency": {
+    "design": { "low": 0.05, "mid": 0.08, "high": 0.12, "evidence": [], "derived": true, "method": "Judgment." },
+    "hard": { "low": 0.05, "mid": 0.08, "high": 0.12, "evidence": [], "derived": true, "method": "Judgment; higher for remote sites (rock, access, perc failure)." },
+    "soft": { "low": 0.03, "mid": 0.05, "high": 0.10, "evidence": [], "derived": true, "method": "General norm." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 80000, "max": 500000, "dollarYear": 2023, "region": "US", "method": "Min = small prefab cabin + basic site, low soft; max = 900 SF custom cabin ($500/SF, b2) + engineered site + soft costs." }
+  },
+
+  "evidence": [
+    {
+      "id": "b1", "metric": "cabinCost", "value": 75000, "low": 50000, "high": 150000, "unit": "USD/unit",
+      "region": "United States", "regionKey": "US", "dataYear": 2023,
+      "source": { "title": "How Much Does It Cost to Build a Cabin?", "url": "https://www.bobvila.com/articles/cost-to-build-a-cabin.md", "publisher": "Bob Vila (BobVila.com)", "accessed": "2026-10-24" },
+      "quote": "The national average to build a 500-square-foot cabin is $75,000.",
+      "scopeNotes": "Consumer guide dated 2023-07-25. Log cabin range $50,000-$150,000. Foundation: 'The average foundation cost is between $7,000 and $19,000.' Building cost; land and most site utilities excluded.",
+      "confidence": "low"
+    },
+    {
+      "id": "b2", "metric": "cabinCostPerSF", "low": 80, "high": 500, "unit": "USD/sf",
+      "region": "United States", "regionKey": "US", "dataYear": 2023,
+      "source": { "title": "How Much Does It Cost to Build a Cabin?", "url": "https://www.bobvila.com/articles/cost-to-build-a-cabin.md", "publisher": "Bob Vila (BobVila.com)", "accessed": "2026-10-24" },
+      "quote": "A custom cabin can cost between $300 and $500 per square foot ... a prefabricated cabin can fall between $80 and $230 per square foot.",
+      "scopeNotes": "Low/high span prefab low to custom high. Log cabin kits $50-$80/SF (materials).",
+      "confidence": "low"
+    },
+    {
+      "id": "b3", "metric": "septicTank", "low": 3500, "high": 11100, "unit": "USD/ea",
+      "region": "United States", "regionKey": "US", "dataYear": 2023,
+      "source": { "title": "How Much Does It Cost to Build a Cabin?", "url": "https://www.bobvila.com/articles/cost-to-build-a-cabin.md", "publisher": "Bob Vila (BobVila.com)", "accessed": "2026-10-24" },
+      "quote": "Utilities table: Septic tank $3,500 to $11,100 (labor and materials)",
+      "scopeNotes": "Single-residence septic tank; drainfield may be separate.",
+      "confidence": "low"
+    }
+  ],
+
+  "openQuestions": [
+    "No resort-scale cabin STR budget was retrieved (web search budget exhausted). Look for: lender feasibility studies for cabin resorts, prefab cabin manufacturer price lists (delivered/set), public bid tabs for state park cabins (e.g., Idaho Farragut SP cabins in the 2024 campground bid).",
+    "FF&E per key and hot tub costs are judgment only."
+  ]
+}

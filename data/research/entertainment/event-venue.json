@@ -1,0 +1,477 @@
+{
+  "schemaVersion": 1,
+  "id": "event-venue",
+  "name": "Event / wedding venue",
+  "category": "entertainment",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Banquet/wedding venue: one large clear-span hall with a catering (warming or full) kitchen, bridal suites, restrooms, outdoor ceremony lawn/terrace and parking. Building cost tracks RSMeans social-club and country-club models; finish level (rustic barn vs. estate) and grounds drive the spread. Texas TDLR filings for new banquet halls (2022–24) show owner-estimated costs of ~$70–110/SF (one $417/SF outlier), well below RSMeans-based figures (~$235/SF in 2023 $ with sitework); the mid splits the difference and should be verified.",
+  "sizing": {
+    "typicalSize": {
+      "low": 5000,
+      "mid": 12000,
+      "high": 20000,
+      "unit": "sf",
+      "evidence": [
+        "e5",
+        "e6",
+        "e7",
+        "e8",
+        "e9"
+      ],
+      "derived": true,
+      "method": "TDLR banquet halls: 11,669–20,918 SF (e5–e9). Typical independent wedding/event venues hold 150–400 guests seated; at ~25 gross SF per seated guest (hall ~12–15 SF/guest banquet plus kitchen, suites, restrooms, circulation) → ~4,000–10,000 SF; larger multi-room venues 15,000–20,000 SF. Derived."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 3000,
+      "mid": 5000,
+      "high": 8000,
+      "evidence": [],
+      "derived": true,
+      "method": "Building SF per acre: event venues are low-FAR with lawn/ceremony grounds and parking (~0.4 spaces/guest). Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.008,
+      "mid": 0.012,
+      "high": 0.016,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per building SF: ~1 space per 2.5–3 guests at ~25 SF/guest ≈ 13 per 1,000 SF; assembly-use zoning commonly 1 per 3–4 seats. Derived."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 95,
+      "mid": 180,
+      "high": 400,
+      "dollarYear": 2023,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e5",
+        "e6",
+        "e7",
+        "e8",
+        "e9"
+      ],
+      "derived": true,
+      "method": "2023 dollars. Two evidence families disagree: (a) RSMeans 2019 building hard cost social club $157 union / $142 open shop (e1), community center $134 (e2), country club $205 (e3) → ≈ $175–$270 in 2023 dollars, ≈ $235 for social club incl. ~15% on-site work; (b) Texas TDLR owner-filed estimates for new banquet halls 2022–24: $69 (e6), $85 (e5), $96 (e9), $108 (e7) per SF, plus a $417 outlier (e8) — median ≈ $96, likely building-only and understated, and Texas is below national cost. Mid $180 ≈ midpoint of (a) ≈ $235 and (b) adjusted to national with sitework ≈ $120. Low $95 ≈ TDLR-type simple banquet box; high $400 ≈ estate/luxury venue (country-club finish) and the e8 outlier."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P and typical on-site work (parking, lawn/terrace, landscaping, utilities). Excludes land, soft costs, FF&E (tables, chairs, AV, decor), catering equipment beyond basic, off-sites, impact/tap fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.55,
+    "standard": 1.0,
+    "premium": 1.45,
+    "luxury": 2.2,
+    "evidence": [
+      "e1",
+      "e3",
+      "e6",
+      "e8"
+    ],
+    "derived": true,
+    "method": "economy ≈ low/mid (95/180 = 0.53); luxury ≈ high/mid (400/180 = 2.2); premium interpolated."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.09
+      },
+      {
+        "division": "03",
+        "pct": 0.08
+      },
+      {
+        "division": "04",
+        "pct": 0.03
+      },
+      {
+        "division": "05",
+        "pct": 0.08
+      },
+      {
+        "division": "06",
+        "pct": 0.05
+      },
+      {
+        "division": "07",
+        "pct": 0.07
+      },
+      {
+        "division": "08",
+        "pct": 0.06
+      },
+      {
+        "division": "09",
+        "pct": 0.11
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "11",
+        "pct": 0.03
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.06
+      },
+      {
+        "division": "23",
+        "pct": 0.09
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "27",
+        "pct": 0.01
+      },
+      {
+        "division": "28",
+        "pct": 0.01
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.06
+      },
+      {
+        "division": "33",
+        "pct": 0.02
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived: assembly building with long-span roof (05/07), high finish share (09), catering kitchen (11, 22, 23), plus ~11% on-site work (31–33) consistent with the 1.18 sitework adder. Not taken from a published estimate; RSMeans model pages show totals only."
+  },
+  "lineItems": [
+    {
+      "id": "catering-kitchen",
+      "name": "Catering kitchen equipment and hood (full-prep)",
+      "division": "11",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 75000,
+        "mid": 175000,
+        "high": 350000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance: warming kitchen ~$50–100k; full-prep kitchen with Type I hood, walk-in, ranges/ovens, dish ~$150–350k."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Not in baseline hard cost (equipment)."
+    },
+    {
+      "id": "ceremony-site",
+      "name": "Outdoor ceremony site / pergola / terrace hardscape",
+      "division": "32",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 50000,
+        "mid": 150000,
+        "high": 400000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "_blocks/amenities.json#e23"
+        ],
+        "derived": true,
+        "method": "Derived: 2,000–5,000 SF terrace at $20–40/SF plus pergola/arbor (pergola costs per amenities block, Fixr) and lighting."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "bridal-suites",
+      "name": "Bridal / groom suites (finished)",
+      "division": "09",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 800
+      },
+      "cost": {
+        "low": 200,
+        "mid": 275,
+        "high": 400,
+        "dollarYear": 2019,
+        "region": "US",
+        "evidence": [
+          "e3"
+        ],
+        "derived": true,
+        "method": "Finished residential-grade suites; ~country-club $/SF (e3, 2019 $205) with finish upgrade."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 10,
+      "mid": 20,
+      "high": 40,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Banquet tables/chairs (~$100–200 per guest), AV/lighting, bar, decor; at ~25 SF per guest ≈ $8–16/SF plus AV. Derived."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.15,
+      "mid": 0.2,
+      "high": 0.25,
+      "evidence": [
+        "e1"
+      ],
+      "derived": true,
+      "method": "RSMeans models carry ~6–7.5% architectural fees (e1 page: architectural fees 7%); add civil/site, MEP engineering, permits, surveys, testing, legal, insurance → ~15–25%. Derived."
+    },
+    "notes": "Rural venues may need septic/well studies and special-use permits (noise, assembly)."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical new-build design contingency."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical new-build construction contingency."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 90,
+      "max": 520,
+      "dollarYear": 2023,
+      "region": "US",
+      "method": "TDLR-type simple hall (~$95 hard, minimal soft) to luxury venue $400 × 1.3 incl. soft; 2023 dollars."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "buildingHardCostPerSF",
+      "value": 157.45,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Club, Social - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/social-club",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Club, Social with Decorative Concrete Block / Steel Joists ... SubTotal 100% $125.96 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $31.49",
+      "scopeNotes": "2019 RSMeans national model, 22,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $157.45/SF; open shop = $142.0/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Closest RSMeans model to a banquet/event hall.",
+      "confidence": "medium",
+      "low": 142.0,
+      "high": 157.45
+    },
+    {
+      "id": "e2",
+      "metric": "buildingHardCostPerSF",
+      "value": 134.36,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Community Center - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/community-center",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Community Center with Decorative Concrete Block / Bearing Walls ... SubTotal 100% $107.49 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $26.87",
+      "scopeNotes": "2019 RSMeans national model, 10,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $134.36/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "buildingHardCostPerSF",
+      "value": 205.36,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Club, Country - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/country-club",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Club, Country with Brick Veneer / Wood Frame ... SubTotal 100% $164.29 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $41.07",
+      "scopeNotes": "2019 RSMeans national model, 6,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $205.36/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Upper-finish clubhouse/event building proxy.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "buildingHardCostPerSF",
+      "value": 205.16,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Restaurant - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/restaurant",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Restaurant with Brick Veneer / Wood Frame ... SubTotal 100% $164.13 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $41.03",
+      "scopeNotes": "2019 RSMeans national model, 5,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $205.16/SF; open shop = $186.33/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Proxy for catering kitchen area density.",
+      "confidence": "medium",
+      "low": 186.33,
+      "high": 205.16
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": 85.18,
+      "unit": "USD/sf",
+      "region": "Houston, TX",
+      "regionKey": "TX-Houston",
+      "dataYear": 2022,
+      "source": {
+        "title": "TABS2021011901 - Lemus Banquet Hall",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2021011901",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $1,700,000 Type of Work: New Construction ... Square Footage: 19,958 ft 2",
+      "scopeNotes": "Owner-filed estimate for accessibility review (often building-only and understated): $1,700,000 / 19,958 SF ≈ $85/SF. Construction 2022.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostPerSF",
+      "value": 68.56,
+      "unit": "USD/sf",
+      "region": "Lancaster, TX",
+      "regionKey": "TX-DFW",
+      "dataYear": 2023,
+      "source": {
+        "title": "TABS2023005718 - United Village Banquet",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2023005718",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $800,000 Type of Work: New Construction ... New Construction of an 11,669 SF Banquet Hall",
+      "scopeNotes": "Owner-filed estimate for accessibility review (often building-only and understated): $800,000 / 11,669 SF ≈ $69/SF.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": 108.14,
+      "unit": "USD/sf",
+      "region": "Dallas, TX",
+      "regionKey": "TX-DFW",
+      "dataYear": 2022,
+      "source": {
+        "title": "TABS2022020744 - The Crown Venue",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2022020744",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $1,600,000 Type of Work: New Construction ... A new 14,796 sqft banquet hall facility with a mezzanine floor and outdoor balcony and patio.",
+      "scopeNotes": "Owner-filed estimate for accessibility review (often building-only and understated): $1,600,000 / 14,796 SF ≈ $108/SF.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerSF",
+      "value": 416.67,
+      "unit": "USD/sf",
+      "region": "Irving, TX",
+      "regionKey": "TX-DFW",
+      "dataYear": 2024,
+      "source": {
+        "title": "TABS2024008718 - Delight Banquet Hall",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2024008718",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $5,000,000 Type of Work: New Construction ... 12K sq ft banquet hall construction",
+      "scopeNotes": "Owner-filed estimate for accessibility review (often building-only and understated): $5,000,000 / 12,000 SF ≈ $417/SF. High outlier; may include more than construction.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9",
+      "metric": "hardCostPerSF",
+      "value": 95.61,
+      "unit": "USD/sf",
+      "region": "Houston, TX",
+      "regionKey": "TX-Houston",
+      "dataYear": 2022,
+      "source": {
+        "title": "TABS2022014533 - Sterling Manor Banquet Hall",
+        "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2022014533",
+        "publisher": "Texas Department of Licensing and Regulation (TABS)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Estimated Cost: $2,000,000 Type of Work: New Construction ... 2-story, 20,918 sq.ft banquet hall.",
+      "scopeNotes": "Owner-filed estimate for accessibility review (often building-only and understated): $2,000,000 / 20,918 SF ≈ $96/SF.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "Compare TDLR owner estimates with actual contract values to calibrate the gap vs. RSMeans.",
+    "Confirm typical seated capacity and SF per guest from venue operator data."
+  ]
+}

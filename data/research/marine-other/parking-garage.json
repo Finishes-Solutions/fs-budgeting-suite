@@ -1,0 +1,532 @@
+{
+  "schemaVersion": 1,
+  "id": "parking-garage",
+  "name": "Parking garage",
+  "category": "marine-other",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "space",
+  "summary": "Freestanding above-grade structured parking is well benchmarked: WGI's annual Parking Structure Cost Outlook (national median of hundreds of completed garages) is the anchor, with RLB-based city averages (UCLA ITS 2026) and a recent public design-build contract showing the upper range. Cost is driven by efficiency (SF per space), structural system, facade, sprinklers/EV mandates and market; below-grade parking is excluded and roughly 1.4x+ more expensive.",
+  "sizing": {
+    "typicalSize": {
+      "low": 300,
+      "mid": 600,
+      "high": 1500,
+      "unit": "space",
+      "evidence": [
+        "e5"
+      ],
+      "derived": true,
+      "method": "Municipal/institutional garages seen in this research range from ~450 spaces (Frisco Rail District, e5) to 1,000+; mid 600 is a typical stand-alone municipal/campus garage. Judgment, verify per project."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 315,
+      "mid": 337,
+      "high": 360,
+      "evidence": [
+        "e1",
+        "e2"
+      ],
+      "derived": true,
+      "method": "Implied gross SF per space from WGI medians: 2026 $33,300 / $98.75 = 337 SF; 2024 $29,900 / $89.45 = 334 SF; Houston 2026 $27,806 / $82.46 = 337 SF. Low/high +/- ~7% for efficient long-span vs. constrained sites."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 250,
+      "mid": 450,
+      "high": 700,
+      "evidence": [],
+      "derived": true,
+      "method": "Footprint ~ 43,560 SF x 0.8 usable / 337 SF per space = ~100 spaces per level per acre; 3-7 supported levels -> ~300-700 spaces per acre of site. Mid assumes ~4.5 levels."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 27800,
+      "mid": 33300,
+      "high": 52000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "e8"
+      ],
+      "derived": false,
+      "method": "Mid = WGI 2026 national median $33,300/space (e1), hard construction only. Low = WGI's lowest-cost major market, Houston, $27,806 (e1). High = UCLA ITS / RLB 2025 17-city average for above-ground structures, $52,000 (e4), corroborated by Frisco TX 451-space design-build contract at ~$52,900/space incl. ground-floor retail shell (e5); San Francisco $43,000 (e1) sits between. UCLA figure is 2025 dollars (within 1 year of 2026). RLB Q3 2026 'Parking — Ground' city ranges (e8) have a median midpoint of ~$165/SF (~$55.6k/space), i.e., core-city consultant ranges sit near the high value; WGI's completed-project median is kept as the national mid because it covers suburban/campus garages too."
+    },
+    "perSF": {
+      "low": 82.46,
+      "mid": 98.75,
+      "high": 154,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e4",
+        "e8"
+      ],
+      "derived": false,
+      "method": "WGI 2026 median $98.75/SF (e1); low = Houston $82.46/SF (e1); high = $52,000/space (e4) / 337 SF per space = ~$154/SF. RLB 2026 city median midpoint ~$165/SF (e8) supports the high."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": true,
+      "includesFFE": false,
+      "notes": "WGI medians are construction cost only (contractor price) for open, naturally ventilated precast or CIP above-grade garages with shallow foundations, standard LED lighting, conventional PARCS; excludes land, A/E, testing, permits, financing. WGI notes most garages in its database predate 2021 IBC so the median 'generally does not reflect' full sprinklers, and EV spaces were only 1-2% (e3) — add those via line items."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.85,
+    "standard": 1.0,
+    "premium": 1.25,
+    "luxury": 1.55,
+    "evidence": [
+      "e1",
+      "e4"
+    ],
+    "derived": true,
+    "method": "Economy = Houston/median (27,806/33,300 = 0.84). Premium ~ San Francisco/median (43,000/33,300 = 1.29) rounded down to 1.25 for architectural facade/curtain-wall stairs. Luxury = RLB 17-city above-ground average/median (52,000/33,300 = 1.56)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.55
+      },
+      {
+        "division": "05",
+        "pct": 0.03
+      },
+      {
+        "division": "07",
+        "pct": 0.03
+      },
+      {
+        "division": "08",
+        "pct": 0.01
+      },
+      {
+        "division": "09",
+        "pct": 0.02
+      },
+      {
+        "division": "10",
+        "pct": 0.01
+      },
+      {
+        "division": "14",
+        "pct": 0.04
+      },
+      {
+        "division": "21",
+        "pct": 0.03
+      },
+      {
+        "division": "22",
+        "pct": 0.03
+      },
+      {
+        "division": "23",
+        "pct": 0.01
+      },
+      {
+        "division": "26",
+        "pct": 0.06
+      },
+      {
+        "division": "28",
+        "pct": 0.02
+      },
+      {
+        "division": "31",
+        "pct": 0.05
+      },
+      {
+        "division": "32",
+        "pct": 0.02
+      },
+      {
+        "division": "33",
+        "pct": 0.01
+      }
+    ],
+    "evidence": [
+      "e7"
+    ],
+    "derived": true,
+    "method": "No public elemental breakdown for a garage was found. Derived for a typical precast/CIP open garage (WGI 'median-cost' description, e3): structure (03) dominates at ~55%; general conditions/fee 8% (RSMeans model shows contractor fees of 25% on its subtotal, e7, but our baseline already includes OH&P throughout, so only GC is carried in 01); elevators 2 cars ~4%; drainage/plumbing 3%; dry sprinkler/standpipe 3%; lighting/power 6%; PARCS/security 2%; foundations/earthwork 5%; site paving/landscape 2%; utilities 1%. Verify against a bid tab."
+  },
+  "lineItems": [
+    {
+      "id": "fire-sprinkler-dry",
+      "name": "Full dry-pipe sprinkler system (2021 IBC trigger: >48,000 SF footprint or >55 ft)",
+      "division": "21",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 3.5,
+        "mid": 5,
+        "high": 8,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e3"
+        ],
+        "derived": true,
+        "method": "WGI states its median generally does not reflect a fully sprinklered garage (e3). Dry-pipe systems in unheated garages typically price ~$3.5-8/SF of garage floor; mid $5/SF is an estimating judgment, not a sourced figure — verify with a fire-protection sub."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Switch on where 2021+ IBC applies (large footprints or tall garages)."
+    },
+    {
+      "id": "ev-charging-l2",
+      "name": "EV charging — Level 2 port incl. conduit, panel capacity, install",
+      "division": "26",
+      "unit": "port",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 0.1
+      },
+      "cost": {
+        "low": 6000,
+        "mid": 10000,
+        "high": 16000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e3"
+        ],
+        "derived": true,
+        "method": "WGI notes EV mandates can reach 25% (commercial) to 100% (multifamily) of spaces vs. 1-2% historically (e3), so EV is outside the median. Per-port cost is an estimating judgment for networked L2 with conduit/transformer share; qty default 10% of spaces. Verify locally."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Set qty to the local EV-capable/EV-installed mandate."
+    },
+    {
+      "id": "elevators",
+      "name": "Passenger elevators (typically 2 cars per stair/elevator core)",
+      "division": "14",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 2
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 225000,
+        "high": 350000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Carve-out of the 04% division-14 share in systemSplit: 0.04 x $33,300 x 600 spaces = ~$800k for a typical garage, i.e., ~2-3 cars at ~$225k-400k incl. glass-backed cab and hoistway. Shown for reference only."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Already inside the baseline per-space cost."
+    },
+    {
+      "id": "parcs",
+      "name": "Parking access & revenue control (PARCS) — gated entry/exit lanes",
+      "division": "11",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 2
+      },
+      "cost": {
+        "low": 40000,
+        "mid": 75000,
+        "high": 125000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e3"
+        ],
+        "derived": true,
+        "method": "WGI's median garage includes a 'conventional parking access and revenue-control system' (e3). Per-lane cost (gate, ticket/LPR, pay station share) is an estimating judgment; qty = 1 entry + 1 exit lane."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Inside the baseline; upgrade to LPR/ticketless adds modestly."
+    },
+    {
+      "id": "below-grade-premium",
+      "name": "Below-grade / podium parking premium (per space)",
+      "division": "31",
+      "unit": "space",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 0
+      },
+      "cost": {
+        "low": 15000,
+        "mid": 21000,
+        "high": 40000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e4"
+        ],
+        "derived": true,
+        "method": "UCLA ITS / RLB 2025: underground average $73,000/space vs above-ground $52,000/space (e4) -> ~$21,000 premium per space. Low/high reflect the wide city spread ($40k-$111k underground). Set qty = share of spaces below grade."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "WGI excludes underground and beneath-building garages from its median (e1)."
+    },
+    {
+      "id": "ground-floor-retail-shell",
+      "name": "Ground-floor retail liner shell (cold dark shell)",
+      "division": "03",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 0
+      },
+      "cost": {
+        "low": 150,
+        "mid": 200,
+        "high": 275,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e5"
+        ],
+        "derived": true,
+        "method": "Garages with ground-floor retail (e.g., Frisco, e5) carry a shell premium over garage SF; $/SF is an estimating judgment for storefront shell with MEP stub-outs. Enter retail SF as qty."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "TI for the retail space is separate (see interior-finish-out)."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.15,
+      "mid": 0.2,
+      "high": 0.25,
+      "evidence": [
+        "e2",
+        "e6"
+      ],
+      "derived": false,
+      "method": "WGI: soft costs 'typically add about 15% to 25%' to construction cost (e2, e6). Mid = midpoint."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.06
+    },
+    "notes": "A/E for repetitive precast garages commonly runs ~5-7% (RSMeans model applies 6% architectural fees, e7). Design-build delivery is common for municipal garages."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Simple, repetitive building type -> low end of typical design contingency norms (judgment)."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical owner construction contingency for new structured parking; 10% used where geotech/foundation risk is high (judgment)."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "General soft-cost contingency norm (judgment)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 30000,
+      "max": 80000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Hard low $27.8k x 1.15 soft = ~$32k (rounded to $30k); hard high $52k x 1.25 soft x 1.10 contingency = ~$72k, rounded up to $80k for EV/sprinkler-mandated coastal markets. Below-grade parking can exceed this."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerUnit",
+      "value": 33300,
+      "low": 27806,
+      "high": 43000,
+      "unit": "USD/space",
+      "region": "United States (national median; Houston low, San Francisco high)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Parking structure construction cost up 6% in 2026",
+        "url": "https://www.bdcnetwork.com/building-sector-reports/transportation-parking-facilities/article/55403221/parking-structure-construction-cost-up-6-in-2026",
+        "publisher": "Building Design + Construction (reporting WGI 2026 Parking Structure Cost Outlook)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The median structure construction cost reached $33,300 per space, or $98.75 per square foot ... San Francisco remains the nation's highest-cost market at $43,000 per space and $126.40 per square foot ... Houston ... $27,806 per space and $82.46 per square foot.",
+      "scopeNotes": "Hard construction cost of above-grade parking structures; underground excluded.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerUnit",
+      "value": 29900,
+      "unit": "USD/space",
+      "region": "United States (national median)",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "WGI's Parking Structure Cost Outlook for 2024 (PDF)",
+        "url": "https://publications.wginc.com/hubfs/WGIs%20Parking%20Structure%20Cost%20Outlook%20for%202024.pdf",
+        "publisher": "WGI",
+        "accessed": "2026-10-24"
+      },
+      "quote": "As of May 2024, our statistical data indicate that the median construction cost for a new parking structure is $29,900 per space, or $89.45 per square foot ... Soft costs typically add about 15% to 25% to the actual construction costs.",
+      "scopeNotes": "Excludes land, A/E fees, environmental, testing, inspections, geotech, financing, owner admin/legal, permitting. Below-grade structures omitted as outliers.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3",
+      "metric": "scopeOfBaseline",
+      "value": null,
+      "unit": "text",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "WGI's Parking Structure Cost Outlook for 2024 (PDF)",
+        "url": "https://publications.wginc.com/hubfs/WGIs%20Parking%20Structure%20Cost%20Outlook%20for%202024.pdf",
+        "publisher": "WGI",
+        "accessed": "2026-10-24"
+      },
+      "quote": "while our analysis does include fire-sprinklered facilities, the median cost generally does not reflect the cost of a fully sprinklered garage ... EV spaces historically made up only 1% to 2% of the total, at most.",
+      "scopeNotes": "Median-cost garage typically includes precast superstructure and facade, glass-backed elevators, shallow foundations, all above grade, open naturally ventilated, conventional PARCS, LED lighting.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerUnit",
+      "value": 52000,
+      "low": 29000,
+      "high": 99000,
+      "unit": "USD/space",
+      "region": "17 U.S. cities (average)",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "New report: No such thing as free parking",
+        "url": "https://www.its.ucla.edu/2026/02/19/no-such-thing-as-free-parking",
+        "publisher": "UCLA Institute of Transportation Studies (using 2025 Rider Levett Bucknall cost data)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Aboveground parking structures cost, on average, $52,000 per space, with costs ranging from $29,000 in Phoenix, Arizona and Washington, D.C., to $99,000 in Portland, Oregon.",
+      "scopeNotes": "Excludes land. Underground averages ~$73,000/space ($40k DC to $111k Portland). Derived from RLB $/SF ranges x SF/space, likely skewed to high-cost core cities.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerUnit",
+      "value": 52905,
+      "unit": "USD/space",
+      "region": "Frisco, TX",
+      "regionKey": "TX-Dallas",
+      "dataYear": 2025,
+      "source": {
+        "title": "Frisco sets construction date for Rail District parking garage",
+        "url": "https://communityimpact.com/frisco/government/frisco-sets-construction-date-for-rail-district-parking-garage/",
+        "publisher": "Community Impact",
+        "accessed": "2026-10-24"
+      },
+      "quote": "$23.86 million lump sum ... 451 parking spaces ... five stories ... retail space available on a portion of the ground floor.",
+      "scopeNotes": "Design-build (McCarthy) construction lump sum $23.86M / 451 spaces = $52,905/space (our arithmetic); includes ground-floor retail shell; earlier design work brings total to $26.01M. Approved Jan 7, 2025.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "softCostPct",
+      "value": null,
+      "low": 0.15,
+      "high": 0.25,
+      "unit": "pct",
+      "region": "United States",
+      "regionKey": "US",
+      "source": {
+        "title": "WGI releases 2026 parking structure cost outlook",
+        "url": "https://www.parking-mobility.org/news/wgi-releases-2026-parking-structure-cost-outlook/",
+        "publisher": "National Parking Association",
+        "accessed": "2026-10-24"
+      },
+      "quote": "an additional 15% to 25%",
+      "scopeNotes": "Soft costs on top of hard construction cost per WGI 2026; also reports 2025 median $31,400/space.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": 73.75,
+      "unit": "USD/sf",
+      "region": "United States (national average)",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Parking Garage — RSMeans square foot model",
+        "url": "https://www.rsmeans.com/model-pages/parking-garage",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cast in Place Concrete, 145,000 S.F., 5 stories: Contractor fees 25% $13.92; Architectural fees 6% $4.17; Total building cost $73.75 (union) / $65.16 (open shop)",
+      "scopeNotes": "2019 RSMeans model, includes 6% architectural fees (soft) inside total; used only for fee structure context, not for the default.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerSF",
+      "value": 165,
+      "low": 60,
+      "high": 340,
+      "unit": "USD/sf",
+      "region": "18 U.S. cities (RLB indicative ranges; median of city midpoints)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "RLB Construction Cost Report North America Q3 2026 (PDF), Indicative Construction Costs — Parking: Ground",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table, PARKING GROUND column (USD/SF GFA): Dallas 120-200; Chicago 105-155; New York 125-220; Phoenix 60-125; Washington, D.C. 75-100; San Francisco 140-210; Portland 290-340",
+      "scopeNotes": "Hard construction cost per SF of gross floor area for above-ground ('ground') structured parking; basement parking is a separate column (e.g., Dallas 170-275). Median of the 18 US city midpoints = ~$165/SF (our arithmetic) -> ~$55,600/space at 337 SF. Core-city cost-consultant ranges run well above WGI's completed-project median.",
+      "confidence": "high"
+    }
+  ],
+  "openQuestions": [
+    "Obtain a public elemental breakdown (bid tab with schedule of values) for a precast garage to replace the derived systemSplit.",
+    "Source per-port EV charging and dry-sprinkler $/SF costs (currently estimating judgment).",
+    "WGI full city table (2026) would allow regional evidence beyond Houston and San Francisco."
+  ]
+}

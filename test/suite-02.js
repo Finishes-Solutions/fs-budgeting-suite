@@ -30,13 +30,18 @@ const BASE = 'http://127.0.0.1:8100';
      && (await p.locator('#page-home button:has-text("Multifamily")').count()) === 0
      && (await p.locator('#page-home button:has-text("+ Blank Budget")').count()) === 0);
   await p.click('button:has-text("+ New Budget")'); await p.waitForTimeout(200);
-  ok('the modal offers Multifamily and Blank, with future types disabled',
+  // Industrial, Retail and Mixed-Use used to be a muted "coming soon" line; the
+  // estimate option (budgeting v2) now covers them and every other type, and
+  // leads the list. Multifamily and Blank stay exactly as they were.
+  ok('the modal leads with Estimate Any Project Type, then Multifamily and Blank',
      await p.evaluate(() => {
        const rows = [...document.querySelectorAll('#newBudgetModal .tpl-row')];
-       const by = n => rows.find(r => r.textContent.includes(n));
-       return !!by('Multifamily') && !by('Multifamily').disabled
+       const name = r => r.querySelector('.tpl-name').textContent.trim();
+       const by = n => rows.find(r => name(r) === n);
+       return name(rows[0]) === 'Estimate Any Project Type'
+         && !!by('Multifamily') && !by('Multifamily').disabled
          && !!by('Blank Budget') && !by('Blank Budget').disabled
-         && by('Industrial').disabled && by('Retail').disabled && by('Mixed-Use').disabled;
+         && !document.getElementById('nbComingSoon');
      }));
   ok('custom templates show an empty state when none exist',
      /No custom templates yet/.test(await p.locator('#customTplList').textContent()));
@@ -51,7 +56,7 @@ const BASE = 'http://127.0.0.1:8100';
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ create: true, name: 'Waller Preview', address: '1 Waller Way' }) });
   });
-  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row:has-text("Multifamily")'));
+  await p.click('button:has-text("+ New Budget")').then(()=>p.click('#newBudgetModal .tpl-row[data-tpl="multifamily"]'));
   await p.waitForTimeout(700);
   await p.selectOption('#nbProject', 'OP-0201');
   await p.fill('#nbId', 'TST-9999');
@@ -131,7 +136,9 @@ const BASE = 'http://127.0.0.1:8100';
                pricingVersion: '2026.08-v2' }
       })
     });
-    await mk('BD-0001', 'Alpha Ridge', 9000000, 'Finalized', '2026-01-05T00:00:00Z');
+    // Noon UTC: the same calendar day in every US time zone (midnight UTC is
+    // the previous evening in the Americas, which made this test zone-dependent).
+    await mk('BD-0001', 'Alpha Ridge', 9000000, 'Finalized', '2026-01-05T12:00:00Z');
     await mk('BD-0002', 'Zephyr Landing', 3000000, 'Draft', '2026-06-20T00:00:00Z');
     await mk('AS-0007', 'Midtown Assessment', 6000000, 'In Review', '2026-03-10T00:00:00Z');
   });
@@ -140,7 +147,10 @@ const BASE = 'http://127.0.0.1:8100';
   ok('All budgets listed', (await p.locator('#budgetsBody tr').count()) === 4,
      (await p.locator('#budgetsBody tr').count()) + ' rows');
 
-  // Column 1 is the User column (creator avatar); Project ID is column 2.
+  // Column 1 is the User column (creator avatar); Budget ID is column 2.
+  ok('the id column is labelled Budget ID, never Project ID',
+     (await p.locator('#budgetsHead th[data-sort="projectId"]').textContent()).trim() === 'Budget ID',
+     (await p.locator('#budgetsHead th[data-sort="projectId"]').textContent()).trim());
   const ids = async () => (await p.locator('#budgetsBody tr td:nth-child(2)').allTextContents()).map(s => s.trim().split(' ')[0]);
 
   await p.click('#budgetsHead th[data-sort="contractSum"]');           // desc first
@@ -173,9 +183,9 @@ const BASE = 'http://127.0.0.1:8100';
        && fmtDay('2026-01-05T00:00:00') === '01-05-2026'));
 
   // --- Group By
-  ok('Group By offers no-grouping, address, ID, type, status and user',
+  ok('Group By offers no-grouping, address, project, type, status and user',
      (await p.locator('#budgetsGroup option').allTextContents()).join('|')
-       === 'No Grouping|Group by Address|Group by Project ID|Group by Type|Group by Status|Group by User',
+       === 'No Grouping|Group by Address|Group by Project|Group by Type|Group by Status|Group by User',
      (await p.locator('#budgetsGroup option').allTextContents()).join('|'));
   ok('The list is ungrouped by default',
      (await p.locator('#budgetsBody tr.grp-hd').count()) === 0);
@@ -212,13 +222,18 @@ const BASE = 'http://127.0.0.1:8100';
      JSON.stringify(byStatus.moneyCols) === '[4,5]', JSON.stringify(byStatus.moneyCols));
   const byType = await grouped('type');
   ok('Grouping by type works', byType.groups >= 1 && byType.rows === 4);
-  const byId = await grouped('id');
-  // Fewer groups than rows is the proof it grouped by prefix — grouping on the whole
-  // (unique) ID would give one group per budget. Groups sort alphabetically, so AS
-  // legitimately comes before BD.
-  ok('Grouping by project ID groups by prefix, not by unique ID',
-     byId.groups < byId.rows && byId.allGroups.some(g => /BD/.test(g)),
-     byId.groups + ' groups for ' + byId.rows + ' budgets');
+  const byId = await grouped('project');
+  await p.waitForTimeout(400);            // the project names arrive after the first paint
+  const byProject = await grouped('project');
+  // Grouped by the budget's PROJECT link (projectKey), never by a prefix read
+  // out of the budget id: TST-9999 was created under OP-0201, the three
+  // seeded budgets carry no project.
+  ok('Grouping by project groups by the linked project, not by id prefix',
+     byId.groups === 2 && byProject.allGroups.some(g => /OP-0201 — Waller Preview/.test(g))
+       && !byProject.allGroups.some(g => /Business Development|Operations/.test(g)),
+     JSON.stringify(byProject.allGroups.map(g => g.trim().replace(/\s+/g, ' '))));
+  ok('Budgets with no project are grouped last, as No Project',
+     /No Project/.test(byProject.last), byProject.last.trim());
   const byAddr = await grouped('address');
   ok('Grouping by address works', byAddr.rows === 4);
   ok('Budgets with no address are grouped last', /No Address/.test(byAddr.last), byAddr.last.trim());

@@ -1,0 +1,642 @@
+{
+  "schemaVersion": 1,
+  "id": "wrap-midrise",
+  "name": "Wrap / mid-rise multifamily",
+  "category": "residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "unit",
+  "summary": "4-5 story Type III/V wood-frame apartments wrapped around a free-standing precast or post-tensioned parking deck (the 'Texas donut'). Cost sits between garden and podium: the garage (~1.3 spaces/unit at ~$30k/space) adds ~15% to the per-unit hard cost, plus elevators and interior corridors. Product-specific data are thin - two developer/educational ranges, older architect ranges and broad RLB/RSMeans multifamily bands - so the mid leans on ratios to garden and podium.",
+  "sizing": {
+    "typicalSize": {
+      "low": 220,
+      "mid": 330,
+      "high": 450,
+      "evidence": [],
+      "derived": true,
+      "method": "Wrap projects are typically one large building around a 4-6 level garage; 250-450 units is the common deal size in Sun Belt metros (judgment; Apers/LandSouth describe the type without a unit count)."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 1000,
+      "mid": 1100,
+      "high": 1200,
+      "evidence": [
+        "e12"
+      ],
+      "derived": true,
+      "method": "Gross residential + amenity SF per unit, excluding the garage. Census median new rental unit = 1,000 net SF (e12); wrap units average ~850-950 net SF and interior-corridor efficiency ~80-85% => ~1,050-1,150 gross."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 50,
+      "mid": 65,
+      "high": 90,
+      "evidence": [
+        "e1",
+        "e2"
+      ],
+      "derived": false,
+      "method": "LandSouth and Apers both give 50-90 units/acre; mid set toward the lower half where most suburban wraps land."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 1.1,
+      "mid": 1.3,
+      "high": 1.5,
+      "evidence": [
+        "e2"
+      ],
+      "derived": false,
+      "method": "Apers: 1.2-1.5 (and ~1.0-1.5 'Texas Donut') spaces per unit in the structured deck; mid 1.3.",
+      "type": "structured"
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 200000,
+      "mid": 265000,
+      "high": 360000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e5",
+        "e6",
+        "e7",
+        "e10",
+        "e11"
+      ],
+      "derived": false,
+      "method": "Per-unit = perSF x sfPerPrimaryUnit: mid $240 x 1,100 = $264k (rounded $265k); low ~$195-200 x 1,000 = ~$200k; high ~$300-310 x 1,200 = ~$360k. Garage check: 1.3 spaces x WGI median $29,900/space (e10, 2024) ~= $39k/unit (~15% of mid). Florida mid-rise LIHTC hard-cost factor $284-311k/unit (e11, a cap) brackets the mid."
+    },
+    "perSF": {
+      "low": 195,
+      "mid": 240,
+      "high": 310,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e5",
+        "e6",
+        "e7",
+        "e8",
+        "e3",
+        "e4"
+      ],
+      "derived": false,
+      "method": "Per gross residential SF with the garage cost spread over it. 2026 evidence: LandSouth and Apers $200-275 (e1, e2; midpoint ~$237); RLB all-multifamily in Dallas/Austin $190-285 (e7, e8) and 18-city median $225-410 (e6); RSMeans 4-7 story $210-475 (e5). Mid $240 = LandSouth/Apers midpoint, ~1.30x the garden mid ($185), consistent with older ratio evidence: MFE 2016 wrap $175-225/RSF vs podium $250-300 (e3) and EVstudio 2018 podium/wrap vs walk-up ~1.13x (e4) before garage. High reflects higher-cost metros (RAND CA/TX wrap ratio 2.1, e9)."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": true,
+      "includesFFE": false,
+      "notes": "Contractor price incl. general conditions and OH&P, the parking structure (~1.3 spaces/unit), on-site work, courtyard amenities and elevators; perSF is per gross residential SF (garage area excluded from the SF but its cost included). Excludes land, soft costs, FF&E, off-sites, impact/tap fees, financing."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.85,
+    "standard": 1.0,
+    "premium": 1.18,
+    "luxury": 1.38,
+    "evidence": [
+      "e4"
+    ],
+    "derived": true,
+    "method": "Same finish/amenity spread as garden-multifamily (EVstudio amenity premium ~+7%, e4; Terrapin market vs affordable ~+25% in the garden file), slightly compressed because the garage and structure don't scale with finish level."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.13
+      },
+      {
+        "division": "03",
+        "pct": 0.11
+      },
+      {
+        "division": "04",
+        "pct": 0.015
+      },
+      {
+        "division": "05",
+        "pct": 0.025
+      },
+      {
+        "division": "06",
+        "pct": 0.16
+      },
+      {
+        "division": "07",
+        "pct": 0.05
+      },
+      {
+        "division": "08",
+        "pct": 0.028
+      },
+      {
+        "division": "09",
+        "pct": 0.085
+      },
+      {
+        "division": "10",
+        "pct": 0.006
+      },
+      {
+        "division": "11",
+        "pct": 0.025
+      },
+      {
+        "division": "12",
+        "pct": 0.032
+      },
+      {
+        "division": "14",
+        "pct": 0.015
+      },
+      {
+        "division": "21",
+        "pct": 0.018
+      },
+      {
+        "division": "22",
+        "pct": 0.068
+      },
+      {
+        "division": "23",
+        "pct": 0.042
+      },
+      {
+        "division": "26",
+        "pct": 0.085
+      },
+      {
+        "division": "27",
+        "pct": 0.006
+      },
+      {
+        "division": "28",
+        "pct": 0.006
+      },
+      {
+        "division": "31",
+        "pct": 0.034
+      },
+      {
+        "division": "32",
+        "pct": 0.04
+      },
+      {
+        "division": "33",
+        "pct": 0.02
+      }
+    ],
+    "evidence": [
+      "e9"
+    ],
+    "derived": true,
+    "method": "Derived from the garden split (RAND Table 3.4 mapping, see garden-multifamily.json) with adjustments for the wrap: +7 pts concrete (03) for the precast/PT garage and slab-on-grade, +1.5 pts elevators (14), +0.6 pts sprinklers/standpipes (21), +0.6 pts HVAC (23, corridor conditioning), -3.4 pts framing (06), -3.7 pts site divisions (31-33, smaller site, no surface lots), small reductions elsewhere for the larger shell. Verify against a wrap GMP schedule of values."
+  },
+  "lineItems": [
+    {
+      "id": "parking-structure",
+      "name": "Wrapped parking structure (precast or PT, above grade)",
+      "division": "03",
+      "block": "parking",
+      "unit": "space",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1.3
+      },
+      "cost": {
+        "low": 25000,
+        "mid": 29900,
+        "high": 38000,
+        "dollarYear": 2024,
+        "region": "US",
+        "evidence": [
+          "e10"
+        ],
+        "derived": false,
+        "method": "WGI 2024 national median for a parking structure $29,900/space (mid); low/high = typical +/-15-25% spread for simple precast vs. PT decks with ramps tied into residential corridors (judgment)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out; already inside the wrap baseline."
+    },
+    {
+      "id": "elevators",
+      "name": "Passenger elevators (4-5 stop, MRL traction or hydraulic)",
+      "division": "14",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 4
+      },
+      "cost": {
+        "low": 130000,
+        "mid": 175000,
+        "high": 250000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: installed 4-5 stop passenger elevator ~ $130-250k each (2026); ~1 car per 80-100 units plus a service car."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "courtyard-amenities",
+      "name": "Courtyard pool and amenity hardscape",
+      "division": "13",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 600000,
+        "mid": 1000000,
+        "high": 1800000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: resort-style pool, deck, cabanas and courtyard landscaping over podium/grade for a 300-unit wrap (2026 judgment)."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "ground-floor-retail-shell",
+      "name": "Ground-floor retail shell (cold dark shell)",
+      "division": "01",
+      "unit": "sf",
+      "qty": {
+        "per": "project",
+        "value": 5000
+      },
+      "cost": {
+        "low": 150,
+        "mid": 200,
+        "high": 275,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: retail shell space within a wood/concrete residential building ~ $150-275/SF (2026), excluding TI."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Optional - some urban wraps include street retail."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 1500,
+      "mid": 2000,
+      "high": 3000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: lobby, clubroom, fitness, co-working, pool furniture ~ $500-900k for ~330 units (2026)."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.12,
+      "mid": 0.18,
+      "high": 0.28,
+      "evidence": [
+        "e13",
+        "e14"
+      ],
+      "derived": false,
+      "method": "RAND market-rate soft/hard 0.19 (TX/CO) to 0.33 (CA), incl. financing (e13); Brookings 20-30% of total cost (e14). Mid slightly above garden (0.22) for structural/garage engineering and longer schedule; excludes construction interest. | Second pass (2026-10-24, main session): Reduced 5 points: RAND-based, includes developer costs and fees. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.045
+    },
+    "notes": "Impact/tap fees modeled separately (RAND: <$1k/unit TX, ~$12k CO, ~$29k CA)."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm for mid-rise wood/garage projects under GMP."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived industry norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 220000,
+      "max": 520000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "Hard low $200k x 1.12 ~= $225k; hard high $360k x 1.42 ~= $510k; rounded."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 200,
+      "high": 275,
+      "unit": "USD/sf",
+      "region": "US (developer commentary)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Which multifamily product type is right for your site",
+        "url": "https://landsouth.com/which-multifamily-product-type-is-right-for-your-site/",
+        "publisher": "LandSouth Construction",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Wrap ... at current industry hard costs near $200 to $275 per square foot; It reaches roughly 50 to 90 units per acre",
+      "scopeNotes": "Builder marketing article, undated (accessed 2026). Comparison table lists wrap parking as 'Structured, central deck'. Unclear whether garage cost is spread into the per-SF figure.",
+      "confidence": "low"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 200,
+      "high": 275,
+      "unit": "USD/sf",
+      "region": "US (illustrative)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Garden vs mid-rise vs high-rise density economics",
+        "url": "https://apers.app/learn/asset-classes/multifamily/garden-vs-midrise-vs-highrise-density-economics",
+        "publisher": "Apers",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost basis runs $200\u2013275 PSF in 2026; Density runs 50\u201390 units per acre; 1.2\u20131.5 spaces per unit, structured in the deck",
+      "scopeNotes": "Educational article (Oct 2026), illustrative ranges citing RSMeans and others. A later section gives ~1.0-1.5 spaces/unit for the 'Texas Donut'.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerNRSF",
+      "value": null,
+      "low": 175,
+      "high": 225,
+      "unit": "USD/nrsf",
+      "region": "US (architect commentary)",
+      "regionKey": "US",
+      "dataYear": 2016,
+      "source": {
+        "title": "Designing Density in Today's Urban Environments (Sept 9, 2016)",
+        "url": "https://www.multifamilyexecutive.com/design-development/designing-density-in-todays-urban-environments_o",
+        "publisher": "Multifamily Executive",
+        "accessed": "2026-10-24"
+      },
+      "quote": "its cost of construction ranges from $175 to $225 per rentable square foot (RSF)",
+      "scopeNotes": "Wrap product, per rentable SF, 2016; same article puts podium at $250-300/RSF and towers at $325+/RSF - used for product-type ratios.",
+      "confidence": "low"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 150,
+      "high": 190,
+      "unit": "USD/sf",
+      "region": "Denver metro, CO",
+      "regionKey": "CO-Denver",
+      "dataYear": 2018,
+      "source": {
+        "title": "Construction Cost Per Square Foot for Multi-family Housing Based on Construction Type (Feb 16, 2018)",
+        "url": "https://evstudio.com/construction-cost-per-square-foot-for-multifamily-housing-based-on-construction-type/",
+        "publisher": "EVstudio",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Suburban 3-6 story wood frame with podium or wrap (parkade or core and shell mixed), no amenities: $150-$180/sq.ft. ... with amenities: $160-$190/sq.ft.",
+      "scopeNotes": "Architect's Denver figures (2018), gross SF basis; vs $130-170 for 2-3 story walk-ups in the same table (ratio ~1.13).",
+      "confidence": "low"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 210,
+      "high": 475,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "How Much Does It Cost to Build an Apartment Complex?",
+        "url": "https://www.rsmeans.com/resources/how-much-does-it-cost-to-build-an-apartment-complex",
+        "publisher": "Gordian / RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "4-7 Story Apartment | 34,000 - 115,000 | $210 - 475 | $7.1 - 54.6M",
+      "scopeNotes": "RSMeans square-foot model range (4-7 story apartment); page calls it a national average; scope (sitework, soft) not stated. Page dated May 29, 2026 but headed '2025 Guide' - treated as 2025 dollars.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 225,
+      "high": 410,
+      "unit": "USD/sf",
+      "region": "Median of the 18 US cities in RLB's table",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "RLB Construction Cost Report North America Q3 2026 (PDF), Indicative Construction Costs table",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table, Residential 'Multi-Family' column (US$/SF GFA), 18 US cities from Austin 190-285 to San Francisco 420-700; median LOW 225, median HIGH 410 (computed from the table)",
+      "scopeNotes": "RLB: 'Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area.' One 'Multi-Family' column covers all multifamily product (garden to high-rise); sitework treatment not stated. Median of city lows/highs computed by the researcher; the 18 cities skew to large, higher-cost metros.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 195,
+      "high": 285,
+      "unit": "USD/sf",
+      "region": "Dallas, TX",
+      "regionKey": "TX-Dallas",
+      "dataYear": 2026,
+      "source": {
+        "title": "RLB Construction Cost Report North America Q3 2026 (PDF), Indicative Construction Costs table",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table, Residential 'Multi-Family' column, row 'Dallas': LOW 195 HIGH 285",
+      "scopeNotes": "RLB: 'Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area.' One 'Multi-Family' column covers all multifamily product (garden to high-rise); sitework treatment not stated.",
+      "confidence": "high"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 190,
+      "high": 285,
+      "unit": "USD/sf",
+      "region": "Austin, TX",
+      "regionKey": "TX-Austin",
+      "dataYear": 2026,
+      "source": {
+        "title": "RLB Construction Cost Report North America Q3 2026 (PDF), Indicative Construction Costs table",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table, Residential 'Multi-Family' column, row 'Austin': LOW 190 HIGH 285",
+      "scopeNotes": "RLB: 'Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area.' One 'Multi-Family' column covers all multifamily product (garden to high-rise); sitework treatment not stated.",
+      "confidence": "high"
+    },
+    {
+      "id": "e9",
+      "metric": "caToTxHardCostRatio",
+      "value": 2.1,
+      "unit": "ratio",
+      "region": "California vs Texas",
+      "regionKey": "US",
+      "source": {
+        "title": "The High Cost of Producing Multifamily Housing in California (RAND RR-A3743-1, Ward & Schlake, 2025) - copy hosted by San Diego Housing Commission",
+        "url": "https://sdhc.org/wp-content/uploads/2025/04/Att-2_RAND_RRA3743-1.pdf",
+        "publisher": "RAND Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "wrap apartment projects (i.e., low-rise wood-framed apartments built around a cement parking structure) ... with an overall hard cost ratio between California and Texas of 2.1",
+      "scopeNotes": "Two current wrap projects bid at the same time by Trammell Crow Residential; regional spread only.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e10",
+      "metric": "structuredParkingPerSpace",
+      "value": 29900,
+      "unit": "USD/space",
+      "region": "US national median",
+      "regionKey": "US",
+      "dataYear": 2024,
+      "source": {
+        "title": "Parking Structure Cost Outlook for 2024",
+        "url": "https://publications.wginc.com/parking-structure-cost-outlook-for-2024",
+        "publisher": "WGI",
+        "accessed": "2026-10-24"
+      },
+      "quote": "national median parking structure construction cost of $29,900 per space",
+      "scopeNotes": "Free-standing above-grade parking structure median (WGI). Below-grade parking costs substantially more; not stated on page.",
+      "confidence": "high"
+    },
+    {
+      "id": "e11",
+      "metric": "hardCostPerUnit",
+      "value": null,
+      "low": 284000,
+      "high": 311000,
+      "unit": "USD/unit",
+      "region": "Florida (Except BMP)",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Total Development Cost per Unit Limitation Template, Version 09-30-2026 (for all RFAs starting July 2023), 'Data' sheet",
+        "url": "https://www.floridahousing.org/docs/default-source/programs/developers-multifamily-programs/competitive/total-development-cost-per-unit-limitation-template-effective-september-30-2026-for-all-rfa-s-starting-july-2023.xlsx",
+        "publisher": "Florida Housing Finance Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Data sheet, table 'Hard Cost Per Unit Factor:', 2026/2027 cycle, 'Except BMP': Mid-Rise-Non ESSC (NC) 284000; Mid-Rise-ESSC (NC) 311000",
+      "scopeNotes": "Florida Housing (LIHTC) hard-cost-per-unit factor used to set the TDC-per-unit cap for new construction, 2026/2027 RFA cycle - a ceiling for affordable deals, not an average; 'Except BMP' = all counties but Broward, Miami-Dade, Palm Beach. ESSC = enhanced structural systems construction.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e12",
+      "metric": "unitSizeNetSF",
+      "value": 1000,
+      "unit": "sf",
+      "region": "US",
+      "regionKey": "US",
+      "source": {
+        "title": "Characteristics of New Housing - Highlights",
+        "url": "https://www.census.gov/construction/chars/highlights.html",
+        "publisher": "U.S. Census Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The median size of multifamily units completed that were built for rent was 1,000 square feet",
+      "scopeNotes": "All new multifamily rental units completed in 2025 (all building types); net unit area.",
+      "confidence": "high"
+    },
+    {
+      "id": "e13",
+      "metric": "softCostPctOfHard",
+      "value": null,
+      "low": 0.19,
+      "high": 0.33,
+      "unit": "ratio",
+      "region": "Texas / Colorado / California",
+      "regionKey": "US",
+      "source": {
+        "title": "The High Cost of Producing Multifamily Housing in California (RAND RR-A3743-1, Ward & Schlake, 2025) - copy hosted by San Diego Housing Commission",
+        "url": "https://sdhc.org/wp-content/uploads/2025/04/Att-2_RAND_RRA3743-1.pdf",
+        "publisher": "RAND Corporation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table 3.1 Panel C. Soft Costs: Texas Market rate $22; Colorado Market rate $44; California Market rate $84 (vs Panel A hard costs $115 / $237 / $253 per NRSF)",
+      "scopeNotes": "Soft/hard ratios derived: TX 0.19, CO 0.19, CA 0.33. RAND soft costs include A&E, legal, fees and financing costs; market-rate sample mixes garden, podium, wrap, high-rise.",
+      "confidence": "high"
+    },
+    {
+      "id": "e14",
+      "metric": "softCostShareOfTotal",
+      "value": null,
+      "low": 0.2,
+      "high": 0.3,
+      "unit": "pct",
+      "region": "US",
+      "regionKey": "US",
+      "source": {
+        "title": "Making apartments more affordable starts with understanding the costs of building them (Hoyt & Schuetz, May 5, 2020)",
+        "url": "https://www.brookings.edu/research/making-apartments-more-affordable-starts-with-understanding-the-costs-of-building-them/",
+        "publisher": "Brookings Institution",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Soft costs average around 20% to 30% of total costs for a relatively straightforward project.",
+      "scopeNotes": "Share of total development cost (incl. land and financing), not of hard cost.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "No public cost-consultant table isolates wrap product; a Texas or Arizona wrap GMP / city incentive application would anchor the mid.",
+    "Whether LandSouth/Apers per-SF figures already spread the garage cost is not stated.",
+    "Elevator, courtyard and retail-shell costs are derived."
+  ]
+}

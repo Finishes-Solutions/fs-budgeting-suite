@@ -11,7 +11,7 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
 
  // every TOC entry must scroll within the guide, never navigate away
  const links=await p.locator('#helpToc a').all();
- ok('TOC has 15 entries', links.length===15, links.length+'');
+ ok('TOC has 16 entries', links.length===16, links.length+'');
  let bad=[];
  for(const a of links){
    const href=await a.getAttribute('href');
@@ -19,7 +19,13 @@ const R=[]; const ok=(n,c,e='')=>R.push(`${c?'PASS':'FAIL'}  ${n}${e?' — '+e:'
    await p.evaluate(()=>window.scrollTo(0,0));
    await p.waitForTimeout(120);
    await a.click();
-   await p.waitForTimeout(750);
+   // Smooth scrolling a long guide takes well over a second; wait until the
+   // page stops moving instead of guessing a duration.
+   for(let i=0,last=-1;i<30;i++){
+     await p.waitForTimeout(150);
+     const y=await p.evaluate(()=>window.scrollY);
+     if(y===last)break; last=y;
+   }
    const stillHelp=await p.locator('#page-help').isVisible();
    const url=p.url();
    const target=await p.locator(href).boundingBox();

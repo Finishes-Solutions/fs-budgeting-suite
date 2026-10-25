@@ -1,0 +1,443 @@
+{
+  "schemaVersion": 1,
+  "id": "container-park",
+  "name": "Shipping container park",
+  "category": "entertainment",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "container",
+  "summary": "Retail/F&B units built from converted 20/40-ft shipping containers around a shared plaza with restrooms, stage and landscaping. Two recent US projects give all-in anchors (Atlantic City ≈ $273k per container total investment; Rio Rancho $10M on 1.3 acres); the best-known example (Las Vegas) reports container construction ended up costing about the same as conventional building, so a build-up from RSMeans retail/restaurant $/SF cross-checks the per-container hard cost. Hard-cost share of the reported totals is assumed.",
+  "sizing": {
+    "typicalSize": {
+      "low": 10,
+      "mid": 25,
+      "high": 60,
+      "unit": "container",
+      "evidence": [
+        "e1",
+        "e5"
+      ],
+      "derived": true,
+      "method": "Downtown Container Park (e1) has 84 modules (43 containers + 41 cubes) for 38 tenants; AC Container Park 22 containers (e5). Mid 25."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 160,
+      "mid": 300,
+      "high": 640,
+      "evidence": [
+        "e1",
+        "e5"
+      ],
+      "derived": true,
+      "method": "Container floor area: 20-ft ≈ 160 SF, 40-ft ≈ 320 SF (e5: leased containers 160–320 SF); tenants often join two (e1: tenant spaces 170–800 SF). Mid 300 SF of enclosed container area per container (mostly 40-ft units). Excludes plaza area."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 15,
+      "mid": 30,
+      "high": 50,
+      "evidence": [],
+      "derived": true,
+      "method": "40-ft container ≈ 320 SF footprint; containers typically cover ~20–35% of site with the rest plaza, seating, stage and service, and parks often stack 2 levels. ~30 per acre mid; derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0,
+      "mid": 3,
+      "high": 6,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Urban parks often get parking waivers (Las Vegas exempted its container park from 250 spaces per Wikipedia); suburban parks ~1 space per 100 SF of container + plaza seating. Derived."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 90000,
+      "mid": 180000,
+      "high": 350000,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e5",
+        "e6",
+        "e2",
+        "e3",
+        "e4"
+      ],
+      "derived": true,
+      "method": "Sourced all-in anchors: AC Container Park ≈ $6M / 22 containers ≈ $273k per container total investment (2026, e5); Rio Rancho $10M on 1.3 acres (2022, e6) ≈ $190k–$300k per container at 25–40 containers/acre. At ~0.65–0.70 hard-cost share these imply ≈ $175k–$200k hard per container. Build-up cross-check for a 40-ft (320 SF) unit, 2025 $: container purchase + structural cut-outs, storefront glazing, insulation, finishes, HVAC and MEP ≈ $250–$400/SF of container (bracketed by RSMeans 2019 retail $151/SF and restaurant $205/SF hard cost, escalated ~1.3x to 2025 and raised for per-unit MEP/storefront inefficiency of tiny units; e2 says costs ended up equal to conventional) → ~$95k mid; plus shared site (plaza paving, utilities, restrooms, stage/shade, lighting, landscaping) ≈ $50k per container at 25 containers → ≈ $145k. Mid $180k weights the sourced projects (which include stacked units, stages and bars) over the build-up. Low = retail-only dry units with minimal plaza; high = F&B-heavy units with kitchens, stacked/2-story with stairs/elevator."
+    },
+    "perSF": {
+      "low": 300,
+      "mid": 600,
+      "high": 1100,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e3",
+        "e4"
+      ],
+      "derived": true,
+      "method": "perPrimaryUnit / sfPerPrimaryUnit (300 SF) — per SF of enclosed container area, including the shared site share. Not comparable to building $/SF."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Per container incl. pro-rata shared plaza/site, restrooms and utilities. Excludes land, soft costs, tenant FF&E/kitchen equipment, off-sites, impact/tap fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.5,
+    "standard": 1.0,
+    "premium": 1.4,
+    "luxury": 1.95,
+    "evidence": [],
+    "derived": true,
+    "method": "economy = low/mid (90/180); luxury ≈ high/mid (350/180 = 1.94); premium interpolated."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.1
+      },
+      {
+        "division": "03",
+        "pct": 0.05
+      },
+      {
+        "division": "05",
+        "pct": 0.1
+      },
+      {
+        "division": "07",
+        "pct": 0.04
+      },
+      {
+        "division": "08",
+        "pct": 0.07
+      },
+      {
+        "division": "09",
+        "pct": 0.06
+      },
+      {
+        "division": "10",
+        "pct": 0.02
+      },
+      {
+        "division": "13",
+        "pct": 0.08
+      },
+      {
+        "division": "22",
+        "pct": 0.07
+      },
+      {
+        "division": "23",
+        "pct": 0.07
+      },
+      {
+        "division": "26",
+        "pct": 0.1
+      },
+      {
+        "division": "31",
+        "pct": 0.04
+      },
+      {
+        "division": "32",
+        "pct": 0.13
+      },
+      {
+        "division": "33",
+        "pct": 0.07
+      }
+    ],
+    "evidence": [],
+    "derived": true,
+    "method": "Derived: container shell and structural modification carried in 05 (metals) and 13 (special construction: the containers/modules themselves); storefronts (08); per-unit HVAC (23) and service (26) are relatively high for tiny units; plaza hardscape/landscape (32) and site utilities (33) reflect the shared open space. Not sourced from a published container-park estimate."
+  },
+  "lineItems": [
+    {
+      "id": "container-module",
+      "name": "Converted 40-ft container retail/F&B module (purchase, cut-outs, storefront, insulation, MEP rough-in, finishes)",
+      "division": "13",
+      "unit": "container",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 60000,
+        "mid": 95000,
+        "high": 160000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e3",
+          "e4"
+        ],
+        "derived": true,
+        "method": "~320 SF × $190–$500/SF (RSMeans 2019 retail/restaurant hard cost ~$151–205/SF escalated to 2025 and increased for small-unit MEP/storefront density)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of the baseline."
+    },
+    {
+      "id": "restroom-building",
+      "name": "Shared restroom building",
+      "division": "22",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 150000,
+        "mid": 250000,
+        "high": 450000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "_blocks/amenities.json#e13",
+          "_blocks/amenities.json#e14",
+          "entertainment/food-truck-park.json#e7"
+        ],
+        "derived": true,
+        "method": "Municipal/park restroom contracts $265k (Savannah prefab) to $608k (Fresno large) in the amenities block; food-truck-park restroom $180k. Mid $250k."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "stage-shade",
+      "name": "Event stage / shade canopy over plaza",
+      "division": "13",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 75000,
+        "mid": 200000,
+        "high": 500000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "entertainment/food-truck-park.json#e6"
+        ],
+        "derived": true,
+        "method": "Shade at ~$40/SF (food-truck-park e6) over 2,000–5,000 SF plus a small stage. Derived."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": ""
+    },
+    {
+      "id": "stair-elevator",
+      "name": "Stairs/elevator for stacked (2-story) containers",
+      "division": "14",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 60000,
+        "mid": 120000,
+        "high": 200000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Exterior steel stair plus one LULA/hydraulic elevator for accessibility to upper-level units (see _blocks/building-systems.json elevator-hydraulic $75k–$160k)."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Only when units are stacked."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 5000,
+      "mid": 25000,
+      "high": 75000,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [],
+      "derived": true,
+      "method": "Landlord-provided items only (plaza furniture share, signage); tenant kitchen equipment for F&B units can add $25k–$75k each. Derived."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.15,
+      "mid": 0.2,
+      "high": 0.25,
+      "evidence": [],
+      "derived": true,
+      "method": "Architecture/structural engineering for modified containers, MEP, civil, permits (container modules often need third-party/modular inspections). Derived from typical small-commercial soft-cost range."
+    },
+    "notes": "Modular/off-site fabrication may require state modular-building approval and third-party inspection fees."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.1,
+      "high": 0.15,
+      "evidence": [
+        "e2"
+      ],
+      "derived": true,
+      "method": "Higher than normal: e2 reports container savings evaporated as scope expanded."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Retrofit of used containers (corrosion, structural reinforcement at cut-outs) carries above-average field risk."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Typical soft-cost contingency norm."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 80000,
+      "max": 450000,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Hard low × (1+soft low) to hard high × (1+soft high) with allowance for stacked F&B parks."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "programSizing",
+      "value": 84,
+      "unit": "count",
+      "region": "Las Vegas, NV",
+      "regionKey": "NV-LasVegas",
+      "source": {
+        "title": "Downtown Container Park",
+        "url": "https://en.wikipedia.org/wiki/Downtown_Container_Park",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The mall includes 43 shipping containers and 41 cubes, with a total of 38 tenant spaces ... Tenant spaces range from 170 to 800 square feet.",
+      "scopeNotes": "Program/sizing only (no cost). Benchmark US container park, opened 2013, 2–3 floors.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "costComparison",
+      "value": null,
+      "unit": "text",
+      "region": "Las Vegas, NV",
+      "regionKey": "NV-LasVegas",
+      "source": {
+        "title": "Downtown Container Park",
+        "url": "https://en.wikipedia.org/wiki/Downtown_Container_Park",
+        "publisher": "Wikipedia",
+        "accessed": "2026-10-24"
+      },
+      "quote": "when the plans were expanded, the final construction costs were roughly equal with traditional building methods.",
+      "scopeNotes": "Qualitative: container construction did not save money vs. conventional small-shop construction once fully fitted out. Supports deriving cost from conventional retail/restaurant $/SF.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "buildingHardCostPerSF",
+      "value": 151.29,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Store, Retail - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/retail-store",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Store,Retail with Brick Veneer / Reinforced Concrete ... SubTotal 100% $121.03 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $30.26",
+      "scopeNotes": "2019 RSMeans national model, 8,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $151.29/SF; open shop = $134.49/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Used as conventional small-shop proxy per e2.",
+      "confidence": "medium",
+      "low": 134.49,
+      "high": 151.29
+    },
+    {
+      "id": "e4",
+      "metric": "buildingHardCostPerSF",
+      "value": 205.16,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Restaurant - Commercial Construction Costs Per Square Foot (RSMeans model page)",
+        "url": "https://www.rsmeans.com/model-pages/restaurant",
+        "publisher": "RSMeans / Gordian",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Restaurant with Brick Veneer / Wood Frame ... SubTotal 100% $164.13 ... Contractor Fees (General Conditions,Overhead,Profit) 25% $41.03",
+      "scopeNotes": "2019 RSMeans national model, 5,000 SF, 1 story, union labor. value = subtotal + 25% contractor fees = $205.16/SF; open shop = $186.33/SF. Building only: excludes the architectural fees (6–8%) shown on the page, sitework, FF&E. Used as proxy for F&B containers with kitchen MEP.",
+      "confidence": "medium",
+      "low": 186.33,
+      "high": 205.16
+    },
+    {
+      "id": "e5",
+      "metric": "totalInvestment",
+      "value": 6000000,
+      "unit": "USD/ls",
+      "region": "Atlantic City, NJ",
+      "regionKey": "NJ",
+      "dataYear": 2026,
+      "source": {
+        "title": "AC Container Park, a New Retail Complex, Nears Completion in Atlantic City",
+        "url": "https://jerseydigs.com/ac-container-park-atlantic-city/",
+        "publisher": "Jersey Digs",
+        "accessed": "2026-10-24"
+      },
+      "quote": "the park will feature 22 repurposed shipping containers ... Sizes of containers being leased span from 160 square feet up to 320 square feet, with each unit boasting their own electric and HVAC systems. ... invested a total of about $6 million",
+      "scopeNotes": "Total developer investment (may include land and soft costs) ≈ $273k per container; $2.5M NJEDA grant. Published Aug 2026.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "projectCost",
+      "value": 10000000,
+      "unit": "USD/ls",
+      "region": "Rio Rancho, NM",
+      "regionKey": "NM-Albuquerque",
+      "dataYear": 2022,
+      "source": {
+        "title": "Shipping container project underway in Rio Rancho",
+        "url": "https://www.kob.com/new-mexico/shipping-container-project-underway-in-rio-rancho/",
+        "publisher": "KOB 4",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The $10 million park – which will be built on a 1.3-acre lot using repurposed shipping containers",
+      "scopeNotes": "Project cost at groundbreaking (Nov 2022); container count not stated. ≈ $7.7M per acre; at 25–40 containers/acre ≈ $190k–$300k per container all-in.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "Confirm scope of e5/e6 totals (land, soft costs) and Rio Rancho container count.",
+    "Split cost between retail-only and F&B containers (kitchen hoods/grease drive the high end)."
+  ]
+}

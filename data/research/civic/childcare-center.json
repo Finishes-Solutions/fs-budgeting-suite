@@ -1,0 +1,431 @@
+{
+  "schemaVersion": 1,
+  "id": "childcare-center",
+  "name": "Childcare / daycare center",
+  "category": "civic",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Licensed childcare centers are one-story, residential-scale (often wood-frame) buildings of 6k-15k SF with many small classrooms, high plumbing density (child-height toilets and sinks in or next to each room), a kitchen, and a fenced outdoor play yard of ~75 SF per child. Public cost data is thin: values come from the RSMeans 2019 day-care model and a 2019 Purdue University child care budget, so the hard cost is a DERIVED estimate in 2019 dollars (the build script escalates) - verify against a franchise FDD Item 7 or local bids.",
+  "sizing": {
+    "typicalSize": {
+      "low": 6000,
+      "mid": 10000,
+      "high": 16000,
+      "unit": "sf",
+      "evidence": [
+        "e1",
+        "e2",
+        "e4"
+      ],
+      "derived": true,
+      "method": "RSMeans model is 10,000 SF (e1); Purdue facilities 16,400-16,600 GSF for 140-150 children (e2, e4). Franchise/independent centers commonly 8k-12k SF for ~120-180 children. Licensed capacity ~ SF / 100-115 GSF per child (e2: ~111 GSF/child)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 6000,
+      "mid": 9000,
+      "high": 13000,
+      "evidence": [
+        "e5"
+      ],
+      "derived": true,
+      "method": "Building SF per site acre. A 10,000 SF center for ~100-150 children needs ~7,500-11,250 SF of outdoor play (75 SF/child, e5) plus drop-off loop and parking; 1.0-1.5 acre sites are typical (~7,000-10,000 SF/acre). Derived."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.0025,
+      "mid": 0.0035,
+      "high": 0.005,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Spaces per building SF (= 2.5-5 per 1,000 SF): one per staff member plus short-term drop-off spaces. Derived; local code governs."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 175,
+      "mid": 245,
+      "high": 340,
+      "dollarYear": 2019,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4"
+      ],
+      "derived": true,
+      "method": "Derived, expressed in 2019 dollars (all anchors are 2019) for the build script to escalate. Building-only anchors: RSMeans 2019 day care hard cost w/o A/E = $140.46 x 1.25 = ~$176/SF (e1, national); Purdue 2019 construction lines $201/GSF (e2, IN, institutional quality). Add on-site work (playground surfacing/fencing, drop-off loop, parking, utilities) at ~15%-25% of building cost -> ~$205-$250/SF. Mid $245 = Purdue building + ~20% site; low $175 = RSMeans building-only economy wood-frame with minimal site; high $340 ~ Purdue 2015 all-in project rate ($323/GSF, e4) used as the ceiling for high-quality institutional centers. Expect ~+40%-50% escalation to 2025-26."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P, play-yard fencing/surfacing, drop-off/parking, on-site utilities and landscaping; excludes land, soft costs, playground equipment (line item), loose FF&E, off-sites and fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.75,
+    "standard": 1.0,
+    "premium": 1.25,
+    "luxury": 1.45,
+    "evidence": [
+      "e1",
+      "e2",
+      "e4"
+    ],
+    "derived": true,
+    "method": "Low/mid and high/mid of the derived range ($175/$245 = 0.71; $340/$245 = 1.39), rounded; institutional/university centers (e2, e4) sit at premium."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.08
+      },
+      {
+        "division": "03",
+        "pct": 0.06
+      },
+      {
+        "division": "04",
+        "pct": 0.03
+      },
+      {
+        "division": "05",
+        "pct": 0.02
+      },
+      {
+        "division": "06",
+        "pct": 0.08
+      },
+      {
+        "division": "07",
+        "pct": 0.07
+      },
+      {
+        "division": "08",
+        "pct": 0.07
+      },
+      {
+        "division": "09",
+        "pct": 0.09
+      },
+      {
+        "division": "10",
+        "pct": 0.03
+      },
+      {
+        "division": "11",
+        "pct": 0.02
+      },
+      {
+        "division": "12",
+        "pct": 0.01
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.09
+      },
+      {
+        "division": "23",
+        "pct": 0.09
+      },
+      {
+        "division": "26",
+        "pct": 0.08
+      },
+      {
+        "division": "27",
+        "pct": 0.02
+      },
+      {
+        "division": "28",
+        "pct": 0.02
+      },
+      {
+        "division": "31",
+        "pct": 0.03
+      },
+      {
+        "division": "32",
+        "pct": 0.07
+      },
+      {
+        "division": "33",
+        "pct": 0.02
+      }
+    ],
+    "evidence": [
+      "e2"
+    ],
+    "derived": true,
+    "method": "Derived. Purdue's construction lines split structure 78% / mechanical 16% / electrical 6% of building cost (e2: $2.6M / $524k / $205k), i.e. MEP ~22% of building; this split keeps HVAC+plumbing+FP at ~20% and electrical/low-voltage ~12% of total, with plumbing raised (9%) for child-height fixtures in each classroom. Wood frame (06 8%) per the RSMeans model (e1); site 12% (31-33) reflects fenced play yards and drop-off loop."
+  },
+  "lineItems": [
+    {
+      "id": "playground-equipment",
+      "name": "Playground equipment, shade and safety surfacing (per play yard)",
+      "division": "32",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 2
+      },
+      "cost": {
+        "low": 40000,
+        "mid": 80000,
+        "high": 150000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [
+          "e5"
+        ],
+        "derived": true,
+        "method": "Derived allowance per age-group play yard (infant/toddler and preschool yards are usually separated); outdoor area sized at 75 SF per child (e5)."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": false,
+      "notes": "Not in baseline hard cost; add per play yard."
+    },
+    {
+      "id": "commercial-kitchen",
+      "name": "Kitchen (residential-grade warming to commercial with hood)",
+      "division": "11",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 40000,
+        "mid": 100000,
+        "high": 250000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance; centers that cook on site need a Type I hood and grease interceptor."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Inside baseline."
+    },
+    {
+      "id": "child-plumbing-fixtures",
+      "name": "Child-height toilets/sinks and classroom diaper/hand-wash stations",
+      "division": "22",
+      "unit": "ea",
+      "qty": {
+        "per": "sf",
+        "value": 0.002
+      },
+      "cost": {
+        "low": 3000,
+        "mid": 5000,
+        "high": 8000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived: per fixture installed incl. rough-in; ~1 fixture per 500 SF (2 per 1,000 SF) reflects licensing ratios of ~1 toilet and sink per 10-15 children."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carved out of Div 22."
+    },
+    {
+      "id": "security-access",
+      "name": "Secured entry, access control and classroom cameras",
+      "division": "28",
+      "unit": "ls",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 25000,
+        "mid": 60000,
+        "high": 120000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived allowance; parent-viewable camera systems are common in franchise centers."
+      },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Inside baseline."
+    }
+  ],
+  "ffe": {
+    "perPrimaryUnit": {
+      "low": 15,
+      "mid": 20,
+      "high": 35,
+      "dollarYear": 2019,
+      "region": "US",
+      "evidence": [
+        "e3"
+      ],
+      "derived": true,
+      "method": "Purdue budget carries movable equipment $215,000 + fixed equipment $75,000 on 16,600 GSF (~$17.5/GSF, e3); range widened for franchise classroom packages."
+    }
+  },
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.12,
+      "mid": 0.17,
+      "high": 0.25,
+      "evidence": [
+        "e3"
+      ],
+      "derived": true,
+      "method": "Purdue architectural fee $280,500 = ~8.4% of the $3.33M construction lines (e3); add permits/licensing plan review, survey/geotech, testing, legal and owner PM for ~12%-20% in private development; institutional owners with 'other' costs run higher. Excludes FF&E and contingency."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.08
+    },
+    "notes": "State childcare licensing plan review and health-department (kitchen) review add schedule but small fees."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: simple one-story building with a repeatable program."
+    },
+    "hard": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: typical owner construction contingency."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Derived: typical owner soft-cost contingency."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 200,
+      "max": 450,
+      "dollarYear": 2019,
+      "region": "US",
+      "method": "2019 dollars: low ~ $175 hard x 1.12; high ~ Purdue all-in $416/GSF (2019, incl. site and land, e3) rounded up."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 191.38,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "RSMeans square foot cost model: Day Care Center (Brick Veneer / Wood Frame), 1 story",
+        "url": "https://www.rsmeans.com/model-pages/day-care-center",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Model page cost table (10,000 SF, 2019 data): SubTotal $140.46/SF; Contractor Fees 25%; Architectural Fees 9%; Total Building Cost $191.38/SF (union)",
+      "scopeNotes": "Building only, union labor, 2019 national average; includes contractor GC/OH&P (25%) AND architect fees; excludes sitework, land, FF&E. Hard cost w/o A/E fee = SubTotal x 1.25. Stale (2019) and well below current bids; used for relative ratios between types only.",
+      "confidence": "low"
+    },
+    {
+      "id": "e2",
+      "metric": "hardCostPerSF",
+      "value": 201,
+      "unit": "USD/sf",
+      "region": "West Lafayette, IN",
+      "regionKey": "IN",
+      "dataYear": 2019,
+      "source": {
+        "title": "Daycare Construction Cost Per Square Foot: Sourced Data",
+        "url": "https://buildermuse.com/public-works/daycare-center-construction-cost-per-square-foot/",
+        "publisher": "Buildermuse (citing Indiana State Budget Agency project B-1-20-1-11, Jan 15 2020)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "about 16,600 gross square feet, serving about 150 children ... the three construction lines total $3,329,000, about $201 per gross square foot",
+      "scopeNotes": "Purdue University child care facility approved Dec 2019. Construction lines = structure $2.6M + mechanical $524k + electrical $205k (building only); site development is combined with land acquisition in a separate $1,757,000 line, so sitework is excluded here.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "totalProjectCost",
+      "value": 6900000,
+      "unit": "USD/ls",
+      "region": "West Lafayette, IN",
+      "regionKey": "IN",
+      "dataYear": 2019,
+      "source": {
+        "title": "Daycare Construction Cost Per Square Foot: Sourced Data",
+        "url": "https://buildermuse.com/public-works/daycare-center-construction-cost-per-square-foot/",
+        "publisher": "Buildermuse (citing Indiana State Budget Agency project B-1-20-1-11, Jan 15 2020)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Total estimated project cost: $6,900,000, funded from university operating reserves.",
+      "scopeNotes": "All-in incl. architectural $280,500, movable equipment $215,000, fixed equipment $75,000, site development/land $1,757,000, other $1,243,500. = ~$416/GSF and ~$46,000 per child (150 children).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "totalProjectCostPerSF",
+      "value": 323,
+      "unit": "USD/sf",
+      "region": "West Lafayette, IN",
+      "regionKey": "IN",
+      "dataYear": 2015,
+      "source": {
+        "title": "Daycare Construction Cost Per Square Foot: Sourced Data",
+        "url": "https://buildermuse.com/public-works/daycare-center-construction-cost-per-square-foot/",
+        "publisher": "Buildermuse (citing Purdue's request)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Purdue's Early Care and Education Center, completed in 2015, at 16,400 gross square feet, $5.3 million, ... $323 per gross square foot and capacity for 140 children.",
+      "scopeNotes": "Total project cost per GSF (scope of 'cost' not itemized); 117 GSF per child.",
+      "confidence": "low"
+    },
+    {
+      "id": "e5",
+      "metric": "sfPerChild",
+      "value": 35,
+      "low": 35,
+      "high": 75,
+      "unit": "text",
+      "region": "US (federal Head Start standard)",
+      "regionKey": "US",
+      "source": {
+        "title": "Daycare Construction Cost Per Square Foot: Sourced Data",
+        "url": "https://buildermuse.com/public-works/daycare-center-construction-cost-per-square-foot/",
+        "publisher": "Buildermuse (citing 45 CFR 1302.21(d)(2) and Oregon OAR 414-305-0800)",
+        "accessed": "2026-10-24"
+      },
+      "quote": "require at least 35 square feet of usable indoor space per child ... at least 75 square feet of usable outdoor play space per child",
+      "scopeNotes": "Regulatory minimums; usable activity space excludes halls, toilets, kitchens and storage, so gross building SF per child is ~2.5-3.5x the 35 SF minimum.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "No current (2024-26) sourced childcare hard cost was found: franchise FDD Item 7 build-out ranges (Primrose, Goddard, Kiddie Academy, Lightbridge) and state childcare facility grant program data should be pulled to replace this derived estimate.",
+    "Per-child metrics (cost per licensed child, SF per child) depend on state licensing ratios; ~100-115 GSF per child is used from the Purdue example only.",
+    "Purdue figures are cited via a secondary article quoting the Indiana State Budget Agency request; verify against the original."
+  ]
+}

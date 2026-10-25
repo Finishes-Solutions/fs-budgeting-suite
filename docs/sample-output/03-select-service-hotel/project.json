@@ -1,0 +1,65 @@
+{
+  "sample": {
+    "id": "03-select-service-hotel",
+    "name": "Harbor Point — select-service hotel",
+    "address": "Nashville, TN",
+    "exitCap": 0.085
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "quick",
+    "location": {
+      "region": "TN-Nashville"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "amount",
+      "value": 3200000
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "c1",
+        "typeId": "hotel-select-service",
+        "name": "Harbor Point hotel",
+        "phaseId": "p1",
+        "size": 124,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perUnitYear",
+          "rate": 64000,
+          "otherIncome": 350000,
+          "vacancy": 0.27,
+          "expenseRatio": 0.64
+        }
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

@@ -1,0 +1,514 @@
+{
+  "schemaVersion": 1,
+  "id": "last-mile-industrial",
+  "name": "Last-mile / infill industrial",
+  "category": "industrial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Smaller (≈40k–250k SF) infill distribution and delivery-station buildings cost more per SF than bulk warehouses: fixed costs spread over less area, sites are often brownfield, and the ratio of paved van/trailer parking to building area is several times higher. No public source isolates \"last-mile\" product, so the default starts from Cushman & Wakefield's 2026 small-building model ($144 psf at 109,200 SF) and RLB metro ranges for the infill markets where this product concentrates.",
+  "sizing": {
+    "typicalSize": {
+      "low": 40000,
+      "mid": 120000,
+      "high": 250000,
+      "unit": "sf",
+      "evidence": [
+        "e2"
+      ],
+      "derived": true,
+      "method": "C&W small model is 109,200 SF (e2); infill/last-mile product typically 40k–250k SF (judgment), mid 120k SF."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 8500,
+      "mid": 12000,
+      "high": 16000,
+      "evidence": [],
+      "derived": true,
+      "method": "Building SF per site acre at FAR ~0.20–0.37: delivery stations and IOS-heavy infill sites carry large van/trailer yards (FAR 0.20–0.30); conventional infill shallow-bay at ~0.35. Mid FAR 0.275 × 43,560 ≈ 12,000 SF/acre."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.001,
+      "mid": 0.002,
+      "high": 0.004,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Car + delivery-van stalls per building SF: ~1–4 per 1,000 SF (delivery stations stage 1+ van per 1,000 SF plus employee cars); trailer stalls are a separate line."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 110,
+      "mid": 150,
+      "high": 220,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "e7",
+        "e8",
+        "e9"
+      ],
+      "derived": false,
+      "method": "Mid $150 = C&W 2026 small-building average $144 psf (e1) plus ~4% for the larger paved van/trailer yards typical of last-mile sites (bulk sitework already in C&W). Low $110 ≈ RLB low bounds in sunbelt infill markets (Dallas $75–$155 midpoint $115, Miami $80–$160 midpoint $120; e7/e8). High $220 ≈ RLB national median-of-highs ($228, e3) and the top of LA/Chicago ranges ($230–$245; e4/e6) — dense coastal infill with multi-story or heavy brownfield work can exceed this (NYC $155–$250, e5). RSMeans 2019 30k SF warehouse ($119–$131, e9) escalated to 2026 lands inside the range."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC/OH&P, core & shell, spec office, on-site paving for cars/vans/trailers, on-site utilities and stormwater; excludes environmental remediation beyond typical, multi-story ramps, fleet EV charging, land, soft costs, off-sites and fees."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.75,
+    "standard": 1,
+    "premium": 1.3,
+    "luxury": 1.6,
+    "evidence": [
+      "e3",
+      "e5"
+    ],
+    "derived": true,
+    "method": "economy ≈ low/mid (110/150 = 0.73); premium ≈ high/mid (220/150 = 1.47) tempered to 1.3 for single-story product with heavy yard; luxury 1.6 for multi-story/ramped urban logistics (NYC/LA range tops e4/e5)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.1
+      },
+      {
+        "division": "03",
+        "pct": 0.18
+      },
+      {
+        "division": "05",
+        "pct": 0.09
+      },
+      {
+        "division": "07",
+        "pct": 0.06
+      },
+      {
+        "division": "08",
+        "pct": 0.04
+      },
+      {
+        "division": "09",
+        "pct": 0.025
+      },
+      {
+        "division": "10",
+        "pct": 0.01
+      },
+      {
+        "division": "11",
+        "pct": 0.015
+      },
+      {
+        "division": "21",
+        "pct": 0.035
+      },
+      {
+        "division": "22",
+        "pct": 0.015
+      },
+      {
+        "division": "23",
+        "pct": 0.03
+      },
+      {
+        "division": "26",
+        "pct": 0.06
+      },
+      {
+        "division": "27",
+        "pct": 0.005
+      },
+      {
+        "division": "28",
+        "pct": 0.015
+      },
+      {
+        "division": "31",
+        "pct": 0.09
+      },
+      {
+        "division": "32",
+        "pct": 0.17
+      },
+      {
+        "division": "33",
+        "pct": 0.06
+      }
+    ],
+    "evidence": [
+      "e10"
+    ],
+    "derived": true,
+    "method": "Warehouse-distribution split (C&W category shares, e10) shifted ~6 points from structure (03/05) into paving (32) and earthwork (31) to reflect the higher yard-to-building ratio; slightly more electrical/security (26/28) for fleet operations. Judgment — verify."
+  },
+  "lineItems": [
+    {
+      "id": "van-fleet-parking",
+      "name": "Delivery-van / employee surface stalls",
+      "division": "32",
+      "block": "parking",
+      "unit": "space",
+      "qty": {
+        "per": "sf",
+        "value": 0.0015
+      },
+      "cost": {
+        "low": 3500,
+        "mid": 6500,
+        "high": 12000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Copied from _blocks/parking.json item parking-surface ($3,500/$6,500/$12,000 per space, 2025). Quantity ~1.5 stalls per 1,000 SF (vans + cars)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of baseline sitework."
+    },
+    {
+      "id": "trailer-parking",
+      "name": "Trailer / box-truck stalls (heavy-duty concrete)",
+      "division": "32",
+      "block": "paving",
+      "unit": "space",
+      "qty": {
+        "per": "sf",
+        "value": 0.0001
+      },
+      "cost": {
+        "low": 6500,
+        "mid": 9000,
+        "high": 13000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/paving.json#e7",
+          "_blocks/paving.json#e8"
+        ],
+        "derived": true,
+        "method": "Same build-up as warehouse-distribution: 660 SF stall = 73 SY × heavy-duty concrete $85–$170/SY (paving block). ~1 stall per 10,000 SF."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "fleet-ev-make-ready",
+      "name": "Fleet EV charging make-ready + Level 2 chargers (optional)",
+      "division": "26",
+      "block": "energy",
+      "unit": "port",
+      "qty": {
+        "per": "sf",
+        "value": 0.0005
+      },
+      "cost": {
+        "low": 8500,
+        "mid": 13000,
+        "high": 24650,
+        "dollarYear": 2022,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Sum of _blocks/energy.json items ev-make-ready ($2,500/$4,000/$8,650 per port, 2022) and ev-l2-port ($6,000/$9,000/$16,000, 2021) — expressed in the older year (2022). Quantity 1 port per 2,000 SF (≈ one per 2 van stalls) — judgment; utility service upgrade not included."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Optional; often tenant-funded."
+    },
+    {
+      "id": "dock-door-package",
+      "name": "Dock door package (door, leveler, seal, bumpers, light)",
+      "division": "11",
+      "unit": "ea",
+      "qty": {
+        "per": "sf",
+        "value": 0.0001
+      },
+      "cost": {
+        "low": 12000,
+        "mid": 18000,
+        "high": 28000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Same derived build-up as warehouse-distribution (door $4k–$7k + leveler $7k–$14k + seal/bumpers/light $1.5k–$4k). Last-mile buildings use fewer dock doors and more grade-level/van doors: ~1 per 10,000 SF."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.11,
+      "mid": 0.16,
+      "high": 0.22,
+      "evidence": [
+        "e9"
+      ],
+      "derived": true,
+      "method": "Bulk-warehouse soft-cost range (10–20%, see warehouse-distribution) plus ~1–2 points for infill entitlements, traffic studies, Phase I/II environmental and smaller project size. RSMeans architectural fee 7% (e9) is the upper bound for A/E."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.05
+    },
+    "notes": "Excludes financing, land and remediation beyond typical."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Slightly above bulk warehouse because infill sites are less standardised (judgment)."
+    },
+    "hard": {
+      "low": 0.04,
+      "mid": 0.06,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Brownfield/infill unknowns (old foundations, contaminated soils, utility conflicts) → 4–10% (judgment)."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard 5–10% of soft costs (judgment)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 115,
+      "max": 300,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "min ≈ hard low $110 × 1.05; max ≈ NYC/LA RLB tops ($250) × 1.2 for soft costs. Multi-story urban logistics can exceed this and should be checked separately."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "hardCostPerSF",
+      "value": 144,
+      "unit": "USD/sf",
+      "region": "Americas average (46 markets)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "2026 Americas Industrial Construction Cost Guide (landing page)",
+        "url": "https://www.cushmanwakefield.com/en/united-states/insights/industrial-construction-cost-guide",
+        "publisher": "Cushman & Wakefield",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Small projects averaged $144 psf (+3.6% YOY), medium $87 psf (+2.8% YOY), and large $78 psf (+2.3% YOY).",
+      "scopeNotes": "Model 109,200-SF distribution building (size per CRE Daily); ground-up core and shell. Average of 46 Americas markets incl. Canada, Mexico, Costa Rica, so not a pure US figure.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "modelBuildingSize",
+      "value": 476400,
+      "low": 109200,
+      "high": 901000,
+      "unit": "sf",
+      "region": "Americas",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Industrial Construction Costs Rise Across Americas",
+        "url": "https://www.credaily.com/?p=223266",
+        "publisher": "CRE Daily",
+        "accessed": "2026-10-24"
+      },
+      "quote": "A 109,200-SF small project averaged $144 PSF in mid-2026 … A 476,400-SF medium project averaged $87 PSF … A 901,000-SF large project averaged $78 PSF",
+      "scopeNotes": "Secondary report of the C&W 2026 guide; gives the model building sizes behind the small/medium/large averages.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 140,
+      "high": 228,
+      "unit": "USD/sf",
+      "region": "United States (18 RLB metros)",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Industrial - Warehouse column, 18 U.S. city rows (Austin 75-155 … Washington, D.C. 140-225; full range 75-370).",
+      "scopeNotes": "low/high here = median of the 18 U.S. city LOW values (140) and median of the HIGH values (227.5), computed by the researcher; un-weighted, coastal-heavy city sample, so above a true national average.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 150,
+      "high": 230,
+      "unit": "USD/sf",
+      "region": "Los Angeles",
+      "regionKey": "CA-LosAngeles",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Los Angeles row, Industrial - Warehouse: Low 150 High 230. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 155,
+      "high": 250,
+      "unit": "USD/sf",
+      "region": "New York",
+      "regionKey": "NY-NewYorkCity",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), New York row, Industrial - Warehouse: Low 155 High 250. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 155,
+      "high": 245,
+      "unit": "USD/sf",
+      "region": "Chicago",
+      "regionKey": "IL-Chicago",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Chicago row, Industrial - Warehouse: Low 155 High 245. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 80,
+      "high": 160,
+      "unit": "USD/sf",
+      "region": "Miami",
+      "regionKey": "FL-Miami",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Miami row, Industrial - Warehouse: Low 80 High 160. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e8",
+      "metric": "hardCostPerSF",
+      "value": null,
+      "low": 75,
+      "high": 155,
+      "unit": "USD/sf",
+      "region": "Dallas",
+      "regionKey": "TX-DFW",
+      "dataYear": 2026,
+      "source": {
+        "title": "Quarterly Construction Cost Report 2026 Third Quarter (North America)",
+        "url": "https://www.rlb.com/wp-content/uploads/sites/4/2026/09/Q3-2026-QCR.pdf",
+        "publisher": "Rider Levett Bucknall",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Indicative Construction Costs table (p.11), Dallas row, Industrial - Warehouse: Low 75 High 155. \"Values of U.S. locations represent hard construction costs based on U.S. dollars per square foot of gross floor area\"",
+      "scopeNotes": "Generic warehouse hard cost per GFA in that metro; RLB does not state whether sitework is included or the building size basis.",
+      "confidence": "high"
+    },
+    {
+      "id": "e9",
+      "metric": "hardCostPerSF",
+      "value": 119.27,
+      "low": 119.27,
+      "high": 130.62,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Warehouse Construction Cost Model (Brick Veneer / Reinforced Concrete)",
+        "url": "https://www.rsmeans.com/model-pages/warehouse",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Subtotal $95.42/SF (open shop) … Contractor Fees (General Conditions, Overhead, Profit) 25% $23.85 … Architectural Fees 7% … Total $127.62 (open shop) / $139.76 (union)",
+      "scopeNotes": "value = open-shop subtotal + 25% contractor fees ($95.42 + $23.85), architectural fee removed; high = union equivalent ($104.50 + $26.12). 30,000-SF, 24-ft brick-veneer warehouse; building only, sitework not shown. 2019 dollars.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e10",
+      "metric": "costShareByCategory",
+      "value": null,
+      "low": 0.34,
+      "high": 0.37,
+      "unit": "pct",
+      "region": "Americas",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Industrial Construction Costs Rise Across Americas",
+        "url": "https://www.credaily.com/?p=223266",
+        "publisher": "CRE Daily",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Structural and enclosure work was the biggest cost category … about 34% of a small warehouse budget … about 37% for a large project. Architectural work represented about 22% of costs on small projects and roughly 15% on large projects.",
+      "scopeNotes": "C&W 2026 cost-category shares (structure/enclosure 34-37%, architectural 15-22%; the article also puts MEP near 6-7% across sizes); the remaining ~35-45% is not itemised in the article (presumably sitework and GC/fees).",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "No public cost source isolates last-mile/delivery-station product; a public delivery-station budget (municipal incentive filing) would help.",
+    "Clarify how much of the yard paving is inside the C&W small-building model."
+  ]
+}

@@ -174,7 +174,10 @@ Deliberately NOT built (validator rejects rather than approximates; revisit only
 with controlled calibration exports): charts/chart exports, after-tax analysis,
 ten-year reports, interest-only / assumed / second / refinance loans, partner
 waterfalls, MIRR/NPV, disposition-price sensitivity, AI summaries, external
-publishing. A future **Refresh From New Budget Version** action (diff + new
+publishing. (The **Budget Assistant** added in 2026-10 is not that: it answers
+questions about a *budget* on request, in a dialog, and writes nothing into an
+analysis, a report or an export — see `AGENTS.md` § Budget Assistant.) A future
+**Refresh From New Budget Version** action (diff + new
 analysis version) is the planned path for re-importing after a budget changes.
 
 ---

@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "id": "duplex-fourplex",
+  "name": "Duplex / triplex / fourplex",
+  "category": "residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "unit",
+  "summary": "Small 2\u20134 unit 'missing middle' buildings, usually wood frame on a single lot. Per-SF cost runs a little above townhomes: small project scale, repeated kitchens and baths in smaller units, and fire separations. Triplexes and fourplexes often trigger commercial-code (IBC R-2) sprinklers and separate utility services. Direct cost data is thin. The only primary cost points are Washington permit valuations; national values are derived from townhome and single-family data. Treat as a derived estimate.",
+  "sizing": {
+    "typicalSize": {
+      "low": 2,
+      "mid": 4,
+      "high": 8,
+      "unit": "unit",
+      "evidence": [
+        "e3"
+      ],
+      "derived": true,
+      "method": "Units per project: one building of 2\u20134 units, or two fourplexes on a double lot. Census reports 20% of multifamily buildings completed in 2025 had two units (e3)."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 900,
+      "mid": 1150,
+      "high": 1500,
+      "evidence": [
+        "e3"
+      ],
+      "derived": true,
+      "method": "Gross building SF per unit. Census 2025 multifamily units completed: median 1,000 SF built-for-rent, 1,170 SF built-for-sale (e3, net unit area). ~5\u201310% added for stairs and walls in small buildings. Side-by-side duplexes run larger (1,300\u20131,800 SF)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 8,
+      "mid": 14,
+      "high": 25,
+      "evidence": [],
+      "derived": true,
+      "method": "A duplex on a 6,000 SF lot \u2248 14.5 du/net acre; a fourplex on a 7,000 SF lot \u2248 25 du/acre. Judgment from typical missing-middle zoning lot sizes."
+    },
+    "parkingPerPrimaryUnit": {
+      "low": 0.5,
+      "mid": 1,
+      "high": 2,
+      "type": "surface",
+      "evidence": [],
+      "derived": true,
+      "method": "Recent missing-middle reforms often allow 0\u20131 space per unit; suburban codes require 1.5\u20132. Judgment."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 110000,
+      "mid": 185000,
+      "high": 295000,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2"
+      ],
+      "derived": true,
+      "method": "= perSF \u00d7 sfPerPrimaryUnit: mid $160 \u00d7 1,150 \u2248 $185k; low $120 \u00d7 900 \u2248 $110k; high $210 \u00d7 1,400 \u2248 $295k. WA cross-check: Snohomish County 2025 permit valuations $358.5k/unit for duplexes (e1) and $272k/unit for 3\u20134 unit buildings (e2), Seattle metro, with unit sizes not stated. Dividing by an assumed ~1.2 Seattle-to-national factor gives ~$300k and ~$227k. Those sit in the upper half of the range, consistent with larger WA units."
+    },
+    "perSF": {
+      "low": 120,
+      "mid": 160,
+      "high": 210,
+      "dollarYear": 2025,
+      "region": "US",
+      "evidence": [
+        "residential/townhomes.json#e1",
+        "residential/townhomes.json#e4"
+      ],
+      "derived": true,
+      "method": "Derived from the townhomes per-SF range (115/150/200, from Census attached-home prices and WA permit valuations) +~7%. The premium is a judgment for small-builder scale, higher kitchen/bath density in ~1,000 SF units, and rated floor/ceiling separations in stacked units. No national per-SF source for 2\u20134 unit buildings was found."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC general conditions and OH&P for the building plus on-lot work (driveway/parking pad, walks, laterals, landscaping). Excludes land, demolition of an existing house, off-site improvements, impact/tap fees and separate meter fees, A&E, financing and FF&E."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.78,
+    "standard": 1.0,
+    "premium": 1.25,
+    "luxury": 1.55,
+    "evidence": [],
+    "derived": true,
+    "method": "Economy = low/mid of the per-SF range (120/160 = 0.75), rounded up slightly. Premium and luxury follow the townhome tiers. Judgment."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.13
+      },
+      {
+        "division": "03",
+        "pct": 0.07
+      },
+      {
+        "division": "04",
+        "pct": 0.01
+      },
+      {
+        "division": "05",
+        "pct": 0.005
+      },
+      {
+        "division": "06",
+        "pct": 0.16
+      },
+      {
+        "division": "07",
+        "pct": 0.095
+      },
+      {
+        "division": "08",
+        "pct": 0.05
+      },
+      {
+        "division": "09",
+        "pct": 0.1
+      },
+      {
+        "division": "10",
+        "pct": 0.007
+      },
+      {
+        "division": "11",
+        "pct": 0.025
+      },
+      {
+        "division": "12",
+        "pct": 0.045
+      },
+      {
+        "division": "21",
+        "pct": 0.015
+      },
+      {
+        "division": "22",
+        "pct": 0.09
+      },
+      {
+        "division": "23",
+        "pct": 0.06
+      },
+      {
+        "division": "26",
+        "pct": 0.075
+      },
+      {
+        "division": "31",
+        "pct": 0.02
+      },
+      {
+        "division": "32",
+        "pct": 0.033
+      },
+      {
+        "division": "33",
+        "pct": 0.01
+      }
+    ],
+    "evidence": [
+      "residential/single-family.json#e3"
+    ],
+    "derived": true,
+    "method": "Derived from the single-family split (NAHB 2024 Table 1 mapped to CSI). Adjustments, all judgment: Div 01 up (small-project GC overhead); 21 added (13D/13R sprinklers for 3\u20134 unit buildings); 22, 11 and 12 up (one kitchen and 1\u20132 baths per ~1,100 SF); 09 up (rated assemblies); 31 and 32 down (single small lot); 33 for separate water/sewer services."
+  },
+  "lineItems": [
+    {
+      "id": "fire-sprinklers-13r",
+      "name": "Fire sprinkler system (NFPA 13D/13R) \u2014 triplex/fourplex",
+      "division": "21",
+      "unit": "sf",
+      "qty": {
+        "per": "sf",
+        "value": 1
+      },
+      "cost": {
+        "low": 2,
+        "mid": 3.5,
+        "high": 6,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Judgment: Div 21 \u2248 1.5\u20132.5% of a $160/SF building. A new water service upsize may add more. Verify locally."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Triplexes and fourplexes fall under the IBC (R-2) and usually require sprinklers; duplexes under the IRC often do not."
+    },
+    {
+      "id": "separate-utility-services",
+      "name": "Separate water/electric/gas services and meters per unit",
+      "division": "33",
+      "unit": "ea",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 3000,
+        "mid": 7500,
+        "high": 15000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Judgment for on-lot laterals, meter banks and service equipment per unit; utility connection/tap fees are excluded (soft costs). The ADU evidence (adu.json) shows single new meters can cost $10k\u201330k in some cities."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of the hard cost."
+    },
+    {
+      "id": "demolition-existing-house",
+      "name": "Demolition of existing single-family house (infill lot)",
+      "division": "02",
+      "unit": "ea",
+      "qty": {
+        "per": "project",
+        "value": 1
+      },
+      "cost": {
+        "low": 15000,
+        "mid": 25000,
+        "high": 45000,
+        "dollarYear": 2025,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Judgment for a 1,200\u20132,000 SF wood house incl. utility disconnects and hauling. Asbestos abatement is extra."
+      },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Most missing-middle projects replace an existing house."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.11,
+      "mid": 0.17,
+      "high": 0.26,
+      "evidence": [
+        "residential/single-family.json#e10"
+      ],
+      "derived": true,
+      "method": "Starts from the single-family NAHB structure (fees \u2248 5%, A&E \u2248 1.6% of direct cost). A&E raised to ~5\u20137% (custom small-building design, structural/energy engineering for R-2) and per-unit impact and utility fees raised. No developer marketing overhead at this scale. Mid \u2248 21%. Judgment. | Second pass (2026-10-24, main session): Reduced 4 points to remove the per-unit impact and utility fees it raised. The engine adds impact & tap fees, the developer fee and construction financing as their own lines (docs/BUDGET_ENGINE.md \u00a75), so this bucket must exclude them."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.06,
+      "permitsAndFees": 0.06,
+      "financing": 0.04,
+      "legalInsurance": 0.02,
+      "developerOverhead": 0.03
+    },
+    "notes": "Impact and connection fees are often assessed per dwelling unit and can dominate on small projects."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Judgment: one-off small building designs."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.07,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Judgment: infill sites carry unknowns (old utilities, soils)."
+    },
+    "soft": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "General development norm. Judgment."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 120000,
+      "max": 450000,
+      "dollarYear": 2025,
+      "region": "US",
+      "method": "Low hard $110k \u00d7 1.12 \u2248 $125k; high $295k \u00d7 1.35 \u2248 $400k, plus headroom for coastal metros. Excludes land."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "permitValuationPerUnit",
+      "value": 358506,
+      "unit": "USD/unit",
+      "region": "Unincorporated Snohomish County (Seattle metro), WA",
+      "regionKey": "WA-Seattle",
+      "dataYear": 2025,
+      "source": {
+        "title": "Issued Residential Building Permits \u2014 September 2025, Unincorporated Snohomish County",
+        "url": "https://snohomishcountywa.gov/Archive.asp?ADID=7313",
+        "publisher": "Snohomish County Planning and Development Services",
+        "accessed": "2026-10-24"
+      },
+      "quote": "DUPLEXES 4 [units] 2 [bldgs] $1,434,025",
+      "scopeNotes": "Researcher computed $1,434,025 / 4 units = $358,506/unit. Permit valuation (building value), unit sizes not stated. Small sample (2 buildings).",
+      "confidence": "low"
+    },
+    {
+      "id": "e2",
+      "metric": "permitValuationPerUnit",
+      "value": 271997,
+      "unit": "USD/unit",
+      "region": "Unincorporated Snohomish County (Seattle metro), WA",
+      "regionKey": "WA-Seattle",
+      "dataYear": 2025,
+      "source": {
+        "title": "Issued Residential Building Permits \u2014 September 2025, Unincorporated Snohomish County",
+        "url": "https://snohomishcountywa.gov/Archive.asp?ADID=7313",
+        "publisher": "Snohomish County Planning and Development Services",
+        "accessed": "2026-10-24"
+      },
+      "quote": "3 & 4 UNIT BUILDINGS 18 [units] 6 [bldgs] $4,895,952",
+      "scopeNotes": "Researcher computed $4,895,952 / 18 units = $271,997/unit. Permit valuation; unit sizes not stated.",
+      "confidence": "low"
+    },
+    {
+      "id": "e3",
+      "metric": "sfPerUnit",
+      "value": 1000,
+      "low": 1000,
+      "high": 1170,
+      "unit": "count",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2025,
+      "source": {
+        "title": "Highlights of Annual 2025 Characteristics of New Housing",
+        "url": "https://www.census.gov/construction/chars/highlights.html",
+        "publisher": "U.S. Census Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "The median size of multifamily units completed that were built for rent was 1,000 square feet",
+      "scopeNotes": "Built-for-sale multifamily median was 1,170 SF. The same page reports 20% of multifamily buildings completed in 2025 had two units. All multifamily, not only 2\u20134 unit buildings.",
+      "confidence": "medium"
+    }
+  ],
+  "openQuestions": [
+    "No national hard-cost source for 2\u20134 unit buildings. Missing-middle feasibility studies (e.g., Portland Residential Infill Project, California SB 9 analyses, Opticos) or RSMeans R-2/R-3 square-foot models would replace the derived per-SF.",
+    "Permit valuations (Snohomish) lack unit SF, so per-SF could not be computed."
+  ]
+}

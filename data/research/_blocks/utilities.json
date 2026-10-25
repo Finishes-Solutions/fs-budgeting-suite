@@ -1,0 +1,483 @@
+{
+  "schemaVersion": 1,
+  "id": "utilities",
+  "name": "Site utilities",
+  "researchedAt": "2026-10-24",
+  "notes": "Pipe, hydrant and structure prices are anchored on DOT weighted-average bid prices (FDOT statewide Sep 2025-Aug 2026; ArDOT Jun 2025-Jun 2026; MDT 2025). DOT utility pipe items are usually utility relocations inside an active roadway (traffic control, conflicts, small runs), so they run at or above typical greenfield private-site main costs; methods account for this. On-site septic, wells, electrical primary/transformers, lift stations and utility pedestals had no authoritative public unit price available in this session and are derived; RV and food-truck pedestals reuse evidence collected by the RV park and food truck park type files.",
+  "items": [
+    {
+      "id": "water-main",
+      "name": "Water main, 8\" PVC C900 / DI (incl. fittings, valves amortized, trench & backfill)",
+      "division": "33",
+      "unit": "lf",
+      "cost": {
+        "low": 70, "mid": 115, "high": 175,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e1", "e2", "e3"],
+        "derived": false,
+        "method": "FDOT utility pipe PVC water/sewer 8\" $115.60/LF (7 contracts, e1); FDOT ductile iron 8\" $123.64/LF and 12\" $117.08/LF (e2); ArDOT PVC C900 DR14 $117.50/LF on 10,700 LF (e3). Mid $115 = the cluster of all three DOT prices. Low $70 = long, unobstructed greenfield runs in low-cost markets (DOT relocation work carries a premium); high $175 = 12\" DI / urban conditions with pavement restoration."
+      },
+      "notes": "On-site loop / private fire line. Gate valves ~every 500 ft and fittings are amortized in the LF price. Add fire-hydrant (ea) separately."
+    },
+    {
+      "id": "sanitary-sewer",
+      "name": "Sanitary sewer, 8\" PVC gravity at 6-12' depth (incl. manholes ~every 350 ft)",
+      "division": "33",
+      "unit": "lf",
+      "cost": {
+        "low": 90, "mid": 140, "high": 220,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e1", "e7"],
+        "derived": true,
+        "method": "Pipe: FDOT PVC water/sewer 8\" $115.60/LF (e1) as the in-trench pipe price. Manholes: FDOT manhole P-7/P-8 <10' $7,320-$8,295 each (e7) spread over ~350 LF = ~$22-$24/LF. Mid = $115 + $24 = ~$140. Low = shallow greenfield runs at ~$70/LF pipe + manholes; high = 12-18' depths with dewatering or rock."
+      },
+      "notes": "Services/laterals extra (~$1,500-$4,000 each). Deeper than ~14 ft or in rock: use the high end or add rock-excavation."
+    },
+    {
+      "id": "storm-sewer",
+      "name": "Storm sewer pipe, 18-24\" RCP/HDPE in place (excl. inlets/manholes)",
+      "division": "33",
+      "unit": "lf",
+      "cost": {
+        "low": 85, "mid": 125, "high": 210,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e5", "e6"],
+        "derived": false,
+        "method": "FDOT pipe culvert, optional material, round 18\" $121.00/LF (91 contracts, 133,261 LF) and 24\" $135.99/LF (e5); ArDOT 18\" RCP class 3 $91.21/LF and 24\" $126.71/LF (e6). Mid $125 = average of the four; low = ArDOT 18\" less private-site efficiency; high = 36\" pipe (FDOT $208.05/LF)."
+      },
+      "notes": "Add storm-inlet and manhole items for structures. Larger trunk lines: 30\" ~$175, 36\" ~$210, 48\" ~$300/LF (FDOT)."
+    },
+    {
+      "id": "storm-inlet",
+      "name": "Storm inlet / catch basin (curb or ditch-bottom, <10' deep)",
+      "division": "33",
+      "unit": "ea",
+      "cost": {
+        "low": 5000, "mid": 8500, "high": 15000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e8"],
+        "derived": false,
+        "method": "FDOT inlets: ditch-bottom type C <10' $6,518.82 (146 EA), type D $7,257.63 (204 EA), curb type P-5 $9,687.94 (207 EA), gutter type S $7,731.44 (391 EA) (e8). Mid $8,500 = central value of these high-volume items; low/high = shallow yard drains to J-bottom/deeper curb inlets ($14k-$15k)."
+      },
+      "notes": "Parking lots typically need ~1 inlet per 10,000-20,000 SF of pavement."
+    },
+    {
+      "id": "manhole",
+      "name": "Manhole, precast 4-5' dia, <10' deep (storm or sanitary)",
+      "division": "33",
+      "unit": "ea",
+      "cost": {
+        "low": 6000, "mid": 8500, "high": 15000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e7"],
+        "derived": false,
+        "method": "FDOT manholes P-8 <10' $7,320.54 (114 EA), P-7 <10' $8,295.47 (85 EA), J-8 <10' $12,428.26 (107 EA) and J-7 >10' $26,087.52 (e7). Mid $8,500 ~ P-7; high = J-type (larger) structures."
+      },
+      "notes": "Sanitary manholes with drop connections or lining run at the high end."
+    },
+    {
+      "id": "force-main",
+      "name": "Sewer force main, 4-6\" PVC/HDPE (incl. air release allowance)",
+      "division": "33",
+      "unit": "lf",
+      "cost": {
+        "low": 40, "mid": 75, "high": 120,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e1", "e4"],
+        "derived": true,
+        "method": "FDOT utility pipe HDPE water/sewer 4\" $68.41/LF and 6\" $88.33/LF (e4); FDOT PVC 4\" $102.30/LF (6 contracts, 518 LF, e1). Samples are small (relocation work), so mid $75 ~ midpoint of HDPE 4\"-6\"; low $40 = long open-cut rural runs; high $120 = directional-drilled or urban runs."
+      },
+      "notes": "Pair with lift-station. Directionally drilled HDPE is common under roads/wetlands."
+    },
+    {
+      "id": "electrical-primary-underground",
+      "name": "Underground electrical primary (duct bank w/ 2-3 conduits, trench, cable allowance)",
+      "division": "33",
+      "unit": "lf",
+      "cost": {
+        "low": 50, "mid": 85, "high": 150,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e9"],
+        "derived": true,
+        "method": "FDOT conduit furnish & install, open trench $17.51/LF and directional bore $35.87/LF (e9) - single small conduit. A primary run typically needs 2-3 x 4-6\" conduits (sometimes concrete-encased), deeper trench, warning tape and pull boxes/vaults (FDOT pull & splice boxes $1,476-$5,780 each), plus primary cable where the developer installs it: ~2.5-4x a single-conduit price -> $50-$150/LF; mid $85. In many utility territories the utility installs cable and the developer only trenches/installs conduit (use the low end)."
+      },
+      "notes": "Utility line-extension charges/aid-in-construction vary widely by utility and are not included; treat them as a fee or off-site item."
+    },
+    {
+      "id": "transformer-pad",
+      "name": "Transformer pad & connections (utility-furnished pad-mount transformer)",
+      "division": "26",
+      "unit": "ea",
+      "cost": {
+        "low": 6000, "mid": 15000, "high": 40000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived (no public unit price captured). Developer scope when the utility furnishes and sets the transformer: precast or cast-in-place pad/box pad ($2k-$8k), grounding grid, bollards ($1k-$3k), primary and secondary conduit stub-ups ($2k-$10k) and secondary feeders to the building service (short runs). Mid $15k for a single 3-phase commercial service; high $40k for large services with long secondary runs."
+      },
+      "notes": "If the owner must purchase the transformer (campus/private distribution, some solar/EV sites), use transformer-owner-furnished instead/in addition."
+    },
+    {
+      "id": "transformer-owner-furnished",
+      "name": "Pad-mount transformer, owner-furnished & installed (≈300-750 kVA, 3-phase)",
+      "division": "26",
+      "unit": "ea",
+      "cost": {
+        "low": 45000, "mid": 85000, "high": 180000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived (no public price list available). Distribution-transformer prices rose sharply after 2020 with long lead times; a 300-750 kVA 3-phase pad-mount unit is assumed at ~$35k-$140k equipment plus $10k-$40k pad, rigging, terminations and testing. Mid $85k for ~500 kVA. Verify with a current supplier quote - lead times of 1-2+ years can drive premiums."
+      },
+      "notes": "Optional item; most single-building commercial services use a utility-owned transformer (transformer-pad)."
+    },
+    {
+      "id": "lift-station",
+      "name": "Sewage lift station, packaged duplex submersible (wet well, pumps, controls, generator receptacle)",
+      "division": "33",
+      "unit": "ea",
+      "cost": {
+        "low": 150000, "mid": 350000, "high": 750000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e10", "specialty-residential/rv-park-resort.json#e14"],
+        "derived": true,
+        "method": "FDOT 12-month average shows one public sanitary lift station at $497,334 (e10, single contract - municipal spec). Private-development packaged duplex stations (100-300 gpm) commonly run well below municipal stations; small private stations without standby generator ~$150k. Mid $350k reflects a developer station built to utility-dedication standards (precast wet well, valve vault, duplex submersibles, control panel, telemetry, fencing, access drive). High $750k = larger station with on-site generator and odor control."
+      },
+      "notes": "Grinder-pump systems for very small flows can be $15k-$40k instead. Add force-main LF separately."
+    },
+    {
+      "id": "fire-hydrant",
+      "name": "Fire hydrant assembly (hydrant, tee, gate valve, lead)",
+      "division": "33",
+      "unit": "ea",
+      "cost": {
+        "low": 8000, "mid": 11000, "high": 15000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e11", "e12", "e13"],
+        "derived": false,
+        "method": "FDOT fire hydrant F&I standard $10,255.96 (14 EA), 3-way $9,768.38 (21 EA), 2-hose $14,400 (1 EA) (e11); ArDOT fire hydrant assembly $10,665.93 (27 EA) (e12); MDT hydrant assembly $14,600 (2 EA) (e13). Mid $11,000 = weighted center of FDOT/ArDOT; high = MDT/FDOT single-contract prices; low = greenfield sites with short leads."
+      },
+      "notes": "Typical spacing 300-500 ft on site loops; fire code driven."
+    },
+    {
+      "id": "offsite-utility-extension",
+      "name": "Off-site utility extension in public ROW (water + sewer in common corridor, incl. pavement restoration)",
+      "division": "33",
+      "unit": "lf",
+      "cost": {
+        "low": 200, "mid": 375, "high": 650,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["e1", "e7", "_blocks/paving.json#e1"],
+        "derived": true,
+        "method": "Per LF of corridor carrying both an 8\" water main (~$115/LF, e1) and 8\" gravity sewer with manholes (~$140/LF, e1/e7), plus trench pavement cut-and-patch and traffic control in public ROW (~$60-$150/LF using HMA at FDOT $136/ton), plus valves/connections and inspection by the utility -> ~$315-$405; mid $375. Low $200 = single utility along an unpaved shoulder; high $650 = urban street with full-lane restoration, deeper sewer or bores."
+      },
+      "notes": "Off-site; excluded from the baseline hard cost by definition and added only when the user switches it on. Reimbursement/latecomer agreements may offset cost."
+    },
+    {
+      "id": "septic-system",
+      "name": "Septic system, conventional (≈1,000-1,500 gal tank + gravity drainfield; small building)",
+      "division": "33",
+      "unit": "ea",
+      "cost": {
+        "low": 10000, "mid": 20000, "high": 40000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived; no authoritative public source was retrievable in this session (consumer cost sites blocked automated access). Conventional systems for a single home/small building are widely quoted at ~$5k-$15k in prior years; for a small commercial building (higher design flow, engineered design, commercial permit, effluent filter, heavier tank) assumed 1.5-2.5x -> $10k-$40k, mid $20k. Mound/aerobic/ATU systems sit at the high end."
+      },
+      "notes": "For larger flows (campgrounds, multiple buildings) use drainfield-large. Perc testing/design are soft costs."
+    },
+    {
+      "id": "drainfield-large",
+      "name": "Large on-site wastewater system (≈2,000-10,000 gpd; tanks, dosing/LPP drainfield)",
+      "division": "33",
+      "unit": "ea",
+      "cost": {
+        "low": 60000, "mid": 150000, "high": 350000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": ["specialty-residential/rv-park-resort.json#e14"],
+        "derived": true,
+        "method": "Anchor: an RV park developer source reports small parks doing their 'entire septic for $100k' (rv-park-resort.json#e14, low confidence). Scaled by design flow: ~$15-$35 per gpd of design flow for multiple tanks, dosing pumps/controls and pressure-distribution field -> 4,000-10,000 gpd = $60k-$350k; mid $150k (~6,000 gpd). Package treatment plants (>$1M) are not included."
+      },
+      "notes": "Large-capacity septic systems often need state (not county) permits and EPA UIC registration."
+    },
+    {
+      "id": "water-well",
+      "name": "Water well, drilled (≈300-600 ft) with pump, pitless adapter, pressure tank - small non-community system",
+      "division": "33",
+      "unit": "ea",
+      "cost": {
+        "low": 20000, "mid": 45000, "high": 120000,
+        "dollarYear": 2026, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "Derived (no retrievable public source this session). Drilling at ~$30-$90/LF for 6\" wells x 300-600 ft = $9k-$54k, plus submersible pump, pitless adapter, pressure tanks and controls $6k-$20k, plus disinfection/testing; public-water-system (non-community) wells add grouting, wellhouse and treatment allowances -> $20k-$120k, mid $45k."
+      },
+      "notes": "Storage tanks, treatment and fire-flow systems are extra. Highly variable with depth and geology."
+    },
+    {
+      "id": "utility-pedestal-rv-50a",
+      "name": "RV site utility pedestal, 50/30/20A (installed, incl. share of site feeder)",
+      "division": "26",
+      "unit": "ea",
+      "cost": {
+        "low": 1500, "mid": 3000, "high": 5500,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["specialty-residential/rv-park-resort.json#e13", "specialty-residential/rv-park-resort.json#e9"],
+        "derived": true,
+        "method": "Pedestal hardware ~$500-$600 each (city council estimate, rv-park-resort.json#e13); an RV park developer source puts electrical at ~$4,000 per site including distribution (rv-park-resort.json#e9). Installed pedestal (setting, breakers, metering option, short secondary from the loop) assumed ~$1.5k-$3k; mid $3,000 includes a partial share of feeders. Use high $5,500 when each pedestal also carries metering and long trench runs. Water/sewer hookups are separate."
+      },
+      "notes": "Matches the RV park type file's electrical-pedestal line item ($1,200-$3,500). Does not include transformer/service equipment."
+    },
+    {
+      "id": "utility-pedestal-food-truck",
+      "name": "Food truck pad utility pedestal (≈50-100A power, water & sewer/grey-water stub)",
+      "division": "26",
+      "unit": "ea",
+      "cost": {
+        "low": 5000, "mid": 10000, "high": 20000,
+        "dollarYear": 2023, "region": "US",
+        "evidence": ["entertainment/food-truck-park.json#e5"],
+        "derived": true,
+        "method": "A Utah special service district estimate lists 'Electrical For Food Truck 1 LS 10,000.00' per truck pad (food-truck-park.json#e5) - used as the mid. Low $5k = power-only pedestal near the service; high $20k = 100A service plus potable water, grey-water/sewer stub and backflow per pad."
+      },
+      "notes": "Per truck position. Grease interceptor and restrooms are carried in the food truck park type file."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "pvcPipePerLF",
+      "value": 115.60, "low": 102.30, "high": 131.01,
+      "unit": "USD/lf",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 1050 31208: 7 contracts, $115.60, 3,922.000 LF - UTILITY PIPE- POLY VINYL CHLORIDE, FURNISH & INSTALL, WATER/SEWER, 8\"; 1050 31204: $102.30 - 4\"; 1050 31212: $131.01 - 12\"",
+      "scopeNotes": "Utility work within highway projects (relocations/adjustments), furnished and installed incl. trench. Water vs sewer not distinguished.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2",
+      "metric": "diPipePerLF",
+      "value": 123.64, "low": 117.08,
+      "unit": "USD/lf",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 1050 51208: 4 contracts, $123.64, 4,050.000 LF - UTILITY PIPE- DUCTILE IRON/CAST IRON, FURNISH & INSTALL, WATER/SEWER, 8\"; 1050 51212: 4 contracts, $117.08, 11,353.000 LF - 12\"",
+      "scopeNotes": "As e1.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "pvcPipePerLF",
+      "value": 117.50,
+      "unit": "USD/lf",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "911 PVC (AWWA C900, 305, DR14) LF 10,700.00 117.50 117.50 117.50",
+      "scopeNotes": "Single-price item (one contract); diameter not stated in the item name.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "hdpePipePerLF",
+      "value": 68.41, "high": 88.33,
+      "unit": "USD/lf",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 1050 42204: 1 contract, $68.41, 84.000 LF - UTILITY PIPE- HIGH DENSITY POLYETHYLENE, FURNISH & INSTALL, WATER/SEWER, 4\"; 1050 42206: 2 contracts, $88.33, 459.000 LF - 6\"",
+      "scopeNotes": "Very small quantities; used only as an order-of-magnitude anchor for force mains.",
+      "confidence": "low"
+    },
+    {
+      "id": "e5",
+      "metric": "stormPipePerLF",
+      "value": 121.00, "high": 208.05,
+      "unit": "USD/lf",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0430175118: 91 contracts, $121.00, 133,261.000 LF - PIPE CULVERT,OPTIONAL MATERIAL,ROUND, 18\"S/CD; 0430175124: 62 contracts, $135.99 - 24\"; 0430175136: 35 contracts, $208.05 - 36\"",
+      "scopeNotes": "S/CD = storm drain / cross drain; pipe only, structures paid separately.",
+      "confidence": "high"
+    },
+    {
+      "id": "e6",
+      "metric": "stormPipePerLF",
+      "value": 91.21, "high": 126.71,
+      "unit": "USD/lf",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "605 18\" R.C.PIPE CULVERTS(CL.3) LF 23,133.00 577.63 60.00 91.21 ... 605 24\" R.C.PIPE CULVERTS(CL.3) LF 5,646.00 201.22 85.00 126.71",
+      "scopeNotes": "Columns: quantity, high, low, weighted average. Culverts (pipe only).",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "manholePerEach",
+      "value": 8295.47, "low": 7320.54, "high": 12428.26,
+      "unit": "USD/ea",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0425 2 41: 29 contracts, $8,295.47, 85.000 EA - MANHOLES, P-7, <10'; 0425 2 61: 32 contracts, $7,320.54, 114.000 EA - MANHOLES, P-8, <10'; 0425 2 91: 26 contracts, $12,428.26 - MANHOLES, J-8, <10'",
+      "scopeNotes": "Storm drainage manholes; used as a proxy for sanitary manholes.",
+      "confidence": "high"
+    },
+    {
+      "id": "e8",
+      "metric": "inletPerEach",
+      "value": 9687.94, "low": 6518.82, "high": 15033.42,
+      "unit": "USD/ea",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0425 1351: 35 contracts, $9,687.94, 207.000 EA - INLETS, CURB, TYPE P-5, <10'; 0425 1521: 36 contracts, $6,518.82, 146.000 EA - INLETS, DT BOT, TYPE C,<10'; 0425 1701: 20 contracts, $7,731.44, 391.000 EA - INLETS, GUTTER, TYPE S, <10'",
+      "scopeNotes": "high = curb inlet type J-5 <10' $15,033.42 (54 EA).",
+      "confidence": "high"
+    },
+    {
+      "id": "e9",
+      "metric": "conduitPerLF",
+      "value": 17.51, "high": 35.87,
+      "unit": "USD/lf",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 0630 2 11: 160 contracts, $17.51, 911,784.000 LF - CONDUIT, FURNISH & INSTALL, OPEN TRENCH; 0630 2 12: 176 contracts, $35.87 - CONDUIT, FURNISH & INSTALL, DIRECTIONAL BORE",
+      "scopeNotes": "Signal/lighting/ITS conduit (typically single 2\"); a proxy for one conduit of a primary duct bank.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e10",
+      "metric": "liftStationPerEach",
+      "value": 497334,
+      "unit": "USD/ea",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 1501 1: 1 contract, $497,334.00, 1.000 EA - LIFT STATION, SANITARY SEWER",
+      "scopeNotes": "Single public lift station; capacity not stated.",
+      "confidence": "low"
+    },
+    {
+      "id": "e11",
+      "metric": "hydrantPerEach",
+      "value": 10255.96, "low": 9768.38, "high": 14400,
+      "unit": "USD/ea",
+      "region": "Florida statewide",
+      "regionKey": "FL",
+      "dataYear": 2026,
+      "source": {
+        "title": "Item Average Unit Cost, From 2025/09/01 to 2026/08/31, Statewide (historical-item-averages-statewide-12-months)",
+        "url": "https://fdotwww.blob.core.windows.net/sitefinity/docs/default-source/fpo/fpc/reports/historicalitemaveragecost/moving/statewide/pdf/historical-item-averages-statewide-12-months.pdf?sfvrsn=32501f5b_15",
+        "publisher": "Florida Department of Transportation",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Item 1644113 08: 3 contracts, $10,255.96, 14.000 EA - FIRE HYDRANT, F&I, STANDARD, 2 HOSE, 1PUMPER, 6\"; 1644116 08: 3 contracts, $9,768.38, 21.000 EA - FIRE HYDRANT, STANDARD, F&I, 3 WAY",
+      "scopeNotes": "high = 1644112 06, single contract, $14,400.00.",
+      "confidence": "high"
+    },
+    {
+      "id": "e12",
+      "metric": "hydrantPerEach",
+      "value": 10665.93, "low": 2500, "high": 10980,
+      "unit": "USD/ea",
+      "region": "Arkansas statewide",
+      "regionKey": "AR",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Unit Prices from 6/25/2025 to 6/24/2026",
+        "url": "https://media.ark.org/ardot/June-24-2026-Weighted-Averages-Prices.pdf",
+        "publisher": "Arkansas Department of Transportation, Program Management Division",
+        "accessed": "2026-10-24"
+      },
+      "quote": "904 FIRE HYDRANT ASSEMBLY EACH 27.00 10,980.00 2,500.00 10,665.93",
+      "scopeNotes": "Columns: quantity, high, low, weighted average.",
+      "confidence": "high"
+    },
+    {
+      "id": "e13",
+      "metric": "hydrantPerEach",
+      "value": 14600,
+      "unit": "USD/ea",
+      "region": "Montana statewide",
+      "regionKey": "MT",
+      "dataYear": 2025,
+      "source": {
+        "title": "Weighted Average Prices Catalog (2025)",
+        "url": "https://mdt.mt.gov/other/webdata/external/contractplans/contract/Archives/Average_prices/2025.pdf",
+        "publisher": "Montana Department of Transportation, Construction Contracting Bureau",
+        "accessed": "2026-10-24"
+      },
+      "quote": "603014492 20 HYDRANT ASSEMBLY EACH 2 $14,600.00",
+      "scopeNotes": "Two hydrants only.",
+      "confidence": "medium"
+    }
+  ]
+}

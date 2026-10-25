@@ -23,6 +23,11 @@ module.exports = async function (context, req) {
   const id = (context.bindingData.id || '').toLowerCase();
   if (!GUID_RX.test(id)) { context.res = jsonRes(400, { error: 'bad_request', message: 'Invalid analysis ID.' }); return; }
   const pool = await getPool();
+  // Declared once, up front. The DELETE branch below used to read it before
+  // the `const` further down had run — a temporal-dead-zone ReferenceError
+  // thrown AFTER the soft-delete had committed, so the analysis vanished, no
+  // activity row was written and the caller got a 500.
+  const principal = getPrincipal(req);
 
   if (req.method === 'GET') {
     const gf = await features(pool);
@@ -79,8 +84,10 @@ module.exports = async function (context, req) {
       context.res = jsonRes(404, { error: 'not_found', message: 'Not found' }); return;
     }
     context.res = { status: 204 };
-    // Deleting an analysis recorded nothing before this.
-    await require('../shared/users').recordActivity(pool, principal, 'analysis_delete', 'analysis', id,
+    // Deleting an analysis recorded nothing before this. The principal is read
+    // HERE: the `const principal` further down is not initialised on this path,
+    // and touching it threw after the delete had already happened.
+    await require('../shared/users').recordActivity(pool, getPrincipal(req), 'analysis_delete', 'analysis', id,
       before ? { name: before.Name || null, budgetId: before.ProjectId || null,
                  projectKey: before.ProjectKey || null } : null);
     return;
@@ -89,12 +96,19 @@ module.exports = async function (context, req) {
   // ---- PUT
   const body = req.body || {};
 
-  /* PUT ?scope=resync — re-read the project's CURRENT budget version and
-     refresh only the imported fields, leaving everything the user typed alone.
-     It is an explicit action, never automatic: a saved analysis is never
-     silently restated, and an old analysis version is never recalculated.
+  /* PUT ?scope=resync — re-read the budget's CURRENT version and refresh only
+     the imported fields, leaving everything the user typed alone.
+     It is a PROPOSAL and writes NOTHING: the re-synced input comes back to the
+     browser, which shows what changes and applies it as unsaved edits; the
+     ordinary save (with expectedVersionNumber and resyncBudgetVersionId) is
+     what records it. Writing it here used to restate the stored inputs and
+     re-point the source behind the saved result's back — a reopened analysis
+     showed the new inputs beside the old result, not marked stale, and the
+     user's Discard discarded nothing. `body.input`, when sent, is the copy on
+     screen, so unsaved edits elsewhere survive the re-sync.
      Extends a route that already deploys rather than adding a function folder. */
   if (String((req.query && req.query.scope) || '') === 'resync') {
+    if (JSON.stringify(body).length > MAX_BODY) { context.res = jsonRes(413, { error: 'too_large', message: 'The analysis input is too large.' }); return; }
     const cur = await pool.request().input('id', sql.UniqueIdentifier, id)
       .query(`SELECT a.ProjectId, a.InputDoc, a.CurrentVersionNumber
               FROM dbo.InvestmentAnalyses AS a WHERE a.AnalysisId = @id AND a.IsDeleted = 0`);
@@ -105,7 +119,12 @@ module.exports = async function (context, req) {
         message: 'This analysis is standalone — there is no budget to re-sync from.' });
       return;
     }
-    let input; try { input = JSON.parse(row.InputDoc); } catch (_) { input = null; }
+    let input;
+    if (body.input && typeof body.input === 'object' && !Array.isArray(body.input)) {
+      input = JSON.parse(JSON.stringify(body.input));
+    } else {
+      try { input = JSON.parse(row.InputDoc); } catch (_) { input = null; }
+    }
     if (!input) { context.res = jsonRes(500, { error: 'unreadable', message: 'The stored assumptions could not be read.' }); return; }
 
     const bv = await pool.request().input('pid', sql.VarChar(16), row.ProjectId)
@@ -122,7 +141,15 @@ module.exports = async function (context, req) {
     // organisation default — the ratio is a share of GOI, and GOI is after
     // vacancy.
     const vacancy = input.vacancy && Number.isFinite(+input.vacancy.value) ? +input.vacancy.value : undefined;
-    const proj = projectFromBudget(bdoc, v, { projectId: row.ProjectId, vacancy });
+    const proj = projectFromBudget(bdoc, v, { projectId: row.ProjectId, vacancy,
+      scope: input.source && input.source.scope });
+    // Re-sync never turns a component or phase analysis into a whole-project
+    // one: if its slice is gone, refuse and change nothing.
+    if (proj.scopeMissing) {
+      context.res = jsonRes(409, { error: 'scope_missing',
+        message: 'The component or phase this analysis was built from is no longer in the budget. Nothing was changed.' });
+      return;
+    }
 
     input.property = Object.assign({}, input.property, {
       name: proj.imported.property.name,
@@ -146,25 +173,19 @@ module.exports = async function (context, req) {
     input.source = Object.assign({}, input.source || {}, {
       projectId: row.ProjectId, budgetVersionId: v.Id, budgetVersionNumber: v.VersionNumber,
       syncedAt: new Date().toISOString(),
-      fieldOrigins: proj.fieldOrigins, support: proj.support,
+      fieldOrigins: proj.fieldOrigins, support: proj.support, scope: proj.scope,
       // originalValues is deliberately NOT rewritten: the From Budget badges
       // compare against the ORIGINAL import forever.
       originalValues: (input.source && input.source.originalValues) || {},
       importedAt: (input.source && input.source.importedAt) || new Date().toISOString()
     });
 
-    await pool.request().input('id', sql.UniqueIdentifier, id)
-      .input('sbv', sql.BigInt, v.Id)
-      .input('input', sql.NVarChar(sql.MAX), JSON.stringify(input))
-      .query(`UPDATE dbo.InvestmentAnalyses
-              SET InputDoc = @input, SourceBudgetVersionId = @sbv, UpdatedAt = SYSUTCDATETIME()
-              WHERE AnalysisId = @id AND IsDeleted = 0`);
-
+    // Deliberately no UPDATE — see the comment above.
     context.res = jsonRes(200, { ok: true, input, expensesOverridden: overridden,
       source: { projectId: row.ProjectId, budgetVersionId: v.Id, budgetVersionNumber: v.VersionNumber,
                 budgetCurrentVersionNumber: v.VersionNumber, drift: false },
       message: 'Re-synced from budget ' + row.ProjectId + ' v' + v.VersionNumber
-        + '. Recalculate and save to fold the new numbers into a version.' });
+        + '. Nothing is stored until the analysis is saved.' });
     return;
   }
 
@@ -187,8 +208,20 @@ module.exports = async function (context, req) {
   const input = body.input;
   if (!input || typeof input !== 'object') { context.res = jsonRes(400, { error: 'bad_request', message: 'Body must be { input, expectedVersionNumber }.' }); return; }
   if (JSON.stringify(body).length > MAX_BODY) { context.res = jsonRes(413, { error: 'too_large', message: 'The analysis input is too large.' }); return; }
+  // A full save changes the assumptions, not the workflow status. Absent, the
+  // stored status stands (every save used to reset it to Draft); present, it
+  // must be a real status, exactly as the status-only path requires.
+  if (body.status !== undefined && body.status !== null && !STATUSES.includes(body.status)) {
+    context.res = jsonRes(400, { error: 'bad_request', message: 'status must be one of: ' + STATUSES.join(', ') }); return;
+  }
+  const newStatus = typeof body.status === 'string' ? body.status : null;
+  // A re-sync applied in the browser travels with the save that records it.
+  const resyncTo = body.resyncBudgetVersionId === undefined || body.resyncBudgetVersionId === null
+    ? null : String(body.resyncBudgetVersionId);
+  if (resyncTo !== null && !/^\d{1,18}$/.test(resyncTo)) {
+    context.res = jsonRes(400, { error: 'bad_request', message: 'resyncBudgetVersionId must be a budget version id.' }); return;
+  }
 
-  const principal = getPrincipal(req);
   const userId = principal ? (principal.userId || null) : null;
   const userName = principal ? (principal.userDetails || null) : null;
 
@@ -250,7 +283,31 @@ module.exports = async function (context, req) {
 
       // Provenance is server-owned: the stored source link survives every
       // save; a client cannot re-point an analysis at another budget version.
-      const sourceBudgetVersionId = a.SourceBudgetVersionId;
+      // The one exception is a re-sync, and it is checked HERE rather than
+      // trusted: the version must belong to this analysis's own budget and be
+      // newer than the one it is pinned to.
+      let sourceBudgetVersionId = a.SourceBudgetVersionId;
+      if (resyncTo !== null && String(resyncTo) !== String(a.SourceBudgetVersionId)) {
+        const bad = () => {
+          const e = new Error('bad resync');
+          e.httpRes = jsonRes(400, { error: 'bad_resync',
+            message: 'That budget version cannot be re-synced into this analysis. Re-sync again, then save.' });
+          return e;
+        };
+        if (!a.ProjectId) throw bad();
+        const chk = await new sql.Request(tx)
+          .input('nv', sql.BigInt, resyncTo)
+          .input('ov', sql.BigInt, a.SourceBudgetVersionId === undefined ? null : a.SourceBudgetVersionId)
+          .input('pid', sql.VarChar(16), a.ProjectId)
+          .query(`SELECT v.Id, v.VersionNumber,
+                         (SELECT o.VersionNumber FROM dbo.BudgetVersions AS o WHERE o.Id = @ov) AS PinnedNumber
+                  FROM dbo.BudgetVersions AS v
+                  WHERE v.Id = @nv AND v.ProjectId = @pid`);
+        const hit = chk.recordset[0];
+        if (!hit || (hit.PinnedNumber !== null && hit.PinnedNumber !== undefined
+                     && !(hit.VersionNumber > hit.PinnedNumber))) throw bad();
+        sourceBudgetVersionId = hit.Id;
+      }
       if (input.source && typeof input.source === 'object') {
         input.source.budgetVersionId = sourceBudgetVersionId;
       }
@@ -266,7 +323,8 @@ module.exports = async function (context, req) {
       await new sql.Request(tx)
         .input('id', sql.UniqueIdentifier, id)
         .input('name', sql.NVarChar(200), result.normalizedInput.analysisName)
-        .input('status', sql.NVarChar(30), typeof body.status === 'string' ? body.status.slice(0, 30) : 'Draft')
+        .input('status', sql.NVarChar(30), newStatus)
+        .input('sbv', sql.BigInt, sourceBudgetVersionId === undefined ? null : sourceBudgetVersionId)
         .input('vn', sql.Int, versionNumber)
         .input('input', sql.NVarChar(sql.MAX), inputJson)
         .input('norm', sql.NVarChar(sql.MAX), normalizedJson)
@@ -281,7 +339,8 @@ module.exports = async function (context, req) {
         .input('irr', sql.Decimal(19, 10), sum.finalYearEquityIRR)
         .input('hold', sql.TinyInt, sum.optimalHoldingYear)
         .query(`UPDATE dbo.InvestmentAnalyses SET
-                  Name=@name, Status=@status, CurrentVersionNumber=@vn, ProjectionYears=@years,
+                  Name=@name, Status=COALESCE(@status, Status), SourceBudgetVersionId=@sbv,
+                  CurrentVersionNumber=@vn, ProjectionYears=@years,
                   InputDoc=@input, NormalizedInputDoc=@norm, ResultDoc=@result,
                   ContentHash=@hash, InputSchemaVersion=@schema, CalculationVersion=@calc,
                   PurchasePrice=@pp, Year1NOI=@noi, InitialEquity=@eq,

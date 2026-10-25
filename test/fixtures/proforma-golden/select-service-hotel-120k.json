@@ -1,0 +1,525 @@
+{
+ "capturedFrom": "staging@63ef1a4",
+ "input": {
+  "schemaVersion": 1,
+  "projection": {
+   "years": 5,
+   "taxMode": "beforeTax"
+  },
+  "capitalExpenses": [
+   {
+    "label": "FF&E reserve",
+    "annualAmounts": [
+     180000,
+     186000,
+     193000,
+     199000,
+     206000
+    ]
+   }
+  ],
+  "reportOptions": {
+   "includeSensitivity": false
+  },
+  "analysisName": "Select-service hotel 120 keys",
+  "property": {
+   "name": "Hotel Example",
+   "address": "I-35 & Main, San Marcos TX",
+   "size": {
+    "unit": "squareFeet",
+    "value": 72000
+   },
+   "unitCount": 120,
+   "purchaseMonth": "2027-01"
+  },
+  "acquisition": {
+   "basis": {
+    "mode": "purchasePrice",
+    "value": 24600000
+   },
+   "costPercent": 0.025
+  },
+  "income": {
+   "mode": "aggregate",
+   "year1PotentialIncome": 6132000,
+   "growth": {
+    "mode": "constant",
+    "value": 0.035
+   },
+   "otherIncome": [
+    {
+     "label": "F&B and other departments",
+     "year1Amount": 310000
+    }
+   ]
+  },
+  "vacancy": {
+   "mode": "constant",
+   "value": 0.28
+  },
+  "expenses": {
+   "mode": "annualDollar",
+   "value": 2750000,
+   "growth": {
+    "mode": "constant",
+    "value": 0.035
+   }
+  },
+  "financing": {
+   "loans": [
+    {
+     "label": "First Mortgage",
+     "kind": "newAmortizing",
+     "amount": {
+      "mode": "amount",
+      "value": 15990000
+     },
+     "annualRate": 0.0725,
+     "amortizationYears": 25,
+     "termYears": 5,
+     "feePercent": 0.0125,
+     "interestCalculation": "30/360"
+    }
+   ]
+  },
+  "disposition": {
+   "exitCapRate": {
+    "mode": "constant",
+    "value": 0.085
+   },
+   "sellingCostPercent": 0.03
+  }
+ },
+ "output": {
+  "inputSchemaVersion": 1,
+  "calculationVersion": "before-tax-1.1.0",
+  "normalizedInput": {
+   "schemaVersion": 1,
+   "analysisName": "Select-service hotel 120 keys",
+   "source": null,
+   "property": {
+    "name": "Hotel Example",
+    "address": "I-35 & Main, San Marcos TX",
+    "city": "",
+    "state": "",
+    "postalCode": "",
+    "size": {
+     "unit": "squareFeet",
+     "value": 72000,
+     "normalizedSquareFeet": 72000
+    },
+    "unitCount": 120,
+    "purchaseMonth": "2027-01"
+   },
+   "projection": {
+    "years": 5,
+    "taxMode": "beforeTax"
+   },
+   "acquisition": {
+    "basis": {
+     "mode": "purchasePrice",
+     "value": 24600000
+    },
+    "costPercent": 0.025
+   },
+   "income": {
+    "mode": "aggregate",
+    "year1PotentialIncome": 6132000,
+    "growth": {
+     "mode": "constant",
+     "value": 0.035
+    },
+    "otherIncome": [
+     {
+      "label": "F&B and other departments",
+      "year1Amount": 310000,
+      "growth": {
+       "mode": "constant",
+       "value": 0.03
+      }
+     }
+    ]
+   },
+   "vacancy": {
+    "mode": "constant",
+    "value": 0.28
+   },
+   "expenses": {
+    "mode": "annualDollar",
+    "value": 2750000,
+    "growth": {
+     "mode": "constant",
+     "value": 0.035
+    },
+    "override": false,
+    "derivedFrom": null
+   },
+   "capitalExpenses": [
+    {
+     "label": "FF&E reserve",
+     "annualAmounts": [
+      180000,
+      186000,
+      193000,
+      199000,
+      206000
+     ]
+    }
+   ],
+   "financing": {
+    "loans": [
+     {
+      "label": "First Mortgage",
+      "kind": "newAmortizing",
+      "amount": {
+       "mode": "amount",
+       "value": 15990000
+      },
+      "annualRate": 0.0725,
+      "amortizationYears": 25,
+      "termYears": 5,
+      "feePercent": 0.0125,
+      "interestCalculation": "30/360"
+     }
+    ]
+   },
+   "disposition": {
+    "exitCapRate": {
+     "mode": "constant",
+     "value": 0.085
+    },
+    "sellingCostPercent": 0.03
+   },
+   "reportOptions": {
+    "includeSensitivity": false
+   }
+  },
+  "summary": {
+   "purchasePrice": 24600000,
+   "acquisitionCapRate": 0.08028617886178861,
+   "acquisitionCosts": 615000,
+   "loanFees": 199875,
+   "unleveragedInitialInvestment": 25215000,
+   "initialEquity": 9424875,
+   "year1NOI": 1975040,
+   "year1PotentialIncome": 6132000,
+   "grossRentMultiplier": 4.011741682974559,
+   "pricePerSquareFoot": 341.6666666666667,
+   "pricePerUnit": 205000,
+   "normalizedSquareFeet": 72000,
+   "initialLTV": 0.65,
+   "terminalYearNOI": 2336920.169387272,
+   "optimalHoldingYear": 5,
+   "optimalHoldingYield": 0.10092799826099247,
+   "finalYearEquityIRR": 0.10092799826099247,
+   "finalYearEquityMultiple": 1.5619449443842273
+  },
+  "loans": [
+   {
+    "label": "First Mortgage",
+    "principal": 15990000,
+    "annualRate": 0.0725,
+    "amortizationYears": 25,
+    "termYears": 5,
+    "feePercent": 0.0125,
+    "fees": 199875,
+    "monthlyPayment": 115576.8175691364,
+    "annualDebtService": 1386921.8108296369,
+    "interestCalculation": "30/360"
+   }
+  ],
+  "annual": [
+   {
+    "year": 1,
+    "periodEnd": "2027-12",
+    "potentialIncome": 6132000,
+    "vacancyLoss": 1716960.0000000002,
+    "effectiveRentalIncome": 4415040,
+    "otherIncome": 310000,
+    "grossOperatingIncome": 4725040,
+    "operatingExpenses": 2750000,
+    "netOperatingIncome": 1975040,
+    "capitalExpenses": 180000,
+    "debtService": 1386921.8108296369,
+    "cashFlowBeforeTaxes": 408118.1891703631,
+    "endingLoanBalance": 15754634.243404346,
+    "grossSalePrice": 24031000,
+    "sellingCosts": 720930,
+    "netSaleProceeds": 7555435.756595654,
+    "projectedLTV": 0.655596281611433,
+    "dscr": 1.424045670475511,
+    "debtYield": 0.12351719824890557,
+    "cashOnCash": 0.043302238933711386,
+    "unleveragedCashOnCash": 0.07118937140590918,
+    "returnOnEquity": 0.05401649915613259,
+    "equityMultiple": 0.8449506169329586,
+    "propertyIRR": -0.0043581201663521075,
+    "effectiveLoanRate": 0.0855871029666315,
+    "equityIRR": -0.15504938306658844,
+    "leverageImpact": -0.15069126290023632
+   },
+   {
+    "year": 2,
+    "periodEnd": "2028-12",
+    "potentialIncome": 6346619.999999999,
+    "vacancyLoss": 1777053.5999999999,
+    "effectiveRentalIncome": 4569566.399999999,
+    "otherIncome": 319300,
+    "grossOperatingIncome": 4888866.399999999,
+    "operatingExpenses": 2846250,
+    "netOperatingIncome": 2042616.3999999994,
+    "capitalExpenses": 186000,
+    "debtService": 1386921.8108296369,
+    "cashFlowBeforeTaxes": 469694.58917036257,
+    "endingLoanBalance": 15501625.870423002,
+    "grossSalePrice": 24853000,
+    "sellingCosts": 745590,
+    "netSaleProceeds": 8605784.129576998,
+    "projectedLTV": 0.6237325824014406,
+    "dscr": 1.4727696861138375,
+    "debtYield": 0.12774336460287677,
+    "cashOnCash": 0.049835630623256286,
+    "unleveragedCashOnCash": 0.0736314257386476,
+    "returnOnEquity": 0.0545789415697846,
+    "equityMultiple": 1.0062305237913207,
+    "propertyIRR": 0.05096287980470879,
+    "effectiveLoanRate": 0.07904666399902999,
+    "equityIRR": 0.0031790384950589716,
+    "leverageImpact": -0.04778384130964981
+   },
+   {
+    "year": 3,
+    "periodEnd": "2029-12",
+    "potentialIncome": 6568751.699999999,
+    "vacancyLoss": 1839250.476,
+    "effectiveRentalIncome": 4729501.223999999,
+    "otherIncome": 328879,
+    "grossOperatingIncome": 5058380.223999999,
+    "operatingExpenses": 2945868.7499999995,
+    "netOperatingIncome": 2112511.474,
+    "capitalExpenses": 193000,
+    "debtService": 1386921.8108296369,
+    "cashFlowBeforeTaxes": 532589.663170363,
+    "endingLoanBalance": 15229652.420569636,
+    "grossSalePrice": 25704000,
+    "sellingCosts": 771120,
+    "netSaleProceeds": 9703227.579430364,
+    "projectedLTV": 0.592501261304452,
+    "dscr": 1.5231655148146568,
+    "debtYield": 0.13211453871169482,
+    "cashOnCash": 0.05650893652917021,
+    "unleveragedCashOnCash": 0.0761257772754313,
+    "returnOnEquity": 0.05488788743854539,
+    "equityMultiple": 1.1791806279596762,
+    "propertyIRR": 0.07005750746089415,
+    "effectiveLoanRate": 0.07686766253169107,
+    "equityIRR": 0.05891713313318231,
+    "leverageImpact": -0.011140374327711838
+   },
+   {
+    "year": 4,
+    "periodEnd": "2030-12",
+    "potentialIncome": 6798658.009499999,
+    "vacancyLoss": 1903624.2426599998,
+    "effectiveRentalIncome": 4895033.766839999,
+    "otherIncome": 338745.37,
+    "grossOperatingIncome": 5233779.136839999,
+    "operatingExpenses": 3048974.156249999,
+    "netOperatingIncome": 2184804.98059,
+    "capitalExpenses": 199000,
+    "debtService": 1386921.8108296369,
+    "cashFlowBeforeTaxes": 598883.169760363,
+    "endingLoanBalance": 14937292.303971453,
+    "grossSalePrice": 26583000,
+    "sellingCosts": 797490,
+    "netSaleProceeds": 10848217.696028547,
+    "projectedLTV": 0.5619114586002879,
+    "dscr": 1.5752906642106095,
+    "debtYield": 0.13663570860475296,
+    "cashOnCash": 0.0635428236194499,
+    "unleveragedCashOnCash": 0.07875490702320047,
+    "returnOnEquity": 0.05520567401404653,
+    "equityMultiple": 1.3642094253027228,
+    "propertyIRR": 0.07970772957076422,
+    "effectiveLoanRate": 0.07577357227543574,
+    "equityIRR": 0.08583241511189929,
+    "leverageImpact": 0.006124685541135072
+   },
+   {
+    "year": 5,
+    "periodEnd": "2031-12",
+    "potentialIncome": 7036611.039832498,
+    "vacancyLoss": 1970251.0911530997,
+    "effectiveRentalIncome": 5066359.948679399,
+    "otherIncome": 348907.73110000003,
+    "grossOperatingIncome": 5415267.679779399,
+    "operatingExpenses": 3155688.2517187493,
+    "netOperatingIncome": 2259579.42806065,
+    "capitalExpenses": 206000,
+    "debtService": 1386921.8108296369,
+    "cashFlowBeforeTaxes": 666657.617231013,
+    "endingLoanBalance": 14623017.370799169,
+    "grossSalePrice": 27493000,
+    "sellingCosts": 824790,
+    "netSaleProceeds": 12045192.629200831,
+    "projectedLTV": 0.5318814742224991,
+    "dscr": 1.6292046245267435,
+    "debtYield": 0.14131203427521263,
+    "cashOnCash": 0.07073384179960085,
+    "unleveragedCashOnCash": 0.08144276930639104,
+    "returnOnEquity": 0.05534636412661871,
+    "equityMultiple": 1.5619449443842273,
+    "propertyIRR": 0.0855260667693124,
+    "effectiveLoanRate": 0.07511226455821346,
+    "equityIRR": 0.10092799826099247,
+    "leverageImpact": 0.015401931491680065
+   }
+  ],
+  "sensitivity": null,
+  "warnings": [
+   "Leverage is negative in at least one year — borrowing lowers the equity return."
+  ]
+ },
+ "annualRows": [
+  {
+   "analysisYear": 1,
+   "periodEnd": "2027-12",
+   "potentialIncome": 6132000,
+   "vacancyLoss": 1716960.0000000002,
+   "effectiveRentalIncome": 4415040,
+   "otherIncome": 310000,
+   "grossOperatingIncome": 4725040,
+   "operatingExpenses": 2750000,
+   "netOperatingIncome": 1975040,
+   "capitalExpenses": 180000,
+   "debtService": 1386921.8108296369,
+   "cashFlowBeforeTaxes": 408118.1891703631,
+   "endingLoanBalance": 15754634.243404346,
+   "grossSalePrice": 24031000,
+   "sellingCosts": 720930,
+   "netSaleProceeds": 7555435.756595654,
+   "projectedLTV": 0.655596281611433,
+   "dscr": 1.424045670475511,
+   "debtYield": 0.12351719824890557,
+   "cashOnCash": 0.043302238933711386,
+   "returnOnEquity": 0.05401649915613259,
+   "equityMultiple": 0.8449506169329586,
+   "propertyIRR": -0.0043581201663521075,
+   "effectiveLoanRate": 0.0855871029666315,
+   "equityIRR": -0.15504938306658844,
+   "leverageImpact": -0.15069126290023632
+  },
+  {
+   "analysisYear": 2,
+   "periodEnd": "2028-12",
+   "potentialIncome": 6346619.999999999,
+   "vacancyLoss": 1777053.5999999999,
+   "effectiveRentalIncome": 4569566.399999999,
+   "otherIncome": 319300,
+   "grossOperatingIncome": 4888866.399999999,
+   "operatingExpenses": 2846250,
+   "netOperatingIncome": 2042616.3999999994,
+   "capitalExpenses": 186000,
+   "debtService": 1386921.8108296369,
+   "cashFlowBeforeTaxes": 469694.58917036257,
+   "endingLoanBalance": 15501625.870423002,
+   "grossSalePrice": 24853000,
+   "sellingCosts": 745590,
+   "netSaleProceeds": 8605784.129576998,
+   "projectedLTV": 0.6237325824014406,
+   "dscr": 1.4727696861138375,
+   "debtYield": 0.12774336460287677,
+   "cashOnCash": 0.049835630623256286,
+   "returnOnEquity": 0.0545789415697846,
+   "equityMultiple": 1.0062305237913207,
+   "propertyIRR": 0.05096287980470879,
+   "effectiveLoanRate": 0.07904666399902999,
+   "equityIRR": 0.0031790384950589716,
+   "leverageImpact": -0.04778384130964981
+  },
+  {
+   "analysisYear": 3,
+   "periodEnd": "2029-12",
+   "potentialIncome": 6568751.699999999,
+   "vacancyLoss": 1839250.476,
+   "effectiveRentalIncome": 4729501.223999999,
+   "otherIncome": 328879,
+   "grossOperatingIncome": 5058380.223999999,
+   "operatingExpenses": 2945868.7499999995,
+   "netOperatingIncome": 2112511.474,
+   "capitalExpenses": 193000,
+   "debtService": 1386921.8108296369,
+   "cashFlowBeforeTaxes": 532589.663170363,
+   "endingLoanBalance": 15229652.420569636,
+   "grossSalePrice": 25704000,
+   "sellingCosts": 771120,
+   "netSaleProceeds": 9703227.579430364,
+   "projectedLTV": 0.592501261304452,
+   "dscr": 1.5231655148146568,
+   "debtYield": 0.13211453871169482,
+   "cashOnCash": 0.05650893652917021,
+   "returnOnEquity": 0.05488788743854539,
+   "equityMultiple": 1.1791806279596762,
+   "propertyIRR": 0.07005750746089415,
+   "effectiveLoanRate": 0.07686766253169107,
+   "equityIRR": 0.05891713313318231,
+   "leverageImpact": -0.011140374327711838
+  },
+  {
+   "analysisYear": 4,
+   "periodEnd": "2030-12",
+   "potentialIncome": 6798658.009499999,
+   "vacancyLoss": 1903624.2426599998,
+   "effectiveRentalIncome": 4895033.766839999,
+   "otherIncome": 338745.37,
+   "grossOperatingIncome": 5233779.136839999,
+   "operatingExpenses": 3048974.156249999,
+   "netOperatingIncome": 2184804.98059,
+   "capitalExpenses": 199000,
+   "debtService": 1386921.8108296369,
+   "cashFlowBeforeTaxes": 598883.169760363,
+   "endingLoanBalance": 14937292.303971453,
+   "grossSalePrice": 26583000,
+   "sellingCosts": 797490,
+   "netSaleProceeds": 10848217.696028547,
+   "projectedLTV": 0.5619114586002879,
+   "dscr": 1.5752906642106095,
+   "debtYield": 0.13663570860475296,
+   "cashOnCash": 0.0635428236194499,
+   "returnOnEquity": 0.05520567401404653,
+   "equityMultiple": 1.3642094253027228,
+   "propertyIRR": 0.07970772957076422,
+   "effectiveLoanRate": 0.07577357227543574,
+   "equityIRR": 0.08583241511189929,
+   "leverageImpact": 0.006124685541135072
+  },
+  {
+   "analysisYear": 5,
+   "periodEnd": "2031-12",
+   "potentialIncome": 7036611.039832498,
+   "vacancyLoss": 1970251.0911530997,
+   "effectiveRentalIncome": 5066359.948679399,
+   "otherIncome": 348907.73110000003,
+   "grossOperatingIncome": 5415267.679779399,
+   "operatingExpenses": 3155688.2517187493,
+   "netOperatingIncome": 2259579.42806065,
+   "capitalExpenses": 206000,
+   "debtService": 1386921.8108296369,
+   "cashFlowBeforeTaxes": 666657.617231013,
+   "endingLoanBalance": 14623017.370799169,
+   "grossSalePrice": 27493000,
+   "sellingCosts": 824790,
+   "netSaleProceeds": 12045192.629200831,
+   "projectedLTV": 0.5318814742224991,
+   "dscr": 1.6292046245267435,
+   "debtYield": 0.14131203427521263,
+   "cashOnCash": 0.07073384179960085,
+   "returnOnEquity": 0.05534636412661871,
+   "equityMultiple": 1.5619449443842273,
+   "propertyIRR": 0.0855260667693124,
+   "effectiveLoanRate": 0.07511226455821346,
+   "equityIRR": 0.10092799826099247,
+   "leverageImpact": 0.015401931491680065
+  }
+ ]
+}

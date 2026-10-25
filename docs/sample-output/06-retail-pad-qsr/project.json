@@ -1,0 +1,64 @@
+{
+  "sample": {
+    "id": "06-retail-pad-qsr",
+    "name": "Outparcel QSR with drive-thru",
+    "address": "Atlanta, GA",
+    "exitCap": 0.0575
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "quick",
+    "location": {
+      "region": "GA-Atlanta"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "amount",
+      "value": 1150000
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "c1",
+        "typeId": "retail-pad-qsr",
+        "name": "QSR building",
+        "phaseId": "p1",
+        "size": 2800,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "annual",
+          "rate": 210000,
+          "vacancy": 0,
+          "expenseRatio": 0.03
+        }
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

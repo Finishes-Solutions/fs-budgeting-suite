@@ -1,0 +1,379 @@
+{
+  "schemaVersion": 1,
+  "id": "rv-park-resort",
+  "name": "RV park / resort",
+  "category": "specialty-residential",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "site",
+  "summary": "Cost per site is driven by wastewater (municipal sewer vs. septic/drainfield vs. package plant), electrical service (50A pedestals and distribution), road and pad surfacing (gravel vs. asphalt/concrete) and how much building (bathhouse, clubhouse, store, pool) is spread over the sites. Public-sector bid-grade evidence (Missouri, Utah state parks) runs $50k-$112k per site; private-developer itemizations run roughly $15k-$40k per site. The default sits between them, weighted toward private development; confidence is medium.",
+
+  "sizing": {
+    "typicalSize": { "low": 40, "mid": 100, "high": 250, "unit": "site", "evidence": ["e8", "e7", "e21"], "derived": true, "method": "OH Weekly cost model assumes a 100+ site park (e8); public examples are 35 sites (e7, Utah) and 48 sites (e21, Oregon); Richmond BC feasibility modeled 150 pads (e20). Mid 100 sites; range covers small rural parks to large resort parks." },
+    "primaryUnitsPerAcre": { "low": 8, "mid": 12, "high": 20, "evidence": ["e20"], "derived": true, "method": "Richmond BC feasibility modeled 150 pads on 12 acres = 12.5 sites/acre including clubhouse, pool and storage (e20). Low = resort parks with large pull-throughs and amenities; high = tight back-in parks." },
+    "parkingPerPrimaryUnit": { "low": 1.0, "mid": 1.1, "high": 1.3, "type": "surface", "evidence": [], "derived": true, "method": "Each site carries its own tow/towed vehicle space on the pad; add ~0.1 per site of visitor/office parking. Planning judgment, not sourced." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 18000, "mid": 42000, "high": 95000,
+      "dollarYear": 2024, "region": "US",
+      "evidence": ["e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e11", "e12", "e21"],
+      "derived": false,
+      "method": "Two clusters of evidence. (a) Private-developer itemization: OH Weekly $30k-$40k per site all-in excluding land (e8, 2024), less ~$2.5k/site of surveys/engineering/permits = ~$27.5k-$37.5k hard, midpoint ~$32.5k. Freakonomics/industry estimate $15k-$25k per site for infrastructure (e11, 2025) and Menahga MN $9.2k materials per site (e12) mark the low end. (b) Public bid-grade estimates (prevailing wage, concrete pads, demolition of old loops): Missouri State Parks construction+site work per site = $78.6k (LOSP), $65.8k (St. Francois), $67.5k (Table Rock), $94.4k (Long Branch), $49.8k (Roaring River) in 2020 dollars (e1-e5), median ~$67.5k; Missouri's stated average $55k (e6); Utah Sand Hollow award $3.92M / 35 sites = ~$112k incl. restroom/shower building and day-use parking (e7, 2022). Mid = 0.75 x private ($32.5k) + 0.25 x public median ($67.5k, 2020$ used unescalated) = $41.3k, rounded to $42k, expressed as 2024 dollars (private evidence year). Low $18k = gravel roads/pads, municipal sewer available, minimal buildings (e11). High $95k = public-grade or resort build with concrete pads, paved roads, large amenity buildings (Long Branch e4; Sand Hollow e7 is an upper outlier). Evidence years span 2020-2025; Missouri 2020 figures not escalated by hand."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Per-site contractor price incl. general conditions and OH&P, including grading, roads, pads/patios, on-site water/sewer/electric distribution, hookups (water, sewer, 30/50A pedestal) and a share of the bathhouse/laundry/office buildings. Excludes land, soft costs, FF&E, off-site utility extensions, tap/impact fees, and on-site wastewater treatment (septic/package plant) which is a separate line item."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.55, "standard": 1.0, "premium": 1.5, "luxury": 2.25,
+    "evidence": [], "derived": true,
+    "method": "Economy ~= low/mid of the hard-cost range (18k/42k = 0.43) tempered to 0.55 because the low anchor is infrastructure-only; luxury ~= high/mid (95k/42k = 2.26); premium interpolated."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.080 },
+      { "division": "03", "pct": 0.040 },
+      { "division": "06", "pct": 0.050 },
+      { "division": "07", "pct": 0.030 },
+      { "division": "08", "pct": 0.015 },
+      { "division": "09", "pct": 0.025 },
+      { "division": "10", "pct": 0.015 },
+      { "division": "22", "pct": 0.040 },
+      { "division": "23", "pct": 0.012 },
+      { "division": "26", "pct": 0.121 },
+      { "division": "31", "pct": 0.073 },
+      { "division": "32", "pct": 0.351 },
+      { "division": "33", "pct": 0.148 }
+    ],
+    "evidence": ["e8", "e9", "e10"],
+    "derived": true,
+    "method": "Built from the OH Weekly per-site itemization (e8-e10), hard items only (total ~$33.1k): grading $2.4k -> 31 (0.073); paving $3.6k + patios/walkways $3.2k + half of landscaping/misc -> 32 (0.351 incl. site furnishings); sewer $2.5k + water $2.4k -> 33 (0.148); electrical $4.0k -> 26 (0.121); buildings $7.5k (midpoint) split across 03/06/07/08/09/10/22/23 per a typical small wood-frame bathhouse/clubhouse (0.227); remaining misc -> 01 general conditions (0.08)."
+  },
+
+  "lineItems": [
+    {
+      "id": "electrical-pedestal",
+      "name": "RV power pedestal (50/30/20A) incl. setting and connection",
+      "division": "26",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 1200, "mid": 2000, "high": 3500, "dollarYear": 2025, "region": "US", "evidence": ["e13", "e9"], "derived": true, "method": "Pedestal hardware $500-$600 each (e13) plus setting, breakers, metering and labor; OH Weekly total electrical incl. distribution is ~$4.0k/site (e9), of which the pedestal and its final connection taken as ~half (mid $2.0k)." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out of the per-site hard cost. Distribution feeders/transformers are additional within the $4k/site electrical budget."
+    },
+    {
+      "id": "water-sewer-hookup",
+      "name": "Water and sewer hookups per site (riser, hose bib, 4in sewer inlet, laterals)",
+      "division": "33",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 3000, "mid": 4900, "high": 9000, "dollarYear": 2024, "region": "US", "evidence": ["e8"], "derived": true, "method": "OH Weekly sewer lines ~$2.5k + water lines ~$2.4k per site = $4.9k (e8). High reflects deep sewer, rock, or freeze-protected risers." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out; excludes the treatment/disposal system."
+    },
+    {
+      "id": "site-pad-patio",
+      "name": "RV pad and patio (gravel, asphalt or concrete pad; concrete patio)",
+      "division": "32",
+      "unit": "ea",
+      "qty": { "per": "primaryUnit", "value": 1 },
+      "cost": { "low": 1500, "mid": 3200, "high": 8000, "dollarYear": 2024, "region": "US", "evidence": ["e8"], "derived": true, "method": "OH Weekly patios/walkways ~$3.2k per site (e8). Low = gravel pad with no patio; high = full-length concrete pad + patio (Missouri sites have concrete pads, e1)." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "interior-roads",
+      "name": "Interior park roads (20-24 ft, gravel to asphalt)",
+      "division": "32",
+      "unit": "lf",
+      "qty": { "per": "primaryUnit", "value": 40 },
+      "cost": { "low": 50, "mid": 100, "high": 200, "dollarYear": 2024, "region": "US", "evidence": ["e8"], "derived": true, "method": "OH Weekly paving ~$3.6k per site (e8) over an assumed ~35-45 LF of road per site (half of a double-loaded 70-90 ft site frontage + entry/loop share) = ~$90-$100/LF; low = aggregate surface, high = full-depth asphalt with curb/drainage." },
+      "inBaseline": true, "scales": true, "optional": false,
+      "notes": "Carve-out. LF per site is a planning assumption; verify against site plan."
+    },
+    {
+      "id": "bathhouse",
+      "name": "Bathhouse / comfort station with showers and laundry",
+      "division": "22",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 350000, "mid": 700000, "high": 1100000, "dollarYear": 2024, "region": "US", "evidence": ["e16", "e17", "e10"], "derived": true, "method": "Public comparables: Oregon State Parks standard prototype restroom/shower building $1.1M (e16, 2024); South Dakota Palisades SP comfort station low bid $705,540 (e17, 2023). Mid = SD figure; high = OR prototype; low = private prefab/smaller building. Typically one per 50-75 sites." },
+      "inBaseline": true, "scales": false, "optional": false,
+      "notes": "Carve-out of the buildings share of the per-site cost (OH Weekly buildings $5k-$10k per site, e10). Add a second building above ~75 sites."
+    },
+    {
+      "id": "office-store-clubhouse",
+      "name": "Office / camp store / clubhouse",
+      "division": "06",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 250000, "mid": 600000, "high": 1500000, "dollarYear": 2024, "region": "US", "evidence": ["e10"], "derived": true, "method": "OH Weekly buildings (clubhouse, bathhouses, amenities) $5k-$10k per site (e10); for a 100-site park that is $0.5M-$1.0M total, of which ~$0.6M assumed for office/store/clubhouse after the bathhouse. High = resort clubhouse." },
+      "inBaseline": true, "scales": false, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "dump-station",
+      "name": "RV dump (sanitary) station with rinse water",
+      "division": "33",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 15000, "mid": 35000, "high": 75000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Planning judgment: concrete apron, inlet, holding/connection to sewer, rinse hydrant and approach paving. No public bid tab found in this session; verify with a local bid." },
+      "inBaseline": true, "scales": false, "optional": false,
+      "notes": "Carve-out."
+    },
+    {
+      "id": "septic-drainfield",
+      "name": "On-site septic system / drainfield (no municipal sewer)",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 100000, "mid": 300000, "high": 700000, "dollarYear": 2024, "region": "US", "evidence": ["e14"], "derived": true, "method": "OH Weekly: small parks have done their entire septic for ~$100k, while individual leach fields at a dozen-plus-site park cost that much (e14). Mid assumes a 100-site park with large-capacity drainfields; high = engineered/pressure-dosed systems." },
+      "inBaseline": false, "scales": true, "optional": true,
+      "notes": "Switch on when no municipal sewer is available. Scales with site count."
+    },
+    {
+      "id": "package-wastewater-plant",
+      "name": "Package wastewater treatment plant",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 1000000, "mid": 1500000, "high": 3000000, "dollarYear": 2024, "region": "US", "evidence": ["e15"], "derived": true, "method": "OH Weekly: treatment plants required by some jurisdictions 'cost $1MM plus' (e15). Mid/high are judgment for larger parks; verify with engineer." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Alternative to the septic line item; do not enable both."
+    },
+    {
+      "id": "lift-station",
+      "name": "Sewage lift station",
+      "division": "33",
+      "unit": "ea",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 150000, "mid": 300000, "high": 600000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Planning judgment for a duplex submersible station with controls and force main stub. Oregon Fort Stevens campground project included a south lift station within its $14.6M utility scope (e16 context) but the station was not priced separately." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Needed when gravity sewer to the outfall is not possible."
+    },
+    {
+      "id": "well-water-system",
+      "name": "Water well, pressure tank and treatment (no municipal water)",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 50000, "mid": 120000, "high": 300000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Planning judgment: public water system well(s) sized for 100 sites incl. storage/pressure and disinfection. Verify locally (public water system rules apply)." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Switch on for rural sites without municipal water."
+    },
+    {
+      "id": "swimming-pool",
+      "name": "Resort swimming pool and deck",
+      "division": "13",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 200000, "mid": 400000, "high": 900000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Planning judgment for a commercial (public-code) pool with deck, fence and equipment building. Richmond BC generic park program included a pool (e20)." },
+      "inBaseline": false, "scales": false, "optional": true,
+      "notes": "Resort-tier amenity."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 500, "mid": 1500, "high": 4000, "dollarYear": 2024, "region": "US", "evidence": [], "derived": true, "method": "Picnic table + fire ring/grill per site (~$500-$1,000) plus a per-site share of clubhouse/office/laundry furnishings and equipment for a 100-site park. Judgment; not sourced." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.08, "mid": 0.12, "high": 0.18, "evidence": ["e18", "e8"], "derived": false, "method": "Missouri State Parks 'Design and Bidding' = ~11.4% of construction + site work on four of five project sheets (e18); OH Weekly surveys/engineering/plans/permits ~$2.5k per site = ~7.6% of ~$33k hard (e8). Mid 12% adds legal, insurance and permitting; high for jurisdictions requiring CUP/rezoning and wastewater permitting." },
+    "breakdown": { "architectureEngineering": 0.08 },
+    "notes": "Excludes franchise fees (e.g., KOA) and financing."
+  },
+
+  "contingency": {
+    "design": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": [], "derived": true, "method": "Concept-stage parks often lack a geotech/perc test; judgment." },
+    "hard": { "low": 0.05, "mid": 0.10, "high": 0.15, "evidence": ["e19"], "derived": true, "method": "Missouri State Parks carried 15% contingency on concept estimates (e19); 10% mid for a designed private project." },
+    "soft": { "low": 0.03, "mid": 0.05, "high": 0.10, "evidence": [], "derived": true, "method": "General norm; judgment." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 18000, "max": 140000, "dollarYear": 2024, "region": "US", "method": "Min ~= Freakonomics/industry low infrastructure-only figure (e11) plus minimal soft cost; max ~= Missouri LOSP total project cost $98k/site (e1) and Long Branch $118k/site (e4) in 2020 dollars, plus Utah Sand Hollow $112k/site hard (e7) with soft costs." }
+  },
+
+  "evidence": [
+    {
+      "id": "e1", "metric": "hardCostPerUnit", "value": 78622, "unit": "USD/site",
+      "region": "Lake of the Ozarks State Park, MO", "regionKey": "MO", "dataYear": 2020,
+      "source": { "title": "Lake of the Ozarks State Park - Campground Upgrade Project (revenue bond project sheet)", "url": "https://web.archive.org/web/2022id_/https://mostateparks.com/sites/mostateparks/files/LOSP-campground-project.pdf", "publisher": "Missouri State Parks (Missouri DNR)", "accessed": "2026-10-24" },
+      "quote": "Construct 25 Campsites $1,769,000 / Other Infrastructure $196,556 / Design and Bidding $224,125 / 15% Contingency $265,350 / TOTAL PROJECT COST $2,455,031",
+      "scopeNotes": "Value = (1,769,000 + 196,556) / 25 sites. Full hookup: concrete pads, 50-amp, sewer, water. Replaces 29 basic sites (demolition included). Total project cost incl. design and contingency = $98,201/site. Original mostateparks.com URL now returns 404; text read from the Internet Archive copy. Sheets state estimates are based on 2020 information.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2", "metric": "hardCostPerUnit", "value": 65780, "unit": "USD/site",
+      "region": "St. Francois State Park, MO", "regionKey": "MO", "dataYear": 2020,
+      "source": { "title": "St. Francois State Park - Campground Upgrade Project (revenue bond project sheet)", "url": "https://web.archive.org/web/2022id_/https://mostateparks.com/sites/mostateparks/files/st-francois-campground-project.pdf", "publisher": "Missouri State Parks (Missouri DNR)", "accessed": "2026-10-24" },
+      "quote": "Construct 63 Campsites $3,729,750 / Site Work $414,417 / Design and Bidding $469,219 / 15% Contingency $559,463 / TOTAL PROJECT COST $5,172,848",
+      "scopeNotes": "Value = (3,729,750 + 414,417) / 63. New 63-site loop with 50-amp, sewer and water at each site and 'a small showerhouse'. Original URL now 404; read from Internet Archive copy.",
+      "confidence": "high"
+    },
+    {
+      "id": "e3", "metric": "hardCostPerUnit", "value": 67472, "unit": "USD/site",
+      "region": "Table Rock State Park, MO", "regionKey": "MO", "dataYear": 2020,
+      "source": { "title": "Table Rock State Park - Campground Upgrade Project (revenue bond project sheet)", "url": "https://web.archive.org/web/2022id_/https://mostateparks.com/sites/mostateparks/files/table-rock-campground-project.pdf", "publisher": "Missouri State Parks (Missouri DNR)", "accessed": "2026-10-24" },
+      "quote": "Construct 22 Campsites $1,335,950 / Infrastructure and Site Work $148,438 / Design and Bidding $169,994 / 15% Contingency $200,393 / TOTAL PROJECT COST $1,854,775",
+      "scopeNotes": "Value = (1,335,950 + 148,438) / 22. Replaces 22 electric-only sites with 50-amp/sewer/water sites. Original URL now 404; read from Internet Archive copy.",
+      "confidence": "high"
+    },
+    {
+      "id": "e4", "metric": "hardCostPerUnit", "value": 94445, "unit": "USD/site",
+      "region": "Long Branch State Park, MO", "regionKey": "MO", "dataYear": 2020,
+      "source": { "title": "Long Branch State Park - Campground Upgrade Project (revenue bond project sheet)", "url": "https://web.archive.org/web/2022id_/https://mostateparks.com/sites/mostateparks/files/long-branch-campground-project.pdf", "publisher": "Missouri State Parks (Missouri DNR)", "accessed": "2026-10-24" },
+      "quote": "Construct 17 Campsites $1,445,000 / Site Work $160,556 / Design and Bidding $183,625 / 15% Contingency $216,750 / TOTAL PROJECT COST $2,005,931",
+      "scopeNotes": "Value = (1,445,000 + 160,556) / 17. Small project (17 sites) so fixed costs spread thin. Total project $118k/site. Original URL now 404; read from Internet Archive copy.",
+      "confidence": "high"
+    },
+    {
+      "id": "e5", "metric": "hardCostPerUnit", "value": 49768, "unit": "USD/site",
+      "region": "Roaring River State Park, MO", "regionKey": "MO", "dataYear": 2020,
+      "source": { "title": "Roaring River State Park - Campground Upgrade Project (revenue bond project sheet)", "url": "https://web.archive.org/web/2022id_/https://mostateparks.com/sites/mostateparks/files/RRSP-campground-project.pdf", "publisher": "Missouri State Parks (Missouri DNR)", "accessed": "2026-10-24" },
+      "quote": "Construct 30 Campsites $1,493,034 / Design and Bidding $63,468 / 15% Contingency $67,187 / TOTAL PROJECT COST $1,623,689",
+      "scopeNotes": "Value = 1,493,034 / 30. Includes a small showerhouse. Based on a 2015 designer's estimate with inflation applied, so likely understated.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6", "metric": "hardCostPerUnit", "value": 55000, "unit": "USD/site",
+      "region": "Missouri State Parks system", "regionKey": "MO", "dataYear": 2020,
+      "source": { "title": "Lake of the Ozarks State Park - Campground Upgrade Project (revenue bond project sheet)", "url": "https://web.archive.org/web/2022id_/https://mostateparks.com/sites/mostateparks/files/LOSP-campground-project.pdf", "publisher": "Missouri State Parks (Missouri DNR)", "accessed": "2026-10-24" },
+      "quote": "Campground renovation projects with full hookup average $55,000 per campsite. This includes the total cost of water, sewer, roads and electrical service.",
+      "scopeNotes": "System-wide average stated on every project sheet; construction scope (water, sewer, roads, electric).",
+      "confidence": "high"
+    },
+    {
+      "id": "e7", "metric": "hardCostPerUnit", "value": 112037, "unit": "USD/site",
+      "region": "Sand Hollow State Park, UT", "regionKey": "UT", "dataYear": 2022,
+      "source": { "title": "Division of Facilities Construction and Management 22223510 - Bud Mahas Construction, Inc. | Govly", "url": "https://app.govly.com/public/awards/e357f38dba36a5dcac9434618dbba1fb", "publisher": "Govly (public award record of Utah DFCM)", "accessed": "2026-10-24" },
+      "quote": "Award $3,921,285.00; 'The project involves construction of a new campground at Sand Hollow Campground, Utah' - two loops with roadways, approximately 35 RV pads/sites, utilities, a restroom/shower building.",
+      "scopeNotes": "Value = 3,921,285 / 35. Contract award May 27, 2022. Also includes entry gates, fee station and a separate day-use parking area, so overstates the per-site figure.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8", "metric": "allInCostPerUnit", "low": 30000, "high": 40000, "unit": "USD/site",
+      "region": "United States (unspecified)", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "How much does it cost to build a campground or RV park?", "url": "https://ohweekly.substack.com/p/how-much-does-it-cost-to-build-a", "publisher": "Outdoor Hospitality Weekly (Substack)", "accessed": "2026-10-24" },
+      "quote": "Total: $30,000-$40,000 per site (not including land/acquisition cost).",
+      "scopeNotes": "Assumes 100+ sites, good-to-excellent quality, design/build. Includes ~$2.5k/site surveys/engineering/permits (soft). Itemization: grading ~$2,400; paving ~$3,600; patios/walkways ~$3,200; sewer ~$2,500; water ~$2,400; electrical ~$4,000; buildings $5k-$10k; landscaping/misc $5k-$10k per site. Article dated Aug 10, 2024.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9", "metric": "electricalPerSite", "value": 4000, "unit": "USD/site",
+      "region": "United States (unspecified)", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "How much does it cost to build a campground or RV park?", "url": "https://ohweekly.substack.com/p/how-much-does-it-cost-to-build-a", "publisher": "Outdoor Hospitality Weekly (Substack)", "accessed": "2026-10-24" },
+      "quote": "Electrical: ~$4,000 per site",
+      "scopeNotes": "Includes distribution and pedestals; varies with service size and layout.",
+      "confidence": "low"
+    },
+    {
+      "id": "e10", "metric": "buildingsPerSite", "low": 5000, "high": 10000, "unit": "USD/site",
+      "region": "United States (unspecified)", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "How much does it cost to build a campground or RV park?", "url": "https://ohweekly.substack.com/p/how-much-does-it-cost-to-build-a", "publisher": "Outdoor Hospitality Weekly (Substack)", "accessed": "2026-10-24" },
+      "quote": "Buildings (clubhouse, bathhouses, amenities): ~$5,000-$10,000 per site",
+      "scopeNotes": "Author calls buildings possibly the biggest variable.",
+      "confidence": "low"
+    },
+    {
+      "id": "e11", "metric": "hardCostPerUnit", "low": 15000, "high": 25000, "unit": "USD/site",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Campgrounds - Freakonomics", "url": "https://freakonomics.com/podcast/campgrounds/", "publisher": "Freakonomics Radio Network - The Economics of Everyday Things, Ep. 112 (Oct 26, 2025)", "accessed": "2026-10-24" },
+      "quote": "And it's estimated that it would be about fifteen thousand to twenty five thousand dollars per site.",
+      "scopeNotes": "Speaker Mark Lemoine; infrastructure only, excludes land. Same episode: 'a top range of about two and a half million dollars just to build the infrastructure' for a 100-site campground.",
+      "confidence": "low"
+    },
+    {
+      "id": "e12", "metric": "materialsPerSite", "value": 9200, "unit": "USD/site",
+      "region": "Menahga, MN", "regionKey": "MN", "dataYear": 2025,
+      "source": { "title": "Menahga City Council Advances Plans for 10 Permanent Campsites at Memorial Forest Park", "url": "https://moderncampground.com/?p=68943", "publisher": "Modern Campground", "accessed": "2026-10-24" },
+      "quote": "each site is projected to cost around $9,200 in materials, excluding electrical pedestals",
+      "scopeNotes": "Materials only for full water/sewer/electric sites; excludes labor, road construction, tree clearing. Dec 1, 2025.",
+      "confidence": "low"
+    },
+    {
+      "id": "e13", "metric": "pedestalMaterialEach", "low": 500, "high": 600, "unit": "USD/ea",
+      "region": "Menahga, MN", "regionKey": "MN", "dataYear": 2025,
+      "source": { "title": "Menahga City Council Advances Plans for 10 Permanent Campsites at Memorial Forest Park", "url": "https://moderncampground.com/?p=68943", "publisher": "Modern Campground", "accessed": "2026-10-24" },
+      "quote": "which Soukup estimated at $500 to $600 apiece",
+      "scopeNotes": "Electrical pedestal hardware only.",
+      "confidence": "low"
+    },
+    {
+      "id": "e14", "metric": "septicSystemProject", "value": 100000, "unit": "USD/ls",
+      "region": "United States (unspecified)", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "How much does it cost to build a campground or RV park?", "url": "https://ohweekly.substack.com/p/how-much-does-it-cost-to-build-a", "publisher": "Outdoor Hospitality Weekly (Substack)", "accessed": "2026-10-24" },
+      "quote": "I've seen small parks do their entire septic for $100k",
+      "scopeNotes": "Author adds that individual leach fields at a park of a dozen-plus sites can cost that much.",
+      "confidence": "low"
+    },
+    {
+      "id": "e15", "metric": "wastewaterPlantProject", "value": 1000000, "unit": "USD/ls",
+      "region": "United States (unspecified)", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "How much does it cost to build a campground or RV park?", "url": "https://ohweekly.substack.com/p/how-much-does-it-cost-to-build-a", "publisher": "Outdoor Hospitality Weekly (Substack)", "accessed": "2026-10-24" },
+      "quote": "I've seen those cost $1MM plus.",
+      "scopeNotes": "Refers to wastewater treatment plants some municipalities require for parks of a certain size. Value is a floor.",
+      "confidence": "low"
+    },
+    {
+      "id": "e16", "metric": "bathhouseEach", "value": 1100000, "unit": "USD/ea",
+      "region": "Fort Stevens State Park, OR", "regionKey": "OR", "dataYear": 2024,
+      "source": { "title": "Oregon State Parks and Recreation Commission, Nov. 20, 2024, Agenda Item 8d - Ft. Stevens Utility Upgrade Construction Contract", "url": "https://oregon.gov/oprd/CAC/Documents/2024-11-8d.pdf", "publisher": "Oregon Parks and Recreation Department", "accessed": "2026-10-24" },
+      "quote": "The most recent engineer's estimate is $14.6M ... This includes $13.5M of GO Bond funds for the campground improvements and $1.1M for POP funds for the restroom building.",
+      "scopeNotes": "Replacement of aged C Loop restroom with an OPRD standard prototype restroom/shower building. $13.5M covers electrical, wastewater and water upgrades to four camp loops plus a lift station (site count not stated).",
+      "confidence": "high"
+    },
+    {
+      "id": "e17", "metric": "comfortStationEach", "value": 705540, "unit": "USD/ea",
+      "region": "Palisades State Park, SD", "regionKey": "SD", "dataYear": 2023,
+      "source": { "title": "Bid Tabulation - Campground Development Phase II, Comfort Station - Rebid, Palisades State Park, GFP Project No. Pali23Oa", "url": "https://gfp.sd.gov/UserDocs/nav/Bid_Tab_Comfort_Station_Rebid.pdf", "publisher": "South Dakota Department of Game, Fish and Parks", "accessed": "2026-10-24" },
+      "quote": "1.00 Comfort Station LS 1 $705,540.06 ... Bid Opening Date: January 10, 2023",
+      "scopeNotes": "Low of two bids ($705,540.06 Schwarztle Construction; $707,000.00 605 Companies). Building size not stated on the tab.",
+      "confidence": "high"
+    },
+    {
+      "id": "e18", "metric": "softCostPct", "value": 0.114, "unit": "pct",
+      "region": "Missouri State Parks", "regionKey": "MO", "dataYear": 2020,
+      "source": { "title": "Table Rock State Park - Campground Upgrade Project (revenue bond project sheet)", "url": "https://web.archive.org/web/2022id_/https://mostateparks.com/sites/mostateparks/files/table-rock-campground-project.pdf", "publisher": "Missouri State Parks (Missouri DNR)", "accessed": "2026-10-24" },
+      "quote": "Design and Bidding $169,994 (vs. Construct 22 Campsites $1,335,950 + Infrastructure and Site Work $148,438)",
+      "scopeNotes": "169,994 / 1,484,388 = 11.5%. Same ratio on LOSP (11.4%), St. Francois (11.3%) and Long Branch (11.4%) sheets.",
+      "confidence": "high"
+    },
+    {
+      "id": "e19", "metric": "contingencyPct", "value": 0.15, "unit": "pct",
+      "region": "Missouri State Parks", "regionKey": "MO", "dataYear": 2020,
+      "source": { "title": "Lake of the Ozarks State Park - Campground Upgrade Project (revenue bond project sheet)", "url": "https://web.archive.org/web/2022id_/https://mostateparks.com/sites/mostateparks/files/LOSP-campground-project.pdf", "publisher": "Missouri State Parks (Missouri DNR)", "accessed": "2026-10-24" },
+      "quote": "15% Contingency $265,350",
+      "scopeNotes": "Applied to construction + design on concept-level estimates.",
+      "confidence": "high"
+    },
+    {
+      "id": "e20", "metric": "sitesPerAcre", "value": 12.5, "unit": "ratio",
+      "region": "Richmond, British Columbia, Canada",
+      "source": { "title": "Feasibility of a Recreational Vehicle Park in Richmond (staff report, June 23, 2016) - RV Park Opportunities in Richmond, B.C. (Rollo + Associates)", "url": "https://citycouncil.richmond.ca/__shared/assets/_1_Feasibility_RV_Park44896.pdf", "publisher": "City of Richmond, BC", "accessed": "2026-10-24" },
+      "quote": "Appendix D, Financial Viability of a Generic RV Park has been prepared to illustrate the viability of a generic 150 pad RV park on a 12 acre property.",
+      "scopeNotes": "150/12 = 12.5 pads per acre incl. club-house, maintenance building, pool, playground and storage for 75 RVs. Same report: hard+soft 'approximately $51,000 per pad' in 2016 Canadian dollars (not used for money because non-US).",
+      "confidence": "medium"
+    },
+    {
+      "id": "e21", "metric": "totalProjectCost", "value": 39269, "unit": "USD/site",
+      "region": "Wasco County (The Dalles), OR", "regionKey": "OR", "dataYear": 2026,
+      "source": { "title": "RV Park construction in West TD could move forward with $1 million state grant", "url": "https://columbiacommunityconnection.com/the-dalles/rv-park-construction-in-west-td-could-move-forward-with-1-million-state-grant", "publisher": "Columbia Community Connection", "accessed": "2026-10-24" },
+      "quote": "The grant requires an $884,900 local match, bringing the total estimated project cost to $1,884,900.",
+      "scopeNotes": "1,884,900 / 48 full-hookup sites. Completion of a partly built park: 'The previous owner completed most of the utility work', so this understates a ground-up build. Includes ADA restroom/shower facility.",
+      "confidence": "low"
+    }
+  ],
+
+  "openQuestions": [
+    "Private-sector RV park bid tabs or lender feasibility budgets (SBA 7a / USDA B&I) would firm up the private-developer cluster, which currently rests on one trade newsletter.",
+    "Missouri State Parks figures are 2020 concept estimates; actual bid results (e.g., Roaring River bid tab on oa.mo.gov) should be pulled and compared.",
+    "Dump station, lift station, well and pool line items are judgment-only; need bid tabs.",
+    "KOA franchise disclosure (Item 7 initial investment) could provide a national per-site range; not retrieved in this session."
+  ]
+}

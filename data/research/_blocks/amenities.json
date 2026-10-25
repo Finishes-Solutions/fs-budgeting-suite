@@ -1,0 +1,399 @@
+{
+  "schemaVersion": 1,
+  "id": "amenities",
+  "name": "Amenities",
+  "researchedAt": "2026-10-24",
+  "note": "Contractor-installed price (incl. general conditions and OH&P) for each amenity. Excludes FF&E/loose equipment unless noted, soft costs and land. Public municipal bids are the main evidence; developer-built amenities at multifamily/RV/hospitality projects are usually smaller and somewhat cheaper than municipal versions, which is why several mids sit below the municipal awards.",
+  "items": [
+    {
+      "id": "pool-residential-amenity",
+      "name": "Resort-style community pool with deck (≈1,500–2,500 SF of water)",
+      "division": "13",
+      "unit": "ea",
+      "cost": {
+        "low": 350000, "mid": 650000, "high": 1100000,
+        "dollarYear": 2024, "region": "US",
+        "evidence": ["e1", "e2", "e3", "e4", "e6"],
+        "derived": true,
+        "method": "Built up from pool-per-sf: 2,000 SF water × $320/SF (pool-per-sf mid) = $640k, plus ≈4,000–6,000 SF of concrete/paver deck, pool fence, lighting and a small equipment room, which brings a plain pool to the low end (1,500 SF × ~$200/SF + deck ≈ $350k) and a 2,500 SF resort pool with sun shelf, spa and premium deck to the high end (2,500 SF × ~$400 + extras ≈ $1.1M). Cross-check: Van Wert OH community pool (e6) at $7.5M for 9,384 SF water + 32,806 SF deck/grass ≈ $800 per SF of water all-in for a municipal facility with bathhouse-type support, so a 2,000 SF amenity pool at $325/SF of water all-in is plausible for private multifamily scope. Evidence years: Chico 2015, Rec Management 2024, Van Wert 2024 prices."
+      },
+      "notes": "Includes pool shell, finish, filtration/heater/chemical equipment, coping, deck, code fence and pool lighting. Excludes cabana/clubhouse building (use clubhouse), shade structures (pavilion-shade), pool furniture (FF&E). Spa adds roughly $60k–$150k (judgment)."
+    },
+    {
+      "id": "pool-per-sf",
+      "name": "Swimming pool, per SF of water surface (shell, finish, mechanical)",
+      "division": "13",
+      "unit": "sf",
+      "cost": {
+        "low": 200, "mid": 320, "high": 490,
+        "dollarYear": 2024, "region": "US",
+        "evidence": ["e1", "e2", "e3", "e4"],
+        "derived": false,
+        "method": "Chico CA aquatics feasibility (2015 $) gives pool-only construction of $145/SF (teaching pool, e3), $185/SF (25-yd lap pool, e2) and $270/SF (multipurpose recreation pool, e4). Rec Management (e1) puts the 2024 average at ≈$488/SF (scope undefined; treated as the high end, likely includes deck/mechanical building). Chico values are 9 years old; construction costs rose roughly 50% 2015→2024, so Chico ≈ $215–$400/SF in 2024 terms — low $200 and mid $320 sit in that band; high = e1 rounded."
+      },
+      "notes": "Per SF of water surface. Pool shell, plaster/tile finish, coping, filtration, pumps, heaters, chemical feed, pool lighting. Deck, fencing and support buildings are extra. Leisure/zero-entry pools run toward the high end, simple rectangular lap pools toward the low end."
+    },
+    {
+      "id": "clubhouse",
+      "name": "Clubhouse / amenity building",
+      "division": "01",
+      "unit": "sf",
+      "cost": {
+        "low": 142, "mid": 186, "high": 290,
+        "dollarYear": 2019, "region": "US",
+        "evidence": ["e18", "e19", "e20"],
+        "derived": true,
+        "method": "RSMeans public model pages (2019 data, US national average). Construction cost = SubTotal + contractor fees (GC/OH&P), excluding the 8% architectural fee included in RSMeans 'Total'. Low = Social Club open shop ($113.60 × 1.25 = $142); mid = Country Club open shop ($148.69 × 1.25 = $186); high = Country Club union ($205.36) × 1.4 for luxury multifamily clubhouse finishes (judgment). Kept in 2019 dollars for the build-script escalation."
+      },
+      "notes": "Stand-alone amenity building (leasing, lounge, kitchenette, restrooms) — building only, no sitework or FF&E. Use fitness-room for the gym portion if built as separate space."
+    },
+    {
+      "id": "fitness-room",
+      "name": "Fitness room / gym space (built space, excl. equipment)",
+      "division": "01",
+      "unit": "sf",
+      "cost": {
+        "low": 150, "mid": 175, "high": 260,
+        "dollarYear": 2019, "region": "US",
+        "evidence": ["e21"],
+        "derived": true,
+        "method": "RSMeans Gymnasium model (e21, 2019 data): construction = SubTotal + contractor fees = $129.64 × 1.25 = $162 open shop; $141.48 + $35.37 = $177 union. Mid $175 ≈ union; low $150 for space carved inside a larger building; high = ×1.5 for boutique finishes (rubber floors, mirrors, AV, extra HVAC) — judgment."
+      },
+      "notes": "Excludes fitness equipment (typically $40–$80 per SF of fitness room for commercial-grade cardio/strength packages — judgment; carry in FF&E)."
+    },
+    {
+      "id": "playground",
+      "name": "Playground (commercial-grade structure, safety surfacing, borders)",
+      "division": "11",
+      "unit": "ea",
+      "cost": {
+        "low": 75000, "mid": 175000, "high": 450000,
+        "dollarYear": 2024, "region": "US",
+        "evidence": ["e17"],
+        "derived": true,
+        "method": "No clean per-playground bid tab captured. Santa Monica's inclusive Douglas Park playground (e17, NTE $1.9M incl. 10% contingency, 2023) is a destination municipal playground and is treated as an outlier above the range. Range is judgment for multifamily/RV/park-sized playgrounds: low = single modular structure with engineered wood fiber; mid = 2–12-year-old structures with poured-in-place rubber; high = larger inclusive playground with shade. Verify with local bids."
+      },
+      "notes": "Includes equipment, installation, safety surfacing, edging and drainage. Shade sails extra (pavilion-shade)."
+    },
+    {
+      "id": "sport-court",
+      "name": "Sport court (tennis or basketball), post-tension concrete, fenced",
+      "division": "32",
+      "unit": "court",
+      "cost": {
+        "low": 75000, "mid": 150000, "high": 230000,
+        "dollarYear": 2024, "region": "US",
+        "evidence": ["e12"],
+        "derived": true,
+        "method": "College Station TX (e12, Oct 2024): $1,041,469 for 6 tennis courts on post-tension slabs incl. demolition, waterline relocation, regrade, fencing, nets = $173.6k/court; lighting by separate Musco contract $332,655 = $55.4k/court. Mid $150k = tennis court without demolition/utility relocation; high $230k = e12 + lighting; low $75k = half-court/full basketball court on asphalt or concrete (judgment: roughly half the area of a tennis court, no 10-ft fence)."
+      },
+      "notes": "Tennis court ≈ 7,200 SF (60×120). Basketball court ≈ 4,700 SF full court. Lighting typically adds $40k–$60k per court (e12)."
+    },
+    {
+      "id": "pickleball-court-outdoor",
+      "name": "Outdoor pickleball court (post-tension concrete, fenced)",
+      "division": "32",
+      "unit": "court",
+      "cost": {
+        "low": 55000, "mid": 85000, "high": 170000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e9", "e10", "e11"],
+        "derived": false,
+        "method": "Three 2025 municipal awards: Troy MI (e9) $489,510 / 8 courts = $61.2k/court (PT concrete, windscreen, 2 sun shades, no lighting); Farragut TN (e10) $856,742 / 9 courts = $95.2k/court (incl. LED lighting, fencing, shaded seating); Tuscaloosa AL (e11) $1,373,029 / 8 courts = $171.6k/court (incl. new parking lot). Mid $85k between e9 and e10 (bank of courts with lighting); low = e9 rounded down for larger banks; high = e11."
+      },
+      "notes": "Assumes courts built in banks of 4+; a single stand-alone court costs more per court. Troy bid tab: post-tension 5-inch concrete court slab $113.15/SY (≈$12.57/SF)."
+    },
+    {
+      "id": "dog-park",
+      "name": "Dog park (fenced, double-gated, surfacing, waste stations, water)",
+      "division": "32",
+      "unit": "ea",
+      "cost": {
+        "low": 30000, "mid": 90000, "high": 600000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e15", "e16"],
+        "derived": true,
+        "method": "Wichita Falls TX (e15, 2025): $64,500 for a park with small/large dog areas and 1,400 LF of 6-ft chain link. Farragut TN (e16): $562,000 low bid for a municipal dog park with vinyl fencing, ADA aggregate paths, retaining walls and landscaping. Private amenity dog parks (multifamily, RV) are typically 3,000–15,000 SF; low $30k = small turf/gravel run with 4-ft fence (judgment); mid $90k ≈ e15 scaled up for synthetic turf and water; high ≈ e16 (municipal-scale)."
+      },
+      "notes": "Synthetic pet turf on drainage base ($12–$20/SF, judgment) is the main driver for small amenity dog parks."
+    },
+    {
+      "id": "pavilion-shade",
+      "name": "Pavilion / shade structure (open-sided roofed)",
+      "division": "13",
+      "unit": "sf",
+      "cost": {
+        "low": 40, "mid": 75, "high": 150,
+        "dollarYear": 2024, "region": "US",
+        "evidence": ["e23"],
+        "derived": true,
+        "method": "Judgment. Fixr (e23, residential, 2022) gives roofed pergola/pavilion structures at $5,700–$30,000 and open pergolas at $10–$40/SF installed. Commercial prefabricated steel pavilions with footings and slab typically run higher than residential pergolas: low $40/SF (shade sail or simple steel frame on existing slab), mid $75/SF (prefab steel pavilion with roof, footings and slab), high $150/SF (custom timber/masonry pavilion with lighting and power)."
+      },
+      "notes": "Per SF of roof footprint. Include slab if none exists. Troy MI pickleball bid (e9) carried two court sun shades at $22,500 each."
+    },
+    {
+      "id": "splash-pad",
+      "name": "Splash pad (spray ground)",
+      "division": "13",
+      "unit": "ea",
+      "cost": {
+        "low": 200000, "mid": 450000, "high": 750000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e5", "e7", "e8"],
+        "derived": false,
+        "method": "Webster City IA engineer's estimate $448,550 (e8, 2023); Sugar Land TX contract $579,451 (e7, Jan 2026); Chico CA feasibility $250,000 (e5, 2015 $). Mid = e8 rounded (≈ median); low = small flow-through pad near e5; high = recirculating pad with treatment, larger than e7 (judgment)."
+      },
+      "notes": "Flow-through (potable to sewer) pads are cheaper to build but costly to run; recirculating pads add a treatment vault/pump room (≈$100k–$200k, judgment)."
+    },
+    {
+      "id": "restroom-building",
+      "name": "Restroom building (prefab or site-built, park/amenity)",
+      "division": "13",
+      "unit": "sf",
+      "cost": {
+        "low": 450, "mid": 750, "high": 1250,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e13", "e14"],
+        "derived": true,
+        "method": "Neither award states square footage. Fresno CA (e13, bids Dec 2025): $608,363 for a prefabricated 4-stall ADA restroom incl. new sewer/water service and accessible path. Savannah GA (e14, Dec 2024): $264,927 to design, manufacture and install a prefab CMU restroom. Assuming ≈350 SF for e14 and ≈450–500 SF for e13 (typical 2–4-stall park restroom footprints, judgment), the awards imply ≈$750/SF (e14) and ≈$1,200–$1,350/SF incl. utility work (e13). Low $450 = site-built restroom inside a larger amenity site with utilities at the pad."
+      },
+      "notes": "Small buildings carry high $/SF because plumbing fixtures, vandal-resistant finishes and utility connections dominate. Utility service extensions beyond 50 ft are extra."
+    },
+    {
+      "id": "bathhouse",
+      "name": "Bathhouse with showers and laundry (RV park / campground)",
+      "division": "13",
+      "unit": "sf",
+      "cost": {
+        "low": 300, "mid": 450, "high": 700,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e13", "e14", "e22b"],
+        "derived": true,
+        "method": "Derived. RSMeans Laundromat model (e22b, 2019 data) = $216–$235/SF construction (open shop $172.84 × 1.25; union $187.98 + $47.00), a plumbing-heavy small building comparable to a bathhouse; that is ≈$300–$330/SF in 2025 terms (≈+40% 2019→2025), used as the low. Mid $450 sits between that and the restroom-building low-to-mid ($450–$750/SF) because bathhouses (1,000–3,000 SF) spread fixed costs over more area than a single restroom. High $700 = small bathhouse with premium finishes."
+      },
+      "notes": "Typical RV park ratio ≈ 1 toilet + 1 shower per sex per 15–25 sites (state codes vary); laundry adds 150–300 SF. Excludes washers/dryers (often vendor-leased)."
+    },
+    {
+      "id": "mail-kiosk",
+      "name": "Mail kiosk (USPS cluster box units under a roofed kiosk)",
+      "division": "10",
+      "unit": "ea",
+      "cost": {
+        "low": 15000, "mid": 40000, "high": 100000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "No source captured (web search limit reached). Judgment: USPS-approved cluster box units at ≈$1,500–$3,000 per 16-door unit installed on a pad (low = 4–6 CBUs on a slab with no roof); mid = 200–300-unit community with 15–20 CBUs/parcel lockers in a 300–500 SF roofed kiosk; high = enclosed, conditioned mail room or large kiosk with electronic parcel lockers. Verify with a CBU supplier quote."
+      },
+      "notes": "Size from unit count: roughly 1 CBU door per dwelling unit plus parcel lockers at ≈1 per 10 units (USPS guidance — verify locally with the postmaster)."
+    },
+    {
+      "id": "outdoor-kitchen-grill",
+      "name": "Outdoor kitchen / grill station",
+      "division": "11",
+      "unit": "ea",
+      "cost": {
+        "low": 8000, "mid": 20000, "high": 65000,
+        "dollarYear": 2025, "region": "US",
+        "evidence": ["e22"],
+        "derived": false,
+        "method": "Fixr (e22, Feb 2025): $6,000–$30,000 typical, $16,000 national average, $65,000 high-end custom. Commercial amenity grill stations use commercial-grade built-in grills and accessible counters, so the mid is set ≈25% above e22's average ($20k); high = e22 high."
+      },
+      "notes": "Per station (built-in grill, counter, sink optional). Power/gas/water run from building ≤ 50 ft. Shade structure extra."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1", "metric": "poolCostPerSF", "value": 488, "unit": "USD/sf",
+      "region": "United States", "regionKey": "US", "dataYear": 2024,
+      "source": { "title": "Realistic Pool Pricing for City and Commercial Pools", "url": "https://recmanagement.com/articles/154659/realistic-pool-pricing-city-commercial-pools", "publisher": "Recreation Management", "accessed": "2026-10-24" },
+      "quote": "The average cost of constructing a pool in 2024 is estimated at approximately $488 per square foot",
+      "scopeNotes": "Article (Aug 2024) does not define scope (water area vs. total facility; deck/mechanical inclusion). Treated as an upper-end commercial pool figure.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2", "metric": "poolCostPerSF", "value": 185, "unit": "USD/sf",
+      "region": "Chico, CA", "regionKey": "CA-Chico", "dataYear": 2015,
+      "source": { "title": "Chico Aquatics Feasibility Study — Public Meeting 2 (Dec 16, 2015)", "url": "https://www.chicorec.gov/files/0ed35410b/Chico+Public+Meeting+2+Final.pdf", "publisher": "Chico Area Recreation and Park District", "accessed": "2026-10-24" },
+      "quote": "25-Yard x 9-Lane Pool … Square Feet: 4,925 • Construction Cost (Pool Only): $911,000",
+      "scopeNotes": "$911,000 / 4,925 SF = $185/SF. Pool only (no building, deck or site); 2015 planning-level estimate.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3", "metric": "poolCostPerSF", "value": 145, "unit": "USD/sf",
+      "region": "Chico, CA", "regionKey": "CA-Chico", "dataYear": 2015,
+      "source": { "title": "Chico Aquatics Feasibility Study — Public Meeting 2 (Dec 16, 2015)", "url": "https://www.chicorec.gov/files/0ed35410b/Chico+Public+Meeting+2+Final.pdf", "publisher": "Chico Area Recreation and Park District", "accessed": "2026-10-24" },
+      "quote": "Teaching Pool … Square Feet: 1,625 • Construction Cost (Pool Only): $236,000",
+      "scopeNotes": "$236,000 / 1,625 SF = $145/SF. Shallow (3.5–4.5 ft) pool only; closest in size to an amenity pool.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4", "metric": "poolCostPerSF", "value": 270, "unit": "USD/sf",
+      "region": "Chico, CA", "regionKey": "CA-Chico", "dataYear": 2015,
+      "source": { "title": "Chico Aquatics Feasibility Study — Public Meeting 2 (Dec 16, 2015)", "url": "https://www.chicorec.gov/files/0ed35410b/Chico+Public+Meeting+2+Final.pdf", "publisher": "Chico Area Recreation and Park District", "accessed": "2026-10-24" },
+      "quote": "Multipurpose Recreation Pool … Square Feet: 4,715 • Construction Cost (Pool Only): $1,272,000",
+      "scopeNotes": "$1,272,000 / 4,715 SF = $270/SF. Zero-depth leisure pool, pool only.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5", "metric": "splashPadCost", "value": 250000, "unit": "USD/ea",
+      "region": "Chico, CA", "regionKey": "CA-Chico", "dataYear": 2015,
+      "source": { "title": "Chico Aquatics Feasibility Study — Public Meeting 2 (Dec 16, 2015)", "url": "https://www.chicorec.gov/files/0ed35410b/Chico+Public+Meeting+2+Final.pdf", "publisher": "Chico Area Recreation and Park District", "accessed": "2026-10-24" },
+      "quote": "Splash Pad … Uses: Water Play • Construction Cost: $250,000",
+      "scopeNotes": "Planning estimate, size not stated, 2015 dollars.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6", "metric": "poolProjectCost", "value": 7500000, "unit": "USD/ea",
+      "region": "Van Wert, OH", "regionKey": "OH", "dataYear": 2024,
+      "source": { "title": "Van Wert community pool cost estimate (Mar 5, 2024)", "url": "https://thevwindependent.com/news/?p=176598", "publisher": "The Van Wert Independent", "accessed": "2026-10-24" },
+      "quote": "9,384 square feet of water surface … 32,806 square foot deck and grass area … $7.5 million … based on 2024 prices",
+      "scopeNotes": "Municipal community pool project incl. deck and grass area (≈$800 per SF of water all-in). Used only as a cross-check on the all-in amenity pool.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e7", "metric": "splashPadCost", "value": 579451, "unit": "USD/ea",
+      "region": "Sugar Land, TX", "regionKey": "TX", "dataYear": 2026,
+      "source": { "title": "Sugar Land building city's second splashpad at Memorial Park", "url": "https://communityimpact.com/sugar-land-missouri-city/government/sugar-land-building-citys-second-splashpad-at-memorial-park/", "publisher": "Community Impact", "accessed": "2026-10-24" },
+      "quote": "$579,451 contract with HD Outdoor Construction, LLC",
+      "scopeNotes": "Construction contract (article Jan 25, 2026) for an all-abilities splash pad; size not stated.",
+      "confidence": "high"
+    },
+    {
+      "id": "e8", "metric": "splashPadCost", "value": 448550, "unit": "USD/ea",
+      "region": "Webster City, IA", "regionKey": "IA", "dataYear": 2023,
+      "source": { "title": "City will seek bids for splash pad materials", "url": "https://www.freemanjournal.net/news/local-news/2023/10/city-will-seek-bids-for-splash-pad-materials/", "publisher": "The Daily Freeman-Journal", "accessed": "2026-10-24" },
+      "quote": "An engineer's estimate shows the project would cost $448,550.",
+      "scopeNotes": "Engineer's estimate (Oct 2023), materials + construction; size not stated.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e9", "metric": "pickleballCostPerCourt", "value": 61189, "unit": "USD/court",
+      "region": "Troy, MI", "regionKey": "MI", "dataYear": 2025,
+      "source": { "title": "Firefighters Park Pickleball Courts Construction — City Council resolution and bid tabulation (Apr 7, 2025)", "url": "https://apps.troymi.gov/OpenTroy/OnbaseDocument/6723557", "publisher": "City of Troy, MI", "accessed": "2026-10-24" },
+      "quote": "to construct eight (8) Pickleball courts at Firefighters Park including the amenities … for a total cost of $489,509.82 plus a 15% contingency",
+      "scopeNotes": "$489,509.82 / 8 = $61,189 per court. Bid tab: 'Post-Tension Concrete Pickleball Courts, 5 inch' 1,878 SY at $113.15; windscreen, two court sun shades at $22,500, markings. No lighting.",
+      "confidence": "high"
+    },
+    {
+      "id": "e10", "metric": "pickleballCostPerCourt", "value": 95194, "unit": "USD/court",
+      "region": "Farragut, TN", "regionKey": "TN", "dataYear": 2025,
+      "source": { "title": "Final nod for pickleball at MBL Park: BOMA (May 14, 2025)", "url": "https://farragutpress.com/articles/2025/05/14708", "publisher": "Farragut Press", "accessed": "2026-10-24" },
+      "quote": "nine courts, LED lighting, interior and exterior fencing",
+      "scopeNotes": "Baseline Sports Construction bid $856,742 (base) for nine courts = $95,194/court incl. LED lighting, fencing, 2 ADA spaces, shaded seating. Second bid $1,098,000.",
+      "confidence": "high"
+    },
+    {
+      "id": "e11", "metric": "pickleballCostPerCourt", "value": 171629, "unit": "USD/court",
+      "region": "Tuscaloosa, AL", "regionKey": "AL", "dataYear": 2025,
+      "source": { "title": "New pickleball courts coming to North Tuscaloosa (Mar 27, 2025)", "url": "https://tuscaloosathread.com/new-pickleball-courts-north-tuscaloosa/", "publisher": "Tuscaloosa Thread", "accessed": "2026-10-24" },
+      "quote": "$1,373,029",
+      "scopeNotes": "Contract to Price Construction for 8 new courts plus a new parking lot = $171,629/court all-in; parking inflates the per-court figure.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e12", "metric": "tennisCostPerCourt", "value": 173578, "unit": "USD/court",
+      "region": "College Station, TX", "regionKey": "TX", "dataYear": 2024,
+      "source": { "title": "Item 9.4 — 2022 Bond Bee Creek and Central Park Tennis (City Council, Oct 7, 2024)", "url": "https://wtaw.com/wp-content/uploads/2024/10/CScoun100724ConstContractTennis.pdf", "publisher": "City of College Station, TX (posted by WTAW)", "accessed": "2026-10-24" },
+      "quote": "construction contract with JaCody Construction, LP, in the amount of $1,041,469 for the construction renovations of tennis courts at Bee Creek Park, and Central Park",
+      "scopeNotes": "Six courts (4 + 2) demolished and rebuilt on post-tension slabs with fencing, nets, surfacing, waterline relocation = $173,578/court. Lighting separate: Musco contract $332,655 (≈$55k/court). Ten proposals received.",
+      "confidence": "high"
+    },
+    {
+      "id": "e13", "metric": "restroomBuildingCost", "value": 608363, "unit": "USD/ea",
+      "region": "Fresno, CA", "regionKey": "CA-Fresno", "dataYear": 2025,
+      "source": { "title": "Legislation ID 26-23 — Large Park Restroom construction contract", "url": "https://agendas.fresno.gov/en/legislation/id-26-23-20726", "publisher": "City of Fresno", "accessed": "2026-10-24" },
+      "quote": "in the amount of $608,363.20",
+      "scopeNotes": "Prefabricated 4-stall (2 ADA) restroom with new sewer and water service and accessible path; bids opened Dec 2, 2025 (range $544k–$774k). SF not stated.",
+      "confidence": "high"
+    },
+    {
+      "id": "e14", "metric": "restroomBuildingCost", "value": 264927, "unit": "USD/ea",
+      "region": "Savannah, GA", "regionKey": "GA", "dataYear": 2024,
+      "source": { "title": "Design, Manufacture, and Install a Prefabricated Restroom Building — City Council Regular Meeting (Dec 19, 2024)", "url": "https://agenda.savannahga.gov/publishing/december-19-2024-city-council-regular-meeting/1471_10896.html", "publisher": "City of Savannah, GA", "accessed": "2026-10-24" },
+      "quote": "The modular building will be constructed of concrete block, metal roof, 8\" thick concrete slab foundation",
+      "scopeNotes": "Contract not to exceed $264,927 for design, manufacture and install at Daffin Park playground; SF not stated.",
+      "confidence": "high"
+    },
+    {
+      "id": "e15", "metric": "dogParkCost", "value": 64500, "unit": "USD/ea",
+      "region": "Wichita Falls, TX", "regionKey": "TX", "dataYear": 2025,
+      "source": { "title": "New dog park coming to Wichita Falls' Conoco Park (Aug 5, 2025)", "url": "https://www.yahoo.com/news/articles/dog-park-coming-wichita-falls-223351010.html", "publisher": "Yahoo News", "accessed": "2026-10-24" },
+      "quote": "surrounded by 1,400 feet of a six-foot-tall chain-link fence",
+      "scopeNotes": "Project 'will cost $64,500'; small and large dog areas; grant-funded. Basic scope.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e16", "metric": "dogParkCost", "value": 562000, "unit": "USD/ea",
+      "region": "Farragut, TN", "regionKey": "TN", "dataYear": 2026,
+      "source": { "title": "Dog park, illuminated signs win approval (Jan 14, 2026)", "url": "https://farragutpress.com/articles/2026/01/15289", "publisher": "Farragut Press", "accessed": "2026-10-24" },
+      "quote": "Fuel Tank Maintenance submitted the low bid at $562,000",
+      "scopeNotes": "Municipal dog park with separate large/small dog areas, vinyl fencing, ADA aggregate paths, landscaping, retaining walls; total approved $637,250 with add-ons.",
+      "confidence": "high"
+    },
+    {
+      "id": "e17", "metric": "playgroundCost", "value": 1900000, "unit": "USD/ea",
+      "region": "Santa Monica, CA", "regionKey": "CA-LosAngeles", "dataYear": 2023,
+      "source": { "title": "Douglas Park Playground Reconstruction Project", "url": "https://www.santamonica.gov/douglas-park-playground-reconstruction-project", "publisher": "City of Santa Monica", "accessed": "2026-10-24" },
+      "quote": "for an amount not to exceed $1,900,000 (including 10% contingency) for two years with a one-year renewal option",
+      "scopeNotes": "Destination inclusive (universally accessible) municipal playground with equipment and surfacing — far above a typical amenity playground; outlier/upper bound only.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e18", "metric": "buildingCostPerSF", "value": 145.11, "unit": "USD/sf",
+      "region": "US national average", "regionKey": "US", "dataYear": 2019,
+      "source": { "title": "Community Center — RSMeans model page", "url": "https://www.rsmeans.com/model-pages/community-center", "publisher": "Gordian / RSMeans", "accessed": "2026-10-24" },
+      "quote": "Standard Union Labor Total Building Cost $145.11 per SF; 10,000 SF; Year 2019; SubTotal $107.49 + Contractor Fees $26.87 + Architectural Fees $10.75",
+      "scopeNotes": "Total includes 8% architectural fees; construction cost = $134.36/SF union, $122.66/SF open shop. Building only.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e19", "metric": "buildingCostPerSF", "value": 221.79, "unit": "USD/sf",
+      "region": "US national average", "regionKey": "US", "dataYear": 2019,
+      "source": { "title": "Country Club — RSMeans model page", "url": "https://www.rsmeans.com/model-pages/country-club", "publisher": "Gordian / RSMeans", "accessed": "2026-10-24" },
+      "quote": "Floor area 6,000 SF; Year 2019; Union SubTotal $164.29, Contractor fees $41.07, Total $221.79; Open Shop SubTotal $148.69, Total $200.73",
+      "scopeNotes": "Total includes architectural fees; construction = $205.36 union / ≈$186 open shop.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e20", "metric": "buildingCostPerSF", "value": 168.47, "unit": "USD/sf",
+      "region": "US national average", "regionKey": "US", "dataYear": 2019,
+      "source": { "title": "Social Club — RSMeans model page", "url": "https://www.rsmeans.com/model-pages/social-club", "publisher": "Gordian / RSMeans", "accessed": "2026-10-24" },
+      "quote": "Floor area 22,000 SF; Year 2019; Union SubTotal $125.96, Contractor fees $31.49, Total $168.47; Open Shop SubTotal $113.60, Total $151.94",
+      "scopeNotes": "Total includes architectural fees; construction = $157.45 union / $142 open shop.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e21", "metric": "buildingCostPerSF", "value": 189.23, "unit": "USD/sf",
+      "region": "US national average", "regionKey": "US", "dataYear": 2019,
+      "source": { "title": "Gymnasium — RSMeans model page", "url": "https://www.rsmeans.com/model-pages/gymnasium", "publisher": "Gordian / RSMeans", "accessed": "2026-10-24" },
+      "quote": "Floor Area (S.F.): 20,000; Data Release: Year 2019; Union subtotal $141.48, contractor fees $35.37, Total Building Cost $189.23; Open Shop subtotal $129.64, total $173.39",
+      "scopeNotes": "Total includes architectural fees; construction = $176.85 union / $162 open shop.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e22b", "metric": "buildingCostPerSF", "value": 251.43, "unit": "USD/sf",
+      "region": "US national average", "regionKey": "US", "dataYear": 2019,
+      "source": { "title": "Laundromat — RSMeans model page", "url": "https://www.rsmeans.com/model-pages/laundromat", "publisher": "Gordian / RSMeans", "accessed": "2026-10-24" },
+      "quote": "Floor area 3,000 S.F.; Year 2019; Union subtotal $187.98, contractor fees $47.00, total $251.43; Open Shop subtotal $172.84, total $231.17",
+      "scopeNotes": "Proxy for a plumbing-heavy small building (bathhouse). Total includes architectural fees; construction ≈ $235 union / $216 open shop.",
+      "confidence": "low"
+    },
+    {
+      "id": "e22", "metric": "outdoorKitchenCost", "value": 16000, "low": 6000, "high": 30000, "unit": "USD/ea",
+      "region": "United States", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Outdoor Kitchen Cost", "url": "https://www.fixr.com/costs/outdoor-kitchen", "publisher": "Fixr", "accessed": "2026-10-24" },
+      "quote": "$6,000 – $30,000 … national average … $16,000 … $65,000 for a custom, luxury kitchen with a pergola, pizza oven",
+      "scopeNotes": "Residential consumer guide (updated Feb 7, 2025); proxy for an amenity grill station.",
+      "confidence": "low"
+    },
+    {
+      "id": "e23", "metric": "pavilionCost", "low": 5700, "high": 30000, "unit": "USD/ea",
+      "region": "United States", "regionKey": "US", "dataYear": 2022,
+      "source": { "title": "Pergola Cost", "url": "https://www.fixr.com/costs/build-pergola", "publisher": "Fixr", "accessed": "2026-10-24" },
+      "quote": "Gable-roof pergola (custom): $5,700 - $20,000; Hip-roof pergola (custom): $8,000 - $30,000; $10 to $40 per square foot installed (open pergola)",
+      "scopeNotes": "Residential pergolas/roofed pavilions (updated Aug 18, 2022). Loose proxy only.",
+      "confidence": "low"
+    }
+  ]
+}

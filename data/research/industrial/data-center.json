@@ -1,0 +1,598 @@
+{
+  "schemaVersion": 1,
+  "id": "data-center",
+  "name": "Data center",
+  "category": "industrial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "kw",
+  "summary": "Colocation/hyperscale data centers are priced per kW of critical IT load; 70–85% of construction cost is electrical (switchgear, UPS, generators, distribution) and mechanical (cooling) infrastructure, so cost tracks IT capacity rather than floor area. Evidence is good: Turner & Townsend (US$13.28/W Chicago, 2026), JLL ($11.3M/MW shell-and-core, 2026) and Cushman & Wakefield ($17.6M/MW all-in, 2026) agree once scope differences (land, sitework, soft costs, contingency) are reconciled. Liquid-cooled AI halls carry a 7–10% premium; IT equipment is excluded.",
+  "sizing": {
+    "typicalSize": {
+      "low": 10000,
+      "mid": 60000,
+      "high": 200000,
+      "unit": "kw",
+      "evidence": [
+        "e7"
+      ],
+      "derived": true,
+      "method": "Turner & Townsend benchmarks a typical 60 MW IT hyperscale facility (e7) = mid 60,000 kW; colocation buildings 10–40 MW, campus phases up to 200+ MW."
+    },
+    "sfPerPrimaryUnit": {
+      "low": 6,
+      "mid": 12,
+      "high": 20,
+      "evidence": [
+        "e1",
+        "e12"
+      ],
+      "derived": true,
+      "method": "Gross building SF per kW of IT load. C&W ~$1,000/SF (e12) against $17,600/kW all-in (e1) implies ≈ 17.6 SF/kW; air-cooled hyperscale at ~150–250 W/SF of white space with white space ≈ 50% of gross ≈ 8–13 SF/kW; dense AI halls 5–7 SF/kW; older enterprise 20+. Mid 12 (judgment)."
+    },
+    "primaryUnitsPerAcre": {
+      "low": 500,
+      "mid": 1500,
+      "high": 4000,
+      "evidence": [],
+      "derived": true,
+      "method": "kW of IT per site acre: single-story campuses with substations, generator yards and setbacks ≈ 0.5–2 MW/acre; multi-story urban 3–5 MW/acre (judgment)."
+    }
+  },
+  "hardCost": {
+    "perPrimaryUnit": {
+      "low": 9000,
+      "mid": 12000,
+      "high": 17000,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e6",
+        "e7",
+        "e8",
+        "e9",
+        "e10"
+      ],
+      "derived": false,
+      "method": "Three reconciled anchors (all 2026 $/kW): (1) T&T US$13.28/W Chicago (e6; Silicon Valley $13.3 in 2025, e8) — includes GC contingency but excludes site works and fees (e7); (2) JLL shell-and-core $11.3M/MW global (e4) and US markets $10–$14M (e9); (3) C&W all-in $17.6M/MW (e1) less site acquisition 7% and ≈ 15–20% soft costs/owner contingency (e3 lists contingencies at 16%) ≈ $12.2k–$13.1k/kW. Mid $12,000 = between JLL US markets (~$11.5k NoVA) and T&T Chicago, plus ~3% typical sitework that T&T excludes. Low $9,000 = C&W all-in market floor $8.9M/MW (e2) for low-cost markets/simpler tiers. High $17,000 = high-cost market ($13.3k) + liquid cooling (+$1–2k/kW, e10; T&T 7–10%) + multi-story/sitework."
+    },
+    "perSF": {
+      "low": 600,
+      "mid": 1000,
+      "high": 1800,
+      "dollarYear": 2026,
+      "region": "US",
+      "evidence": [
+        "e11",
+        "e12"
+      ],
+      "derived": true,
+      "method": "perPrimaryUnit ÷ sfPerPrimaryUnit at matched densities (12,000/12 = $1,000; 9,000/15 = $600; 17,000/9.5 ≈ $1,800). Consistent with the ~$1,000/SF attributed to C&W (e12); RSMeans 2019 small enterprise model ($307–$342/SF, e11) is a low-density outlier."
+    },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Contractor price incl. GC preliminaries/OH&P: powered shell, white-space fit-out, electrical (MV switchgear, transformers, UPS, generators, PDUs/busway), mechanical cooling plant and distribution, fire protection/suppression, security, BMS/EPMS, and typical on-site work. Excludes land, IT/tech fit-out (servers, network, GPUs — up to $25M/MW for AI, e5), utility substation/transmission work, soft costs and owner contingency."
+    }
+  },
+  "qualityTiers": {
+    "economy": 0.75,
+    "standard": 1,
+    "premium": 1.2,
+    "luxury": 1.42,
+    "evidence": [
+      "e2",
+      "e7",
+      "e10"
+    ],
+    "derived": true,
+    "method": "economy = low/mid (Tier II/edge or low-cost market); premium 1.2 ≈ Tier IV / 2N redundancy or liquid-cooled AI (T&T 7–10% + $1–2k/kW, e7/e10); luxury = high/mid (multi-story, high-cost market, full liquid cooling)."
+  },
+  "systemSplit": {
+    "lines": [
+      {
+        "division": "01",
+        "pct": 0.06
+      },
+      {
+        "division": "03",
+        "pct": 0.05
+      },
+      {
+        "division": "05",
+        "pct": 0.04
+      },
+      {
+        "division": "07",
+        "pct": 0.02
+      },
+      {
+        "division": "08",
+        "pct": 0.01
+      },
+      {
+        "division": "09",
+        "pct": 0.01
+      },
+      {
+        "division": "21",
+        "pct": 0.02
+      },
+      {
+        "division": "22",
+        "pct": 0.01
+      },
+      {
+        "division": "23",
+        "pct": 0.25
+      },
+      {
+        "division": "26",
+        "pct": 0.36
+      },
+      {
+        "division": "27",
+        "pct": 0.02
+      },
+      {
+        "division": "28",
+        "pct": 0.02
+      },
+      {
+        "division": "31",
+        "pct": 0.02
+      },
+      {
+        "division": "32",
+        "pct": 0.02
+      },
+      {
+        "division": "33",
+        "pct": 0.01
+      },
+      {
+        "division": "48",
+        "pct": 0.08
+      }
+    ],
+    "evidence": [
+      "_blocks/specialty-mep.json#e10",
+      "e3"
+    ],
+    "derived": true,
+    "method": "ConstructConnect shares (specialty-mep block e10): electrical 48–54%, mechanical 22–33%, core & shell 9–14%. Mapped: electrical 26 (36%) + generators/power generation 48 (8%) + 27/28 (4%) = 48%; mechanical 23 (25%) + 21/22 (3%) = 28%; shell 03/05/07/08/09 = 13%; sitework 5%; GC 6%. C&W's \"power infrastructure 21% of all-in\" (e3) is consistent once land/soft/contingency are removed."
+  },
+  "lineItems": [
+    {
+      "id": "dc-mep",
+      "name": "Data-center MEP (electrical + mechanical infrastructure)",
+      "division": "26",
+      "block": "specialty-mep",
+      "unit": "kw",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 5000,
+        "mid": 8000,
+        "high": 11500,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/specialty-mep.json#e6",
+          "_blocks/specialty-mep.json#e7",
+          "_blocks/specialty-mep.json#e8",
+          "_blocks/specialty-mep.json#e10"
+        ],
+        "derived": false,
+        "method": "From _blocks/specialty-mep.json data-center-mep ($5,000/$8,000/$11,500 per kW): mechanical $2–4M/MW + electrical $3–5M/MW; T&T $/W × 70–87% MEP share."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out; includes the UPS and generator lines below."
+    },
+    {
+      "id": "standby-generators",
+      "name": "Standby diesel generators (N+1 ≈ 1.25 kW per kW IT incl. mechanical load share)",
+      "division": "48",
+      "block": "specialty-mep",
+      "unit": "kw",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1.25
+      },
+      "cost": {
+        "low": 350,
+        "mid": 550,
+        "high": 750,
+        "dollarYear": 2014,
+        "region": "US",
+        "evidence": [
+          "_blocks/specialty-mep.json#e11",
+          "_blocks/specialty-mep.json#e12"
+        ],
+        "derived": true,
+        "method": "From _blocks/specialty-mep.json emergency-generator ($350/$550/$750 per kW, 2014 $; escalated by the build). Recent switchgear/generator price inflation (+33% generators since 2021 per C&W/CRE Daily) suggests the escalated figure may still be low. Quantity 1.25 kW gen per kW IT (cooling load + N+1)."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of dc-mep."
+    },
+    {
+      "id": "ups-system",
+      "name": "UPS modules, batteries and bypass (per kW IT)",
+      "division": "26",
+      "block": "specialty-mep",
+      "unit": "kw",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 600,
+        "mid": 1000,
+        "high": 1500,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "_blocks/specialty-mep.json#e7"
+        ],
+        "derived": true,
+        "method": "From _blocks/specialty-mep.json ups-system ($600/$1,000/$1,500 per kW, derived as 20–30% of electrical). 2N designs roughly double this."
+      },
+      "inBaseline": true,
+      "scales": true,
+      "optional": false,
+      "notes": "Carve-out of dc-mep."
+    },
+    {
+      "id": "liquid-cooling-premium",
+      "name": "Direct-to-chip liquid cooling premium (AI halls)",
+      "division": "23",
+      "unit": "kw",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 1
+      },
+      "cost": {
+        "low": 1000,
+        "mid": 1500,
+        "high": 2000,
+        "dollarYear": 2026,
+        "region": "US",
+        "evidence": [
+          "e10",
+          "e7",
+          "e8"
+        ],
+        "derived": false,
+        "method": "Liquid cooling adds $1–2M per MW (e10) = $1,000–$2,000/kW; cross-check T&T 7–10% premium on ~$13.3k/kW (e7/e8) ≈ $930–$1,330/kW."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Optional; turn on for AI/high-density product."
+    },
+    {
+      "id": "onsite-substation",
+      "name": "On-site HV substation / utility interconnection (optional)",
+      "division": "33",
+      "block": "energy",
+      "unit": "mw",
+      "qty": {
+        "per": "primaryUnit",
+        "value": 0.0013
+      },
+      "cost": {
+        "low": 30000,
+        "mid": 100000,
+        "high": 250000,
+        "dollarYear": 2022,
+        "region": "US",
+        "evidence": [],
+        "derived": true,
+        "method": "From _blocks/energy.json utility-interconnection ($30k/$100k/$250k per MW, 2022). Quantity ≈ 1.3 MW of utility capacity per MW IT (PUE ~1.3) = 0.0013 MW per kW. Often utility- or owner-funded and site-specific."
+      },
+      "inBaseline": false,
+      "scales": true,
+      "optional": true,
+      "notes": "Off by default: substations/transmission are off-site-type costs excluded from the baseline."
+    }
+  ],
+  "softCosts": {
+    "pctOfHard": {
+      "low": 0.08,
+      "mid": 0.12,
+      "high": 0.18,
+      "evidence": [
+        "e3"
+      ],
+      "derived": true,
+      "method": "C&W all-in shares (e3) leave ≈ 10–15% of all-in for design, permits, commissioning and owner costs after construction, contingency and land; as a fraction of hard cost ≈ 8–18%. A/E for MEP-heavy design ~4–6%; integrated commissioning (Level 1–5) 1–2%; utility/power studies, permits and owner's rep the rest (judgment)."
+    },
+    "breakdown": {
+      "architectureEngineering": 0.05
+    },
+    "notes": "Type-specific soft items: utility power studies and interconnection deposits, Level 1–5 commissioning, ASHRAE/Uptime certification. Excludes IT equipment, land and financing."
+  },
+  "contingency": {
+    "design": {
+      "low": 0.03,
+      "mid": 0.05,
+      "high": 0.08,
+      "evidence": [],
+      "derived": true,
+      "method": "Rapidly changing density/cooling requirements (judgment)."
+    },
+    "hard": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.12,
+      "evidence": [
+        "e3"
+      ],
+      "derived": true,
+      "method": "C&W reports contingencies at 16% of all-in cost (e3), which covers design, construction and owner contingency together; split as ~8% hard + 5% design + soft (judgment). Long-lead switchgear/generator risk."
+    },
+    "soft": {
+      "low": 0.05,
+      "mid": 0.08,
+      "high": 0.1,
+      "evidence": [],
+      "derived": true,
+      "method": "Standard 5–10% of soft costs (judgment)."
+    }
+  },
+  "rangeCheck": {
+    "perPrimaryUnit": {
+      "min": 9500,
+      "max": 24000,
+      "dollarYear": 2026,
+      "region": "US",
+      "method": "C&W all-in market range $8.9M–$23.3M/MW (e2) incl. land; excluding land (~7%) and IT, hard+soft should fall ≈ $9.5k–$24k per kW."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e1",
+      "metric": "allInCostPerKW",
+      "value": 17600,
+      "unit": "USD/kw",
+      "region": "US & Canada average",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Data Center Development Cost Guide (2026)",
+        "url": "https://www.cushmanwakefield.com/en/united-states/insights/data-center-development-cost-guide",
+        "publisher": "Cushman & Wakefield",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Developers can expect average greenfield costs of $17.6 million per MW for the most modern facilities.",
+      "scopeNotes": "Cushman & Wakefield 2026 Data Center Development Cost Guide; all-in greenfield (incl. land/site acquisition, soft costs and contingency; excludes IT/GPUs). $17.6M/MW = $17,600/kW.",
+      "confidence": "high"
+    },
+    {
+      "id": "e2",
+      "metric": "allInCostPerKW",
+      "value": null,
+      "low": 8900,
+      "high": 23300,
+      "unit": "USD/kw",
+      "region": "US & Canada markets",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Data Center Construction Costs Jump 21% Since 2024",
+        "url": "https://www.credaily.com/?p=222025",
+        "publisher": "CRE Daily",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Article reports C&W 2026 all-in greenfield range for US and Canada: $8.9M to $23.3M per MW. \"That range excludes the chips and GPUs needed for AI workloads.\"",
+      "scopeNotes": "Secondary report of the C&W 2026 guide market range; all-in incl. land and soft costs.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e3",
+      "metric": "costShareOfTotal",
+      "value": null,
+      "low": 0.07,
+      "high": 0.21,
+      "unit": "pct",
+      "region": "US & Canada",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Data Center Construction Costs Jump 21% Since 2024",
+        "url": "https://www.credaily.com/?p=222025",
+        "publisher": "CRE Daily",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Article cost-share list for a greenfield build (C&W 2026): power infrastructure 21%; core-and-shell construction and sitework 17%; contingencies 16%; site acquisition 7%.",
+      "scopeNotes": "C&W 2026 component shares of all-in cost (as reported by CRE Daily); MEP/soft-cost shares not given.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e4",
+      "metric": "shellCoreCostPerKW",
+      "value": 11300,
+      "low": 10700,
+      "high": 11300,
+      "unit": "USD/kw",
+      "region": "Global average",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Data Center Outlook (2026 Global Data Center Outlook)",
+        "url": "https://www.jll.com/en-us/insights/market-outlook/data-center-outlook",
+        "publisher": "JLL",
+        "accessed": "2026-10-24"
+      },
+      "quote": "\"For 2026, JLL is forecasting the average global cost will increase 6% to $11.3 million per MW.\" \"Note: the figures in the chart only include the cost to construct the shell and core.\"",
+      "scopeNotes": "Global (not US-only) average; 2025 actual $10.7M/MW. JLL \"shell and core\" for data centers includes the powered/cooled base building (MEP), excluding tenant tech fit-out.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5",
+      "metric": "tenantTechFitOutPerKW",
+      "value": null,
+      "high": 25000,
+      "unit": "USD/kw",
+      "region": "Global",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Data Center Outlook (2026 Global Data Center Outlook)",
+        "url": "https://www.jll.com/en-us/insights/market-outlook/data-center-outlook",
+        "publisher": "JLL",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Tenants are typically responsible for the tech fit-out which can cost as much as $25 million per MW for AI infrastructure.",
+      "scopeNotes": "IT/tech fit-out — excluded from this type's hard cost.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e6",
+      "metric": "constructionCostPerKW",
+      "value": 13280,
+      "unit": "USD/kw",
+      "region": "Chicago, IL",
+      "regionKey": "IL-Chicago",
+      "dataYear": 2026,
+      "source": {
+        "title": "Data centre construction cost index 2026 — Cost trends",
+        "url": "https://reports.turnerandtownsend.com/data-centre-construction-cost-index-2026/cost-trends",
+        "publisher": "Turner & Townsend",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Cost trends page: Chicago US$13.28 per Watt (11th of 62 markets; the only US city with a stated figure)",
+      "scopeNotes": "Turner & Townsend 2026 index, typical 60 MW air-cooled hyperscale; excludes site works, land, utility works and professional fees (see e7).",
+      "confidence": "high"
+    },
+    {
+      "id": "e7",
+      "metric": "scope",
+      "value": null,
+      "unit": "text",
+      "region": "Global",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Data centre construction cost index 2026 — Methodology",
+        "url": "https://reports.turnerandtownsend.com/data-centre-construction-cost-index-2026/methodology",
+        "publisher": "Turner & Townsend",
+        "accessed": "2026-10-24"
+      },
+      "quote": "\"The cost model does not include any client direct costs, land purchase costs, utility works\" … \"abnormal groundworks, site works, active IT equipment\" … \"a typical air-cooled, build-to-suit hyperscale data centre in the average range of 60MW (IT load).\"",
+      "scopeNotes": "Includes shell & core, architectural fit-out, M&E fit-out and equipment, GC preliminaries, margin and contingency. Colo/enterprise may differ by up to 15%; liquid cooling 7–10% premium.",
+      "confidence": "high"
+    },
+    {
+      "id": "e8",
+      "metric": "constructionCostPerKW",
+      "value": 13300,
+      "unit": "USD/kw",
+      "region": "Silicon Valley, CA",
+      "regionKey": "CA-SanJose",
+      "dataYear": 2025,
+      "source": {
+        "title": "AI data center rush raises alarm over construction supply chain",
+        "url": "https://www.turnerandtownsend.com/en-us/news/ai-data-center-rush-raises-alarm-over-construction-supply-chain/",
+        "publisher": "Turner & Townsend",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Silicon Valley (US$13.3 per watt) … a 7-10 percent construction cost premium between traditional and AI data centers",
+      "scopeNotes": "Turner & Townsend 2025 index (5 Nov 2025 release); same scope basis as e7.",
+      "confidence": "high"
+    },
+    {
+      "id": "e9",
+      "metric": "shellCoreCostPerKW",
+      "value": null,
+      "low": 10000,
+      "high": 14000,
+      "unit": "USD/kw",
+      "region": "US markets",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Data Centre Cost per MW by Region (October 2026 research update)",
+        "url": "https://www.nextmsc.com/industry-deep-dive/data-centre-cost-per-mw-by-region",
+        "publisher": "Next Move Strategy Consulting",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Table: JLL 2026 shell-and-core midpoint — Chicago 13.0 (range 12–14); Northern Virginia 11.5 (range 11–12); Phoenix, Dallas, Atlanta 10.5 each (range 10–11) US$M per MW",
+      "scopeNotes": "Secondary citation of JLL market figures by a research vendor; not verified against JLL directly.",
+      "confidence": "low"
+    },
+    {
+      "id": "e10",
+      "metric": "liquidCoolingPremiumPerKW",
+      "value": null,
+      "low": 1000,
+      "high": 2000,
+      "unit": "USD/kw",
+      "region": "Global",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "Data Centre Construction Costs Rise to $11.3M per MW in 2026",
+        "url": "https://www.datacentres.com/news/data-centre-construction-costs-11m-per-mw",
+        "publisher": "Datacentres.com",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Liquid cooling adds \"$1-2 million per MW over air-cooled designs.\"",
+      "scopeNotes": "Trade news summary of JLL outlook.",
+      "confidence": "medium"
+    },
+    {
+      "id": "e11",
+      "metric": "hardCostPerSF",
+      "value": 306.91,
+      "low": 306.91,
+      "high": 342.01,
+      "unit": "USD/sf",
+      "region": "US national average",
+      "regionKey": "US",
+      "dataYear": 2019,
+      "source": {
+        "title": "Computer Data Center Construction Cost Model",
+        "url": "https://www.rsmeans.com/model-pages/computer-data-center",
+        "publisher": "Gordian RSMeans",
+        "accessed": "2026-10-24"
+      },
+      "quote": "Computer Data Center … 22,500 S.F. … Subtotal $245.53/S.F. (open shop) … Contractor fees (general conditions, overhead, profit, 25%) $61.38/S.F.",
+      "scopeNotes": "value = open-shop subtotal + 25% fees, architect fee removed; high = union ($273.61 + $68.40). Small enterprise data center model (2019) — far below hyperscale power density; per-SF reference only.",
+      "confidence": "low"
+    },
+    {
+      "id": "e12",
+      "metric": "costPerSF",
+      "value": 1000,
+      "unit": "USD/sf",
+      "region": "United States",
+      "regionKey": "US",
+      "dataYear": 2026,
+      "source": {
+        "title": "AI Data Center Development Costs in 2026: What Developers and Investors Need to Know",
+        "url": "https://www.coradvisors.net/2026/06/ai-data-center-development-costs-2026.html",
+        "publisher": "COR Advisors",
+        "accessed": "2026-10-24"
+      },
+      "quote": "per-square-foot pricing for U.S. facilities pushing toward roughly $1,000",
+      "scopeNotes": "Advisory blog attributing the figure to Cushman & Wakefield; basis (all-in vs hard) unclear.",
+      "confidence": "low"
+    }
+  ],
+  "openQuestions": [
+    "Obtain the C&W 2026 Data Center Development Cost Guide tables (market-by-market $/MW and full component split).",
+    "T&T 2026 publishes only Chicago among US cities on the public page; other US markets would refine the regional spread.",
+    "Generator cost evidence in the specialty-MEP block is 2014-dated; a current $/kW quote is needed."
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "sample": {
+    "id": "09-tiny-home-community",
+    "name": "Cedar Pines tiny home community",
+    "address": "Austin, TX",
+    "exitCap": 0.07
+  },
+  "engine": {
+    "schema": 1,
+    "mode": "quick",
+    "location": {
+      "region": "TX-Austin"
+    },
+    "startMonth": "2027-03",
+    "settings": {},
+    "land": {
+      "mode": "perAcre",
+      "value": 95000
+    },
+    "phases": [
+      {
+        "id": "p1",
+        "name": "Phase 1",
+        "startMonth": null,
+        "months": null,
+        "drawCurve": "s",
+        "financing": {
+          "enabled": true,
+          "ltc": null,
+          "rate": null,
+          "feePct": null
+        }
+      }
+    ],
+    "components": [
+      {
+        "id": "c1",
+        "typeId": "tiny-home-community",
+        "name": "Tiny home pads",
+        "phaseId": "p1",
+        "size": 40,
+        "sf": null,
+        "acres": null,
+        "quality": "standard",
+        "baseline": {
+          "price": null,
+          "basis": "national"
+        },
+        "items": {},
+        "blocks": [],
+        "contingency": {},
+        "revenue": {
+          "mode": "perUnitMonth",
+          "rate": 950,
+          "vacancy": 0.08,
+          "expenseRatio": 0.35
+        }
+      }
+    ],
+    "shared": [],
+    "overrides": {},
+    "scenarios": []
+  }
+}

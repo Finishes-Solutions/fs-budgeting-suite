@@ -1,0 +1,182 @@
+{
+  "totals": {
+    "hard": 17213433.31,
+    "ffe": 2336729.26,
+    "contingency": 2066064.57,
+    "soft": 4767516.45,
+    "financing": 923359.32,
+    "land": 3298800,
+    "total": 30605902.91,
+    "hardContingency": 1881213.38,
+    "softContingency": 184851.19,
+    "fees": 547247.74,
+    "developerFee": 1014759.37,
+    "hardAll": 21431375.95,
+    "softAll": 5875726.96,
+    "cents": 3060590291
+  },
+  "metrics": {
+    "sf": 76880,
+    "acres": 2.48,
+    "primaryUnits": 124,
+    "unit": "key",
+    "perSF": 398.09967364724247,
+    "perAcre": 12341089.883064516,
+    "perPrimaryUnit": 246821.79766129033,
+    "byUnit": {
+      "key": 124
+    }
+  },
+  "split": {
+    "hard": 0.7002366835254396,
+    "soft": 0.19198018687042878,
+    "land": 0.10778312960413165
+  },
+  "components": [
+    {
+      "id": "c1",
+      "name": "Harbor Point hotel",
+      "type": "Select-service hotel",
+      "size": 124,
+      "unit": "key",
+      "totals": {
+        "hard": 17213433.31,
+        "ffe": 2336729.26,
+        "contingency": 2066064.57,
+        "soft": 4767516.45,
+        "financing": 923359.32,
+        "land": 3298800,
+        "total": 30605902.91,
+        "hardContingency": 1881213.38,
+        "softContingency": 184851.19,
+        "fees": 547247.74,
+        "developerFee": 1014759.37,
+        "hardAll": 21431375.95,
+        "softAll": 5875726.96,
+        "cents": 3060590291
+      },
+      "metrics": {
+        "sf": 76880,
+        "acres": 2.48,
+        "primaryUnits": 124,
+        "unit": "key",
+        "perSF": 398.09967364724247,
+        "perAcre": 12341089.883064516,
+        "perPrimaryUnit": 246821.79766129033
+      },
+      "range": {
+        "min": 146344.78,
+        "max": 334502.36,
+        "value": 238205.12471598305,
+        "status": "within",
+        "unit": "key"
+      }
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "name": "Phase 1",
+      "start": "2027-03",
+      "months": 19,
+      "midpoint": "2028-01",
+      "escalation": 1.0626337092338076,
+      "totals": {
+        "hard": 17213433.31,
+        "ffe": 2336729.26,
+        "contingency": 2066064.57,
+        "soft": 4767516.45,
+        "financing": 923359.32,
+        "land": 3298800,
+        "total": 30605902.91,
+        "hardContingency": 1881213.38,
+        "softContingency": 184851.19,
+        "fees": 547247.74,
+        "developerFee": 1014759.37,
+        "hardAll": 21431375.95,
+        "softAll": 5875726.96,
+        "cents": 3060590291
+      },
+      "financing": {
+        "enabled": true,
+        "ltc": 0.6,
+        "rate": 0.07,
+        "feePct": 0.01,
+        "loan": 18363541.75,
+        "equity": 12242361.16,
+        "interest": 739723.9,
+        "fee": 183635.42,
+        "iterations": 7
+      }
+    }
+  ],
+  "shared": [],
+  "warnings": [],
+  "proformas": [
+    {
+      "scope": {
+        "kind": "project",
+        "id": "project"
+      },
+      "purchasePrice": 30605902.91,
+      "year1PotentialIncome": 7936000,
+      "size": {
+        "unit": "squareFeet",
+        "value": 76880
+      },
+      "unitCount": 124,
+      "error": null,
+      "summary": {
+        "year1NOI": 2211580.8,
+        "yieldOnCost": 0.0722599430084907,
+        "equityIRR": 0.062317180866599695,
+        "equityMultiple": 1.3124975994183088,
+        "warnings": [
+          "Leverage is negative in at least one year — borrowing lowers the equity return."
+        ]
+      },
+      "fieldOrigins": {
+        "property.name": "Budget name",
+        "property.address": "Budget address",
+        "property.size": "Estimate building SF (or units)",
+        "property.unitCount": "Estimate primary units",
+        "acquisition.basis": "Estimate total project cost",
+        "income.year1PotentialIncome": "Estimate revenue inputs",
+        "income.otherIncome": "Estimate other income",
+        "expenses": "Estimate expense ratio"
+      },
+      "irrRow": [
+        {
+          "year": 1,
+          "NOI": 2211580.8,
+          "cashFlow": 599685.4637012752,
+          "equityIRR": -0.4048792088752594
+        },
+        {
+          "year": 2,
+          "NOI": 2277928.224,
+          "cashFlow": 666032.8877012753,
+          "equityIRR": -0.1334245976061404
+        },
+        {
+          "year": 3,
+          "NOI": 2346266.07072,
+          "cashFlow": 734370.7344212756,
+          "equityIRR": -0.0246810139437669
+        },
+        {
+          "year": 4,
+          "NOI": 2416654.0528416,
+          "cashFlow": 804758.7165428754,
+          "equityIRR": 0.030467354511863113
+        },
+        {
+          "year": 5,
+          "NOI": 2489153.674426848,
+          "cashFlow": 877258.3381281234,
+          "equityIRR": 0.062317180866599695
+        }
+      ]
+    }
+  ]
+}

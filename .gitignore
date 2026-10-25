@@ -15,3 +15,4 @@ node_modules/
 # temp dir, but not every run overrides it.
 test/out/
 *.log
+

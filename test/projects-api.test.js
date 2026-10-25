@@ -175,6 +175,47 @@ test('an ordinary save of an existing budget still updates it', async () => {
   assert.ok(pj.body.budgets.some(b => b.projectId === 'BD-0110'));
 });
 
+test('a save carrying a stale baseHash is refused instead of overwriting', async () => {
+  await api('/api/budget/OP-0115?scope=project',
+    { method: 'PUT', body: { create: true, name: 'Two Editors', address: '5 Way' } });
+  await saveBudget('BD-0115', 'OP-0115', { name: 'Start' });
+  const hashOf = async () => (await fetch(BASE + '/api/budget/BD-0115')).headers.get('x-budget-hash');
+  const put = (name, baseHash) => api('/api/budget/BD-0115', { method: 'PUT', body: {
+    meta: { projectId: 'BD-0115', name, status: 'Draft' }, doc: doc('BD-0115', { name }), baseHash } });
+
+  const base = await hashOf();
+  assert.match(base, /^[0-9a-f]{64}$/, 'GET hands out the concurrency token in a header');
+  const got = await api('/api/budget/BD-0115');
+  assert.equal(got.body.name, 'Start', 'and the body is still exactly the document');
+
+  // Tab one saves against the base it opened: fine, and it learns the new base.
+  const one = await put('Tab One', base);
+  assert.equal(one.status, 200);
+  assert.equal(one.body.docHash, await hashOf(), 'the PUT returns what GET now hands out');
+
+  // Tab two still holds the old base: refused, and nothing is written.
+  const two = await put('Tab Two', base);
+  assert.equal(two.status, 409);
+  assert.equal(two.body.error, 'budget_conflict');
+  assert.equal(two.body.currentHash, one.body.docHash);
+  assert.equal((await api('/api/budget/BD-0115')).body.name, 'Tab One');
+
+  // A save with no base (an older page, or Overwrite Anyway) is last-write-wins.
+  const force = await put('Tab Two', undefined);
+  assert.equal(force.status, 200);
+  assert.equal((await api('/api/budget/BD-0115')).body.name, 'Tab Two');
+
+  // A quick status change moves the stored document, and says where to.
+  const st = await api('/api/budget/BD-0115', { method: 'PUT', body: { status: 'In Review' } });
+  assert.equal(st.body.docHash, await hashOf());
+  assert.notEqual(st.body.docHash, force.body.docHash);
+  // An unchanged save against the current base still succeeds.
+  const again = await api('/api/budget/BD-0115', { method: 'PUT', body: {
+    meta: { projectId: 'BD-0115', name: 'Tab Two', status: 'In Review' },
+    doc: doc('BD-0115', { name: 'Tab Two', status: 'In Review' }), baseHash: st.body.docHash } });
+  assert.equal(again.status, 200);
+});
+
 test('square footage is required and must be greater than zero', async () => {
   await api('/api/budget/OP-0120?scope=project',
     { method: 'PUT', body: { create: true, name: 'Sizeless', address: '5 Way' } });

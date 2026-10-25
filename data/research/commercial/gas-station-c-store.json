@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "id": "gas-station-c-store",
+  "name": "Gas station / convenience store",
+  "category": "commercial",
+  "researchedAt": "2026-10-24",
+  "primaryUnit": "sf",
+  "summary": "Ground-up convenience store (≈2,500–6,500 SF) with fuel canopy, 4–8 multi-product dispensers (8–16 fueling positions) and 2–4 double-wall USTs on 1.5–5 acres. Because fuel system, canopy and a large paved fuel court ride on a small building, cost per store SF is high and swings with fueling positions. Evidence is moderate: one consultant development budget, eight 2025 Texas accessibility-registration estimates (self-reported, likely partial), and one 2024 public bid tab for UST/dispenser/canopy packages; no cost-consultant elemental data found.",
+
+  "sizing": {
+    "typicalSize": { "low": 2500, "mid": 4500, "high": 6500, "unit": "sf", "evidence": ["g1", "g2", "g3", "g4", "g6", "g7", "g9"], "derived": false, "method": "Store SF: MMCG example 3,024 SF (g1); Texas 2025 registrations 3,600–7,773 SF (g2–g4, g6, g7, g9). Mid 4,500 SF; 8,500–10,900 SF registrations (g8, g10) treated as truck-stop/outliers or including canopy area." },
+    "primaryUnitsPerAcre": { "low": 600, "mid": 2200, "high": 3500, "evidence": ["g1"], "derived": true, "method": "Store SF per site acre. MMCG example 3,024 SF on 5.40 acres = 560 SF/ac (g1, large highway site). Typical suburban 4,500 SF store on 1.5–2.0 ac ≈ 2,200–3,000 SF/ac (judgment); urban corner 1 ac ≈ 3,500." },
+    "parkingPerPrimaryUnit": { "low": 0.003, "mid": 0.004, "high": 0.006, "type": "surface", "evidence": [], "derived": true, "method": "Spaces per store SF excluding pump positions; typical retail code 3–6 per 1,000 SF (judgment). Fueling positions not counted as parking." }
+  },
+
+  "hardCost": {
+    "perPrimaryUnit": { "low": 350, "mid": 600, "high": 1050, "dollarYear": 2025, "region": "US", "evidence": ["g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8", "g9", "g11"], "derived": false, "method": "Complete facility (store + canopy + fuel system + site) per store SF. MMCG budget: hard costs $3,169,000 for a 3,024 SF store with 8 fueling positions = $1,048/store SF (g1, 2025, includes canopy, tanks, site work). Texas 2025 registrations (whole gas station + c-store projects, self-reported): Dallas $3.0M / 7,773 SF = $386 (g7); Odessa $2.5M / 6,277 SF = $398 (g2); Palestine $2.0M / 5,210 SF = $384 (g4); Fort Worth $2.0M / 6,000 SF = $333 (g3); Houston $1.2M / 3,600 SF = $333 (g9); Houston $0.68M / 3,600 = $189 and $1.5M / 8,500 = $176 (g6, g8; likely partial). RSMeans 2019 basic convenience-store building only $126/SF ex-architect (g11; ≈$165–175 in 2025 before food-service and image upgrades). Built-up check for a 4,500 SF modern food-forward store: building ~$325/SF ($1.46M) + site work ~$0.7M + canopy ~$0.2M + fuel system ~$0.65M (g5 bid tab $332–552k for a smaller fleet system) ≈ $3.0M ≈ $670/SF. Mid $600 = between the TX registration cluster (~$385, Texas factor <1 and likely partial) and the built-up/MMCG figures. Low $350 = TX cluster; high $1,050 = MMCG." },
+    "scope": {
+      "includesSitework": true,
+      "includesStructuredParking": false,
+      "includesFFE": false,
+      "notes": "Store building + fuel canopy + fuel system (USTs, piping, islands, dispensers, tank monitoring) + on-site work (fuel-court concrete, paving, storm/oil-water separator, utilities, lighting, landscaping). Excludes store equipment (coolers, shelving, food service, POS), signage/price pylon (ffe), land, soft costs, off-site/turn lanes, tap/impact fees."
+    }
+  },
+
+  "qualityTiers": {
+    "economy": 0.65, "standard": 1.0, "premium": 1.35, "luxury": 1.75,
+    "evidence": ["g1", "g2", "g7"], "derived": true,
+    "method": "economy ≈ low/mid (TX registrations, 350/600 → 0.6–0.65); premium ≈ large-format 'food-forward' c-store; luxury ≈ high/mid (MMCG, 1,050/600 = 1.75)."
+  },
+
+  "systemSplit": {
+    "lines": [
+      { "division": "01", "pct": 0.09 },
+      { "division": "03", "pct": 0.07 },
+      { "division": "04", "pct": 0.03 },
+      { "division": "05", "pct": 0.03 },
+      { "division": "06", "pct": 0.02 },
+      { "division": "07", "pct": 0.04 },
+      { "division": "08", "pct": 0.03 },
+      { "division": "09", "pct": 0.04 },
+      { "division": "10", "pct": 0.01 },
+      { "division": "11", "pct": 0.05 },
+      { "division": "13", "pct": 0.06 },
+      { "division": "21", "pct": 0.01 },
+      { "division": "22", "pct": 0.03 },
+      { "division": "23", "pct": 0.04 },
+      { "division": "26", "pct": 0.08 },
+      { "division": "27", "pct": 0.01 },
+      { "division": "28", "pct": 0.01 },
+      { "division": "31", "pct": 0.06 },
+      { "division": "32", "pct": 0.14 },
+      { "division": "33", "pct": 0.15 }
+    ],
+    "evidence": ["g5"], "derived": true,
+    "method": "Built-up from the mid example (4,500 SF store, $3.0M): fuel system ≈ 22% (Div 11 dispensers 5% + Div 33 tanks/piping/utilities 15% + part of 26), canopy ≈ 6% (Div 13 pre-engineered canopy; g5 shows canopy ≈ 18–20% of the tank/dispenser package), site 31+32 ≈ 20% (large fuel-court concrete/paving), building ≈ 50% allocated with a small-retail pattern. Not from a published elemental estimate."
+  },
+
+  "lineItems": [
+    {
+      "id": "fuel-system",
+      "name": "Fuel system: double-wall USTs, product piping, islands, dispensers, tank monitoring",
+      "division": "33",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 330000, "mid": 650000, "high": 1100000, "dollarYear": 2024, "region": "US", "evidence": ["g5"], "derived": true, "method": "Boone County, MO 2024 bid: 'Furnishing, delivery, and installation of new USTs, Islands, Dispensers, and FMUs' $331,570 (Sheriff site) and $551,995.97 (Road & Bridge site) (g5) — fleet-scale systems. Retail stations typically carry 3–4 tank compartments and 4–8 dispensers, so mid scaled ~1.2–2× the larger bid to $650k; high for 8 dispensers + diesel/DEF." },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out of the baseline; scales mainly with number of dispensers and tanks."
+    },
+    {
+      "id": "fuel-canopy",
+      "name": "Fuel canopy (pre-engineered steel, LED lighting, fascia)",
+      "division": "13",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 70000, "mid": 200000, "high": 400000, "dollarYear": 2024, "region": "US", "evidence": ["g5"], "derived": true, "method": "Boone County 2024 bid canopy lines $68,777.38 and $101,930.00 (g5) for small fleet islands; retail 4–8 dispenser canopies are 2–4× larger in area → mid $200k (derived scaling)." },
+      "inBaseline": true,
+      "scales": false,
+      "optional": false,
+      "notes": "Carve-out of the baseline."
+    },
+    {
+      "id": "ust-removal-remediation",
+      "name": "Removal of existing USTs, lines and contaminated soil (redevelopment sites)",
+      "division": "02",
+      "unit": "ls",
+      "qty": { "per": "project", "value": 1 },
+      "cost": { "low": 50000, "mid": 80000, "high": 150000, "dollarYear": 2024, "region": "US", "evidence": ["g5"], "derived": false, "method": "Boone County 2024 bid: removal of 6,000-gal UST $11,595 + 12,000-gal UST $24,550 + product lines/concrete $16,750 + contaminated soil up to 150 tons $36,475 = $89,370 (site 1); two 4,000-gal USTs $18,750 + lines $8,005 + soil $29,605 = $56,360 (site 2); soil beyond 150 tons $165/ton (g5). High allows larger soil volumes." },
+      "inBaseline": false,
+      "scales": false,
+      "optional": true,
+      "notes": "Only for rebuilds of existing stations."
+    }
+  ],
+
+  "ffe": {
+    "perPrimaryUnit": { "low": 60, "mid": 110, "high": 200, "dollarYear": 2025, "region": "US", "evidence": ["g1"], "derived": true, "method": "Store equipment (walk-in cooler doors, reach-ins, shelving, food service, POS, security) + signage/price pylon. MMCG 'Equipment & Fixtures' $1,135,200 (g1) covers dispensers, tanks, POS, refrigeration, food service, signage; netting a ~$0.55–0.65M fuel system leaves ~$0.5–0.6M / 3,024 SF ≈ $165–200/SF (high end, food-forward). Low/mid for a basic store; derived — verify with an equipment vendor." }
+  },
+
+  "softCosts": {
+    "pctOfHard": { "low": 0.07, "mid": 0.10, "high": 0.15, "evidence": ["g1"], "derived": true, "method": "MMCG soft costs $553,600 include contingency $316,900 and loan monitoring $35k → design/permits/other ≈ $200k on $3.169M hard ≈ 6.4% (g1). Add Phase I/II ESA, UST registration/permits, traffic study and legal → mid 10%." },
+    "breakdown": { "architectureEngineering": 0.05, "permitsFees": 0.02 },
+    "notes": "Type-specific: environmental site assessments, state UST registration and tank-tightness testing, fuel-brand (jobber) image program costs, traffic/driveway permits (state DOT)."
+  },
+
+  "contingency": {
+    "design": { "low": 0.03, "mid": 0.05, "high": 0.08, "evidence": [], "derived": true, "method": "Judgment; fuel-court grading and DOT driveway design changes are common." },
+    "hard": { "low": 0.05, "mid": 0.08, "high": 0.10, "evidence": ["g1"], "derived": false, "method": "MMCG contingency 'around 10% of hard construction costs' (g1); mid 8% with separate design contingency." },
+    "soft": { "low": 0.05, "mid": 0.08, "high": 0.10, "evidence": [], "derived": true, "method": "Standard 5–10%." }
+  },
+
+  "rangeCheck": {
+    "perPrimaryUnit": { "min": 350, "max": 1400, "dollarYear": 2025, "region": "US", "method": "Hard $350–1,050/store SF × 1.07–1.15 soft ≈ $375–1,210; widened to $1,400 for small stores with many fueling positions (MMCG total excl. land/financing ≈ $4.86M / 3,024 SF incl. equipment ≈ $1,600, g1)." }
+  },
+
+  "evidence": [
+    {
+      "id": "g1", "metric": "hardCostPerSite", "value": 3169000, "unit": "USD/site",
+      "region": "United States (location not stated)", "regionKey": "US", "dataYear": 2025,
+      "source": { "title": "Gas Station Construction Cost Breakdown and Why a Gas Station Feasibility Study Is Essential", "url": "https://www.mmcginvest.com/post/gas-station-construction-cost-breakdown-and-why-a-gas-station-feasibility-study-is-essential", "publisher": "MMCG Invest", "accessed": "2026-10-24" },
+      "quote": "roughly $730 per sq. ft. of built area (including the store and canopy)",
+      "scopeNotes": "Example BP station budget (June 2025): Hard Costs $3,169,000; Soft $553,600 (incl. ~$316,900 contingency ≈10% of hard); Equipment & Fixtures $1,135,200; Land $750,000; Financing $460,000; total $6,067,800. 3,024 SF store, 8 fueling positions, 5.40 acres.",
+      "confidence": "medium"
+    },
+    {
+      "id": "g2", "metric": "hardCostPerSite", "value": 2500000, "unit": "USD/site",
+      "region": "Odessa, TX", "regionKey": "TX", "dataYear": 2025,
+      "source": { "title": "TABS project TABS2025010493 — I-20 & FM 866", "url": "https://www.tdlr.texas.gov/TABS/Projects/TABS2025010493", "publisher": "Texas Department of Licensing and Regulation", "accessed": "2026-10-24" },
+      "quote": "The project is construction of a new Convenience Store and Gas Station. … 6,277 ft 2 … Estimated Cost: $2,500,000",
+      "scopeNotes": "Pre-engineered metal building; self-reported estimate, scope of fuel system unclear. $398/SF.",
+      "confidence": "low"
+    },
+    {
+      "id": "g3", "metric": "hardCostPerSite", "value": 2000000, "unit": "USD/site",
+      "region": "Fort Worth, TX", "regionKey": "TX-FortWorth", "dataYear": 2025,
+      "source": { "title": "TABS project TABS2025017370 — Sycamore C-Store Gas Station", "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2025017370", "publisher": "Texas Department of Licensing and Regulation", "accessed": "2026-10-24" },
+      "quote": "New construction of a new convenience store and gas station. 4000 SF of which is for a convenience store … 6,000 ft 2 … Estimated Cost: $2,000,000",
+      "scopeNotes": "Self-reported estimate; $333/SF of registered area.",
+      "confidence": "low"
+    },
+    {
+      "id": "g4", "metric": "hardCostPerSite", "value": 2000000, "unit": "USD/site",
+      "region": "Palestine, TX", "regionKey": "TX", "dataYear": 2025,
+      "source": { "title": "TABS project TABS2025011923 — New Convenience store", "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2025011923", "publisher": "Texas Department of Licensing and Regulation", "accessed": "2026-10-24" },
+      "quote": "New convenience store, 5210 sf, Gas Station-auto and truck fueling … Estimated Cost: $2,000,000",
+      "scopeNotes": "Self-reported estimate; $384/SF.",
+      "confidence": "low"
+    },
+    {
+      "id": "g5", "metric": "fuelSystemPerSite", "value": null, "low": 331570, "high": 551996, "unit": "USD/site",
+      "region": "Boone County (Columbia), MO", "regionKey": "MO-Columbia", "dataYear": 2024,
+      "source": { "title": "Bid Tabulation 43-28OCT24 — New Turnkey Fuel Systems for Boone County Road & Bridge and the Boone County Sheriff's Office", "url": "https://showmeboone.com/purchasing/WebPublish/bid-tabulations/2024/Bid%20Tabulations%202024/43-28OCT24_New_Turnkey_Fuel_Systems.pdf", "publisher": "Boone County, Missouri Purchasing", "accessed": "2026-10-24" },
+      "quote": "Furnishing, delivery, and installation of new USTs, Islands, Dispensers, and FMUs LS 1 551,995.97 … Furnishing, delivery, and installation of Canopy LS 1 101,930.00 … $331,570.00 … $68,777.38",
+      "scopeNotes": "Mid-State Petroleum Equipment, Inc. bid (the other bidder no-bid), Oct 28, 2024; two county fleet fueling sites. Also: UST removals $11,595 (6,000 gal), $24,550 (12,000 gal), $18,750 (two 4,000 gal); contaminated soil up to 150 tons $29,605–$36,475; $165/ton beyond.",
+      "confidence": "high"
+    },
+    {
+      "id": "g6", "metric": "hardCostPerSite", "value": 680000, "unit": "USD/site",
+      "region": "Houston, TX", "regionKey": "TX-Houston", "dataYear": 2025,
+      "source": { "title": "TABS project TABS2025012292 — Gas Station and Convenience Store", "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2025012292", "publisher": "Texas Department of Licensing and Regulation", "accessed": "2026-10-24" },
+      "quote": "New C Store … 3,600 ft 2 … Estimated cost: $680,000",
+      "scopeNotes": "Likely store building only; $189/SF.",
+      "confidence": "low"
+    },
+    {
+      "id": "g7", "metric": "hardCostPerSite", "value": 3000000, "unit": "USD/site",
+      "region": "Dallas, TX", "regionKey": "TX-Dallas", "dataYear": 2025,
+      "source": { "title": "TABS project TABS2025009572 — Family Fuel Gas Station and Convenience Store", "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2025009572", "publisher": "Texas Department of Licensing and Regulation", "accessed": "2026-10-24" },
+      "quote": "one ground up construction of 7773 sq ft convenience store and gas station with 6 pumps … Estimated Cost: $3,000,000",
+      "scopeNotes": "Includes driveways and parking; $386/SF.",
+      "confidence": "low"
+    },
+    {
+      "id": "g8", "metric": "hardCostPerSite", "value": 1500000, "unit": "USD/site",
+      "region": "Houston, TX", "regionKey": "TX-Houston", "dataYear": 2025,
+      "source": { "title": "TABS project TABS2025012126 — Gas Station & Convenience Store", "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2025012126", "publisher": "Texas Department of Licensing and Regulation", "accessed": "2026-10-24" },
+      "quote": "Construction of new gas station and convenience store. … 8,500 ft 2 … Estimated Cost: $1,500,000",
+      "scopeNotes": "$176/SF of registered area; area may include canopy; likely partial.",
+      "confidence": "low"
+    },
+    {
+      "id": "g9", "metric": "hardCostPerSite", "value": 1200000, "unit": "USD/site",
+      "region": "Houston, TX", "regionKey": "TX-Houston", "dataYear": 2025,
+      "source": { "title": "TABS project TABS2024002307 — Convenience Store & Gas station", "url": "https://www.tdlr.texas.gov/TABS/Projects/TABS2024002307", "publisher": "Texas Department of Licensing and Regulation", "accessed": "2026-10-24" },
+      "quote": "THIS IS A NEW CONSTRUCTION OF 3,600 SF CONVENIENCE STORE AND GAS STATION … Estimated Cost: $1,200,000",
+      "scopeNotes": "$333/SF.",
+      "confidence": "low"
+    },
+    {
+      "id": "g10", "metric": "hardCostPerSite", "value": 800000, "unit": "USD/site",
+      "region": "Needville, TX", "regionKey": "TX", "dataYear": 2025,
+      "source": { "title": "TABS project TABS2025014616 — Gas Station C-Store", "url": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2025014616", "publisher": "Texas Department of Licensing and Regulation", "accessed": "2026-10-24" },
+      "quote": "Construction of gas station convenience store, smoke shop, and gas station canopy with four multi-product dispensers. … 10,900 ft 2 … Estimated cost: $800,000",
+      "scopeNotes": "$73/SF of registered area (includes canopy area) — clearly partial; recorded as a low outlier, not used for the mid.",
+      "confidence": "low"
+    },
+    {
+      "id": "g11", "metric": "hardCostPerSF", "value": 126.04, "unit": "USD/sf",
+      "region": "US national average", "regionKey": "US", "dataYear": 2019,
+      "source": { "title": "Construction Cost Estimates for Convenience Store in National, US (model page)", "url": "https://www.rsmeans.com/model-pages/convenience-store", "publisher": "Gordian / RSMeans", "accessed": "2026-10-24" },
+      "quote": "Store, Convenience with Face Brick / Wood Frame … 4,000 S.F. … Total building cost $134.86/SF (union), incl. Contractor fees (25%) $25.21/SF and Architectural fees (7%) $8.82/SF",
+      "scopeNotes": "Value = $134.86 − $8.82 = $126.04/SF; store building only (no canopy, fuel system, site work or equipment); 2019 data, basic finishes. Open shop total $120.30.",
+      "confidence": "medium"
+    }
+  ],
+
+  "openQuestions": [
+    "No sourced per-dispenser / per-tank retail costs (Toast and USDA pages returned 403); fuel-system and canopy carve-outs scale up a fleet bid — get a petroleum-equipment contractor quote.",
+    "Texas registration estimates are self-reported and probably understate full contract value; a few closed-out c-store GMPs (e.g., public P3 or travel-center bond documents) would help.",
+    "Brand image programs (e.g., large-format food-forward c-stores) can push building costs well above the mid."
+  ]
+}
